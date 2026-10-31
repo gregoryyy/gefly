@@ -1,5 +1,47 @@
 # Repository tools
 
+## Shared local and hosted gate
+
+`just ci` delegates to [ci.py](ci.py), the same entry point invoked by
+[GitHub Actions](../.github/workflows/foundation.yml). The direct command needs Python
+3.11+ and Git, without `just` or third-party Python packages:
+
+```bash
+python3 /path/to/checkout/utils/ci.py
+```
+
+The runner finds the checkout from its own location, independently of the caller's
+working directory. Its required phases check the scaffold, discover and run the
+offline standard-library repository-tool tests, and inspect whitespace in the
+current contents of all tracked files. A missing/empty test suite or a required
+phase failure returns nonzero. Whitespace is checked even in an otherwise clean
+checkout; this is broader than checking a working-tree diff. Untracked files are
+excluded until added to Git, so add intended new files before the final gate.
+
+After checkout and interpreter setup, the hosted gate uses only Git and the
+Python standard library. It performs no project-package installation, live peer
+review, provider authentication, PDF/browser/TeX build or simulator/data ingestion.
+Peer-router tests use mocked provider processes; they do not establish live access
+or acceptance. `just check` and `just test-tools` remain lower-level commands for
+targeted checks rather than replacements for the complete gate.
+
+The workflow targets pushes and pull requests to `main` with `contents: read`,
+`persist-credentials: false`, `ubuntu-24.04` and a Python 3.11/3.15 matrix. Exact
+interpreter patches and hosted runner images can change. [SBOM](../docs/SBOM.md)
+records immutable action pins and the reviewed update policy. The matrix tests
+supported lines rather than promising hermetic or identical environments.
+
+[E0-CI](../docs/EVAL.md#e0-ci-are-repository-tool-quality-gates-reproducible-locally-and-in-ci)
+defines acceptance, including clean-checkout/unrelated-directory and negative
+fixtures. Record actual Python versions, commands and local outcomes separately
+from hosted commit/run/job outcomes in [RESULTS](../docs/RESULTS.md). A local pass
+or workflow inspection does not prove a hosted run passed. This slice covers
+current repository tools; future application lint/types, dependency vulnerability/
+license checks and runtime tests remain in TODO 1.1 after stack selection. The
+local quality, specification-validation and live peer gates remain separate.
+
+## Lower-level scaffold check
+
 `just check` runs [check.py](check.py) with Python 3.11 or newer and only the standard
 library. It checks required scaffold files, local Markdown link targets, the Claude
 entrypoint, the nine native Codex agent definitions, the native Claude peer dispatcher

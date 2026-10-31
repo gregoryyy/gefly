@@ -12,8 +12,8 @@ plan rather than assuming a single engine license covers all these materials.
 
 | Tool or asset | Use and provenance | Version / rights status |
 | --- | --- | --- |
-| Python | Standard-library scaffold checks, including `tomllib` | 3.11+ required; local version recorded in RESULTS |
-| just | Local command entry point | Version recorded in RESULTS; not bundled |
+| Python | Standard-library scaffold checks, tool tests and shared CI runner, including `tomllib` | 3.11+ required; CI supports minor lines 3.11 and 3.15; exact observed patches recorded in RESULTS |
+| just | Local command entry point; `just ci` delegates to `utils/ci.py` | Version recorded in RESULTS; not bundled or required by hosted CI |
 | pandoc | Trusted Markdown to embedded HTML | Version recorded in RESULTS; not bundled |
 | Google Chrome | Headless A4 PDF print | Locally installed; `CHROME` can override executable |
 | `utils/pdf/style.css`, `mermaid.html`, `latex.lua` | Copied from `../propeller/utils/pdf/` by the requested bootstrap procedure | Propeller declares GPL-3.0-or-later; original comments retained, notices and full GPL text included for publication |
@@ -30,9 +30,63 @@ are recorded for derived BOOT/build/PDF material in
 `LICENSES/`. This is separate from choosing a blanket license for Gefly's original
 material, which remains Q5.
 
+## Repository-tool CI inventory
+
+The [shared runner](../utils/ci.py) checks scaffold structure, offline standard-
+library tool tests and whitespace in all tracked current files. Empty/missing
+tests or required-phase failures return nonzero. Untracked files are outside the
+whitespace gate until added to Git. This is TODO 1.1.1's bounded tool slice, not a
+choice of simulator stack or completion of parent TODO 1.1.
+
+The [workflow](../.github/workflows/foundation.yml) handles pushes and pull requests
+targeting `main`, using `contents: read` and checkout `persist-credentials: false`.
+It runs on `ubuntu-24.04` with explicit Python minor lines 3.11 and 3.15. At
+selection on 2026-10-31, Python's [supported-version table](https://devguide.python.org/versions/)
+lists 3.11 in security support and 3.15 in bugfix support;
+[3.15.2](https://www.python.org/downloads/release/python-3152/) is the current
+selected-line release checked for setup availability. The matrix permits later
+patches within each minor line; record exact observed interpreters and hosted
+runner details in RESULTS. An immutable action pin does not make the interpreter
+download or hosted runner image hermetic.
+
+| Action | Official release and immutable source pin | Runtime compatibility |
+| --- | --- | --- |
+| `actions/checkout` | [v7.0.1](https://github.com/actions/checkout/releases/tag/v7.0.1), `3d3c42e5aac5ba805825da76410c181273ba90b1` | Node 24 action runtime; Actions runner 2.327.1+ |
+| `actions/setup-python` | [v7.1.0](https://github.com/actions/setup-python/releases/tag/v7.1.0), `6d4fd22b20465ccc0f7354476588e8df7c9ca0e0` | Node 24 action runtime; Actions runner 2.327.1+ |
+
+Both action sources declare the MIT license at their pinned revisions:
+[checkout license](https://github.com/actions/checkout/blob/3d3c42e5aac5ba805825da76410c181273ba90b1/LICENSE)
+and [setup-python license](https://github.com/actions/setup-python/blob/6d4fd22b20465ccc0f7354476588e8df7c9ca0e0/LICENSE).
+They are referenced by CI, not vendored into the application.
+
+The runtime requirements are recorded in the pinned
+[checkout source](https://github.com/actions/checkout/blob/3d3c42e5aac5ba805825da76410c181273ba90b1/README.md)
+and [setup-python source](https://github.com/actions/setup-python/blob/6d4fd22b20465ccc0f7354476588e8df7c9ca0e0/README.md).
+These are CI action runtimes, not application dependencies. Action/interpreter
+setup can download tools; the shared gate then needs only Git and the Python
+standard library. It installs no project packages and invokes no live peer
+provider, PDF/browser/TeX process or simulator runtime. Tests mock provider calls.
+
+[Dependabot configuration](../.github/dependabot.yml) monitors the
+`github-actions` ecosystem at `/` weekly, proposing update PRs under
+[GitHub's documented action-update mechanism](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/auto-update-actions).
+For each proposed replacement, verify the release/tag-to-commit mapping against
+the official action repository, inspect the pinned source and runner/runtime
+requirements, preserve a full commit SHA, and review/test the change through the
+same shared gate and independent review process. Do not merge an update merely
+because the bot opened it. Python patch resolution and hosted runner updates
+remain explicit limits outside those action pins.
+
+Local gate observations and actual hosted outcomes are separate records under
+[E0-CI](EVAL.md#e0-ci-are-repository-tool-quality-gates-reproducible-locally-and-in-ci).
+Workflow presence does not establish a hosted pass or branch protection; peer
+acceptance is also a separate gate. Future application lint/type checks,
+dependency vulnerability/license checks and package-manager update automation
+remain TODO 1.1 work after the runtime stack is selected.
+
 ## Selection and updates
 
-Prefer the smallest dependency set that meets measured requirements. Before adopting one, record its exact version, official source, license, maintenance/security posture, transitive obligations, browser compatibility, size/performance impact and alternatives. Commit lockfiles for the selected package manager. Foundation TODO 1.1 adds vulnerability/license checks and automated update proposals appropriate to that ecosystem; no automation is claimed to exist yet.
+Prefer the smallest dependency set that meets measured requirements. Before adopting one, record its exact version, official source, license, maintenance/security posture, transitive obligations, browser compatibility, size/performance impact and alternatives. Commit lockfiles for the selected package manager. The current action-update configuration is described above; foundation TODO 1.1 still needs vulnerability/license checks and automated update proposals appropriate to the future application ecosystem.
 
 JSBSim is a **candidate**, not an installed dependency. GeoFS is a reference product, not a library or asset grant. Check primary source documents and actual licenses before reuse; see [foundation research](research/2026-10-31-foundation-sources.md).
 

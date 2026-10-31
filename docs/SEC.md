@@ -22,6 +22,24 @@ Protect source code, build environment, dependency integrity, aircraft/reference
 | LLM authoring fabricating facts, following instructions embedded in a source or producing executable content | Resolve real assets through structured sources; validate declarative packages and record provenance; isolate untrusted source text from authoring instructions; require review before accepted use | Unknown-fix, malicious-source, invalid-geometry, incompatible-equipment and provider-failure cases in E9 |
 | Public community exposing private records or falsely labeling content as reviewed | Explicit submission visibility, scoped roles, authorship/review labels, reporting/moderation/removal and retention decisions | Scoped community access/content cases in E11 before deployment |
 
+## Repository-tool CI
+
+The foundation workflow runs the committed offline gate on pull requests to
+`main` and pushes to `main`. Its token has only `contents: read`; checkout does
+not persist credentials. It uses immutable action commits, no repository secrets,
+package installation, live provider calls or document rendering. Pull-request
+code executes in the normal `pull_request` context, never a privileged
+`pull_request_target` context. The test process is not a sandbox for arbitrary
+local code; inspect contributions before running them on a developer machine.
+
+Dependabot proposes GitHub Actions pin updates weekly; verify the upstream
+release/commit, review changes and rerun the gate before accepting an update.
+Hosted runner images and Python patch versions still change. This workflow does
+not configure branch protection, scan future application dependencies or replace
+the independent quality, validation and cross-provider reviews. See
+[E0-CI](EVAL.md#e0-ci-are-repository-tool-quality-gates-reproducible-locally-and-in-ci)
+and [the tool inventory](SBOM.md).
+
 ## Developer peer review
 
 The peer router sends only the orchestrator's inspected packet to the selected

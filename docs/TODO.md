@@ -27,7 +27,8 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 ## 1. Foundation
 
-- [ ] 1.1 Add stack-appropriate quality gates and CI with reproducible local equivalents; keep remote publication dependent on Q6.
+- [ ] 1.1 Add stack-appropriate quality gates and CI with reproducible local equivalents; extend the repository-tool gate when the simulator stack is chosen. Q6 publication is resolved.
+  - [ ] 1.1.1 Add the shared offline repository-tool gate and GitHub Actions matrix, negative fixtures, pinned action/update policy and independent E0-CI review; distinguish local checks from hosted run evidence.
 - [ ] 1.2 Choose web stack, rendering/geography strategy and dynamics architecture through a bounded E1 study. *(decision)*
   - [ ] 1.2.1 Specify the reference Mac, macOS/browser versions and optional yoke/joystick/pedals; refine GeoFS-inspired settings and measure trial timestep, latency and numerical budgets using Q4's selected baseline.
   - [ ] 1.2.2 Compare open physics engines and applicable aircraft-model/adapter reuse first, including browser deployment and distinct licenses; justify custom code only for documented gaps or reference harnesses. *(variant)*

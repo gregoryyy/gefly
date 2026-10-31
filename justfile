@@ -20,6 +20,10 @@ default:
 check:
     python3 "{{justfile_directory()}}/utils/check.py"
 
+# Run the same offline foundation gates used by the hosted workflow
+ci:
+    python3 "{{justfile_directory()}}/utils/ci.py"
+
 # Run standard-library repository-tool tests without invoking live providers
 test-tools:
     python3 -m unittest discover -s "{{justfile_directory()}}/utils" -p 'test_*.py'
