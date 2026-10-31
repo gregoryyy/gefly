@@ -3,6 +3,52 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-10-31 17:17 — Add and exercise the independent opposite-provider peer
+
+TODO: 0.17 complete. PR: [#2](https://github.com/gregoryyy/gefly/pull/2), following merged #1.
+Agent: Codex orchestrator; product_refinement, peer_runner, peer_registration and
+housekeeping on disjoint paths, then independent local quality/validate and an
+actual external Claude peer. Model reported by the external CLI:
+claude-haiku-4-5-20251001; CLI 2.1.193.
+
+**Implementation notes**
+
+BOOT/AGENTS and the active workflow now define nine roles. Peer adds Claude
+quality/specification review for Codex work and the reciprocal Codex route for
+Claude work. Added the canonical role, both native dispatchers, a bounded packet
+router, tests and recipes, R-AGENT-7 (50 stable IDs), process/security/dependency
+and PR evidence conventions. No model alias or local subagent is represented as
+an external provider. Missing access/identity/evidence blocks; findings remain
+separate from criterion validation and final orchestrator acceptance.
+
+Local checks pass: 65 Markdown records, nine native Codex definitions plus a
+Claude dispatcher, 18 offline tests and whitespace. Local quality's revision-
+whitespace bug was fixed and rechecked. The first live Claude attempt timed out
+and was not passed. A completed Claude review found only missing justfile context;
+its follow-up accepted full-header/argument evidence with no findings. Actual
+reports, scope, snapshots, provider/model and limitations are in the
+[cross-provider record](reviews/2026-10-31-cross-provider-peer.md).
+
+Publication recorded 2026-10-31 17:23 Europe/Berlin: rebased onto merged main, pushed
+`chore/cross-provider-peer` and created draft PR #2. Source content remains the
+reviewed snapshot; only bookkeeping/review-evidence files changed afterward.
+
+**Deviations**
+
+Cross-provider evidence covers this new peer addition, not every older roadmap
+change or simulator implementation. Claude inspected packets and recorded test
+outputs, without independently running commands. The reverse live Codex route and
+native agent discovery were not exercised; offline routing/previews cover those
+adapters. Existing configured model/authentication was used without install,
+account change, permission bypass, unrequested posting or PDF generation.
+
+**Insights**
+
+A peer can refuse incomplete context even when code is correct; preserve both
+the original concern and its resolution. Process success, reviewer recommendation
+and provider/coverage acceptance are different observations. Fresh other-provider
+execution is stronger than renaming a local role or choosing another model alias.
+
 ## 2026-10-31 15:49 — Add sailplane and ultralight pilot-qualification roadmap tracks
 
 TODO: 0.16 complete; future profile contract in 1.12. PR: [#1](https://github.com/gregoryyy/gefly/pull/1), documentation refinement.

@@ -20,6 +20,7 @@ plan rather than assuming a single engine license covers all these materials.
 | Mermaid | Optional diagram rendering in PDF builds | CDN script pinned to 11.4.1 in inherited include; fetched only for Mermaid documents; no checked-in bundle |
 | TeX Live / dvisvgm | Optional LaTeX fenced-block to SVG | Needed only for such blocks; not required for current foundation documents |
 | Git / GitHub | Initial public repository publication authorized by user | Destination `gregoryyy/gefly`; actual commit/push evidence in DONE and RESULTS |
+| Codex CLI / Claude Code CLI | Local prerequisites for the opposite-provider peer gate; not bundled | Observed CLI versions: 0.46.0 / 2.1.193. Use existing configured models/authentication, check installed capabilities and record actual model evidence per run. No installation or model selection by the router. |
 
 The document recipes are adapted from the source project's justfile. Generated
 `*.md.pdf` files and `.pdfstamps/` are excluded from Git. Upstream Propeller README

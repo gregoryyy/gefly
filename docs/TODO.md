@@ -23,6 +23,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 - [x] 0.14 Research regional/open-engine source candidates and independently review the integrated roadmap/architecture refinement.
 - [x] 0.15 Record Q11's accepted scenario-first briefing sequence and propagate Q4/Q11 through the product/design/evaluation records.
 - [x] 0.16 Add and review the requested sailplane/ultralight qualification roadmap, distinct curricula/aircraft gates and source references.
+- [x] 0.17 Add the cross-provider peer role, reciprocal dispatchers/router and tests; record actual Claude review of the Codex-authored addition and its accepted follow-up. Reverse live execution remains unclaimed.
 
 ## 1. Foundation
 
@@ -52,6 +53,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 - [ ] 2.6 Quality independently reviews code/security/numerics/tests; coders resolve findings.
 - [ ] 2.7 Validate independently checks every in-scope SPEC criterion at the integrated revision; record failures, limitations and evidence.
 - [ ] 2.8 Record E3 review of the first exercise and decide the next fidelity increment.
+- [ ] 2.9 Run the additional peer quality/specification review in the other provider on the stable integrated result; retain provider/hash evidence and recheck affected criteria after fixes.
 
 Later phases remain in [ROAD](ROAD.md); do not silently create an entire avionics suite or CPL course while completing a bounded milestone.
 

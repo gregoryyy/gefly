@@ -139,3 +139,22 @@ roadmap, source/profile boundaries, Q14 choices and E12 gates with no findings.
 The [source note](research/2026-10-31-license-training-tracks.md) records inspected
 regulatory/training-body sources and edition/amendment limits. No current course,
 qualification eligibility, runtime model or approved training credit was evaluated.
+
+## 2026-10-31 17:17 — E13 independent-provider peer evidence
+
+`just check` passes for 65 Markdown records, nine Codex definitions and the Claude
+peer dispatcher. `just test-tools` passes 18 tests; existing 49 requirement IDs
+remain in order with R-AGENT-7 added (50 total). Whitespace checks and reciprocal
+spaced-path previews pass. Local quality/validation are separately recorded from
+actual provider execution.
+
+Claude CLI 2.1.193 reported claude-haiku-4-5-20251001.
+A 240-second attempt timed out (blocked). A later focused review completed with
+C1–C8 passed but requested missing justfile context. Its real Claude follow-up
+passed F1–F3, found no defects and recommended acceptance. The orchestrator
+verified provenance/coverage for this peer-addition scope; normalized reports and
+all caveats are in [the peer record](reviews/2026-10-31-cross-provider-peer.md).
+No live reverse Codex run, simulator test, independent external test execution or
+updated PDF render is claimed. Historical local reviews are not reclassified as
+cross-provider evidence, and broader PR roadmap scope is not silently accepted by
+this focused peer record.

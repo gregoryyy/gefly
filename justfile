@@ -20,6 +20,18 @@ default:
 check:
     python3 "{{justfile_directory()}}/utils/check.py"
 
+# Run standard-library repository-tool tests without invoking live providers
+test-tools:
+    python3 -m unittest discover -s "{{justfile_directory()}}/utils" -p 'test_*.py'
+
+# Review a frozen packet through the provider opposite its declared author
+peer-review author packet:
+    python3 "{{justfile_directory()}}/utils/peer_review.py" --author-provider "$1" --packet "$2"
+
+# Preview peer routing and packet handling without invoking either provider
+peer-preview author packet:
+    python3 "{{justfile_directory()}}/utils/peer_review.py" --author-provider "$1" --packet "$2" --dry-run
+
 # Every Markdown source under PATHS; ignored files, agent entrypoints and PR templates excluded
 [private]
 sources *PATHS:

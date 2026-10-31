@@ -8,11 +8,20 @@ Read [SDLC](docs/SDLC.md), [STYLE](docs/STYLE.md), [SEC](docs/SEC.md), [TODO](do
 
 ## Orchestrator and subagents
 
-The primary conversation acts as **orchestrator**: interact with the user, ask concise questions, record dated answers and assumptions in GAPS, select actionable tasks, assign ownership, integrate and report. Delegate independent work using the [role definitions](docs/agents/README.md): researcher, product, code1, code2, quality, validate and housekeeping. Use available runtime tools; defining a role does not launch a persistent service.
+The primary conversation acts as **orchestrator**: interact with the user, ask concise questions, record dated answers and assumptions in GAPS, select actionable tasks, assign ownership, integrate and report. Delegate independent work using the [nine role definitions](docs/agents/README.md): orchestrator, researcher, product, code1, code2, quality, validate, peer and housekeeping. Use available runtime tools; defining a role does not launch a persistent service.
 
 Run **code1 and code2 in parallel** on separate specification slices and disjoint paths after agreeing shared contracts. They have equal implementation responsibilities; `coder1` in the original brief means `code1`. Run **housekeeping alongside implementation** on separately assigned documentation/tooling paths. The orchestrator owns integration files and shared status; never let workers race on lockfiles, contracts, GAPS, TODO or DONE. Respect runtime concurrency limits; schedule in waves when necessary, reserving parallel capacity for housekeeping during implementation.
 
 **Quality** independently checks correctness, security, maintainability, test quality, units and numerical risks. **Validate** independently checks the delivered behavior against each in-scope specification criterion. Neither approves its own implementation. Failed checks return to a coder; changed artifacts require renewed affected reviews. Missing evidence is blocked or not evaluated, never a pass. Full dispatch and return contracts are in [the workflow](docs/agents/README.md).
+
+**Peer** adds actual cross-provider quality and specification validation: Claude
+reviews Codex-authored work; Codex reviews Claude-authored work. Use a fresh
+external provider process and the frozen packet via [the peer contract](docs/agents/peer.md).
+A local dispatcher, same-provider subagent or model alias does not satisfy this
+gate. Record authorship, provider/CLI/model evidence, revision/packet hash and
+separate quality/validation outcomes. Mixed authorship needs reciprocal coverage,
+excluding each reviewer's own work. Missing access/identity/evidence is blocked,
+with no silent fallback; do not claim old local reviews meet the new peer gate.
 
 ## Design rules
 

@@ -4,7 +4,7 @@ Status: planned protocols. Targets below are proposed until foundation decisions
 
 ## E0. Is the project foundation usable?
 
-Question: can a contributor find the original brief, authoritative requirements, open decisions, all eight roles and a working check/build entry point without the source sibling repository?
+Question: can a contributor find the original brief, authoritative requirements, open decisions, all declared roles and a working check/build entry point without the source sibling repository?
 
 Procedure: run `just check`, inspect role instructions and native TOML registrations, verify local links and immutable input, compare the adapted BOOT with its recorded provenance. Run `just pdf docs/IDEA.md` twice to check generation and incremental reuse. Inspect the produced A4 PDF visually. Exercise a missing-prerequisite path without installing anything automatically.
 
@@ -30,7 +30,7 @@ Check progression separately from aircraft accuracy: learners should identify th
 
 ## E4. Does the integrated release satisfy the specification?
 
-Quality reviews code/tests/security and numerical design independently of its authors. Validate then builds a requirement-by-requirement matrix at the integrated revision with expected versus actual behavior and artifact/test/source references. Use pass, fail, blocked and not evaluated; never infer a pass from an unchecked TODO box or a coder's summary. Re-run affected checks after repairs, integration or configuration changes. Release requires both reviews and all in-scope criteria supported by evidence.
+Quality reviews code/tests/security and numerical design independently of its authors. Validate builds a requirement-by-requirement matrix at the integrated revision with expected versus actual behavior and artifact/test/source references. The additional peer repeats quality and specification review in the opposite provider (Claude for Codex, Codex for Claude), using a frozen packet with authorship, revision/hash and actual provider evidence. Use pass, fail, blocked and not evaluated; never infer a pass from an unchecked TODO box, process exit or coder's summary. Re-run affected checks after repairs/integration. Release requires local quality/validation, the independent peer gate and evidence for all in-scope criteria.
 
 ## E5. Does browser accessibility survive richer cockpit interaction?
 
@@ -184,3 +184,25 @@ to PPL/CPL airplane criteria. A shared lesson, common acronym or simulator featu
 does not establish training-credit transfer or eligibility. Exact criteria and
 numeric tolerances are fixed when a track starts; this roadmap update does not
 implement or validate any sailplane/ultralight curriculum or aircraft model.
+
+## E13. Is peer review actually independent across providers?
+
+Scope: R-AGENT-7 and the nine-role setup. Inspect the canonical contract, both
+native dispatchers and router; a local dispatcher is not the external reviewer.
+Run `just test-tools` offline for reciprocal routing, dry-run without calls,
+missing CLI/revision, failures/timeouts, malformed reports, tool-use and inconsistent
+recommendations. `just check` covers registration/prose links only, not live identity.
+
+For live evidence, freeze a packet with exact revision/source snapshot, declared
+author provider(s), requirements, relevant source/diff and recorded check outputs.
+Run the actual opposite-provider CLI in a fresh context. Preserve packet hash,
+CLI/version, reported model/provider evidence, quality findings, validation rows,
+limitations and the orchestrator's gate assessment. Process execution, parsed
+recommendation and verified acceptance are separate observations.
+
+No same-provider substitute may pass missing CLI/authentication, unsupported
+behavior, unknown identity or incomplete criteria. For mixed authorship, require
+reciprocal coverage excluding each provider's own contributions. Recheck affected
+criteria after repairs. One live route plus mocked reciprocal tests must not be
+reported as two live provider runs. Packet-only inspection cannot claim commands
+were independently executed or establish simulator fidelity/training credit.

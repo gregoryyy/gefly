@@ -6,7 +6,8 @@ see [upstream notices and license text](../THIRD_PARTY_NOTICES.md).
 Gefly adaptation: imported from `../propeller/docs/BOOT.md` on 2026-10-31.
 Upstream SHA-256: `2bbe39a361ac879362571713b2e9e3cc2d08b29e6ea10ac76676c67376ef4509`. The source repository
 was read only. Propeller examples below describe the upstream project; optional
-trackers, hooks and Claude-specific wrappers are not installed by this scaffold.
+trackers/hooks are not installed. Gefly provides a Claude-specific peer dispatcher;
+the other upstream Claude wrapper examples are not installed by this scaffold.
 The Gefly extension below and local SDLC/AGENTS govern this project.
 
 How a new project gets set up, from raw idea to a repository that agents and people can work in. Propeller was set up this way on 2026-10-25 between 10:20 and 11:00, following the conventions of the kibitz repository. Use this as the checklist for the next project. Status: 2026-10-27 15:18.
@@ -191,6 +192,7 @@ Copy the document section of the `justfile` and `utils/pdf/`.
 ├── AGENTS.md            rules for coding agents and contributors
 ├── CLAUDE.md            @AGENTS.md
 ├── .codex/              native project configuration and agents/*.toml
+├── .claude/agents/peer.md opposite-provider peer dispatcher for Claude-authored work
 ├── justfile             builds: documents now, the app later
 ├── LICENSE
 ├── .gitignore
@@ -232,7 +234,7 @@ Copy the document section of the `justfile` and `utils/pdf/`.
 ## Gefly extension: orchestrator and specialist agents
 
 This split is part of project setup, not an optional assurance add-on. Start with
-an orchestrator and seven worker roles. [The workflow](agents/README.md) is the
+an orchestrator and eight worker roles. [The workflow](agents/README.md) is the
 operational contract; canonical prompts live in `docs/agents/`. Native project
 agent registrations live in `.codex/agents/`, with global worker limits in
 `.codex/config.toml`. The primary conversation acts as orchestrator through
@@ -247,6 +249,7 @@ AGENTS. These definitions do not launch persistent services.
 | **code2** | Same responsibilities as code1; implement a separate slice in parallel | Disjoint paths against agreed shared contracts; equal implementation standards |
 | **quality** | Independently check code output for quality criteria | Concrete correctness, maintainability, security, numerical and test findings |
 | **validate** | Independently validate completed work against specification | Criterion-by-criterion expected/observed evidence and pass/fail/blocked/not evaluated |
+| **peer** | Additional quality and specification validation in another provider: Claude for Codex, Codex for Claude | Fresh external provider report, exact revision/packet hash, provider evidence and separate findings/criterion matrix; no self-approval or same-provider fallback |
 | **housekeeping** | Maintain hygiene in parallel with implementation | Assigned documentation/tooling/inventory checks and changes, no scope or acceptance decisions |
 
 The original brief's `coder1` means `code1`. Code2 is a separate stream, not the
@@ -277,6 +280,51 @@ Every return identifies role/task, reviewed revision or bounded working-tree
 scope, changed paths, commands actually run, results, sources where relevant,
 findings, open questions and limitations. Full dispatch/return templates and
 canonical role links are in [the agent workflow](agents/README.md).
+
+### Independent peer in another provider
+
+The ninth role, **peer**, is additional to quality and validate. If Codex authored
+the work, launch **Claude** for the peer review; if Claude authored it, launch
+**Codex**. A separate local subagent or model alias in the author's provider does
+not satisfy this requirement. Native Codex custom agents inherit the provider;
+the native peer definitions are dispatchers for an actual external CLI process,
+not declarations that a local model has changed providers.
+
+Canonical instructions: [peer contract](agents/peer.md). Codex dispatches through
+`.codex/agents/peer.toml`; Claude through `.claude/agents/peer.md`. Use the same
+frozen packet for each relevant review, with authorship/provider map, exact
+revision, specification/criteria, source/diff context and recorded check outputs.
+Do not supply the author's private reasoning or previous review conclusions.
+
+```sh
+just peer-preview codex /path/to/packet.md
+just peer-review codex /path/to/packet.md   # external Claude reviews Codex work
+just peer-review claude /path/to/packet.md  # external Codex reviews Claude work
+just test-tools                           # offline routing/failure/schema tests
+```
+
+The peer returns two distinct sections: **quality findings** (severity, location,
+reproduction/evidence) and **specification validation** (criterion, expected versus
+observed behavior, evidence, pass/fail/blocked/not evaluated). Record actual
+provider/CLI/version/model evidence, packet hash and reviewed revision. Execution
+success or a preview is not by itself acceptance. Packet-only review does not
+claim independent test execution. The orchestrator verifies identity, scope and
+evidence before accepting the recommendation.
+
+For mixed-provider contributions, obtain reciprocal coverage: each provider
+reviews the other's work and excludes its own from acceptance. Missing provider,
+authentication, supported CLI behavior, identity or evidence blocks the affected
+peer gate. Do not silently substitute the author's provider, install or change
+accounts, bypass permissions, or mark it passed. Preserve useful local checks
+while reporting what the peer still needs. Return findings to the implementation
+owner and repeat affected peer review after fixes/integration. Older same-provider
+reviews do not retroactively satisfy this new gate.
+
+Official references, consulted 2026-10-31: [Codex custom agents](https://learn.chatgpt.com/docs/agent-configuration/subagents),
+[Codex non-interactive mode](https://learn.chatgpt.com/docs/non-interactive-mode),
+[Claude subagents](https://code.claude.com/docs/en/sub-agents) and
+[Claude CLI](https://code.claude.com/docs/en/cli-reference). Check installed CLI
+capabilities; do not assume every client/version supports the same flags.
 
 ### Apply the guide to Gefly
 

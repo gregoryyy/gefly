@@ -26,8 +26,12 @@ a competing user conversation.
    runtime limits, preferably primary plus those three workers during implementation.
 4. Integrate shared contracts, dependencies, status and worker changes. Do not allow
    overlapping edits or silently discard a worker's changes.
-5. Assign independent quality and validate reviews of the stable integrated artifact.
-   Return findings to coders. Re-run affected checks/reviews after fixes.
+5. Assign independent quality and validate reviews and the additional cross-provider
+   peer: Claude for Codex-authored work, Codex for Claude-authored work. Supply
+   authorship, frozen packet/hash and criteria; verify actual external provider
+   evidence. Mixed authorship needs reciprocal coverage without self-approval.
+   Missing access/evidence blocks the peer gate, with no same-provider fallback.
+   Return findings to coders and re-run affected checks/reviews after fixes.
 6. Record actual commands, sources, limits and results; update TODO/DONE through
    one integration owner. Report delivered behavior and remaining decisions to user.
 

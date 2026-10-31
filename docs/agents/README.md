@@ -1,6 +1,6 @@
 # Orchestrator and specialist agents
 
-These eight roles implement the requested work split. [AGENTS.md](../../AGENTS.md)
+These nine roles implement the requested work split. [AGENTS.md](../../AGENTS.md)
 is the shared entry point. The primary conversation follows the orchestrator role;
 worker roles are delegated through the runtime's agent tools. Role definitions are
 instructions, not background services or filesystem permission enforcement.
@@ -16,6 +16,7 @@ instructions, not background services or filesystem permission enforcement.
 | [code2](code2.md) | Second equal implementation stream in parallel with code1 | Same dispatch contract on a separate slice | Disjoint implementation paths, tests and evidence |
 | [quality](quality.md) | Independent code quality, correctness, security and test review | Integrated diff, requirements, quality rules and checks | Assigned review report with findings; no self-approval or silent repairs |
 | [validate](validate.md) | Independently validate completed work against SPEC | Integrated artifact, frozen criteria and reproducible evidence | Requirement-by-criterion matrix and acceptance recommendation |
+| [peer](peer.md) | Additional quality and validation in the other provider: Claude for Codex, Codex for Claude | Frozen packet, criteria, authorship/provider map and exact revision | External provider evidence, separate findings/matrix, acceptance or explicit blocker |
 | [housekeeping](housekeeping.md) | Maintain repository hygiene alongside implementation | Exclusive docs/tooling paths and shared-file restrictions | Assigned hygiene changes, checks and integration proposals |
 
 `code1` and `code2` have identical implementation authority and standards. The
@@ -26,10 +27,10 @@ validation; validate does not redefine acceptance to match the implementation.
 ## Dispatch and concurrency
 
 Orchestrator → researcher → product → agreed specification/contracts → **code1 +
-code2 + housekeeping concurrently** → integrated artifact → quality → validate →
+code2 + housekeeping concurrently** → integrated artifact → quality → validate → peer →
 orchestrator/user. Research/product can overlap unrelated implementation where
 their outputs do not change its frozen requirements or shared paths. Quality and
-validate can inspect the same stable artifact concurrently if capacity permits;
+validate and the external peer can inspect the same stable artifact concurrently if capacity permits;
 any subsequent fix or integration invalidates affected reviews.
 
 For a four-thread runtime, keep the primary plus three workers. Use the three
@@ -53,6 +54,7 @@ Task / role:
 Goal and exclusions:
 TODO and requirement IDs:
 SPEC revision or content hash / frozen criteria:
+Authoring provider(s), authorship map and required external reviewer:
 Dependencies and agreed interface versions:
 Inputs, source applicability and read paths:
 Exclusive write paths / integration owner:
@@ -65,6 +67,7 @@ Open decisions, stop conditions and return destination:
 
 ```text
 Task / role / reviewed revision or working-tree scope:
+Author/reviewer providers, actual CLI/model evidence and frozen packet hash:
 Status: complete | needs changes | blocked | partial
 Changed paths / proposed shared-file updates:
 Requirement and criterion evidence:
@@ -95,8 +98,32 @@ This setup follows the [official Codex subagent documentation](https://learn.cha
 consulted 2026-10-31. Native custom-agent discovery requires a client supporting
 that schema; TOML checks cannot prove live discovery. In other runtimes, the
 orchestrator can pass the canonical role prompt and explicit task to their own
-delegation tools. `CLAUDE.md` imports AGENTS; native Claude-specific role wrappers
-and hooks are optional future adapters, not installed enforcement.
+delegation tools. `CLAUDE.md` imports AGENTS. The installed `.claude/agents/peer.md`
+dispatcher routes Claude-authored packets to external Codex; other Claude-specific
+wrappers/hooks remain optional. Native dispatchers and structural checks do not
+prove actual provider identity or enforce runtime permissions independently.
+
+## Independent cross-provider gate
+
+Use [peer](peer.md) after integration in addition to quality and validate. Codex-
+authored work goes to Claude, Claude-authored work to Codex, through a fresh CLI
+session using `just peer-review AUTHOR PACKET`. A model alias or another local
+agent is not another provider. Preview with `just peer-preview`; run offline
+router tests with `just test-tools`. A packet names its revision and criteria,
+authorship/providers and check evidence; its content hash identifies exactly what
+the other provider saw. Do not forward the author's private reasoning or prior
+review conclusions.
+
+Preserve provider/CLI/model evidence and separate quality findings from the
+specification matrix. The router's `accepted` field reflects its parsed reviewer
+recommendation, not the orchestrator's final gate: independently check provider
+identity, authorship coverage and whether evidence meets each criterion. Unknown
+identity, missing prerequisites or incomplete evidence blocks acceptance. Mixed
+authorship needs reciprocal independent coverage; no provider approves its own
+contribution. Return defects to coders and repeat affected review after changes.
+Historical same-provider reports do not satisfy this additional gate.
+
+## Research capabilities
 
 Research uses available deep research skills after reading their instructions.
 There is no dedicated deep research skill in the current session. The documented

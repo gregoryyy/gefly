@@ -1,0 +1,159 @@
+{
+  "recorded_at": "2026-10-31 17:17 Europe/Berlin",
+  "scope": "New peer role, dispatcher/router and related process tooling only; historical roadmap changes and simulator runtime are not accepted by this evidence.",
+  "orchestrator_assessment": "Accepted for the declared peer-addition scope after full justfile evidence resolved the conditional finding; fresh external Claude process, reported Claude model and normal first-party authentication observed. This is operational evidence, not cryptographic backend attestation.",
+  "initial_attempt": {
+    "status": "blocked",
+    "diagnostic": "reviewer_timeout",
+    "timeout_seconds": 240,
+    "review": null
+  },
+  "initial_completed_review": {
+    "author_provider": "codex",
+    "reviewer_provider": "claude",
+    "cli": {
+      "executable": "claude",
+      "version": "2.1.193"
+    },
+    "model_evidence": [
+      "claude-haiku-4-5-20251001"
+    ],
+    "packet_sha256": "5a5936a2b7db62c3afc913278c7f84c73c91e097df5205ed11d937a1f1ba9bca",
+    "revision": "working-tree-on-8bd8fe99cb7ce7e691226aa794f9e676f6a8d5ff; source-snapshot-sha256=2da42d5ce2a01e1219b08dbed1e27a10dbf55c6136342058ccc28d64d746b7c2",
+    "execution_status": "completed",
+    "reviewer_recommends_acceptance": false,
+    "review": {
+      "quality": [
+        {
+          "severity": "medium",
+          "location": "justfile (peer-review and peer-preview recipes)",
+          "description": "The `peer-review author packet:` and `peer-preview author packet:` recipes forward arguments as shell positional parameters: `--author-provider \"$1\" --packet \"$2\"` (and `$1`/`$2` for preview) instead of the just interpolations `{{author}}`/`{{packet}}`. In just, recipe arguments are exposed as `$1`/`$2` only when `set positional-arguments := true` is declared; otherwise `$1`/`$2` are unset/empty and `just peer-review codex /path/packet.md` invokes `peer_review.py --author-provider \"\" --packet \"\"`, which fails argparse (invalid --author-provider choice) and never routes. Expected: the documented `just peer-review AUTHOR PACKET` / `just peer-preview AUTHOR PACKET` entry points (BOOT.md, README, peer.md) forward both arguments to the router. Reproduction: run `just peer-review codex /path/packet.md`; if positional-arguments is not enabled it errors instead of dispatching. The documented direct form `python3 utils/peer_review.py --author-provider codex --packet ...` is unaffected.",
+          "evidence": "justfile excerpt: `peer-review author packet:` body `python3 \"...\" --author-provider \"$1\" --packet \"$2\"` and `peer-preview` likewise. The justfile is supplied only as a tail 'Source excerpt' beginning at the `check:` recipe; the header where `set positional-arguments := true` must be declared is not present in the packet, so recipe executability cannot be confirmed from the supplied evidence."
+        }
+      ],
+      "validation": [
+        {
+          "criterion": "C1: peer is a ninth role performing both independent quality review and specification validation, in addition to existing quality/validate",
+          "expected": "Active BOOT and role/workflow docs define a ninth 'peer' role doing both independent quality review and specification validation, additional to quality and validate",
+          "observed": "docs/BOOT.md ('The ninth role, peer, is additional to quality and validate'; role table), docs/agents/README.md ('These nine roles', peer row 'Additional quality and validation in the other provider'), docs/agents/peer.md ('additional independent quality review and specification validation' with separate Quality/Validation sections), AGENTS.md peer paragraph, and SPEC R-AGENT-7 all define peer as a ninth role covering both functions in addition to quality/validate.",
+          "status": "pass",
+          "evidence": "docs/BOOT.md role table + 'The ninth role, peer'; docs/agents/README.md 'These nine roles' + table; docs/agents/peer.md Purpose/Quality/Validation; AGENTS.md 'Peer adds actual cross-provider quality and specification validation'; SPEC R-AGENT-7."
+        },
+        {
+          "criterion": "C2: Codex work routes to an actual external Claude process and Claude work to an actual external Codex process; wrappers/aliases not misrepresented; reciprocal mixed authorship excludes self-approval",
+          "expected": "Author→opposite-provider CLI launched as a real process; local dispatchers/model aliases are not called other providers; mixed authorship gets reciprocal coverage with no self-approval",
+          "observed": "peer_review.py PROVIDERS={codex:claude,claude:codex}; run_review resolves the opposite CLI via shutil.which and launches it with subprocess.run (claude via build_command with claude flags; codex via `exec --sandbox read-only --json -c project_doc_max_bytes=0 -`). Structural self-review is impossible since PROVIDERS always maps to the opposite provider. Both dispatchers state they are local dispatchers, not the reviewer, and that a model alias does not change providers. peer.md table, SDLC, ASSR and SPEC R-AGENT-7 require reciprocal coverage excluding self-authored work.",
+          "status": "pass",
+          "evidence": "utils/peer_review.py PROVIDERS, build_command, run_review (shutil.which + subprocess.run); .codex/agents/peer.toml and .claude/agents/peer.md ('This is a local ... dispatcher, not the independent reviewer', 'does not change provider through a local model alias'); docs/agents/peer.md 'Both' row; SPEC R-AGENT-7. Backend identity remains non-attestable (see limitations)."
+        },
+        {
+          "criterion": "C3: no failure/timeout/malformed/inconsistent/forbidden-tool-use path yields a passed review; dry-run launches no provider and is not acceptance",
+          "expected": "Missing CLI/revision/auth/provider failure/timeout/malformed/incomplete/inconsistent report/forbidden tool use all block (never pass); dry-run launches nothing and is not acceptance",
+          "observed": "run_review returns status 'blocked', accepted False, exit 2 for missing_reviewer_cli, missing_packet_revision, reviewer_nonzero_exit (auth/nonzero), provider_error, reviewer_timeout, reviewer_launch_failed, and ReviewError variants (malformed_review, incomplete_*, inconsistent_recommendation, forbidden_tool_use). Codex items whose type is not agent_message/reasoning raise forbidden_tool_use. dry_run returns before cli_version and subprocess.run with status 'dry_run', accepted False, review None. acceptance only on recommendation=='accept' after validate_report.",
+          "status": "pass",
+          "evidence": "utils/peer_review.py run_review branches, parse_output forbidden_tool_use, validate_report; mirrored by utils/test_peer_review.py (missing binary, nonzero exit, timeout/launch, error wrapper, malformed/incomplete, blocked/not_evaluated, high-finding, tool-use, missing/blank revision, invalid timeout, dry-run)."
+        },
+        {
+          "criterion": "C4: fresh packet-only review preserves exact revision/hash, source/criteria and actual CLI/model evidence, separates parsed recommendation from orchestrator identity/coverage acceptance, does not claim independent command execution; documented isolation limits; no permission bypass",
+          "expected": "Envelope preserves exact packet sha256/revision, CLI/model evidence from a fresh context; keeps parsed `accepted` distinct from orchestrator acceptance; disclaims independent command execution; documents isolation limits; no permission bypass",
+          "observed": "Envelope records packet.sha256 (hashlib over raw bytes), packet.revision (packet_revision from explicit metadata, not inferred HEAD), cli.version and model_evidence (allowlisted model names only; account/session discarded). Fresh context via claude --no-session-persistence and a fresh codex exec. limitations always include 'Packet review does not independently execute the packet's test commands' and 'CLI routing and returned model names are evidence, not backend attestation'. README/peer.md/README(agents) state `accepted` is the parsed recommendation, not the orchestrator's final gate. SEC.md/peer.md document the non-interchangeable Claude tool-disable vs Codex read-only-sandbox limits and prohibit permission bypass/install/reauth.",
+          "status": "pass",
+          "evidence": "utils/peer_review.py run_review envelope, packet_revision, model_names, build_command flags, static limitations; docs/agents/README.md 'accepted field reflects its parsed reviewer recommendation, not the orchestrator's final gate'; docs/SEC.md; docs/agents/peer.md External reviewer mode."
+        },
+        {
+          "criterion": "C5: returned review has separate actionable quality findings and a nonempty criterion matrix with explicit status, recommendation and limitations; no simulator/aircraft/training approval",
+          "expected": "Schema enforces separate quality findings and a nonempty validation matrix (pass/fail/blocked/not_evaluated), recommendation and limitations; no claim of simulator/aircraft/training approval",
+          "observed": "validate_report requires quality items (severity in critical/high/medium/low + location/description/evidence), nonempty validation (status in {pass,fail,blocked,not_evaluated} + criterion/expected/observed/evidence), recommendation in {accept,changes_required,blocked}, and nonempty string limitations; the envelope returns quality and validation as distinct sections. peer.md/orchestrator.md forbid claiming aircraft/training validity without evidence; check.py and docs scope-exclude simulator behavior.",
+          "status": "pass",
+          "evidence": "utils/peer_review.py validate_report and envelope['review']; docs/agents/peer.md JSON shape/sections; docs/agents/orchestrator.md boundary; utils/check.py scope note."
+        },
+        {
+          "criterion": "C6: nine-role registration/checker, Codex+Claude dispatchers, recipes, process/spec/security/dependency docs and PR evidence fields are consistent; historical eight-role records are history",
+          "expected": "Registration/checker, both native dispatchers, recipes and the SDLC/SPEC/SEC/ASSR/EVAL/SBOM/PR docs agree on the nine-role peer gate with no active roster contradiction",
+          "observed": "check.py ROLES includes all nine (incl peer); REQUIRED includes .claude/agents/peer.md, docs/agents/peer.md, utils/peer_review.py; agents()/claude_peer() enforce nine Codex toml + the Claude dispatcher and the peer routing strings; orchestrator transcript reports '9 native Codex agent definitions and a Claude peer dispatcher' (exit 0). justfile peer-review/peer-preview recipes present and route author→opposite reviewer; SDLC, SPEC R-AGENT-7, SEC, ASSR, EVAL E13, SBOM (CLI versions) and PR template carry consistent peer evidence fields. BOOT's 'orchestrator and eight worker roles' plus 'ninth role peer' is internally consistent (nine total). No active-roster contradiction found in the supplied docs.",
+          "status": "pass",
+          "evidence": "utils/check.py ROLES/REQUIRED/agents/claude_peer/peer_route; orchestrator `just check` transcript; justfile recipes; docs/SDLC.md, docs/SPEC.md R-AGENT-7, docs/SEC.md, docs/assure/ASSR.md, docs/EVAL.md, docs/SBOM.md, .github/pull_request_template.md. (The eight non-peer .codex/agents/*.toml, .codex/config.toml and DONE.md are not in the packet; see limitations.)"
+        },
+        {
+          "criterion": "C7: meaningful mocked tests cover both reciprocal routes, failures/timeouts/schema/metadata and acceptance consistency; recorded local checks passed; reverse live Codex execution not claimed tested by mocks",
+          "expected": "Mocked tests exercise both routes, failure/timeout/schema/metadata paths and acceptance consistency; recorded checks pass; mocks do not claim live reverse Codex execution",
+          "observed": "test_peer_review.py covers reciprocal routing/flags for both providers, auth/nonzero exit, timeout, launch failure, claude error wrapper, malformed/incomplete reviews, blocked/not_evaluated, accept-with-high-finding, failed-criterion rejection, forbidden tool-use (both Codex event shapes), missing/whitespace/blank revision, invalid timeout, unreadable packet, dry-run, and metadata allowlisting (private account/auth not exported). Fixtures/docstrings state 'no live model calls' / 'not live provider evidence'; EVAL E13 forbids reporting one live route plus mocked reciprocal as two live runs. Orchestrator transcript: `just test-tools` Ran 18 tests OK, `just check` exit 0, `git diff --check` exit 0.",
+          "status": "pass",
+          "evidence": "utils/test_peer_review.py (18 test methods incl test_reciprocal_routing_and_flags, test_timeout_and_launch_failure_block, test_malformed_and_incomplete_reviews_block, test_hash_revision_and_only_allowlisted_metadata, test_tool_output_cannot_supply_codex_review); docs/EVAL.md E13; orchestrator check transcript. These results are reported by the packet transcript, not independently run by this reviewer."
+        },
+        {
+          "criterion": "C8: no implementation defects or material documentation contradictions remain in the peer addition; concrete findings identified with source evidence; backend/source identity attestation limited as documented and not overstated",
+          "expected": "No confirmed implementation defect or documentation contradiction remains; concrete findings are identified with source evidence; backend/source identity is documented as limited and not overstated",
+          "observed": "No confirmed implementation defect or documentation contradiction was found in the fully-provided peer sources (peer_review.py, check.py, .codex/agents/peer.toml, .claude/agents/peer.md and the peer docs). One contingent concern is raised as a quality finding: the justfile peer recipes use shell `$1`/`$2`, whose correctness depends on `set positional-arguments := true`, which is absent from the supplied justfile excerpt and therefore cannot be confirmed. Backend/provider/model identity is consistently documented as non-attestable (envelope limitation 'CLI routing and returned model names are evidence, not backend attestation'; SEC.md/peer.md 'do not attest the remote backend'; `accepted` scoped to the parsed recommendation), i.e., not overstated.",
+          "status": "pass",
+          "evidence": "Full sources utils/peer_review.py, utils/check.py, .codex/agents/peer.toml, .claude/agents/peer.md, docs/agents/peer.md; quality finding above (justfile `$1`/`$2`); non-overstatement in peer_review.py envelope limitations, docs/SEC.md and docs/agents/peer.md External reviewer mode."
+        }
+      ],
+      "recommendation": "changes_required",
+      "limitations": [
+        "Packet-only inspection; I ran no commands and did not independently execute the project. The `just check`/`just test-tools`/`git diff --check` results are taken from the orchestrator transcript in the packet, not independently verified.",
+        "justfile is supplied only as a tail excerpt starting at the `check:` recipe; the header where `set positional-arguments := true` would be declared is not in the packet, so the `$1`/`$2` peer-review/peer-preview recipes' executability (quality finding) cannot be confirmed either way.",
+        "Live provider behavior is not demonstrated in the packet: the validity of the claude CLI flags (`--safe-mode`, `--tools \"\"`, `--no-session-persistence`) and the codex `exec --sandbox read-only --json -c project_doc_max_bytes=0 -` invocation against the installed CLIs, authentication, and actual backend/model identity are unverified and (as the docs themselves state) non-attestable; only mocked tests and the transcript are available.",
+        "The eight non-peer .codex/agents/*.toml, the full .codex/config.toml, and DONE.md are not in the packet; nine-role/registration consistency for those files relied on the orchestrator's `just check` transcript rather than independent inspection.",
+        "Router-level reciprocal-coverage/self-exclusion for mixed authorship is enforced by orchestrator process/documentation, not by peer_review.py (which reviews a single route); I assessed it at the documentation/design level only."
+      ]
+    },
+    "execution_limitations": [
+      "CLI routing and returned model names are evidence, not backend attestation.",
+      "Packet review does not independently execute the packet's test commands."
+    ]
+  },
+  "focused_followup": {
+    "author_provider": "codex",
+    "reviewer_provider": "claude",
+    "cli": {
+      "executable": "claude",
+      "version": "2.1.193"
+    },
+    "model_evidence": [
+      "claude-haiku-4-5-20251001"
+    ],
+    "packet_sha256": "7e940f3337e00b55bdf34e098e5b2b10dbdb36a6e8eae8cdb7493cde1c19e9ee",
+    "revision": "working-tree-on-8bd8fe9; source-snapshot-sha256=4ee6b187f311b4fd76c61a9b37c7bee5d974d9885ae7fe067bc93211fc9aac0d",
+    "execution_status": "completed",
+    "reviewer_recommends_acceptance": true,
+    "review": {
+      "quality": [],
+      "validation": [
+        {
+          "criterion": "F1: justfile enables positional arguments so peer-review/peer-preview forward author and packet path (including a path with spaces) to the router correctly; declared setting is syntactically valid",
+          "expected": "`set positional-arguments` present in the full justfile and valid; peer-review/peer-preview bodies pass author/packet as quoted positionals; recorded dry-run shows correct author_provider and the space-containing packet path forwarded as one argument",
+          "observed": "Full justfile header contains `set positional-arguments`; peer-review and peer-preview bodies call peer_review.py with `--author-provider \"$1\" --packet \"$2\"` (quoted, so spaces are preserved); `just --list` exits 0 and lists both recipes, confirming the setting parses; both recorded dry-runs (exit 0) report the expected author_provider (codex→claude, claude→codex) and packet.path 'output/peer/argument forwarding packet.md' intact with spaces",
+          "status": "pass",
+          "evidence": "Full source justfile sha256=3d4bf05... (`set positional-arguments` line; peer-review/peer-preview recipes); `just --list` output (exit 0); recorded orchestrator dry-run entries (packet.path with spaces, exit_code 0)"
+        },
+        {
+          "criterion": "F2: EVAL E0 uses 'all declared roles' and the role roster/registration is consistently nine (orchestrator plus eight workers)",
+          "expected": "E0 wording references 'all declared roles'; nine roles declared in the role README, nine native Codex agent TOMLs registered, and the scaffold check reporting nine",
+          "observed": "EVAL E0 excerpt question lists 'all declared roles'; docs/agents/README.md states 'These nine roles' with a nine-row table (orchestrator + researcher, product, code1, code2, quality, validate, peer, housekeeping); nine .codex/agents/*.toml files are supplied; `just check` reports '9 native Codex agent definitions and a Claude peer dispatcher' (exit 0). No current eight-role declaration appears in the supplied sources",
+          "status": "pass",
+          "evidence": "EVAL E0 excerpt sha256=b1b19d...; docs/agents/README.md sha256=015e1d...; nine provided .codex/agents/*.toml sources; `just check` output (exit 0)"
+        },
+        {
+          "criterion": "F3: No actionable quality defect or material contradiction in the supplied sources/recorded argument checks; dry-run does not claim a live review and a parsed provider recommendation is not final orchestrator approval",
+          "expected": "No in-scope defect or contradiction in the argument-forwarding recipes or role-count wording; dry-run explicitly marked as no review performed; router `accepted` field documented as a parsed recommendation only",
+          "observed": "No actionable defect found in the in-scope recipes or role-count wording; both recorded dry-runs report status 'dry_run', accepted false, review null, diagnostic 'dry_run_no_review_performed'; docs/agents/README.md and docs/agents/peer.md both state the router's `accepted` reflects its parsed reviewer recommendation, not the orchestrator's final gate, and that a dry-run/successful process is not a passed review",
+          "status": "pass",
+          "evidence": "justfile peer-review/peer-preview recipes; recorded dry-run diagnostic/accepted/review fields; docs/agents/README.md 'Independent cross-provider gate'; docs/agents/peer.md 'Evidence and follow-up'"
+        }
+      ],
+      "recommendation": "accept",
+      "limitations": [
+        "Packet inspection only; no commands were independently executed. Dry-run, `just --list`, `just check`, and `just test-tools` outputs are treated as recorded evidence, not reproduced.",
+        "utils/peer_review.py and test_peer_review.py sources are not in the packet; the router's internal packet handling and test content were not inspected. F1 was verified at the justfile→router boundary via the recorded dry-run, which is outside independent execution.",
+        "Provider/model identity cannot be established from the packet (CLI version and model_evidence are 'unknown'); route isolation controls are instructed, not independently verifiable here, as the packet itself notes."
+      ]
+    },
+    "execution_limitations": [
+      "CLI routing and returned model names are evidence, not backend attestation.",
+      "Packet review does not independently execute the packet's test commands."
+    ]
+  },
+  "reverse_route": "Offline routing/schema/failure tests and preview only; no live Codex review was run.",
+  "authorship": "All substantive implementation/specification/configuration work authored through Codex. External review reports are evidence, excluded from substantive authorship and source snapshot."
+}
