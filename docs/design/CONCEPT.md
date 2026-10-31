@@ -15,6 +15,13 @@ A320 is a reference for richer glass-cockpit interaction, not a second initial
 aircraft. QNH, QFE and standard-pressure settings are part of the requested scope;
 exact instrument applicability remains a configuration decision.
 
+The required first control baseline is **Mac desktop, keyboard and touchpad**;
+**yoke/joystick and rudder pedals are optional**. Mobile orientation stays on the
+later roadmap. Reuse GeoFS's documented control/settings interaction and defaults
+conceptually, with the exact Mac browser/device/performance matrix still to be
+selected. The user also accepted **versioned scenario briefings first**, clearly
+labeling historical/generated material, with an optional live adapter later.
+
 The user wants the project to be **free and open source**, with a community site
 oriented toward flight-school learning. Its roadmap includes **LLM-assisted
 experience creation**: define a territory, navigation assets, charts and learning
@@ -36,7 +43,9 @@ asserted. See the current [foundation research](../research/2026-10-31-foundatio
 The user values an aircraft that is quickly running in a browser, recognizable
 geography, usable physics, keyboard/touchpad input and orientation control on
 mobile, cockpit and external views, and video/review. These are the experience
-baseline to preserve while adding depth. Scenery coverage and mobile browser
+baseline to preserve while adding depth. Mac keyboard/touchpad is the first
+required platform/input combination; optional controllers and later mobile support
+have declared profiles and evidence gates. Scenery coverage and mobile browser
 support need explicit scope; they do not imply immediate worldwide detail or
 universal sensor support. Flight review should work from synchronized simulation
 data; an encoded video export is a separate delivery choice.
@@ -122,8 +131,13 @@ the C172 family name alone is insufficient applicability information.
 
 Keep the first web session short: choose the introductory scenario, read its
 objective and limitations, calibrate or confirm controls, enter the flight scene,
-and receive a debrief linked to observable actions. Support keyboard and touchpad
-without requiring flight hardware. On supported mobile devices, orientation
+and receive a debrief linked to observable actions. Make Mac desktop keyboard and
+touchpad sufficient, with optional calibrated yoke/joystick and rudder-pedal
+mappings. Follow GeoFS's documented control/settings concepts and defaults while
+making input modes, sensitivity, inversion and axis assignment discoverable.
+This reuses interaction ideas rather than its code or private user settings.
+The external hardware clarification adds no landing-gear switch and does not add
+retractable gear to a fixed-gear C172 profile. On later supported mobile devices, orientation
 input needs permission, neutral calibration, recentering and an on-screen fallback.
 A clear cockpit view and outside view should serve the exercise; visual richness
 is a separate decision from validated flight behavior.
@@ -141,7 +155,11 @@ elevation and distinguish airport/runway/nav identifiers, actual procedures and
 generated teaching aids. A planned glide path, an ILS indication and a visual aid
 must not be presented as interchangeable. Display the source/time status of a
 weather report or NOTAM beside its content, including when the lesson uses a
-historical or generated scenario.
+historical or generated scenario. The initial briefing is a versioned scenario
+snapshot, not a required real-time feed. Evaluate report/NOTAM applicability
+against that scenario's time, preserve its versions for review, and distinguish
+the snapshot from present-day operational information. A live adapter is optional
+later work with a separate provider, freshness, rights and failure decision.
 
 Text communication can teach who to contact, what to request and how to read
 back an accepted clearance. Its scenario state and feedback must be repeatable;
@@ -211,7 +229,8 @@ regulatory qualification.
 ## Decisions still needed
 
 Select the C172 variant/year/avionics and the manuals and datasets usable for it.
-Define the first EASA PPL exercise, target browsers/devices and physical controls.
+Define the first EASA PPL exercise and exact Mac browser/device/performance matrix;
+keyboard/touchpad and optional yoke/joystick plus rudder pedals are already chosen.
 Choose a physics/rendering approach through a bounded prototype, set initial
 performance and fidelity budgets, and identify qualified review support. The
 orchestrator keeps answers and assumptions in GAPS rather than silently filling

@@ -3,6 +3,78 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-10-31 15:49 — Add sailplane and ultralight pilot-qualification roadmap tracks
+
+TODO: 0.16 complete; future profile contract in 1.12. PR: [#1](https://github.com/gregoryyy/gefly/pull/1), documentation refinement.
+Agent: Codex orchestrator; geofs_research, product_refinement and independent quality/validate.
+
+**Implementation notes**
+
+Preserved the user's ROAD request and added distinct sailplane/ultralight tracks,
+R-TRAIN-6, GAPS Q14, the profile-contract task, E12 coverage gates and a linked
+primary-source research note. Each future profile identifies jurisdiction,
+authority, full qualification/category, applicable source editions, privileges,
+prerequisites, aircraft/equipment and exercises. Common infrastructure may be
+reused while category-specific controls/physics and lessons need their own
+reference cases and qualified review. The initial C172/EASA PPL direction stays
+first; no order relative to CPL was imposed for the new tracks.
+
+`just check` passes for 61 Markdown records/eight roles; SPEC has 49 unique IDs,
+with the original 48 retained in relative order. Whitespace checks pass.
+Independent quality and validation accepted documentary coverage with no findings.
+The existing draft PR's title/body will be updated to describe its full controls,
+briefing and qualification-roadmap scope.
+
+**Deviations**
+
+No sailplane/ultralight model, course or qualification eligibility is validated.
+EASA sailplane SPL/Part-SFCL and German national ultralight rules are source
+references, not user-selected jurisdictions/categories. Source compilation/date
+and amendment-verification limits are explicit; current syllabus acceptance is a
+future gate. No software-license choice, source data import or PDF build occurred.
+
+**Insights**
+
+Pilot-qualification profiles need full jurisdiction/category identifiers; an
+acronym alone can be ambiguous. Sharing a simulator platform, maneuver or aircraft
+component does not establish syllabus equivalence or training-credit transfer.
+
+## 2026-10-31 15:43 — Resolve Mac controls and scenario-first briefing decisions
+
+TODO: 0.10.1 and 0.15 complete. Branch: `docs/mac-controls-scenario-briefings`.
+Agent: Codex orchestrator; product_refinement, independent quality and validate.
+
+**Implementation notes**
+
+Recorded the user's Q4/Q11 answers and hardware clarification in an immutable
+input record, resolved both GAPS entries and propagated decisions into SPEC,
+CONCEPT, ARCH, ROAD, TRAINING, EVAL, TODO and README. Required first input baseline:
+Mac desktop keyboard/touchpad. Optional hardware: yoke/joystick and rudder pedals
+only. GeoFS-inspired settings are sourced in [CONTROLS](design/CONTROLS.md);
+mobile orientation remains later. Q11 accepts versioned historical/generated
+scenario briefings first, evaluated at scenario time and frozen for review; the
+live-data adapter remains optional later work.
+
+`just check` passes for 59 Markdown records/eight roles; all 48 requirement IDs
+remain unique and unchanged. Whitespace checks pass. Independent quality found no
+issues. Validate accepted documentary coverage and requested README preserve the
+word “optional”; that wording was corrected and independently rechecked. Preparing
+a branch commit and draft PR; main remains at the published initial foundation.
+
+**Deviations**
+
+This updates requirements and design only; no controller, Mac browser, weather
+feed or simulator runtime has been tested. Exact Mac/macOS/browser versions,
+peripheral models, performance budgets and provider choices remain technical
+foundation selections. GeoFS settings are reused conceptually from its official
+instructions, without importing source code or private settings. No PDFs rebuilt.
+
+**Insights**
+
+A fixed first input baseline does not imply universal peripheral/browser support.
+Historical/generated briefings need scenario-time validity and preserved inputs;
+their usefulness does not depend on a live feed being available.
+
 ## 2026-10-31 15:33 — Publish the initial foundation to a new public GitHub repository
 
 TODO: 0.8.1/0.8.2 complete. PR: initial bootstrap publication.

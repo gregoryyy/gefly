@@ -104,7 +104,12 @@ fetch a new atmosphere or notice set. A weather report and actual simulated
 conditions must have a documented relationship; label intentional training
 variations. Show service failure, stale or unavailable coverage instead of
 silently using clear weather or an empty notice list. Provider/caching/backend
-needs remain foundation decisions (R-BRIEF-1, GAPS Q10/Q11).
+needs remain foundation decisions (R-BRIEF-1, GAPS Q10). The user accepted Q11's
+sequence: **versioned scenario briefings first**, explicitly labeled historical/
+generated content, with an optional live adapter later. Initial exercises do not
+depend on a live provider; reports/notices and applied conditions are frozen in
+the accepted scenario package. Source/coverage and live-provider rollout remain
+separate technical decisions.
 
 Radio practice uses a scenario state machine: aircraft identity, station/role,
 frequency, intent, issued instruction, readback and acknowledged state. Typed text
@@ -119,9 +124,14 @@ Cockpit and external cameras read the same snapshots. Flight review synchronizes
 state, flown path, control/instrument settings, pressure reference, checklist and
 radio events with the scenario's frozen inputs. Seek/reset semantics are explicit;
 video export, if later selected, is a separate presentation output (R-VIEW-1 and
-R-REVIEW-1). Desktop keyboard/touchpad input and mobile orientation normalize into
-shared control events with calibration, sensitivity/assist metadata and fallback
-when a supported device cannot supply orientation (R-INPUT-1/R-INPUT-2).
+R-REVIEW-1). The first input baseline is a **Mac desktop browser with keyboard and
+touchpad**, with optional yoke/joystick and rudder pedals. Reuse the GeoFS control/
+settings model conceptually; [CONTROLS](design/CONTROLS.md) records its source and
+Mac-specific constraints. Normalize all supported inputs into shared control events
+with explicit mode, calibration, sensitivity/assist metadata and device/focus-loss
+handling. Controller mappings cannot imply unmodeled aircraft systems. Later mobile
+orientation uses the same boundary with permission/calibration/fallback on its own
+supported-device matrix (R-INPUT-1/R-INPUT-2).
 
 Traffic-awareness/advisory systems are capabilities of a selected equipment
 profile, not automatic instruments on every aircraft. Specify source, sensor/
@@ -184,6 +194,6 @@ Downloaded source material, aircraft definitions, URLs and imported replay/scena
 
 ## Proposed budgets and decision gates
 
-The target is a responsive web experience with desktop keyboard/touchpad and a specified mobile-orientation path. Release order and supported browser/device coverage remain proposed (GAPS Q4). A 60 Hz presentation target and 120 Hz physics trial step are **study candidates**, not requirements or observed performance. TODO 1.2 selects reference browsers/devices, measures input latency/frame pacing/headroom, geography load and cockpit readability, and chooses a justified step and budgets. Compare reuse candidates and their browser/deployment adapters first; use a minimal custom harness for reference checks or a justified gap only. JSBSim has not been selected.
+The initial target is a responsive **Mac desktop web experience with keyboard/touchpad**, plus optional yoke/joystick and rudder pedals. Mobile orientation follows later. This platform/input sequence is user-selected (GAPS Q4); exact macOS/browser/device/peripheral versions and budgets remain foundation choices. A 60 Hz presentation target and 120 Hz physics trial step are **study candidates**, not requirements or observed performance. TODO 1.2 selects the reference Mac/browser/display and optional controllers, measures input latency/frame pacing/headroom, geography load and cockpit readability, and chooses a justified step and budgets. Compare reuse candidates and their browser/deployment adapters first; use a minimal custom harness for reference checks or a justified gap only. JSBSim has not been selected.
 
 Before milestone 2: choose stack/engine with recorded evidence, agree contracts/frames, resolve exact aircraft configuration and rights, fix numerical tolerances and establish regression fixtures. See [EVAL](EVAL.md), [GAPS](GAPS.md) and [TODO](TODO.md).

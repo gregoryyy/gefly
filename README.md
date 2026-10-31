@@ -20,6 +20,12 @@ research](docs/research/2026-10-31-geofs-gap-analysis.md) checks documented feat
 and community reports rather than assuming the user's observed gaps are absent
 everywhere in GeoFS.
 
+The first input baseline is **Mac desktop, keyboard and touchpad**, with optional
+**yoke/joystick and rudder pedals**, using a [GeoFS-inspired control profile](docs/design/CONTROLS.md).
+Briefing starts with versioned scenarios and labeled historical/generated
+weather/NOTAM data; a live-data adapter is optional later work. Mobile orientation remains
+a later supported-device capability.
+
 ## Status and entry points
 
 Project foundation: requirements, architecture, roadmap, research and the orchestrator/subagent workflow. Start with [the concept](docs/design/CONCEPT.md), [specification](docs/SPEC.md), [open questions](docs/GAPS.md) and [next tasks](docs/TODO.md).

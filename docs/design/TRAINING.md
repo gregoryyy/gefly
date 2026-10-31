@@ -14,8 +14,10 @@ compatibility are evaluated rather than assumed.
 
 ## Preserve the experience that works
 
-Enter a useful exercise quickly in a browser, use keyboard and a touchpad/pointer
-on desktop, and support orientation control on agreed mobile devices. Provide
+Enter a useful exercise quickly in a Mac desktop browser using keyboard and a
+touchpad, optionally a yoke/joystick and rudder pedals; orientation control on
+agreed mobile devices follows later. Reuse the GeoFS settings/control model as
+described in [CONTROLS](CONTROLS.md). Provide
 recognizable terrain, airports and runways with declared data accuracy; present
 credible flight behavior within a stated envelope. Keep cockpit and external
 views and a flight-review experience. Accessible controls and readable instruments
@@ -55,7 +57,7 @@ must be scoped from primary sources, with capabilities and limitations explicit.
 
 1. **Accessible flight foundation.** Quick desktop browser entry, one bounded
    scene and classic C172 instrument/control subset, multiple views, replay and
-   an explicit route to mobile orientation support. Resolve device scope before
+   an explicit later route to mobile orientation support. Resolve the reference Mac/browser and optional peripheral scope before
    promising all mobile browsers. Complete the original foundation studies first.
 2. **Classic PPL practice loop.** Coherent airport/elevation/map data, pressure
    references, aircraft-specific checks, weather/NOTAM scenario briefing, text
@@ -71,6 +73,12 @@ must be scoped from primary sources, with capabilities and limitations explicit.
    appropriately equipped traffic/advisory exercises and CPL objectives through
    their own source-backed specification and gates. Preserve the earlier classic
    cockpit as a supported learning configuration.
+
+Q11 now fixes the briefing data sequence: versioned scenarios first, with
+historical/generated reports and notices clearly labeled and evaluated against
+scenario time. Preserve accepted data for replay. A later optional live adapter
+has its own provider/coverage/rights decision and is not required for the initial
+practice loop.
 
 ## Geography, charts and glide paths
 

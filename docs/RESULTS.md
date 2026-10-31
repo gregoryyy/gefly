@@ -118,3 +118,24 @@ The follow-up bootstrap commit records this observed outcome; final HEAD/remote
 alignment and clean-tree status are verified again after pushing that record.
 These are repository-publication observations, not application deployment or
 simulator validation.
+
+## 2026-10-31 15:43 — Q4/Q11 documentary validation
+
+`just check` passed for 59 Markdown records/eight native roles, `git diff --check`
+passed and SPEC retained all 48 unique IDs. Independent quality and validation
+accepted the Mac keyboard/touchpad baseline, optional yoke/joystick/pedals,
+GeoFS-inspired settings and scenario-first historical/generated briefing sequence.
+Validation's low README qualifier note was corrected and independently rechecked.
+The two new source records are [the answers](input/2026-10-31-mac-controls-briefing-answers.md)
+and [the control profile](design/CONTROLS.md), with a primary GeoFS link. No runtime,
+Mac/peripheral compatibility, live-provider or updated PDF result is claimed.
+
+## 2026-10-31 15:49 — Licence-specific roadmap documentary validation
+
+`just check` passes for 61 Markdown records/eight native roles. SPEC has 49 unique
+IDs with only R-TRAIN-6 added; all earlier 48 retain their relative order. Whitespace
+checks pass. Independent quality and validate accepted the sailplane/ultralight
+roadmap, source/profile boundaries, Q14 choices and E12 gates with no findings.
+The [source note](research/2026-10-31-license-training-tracks.md) records inspected
+regulatory/training-body sources and edition/amendment limits. No current course,
+qualification eligibility, runtime model or approved training credit was evaluated.
