@@ -16,16 +16,18 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
   - [x] 0.8.2 Create the initial commit, publish the new public repository and verify the pushed `main` revision; see DONE/RESULTS.
 - [ ] 0.9 Select a compatible open-source license and review copied tooling/reference rights before distribution (Q5). *(decision)*
 - [ ] 0.10 Resolve aircraft variant/avionics, browser/device/controls and first exercise as their milestones require (Q3/Q4/Q7). *(decision)*
+  - [x] 0.10.1 Record Q4: Mac desktop keyboard/touchpad; optional yoke/joystick and rudder pedals; GeoFS-inspired settings. Exact reference versions/budgets remain TODO 1.2.1.
 - [x] 0.11 Capture the GeoFS strengths/gaps and cockpit/pressure decisions; refine the product specification, training design and dependency/evaluation plan.
 - [x] 0.12 Research documented GeoFS capabilities and original community feedback, then independently review the refinement; record limits rather than accepting untested competitor claims.
 - [x] 0.13 Record the free/open-source community, AI experience-authoring, EDDF/100 NM and reuse-first architecture directions in authoritative documents.
 - [x] 0.14 Research regional/open-engine source candidates and independently review the integrated roadmap/architecture refinement.
+- [x] 0.15 Record Q11's accepted scenario-first briefing sequence and propagate Q4/Q11 through the product/design/evaluation records.
 
 ## 1. Foundation
 
 - [ ] 1.1 Add stack-appropriate quality gates and CI with reproducible local equivalents; keep remote publication dependent on Q6.
 - [ ] 1.2 Choose web stack, rendering/geography strategy and dynamics architecture through a bounded E1 study. *(decision)*
-  - [ ] 1.2.1 Specify reference device/browser, trial timestep, latency and numerical budgets (Q4).
+  - [ ] 1.2.1 Specify the reference Mac, macOS/browser versions and optional yoke/joystick/pedals; refine GeoFS-inspired settings and measure trial timestep, latency and numerical budgets using Q4's selected baseline.
   - [ ] 1.2.2 Compare open physics engines and applicable aircraft-model/adapter reuse first, including browser deployment and distinct licenses; justify custom code only for documented gaps or reference harnesses. *(variant)*
   - [ ] 1.2.3 Review observations and record the decision in ARCH/SBOM/RESULTS.
 - [ ] 1.3 Select the exact C172 configuration; source applicable aircraft/avionics documents and create a rights/applicability manifest (Q3/Q5). *(decision)*
@@ -33,7 +35,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 - [ ] 1.5 Freeze one exercise's acceptance criteria and numeric tolerances in SPEC/EVAL with product and instructor review (Q7).
 - [ ] 1.6 Review foundation independently through quality and validate before milestone 2.
 - [ ] 1.7 Source the official EDDF airport reference point, define its 100 NM geodesic region and select training airports/runways/data editions; review elevations/datums, radio/fix coverage and map/chart rights (Q10). *(decision)*
-- [ ] 1.8 Scope weather/NOTAM briefing mode, source/freshness/failure semantics, text radio phraseology, checklist and circuit objectives before their implementation (Q7/Q11). *(decision)*
+- [ ] 1.8 Implement Q11's scenario-first briefing decision into source/validity/failure specifications, then scope text radio phraseology, checklist and circuit objectives (Q7); live provider/rollout comes later. *(decision)*
 - [ ] 1.9 Extend shared scenario/review contracts for pressure references, geographic/navigation snapshots, checklist and radio events; freeze requirements per slice before parallel edits.
 - [ ] 1.10 Specify the declarative flight-experience package and LLM retrieval/validation/review boundary, using the EDDF catalog first; select provider/execution assumptions before integration (Q13). *(decision)*
 - [ ] 1.11 Choose compatible open-source license and contributor/data distribution rules; scope the free flight-school community's library, roles, sharing/review and moderation, plus hosting (Q5/Q6/Q12). *(decision)*

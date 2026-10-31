@@ -14,7 +14,7 @@ Pass: required documents and roles exist; configuration parses; local links reso
 
 Compare existing open engines/models and bounded deployment adapters first, using the same initial state, normalized controls and force/moment reference cases. JSBSim and applicable FlightGear-related models are candidates; no engine or aircraft model is selected. A minimal custom model is a reference harness or a documented gap-specific alternative, not the default product engine. Fixtures: stationary/no-force state, known acceleration/torque, unit/frame conversions and timestep refinement. Record engine/model/adapter licenses separately, maintenance, browser integration, fixed step, seed, latency, frame pacing, CPU headroom and integration error. Rejecting suitable reuse needs an explicit requirement mismatch and recorded evidence (R-REUSE-1).
 
-Before running: choose browser/device baseline (GAPS Q4), publish the candidate versions, reference equations, numerical error and latency budgets. Commands are added with the study in TODO 1.2. Stop a candidate if it cannot meet declared budgets, preserve replay or fit rights/deployment constraints. Do not count visual smoothness as dynamics accuracy. Record the review and resulting architecture decision.
+Before running: use Q4's Mac desktop keyboard/touchpad baseline and select exact reference Mac/macOS/browser versions and optional yoke/joystick/pedal models. Publish candidate versions, reference equations, numerical error and latency budgets. Commands are added with the study in TODO 1.2. Stop a candidate if it cannot meet declared budgets, preserve replay or fit rights/deployment constraints. Do not count visual smoothness as dynamics accuracy. Record the review and resulting architecture decision.
 
 ## E2. Does one aircraft configuration match its evidence?
 
@@ -34,14 +34,17 @@ Quality reviews code/tests/security and numerical design independently of its au
 
 ## E5. Does browser accessibility survive richer cockpit interaction?
 
-Scope: R-UX-1, R-INPUT-1/R-INPUT-2, R-VIEW-1 and R-REVIEW-1. Select the supported
-desktop/mobile browser-device matrix and launch/latency/readability budgets before
-running. Compare the same short launch, calibration, control, camera-change and
+Scope: R-UX-1, R-INPUT-1/R-INPUT-2, R-VIEW-1 and R-REVIEW-1. Begin with Q4's Mac
+desktop keyboard/touchpad baseline; select exact reference versions and budgets,
+then separately test optional yoke/joystick and rudder pedals. Mobile orientation
+has its later supported-device gate. Compare the same launch, calibration, control, camera-change and
 review tasks in GeoFS and Gefly at recorded versions/settings; keep subjective
 preference separate from measured completion, errors, timing and frame/input data.
 
-Cases: keyboard and touchpad inputs while adjusting cockpit controls; explicit
-control-neutral/recenter behavior; permission granted/denied and unsupported
+Cases: GeoFS-inspired keyboard/touchpad settings, remapping and control-neutral/
+recenter; Mac keyboard/browser shortcut constraints; cockpit/camera interaction
+without unintended flight input; optional controller calibration, conflicting axes,
+disconnect and fallback. For later mobile: permission granted/denied and unsupported
 orientation; mobile screen-orientation changes/calibration and fallback; camera
 changes without changing aircraft state; replay seek/pause with synchronized
 instruments, settings and events. Test visual accessibility independently of flight
@@ -74,7 +77,10 @@ cases; displaying traffic cannot establish ACAS/TCAS alert logic or resolution a
 Scope: R-BRIEF-1, R-COMM-1, R-TRAIN-4/R-TRAIN-5 and later R-TRAFFIC-1 as separately
 scoped. Predefine a reviewed objective, jurisdiction/phraseology, aircraft fit,
 airport/runway, conditions and expected events before implementation acceptance.
-Begin with deterministic scenario fixtures. Record instructor review and numeric
+Begin with Q11's accepted versioned historical/generated scenario fixtures;
+validate report/NOTAM times against scenario time and freeze them for review.
+An optional live adapter is later scope and is not an initial exercise dependency.
+Record instructor review and numeric
 scoring rationale; ILS familiarization does not automatically imply EASA PPL
 coverage, rating entitlement or a particular syllabus requirement.
 

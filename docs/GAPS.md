@@ -46,6 +46,39 @@ Resolved: 2026-10-31 15:29, user authorization and orchestrator destination sele
 carried into README, SBOM and TODO 0.8.1. No remote mutation had occurred when
 this selection was recorded.
 
+### Q4. First supported controls and browser/device baseline?
+
+Why: fixes the first required platform/input experience and optional peripherals.
+
+Answer: **2026-10-31 15:40, user** (recorded by orchestrator): “mac desktop, controlled via
+keyboard and touchpad, optionally connected landing gear, rudder and ailerons.
+reuse geo-fs settings”.
+
+Clarification: **2026-10-31 15:40, user**: “Yoke/joystick and rudder pedals only”. This
+resolves the hardware wording: required Mac desktop keyboard/touchpad, optional
+yoke/joystick and rudder pedals; no external landing-gear switch selected.
+Reuse GeoFS's control/settings model conceptually, as sourced in
+[CONTROLS](design/CONTROLS.md). Mobile orientation remains later.
+
+Resolved: 2026-10-31 15:40, user; carried into SPEC, CONCEPT, ARCH, CONTROLS, TRAINING,
+ROAD, EVAL and TODO. Exact reference Mac, macOS/browser versions, peripheral
+models, settings details and measured budgets remain foundation implementation
+choices in TODO 1.2.1; they were not selected by this answer.
+
+### Q11. Which briefing data mode ships first?
+
+Why: determines the initial data dependency, scenario repeatability and later
+live-service boundary.
+
+Answer: **2026-10-31 15:40, user**: “as proposed”. Accepted proposal: **versioned scenario
+briefings first**, explicitly labeled historical/generated data, with a **later
+optional live adapter**. Initial exercises do not require a live feed.
+
+Resolved: 2026-10-31 15:40, user; carried into SPEC R-BRIEF-1, ARCH, CONCEPT, TRAINING,
+ROAD, EVAL and TODO. Evaluate historical/generated report/NOTAM validity against
+scenario time; preserve data/condition snapshots for replay. Exact source/provider,
+coverage, rights and live rollout remain future implementation selections.
+
 ## Open questions
 
 ### Q3. Which Cessna 172 variant, year and avionics fit?
@@ -56,12 +89,6 @@ Answer: partial update, **2026-10-31 15:09, user** (recorded by orchestrator):
 “Classic instruments first, glass later”. The exact variant/year and conventional
 instrument/radio fit remain pending. Owner: orchestrator, informed by researcher
 and product. Glass is a later configuration; A320 is a reference, not an initial type.
-
-### Q4. First supported controls and browser/device baseline?
-
-Why: keyboard, pointer, joystick, pedals and touch create different accessibility and calibration requirements. User feedback requests keyboard/touchpad and mobile orientation, recorded 2026-10-31 15:09. Proposed: desktop keyboard/pointer foundation followed by specified orientation-capable mobile devices; select reference browsers/devices, permission/calibration/fallback behavior and performance budget after a measured study. This sequence is a proposal, not a user-selected release order. Blocking: final foundation acceptance budgets in TODO 1.2/1.4; not the scaffold.
-
-Answer: pending. Owner: orchestrator; technical options researched before asking.
 
 ### Q5. Source license and third-party data policy?
 
@@ -90,16 +117,6 @@ airport reference point. Exact current reference coordinates and training airpor
 runways, data versions and chart permissions remain pending. EDDF is the regional
 center, not a decision to conduct every exercise at its runways. Owner: orchestrator
 with researcher/product. See [regional source study](research/2026-10-31-eddf-open-foundation.md).
-
-### Q11. Which briefing data mode ships first?
-
-Why: real-time weather/NOTAM feeds need coverage, rights, freshness, service failure
-handling and synchronization with the simulated conditions; deterministic exercises
-need frozen data. Proposed: versioned scenario briefings first, with explicitly
-labeled historical/generated data and a later optional live adapter. Live data is
-not a confirmed provider or release decision. Blocking: weather/NOTAM integration.
-
-Answer: pending. Owner: orchestrator with research and product.
 
 ### Q12. Community publication and content roles?
 

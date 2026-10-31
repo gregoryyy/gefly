@@ -3,6 +3,42 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-10-31 15:43 — Resolve Mac controls and scenario-first briefing decisions
+
+TODO: 0.10.1 and 0.15 complete. Branch: `docs/mac-controls-scenario-briefings`.
+Agent: Codex orchestrator; product_refinement, independent quality and validate.
+
+**Implementation notes**
+
+Recorded the user's Q4/Q11 answers and hardware clarification in an immutable
+input record, resolved both GAPS entries and propagated decisions into SPEC,
+CONCEPT, ARCH, ROAD, TRAINING, EVAL, TODO and README. Required first input baseline:
+Mac desktop keyboard/touchpad. Optional hardware: yoke/joystick and rudder pedals
+only. GeoFS-inspired settings are sourced in [CONTROLS](design/CONTROLS.md);
+mobile orientation remains later. Q11 accepts versioned historical/generated
+scenario briefings first, evaluated at scenario time and frozen for review; the
+live-data adapter remains optional later work.
+
+`just check` passes for 59 Markdown records/eight roles; all 48 requirement IDs
+remain unique and unchanged. Whitespace checks pass. Independent quality found no
+issues. Validate accepted documentary coverage and requested README preserve the
+word “optional”; that wording was corrected and independently rechecked. Preparing
+a branch commit and draft PR; main remains at the published initial foundation.
+
+**Deviations**
+
+This updates requirements and design only; no controller, Mac browser, weather
+feed or simulator runtime has been tested. Exact Mac/macOS/browser versions,
+peripheral models, performance budgets and provider choices remain technical
+foundation selections. GeoFS settings are reused conceptually from its official
+instructions, without importing source code or private settings. No PDFs rebuilt.
+
+**Insights**
+
+A fixed first input baseline does not imply universal peripheral/browser support.
+Historical/generated briefings need scenario-time validity and preserved inputs;
+their usefulness does not depend on a live feed being available.
+
 ## 2026-10-31 15:33 — Publish the initial foundation to a new public GitHub repository
 
 TODO: 0.8.1/0.8.2 complete. PR: initial bootstrap publication.

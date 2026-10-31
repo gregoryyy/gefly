@@ -13,8 +13,13 @@ learning. The first aircraft is the Cessna 172, the first training framework is
 EASA PPL, and the first runnable product is a web application with GeoFS as an
 interaction reference. CPL comes later. The user chose **classic instruments
 first, glass cockpit later**, and **QNH, QFE and standard pressure** altimeter
-settings. The exact C172 variant, year, instrument/avionics fit, development stack
-and supported browser/device matrix remain open in [GAPS](GAPS.md).
+settings. The first input baseline is **Mac desktop with keyboard and touchpad**,
+optionally **a yoke/joystick and rudder pedals**. Mobile orientation remains a
+later capability. Reuse GeoFS's documented control/settings interaction and
+defaults conceptually. The exact C172 variant, year, instrument/avionics fit,
+development stack and Mac browser/device/performance matrix remain open in
+[GAPS](GAPS.md). The user accepted **versioned scenario briefings first**, with
+explicitly labeled historical/generated data and an optional live adapter later.
 GeoFS is a product reference; this does not establish rights to reuse its code,
 assets, maps, data or flight model.
 
@@ -95,9 +100,10 @@ depth; it does not add an A320 to the initial fleet.
 
 ## GeoFS-inspired capabilities and training depth
 
-These desired capabilities are mandates from the expanded user direction;
-**delivery order, supported envelope and detailed acceptance procedures are
-proposed** until the affected milestone is scoped. They are future simulator
+These desired capabilities are mandates from the expanded user direction.
+The Mac-first input baseline and scenario-first briefing sequence are confirmed;
+**other delivery order, supported envelope and detailed acceptance procedures
+are proposed** until the affected milestone is scoped. They are future simulator
 requirements, not implemented features or additions to bootstrap acceptance.
 “Launch” below means the proposed first usable web slice; “PPL depth” follows
 that foundation; “later” requires a separately accepted scope. Global coverage,
@@ -107,12 +113,12 @@ all become first-release work merely by appearing in this table.
 | Requirement | Proposed stage | Acceptance evidence |
 | --- | --- | --- |
 | Preserve a short route from a web link to a controllable flight. [R-UX-1] | Launch | On the declared browser/device matrix, a fresh session reaches the selected introductory exercise without installing software or connecting flight hardware. Measure loading time and input readiness against a budget fixed before evaluation; disclose loading/failure states. Account or hosting choices remain separate decisions. |
-| Support keyboard and pointer/touchpad flight controls. [R-INPUT-1] | Launch | The user can complete the declared introductory exercise with keyboard and touchpad alone. The current mapping, sensitivity and axis directions are discoverable; tests cover loss of focus, conflicting inputs, remapping/reset and interaction with cockpit controls. |
-| Support mobile orientation controls with an explicit fallback. [R-INPUT-2] | Mobile capability gate | On a declared supported mobile browser/device, the user can grant permission where required, calibrate neutral orientation and sensitivity, pause/recenter and complete the agreed control task. Permission denial, unavailable sensors, screen rotation and loss of sensor input expose a usable on-screen alternative; no silent loss of control. |
+| Support Mac desktop keyboard/touchpad flight controls and optional yoke/joystick and rudder pedals. [R-INPUT-1] | Required first baseline; optional hardware profiles | On the declared Mac browser/device matrix, the user can complete the introductory exercise with keyboard and touchpad alone. Reuse the documented GeoFS control/settings interaction and defaults conceptually, with mappings, sensitivity/exponential response, inversion, input modes and roll/yaw mixing made discoverable and adjustable as applicable. Optional yoke/joystick and rudder-pedal profiles provide axis/button assignment and calibration without becoming launch prerequisites. Tests cover focus/shortcut conflicts, mode changes, remapping/reset, cockpit interaction and optional-device disconnect/reconnect. Declare actual supported hardware/browser combinations; no external gear switch or retractable-gear behavior is inferred from the user's clarification. |
+| Support mobile orientation controls with an explicit fallback. [R-INPUT-2] | Later mobile capability gate | On a declared supported mobile browser/device, the user can grant permission where required, calibrate neutral orientation and sensitivity, pause/recenter and complete the agreed control task. Permission denial, unavailable sensors, screen rotation and loss of sensor input expose a usable on-screen alternative; no silent loss of control. |
 | Provide recognizable geography, terrain and usable airport/runway context. [R-WORLD-1] | Launch region, then expand | A scoped reference area includes identifiable terrain and its selected airports/runways with declared horizontal/vertical datums and source versions. Fixture comparisons check runway position/orientation, terrain/field elevation and visual/physical ground alignment against predeclared tolerances. The map displays airport elevation with units and source. Visual imagery alone is not the authoritative source for airport/runway geometry. Coverage, simplifications, data rights and missing areas are visible. |
 | Provide multiple flight views, including a usable cockpit view. [R-VIEW-1] | Launch | The user can switch among declared cockpit and external views without resetting or changing aircraft state, controls or simulation time. Relevant instruments remain readable and controls operable on the supported display sizes; camera changes do not create a second source of flight values. |
 | Make flight review a first-class training action. [R-REVIEW-1] | Launch review, then richer debrief | A recorded exercise can be paused, replayed and inspected at selected times from the supported views, with controls, instrument state, assists and scenario events synchronized. Reopening preserves its configuration, scenario time/weather, navigation edition, relevant communication events and provenance rather than fetching changed live conditions. Review/replay acceptance is separate from optional encoded video capture/export; video export needs its own format, privacy and performance decision. |
-| Include weather reports and NOTAM information in the scenario briefing. [R-BRIEF-1] | PPL depth | For a selected area/time, the briefing supplies scoped weather reports such as METAR/TAF and relevant NOTAMs, with provider, location, issue/validity times, units and live/historical/generated status. Tests cover missing, stale and out-of-validity data, including replacement/cancellation where supported. Weather shown in reports and conditions applied to the simulation agree or explicitly explain their difference. Offline/generated fixtures never appear to be current operational information. |
+| Include weather reports and NOTAM information in the scenario briefing. [R-BRIEF-1] | Accepted sequence: versioned scenarios first; optional live adapter later | The initial briefing uses a frozen scenario snapshot for the selected area/time, with scoped weather reports such as METAR/TAF and relevant NOTAMs explicitly labeled historical or generated. Preserve source/provider, location, issue/validity times, units and scenario time. Tests cover missing and out-of-validity data, replacement/cancellation where supported, and the distinction between validity at scenario time and present-day freshness. Reports and conditions applied to the simulation agree or explicitly explain their difference. A later optional live adapter requires its own provider/rights/freshness/failure gate; no live feed is required for initial briefing acceptance, and fixtures never appear to be current operational information. |
 | Support realistic procedural communication through text. [R-COMM-1] | PPL depth | Scoped radio scenarios model who is being contacted, relevant frequency/channel, call sign, pilot intent, controller response, clearance/readback and expected resulting action. Repeatable fixtures cover a normal exchange, incorrect/incomplete readback and conflicting or unavailable instructions. Free text or later AI may express the exchange, but accepted clearances/events come from the explicit scenario state; multiplayer chat alone does not satisfy this criterion. |
 | Make supported navigation functions operable through the selected cockpit equipment. [R-NAV-1] | Classic PPL cockpit, glass later | In the identified C172 installation, included navigation controls and indications implement the applicable tuning, identification, course/source selection and VOR/DME/localizer/glideslope behaviors. Tests exercise supported station/service validity, relevant flags, distance/reference distinctions and indications against applicable sources. A map overlay or autopilot that follows a route does not alone establish a working cockpit navigation instrument. A later glass fit declares its supported pages/modes and limitations separately. |
 | Navigate using traceable real identifiers and fixes. [R-NAV-2] | PPL depth | The supported region resolves declared real airport, runway, navaid and waypoint/fix identifiers to versioned published records, including frequencies and coordinates where applicable. Route entry handles ambiguity and unknown/stale records explicitly. Source edition/cycle, coordinate reference, applicability and reuse rights accompany the records and test fixtures. Generated chart rendering is allowed; fictional identifiers in clearly marked synthetic exercises do not satisfy acceptance of real-data navigation. |
@@ -140,18 +146,21 @@ data rights, complete regional coverage or a validated aircraft model.
 
 ## Proposed delivery emphasis
 
-First preserve browser accessibility, keyboard/touchpad control, coherent local
+First preserve browser accessibility, the confirmed Mac desktop keyboard/touchpad
+baseline with optional yoke/joystick and rudder pedals, coherent local
 geography, multiple views, basic review and a bounded physics envelope. Build
 one usable classic C172 cockpit and one useful PPL exercise; make pressure
 settings, relevant elevations, control semantics and checklists correct within
 that scope. Mobile orientation support needs its own browser/device evidence
-before it is advertised, even if developed alongside desktop input.
+before it is advertised and follows the required Mac desktop baseline.
 
-Then deepen briefing, procedural text communication, real identifiers/maps and
+Then deepen versioned scenario-first briefing, procedural text communication, real identifiers/maps and
 cockpit navigation, followed by instrument-approach familiarization and the
-selected glass fit. Equipment-specific collision avoidance and any additional
-aircraft are later decisions. This ordering is a product proposal for review,
-not a user-approved milestone schedule. Physics fidelity, data provenance and
+selected glass fit. The scenario-first/historical-or-generated briefing sequence
+and later optional live adapter are accepted user decisions. Equipment-specific
+collision avoidance and any additional aircraft are later decisions. Other
+ordering is a product proposal for review, not a user-approved milestone schedule.
+Physics fidelity, data provenance and
 visible limitations apply at every stage, rather than being postponed until
 visual or cockpit features are complete.
 
