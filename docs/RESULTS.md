@@ -101,3 +101,20 @@ Gefly licensing remains Q5. GitHub authenticated as `gregoryyy`; lookup of
 `gregoryyy/gefly` confirmed the name did not exist before creation. No successful
 push is inferred from these preparation checks; remote verification is recorded
 when actually observed.
+
+## 2026-10-31 15:33 — Public repository creation and first-push verification
+
+`gh repo create gregoryyy/gefly --public --source . --remote origin` succeeded.
+`git push -u origin main` succeeded. GitHub reports repository URL
+`https://github.com/gregoryyy/gefly`, visibility **PUBLIC**, `isEmpty: false` and
+default branch **main**. `git ls-remote origin refs/heads/main` returned
+`2b4d76f90e1eaed2c5c3e352ef839e271135e328`, matching the initial local foundation commit. `origin` points to
+`git@github.com:gregoryyy/gefly.git` and local main tracks origin/main.
+
+The initial commit passed the staged whitespace check. The verbatim upstream
+license's CRLF line endings are explicitly supported only for that file through
+`.gitattributes`. Structural checks and a redacted directory secret scan passed.
+The follow-up bootstrap commit records this observed outcome; final HEAD/remote
+alignment and clean-tree status are verified again after pushing that record.
+These are repository-publication observations, not application deployment or
+simulator validation.

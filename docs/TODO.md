@@ -13,7 +13,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 - [x] 0.7 Verify the scaffold, independent quality/validation review and representative document build (E0); see RESULTS and review reports.
 - [x] 0.8 Initialize local version control and record actual state on `bootstrap/project-foundation`.
   - [x] 0.8.1 Select `gregoryyy/gefly` as the new public repository under explicit user authorization (Q6).
-  - [ ] 0.8.2 Create the initial commit, publish the new public repository and verify the pushed `main` revision.
+  - [x] 0.8.2 Create the initial commit, publish the new public repository and verify the pushed `main` revision; see DONE/RESULTS.
 - [ ] 0.9 Select a compatible open-source license and review copied tooling/reference rights before distribution (Q5). *(decision)*
 - [ ] 0.10 Resolve aircraft variant/avionics, browser/device/controls and first exercise as their milestones require (Q3/Q4/Q7). *(decision)*
 - [x] 0.11 Capture the GeoFS strengths/gaps and cockpit/pressure decisions; refine the product specification, training design and dependency/evaluation plan.

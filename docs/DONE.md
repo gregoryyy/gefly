@@ -3,6 +3,39 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-10-31 15:33 — Publish the initial foundation to a new public GitHub repository
+
+TODO: 0.8.1/0.8.2 complete. PR: initial bootstrap publication.
+Agent: Codex orchestrator; prior bounded publication review by quality.
+
+**Implementation notes**
+
+Created [gregoryyy/gefly](https://github.com/gregoryyy/gefly) as a new public
+repository and pushed `main`. GitHub reports PUBLIC, nonempty, default branch
+`main`. `git ls-remote origin refs/heads/main` matched initial foundation commit
+`2b4d76f90e1eaed2c5c3e352ef839e271135e328` after the successful push. Added `origin` and tracking for `main`.
+The initial commit contains 75 source/document files, including preserved upstream
+notices/license text; generated PDFs/caches are ignored. `git diff --cached --check`
+passed with a targeted `.gitattributes` rule preserving the exact upstream GPL
+file's original CRLF line endings. Gitleaks reported no leaks and structural
+checks passed. This follow-up bootstrap record captures the observed publication;
+subsequent feature development uses branches/PRs under the normal project rules.
+
+**Deviations**
+
+There is still no runnable simulator or selected project-wide license for original
+Gefly material. Propeller-derived bootstrap files retain GPL-3.0-or-later as
+recorded in THIRD_PARTY_NOTICES. No hosted application, datasets or LLM service
+was deployed by creating the repository. The default whitespace check initially
+flagged the verbatim upstream license's CRLF endings; the file-specific attribute
+preserves that text without weakening source-file checks.
+
+**Insights**
+
+The public repository and initial content are now available independently of
+future implementation choices. Publication is supported by GitHub visibility,
+default-branch and remote-hash observations rather than an inferred push result.
+
 ## 2026-10-31 15:31 — Prepare the initial public repository publication
 
 TODO: 0.8.1 complete; 0.8.2 publication in progress. PR: initial bootstrap.

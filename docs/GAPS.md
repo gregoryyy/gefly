@@ -33,6 +33,12 @@ GitHub account. GitHub lookup confirms no repository of that name exists before
 creation. Initial default branch: `main`; actual creation/push outcome is recorded
 in DONE/RESULTS, without changing any existing remote repository.
 
+Publication verified: **2026-10-31 15:33, orchestrator**. Created the new
+[public repository](https://github.com/gregoryyy/gefly); GitHub reports PUBLIC,
+nonempty, default branch `main`. `git push -u origin main` succeeded and
+`git ls-remote` matched initial commit `2b4d76f90e1eaed2c5c3e352ef839e271135e328`. Final repository checks and
+any bootstrap verification follow-up are recorded in DONE/RESULTS.
+
 Superseded pending-destination status: ~~2026-10-31 15:15, user direction:
 free/open-source project; account/organization and destination pending.~~
 
