@@ -5,7 +5,7 @@ above previous entries. This log records implementation, not simulator validity.
 
 ## 2026-10-31 17:17 — Add and exercise the independent opposite-provider peer
 
-TODO: 0.17 complete. PR: new peer-workflow PR following merged #1; link recorded after creation.
+TODO: 0.17 complete. PR: [#2](https://github.com/gregoryyy/gefly/pull/2), following merged #1.
 Agent: Codex orchestrator; product_refinement, peer_runner, peer_registration and
 housekeeping on disjoint paths, then independent local quality/validate and an
 actual external Claude peer. Model reported by the external CLI:
@@ -28,6 +28,10 @@ and was not passed. A completed Claude review found only missing justfile contex
 its follow-up accepted full-header/argument evidence with no findings. Actual
 reports, scope, snapshots, provider/model and limitations are in the
 [cross-provider record](reviews/2026-10-31-cross-provider-peer.md).
+
+Publication recorded 2026-10-31 17:23 Europe/Berlin: rebased onto merged main, pushed
+`chore/cross-provider-peer` and created draft PR #2. Source content remains the
+reviewed snapshot; only bookkeeping/review-evidence files changed afterward.
 
 **Deviations**
 
