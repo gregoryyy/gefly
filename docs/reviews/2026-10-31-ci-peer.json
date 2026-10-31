@@ -1,0 +1,128 @@
+{
+  "scope": "TODO 1.1.1 only; Codex/OpenAI authored CI implementation and integration",
+  "source_snapshot": {
+    "sha256": "c4adb297d57e3ab77dc37879144ada84d582566c7b2e7dd645a23d903c786506",
+    "files": 83,
+    "exclusions": [
+      "docs/TODO.md",
+      "docs/DONE.md",
+      "docs/RESULTS.md",
+      "docs/reviews/"
+    ]
+  },
+  "authorship": "All implementation/integration authors Codex/OpenAI; generated review/status records excluded. No Claude-authored implementation requiring reciprocal review.",
+  "orchestrator_disposition": "Accepted for the bounded CI slice after checking provider/CLI/model evidence, unchanged source, packet hash/revision, coverage of CI1-CI8 and no unresolved findings. Backend identity is not attested.",
+  "external_report": {
+    "status": "completed",
+    "accepted": true,
+    "author_provider": "codex",
+    "reviewer_provider": "claude",
+    "packet": {
+      "path": "foundation-peer-packet.md",
+      "sha256": "5bf0266fbd0d11f6fc36c66da33696aa0b5ea421645eb38081b2287f64e43599",
+      "revision": "a6f701667282295d0868bdc74fcdf07ff823d8e8"
+    },
+    "cli": {
+      "executable": "claude",
+      "version": "2.1.193"
+    },
+    "model_evidence": [
+      "claude-haiku-4-5-20251001"
+    ],
+    "review": {
+      "quality": [],
+      "validation": [
+        {
+          "criterion": "CI1 — One entry point, independent of caller directory",
+          "expected": "python3 <checkout>/utils/ci.py resolves the repo from its own location; `just ci` delegates to it; the hosted workflow invokes the same committed runner; works on a clean checkout from an unrelated directory.",
+          "observed": "utils/ci.py sets ROOT = Path(__file__).resolve().parent.parent; justfile `ci` recipe runs python3 {{justfile_directory()}}/utils/ci.py; .github/workflows/foundation.yml step 'Run offline foundation gates' runs `python3 utils/ci.py`; test_ci.CiEntrypointTests.test_absolute_entrypoint_runs_all_gates_from_unrelated_directory runs the copied runner from self.outside and passes; recorded clean local runs show 'Repository: <temporary-checkout>' executed from a separate directory.",
+          "status": "pass",
+          "evidence": "utils/ci.py (ROOT); justfile (`ci`); foundation.yml step 4; test_ci.py CiEntrypointTests; 'Clean local Python 3.11/3.15' recorded results and command-evidence clean-snapshot procedure."
+        },
+        {
+          "criterion": "CI2 — Complete, fail-closed local gates",
+          "expected": "Runner executes scaffold check, all declared offline tool tests and tracked-content whitespace; every phase runs on a passing fixture; any phase failure or missing/empty suite returns nonzero with diagnostics; whitespace inspects tracked content even with no diff; untracked excluded and recorded.",
+          "observed": "ci.py main() runs Scaffold (check.py), Offline tool tests (self --test-tools), then check_whitespace, collecting failures and returning 1 if any failed; run_tests returns 1 when countTestCases()==0; check_whitespace rejects an empty tracked set and flags committed defects via git diff --no-index --check; untracked exclusion is printed and documented. Tests confirm each branch; recorded run prints 'Tracked-content whitespace: passed (92 tracked paths; untracked files excluded)'.",
+          "status": "pass",
+          "evidence": "utils/ci.py main/run_tests/check_whitespace; test_ci.py test_empty_suite_is_not_success, test_failing_test_is_not_success, test_scaffold_child_failure_is_not_success, test_full_gate_rejects_whitespace_in_clean_checkout, test_clean_committed_whitespace_fails_despite_empty_diff; recorded gate output."
+        },
+        {
+          "criterion": "CI3 — Negative fixtures establish rejection",
+          "expected": "Isolated fixtures fail on missing scaffold/link target, malformed native config, failing tool test and a tracked whitespace defect in an otherwise clean checkout (empty git diff --check cannot masquerade); providers mocked, never real; diagnostics preserved.",
+          "observed": "test_check: missing_required_document, missing_local_link_target_fails_with_location, malformed_native_toml, malformed_claude_peer_frontmatter, same_provider_peer_route each fail with located diagnostics. test_ci.test_full_gate_rejects_whitespace_in_clean_checkout commits a trailing-space defect, asserts clean `git status`/`git diff --check`==0, then the full gate fails and names clean.txt. test_peer_review patches subprocess.run (no live provider).",
+          "status": "pass",
+          "evidence": "test_check.py ScaffoldTests; test_ci.py WhitespaceTests/CiEntrypointTests; test_peer_review.py setUp/run_mock mocks."
+        },
+        {
+          "criterion": "CI4 — Supported Python lines",
+          "expected": "Matrix runs 3.11 (documented minimum) and an explicitly selected current stable minor line verified from official sources; record exact observed versions/env; pin minor lines (patches may float); no hermetic claim.",
+          "observed": "foundation.yml matrix python-version ['3.11','3.15']; SBOM cites devguide.python.org/versions and python.org/3.15.2 selecting 3.11 (security) and 3.15 (bugfix); recorded interpreters: local 3.11.12/3.15.2, hosted 3.11.17/3.15.1 on ubuntu-24.04 image 20261025.353.1; README/SBOM/utils/README explicitly disclaim hermetic/identical environments.",
+          "status": "pass",
+          "evidence": "foundation.yml matrix; SBOM 'Repository-tool CI inventory'; recorded local and hosted results. Python-line provenance is recorded upstream evidence, not independently fetched (see limitations)."
+        },
+        {
+          "criterion": "CI5 — Safe PR/push execution",
+          "expected": "pull_request and push with read-only token, no persisted checkout creds, no secrets, no privileged PR execution; gate uses only stdlib+Git after setup; offline; no live peer/provider, PDF/browser/TeX, simulator or external ingestion.",
+          "observed": "foundation.yml: on push/pull_request branches [main]; permissions contents: read; checkout persist-credentials: false; no secrets referenced; standard pull_request context (no pull_request_target). ci.py uses only stdlib + git plumbing; tests are offline/mocked. SEC.md 'Repository-tool CI' documents these boundaries and notes the test process is not a sandbox for arbitrary code.",
+          "status": "pass",
+          "evidence": "foundation.yml (on/permissions/persist-credentials); utils/ci.py; SEC.md delta; test_peer_review.py mocked providers."
+        },
+        {
+          "criterion": "CI6 — Immutable actions and reviewed updates",
+          "expected": "Every external action uses a verified full commit pin with recorded release/source; documented process to verify/review/test replacement pins; patch/runner limits noted.",
+          "observed": "checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 and setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0; SBOM records release tags, pinned-ref MIT LICENSE links and runtime; dependabot.yml monitors github-actions weekly; SBOM/SEC describe verifying tag→commit mapping, inspecting source, preserving full SHA and re-running the gate/independent review; patch and runner-image drift flagged as limits. Command evidence maps the two tags to the same SHAs and MIT at those refs.",
+          "status": "pass",
+          "evidence": "foundation.yml pins; SBOM action table and update policy; dependabot.yml; SEC.md; packet 'Observed command evidence' upstream tag/license mapping."
+        },
+        {
+          "criterion": "CI7 — Honest local versus hosted evidence",
+          "expected": "Record reviewed revision/commands/phase outcomes/env for local checks; attempt the hosted matrix on the pushed PR and record commit, run URL/event and each job outcome separately; incomplete hosted runs remain blocked; local success never establishes a remote pass.",
+          "observed": "Recorded clean local runs give commands, phase outcomes and interpreters (3.11.12/3.15.2, git 2.39.5). Hosted PR run 41240047711 (event pull_request, headSha a6f70166728...=review revision) shows both jobs 'success' with resolved env (3.11.17/3.15.1, git 2.56.0, ubuntu-24.04 image 20261025.353.1) and gate stdout (65 md, 41 tests, 92 tracked paths, Foundation CI passed). Docs repeatedly state local/workflow inspection does not prove a hosted pass.",
+          "status": "pass",
+          "evidence": "Recorded 'Clean local Python 3.11/3.15'; 'Actual hosted PR outcome' JSON and 'Hosted resolved environment and gate output'. Hosted/local outcomes are recorded packet evidence only; not independently re-executed (see limitations)."
+        },
+        {
+          "criterion": "CI8 — Workflow and review boundaries",
+          "expected": "Structural/fixture checks establish only repository-tool CI; keep source publication, branch protection, future stack gates and live peer acceptance distinct; changes invalidate affected evidence.",
+          "observed": "README/SBOM/SEC/utils/README explicitly bound this to TODO 1.1.1, keep peer a separate gate (E13), defer future application lint/type/vuln/license and runtime checks to TODO 1.1, and disclaim branch protection and hosted-pass-by-inspection. Command evidence states no branch-protection/fork-PR/main-push is claimed.",
+          "status": "pass",
+          "evidence": "README/SBOM/SEC/utils/README deltas; TODO.md delta (1.1/1.1.1); packet 'Observed command evidence'."
+        },
+        {
+          "criterion": "R-BOOT-2 — documented scaffold enforced by gate",
+          "expected": "The documented project structure exists and the scaffold gate enforces required documents, roles and local links.",
+          "observed": "check.py REQUIRED set, nine roles, Claude peer dispatcher and local-link resolution; recorded scaffold pass (65 Markdown files, 9 native Codex agents, Claude peer dispatcher); negative fixtures reject missing documents/roles/links.",
+          "status": "pass",
+          "evidence": "utils/check.py REQUIRED/ROLES/local_links/agents; test_check.py; recorded scaffold output. Only gate behavior is evaluated; individual document contents are not re-accepted per packet scope."
+        },
+        {
+          "criterion": "R-BOOT-3 — repeatable foundation checks (repeatability scope)",
+          "expected": "Repository provides and documents repeatable foundation checks (and documentation build commands); checks are reproducible.",
+          "observed": "just ci / utils/ci.py documented in README and utils/README; reproduced identically across two clean local interpreters and the hosted matrix; justfile retains pdf/pdfs/docs document-build recipes.",
+          "status": "pass",
+          "evidence": "README/utils/README deltas; justfile; recorded local and hosted runs. DONE/RESULTS honest-recording is excluded from the snapshot and not verifiable here (see limitations)."
+        },
+        {
+          "criterion": "R-AGENT — cross-provider process boundaries (configuration/evidence conventions)",
+          "expected": "Peer routing is enforced so Claude reviews Codex-authored work and Codex reviews Claude-authored work, with no same-provider fallback and no self-approval; contract/evidence conventions are present (packet hash/revision, no secret export, no tool-sourced reviews).",
+          "observed": "check.py peer_route/claude_peer require utils/peer_review.py --author-provider codex (reviewer Claude) and --author-provider claude (reviewer Codex) and reject same-provider or malformed dispatcher config; test_check same_provider_peer_route_fails / malformed_claude_peer_frontmatter_fails confirm. test_peer_review enforces reciprocal routing, missing-binary/auth/timeout/malformed blocking, forbidden tool-use invalidation, packet sha256/revision gating and no secret export — all recorded as passing.",
+          "status": "pass",
+          "evidence": "utils/check.py peer_route/claude_peer/agents; test_check.py; test_peer_review.py; recorded 41-test run. Live provider discovery/execution is not provable from the packet and peer_review.py source was not supplied (see limitations)."
+        }
+      ],
+      "recommendation": "accept",
+      "limitations": [
+        "External-review mode: no tools, execution or live/remote inspection were performed; all local and hosted outcomes are taken from recorded packet evidence and cannot be independently re-executed or confirmed.",
+        "Hosted CI result (run 41240047711, headSha matches revision a6f70166) is internally consistent recorded evidence, not an independently verified remote run; it is CI execution, not a live peer approval.",
+        "utils/peer_review.py full source was not supplied (pre-existing/outside this PR's change scope); R-AGENT process boundaries were assessed only via check.py routing enforcement, test_peer_review.py contract tests and recorded results — live cross-provider discovery/execution is not established by the packet.",
+        "docs/TODO.md, DONE.md, RESULTS.md and docs/reviews/ are excluded from the substantive snapshot; R-BOOT-3's honest DONE recording and RESULTS observations cannot be verified here.",
+        "Python 3.11/3.15 line provenance and the checkout/setup-python tag→SHA and MIT-license mappings rely on recorded upstream/command evidence, not independent fetches.",
+        "Provider/CLI/model identity, packet hash and reviewer authenticity for this review are verified separately by the orchestrator and are not attested in this response."
+      ]
+    },
+    "limitations": [
+      "CLI routing and returned model names are evidence, not backend attestation.",
+      "Packet review does not independently execute the packet's test commands."
+    ]
+  }
+}

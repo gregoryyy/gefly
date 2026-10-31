@@ -158,3 +158,46 @@ No live reverse Codex run, simulator test, independent external test execution o
 updated PDF render is claimed. Historical local reviews are not reclassified as
 cross-provider evidence, and broader PR roadmap scope is not silently accepted by
 this focused peer record.
+
+
+## 2026-10-31 21:43 — E0-CI repository-tool gates
+
+Scope: TODO 1.1.1, [PR #3](https://github.com/gregoryyy/gefly/pull/3), based on
+`main` `3faf9c8`. The repaired implementation is
+`a6f701667282295d0868bdc74fcdf07ff823d8e8`; its 83-file substantive snapshot is
+`c4adb297d57e3ab77dc37879144ada84d582566c7b2e7dd645a23d903c786506`.
+Hash sorted tracked relative path, NUL, file bytes, NUL; exclude TODO/DONE/RESULTS
+and `docs/reviews/`. All implementation/integration authors are Codex/OpenAI;
+review records and status bookkeeping are excluded from implementation authorship.
+
+| Evidence | Observed result |
+| --- | --- |
+| `just ci` after staging every new implementation file | Shared scaffold/offline-test/tracked-content whitespace gate passed; untracked files enter whitespace coverage only after `git add`. |
+| Clean isolated checkout, absolute `utils/ci.py` invocation from unrelated cwd | Passed on Python 3.11.12 and 3.15.2 with Apple Git 2.39.5: 41 tests, 65 Markdown records, nine Codex roles/Claude dispatcher and 92 tracked paths. No sibling repository, prior build, project packages or provider access needed. |
+| Negative fixtures | Rejected missing scaffold/link/configuration, failed child tests, empty suites, missing Git/files, committed whitespace defects in clean repositories and inherited Git repository/index redirection; preserved the deliberate GPL CRLF attribute. |
+| Actual hosted `pull_request` matrix | [Run 41240047711](https://github.com/gregoryyy/gefly/actions/runs/41240047711) passed both jobs for repaired head `a6f7016`: Python 3.11.17 and 3.15.1, Git 2.56.0, Ubuntu 24.04 image 20261025.353.1, Actions runner 2.338.2; each ran all 41 tests and checked 92 tracked paths. |
+| Hosted checkout identity | The PR workflow checked synthetic merge `6f238f99428283f6b7645fd807cddfe0479e609d`, combining `main` `3faf9c8` and `a6f7016`. GitHub commit APIs report the same complete tree `5e9934a977900f86958f2fd99475ac457b455764` for that merge and the feature head. |
+| Action provenance | Official tag APIs matched both full action pins; pinned-source license APIs reported MIT. SBOM records release/source/license links, runtime requirements and reviewed weekly update proposals. |
+| Independent quality | [Report](reviews/2026-10-31-ci-quality.md): two medium Git-environment isolation defects found, fixed and independently rechecked; no unresolved findings at the repaired snapshot. |
+| Independent specification validation | [Report](reviews/2026-10-31-ci-validation.md): repaired CI criteria pass, with source/commit hashes, actual hosted merge-tree identity and separate environment observations verified. |
+| Actual opposite-provider peer, completed 21:51 | Claude CLI 2.1.193 reported claude-haiku-4-5-20251001; completed with no quality findings and all eight CI criteria plus three scoped foundation/process rows passed. [Actual report and provenance](reviews/2026-10-31-ci-peer.md) include frozen packet hash, source coverage and limits. Orchestrator checked identity/coverage separately from router success. |
+
+The initial [hosted run 41239757311](https://github.com/gregoryyy/gefly/actions/runs/41239757311)
+at `91d0aed` passed 39 tests but preceded the independent isolation findings and
+repairs. It is historical evidence, not acceptance of the repaired implementation.
+The fresh local and hosted runs above include both added regressions. Quality's
+reproductions used only disposable repositories; project Git state was not their
+target. `git diff --cached --check` and a redacted directory secret scan passed.
+After staging the final review/status records, `just check` passed 68 Markdown
+records and the tracked-content whitespace phase passed all 96 paths. A fresh
+source hash matched the same 83-file snapshot; the redacted secret scan again
+found no leaks. These bookkeeping checks do not replace the 41-test executions.
+
+This slice implements repository-tool CI and a reviewed action-update path.
+Minor-line patches and runner images can change; no identical/hermetic runtime
+claim is made. Fork-origin PR execution, a main-push event, future Dependabot PRs
+and branch protection were not exercised. Application lint/types, dependency
+vulnerability/license automation and simulator tests remain parent TODO 1.1 work.
+No simulator stack, aircraft model, training fidelity, community deployment,
+blanket source licence, live reverse-provider review or updated PDF is accepted
+by this result.
