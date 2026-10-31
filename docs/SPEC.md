@@ -1,0 +1,185 @@
+# Gefly specification
+
+Status: refined specification, 2026-10-31. Product owns this document; the
+orchestrator records user decisions and accepts changes to scope. The current
+delivery is the project foundation. Simulator requirements below govern future
+milestones and have not yet been implemented or validated.
+
+## Confirmed direction
+
+The user wants a flight simulator that starts simple and becomes more realistic,
+using actual aircraft controls and avionics and realistic physics for PPL and CPL
+learning. The first aircraft is the Cessna 172, the first training framework is
+EASA PPL, and the first runnable product is a web application with GeoFS as an
+interaction reference. CPL comes later. The user chose **classic instruments
+first, glass cockpit later**, and **QNH, QFE and standard pressure** altimeter
+settings. The exact C172 variant, year, instrument/avionics fit, development stack
+and supported browser/device matrix remain open in [GAPS](GAPS.md).
+GeoFS is a product reference; this does not establish rights to reuse its code,
+assets, maps, data or flight model.
+
+The roadmap direction is a **free and open-source, flight-school-oriented
+community site**. It includes **LLM-assisted flight-experience creation and
+context-bound AI interaction**, using real territorial, navigation and chart
+references. The first regional reference is **EDDF and a 100 NM radius around
+its official airport reference point**. Reuse open physics engines and aircraft
+models as far as practical before writing replacements. These are user directions;
+the exact source license, hosting/cost model, regional datasets, LLM provider,
+engine/model choice and detailed milestone sequence remain decisions. No region,
+community service, authoring system or selected engine is implemented yet.
+
+Requirements marked **mandate** express this user direction. **Proposed** marks
+implementation and acceptance details that can be refined before the affected
+milestone. Acceptance applies to the stated delivery stage, not to the whole
+future simulator at bootstrap time.
+
+The expanded GeoFS feedback establishes desired capabilities and a preference
+for fewer aircraft with deeper controls. Its reports of missing or incomplete
+GeoFS behavior remain **user observations**, not independently established
+absence claims. The [capability research](research/2026-10-31-geofs-gap-analysis.md)
+distinguishes documented features, reports about cockpit integration, community
+experience and unresolved questions. The A320 illustrates later glass-cockpit
+depth; it does not add an A320 to the initial fleet.
+
+## Foundation acceptance
+
+| Requirement | Status | Acceptance evidence |
+| --- | --- | --- |
+| Include and extend the supplied Propeller bootstrap guide in `docs/BOOT.md`. [R-BOOT-1] | Mandate | Local guide records its source and includes the Gefly agent split; source repository is untouched. |
+| Create the documented project structure before simulator implementation. [R-BOOT-2] | Mandate | README, contributor instructions, initial input, idea, gaps, concept, specification, architecture, evaluations, security, process, style, dependencies, plan and progress records exist and link to their authoritative records. |
+| Provide an orchestrator and the seven requested worker roles. [R-AGENT-1] | Mandate | Discoverable role definitions exist for `orchestrator`, `researcher`, `product`, `code1`, `code2`, `quality`, `validate` and `housekeeping`; each states responsibilities, inputs, outputs and boundaries. |
+| The orchestrator owns user interaction and unresolved questions. [R-AGENT-2] | Mandate | Workflow routes worker questions through the orchestrator, records dated answers in GAPS, and distinguishes blockers from independent work that can proceed. |
+| Research informs requirements before implementation. [R-AGENT-3] | Mandate | Researcher gathers web references and data using available deep research skills, or explicitly records a rigorous fallback when unavailable; product turns evidence and user decisions into versioned acceptance criteria. |
+| Run two implementation streams with equivalent coding responsibilities. [R-AGENT-4] | Mandate | A task handoff can assign disjoint files or worktrees to `code1` and `code2` concurrently, with shared interfaces agreed before edits. `code1` is the canonical name for the user's `coder1` reference. |
+| Keep quality review and specification validation independent of implementation. [R-AGENT-5] | Mandate | Quality reports defects and criteria checks; validate maps each in-scope requirement to observed evidence and returns pass, fail or blocked. Authors cannot approve their own implementation through another role name. |
+| Run housekeeping alongside implementation within an explicit scope. [R-AGENT-6] | Mandate | Housekeeping can maintain assigned documentation, links, metadata and repository hygiene while both coding streams run, without editing their owned files, changing requirements or deleting user data. |
+| Provide repeatable foundation checks and documentation build commands. [R-BOOT-3] | Proposed | The repository documents how to run checks and render Markdown to PDF; observed checks and unavailable tools are recorded honestly in DONE. |
+
+## Progressive fidelity
+
+| Requirement | Status | Acceptance evidence |
+| --- | --- | --- |
+| Increase learning depth and realism through explicit fidelity stages. [R-FID-1] | Mandate | Concept and roadmap define an introductory stage and later aircraft-specific stages, each with its scope, limitations and an evidence gate. |
+| Make assistance and model limitations visible. [R-FID-2] | Proposed | A scenario records active assists and model version; its briefing identifies approximations. Replaying it retains those settings. An assist never silently changes an aircraft limit or checklist. |
+| Distinguish instructional models from verified C172 behavior. [R-FID-3] | Proposed | Every aircraft-specific claim names the exact variant/configuration and reference. Generic or unverified controls, performance and procedures are labelled; they cannot count as validated C172 evidence. |
+| Raise fidelity by replacing bounded models behind stable interfaces. [R-FID-4] | Proposed | A later flight model or avionics implementation can run the same input/scenario contract; compatibility tests identify changed behavior and unsupported scenarios. |
+
+## Simulator foundation and physics
+
+| Requirement | Status | Acceptance evidence |
+| --- | --- | --- |
+| Deliver the first runnable simulator as a web application. [R-SIM-1] | Mandate | A documented browser launch path reaches a controllable flight scene; platform and performance checks run on the explicitly supported browser/device matrix. Engine and framework are separate decisions. |
+| Separate simulation time from rendering and input collection. [R-SIM-2] | Proposed | Running an identical timed input fixture at different render rates produces matching state within a tolerance fixed before the test. Pause does not advance simulated time. |
+| Make units, axes, reference frames and sign conventions explicit. [R-SIM-3] | Proposed | Shared contracts declare these conventions; boundary tests cover unit conversion, control direction and frame transformations. Display units are converted at presentation boundaries. |
+| Support deterministic scenario reset and replay. [R-SIM-4] | Proposed | Same model/configuration, seed, time step and ordered input log yield identical state hashes on the same supported runtime. Cross-runtime comparison uses an explicitly documented tolerance and is not called bitwise deterministic. |
+| Validate physics against declared reference cases. [R-SIM-5] | Proposed | Before an aircraft model is accepted, fixtures cover mass/balance, force and moment signs, trim, selected steady flight conditions and transients. Each has reference data, configuration, envelope and justified tolerances chosen before execution; all in-scope cases pass. |
+| Keep the simulation numerically bounded in its supported envelope. [R-SIM-6] | Proposed | A repeatable ten-minute scenario suite produces no non-finite state or unreported integrator failure. Out-of-envelope behavior is flagged instead of presented as validated. |
+
+## Aircraft, controls and avionics
+
+| Requirement | Status | Acceptance evidence |
+| --- | --- | --- |
+| Base aircraft-specific systems on a selected actual C172 configuration. [R-AIR-1] | Mandate | The aircraft manifest identifies model/variant, applicable serial/year range, engine/propeller, mass assumptions, avionics fit and source revisions before aircraft-specific acceptance. |
+| Trace implemented controls and avionics states to reference behavior. [R-AIR-2] | Mandate | Each in-scope control has documented range, detents, state transitions, dependencies and expected indications. Tests exercise normal use and relevant failure states against the cited manual; unsupported controls are identified. |
+| Preserve source provenance and reuse rights for external data and assets. [R-DATA-1] | Proposed | Every shipped external aircraft datum, manual excerpt, visual/audio asset and navigation/world dataset has source, revision, applicability, license/permission and integrity metadata. Public access alone is insufficient permission. |
+| Keep unverified generated values separate from reference data. [R-DATA-2] | Proposed | Data records distinguish sourced, derived, estimated and unknown values, with units and uncertainty. Validation rejects an aircraft claim supported only by an AI-generated number. |
+
+## Training and acceptance
+
+| Requirement | Status | Acceptance evidence |
+| --- | --- | --- |
+| Start with EASA PPL learning objectives and extend to CPL later. [R-TRAIN-1] | Mandate | The first accepted lesson set maps selected objectives to the applicable EASA source revision; CPL objectives have their own later scope and evidence gate. |
+| Give each scenario an objective, briefing and observable debrief. [R-TRAIN-2] | Proposed | Scenario records include prerequisites, initial aircraft/environment state, expected actions, scoring criteria, assists, completion conditions and telemetry for the debrief. Failed criteria can be traced to recorded events. |
+| Distinguish software fidelity, learning benefit and approved training credit. [R-TRAIN-3] | Proposed | Evaluation reports separately state model agreement, observed learner outcomes and any independently established approval status. Product copy does not imply regulatory approval or loggable credit from simulator functionality alone. |
+| Agree quantitative acceptance before an evaluation. [R-EVAL-1] | Proposed | EVAL records baselines, fixtures, procedure, sample, measures, tolerances and stop criteria before execution. RESULTS records observations and limitations, including inconclusive outcomes. |
+
+## GeoFS-inspired capabilities and training depth
+
+These desired capabilities are mandates from the expanded user direction;
+**delivery order, supported envelope and detailed acceptance procedures are
+proposed** until the affected milestone is scoped. They are future simulator
+requirements, not implemented features or additions to bootstrap acceptance.
+“Launch” below means the proposed first usable web slice; “PPL depth” follows
+that foundation; “later” requires a separately accepted scope. Global coverage,
+live data, video export, glass avionics and collision-avoidance equipment do not
+all become first-release work merely by appearing in this table.
+
+| Requirement | Proposed stage | Acceptance evidence |
+| --- | --- | --- |
+| Preserve a short route from a web link to a controllable flight. [R-UX-1] | Launch | On the declared browser/device matrix, a fresh session reaches the selected introductory exercise without installing software or connecting flight hardware. Measure loading time and input readiness against a budget fixed before evaluation; disclose loading/failure states. Account or hosting choices remain separate decisions. |
+| Support keyboard and pointer/touchpad flight controls. [R-INPUT-1] | Launch | The user can complete the declared introductory exercise with keyboard and touchpad alone. The current mapping, sensitivity and axis directions are discoverable; tests cover loss of focus, conflicting inputs, remapping/reset and interaction with cockpit controls. |
+| Support mobile orientation controls with an explicit fallback. [R-INPUT-2] | Mobile capability gate | On a declared supported mobile browser/device, the user can grant permission where required, calibrate neutral orientation and sensitivity, pause/recenter and complete the agreed control task. Permission denial, unavailable sensors, screen rotation and loss of sensor input expose a usable on-screen alternative; no silent loss of control. |
+| Provide recognizable geography, terrain and usable airport/runway context. [R-WORLD-1] | Launch region, then expand | A scoped reference area includes identifiable terrain and its selected airports/runways with declared horizontal/vertical datums and source versions. Fixture comparisons check runway position/orientation, terrain/field elevation and visual/physical ground alignment against predeclared tolerances. The map displays airport elevation with units and source. Visual imagery alone is not the authoritative source for airport/runway geometry. Coverage, simplifications, data rights and missing areas are visible. |
+| Provide multiple flight views, including a usable cockpit view. [R-VIEW-1] | Launch | The user can switch among declared cockpit and external views without resetting or changing aircraft state, controls or simulation time. Relevant instruments remain readable and controls operable on the supported display sizes; camera changes do not create a second source of flight values. |
+| Make flight review a first-class training action. [R-REVIEW-1] | Launch review, then richer debrief | A recorded exercise can be paused, replayed and inspected at selected times from the supported views, with controls, instrument state, assists and scenario events synchronized. Reopening preserves its configuration, scenario time/weather, navigation edition, relevant communication events and provenance rather than fetching changed live conditions. Review/replay acceptance is separate from optional encoded video capture/export; video export needs its own format, privacy and performance decision. |
+| Include weather reports and NOTAM information in the scenario briefing. [R-BRIEF-1] | PPL depth | For a selected area/time, the briefing supplies scoped weather reports such as METAR/TAF and relevant NOTAMs, with provider, location, issue/validity times, units and live/historical/generated status. Tests cover missing, stale and out-of-validity data, including replacement/cancellation where supported. Weather shown in reports and conditions applied to the simulation agree or explicitly explain their difference. Offline/generated fixtures never appear to be current operational information. |
+| Support realistic procedural communication through text. [R-COMM-1] | PPL depth | Scoped radio scenarios model who is being contacted, relevant frequency/channel, call sign, pilot intent, controller response, clearance/readback and expected resulting action. Repeatable fixtures cover a normal exchange, incorrect/incomplete readback and conflicting or unavailable instructions. Free text or later AI may express the exchange, but accepted clearances/events come from the explicit scenario state; multiplayer chat alone does not satisfy this criterion. |
+| Make supported navigation functions operable through the selected cockpit equipment. [R-NAV-1] | Classic PPL cockpit, glass later | In the identified C172 installation, included navigation controls and indications implement the applicable tuning, identification, course/source selection and VOR/DME/localizer/glideslope behaviors. Tests exercise supported station/service validity, relevant flags, distance/reference distinctions and indications against applicable sources. A map overlay or autopilot that follows a route does not alone establish a working cockpit navigation instrument. A later glass fit declares its supported pages/modes and limitations separately. |
+| Navigate using traceable real identifiers and fixes. [R-NAV-2] | PPL depth | The supported region resolves declared real airport, runway, navaid and waypoint/fix identifiers to versioned published records, including frequencies and coordinates where applicable. Route entry handles ambiguity and unknown/stale records explicitly. Source edition/cycle, coordinate reference, applicability and reuse rights accompany the records and test fixtures. Generated chart rendering is allowed; fictional identifiers in clearly marked synthetic exercises do not satisfy acceptance of real-data navigation. |
+| Provide source-marked maps/charts and explicit vertical-guidance meaning. [R-NAV-3] | VFR maps first, instrument approaches later | The learner can relate the selected airport/runway, route/fixes and aircraft position to a real licensed chart or a clearly labeled generated training map. Included approach depictions distinguish a planned/teaching glide path from a modeled published procedure or actual ILS indication, and preserve elevation/altitude references, units and source revision. Test a declared approach fixture end to end without substituting a decorative line for avionics guidance. |
+| Implement QNH, QFE and standard-pressure settings with consistent references. [R-AIR-3] | Classic PPL cockpit | The pressure-setting control, displayed setting/units and resulting altitude indication agree with the selected aircraft/instrument model and atmospheric fixture. Tests cover setting changes, unit conversion, the declared QFE datum and standard-pressure setting against sourced expected values, with field elevation and altitude/height references unambiguous. Any unsupported pressure reference is explained as a training substitution rather than invented hardware; a mechanical setting need not imply a dedicated mode switch. |
+| Provide aircraft- and scenario-applicable checklists. [R-TRAIN-4] | Classic PPL cockpit | Included checklists identify aircraft fit, source/revision and applicable phase/configuration. The learner can perform or confirm each in-scope item through its modeled control/state, see unsupported items and distinguish a checked box from automatically sensed state. Normal and intentionally incorrect sequences produce traceable feedback. A blocked lesson step identifies its unmet condition and allows recovery/reset while leaving the checklist accessible; it does not silently change aircraft settings. |
+| Provide repeatable circuit/pattern and instrument-approach drills. [R-TRAIN-5] | Circuits in PPL depth; ILS in later instrument familiarization | A scoped circuit exercise declares runway, pattern direction/geometry, environment, configuration, actions and predeclared assessment criteria. A separately scoped ILS exercise ties frequency/course, approach fixes, localizer/glideslope behavior and missed-approach handling to an applicable procedure and equipment configuration. Both support reset/review and explain limitations. Later instrument familiarization does not imply an instrument rating or that every ILS task belongs to the initial EASA PPL lesson set. |
+| Add traffic awareness and collision-avoidance systems only for applicable equipment. [R-TRAFFIC-1] | Later systems scope | Select and identify the applicable traffic/ACAS/TCAS installation before specifying its displays, alerts, inhibit logic, failure states or guidance. Repeatable encounters are evaluated against its authoritative behavior and limitations; a traffic icon is not claimed to implement collision avoidance. Treat ACAS/TCAS relationships through researched terminology rather than counting the names as independent features. Do not add fictitious airline equipment to the initial C172. |
+| Prefer a small fleet with complete declared controls over many shallow aircraft. [R-SCOPE-1] | All stages | The first aircraft remains the selected C172 configuration with classic instruments. A control/function inventory marks supported, simplified and unavailable behavior, with evidence for every accepted control/indication. A new type or glass fit requires a separate source pack, specification and validation gate; an A320 reference alone does not authorize adding that aircraft. |
+
+## Community, authored experiences and reuse
+
+The directions below are mandates. Their acceptance details and placement in
+the roadmap are **proposed** until scoped. The [EDDF/open-foundation research](research/2026-10-31-eddf-open-foundation.md)
+records candidate sources and reuse options; a source listing does not establish
+data rights, complete regional coverage or a validated aircraft model.
+
+| Requirement | Status | Acceptance evidence |
+| --- | --- | --- |
+| Create a flight-school-oriented community site around the simulator. [R-COMMUNITY-1] | Mandate; delivery sequence proposed | The site connects discoverable learning experiences, objectives, aircraft/fidelity requirements, reference material, review/debrief and community feedback. Contributors can propose and share versioned experiences with visible author/source information and reviewed/experimental status. Public submission, identity, privacy and moderation rules are agreed before those workflows are enabled. A multiplayer lobby or general social feed alone does not satisfy the flight-school focus. |
+| Make the project free and open source. [R-OPEN-1] | Mandate; exact license and operating model pending | Release the project source and reproducible build/run instructions under the chosen open-source license permitting use, modification and redistribution, and provide the declared core learning/community baseline without a usage fee. Inventory the separate licenses/rights of dependencies, aircraft models, data and assets; a code license does not grant their reuse rights. The free baseline can run published experiences without requiring a paid live LLM or a paid imagery subscription. Select and document sustainable hosting/AI/data costs, capacity limits and any optional services before promising an unlimited public service. |
+| Let an LLM assist in creating realistic, source-backed flight experiences with bounded AI interaction. [R-AUTHOR-1] | Mandate; staged authoring and interaction scope proposed | Given a territory and learning intent, authoring produces a reviewable declarative package identifying extent/datum, aircraft/objective, initial conditions, navigation records, chart/procedure references, interaction roles/allowed actions and source versions/rights. Schema and cross-reference checks reject unresolved real identifiers, unsupported procedure references, inconsistent coordinates/units and executable payloads; source comparison and human review reject unsubstantiated real-world claims. Generated narrative or teaching charts are labeled and derived from accepted source records; an LLM is not a source of real navaids or chart geometry. Review precedes publication. Published versions freeze relevant datasets, prompts/model metadata and accepted interaction events for reproducibility; replay uses recorded events rather than fresh generations. AI acts within the package's scenario context and validated actions, not as authority over physics, aircraft limits or clearances. |
+| Model EDDF and a 100 NM surrounding reference region from applicable real material. [R-REGION-1] | Mandate; coverage sequence proposed | Define the region using EDDF's sourced official airport reference point, a 100 nautical mile radius and declared geodesic/datum conventions. Preserve the reference publication and verify boundary fixtures. Inventory terrain, airports/runways/elevations, navaids/fixes and chart/procedure material with applicable versions/rights, plus a coverage map distinguishing validated, approximate and unavailable areas/features. Test selected real-data navigation and chart/ground alignment fixtures under the agreed tolerances. The complete extent is a regional target, not a claim that every feature is already modeled; learner departure airports and first drills within it remain separate choices. |
+| Prefer reuse of open physics engines and aircraft models before custom replacements. [R-REUSE-1] | Mandate; candidate choice pending | Before engine/model selection, compare existing open candidates for license compatibility, aircraft applicability, browser integration, maintainability, numerical behavior and independent reference-case agreement. Record the selected versions and adaptation boundaries. Reuse a suitable candidate where it meets the agreed criteria; justify each custom dynamics/model replacement by an evidenced gap and bounded scope. Open availability, included C172 data and engine reputation do not substitute for model-data rights or the independent validation required by R-SIM-5. |
+
+## Proposed delivery emphasis
+
+First preserve browser accessibility, keyboard/touchpad control, coherent local
+geography, multiple views, basic review and a bounded physics envelope. Build
+one usable classic C172 cockpit and one useful PPL exercise; make pressure
+settings, relevant elevations, control semantics and checklists correct within
+that scope. Mobile orientation support needs its own browser/device evidence
+before it is advertised, even if developed alongside desktop input.
+
+Then deepen briefing, procedural text communication, real identifiers/maps and
+cockpit navigation, followed by instrument-approach familiarization and the
+selected glass fit. Equipment-specific collision avoidance and any additional
+aircraft are later decisions. This ordering is a product proposal for review,
+not a user-approved milestone schedule. Physics fidelity, data provenance and
+visible limitations apply at every stage, rather than being postponed until
+visual or cockpit features are complete.
+
+Use EDDF's 100 NM reference region to ground the data/engine studies and the
+first scoped geography/navigation slice. Prioritize the existing open-engine
+and model survey before building a custom flight model. A flight-school
+community and source-backed experience catalogue can grow around accepted
+exercises; LLM-assisted authoring then turns region/objective requests into
+validated packages and later context-bound interactions. This is a proposed
+dependency order, not permission to publish a community service or to defer
+license/data-rights decisions until after release.
+
+## Change and release rules
+
+Product refines proposed details with researcher evidence and orchestrator/user
+decisions. Keep requirement IDs stable; record material changes and affected
+acceptance evidence. Implementation handoffs cite the requirement IDs and a
+specific specification revision. Quality examines the implementation against
+[SEC](SEC.md), [STYLE](STYLE.md) and [SDLC](SDLC.md); validate examines the completed
+artifact against this specification and [EVAL](EVAL.md). Both must identify the
+revision reviewed. Any later integration change invalidates affected evidence.
+
+## Outside the current delivery
+
+This document refinement does not include a runnable simulator, a selected
+rendering/physics engine, licensed aircraft manuals, validated aircraft performance,
+an implemented EDDF region, community hosting, LLM runtime, instructor endorsement
+or regulatory qualification. Worldwide scenery, a live
+human ATC network, multiplayer, encoded video export, VR, motion platforms and
+commercial training approval remain separately scoped decisions. Procedural
+text-radio practice is a desired capability; it does not require a live ATC network.

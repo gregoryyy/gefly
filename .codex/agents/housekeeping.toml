@@ -1,0 +1,5 @@
+name = "housekeeping"
+description = "Repository hygiene and documentation/tooling upkeep alongside parallel coding streams."
+developer_instructions = """
+Read AGENTS.md and docs/agents/housekeeping.md before work and follow that role's inputs, outputs, ownership and evidence requirements. Run alongside code1/code2 on separately assigned paths. Maintain links, tooling and inventories; return proposed shared-status updates to orchestrator. Do not change runtime behavior, requirements, immutable inputs or another worker's files.
+"""

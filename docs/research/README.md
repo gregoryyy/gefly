@@ -1,0 +1,17 @@
+# Research index
+
+Research clarifies gaps and requirements; it does not decide the product or silently alter SPEC. The researcher owns bounded notes; product interprets evidence and the orchestrator records decisions with user answers where needed.
+
+| Note | Questions and use | Status |
+| --- | --- | --- |
+| [Foundation sources, 2026-10-31](2026-10-31-foundation-sources.md) | Existing simulators, EASA/FAA references, aircraft/avionics sources and dynamics candidates | Initial focused primary-source research; not a completed aircraft data pack |
+| [GeoFS strengths, gaps and community, 2026-10-31](2026-10-31-geofs-gap-analysis.md) | User observations versus official capabilities, original community leads, FlightGear reference and pressure/traffic-system terminology | Focused follow-up; evidence labels and limitations in note; no claim of representative survey or hands-on feature validation |
+| [EDDF regional data and open engines, 2026-10-31](2026-10-31-eddf-open-foundation.md) | Official airport-center/100 NM geometry, basemap/elevation/nav/chart rights, reusable dynamics/models/browser adapters and LLM asset grounding | Candidate sources only; official current ARP and exact provider/model choices unresolved; no region data or engines installed |
+
+## Method and note format
+
+Use available deep research skills when the task and environment support them; discover and read their instructions first. If unavailable, disclose the fallback and use a structured multi-source web investigation. Never claim a skill, tool, source access or verification that did not run. No dedicated deep research skill is installed in the current session.
+
+Frame a note around one question with affected GAPS/requirement/task references, search strategy and queries, primary sources and alternatives, exact versions/dates/sections, access time, applicability, data rights, disagreements, verified findings, inferences, confidence and unresolved issues. Follow source links and evaluate the documents rather than relying on snippets. Aircraft facts require applicable aircraft/avionics configurations and units; curriculum facts require current authority documents. Record source metadata and provenance before creating data fixtures.
+
+End with proposed implications, limitations and a handoff to product/orchestrator. Prefer linked documents and permitted extracts; do not check in copyrighted manuals without authorization. Reference notes by stable relative links; maintain this index when integrating them.

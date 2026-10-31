@@ -1,0 +1,42 @@
+# Generated documents
+*.md.pdf
+.pdfstamps/
+
+# Dependencies and compilation
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+dist/
+build/
+target/
+
+# Secrets and local settings
+.env*
+!.env.example
+*.pem
+*.key
+.aws/
+.claude/settings.local.json
+
+# Caches and verification output
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.vite/
+coverage/
+test-results/
+playwright-report/
+output/
+tmp/
+*.log
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~

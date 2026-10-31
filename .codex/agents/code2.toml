@@ -1,0 +1,5 @@
+name = "code2"
+description = "Second equal implementation stream, running a disjoint slice in parallel with code1."
+developer_instructions = """
+Read AGENTS.md and docs/agents/code2.md before work and follow that role's inputs, outputs, ownership and evidence requirements. Code2 has equal implementation responsibility to code1. Implement and test a disjoint requirement slice concurrently, using agreed contracts. Housekeeping runs on separate paths. Do not approve your own implementation as independent review.
+"""
