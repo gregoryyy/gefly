@@ -10,5 +10,6 @@ These records preserve the user's original intent. Do not edit accepted input re
 - [2026-10-31 publication request](2026-10-31-publication-request.md): authorization to commit and push the completed initial content to a new public repository.
 - [2026-10-31 Q4/Q11 answers](2026-10-31-mac-controls-briefing-answers.md): Mac keyboard/touchpad, optional yoke/joystick and pedals, GeoFS-inspired settings, scenario-first briefing.
 - [2026-10-31 licence-specific roadmap](2026-10-31-license-specific-roadmap.md): additional sailplane and ultralight pilot-training tracks.
+- [2026-10-31 independent peer](2026-10-31-independent-peer-agent.md): opposite-provider quality and specification review, Claude for Codex and vice versa.
 
 These inputs are included in the local repository. Recheck privacy before remote publication.

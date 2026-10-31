@@ -2,7 +2,7 @@
 
 ## Assets and boundaries
 
-Protect source code, build environment, dependency integrity, aircraft/reference provenance and any future learner progress or uploaded scenarios. No accounts, personal telemetry or external AI integration are currently implemented. Raw input contains the product brief, not learner records. User decisions about geography/framework do not determine hosting or data jurisdiction.
+Protect source code, build environment, dependency integrity, aircraft/reference provenance and any future learner progress or uploaded scenarios. No simulator accounts, personal telemetry or runtime AI integrations are currently implemented. Developer cross-provider peer review is a separate data flow described below. Raw input contains the product brief, not learner records. User decisions about geography/framework do not determine hosting or data jurisdiction.
 
 ## Threats and controls
 
@@ -22,7 +22,23 @@ Protect source code, build environment, dependency integrity, aircraft/reference
 | LLM authoring fabricating facts, following instructions embedded in a source or producing executable content | Resolve real assets through structured sources; validate declarative packages and record provenance; isolate untrusted source text from authoring instructions; require review before accepted use | Unknown-fix, malicious-source, invalid-geometry, incompatible-equipment and provider-failure cases in E9 |
 | Public community exposing private records or falsely labeling content as reviewed | Explicit submission visibility, scoped roles, authorship/review labels, reporting/moderation/removal and retention decisions | Scoped community access/content cases in E11 before deployment |
 
-## Document tooling
+## Developer peer review
+
+The peer router sends only the orchestrator's inspected packet to the selected
+other provider using existing local authentication. Exclude credentials, unrelated
+personal information and unauthorized source material; do not publish raw auth or
+session metadata. Record the actual route, packet hash and provider evidence.
+Provider failure, missing identity or incomplete evidence cannot become a passed
+review or trigger a same-provider fallback.
+
+Claude runs a fresh, tool-disabled safe-mode packet review; Codex runs a fresh
+read-only exec with packet-only instructions and blocks detected tool-use output.
+These controls have different limits and do not attest the remote backend or
+replace parent permissions. Do not enable permission bypass, install/reauthenticate
+providers or post reports as part of review. Keep local outputs under ignored
+`output/`; inspect the normalized report before including it in source/PR evidence.
+
+## Document rendering
 
 Pandoc/Chrome and the LaTeX filter are developer tools. Build trusted repository Markdown only. Mermaid builds download a versioned script from a CDN; no document containing Mermaid currently requires it for the scaffold. The inherited LaTeX filter disables shell escape and restricts file access, but this is not a general document sandbox. Never build arbitrary external documents without inspection and suitable isolation.
 

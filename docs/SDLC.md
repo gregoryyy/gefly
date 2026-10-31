@@ -6,7 +6,40 @@ The orchestrator maintains the user conversation and work queue. Researcher inve
 
 For each work item, agree requirement IDs, scope, acceptance criteria, evidence, dependency contracts and exclusive write paths. See [dispatch and handoff templates](agents/README.md). Run code1 and code2 on independent slices in parallel; run housekeeping alongside them. Reserve integration/shared-file ownership for the orchestrator. If three worker slots are available, use them for code1, code2 and housekeeping during implementation; schedule research/product and reviews before or after as necessary. Do not exceed runtime limits.
 
-Integrate before final reviews. Quality reviews code quality/security/numerics/testing; validate checks every in-scope specification criterion. An author may fix findings but may not independently accept their own work. Reviewers receive the diff, applicable requirements and reproducible evidence, without requiring the author's reasoning. Record findings with severity, location, reproduction and expected behavior. Repairs invalidate affected acceptance and require a new check. Split quality from validation even when runtime limits require consecutive review waves.
+Integrate before final reviews. Quality reviews code quality/security/numerics/testing; validate checks every in-scope specification criterion. The additional peer gate performs both reviews through the other provider, with separate findings and acceptance evidence. An author may fix findings but may not independently accept their own work. Reviewers receive the diff, applicable requirements and reproducible evidence, without requiring the author's reasoning. Record findings with severity, location, reproduction and expected behavior. Repairs invalidate affected acceptance and require a new check. Keep the quality and specification results distinct even when runtime limits require consecutive review waves.
+
+## Cross-provider peer gate
+
+Use **Claude to review Codex-authored contributions**, and **Codex to review
+Claude-authored contributions**, in addition to the existing quality and validate
+roles. A different model or subagent inside the author's provider is not a
+cross-provider review. Native peer wrappers dispatch this workflow; their presence
+is not evidence that an external provider ran or that every CLI supports a schema.
+
+Freeze an integrated revision and review packet containing the diff, applicable
+specification/criteria, relevant source/artifact evidence and author-provider
+coverage map. Record the revision and packet content hash. Start the reviewing
+provider with a fresh context from that packet, not the author's conversation or
+a resumed author session. Capture actual CLI/version, invocation outcome and
+observed model/provider metadata without exposing credentials. Declared names
+alone do not establish reviewer identity or successful execution.
+
+Peer returns two distinct sections: concrete quality findings with severity and
+reproduction, and a requirement/criterion matrix with expected/observed behavior,
+evidence and pass/fail/blocked/not evaluated. Mixed Codex/Claude authorship needs
+reciprocal coverage at the same integrated revision: each provider reviews the
+other's contribution and excludes its own contribution from acceptance. Include
+integration edits in the provider coverage map. Neither a single partial report
+nor a reviewer switching role names establishes complete independent coverage.
+
+Missing CLI, authentication, verifiable provider identity, required reciprocal
+coverage or sufficient evidence leaves the affected gate blocked/not evaluated.
+Record the missing prerequisite; do not silently substitute a same-provider
+reviewer, infer success from a router exit alone or mark an untested criterion
+passed. Findings return to coders. Any repair, new integration edit or changed
+packet invalidates affected evidence and requires a new frozen packet and review.
+Earlier reviews remain historical records and do not automatically satisfy this
+new gate. [Assurance](assure/ASSR.md) defines the evidence lineage.
 
 ## Branches, changes and PRs
 
@@ -18,7 +51,7 @@ Record TODO IDs and requirement IDs in changes. Commit descriptions include `Ref
 
 - The in-scope specification criteria are supported by observable evidence; untested criteria are explicitly blocked or not evaluated.
 - Relevant checks pass at the integrated revision; numerical/reference tests are independent of tuning data where possible.
-- Quality and validate reviews are independent of authorship, findings resolved and affected reviews renewed after fixes.
+- Quality, validate and the additional cross-provider peer gate have independent eligible reviewers, resolved findings and current revision/packet evidence; affected reviews are renewed after fixes. Missing provider prerequisites remain explicit blockers.
 - Units, coordinate frames, aircraft configuration, source versions/rights and limitations are explicit when applicable.
 - Documentation, requirement references, TODO status and clock-derived DONE entry reflect the delivered state.
 - No secrets, personal data, unlicensed assets or generated document outputs enter the tracked change unintentionally.
@@ -37,4 +70,4 @@ Open separate milestone PRs when a remote and authorization exist; otherwise pre
 
 ## Releases
 
-Before distribution, resolve license/asset rights, pin dependency versions, review SEC and run the relevant integrated gates. Identify aircraft/model and scenario versions, supported environments, assists, fidelity envelope and known limitations in release notes. Training-credit or approval claims require a separately scoped evidence and review process; they are not inferred from an EASA curriculum reference.
+Before distribution, resolve license/asset rights, pin dependency versions, review SEC and run the relevant integrated gates, including current cross-provider peer evidence. Identify aircraft/model and scenario versions, supported environments, assists, fidelity envelope and known limitations in release notes. Training-credit or approval claims require a separately scoped evidence and review process; they are not inferred from an EASA curriculum reference.

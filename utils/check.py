@@ -18,16 +18,16 @@ import tomllib
 ROOT = Path(__file__).resolve().parent.parent
 ROLES = {
     "orchestrator", "researcher", "product", "code1", "code2", "quality", "validate",
-    "housekeeping",
+    "housekeeping", "peer",
 }
 REQUIRED = {
     "README.md", "AGENTS.md", "CLAUDE.md", "justfile", ".gitignore", ".editorconfig",
-    ".github/pull_request_template.md", ".codex/config.toml",
+    ".github/pull_request_template.md", ".codex/config.toml", ".claude/agents/peer.md",
     "docs/BOOT.md", "docs/IDEA.md", "docs/ARCH.md", "docs/EVAL.md", "docs/GAPS.md",
     "docs/SEC.md", "docs/SDLC.md", "docs/STYLE.md", "docs/SBOM.md", "docs/TODO.md",
     "docs/ROAD.md", "docs/DONE.md", "docs/SPEC.md", "docs/design/CONCEPT.md",
-    "docs/research/README.md", "utils/pdf/style.css", "utils/pdf/mermaid.html",
-    "utils/pdf/latex.lua",
+    "docs/research/README.md", "docs/agents/peer.md", "utils/pdf/style.css",
+    "utils/pdf/mermaid.html", "utils/pdf/latex.lua", "utils/peer_review.py",
 }
 IGNORED_DIRS = {
     ".git", "node_modules", ".venv", "venv", "__pycache__", "dist", "build", "target",
@@ -85,6 +85,35 @@ def read_toml(path, errors):
         return {}
 
 
+def peer_route(instructions, relative, author, reviewer, errors):
+    """Check declared routing only; executing a provider requires separate evidence."""
+    command = f"utils/peer_review.py --author-provider {author}"
+    if not isinstance(instructions, str) or command not in instructions or reviewer not in instructions:
+        errors.append(f"{relative}: peer dispatcher must invoke {command} for {reviewer} review")
+
+
+def claude_peer(errors):
+    relative = ".claude/agents/peer.md"
+    path = ROOT / relative
+    if not path.is_file():
+        errors.append(f"missing Claude peer dispatcher: {relative}")
+        return
+    text = path.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    # Validate the required simple frontmatter field without interpreting arbitrary YAML.
+    if not lines or lines[0] != "---" or "---" not in lines[1:]:
+        errors.append(f"{relative}: missing YAML frontmatter delimiters")
+    else:
+        end = lines.index("---", 1)
+        names = [line.partition(":")[2].strip() for line in lines[1:end]
+                 if line.startswith("name:")]
+        if len(names) != 1 or names[0] not in {"peer", "'peer'", '"peer"'}:
+            errors.append(f"{relative}: frontmatter must declare exactly one name: peer")
+    if "docs/agents/peer.md" not in text:
+        errors.append(f"{relative}: instructions must reference docs/agents/peer.md")
+    peer_route(text, relative, "claude", "Codex", errors)
+
+
 def agents(errors):
     config = read_toml(ROOT / ".codex/config.toml", errors)
     settings = config.get("agents", {})
@@ -113,8 +142,11 @@ def agents(errors):
             errors.append(f"{path.relative_to(ROOT)}: instructions must reference {role_path}")
         if not (ROOT / role_path).is_file():
             errors.append(f"missing role contract: {role_path}")
+        if name == "peer":
+            peer_route(instructions, path.relative_to(ROOT), "codex", "Claude", errors)
     for name in sorted(ROLES - found):
         errors.append(f"missing native agent definition: {name}")
+    claude_peer(errors)
 
 
 def requirements(area):
@@ -153,8 +185,8 @@ def main():
             print(f"ERROR: {error}", file=sys.stderr)
         print(f"Scaffold check failed with {len(errors)} issue(s).", file=sys.stderr)
         return 1
-    print(f"Scaffold check passed: {len(documents)} Markdown files, {len(ROLES)} native agent definitions.")
-    print("Scope: file/link targets and agent configuration; external URLs, heading anchors and simulator behavior are not checked.")
+    print(f"Scaffold check passed: {len(documents)} Markdown files, {len(ROLES)} native Codex agent definitions and a Claude peer dispatcher.")
+    print("Scope: file/link targets and declared agent routing; live discovery, provider identity, external URLs, heading anchors and simulator behavior are not checked.")
     return 0
 
 

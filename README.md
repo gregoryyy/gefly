@@ -30,12 +30,14 @@ a later supported-device capability.
 
 Project foundation: requirements, architecture, roadmap, research and the orchestrator/subagent workflow. Start with [the concept](docs/design/CONCEPT.md), [specification](docs/SPEC.md), [open questions](docs/GAPS.md) and [next tasks](docs/TODO.md).
 
-The [bootstrap guide](docs/BOOT.md) is adapted from `../propeller/docs/BOOT.md` and extended with the requested eight roles. [AGENTS.md](AGENTS.md) governs contributions; [the agent workflow](docs/agents/README.md) explains dispatch, ownership, parallel work and review. Native Codex definitions are in `.codex/agents/`; their role instructions are in `docs/agents/`.
+The [bootstrap guide](docs/BOOT.md) is adapted from `../propeller/docs/BOOT.md` and extended with nine roles. [AGENTS.md](AGENTS.md) governs contributions; [the agent workflow](docs/agents/README.md) explains dispatch, ownership, parallel work and review. Native Codex definitions are in `.codex/agents/`; their role instructions are in `docs/agents/`. The additional [peer](docs/agents/peer.md) routes Codex-authored work to Claude and Claude-authored work to Codex for independent quality and specification review, with a reciprocal Claude dispatcher in `.claude/agents/peer.md`.
 
 ## Local commands
 
 ```sh
 just check                 # scaffold, links and agent configuration checks; Python 3.11+
+just test-tools            # offline peer-routing and report/failure tests
+just peer-preview codex packet.md  # inspect the external Claude route without a call
 just docs                  # A4 PDFs alongside Markdown; pandoc and Google Chrome
 just pdf docs/IDEA.md      # build one document
 just reqs                 # requirement declarations
