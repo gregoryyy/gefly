@@ -142,6 +142,21 @@ Answer: direction confirmed **2026-10-31 15:15, user**: LLM-based flight experie
 creation defining territory/navigation/chart material, with AI-based interaction.
 Provider/local/cloud choices, supported authoring intents and review process pending.
 
+### Q14. Which sailplane and ultralight qualification profiles come first?
+
+Why: pilot licences, aircraft categories, privileges and curricula depend on the
+jurisdiction and selected aircraft. This is distinct from software licence Q5.
+
+Answer: **2026-10-31 15:44, user**: add licence-specific training for sailplanes
+and ultralight aircraft. Country/category, precise qualification, launch/equipment
+scope, first aircraft and ordering remain open. Proposed research references are
+EASA Part-SFCL/SPL and Germany's national ultralight framework; these references
+are not a user decision selecting all their privileges or categories.
+
+Blocking: implementation/acceptance of those later profiles only. Initial C172/
+EASA PPL work continues. Owner: orchestrator/product, informed by the
+[licence-track source note](research/2026-10-31-license-training-tracks.md).
+
 ## Resolved refinement questions
 
 ### Q8. What does “QNX” mean in the requested altimeter features?

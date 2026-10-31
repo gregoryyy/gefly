@@ -20,6 +20,35 @@ license, provider, deployment and detailed phase order remain to be selected.
 | 5. CPL and advanced equipment | Add explicitly scoped CPL objectives and applicable traffic-awareness/advisory equipment; assess any additional aircraft separately | Separate aircraft/equipment/learning specification and source-based cases before ACAS/TCAS or expanded training claims |
 | Community / open release track | A free, open-source site for flight-school practice, proposed exercise library, questions, groups and reviewed debriefs; grow alongside useful simulator slices | E11: selected license, reproducible authorized-data build, contributor/content rules, scoped user roles and moderation; actual hosting/free access verified before deployment claims |
 | AI experience-authoring track | Describe territory, objectives and interaction; assemble source-backed navigation assets/chart material and a validated experience package, beginning with EDDF/100 NM | E9/E10: real identifiers/geometry resolved, missing data exposed, package/source rights reviewed, scenario checks pass and accepted package replays independently of generation |
+| Licence-specific training extensions | Add distinct sailplane and ultralight training profiles, with their own aircraft, controls/physics, exercises and pilot-qualification requirements | R-TRAIN-6 / E12: selected jurisdiction/authority/category, current source-mapped syllabus and privileges, applicable model/reference cases and qualified review; no automatic transfer of airplane requirements or training credit |
+
+## Licence-specific training extensions
+
+The [user's extension](input/2026-10-31-license-specific-roadmap.md) adds pilot
+qualification tracks beyond the initial C172/EASA PPL and later CPL direction.
+These are training qualifications, separate from software licensing. Keep the
+first aircraft/foundation unchanged and scope each extension independently;
+the user has not specified an order relative to CPL.
+
+| Track | Proposed training/model scope | Qualification boundary and gate |
+| --- | --- | --- |
+| Sailplanes | One identified aircraft/configuration; glide/energy management, soaring, applicable launch methods and landing planning. Reuse shared geography, weather, controls and review where appropriate. | EASA Part-SFCL/Sailplane Pilot Licence is a reference profile. Distinguish applicable launch-method and TMG privileges before claiming coverage; source the selected syllabus and aircraft behavior. |
+| Ultralight aircraft | One selected national category and aircraft first, with its actual controls, handling/performance, procedures and exercises. Category differences may require different models and control mappings. | Select the country/authority and qualification explicitly. German national ultralight training is an initial research reference, not a universal EASA licence or a confirmed country/category decision. |
+
+Each future profile identifies jurisdiction, issuing framework, full qualification
+name, aircraft/category, privileges/ratings/launch methods where applicable,
+curriculum source/version, prerequisites and scoped assessment criteria. Reuse
+common simulator infrastructure while keeping category-specific aircraft, physics
+and lessons separately validated. An abbreviation such as “SPL” alone must not
+determine the profile. Shared lessons or simulator functionality do not establish
+cross-credit or certification eligibility.
+
+The [licence-track source note](research/2026-10-31-license-training-tracks.md)
+records authoritative references and amendment/source limits. Q14 retains country,
+category and first-aircraft decisions. E12 defines the future coverage/equipment
+checks; no sailplane/ultralight model or curriculum has been implemented yet.
+
+## Sequence and dependencies
 
 Phase ordering after the first exercise is **proposed**, refined from user feedback;
 it is not an approval to ship the whole wishlist at once. Mobile orientation is a

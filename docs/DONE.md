@@ -3,6 +3,42 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-10-31 15:49 — Add sailplane and ultralight pilot-qualification roadmap tracks
+
+TODO: 0.16 complete; future profile contract in 1.12. PR: [#1](https://github.com/gregoryyy/gefly/pull/1), documentation refinement.
+Agent: Codex orchestrator; geofs_research, product_refinement and independent quality/validate.
+
+**Implementation notes**
+
+Preserved the user's ROAD request and added distinct sailplane/ultralight tracks,
+R-TRAIN-6, GAPS Q14, the profile-contract task, E12 coverage gates and a linked
+primary-source research note. Each future profile identifies jurisdiction,
+authority, full qualification/category, applicable source editions, privileges,
+prerequisites, aircraft/equipment and exercises. Common infrastructure may be
+reused while category-specific controls/physics and lessons need their own
+reference cases and qualified review. The initial C172/EASA PPL direction stays
+first; no order relative to CPL was imposed for the new tracks.
+
+`just check` passes for 61 Markdown records/eight roles; SPEC has 49 unique IDs,
+with the original 48 retained in relative order. Whitespace checks pass.
+Independent quality and validation accepted documentary coverage with no findings.
+The existing draft PR's title/body will be updated to describe its full controls,
+briefing and qualification-roadmap scope.
+
+**Deviations**
+
+No sailplane/ultralight model, course or qualification eligibility is validated.
+EASA sailplane SPL/Part-SFCL and German national ultralight rules are source
+references, not user-selected jurisdictions/categories. Source compilation/date
+and amendment-verification limits are explicit; current syllabus acceptance is a
+future gate. No software-license choice, source data import or PDF build occurred.
+
+**Insights**
+
+Pilot-qualification profiles need full jurisdiction/category identifiers; an
+acronym alone can be ambiguous. Sharing a simulator platform, maneuver or aircraft
+component does not establish syllabus equivalence or training-credit transfer.
+
 ## 2026-10-31 15:43 — Resolve Mac controls and scenario-first briefing decisions
 
 TODO: 0.10.1 and 0.15 complete. Branch: `docs/mac-controls-scenario-briefings`.

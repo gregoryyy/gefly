@@ -23,6 +23,13 @@ explicitly labeled historical/generated data and an optional live adapter later.
 GeoFS is a product reference; this does not establish rights to reuse its code,
 assets, maps, data or flight model.
 
+The roadmap also includes pilot-qualification-specific tracks for **sailplanes
+and ultralight aircraft**. They share the platform while using their own applicable
+curricula, aircraft controls/physics and scenarios. C172/EASA PPL remains first;
+additional tracks can be scoped independently of the later CPL track. Their
+jurisdictions, exact qualifications and aircraft categories remain open. Pilot
+qualification choices are separate from the project's software license.
+
 The roadmap direction is a **free and open-source, flight-school-oriented
 community site**. It includes **LLM-assisted flight-experience creation and
 context-bound AI interaction**, using real territorial, navigation and chart
@@ -97,6 +104,7 @@ depth; it does not add an A320 to the initial fleet.
 | Give each scenario an objective, briefing and observable debrief. [R-TRAIN-2] | Proposed | Scenario records include prerequisites, initial aircraft/environment state, expected actions, scoring criteria, assists, completion conditions and telemetry for the debrief. Failed criteria can be traced to recorded events. |
 | Distinguish software fidelity, learning benefit and approved training credit. [R-TRAIN-3] | Proposed | Evaluation reports separately state model agreement, observed learner outcomes and any independently established approval status. Product copy does not imply regulatory approval or loggable credit from simulator functionality alone. |
 | Agree quantitative acceptance before an evaluation. [R-EVAL-1] | Proposed | EVAL records baselines, fixtures, procedure, sample, measures, tolerances and stop criteria before execution. RESULTS records observations and limitations, including inconclusive outcomes. |
+| Support jurisdiction-, qualification- and aircraft-category-specific training tracks, including sailplanes and ultralights. [R-TRAIN-6] | Mandate; future track scope and sequence proposed | Each accepted track identifies jurisdiction, competent authority, full qualification name and aircraft category rather than an abbreviation alone. Map its objectives, prerequisites, privileges/limits and equipment applicability to dated/versioned authoritative sources and declared acceptance criteria. Provide category- and configuration-specific controls, physics and scenarios with independent reference fixtures and qualified instructor review. Reuse shared platform functions only where applicable; do not infer that the airplane syllabus, aircraft model, simulator approval or training credit transfers to another track. Country/category and qualification mappings must be resolved before that track is accepted; C172/EASA PPL remains the first track. |
 
 ## GeoFS-inspired capabilities and training depth
 

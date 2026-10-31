@@ -22,6 +22,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 - [x] 0.13 Record the free/open-source community, AI experience-authoring, EDDF/100 NM and reuse-first architecture directions in authoritative documents.
 - [x] 0.14 Research regional/open-engine source candidates and independently review the integrated roadmap/architecture refinement.
 - [x] 0.15 Record Q11's accepted scenario-first briefing sequence and propagate Q4/Q11 through the product/design/evaluation records.
+- [x] 0.16 Add and review the requested sailplane/ultralight qualification roadmap, distinct curricula/aircraft gates and source references.
 
 ## 1. Foundation
 
@@ -39,6 +40,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 - [ ] 1.9 Extend shared scenario/review contracts for pressure references, geographic/navigation snapshots, checklist and radio events; freeze requirements per slice before parallel edits.
 - [ ] 1.10 Specify the declarative flight-experience package and LLM retrieval/validation/review boundary, using the EDDF catalog first; select provider/execution assumptions before integration (Q13). *(decision)*
 - [ ] 1.11 Choose compatible open-source license and contributor/data distribution rules; scope the free flight-school community's library, roles, sharing/review and moderation, plus hosting (Q5/Q6/Q12). *(decision)*
+- [ ] 1.12 Define the pilot-qualification profile contract for future sailplane/ultralight tracks: jurisdiction, authority, full licence/category, privileges, applicable source revisions and aircraft/objective mappings; retain Q14 choices until each track starts. *(decision)*
 
 ## 2. First browser exercise
 

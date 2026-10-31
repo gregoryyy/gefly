@@ -162,3 +162,25 @@ removal. Generated or unreviewed content must not appear instructor-approved.
 Check personal-data handling and AI/provider dependencies without assuming a
 central paid service is required to use the simulator. Free/open-source intention
 is user direction; a specific license or deployed service is not established yet.
+
+## E12. Does each pilot-qualification track match its selected framework?
+
+Scope: R-TRAIN-6. Before implementation acceptance, select the jurisdiction,
+authority, full qualification, aircraft/category and relevant privileges/launch
+methods; pin the applicable rule/curriculum revisions. Map each included objective,
+prerequisite and assessment to a source and the equipment/model needed to practice
+it. Keep software licensing separate from pilot qualifications.
+
+For a selected sailplane track, test the declared launch/soaring/energy-management
+and landing cases against applicable aircraft and training references. Treat TMG
+or additional launch privileges only within their specifically accepted scope.
+For ultralights, define the national category and its controls, handling/performance
+and exercises first; do not substitute a generic airplane syllabus or model.
+Use independent model fixtures and qualified curriculum review for each profile.
+
+Check incorrect/ambiguous profile identifiers, mismatched jurisdiction/category,
+unsupported equipment/privileges and stale source mappings. Reject silent fallback
+to PPL/CPL airplane criteria. A shared lesson, common acronym or simulator feature
+does not establish training-credit transfer or eligibility. Exact criteria and
+numeric tolerances are fixed when a track starts; this roadmap update does not
+implement or validate any sailplane/ultralight curriculum or aircraft model.

@@ -129,3 +129,13 @@ Validation's low README qualifier note was corrected and independently rechecked
 The two new source records are [the answers](input/2026-10-31-mac-controls-briefing-answers.md)
 and [the control profile](design/CONTROLS.md), with a primary GeoFS link. No runtime,
 Mac/peripheral compatibility, live-provider or updated PDF result is claimed.
+
+## 2026-10-31 15:49 — Licence-specific roadmap documentary validation
+
+`just check` passes for 61 Markdown records/eight native roles. SPEC has 49 unique
+IDs with only R-TRAIN-6 added; all earlier 48 retain their relative order. Whitespace
+checks pass. Independent quality and validate accepted the sailplane/ultralight
+roadmap, source/profile boundaries, Q14 choices and E12 gates with no findings.
+The [source note](research/2026-10-31-license-training-tracks.md) records inspected
+regulatory/training-body sources and edition/amendment limits. No current course,
+qualification eligibility, runtime model or approved training credit was evaluated.
