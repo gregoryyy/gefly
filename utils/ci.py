@@ -14,6 +14,12 @@ import unittest
 ROOT = Path(__file__).resolve().parent.parent
 
 
+def git_environment() -> dict[str, str]:
+    """Keep normal process settings while preventing inherited Git redirection."""
+    return {key: value for key, value in os.environ.items()
+            if not key.upper().startswith("GIT_")}
+
+
 def check_whitespace(root: Path) -> int:
     """Inspect all tracked working files, including files with no Git diff.
 
@@ -21,9 +27,11 @@ def check_whitespace(root: Path) -> int:
     remain authoritative for explicit exceptions such as preserved license CRLF.
     """
     root = root.resolve()
+    environment = git_environment()
     try:
         listing = subprocess.run(
             ["git", "ls-files", "-z"], cwd=root, capture_output=True, check=False,
+            env=environment,
         )
     except OSError as error:
         print(f"ERROR: cannot list tracked files: {error}", file=sys.stderr)
@@ -51,7 +59,7 @@ def check_whitespace(root: Path) -> int:
                  "diff", "--no-ext-diff", "--no-textconv", "--no-index", "--check",
                  "--", os.devnull, str(path)],
                 cwd=root, capture_output=True, text=True, encoding="utf-8",
-                errors="replace", check=False,
+                errors="replace", check=False, env=environment,
             )
         except OSError as error:
             print(f"ERROR: cannot check whitespace for {relative!r}: {error}",
@@ -99,7 +107,7 @@ def main(argv=None) -> int:
     try:
         version = subprocess.run(
             ["git", "--version"], cwd=ROOT, capture_output=True, text=True,
-            encoding="utf-8", errors="replace", check=False,
+            encoding="utf-8", errors="replace", check=False, env=git_environment(),
         )
     except OSError as error:
         print(f"ERROR: Git is required: {error}", file=sys.stderr)

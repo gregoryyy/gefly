@@ -24,10 +24,13 @@ class GitFixture(unittest.TestCase):
         self.outside.mkdir()
         self.git_executable = shutil.which("git")
         self.assertIsNotNone(self.git_executable, "Git is required for offline CI fixtures")
-        self.git_environment = {"GIT_CONFIG_NOSYSTEM": "1",
-                                "GIT_CONFIG_GLOBAL": os.devnull,
-                                "GIT_TERMINAL_PROMPT": "0"}
-        environment = patch.dict(os.environ, self.git_environment)
+        # Git environment variables override cwd and can redirect writes outside the fixture.
+        self.git_environment = {name: value for name, value in os.environ.items()
+                                if not name.upper().startswith("GIT_")}
+        self.git_environment.update({"GIT_CONFIG_NOSYSTEM": "1",
+                                     "GIT_CONFIG_GLOBAL": os.devnull,
+                                     "GIT_TERMINAL_PROMPT": "0"})
+        environment = patch.dict(os.environ, self.git_environment, clear=True)
         environment.start()
         self.addCleanup(environment.stop)
         self.git("init", "--quiet")
@@ -57,6 +60,68 @@ class GitFixture(unittest.TestCase):
         with redirect_stdout(stdout), redirect_stderr(stderr):
             code = ci.check_whitespace(self.root)
         return code, stdout.getvalue() + stderr.getvalue()
+
+
+class GitEnvironmentIsolationTests(unittest.TestCase):
+    def test_inherited_git_redirection_cannot_mutate_other_repository(self):
+        directory = tempfile.TemporaryDirectory(prefix="gefly-foreign-git-test-")
+        self.addCleanup(directory.cleanup)
+        foreign = Path(directory.name) / "foreign"
+        foreign.mkdir()
+        clean_environment = {name: value for name, value in os.environ.items()
+                             if not name.upper().startswith("GIT_")}
+        clean_environment.update({"GIT_CONFIG_NOSYSTEM": "1",
+                                  "GIT_CONFIG_GLOBAL": os.devnull,
+                                  "GIT_TERMINAL_PROMPT": "0"})
+        git_executable = shutil.which("git")
+        self.assertIsNotNone(git_executable, "Git is required for offline CI fixtures")
+
+        def foreign_git(*arguments):
+            return subprocess.run([git_executable, *arguments], cwd=foreign,
+                                  env=clean_environment, capture_output=True,
+                                  text=True, check=True).stdout
+
+        foreign_git("init", "--quiet")
+        foreign_git("config", "user.name", "External fixture owner")
+        foreign_git("config", "user.email", "external@example.invalid")
+        foreign_git("config", "commit.gpgsign", "false")
+        (foreign / "sentinel.txt").write_text("Keep this repository unchanged.\n", encoding="utf-8")
+        foreign_git("add", "--", "sentinel.txt")
+        foreign_git("commit", "--quiet", "-m", "External repository baseline")
+        original_head = foreign_git("rev-parse", "HEAD")
+        protected_paths = [foreign / ".git/index", foreign / ".git/config",
+                           foreign / "sentinel.txt"]
+        original_bytes = {path: path.read_bytes() for path in protected_paths}
+        redirected_environment = {
+            "GIT_DIR": str(foreign / ".git"),
+            "GIT_WORK_TREE": str(foreign),
+            "GIT_INDEX_FILE": str(foreign / ".git/index"),
+            "GIT_COMMON_DIR": str(foreign / ".git"),
+            "GIT_OBJECT_DIRECTORY": str(foreign / ".git/objects"),
+            "GIT_CONFIG_COUNT": "1",
+            "GIT_CONFIG_KEY_0": "user.name",
+            "GIT_CONFIG_VALUE_0": "Injected caller configuration",
+        }
+        for inherited in ({"GIT_DIR": str(foreign / ".git")}, redirected_environment):
+            with self.subTest(variables=sorted(inherited)):
+                fixture = GitFixture("runTest")
+                with patch.dict(os.environ, inherited):
+                    try:
+                        fixture.setUp()
+                        fixture_top = Path(fixture.git("rev-parse", "--show-toplevel").stdout.strip())
+                        fixture_files = fixture.git("ls-files").stdout
+                        fixture_head = fixture.git("rev-parse", "HEAD").stdout
+                        expected_top = fixture.root.resolve()
+                    finally:
+                        fixture.doCleanups()
+
+                self.assertEqual(foreign_git("rev-parse", "HEAD"), original_head)
+                for path, original in original_bytes.items():
+                    self.assertEqual(path.read_bytes(), original, str(path))
+                self.assertEqual(foreign_git("ls-files"), "sentinel.txt\n")
+                self.assertEqual(fixture_top.resolve(), expected_top)
+                self.assertEqual(fixture_files, "clean.txt\n")
+                self.assertTrue(fixture_head.strip())
 
 
 class WhitespaceTests(GitFixture):
@@ -111,6 +176,32 @@ class WhitespaceTests(GitFixture):
         with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
             code = ci.check_whitespace(self.outside)
         self.assertNotEqual(code, 0)
+
+    def test_inherited_git_directory_or_index_cannot_hide_tracked_defect(self):
+        self.write("README.md", "Clean overlapping file.\n")
+        self.write("bad.txt", "Tracked whitespace defect. \n")
+        self.commit()
+        foreign = self.outside / "foreign"
+        foreign.mkdir()
+
+        def foreign_git(*arguments):
+            return subprocess.run([self.git_executable, *arguments], cwd=foreign,
+                                  capture_output=True, text=True, check=True)
+
+        foreign_git("init", "--quiet")
+        foreign_git("config", "user.name", "External fixture owner")
+        foreign_git("config", "user.email", "external@example.invalid")
+        foreign_git("config", "commit.gpgsign", "false")
+        (foreign / "README.md").write_text("Clean overlapping file.\n", encoding="utf-8")
+        foreign_git("add", "--", "README.md")
+        foreign_git("commit", "--quiet", "-m", "External clean index")
+        for variable, target in (("GIT_DIR", foreign / ".git"),
+                                 ("GIT_INDEX_FILE", foreign / ".git/index")):
+            with self.subTest(variable=variable):
+                with patch.dict(os.environ, {variable: str(target)}):
+                    code, diagnostics = self.whitespace()
+                self.assertNotEqual(code, 0, diagnostics)
+                self.assertIn("bad.txt", diagnostics)
 
 
 class CiEntrypointTests(GitFixture):
