@@ -3,6 +3,26 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 11:11 — Run the JSBSim fixed-step E1 study
+
+TODO: 1.2.2 started. Agent: Claude Code orchestrator; code1 subagent.
+
+**Implementation notes**
+
+Added `studies/e1-jsbsim/` (README with predeclared budgets, harness, tests, WASM
+driver). JSBSim 1.3.3 with the bundled generic `c172x` (not the 172S): bit-identical
+determinism within one build; timestep refinement 1/120 vs 1/480 s differs by
+≤0.042 m altitude over 40 s (first-order convergence); ground rest and trim pass;
+15–31 µs per step. An emscripten build runs repeatably under Node 22 but differs
+from native at ~1e-13 relative, so replay must re-run on the same build.
+
+**Deviations**
+
+Measured on a cloud Intel Xeon, not the reference M1 Mac; no browser, latency or
+force/torque fixtures yet. Study tests run with `python -m unittest discover -s
+studies/e1-jsbsim` (11 tests with JSBSim, 6 skipped without); `utils/ci.py` does
+not discover them. Not yet independently reviewed.
+
 ## 2026-11-01 11:00 — Record reference platform and paired-iPhone control
 
 TODO: 1.2.1 refined; 1.13 added. Agent: Claude Code orchestrator; researcher and
