@@ -94,7 +94,7 @@ $S/venv-e1/bin/pip install "jsbsim==1.3.3" \
 $S/venv-e1/bin/python studies/e1-jsbsim/harness.py all --out $S/e1-results.json
 $S/venv-e1/bin/python -m unittest discover -s studies/e1-jsbsim -v
 python3 -m unittest discover -s studies/e1-jsbsim     # without jsbsim: engine tests skip
-python3 utils/ci.py   # repository gate; it discovers tests under utils/ only and does NOT run these
+python3 utils/ci.py   # repository gate; runs these too (engine tests skip without jsbsim)
 # optional WASM path, all in $S (SRC = $S/src/jsbsim-1.3.3 from
 #   git clone --depth 1 --branch v1.3.3 https://github.com/JSBSim-Team/jsbsim.git)
 git clone https://github.com/emscripten-core/emsdk && cd emsdk && ./emsdk install 6.0.13 \
