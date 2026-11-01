@@ -161,6 +161,13 @@ Resolved: 2026-11-01 07:22, user; carried into SDLC, AGENTS, SPEC R-AGENT-7, the
 
 Why: operating limits, engine/propeller, systems, instrument ranges and procedures must refer to one applicable configuration. Proposed: research availability and redistribution rights for a specific C172S configuration before recommending a conventional panel or glass cockpit. Blocking: TODO 1.3 and aircraft-specific implementation; generic studies may continue.
 
+Answer: **2026-11-01 10:27, user** (recorded by orchestrator, Claude Code;
+[input](input/2026-11-01-first-172s-configuration.md)): “sure.” First configuration:
+**Cessna 172S, serials 172S9491–172S9809, classic panel** (before the NAV III/G1000
+option at 172S9810), per the [172S/FR172 sources](research/2026-11-01-c172s-fr172-sources.md).
+Still open: exact avionics/radio fit and flight-manual revision to model, and the
+FR172 sub-model once FAA A18EU is read.
+
 Confirmation: **2026-11-01 07:08, user** (recorded by orchestrator, Claude Code; [confirmations](input/2026-11-01-confirmations.md)): “gpl3+, yes, yes”. The user confirms the *it depends on the data* reading and the
 order: **classic-panel 172S first, FR172 second** when its data suffice.
 
@@ -184,7 +191,7 @@ values remain unverified. Update after network access was enabled: 172S values
 verified against EASA TCDS IM.A.051 Issue 11 (stated equivalent to FAA 3A12 Rev 88)
 and a public copy of FAA 3A12 Rev 80 (IO-360-L2A 180 hp, McCauley 1A170E/JHA7660,
 2,550 lb; page-cited). The Cessna NAV III (G1000) manual starts at 172S9810, so
-172S8001–9809 are classic panel. Researcher proposal (not a decision): first
+172S8001–9809 are classic panel. Researcher proposal, accepted by the user at 2026-11-01 10:27: first
 configuration 172S9491–9809. FR172 (A18EU) still unverified: FAA DRS refused
 non-browser downloads. JSBSim has no 172S/FR172 model, and its C172 files carry
 mixed LGPL/GPL and "not to be sold" terms needing a Q5 rights decision.

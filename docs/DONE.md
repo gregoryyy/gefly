@@ -3,6 +3,19 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 10:27 — Select the first 172S configuration
+
+TODO: 1.3 in progress. Agent: Claude Code orchestrator (no subagents).
+
+**Implementation notes**
+
+The user accepted the researcher's proposal: Cessna 172S serials 172S9491–172S9809
+with the classic panel. Recorded in a new input record, GAPS Q3, SPEC and TODO 1.3.
+
+**Deviations**
+
+Avionics/radio fit, flight-manual revision and FR172 sub-model remain open.
+
 ## 2026-11-01 10:11 — Verify 172S sources; FR172 still open
 
 TODO: 1.3 in progress. Agent: Claude Code orchestrator; researcher subagent.

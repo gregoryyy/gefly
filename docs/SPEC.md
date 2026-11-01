@@ -16,8 +16,8 @@ first, glass cockpit later**, and **QNH, QFE and standard pressure** altimeter
 settings. The first input baseline is **Mac desktop with keyboard and touchpad**,
 optionally **a yoke/joystick and rudder pedals**. Mobile orientation remains a
 later capability. Reuse GeoFS's documented control/settings interaction and
-defaults conceptually. The C172 candidates are a **classic-panel 172S first, then
-the Reims FR172**, modeled as distinct engine/propeller configurations so learners can
+defaults conceptually. The C172 candidates are a **classic-panel 172S first (serials
+172S9491–172S9809), then the Reims FR172**, modeled as distinct engine/propeller configurations so learners can
 compare performance, based on public FAA (and applicable EASA) documentation as
 far as the available data allow. The **first exercise is a complete circuit:
 take-off, traffic pattern and landing**, at **Frankfurt-Egelsbach (EDFE)** inside
