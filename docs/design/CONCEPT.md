@@ -28,8 +28,9 @@ experience creation**: define a territory, navigation assets, charts and learnin
 intent to create a realistic experience with bounded AI interaction. Ground the
 first regional model in **EDDF and a 100 NM radius from its official airport
 reference point**, using applicable real map/reference material. Reuse open
-physics engines and aircraft models wherever practical. Exact licenses, datasets,
-engine/model, hosting and LLM provider have not been selected.
+physics engines and aircraft models wherever practical. The project license is
+GPL-3.0-or-later; datasets, engine/model, hosting and LLM provider have not been
+selected.
 
 The proposed value is a visible connection between what the learner practices,
 what the simulator actually models and the evidence behind it. An introductory

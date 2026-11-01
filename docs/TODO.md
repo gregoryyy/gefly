@@ -14,8 +14,9 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 - [x] 0.8 Initialize local version control and record actual state on `bootstrap/project-foundation`.
   - [x] 0.8.1 Select `gregoryyy/gefly` as the new public repository under explicit user authorization (Q6).
   - [x] 0.8.2 Create the initial commit, publish the new public repository and verify the pushed `main` revision; see DONE/RESULTS.
-- [ ] 0.9 Select a compatible open-source license and review copied tooling/reference rights before distribution (Q5). *(decision)*
+- [x] 0.9 Select a compatible open-source license and review copied tooling/reference rights before distribution (Q5): GPL-3.0-or-later with a non-proprietary, permissive-preferred third-party policy; `LICENSE` added 2026-11-01.
 - [ ] 0.10 Resolve aircraft variant/avionics, browser/device/controls and first exercise as their milestones require (Q3/Q4/Q7). *(decision)*
+  - [x] 0.10.2 Record Q3/Q7/Q10 partial answers: FR172 and/or 172S engine configurations; first exercise take-off/circuit/landing; first airport Frankfurt-Egelsbach (EDFE). Exact sub-models, avionics, runway and criteria remain TODO 1.3/1.5/1.7.
   - [x] 0.10.1 Record Q4: Mac desktop keyboard/touchpad; optional yoke/joystick and rudder pedals; GeoFS-inspired settings. Exact reference versions/budgets remain TODO 1.2.1.
 - [x] 0.11 Capture the GeoFS strengths/gaps and cockpit/pressure decisions; refine the product specification, training design and dependency/evaluation plan.
 - [x] 0.12 Research documented GeoFS capabilities and original community feedback, then independently review the refinement; record limits rather than accepting untested competitor claims.
@@ -32,15 +33,15 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
   - [ ] 1.2.1 Specify the reference Mac, macOS/browser versions and optional yoke/joystick/pedals; refine GeoFS-inspired settings and measure trial timestep, latency and numerical budgets using Q4's selected baseline.
   - [ ] 1.2.2 Compare open physics engines and applicable aircraft-model/adapter reuse first, including browser deployment and distinct licenses; justify custom code only for documented gaps or reference harnesses. *(variant)*
   - [ ] 1.2.3 Review observations and record the decision in ARCH/SBOM/RESULTS.
-- [ ] 1.3 Select the exact C172 configuration; source applicable aircraft/avionics documents and create a rights/applicability manifest (Q3/Q5). *(decision)*
+- [ ] 1.3 Select the exact FR172 and/or 172S configurations (sub-model/year, engine/propeller, classic avionics) and their order; source public FAA/EASA type-certificate and other applicable documents; create a rights/applicability manifest per configuration (Q3/Q5). *(decision)*
 - [ ] 1.4 Agree units, frames, state/input schemas, replay metadata and independent reference fixtures before parallel coding.
-- [ ] 1.5 Freeze one exercise's acceptance criteria and numeric tolerances in SPEC/EVAL with product and instructor review (Q7).
+- [ ] 1.5 Freeze the first exercise's (take-off, circuit, landing at EDFE) acceptance criteria and numeric tolerances in SPEC/EVAL with product and instructor review; identify the review partner (Q7).
 - [ ] 1.6 Review foundation independently through quality and validate before milestone 2.
-- [ ] 1.7 Source the official EDDF airport reference point, define its 100 NM geodesic region and select training airports/runways/data editions; review elevations/datums, radio/fix coverage and map/chart rights (Q10). *(decision)*
+- [ ] 1.7 Source the official EDDF airport reference point, define its 100 NM geodesic region and source Frankfurt-Egelsbach (EDFE) as the first airport (runway, circuit, elevation, frequencies) and further training airports/data editions; review elevations/datums, radio/fix coverage and map/chart rights (Q10). *(decision)*
 - [ ] 1.8 Implement Q11's scenario-first briefing decision into source/validity/failure specifications, then scope text radio phraseology, checklist and circuit objectives (Q7); live provider/rollout comes later. *(decision)*
 - [ ] 1.9 Extend shared scenario/review contracts for pressure references, geographic/navigation snapshots, checklist and radio events; freeze requirements per slice before parallel edits.
 - [ ] 1.10 Specify the declarative flight-experience package and LLM retrieval/validation/review boundary, using the EDDF catalog first; select provider/execution assumptions before integration (Q13). *(decision)*
-- [ ] 1.11 Choose compatible open-source license and contributor/data distribution rules; scope the free flight-school community's library, roles, sharing/review and moderation, plus hosting (Q5/Q6/Q12). *(decision)*
+- [ ] 1.11 Choose contributor terms (e.g. DCO or a contributor agreement) that keep a later relaxation of GPL-3.0-or-later possible, and data distribution rules; community library, roles, sharing/review, moderation and hosting are deferred to roadmap phase 3 (Q5/Q6/Q12). *(decision)*
 - [ ] 1.12 Define the pilot-qualification profile contract for future sailplane/ultralight tracks: jurisdiction, authority, full licence/category, privileges, applicable source revisions and aircraft/objective mappings; retain Q14 choices until each track starts. *(decision)*
 
 ## 2. First browser exercise

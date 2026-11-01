@@ -3,7 +3,7 @@
 No runtime language, package manager, graphics engine or dynamics engine has been selected. There are no application dependencies or lockfiles yet. This overview does not replace future machine-readable inventories.
 
 The user intends a **free/open-source project** and directs **reuse of open physics
-engines/models wherever practical**. The exact project license is still open;
+engines/models wherever practical**. Original project material is **GPL-3.0-or-later** (GAPS Q5);
 engine, aircraft model, wrapper, imagery, geodata, charts and community content
 must each retain their own license/provenance. Select a compatible distribution
 plan rather than assuming a single engine license covers all these materials.
@@ -27,8 +27,7 @@ The document recipes are adapted from the source project's justfile. Generated
 and LICENSE were inspected before publication: its declared GPL-3.0-or-later terms
 are recorded for derived BOOT/build/PDF material in
 [THIRD_PARTY_NOTICES](../THIRD_PARTY_NOTICES.md), with the full license text under
-`LICENSES/`. This is separate from choosing a blanket license for Gefly's original
-material, which remains Q5.
+`LICENSES/`. Gefly's original material is now also GPL-3.0-or-later (Q5, 2026-11-01); see `LICENSE`.
 
 ## Selection and updates
 
@@ -73,4 +72,13 @@ Browser orientation support and any replay/video library must be evaluated on th
 chosen browser/device matrix before dependency adoption. GeoFS community add-ons
 are research examples, not preapproved dependencies or accepted aircraft data.
 
-Source license selection remains GAPS Q5; a `LICENSE` file has deliberately not been fabricated.
+## Third-party license policy (GAPS Q5)
+
+Admit only non-proprietary licenses: OSI-approved software licenses and open
+data/content licenses. **Prefer permissive** terms (MIT, BSD, Apache-2.0, ISC,
+CC0/public domain, CC-BY) so the project's GPL-3.0-or-later can be relaxed later.
+A copyleft component (for example LGPL/GPL software such as JSBSim or FlightGear
+aircraft packages, or ODbL share-alike data such as OpenStreetMap) needs a
+recorded justification and an isolation/replacement note before adoption.
+Proprietary, non-commercial-only or no-derivatives material is excluded from the
+distribution; link to it instead when it is a needed reference.
