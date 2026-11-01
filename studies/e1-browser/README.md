@@ -113,3 +113,25 @@ and are not evidence for or against the budget. Next: the same runs on the refer
 M1/Chrome (exact versions, renderer string, refresh rate), then the stack decision
 (TODO 1.2.3). Deferred to that run: worker and main-thread CPU headroom, and the
 R-SIM-2 check that different render rates leave the simulation unchanged.
+
+## Results on the reference M1/Chrome (hosted test page)
+
+Run by the user on 2026-11-01 (11:37–11:39 UTC) on the MacBook Pro M1, Chrome 156
+(user agent; `hardwareConcurrency` 8), through the private hosted test page.
+**Not cross-origin isolated**: `performance.now()` is coarsened to 100 µs, which
+quantizes per-step cost. Raw JSON: [worker benchmark](results/2026-11-01-m1-chrome156-sim.json).
+
+| Measure | Result | Budget |
+| --- | --- | --- |
+| Step cost p99 (paced, A / B / live) | 1000 / 900 / 800 µs; p50 200 µs; max 5.3 ms | ≤ 830 µs: **fail as measured**, timer-limited |
+| Unpaced burst cost | 14.8–18.9 µs per step (≈ 0.2% of a 8.33 ms step) | headroom indicator |
+| Missed steps (> 8.3 ms late) | 1 per 30 s in A and B (0.33 per 10 s), 1 in the 10 s live run; max lag 13.2 ms (2 steps); none dropped | ≤ 1 per 10 s: pass |
+| Input-to-state latency p95 (40 live inputs) | 16.9 ms (p50 8.7 ms; 17/40 inputs late) | ≤ 25 ms: pass |
+| Replay digest A = B | `7c8783f3440f387a`, identical | identical: pass |
+
+The paced p99 is dominated by the 100 µs timer granularity and worker wake-up cost:
+the burst run shows ≈ 15 µs of actual WASM compute per step, and simulation time
+tracked wall time to 0.99995. Re-measure step cost cross-origin isolated (local
+runner) before treating the p99 as a budget failure. The replay digest equals the
+container's WASM digest for the same build and inputs, so this build replayed
+bit-identically on Intel Xeon/Linux and Apple M1/macOS.
