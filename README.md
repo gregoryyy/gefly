@@ -1,6 +1,6 @@
 # Gefly
 
-Gefly is a flight simulator that starts with approachable exercises and progressively adds realistic flight dynamics, aircraft controls and avionics. The first target is a **Cessna 172 for EASA PPL learning**, delivered as a **web application**, with GeoFS as an interaction reference. CPL exercises follow later. The precise aircraft variant, year, avionics and implementation stack are still open.
+Gefly is a flight simulator that starts with approachable exercises and progressively adds realistic flight dynamics, aircraft controls and avionics. The first target is a **Cessna 172 for EASA PPL learning**, delivered as a **web application**, with GeoFS as an interaction reference. CPL exercises follow later. The first configuration is a classic-panel Cessna 172S (serials 172S9491–172S9809); the radio/avionics fit and parts of the implementation stack are still open.
 
 The intended product is **free and open source**, with a community site organized
 around flight-school practice. The first regional model is **EDDF plus a 100 NM
@@ -9,7 +9,8 @@ to assemble sourced territory/navigation/chart packages and support AI interacti
 The architecture favors reusing open physics engines and aircraft models. The
 license is GPL-3.0-or-later; the first exercise is a take-off, circuit and landing
 at Frankfurt-Egelsbach (EDFE) in a classic-panel Cessna 172S, with the Reims FR172 as a second configuration. The dynamics engine
-is JSBSim (GAPS Q17); rendering, providers, hosting and deployment are still decisions.
+is JSBSim, rendered with CesiumJS (three.js fallback) in TypeScript (GAPS Q17);
+providers, hosting and deployment are still decisions.
 
 The aim is to connect each modeled behavior to aircraft documentation and each exercise to an explicit learning objective. Assistance and model limitations should stay visible as realism increases. Aircraft fidelity and learning benefits are goals to evaluate; this repository does not yet contain a runnable simulator or establish eligibility for training credit.
 
