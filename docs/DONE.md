@@ -3,6 +3,38 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 18:26 — Fix Codex review findings on PRs #4–#6
+
+TODO: 0.19 in progress. Agent: Claude Code orchestrator; code1 subagent. Findings
+from the Codex local review ([report](reviews/2026-11-01-first-claude-prs.md)).
+
+**Implementation notes**
+
+1. The JSBSim study's stationary and cost fixtures now fail on any `run()` returning
+   False or not advancing sim time by dt; 7 fake-FDM tests (no jsbsim needed).
+2. `studies/e1-jsbsim/requirements.txt` pins jsbsim 1.3.3 and numpy 2.5.4 with
+   hashes (CPython 3.13 manylinux x86-64 only); README uses
+   `pip install --require-hashes -r …`. Fresh-venv install verified; recorded F1
+   digests unchanged.
+3. SPEC, README and CONCEPT now state JSBSim is selected (Q17), separate from the
+   open model, rendering and hosting choices.
+
+**Deviations**
+
+Formal peer acceptance stays blocked: the Codex CLI failed to initialise on a
+read-only filesystem; a re-run with an updated packet is needed. Hashes cover one
+platform only; the original run's numpy version was not recorded.
+
+## 2026-11-01 18:16 — Record local review of first Claude PRs
+
+Agent: Codex orchestrator; first_pr_docs_review performed independent local
+source inspection. Reviewed Claude PRs #4–#6 at `48b2991`; three medium findings
+remain unresolved. [Report](reviews/2026-11-01-first-claude-prs.md) includes
+reproductions, validation scope and frozen packet hash. The fresh Codex CLI
+failed before reviewer initialization on the read-only filesystem; formal peer
+acceptance remains blocked and TODO 0.19 stays open. No product fixes made.
+Current foundation CI passed 41 tests; study tests passed 7 and skipped 9.
+
 ## 2026-11-01 18:18 — Draft scenario and review contract extension v1.1
 
 TODO: 1.9 in progress. Agent: Claude Code orchestrator; product subagent.
