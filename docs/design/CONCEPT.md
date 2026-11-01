@@ -194,8 +194,9 @@ reuse/adaptation path and justify a custom replacement only by a documented gap.
 Keep model-data licensing and aircraft-specific validation separate from the
 engine's availability or reputation. A reused model still needs explicit units,
 configuration, provenance, reference cases and a browser integration study.
-The dynamics engine is JSBSim (GAPS Q17); the rendering engine, the 172S model
-implementation and the deployment stack remain open;
+The dynamics engine is JSBSim and the web stack is CesiumJS (three.js fallback),
+MapLibre and TypeScript (GAPS Q17); the 172S model implementation and the deployment
+stack remain open;
 [ARCH](../ARCH.md) maintains those decisions.
 
 ## Role of AI

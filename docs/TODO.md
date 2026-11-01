@@ -28,6 +28,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 - [x] 0.18 Scope the cross-provider peer gate per Q15; superseded 2026-11-01 11:54 by proclens's batched cadence (every few PRs, *peer pending* in between, coverage required before milestone acceptance/release).
 - [ ] 0.19 Run the first batched Codex peer review of Claude-authored work since `3faf9c8` (PRs #4–#6 and later) on a machine with the Codex CLI.
 - [x] 0.20 Select model size and reasoning effort per task by difficulty and risk (Q20); recorded in AGENTS, BOOT and the agent workflow.
+- [ ] 0.21 Run the reciprocal Claude peer review of Codex-authored work (PRs #27–#30: 1.3.1, 1.5.2, 1.14, 1.15, 2.0) through the router with a frozen packet; required with 0.19 before milestone 1 acceptance.
 
 ## 1. Foundation
 
@@ -36,7 +37,8 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
   - [x] 1.1.1 Add the shared offline repository-tool gate and GitHub Actions matrix, negative fixtures, pinned action/update policy and independent E0-CI review; local, hosted and actual Claude peer evidence are recorded in RESULTS and the CI review reports.
   - [x] 1.1.3 Add separate nonempty, zero-skip Node test coverage for the assessment-airspeed module to the shared local/hosted gate, preserving assurance checks and failure propagation.
 - [ ] 1.2 Choose web stack, rendering/geography strategy and dynamics architecture through a bounded E1 study. *(decision)*
-  - [ ] 1.2.1 Reference platform selected (Q16): MacBook Pro M1, current macOS, Chrome latest first, Safari second; pin exact versions per measurement. Specify optional yoke/joystick/pedals and the paired-iPhone profile; refine GeoFS-inspired settings and measure trial timestep, latency and numerical budgets using Q4's selected baseline.
+  - [ ] 1.2.1 Reference platform selected (Q16): 14-inch MacBook Pro (Apple M1 Pro, 120 Hz), current macOS, Chrome latest first, Safari second; pin exact versions per measurement. Specify optional yoke/joystick/pedals and the paired-iPhone profile; refine GeoFS-inspired settings and measure trial timestep, latency and numerical budgets using Q4's selected baseline.
+    - [ ] 1.2.1.1 Re-test CesiumJS with real terrain and imagery tiles at device resolution on the reference Mac, with pinned macOS/Chrome versions, before milestone 2 acceptance.
   - [ ] 1.2.2 Complete the reuse assessment: JSBSim/native/WASM and limited reference-Mac evidence exist, and the engine LGPL exception is accepted. Remaining work is product load/platform verification, model-data/adapter rights and integration gaps; retain study limitations and justify custom model components under R-REUSE-1. *(variant)*
   - [x] 1.2.3 Review E1 observations and select the stack: JSBSim worker, TypeScript, CesiumJS with three.js fallback and MapLibre (Q17, 2026-11-01). Recorded Mac results support the lightweight study; remaining real-terrain, device-resolution and isolated timing checks are tracked in 1.2.1 and RESULTS.
 - [ ] 1.3 (172S serials 9491–9809 selected 2026-11-01 10:27; FR172 sub-model pending. Started: [172S/FR172 source survey](research/2026-11-01-c172s-fr172-sources.md); verified TCDS extracts still needed; manifest (PR #14) and POH values (PR #17) merged.) Select the exact classic-panel 172S configuration first, then the FR172 (sub-model/year, engine/propeller, classic avionics); source public FAA/EASA type-certificate and other applicable documents; create a rights/applicability manifest per configuration (Q3/Q5). *(decision)*
