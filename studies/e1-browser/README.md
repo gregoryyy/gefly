@@ -152,9 +152,10 @@ object without its outer braces; they were added, values unchanged).
 
 Observations:
 
-- **The GPU is an Apple M1 Pro** (WebGL renderer string), with a 120 Hz display;
-  GAPS Q16 recorded "M1". The budget scales to the measured refresh, so it still
-  applies; the platform record needs the user's confirmation.
+- **Chip:** the WebGL renderer string reports "Apple M1 Pro" and the display ran at
+  120 Hz; the user confirmed the machine is an **M1** (GAPS Q16, 2026-11-01). The
+  120 Hz refresh suggests an external display; record the display on the next run.
+  The budget scales to the measured refresh, so it still applies.
 - Viewport was 1232×817 CSS px at device pixel ratio 2 rendered at CSS resolution,
   not the declared 1440×900; repeat at 1440×900 and with `?dpr=device` for the
   full-resolution case.

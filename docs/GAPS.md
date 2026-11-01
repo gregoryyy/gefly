@@ -92,6 +92,14 @@ Resolved (engine): 2026-11-01 11:38, user; carried into [ARCH](ARCH.md), [SBOM](
 Why: TODO 1.2.1 needs a measured reference platform for timestep, latency and
 frame budgets, and the optional input profiles.
 
+Confirmation: **2026-11-01 13:25, user** (recorded by orchestrator, Claude Code;
+[input](input/2026-11-01-chip-confirmation.md)): “M1 not pro”. The reference Mac is
+an Apple M1. Observation to reconcile: Chrome's WebGL renderer string on the
+recorded runs reported "Apple M1 Pro", and the display measured 120 Hz, which the
+13-inch M1 MacBook Pro's built-in panel does not provide (an external 120 Hz display
+would explain it). Results keep the reported strings; budgets scale to the measured
+refresh.
+
 Answer: **2026-11-01 11:00, user** (recorded by orchestrator, Claude Code;
 [input](input/2026-11-01-reference-platform.md)): “macbook pro m1, latest macos,
 webkit browsers esp. chrome latest. optional controls: bind orientation from
