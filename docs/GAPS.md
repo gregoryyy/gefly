@@ -180,7 +180,13 @@ holds unless the data research contradicts it). Manufacturer POH/AFM text remain
 references, without copying manuals (R-DATA-1). Source survey:
 [172S/FR172 sources](research/2026-11-01-c172s-fr172-sources.md): leads point to FAA
 TCDS 3A12 (172S) and A18EU (FR172E–K); FAA/EASA hosts were unreachable, so all
-values remain unverified. JSBSim has no 172S/FR172 model, and its C172 files carry
+values remain unverified. Update after network access was enabled: 172S values
+verified against EASA TCDS IM.A.051 Issue 11 (stated equivalent to FAA 3A12 Rev 88)
+and a public copy of FAA 3A12 Rev 80 (IO-360-L2A 180 hp, McCauley 1A170E/JHA7660,
+2,550 lb; page-cited). The Cessna NAV III (G1000) manual starts at 172S9810, so
+172S8001–9809 are classic panel. Researcher proposal (not a decision): first
+configuration 172S9491–9809. FR172 (A18EU) still unverified: FAA DRS refused
+non-browser downloads. JSBSim has no 172S/FR172 model, and its C172 files carry
 mixed LGPL/GPL and "not to be sold" terms needing a Q5 rights decision.
 
 Answer: partial update, **2026-10-31 15:09, user** (recorded by orchestrator):

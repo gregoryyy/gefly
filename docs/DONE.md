@@ -3,6 +3,25 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 10:11 — Verify 172S sources; FR172 still open
+
+TODO: 1.3 in progress. Agent: Claude Code orchestrator; researcher subagent.
+
+**Implementation notes**
+
+With network access enabled, the researcher verified the 172S against EASA TCDS
+IM.A.051 Issue 11 and a public copy of FAA TCDS 3A12 Rev 80, with page citations,
+and recorded two small discrepancies between them. The NAV III (G1000) manual
+title page puts G1000 at 172S9810 and on. The researcher proposes 172S9491–9809
+as the first classic configuration.
+
+**Deviations**
+
+FAA DRS returned 403 to non-browser downloads; no workaround was attempted.
+Current FAA 3A12 Rev 88, A18EU (FR172), 1E10 and Continental engine sheets were
+not read directly. FR172 values remain unverified. Downloaded PDFs stay in the
+session scratchpad, not the repository.
+
 ## 2026-11-01 10:08 — Complete EDFE source survey with operator material
 
 TODO: 1.7 in progress. Agent: Claude Code orchestrator; researcher subagent.
