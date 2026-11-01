@@ -1,6 +1,6 @@
 # Target architecture
 
-Status: proposed component boundaries; **web application**, **Cessna 172**, **EASA PPL first**, **classic instruments before glass** and **QNH/QFE/standard-pressure coverage** are user decisions. Aircraft candidates are the Reims FR172 and/or 172S as distinct engine configurations (Q3); the first exercise is a circuit at Frankfurt-Egelsbach (EDFE). Exact sub-model/radio fit, language, renderer, geographic data provider and dynamics engine are open. This describes the target before code exists. Expanded scope and proposed delivery slices are in [the training design](design/TRAINING.md).
+Status: proposed component boundaries; **web application**, **Cessna 172**, **EASA PPL first**, **classic instruments before glass** and **QNH/QFE/standard-pressure coverage** are user decisions. Aircraft: a classic-panel 172S first, then the Reims FR172, as distinct engine configurations (Q3); the first exercise is a circuit at Frankfurt-Egelsbach (EDFE). Exact sub-model/radio fit, language, renderer, geographic data provider and dynamics engine are open. This describes the target before code exists. Expanded scope and proposed delivery slices are in [the training design](design/TRAINING.md).
 
 Additional user decisions: a **free/open-source flight-school community site**,
 **LLM-assisted flight-experience authoring and AI interaction**, an initial

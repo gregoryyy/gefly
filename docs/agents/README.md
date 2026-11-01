@@ -105,7 +105,8 @@ prove actual provider identity or enforce runtime permissions independently.
 
 ## Independent cross-provider gate
 
-Use [peer](peer.md) after integration in addition to quality and validate. Codex-
+Use [peer](peer.md) after integration in addition to quality and validate when
+the [SDLC scope](../SDLC.md#cross-provider-peer-gate) requires it (GAPS Q15). Codex-
 authored work goes to Claude, Claude-authored work to Codex, through a fresh CLI
 session using `just peer-review AUTHOR PACKET`. A model alias or another local
 agent is not another provider. Preview with `just peer-preview`; run offline
