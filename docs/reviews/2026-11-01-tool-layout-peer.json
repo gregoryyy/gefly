@@ -1,0 +1,240 @@
+{
+  "status": "completed",
+  "accepted": true,
+  "dispositionBy": "Orchestrator combining complete independent criterion coverage; not a new provider response",
+  "revision": "8180fb24bc593fa8ee8b2bd4bf96aa70a8c1f15d",
+  "author_provider": "codex",
+  "reviewer_provider": "claude",
+  "source_snapshot": {
+    "base": "4339693144ea1db1549cb1eefe87ac03bba6ec6d",
+    "files": 192,
+    "sha256": "6c3b75d114e9296d1dd3813c35352569f9535e6bca68da767b868c647691af1e",
+    "excludes": "docs/reviews and ignored output; two changed historical review inputs separately frozen below"
+  },
+  "historicalNavigationInputs": [
+    {
+      "path": "docs/reviews/2026-10-31-ci-quality.md",
+      "beforeSha256": "2a5da9377d41d6041942967e4e6496439c34c958b65fb66d1de8e066734da781",
+      "afterSha256": "ac757013924ed4e6f21eb3b4fba8f3397fda1db161b3159648491fc02762df4a"
+    },
+    {
+      "path": "docs/reviews/2026-10-31-ci-validation.md",
+      "beforeSha256": "659b9dc83a7db68b47baef77e6347a272b3fbb79ae49b070692a099f8f98af22",
+      "afterSha256": "56b3aeb3bb3ab6f7f18a9d663e5b6d42a0f78ef1cd8a01df65d70eb83f197d73"
+    }
+  ],
+  "invocation": {
+    "requested_model": "opus",
+    "requested_effort": "high",
+    "fresh_context_per_attempt": true,
+    "safe_mode": true,
+    "tools": [],
+    "session_persistence": false
+  },
+  "attempts": [
+    {
+      "scope": "relocation",
+      "result": {
+        "status": "blocked",
+        "accepted": false,
+        "author_provider": "codex",
+        "reviewer_provider": "claude",
+        "packet": {
+          "path": "output/assurance/tool-layout-peer-packet.md",
+          "sha256": "bdf7c28436b1f8416637cd61f4ba1067d0f5d87a22fa7d8ea3419c2147e89d2b",
+          "revision": "8180fb24bc593fa8ee8b2bd4bf96aa70a8c1f15d"
+        },
+        "cli": {
+          "executable": "claude",
+          "version": "2.1.193"
+        },
+        "model_evidence": [
+          "claude-haiku-4-5-20251001",
+          "claude-opus-4-8"
+        ],
+        "review": {
+          "quality": [],
+          "validation": [
+            {
+              "criterion": "T1 Layout/provenance: assurance runtime/tests/inventory under utils/assure, CI under utils/ci, docs/assure retained, 13 vendored files byte-identical with unchanged source identities/hashes",
+              "expected": "All non-vendor assurance/CI assets relocate; 13 Propeller files move with original bytes/paths/SHA-256 and only destination metadata changes",
+              "observed": "Diff shows 13 vendor files as 100%-similarity renames to utils/assure/upstream/; UPSTREAM.json keeps commit pin 99dc6005…, unchanged source paths and sha256 values, only destination updated to utils/assure/upstream/; runtime/tests under utils/assure/, run.py/check.py/reporter/tests under utils/ci/, docs/assure contract/catalog unchanged",
+              "status": "pass",
+              "evidence": "Source diff rename blocks for 13 files (similarity 100%); utils/assure/UPSTREAM.json listing; graph.ts/cli.ts under utils/assure/src"
+            },
+            {
+              "criterion": "T2 Entry points/discovery: just commands operational, roots resolve independently of cwd, 137 Python and 72 Node tests discovered/executed with explicit skips",
+              "expected": "ci/check/test-tools/assure/assure-test/lineage/reqs work; ROOT derives from file location; all test identities discovered and run",
+              "observed": "justfile updated to utils/ci/run.py, utils/ci/check.py, utils/assure/src/cli.ts; run.py/check.py ROOT=parents[2], cli.ts ROOT='../../../' (correct for added depth); utils/ci/__init__.py added and package-relative imports updated; recorded gate from /private/tmp ran 137 Python tests, 72 Node assurance tests passed, 14 study executed / 9 skipped",
+              "status": "pass",
+              "evidence": "justfile/foundation.yml diff; run.py ROOT and run_tests; test_run.py/test_check.py relative-import changes; Final shared gate output ('Ran 137 tests', 'Assurance tests: passed (72 tests)')"
+            },
+            {
+              "criterion": "T3 Revision/inventory safety: committed 4339693 and diff remain usable; legacy fallback limited to old-only committed; worktree/current-only/mixed missing current inventory fail closed; current tampering not hidden by valid legacy copy",
+              "expected": "Old-only committed snapshots read legacy inventory; all other missing-current-inventory cases raise upstream-inventory; current vendor bytes checked even when a valid legacy copy exists",
+              "observed": "graph.ts gates oldLayout on revision!=worktree && !currentLayout && assure/UPSTREAM.json present; missing-inventory guard fires for any current-layout or worktree-old path; regression test covers old-only (0 errors), worktree-old (error), mixed-committed (error on utils/assure/UPSTREAM.json), current-only (error), and mixed-pinned (upstream-integrity on tampered current bytes); recorded CLI read committed 4339693 with 0 errors and exercised a real diff",
+              "status": "pass",
+              "evidence": "graph.ts lines (currentLayout/oldLayout/inventoryPath); graph.test.ts AS8 additions; Recorded verification: 'Actual new CLI read committed 4339693 … with 0 errors'"
+            },
+            {
+              "criterion": "T4 Outputs and safety: generated output moves to ignored utils/assure/out; output/symlink/traversal rejection preserved; checking does not mutate source/Git or invoke network; old paths are not current fallback aliases",
+              "expected": "lineage writes only ignored utils/assure/out, refuses escaping/symlink outputs; check is read-only; worktree does not alias old layout",
+              "observed": ".gitignore changed assure/out/→utils/assure/out/; cli.ts writeLineage updated with containment, check-ignore and symlink guards intact; worktree inventory logic cannot fall back to old layout; cli.test.ts lineage/symlink test relocated and passing per recorded Node run",
+              "status": "pass",
+              "evidence": ".gitignore diff; cli.ts writeLineage; cli.test.ts AS7 relocation; graph.ts worktree guard; Final gate 'Assurance integrity: passed'"
+            },
+            {
+              "criterion": "T5 Integration: workflow invokes relocated runner; current docs/links updated with old upstream paths retained; 49 DONE records unchanged; no new aircraft/rights/MVP/dependency/provider assertions",
+              "expected": "foundation.yml and docs point to utils/ci/run.py and utils/assure; UPSTREAM.json retains original source paths; DONE append-only; no scope changes claimed",
+              "observed": "foundation.yml → utils/ci/run.py; README/ARCH/BOOT/SBOM/ASSR/SPEC updated; UPSTREAM.json source fields keep original assure/ paths; DONE.md diff only prepends the new entry with prior entries unchanged; TODO adds 1.15 only; no new data/rights/MVP acceptance asserted",
+              "status": "pass",
+              "evidence": "foundation.yml/README/SBOM/BOOT diffs; UPSTREAM.json source vs destination; DONE.md append-only diff; TODO.md 1.15 line"
+            },
+            {
+              "criterion": "T5 Integration (historical reviews): five old-review hrefs receive recorded-revision permalinks plus navigation notes, with historical commands/findings/outcomes unchanged",
+              "expected": "The five review-file hrefs are repinned to recorded revisions with transparent notes and the surrounding review commands/findings remain unchanged",
+              "observed": "Only a summary JSON of two review files (ci-quality, ci-validation) with 5 href before/after pairs and added notes is supplied; the actual docs/reviews file diffs are excluded from the frozen snapshot ('excluding docs/reviews'), so the edits, the exact count, and the 'unchanged commands/findings/outcomes' claim cannot be verified from packet source",
+              "status": "blocked",
+              "evidence": "Snapshot scope line ('excludingdocs/reviews'); 'Historical navigation-only corrections' JSON is an assertion-style summary, not a frozen diff of the review files"
+            }
+          ],
+          "recommendation": "blocked",
+          "limitations": [
+            "The substantive relocation (T1–T4 and the in-diff portions of T5) passes on strong source + recorded-gate evidence; only the historical-review permalink sub-criterion is blocked because docs/reviews files are excluded from the frozen packet.",
+            "All runtime results (137 Python / 72 Node tests, study skips, whitespace, strict noEmit, cross-directory CLI run) are orchestrator-observed recordings, not reviewer-executed; I did not run them.",
+            "Unchanged vendor files and prior unchanged function bodies were reviewed only at the integration boundary per the bounded-review scope; earlier Claude-authored work remains outside scope under TODO 0.19.",
+            "The two permalink revisions (91d0aede…, a6f70166…) and the 'five hrefs' count could not be cross-checked against the actual review files."
+          ]
+        },
+        "limitations": [
+          "CLI routing and returned model names are evidence, not backend attestation.",
+          "Packet review does not independently execute the packet's test commands."
+        ],
+        "diagnostic": "review_blocked"
+      }
+    },
+    {
+      "scope": "navigation",
+      "result": {
+        "status": "completed",
+        "accepted": true,
+        "author_provider": "codex",
+        "reviewer_provider": "claude",
+        "packet": {
+          "path": "output/assurance/tool-layout-peer-navigation-packet.md",
+          "sha256": "295f5dc0d73df2fe4d6ca732edc0f80b617f5e7ae27518e700096b6b9541082b",
+          "revision": "8180fb24bc593fa8ee8b2bd4bf96aa70a8c1f15d"
+        },
+        "cli": {
+          "executable": "claude",
+          "version": "2.1.193"
+        },
+        "model_evidence": [
+          "claude-haiku-4-5-20251001",
+          "claude-opus-4-8"
+        ],
+        "review": {
+          "quality": [],
+          "validation": [
+            {
+              "criterion": "T5-NAV (TODO1.15 historical-navigation): exactly five Markdown href changes across the two frozen review files",
+              "expected": "Precisely five Markdown link-target edits and no more",
+              "observed": "The diff shows exactly five href edits: in 2026-10-31-ci-quality.md QCI1 test_ci.py and QCI2 ci.py (2), and in 2026-10-31-ci-validation.md the runner, CI-fixtures and scaffold-fixtures links in a single 'Inspected' sentence (3). Total = 5. No other link targets changed (workflow and dependabot links kept their relative form).",
+              "status": "pass",
+              "evidence": "Packet 'Complete actual Git diff for both inputs': two '-'/'+' link pairs in ci-quality.md and one hunk converting three links in ci-validation.md."
+            },
+            {
+              "criterion": "T5-NAV: href targets point to the files at the implementation/review revisions recorded in the original reports",
+              "expected": "Each permalink resolves to the recorded file path at a revision the original report records",
+              "observed": "Quality QCI1/QCI2 pin test_ci.py and ci.py to 91d0aede4859..., the report's recorded initial implementation ('The initial implementation was committed as 91d0aed'; locations cite 'initial reviewed lines 27-39, 47-53'). Validation runner/CI-fixtures/scaffold-fixtures pin ci.py/test_ci.py/test_check.py to a6f701667282..., the report's recorded reviewed feature commit ('Reviewed feature commit a6f701667282...'). All five revision/path pairs appear in the orchestrator-recorded verifiedObjects as existing blobs. Note: the three validation links sit in the retained/superseded 'Artifact and evidence scope' section, yet pin to the post-repair a6f7016; since ci.py and test_ci.py changed in the repair, those two links show post-repair content rather than the initial-snapshot content that section documents inspecting. This is defensible (a6f7016 is a recorded reviewed revision and the accepted source) but is an applicability nuance, not a clear fault.",
+              "status": "pass",
+              "evidence": "Packet before/after text (recorded commits 91d0aed and a6f7016), the five permalink URLs in the diff, and 'verifiedObjects' listing blobs at 91d0aede.../utils/{ci,test_ci}.py and a6f701667282.../utils/{ci,test_ci,test_check}.py."
+            },
+            {
+              "criterion": "T5-NAV: the only other changes are transparent navigation notes",
+              "expected": "No substantive edits besides clearly-marked navigation notes",
+              "observed": "The diff appends exactly one dated navigation note to each file: 'Navigation note (2026-11-01): source links above are pinned to the recorded implementation/review revisions after tooling moved under utils/ci/. Historical commands, findings and reported outcomes are unchanged.' No other textual changes appear in either file.",
+              "status": "pass",
+              "evidence": "Packet diff: two '+' blocks adding identical navigation notes; no other added/removed non-link lines."
+            },
+            {
+              "criterion": "T5-NAV: original commands, findings and outcomes remain unchanged",
+              "expected": "All prior commands, finding IDs/dispositions, criterion statuses, hashes and timestamps preserved byte-for-byte outside the link/note edits",
+              "observed": "Byte comparison of before/after for both files shows identical content apart from the five link targets and the two appended notes. Commands (e.g. 'PYTHONDONTWRITEBYTECODE=1 python3 .../utils/ci.py', 'git diff --cached --check 3faf9c8', 'just ci'), QCI1/QCI2 findings and 'resolved' dispositions, the CI1-CI8 matrix statuses, the 21:52 peer-closure text, snapshot hashes and all timestamps are unchanged.",
+              "status": "pass",
+              "evidence": "Packet 'before'/'after' full-text blocks for both files and the diff, which touch only link targets and append-only notes."
+            }
+          ],
+          "recommendation": "accept",
+          "limitations": [
+            "External-review mode: no tools, no command execution, no link fetching. Criteria 1/3/4 were verified directly from the packet's frozen before/after bytes and diff.",
+            "Criterion 2's revision/path existence relies on orchestrator-recorded git objects (verifiedObjects); I did not independently run git, fetch the permalinks, or confirm each URL renders the described file content or cited line ranges.",
+            "The before/after SHA-256 values and the core-files snapshot hash were taken as supplied and not independently recomputed.",
+            "Could not verify the current relocation under utils/ci/ or that the original relative links (../../utils/*.py) are now broken; the navigation note's rationale is accepted as supplied evidence.",
+            "Applicability nuance (not treated as a defect): the validation report's three inspected-file links reside in the retained/superseded initial-scope section but pin to the repaired revision a6f7016; ci.py and test_ci.py changed in the repair, so those two links present post-repair content for a section documenting the initial-snapshot inspection.",
+            "Scope limited to the two historical Markdown files at the integrated revision; the old reviews' assertions, the underlying tool implementation, earlier Claude-authored work, provider identities, and newly generated review records are out of scope per the packet."
+          ]
+        },
+        "limitations": [
+          "CLI routing and returned model names are evidence, not backend attestation.",
+          "Packet review does not independently execute the packet's test commands."
+        ]
+      }
+    }
+  ],
+  "criterionCoverage": [
+    {
+      "criterion": "T1",
+      "status": "pass",
+      "attempt": "relocation",
+      "validationRow": 0
+    },
+    {
+      "criterion": "T2",
+      "status": "pass",
+      "attempt": "relocation",
+      "validationRow": 1
+    },
+    {
+      "criterion": "T3",
+      "status": "pass",
+      "attempt": "relocation",
+      "validationRow": 2
+    },
+    {
+      "criterion": "T4",
+      "status": "pass",
+      "attempt": "relocation",
+      "validationRow": 3
+    },
+    {
+      "criterion": "T5",
+      "status": "pass",
+      "attempt": "relocation",
+      "validationRow": 4
+    },
+    {
+      "criterion": "T5-NAV",
+      "status": "pass",
+      "attempt": "navigation",
+      "validationRows": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "supersedes": {
+        "attempt": "relocation",
+        "validationRow": 5,
+        "reason": "Missing historical-review primary source supplied and reviewed; implementation source unchanged"
+      }
+    }
+  ],
+  "limitations": [
+    "Each raw attempt outcome is preserved: the first remains blocked as recorded; only its missing-evidence subcriterion is superseded by the focused follow-up.",
+    "Provider reviews were packet-only and did not execute tests or fetch hosted logs.",
+    "Both CLI results name claude-opus-4-8 and claude-haiku-4-5-20251001. Opus/high were requested; per-subtask attribution, backend identity and reasoning effort are not attested.",
+    "Earlier Claude-authored implementation and unchanged dependency internals are outside this scope. TODO 0.19 remains open.",
+    "This report accepts no aircraft fidelity, source rights, learner benefit, MVP or training credit."
+  ]
+}
