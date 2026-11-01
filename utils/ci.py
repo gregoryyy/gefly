@@ -8,8 +8,10 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import subprocess
 import sys
+import time
 import unittest
 
 
@@ -17,6 +19,8 @@ ROOT = Path(__file__).resolve().parent.parent
 GIT_TIMEOUT_S = 60.0
 DEFAULT_PHASE_TIMEOUT_S = 600.0
 STUDY_RESULT_MARKER = "GEFLY-STUDY-RESULT"
+KILL_GRACE_S = 2.0
+POSIX = os.name == "posix"
 
 
 def git_environment() -> dict[str, str]:
@@ -160,6 +164,60 @@ def node_environment() -> dict[str, str]:
             if not key.upper().startswith("NODE_")}
 
 
+def _terminate_tree(process: subprocess.Popen) -> None:
+    """Stop a timed-out child and, on POSIX, every process in its session group.
+
+    The child leads its own process group, so grandchildren that keep an output
+    pipe open are signalled too: SIGTERM, a short grace period, then SIGKILL.
+    Elsewhere only the direct child can be killed.
+    """
+    if not POSIX:
+        process.kill()
+        return
+    group = process.pid
+    try:
+        os.killpg(group, signal.SIGTERM)
+    except (ProcessLookupError, PermissionError):
+        return
+    deadline = time.monotonic() + KILL_GRACE_S
+    while time.monotonic() < deadline:
+        process.poll()  # reap the leader so an exited group can disappear
+        try:
+            os.killpg(group, 0)
+        except (ProcessLookupError, PermissionError):
+            return
+        time.sleep(0.05)
+    try:
+        os.killpg(group, signal.SIGKILL)
+    except (ProcessLookupError, PermissionError):
+        pass
+
+
+def run_child(command: list[str], timeout_s: float, capture: bool = False,
+              env: dict[str, str] | None = None) -> subprocess.CompletedProcess:
+    """Run a child with a whole-group timeout; raise TimeoutExpired after cleanup."""
+    process = subprocess.Popen(
+        command, cwd=ROOT, env=env, stdout=subprocess.PIPE if capture else None,
+        text=True, encoding="utf-8", errors="replace", start_new_session=POSIX)
+    try:
+        output, _ = process.communicate(timeout=timeout_s)
+    except BaseException as error:  # timeout, or interruption of the gate itself
+        _terminate_tree(process)
+        partial = ""
+        try:
+            partial, _ = process.communicate(timeout=KILL_GRACE_S)
+        except subprocess.TimeoutExpired:
+            # A process outside the group may still hold the pipe; stop reading.
+            if process.stdout is not None:
+                process.stdout.close()
+            process.kill()
+            process.wait()
+        if isinstance(error, subprocess.TimeoutExpired):
+            raise subprocess.TimeoutExpired(command, timeout_s, output=partial) from None
+        raise
+    return subprocess.CompletedProcess(command, process.returncode, output, None)
+
+
 def run_render_check(require_node: bool, timeout_s: float) -> str:
     """Run the offline synthetic-source check with Node; return passed/failed/skipped."""
     script = ROOT / RENDER_CHECK
@@ -176,17 +234,15 @@ def run_render_check(require_node: bool, timeout_s: float) -> str:
         return "skipped"
     environment = node_environment()
     try:
-        version = subprocess.run([node, "--version"], cwd=ROOT, capture_output=True,
-                                 text=True, encoding="utf-8", errors="replace",
-                                 check=False, env=environment, timeout=timeout_s)
+        version = run_child([node, "--version"], timeout_s, capture=True,
+                            env=environment)
         if version.returncode != 0:
             print(f"ERROR: node --version failed (exit {version.returncode}); "
                   f"{Path(node).resolve()} is not usable.", file=sys.stderr)
             return "failed"
         print(f"Node: {version.stdout.strip() or 'unknown version'} "
               f"({Path(node).resolve()})", flush=True)
-        result = subprocess.run([node, str(script)], cwd=ROOT, check=False,
-                                env=environment, timeout=timeout_s)
+        result = run_child([node, str(script)], timeout_s, env=environment)
     except subprocess.TimeoutExpired:
         print(f"ERROR: Synthetic render check timed out ({timeout_s:g} s).",
               file=sys.stderr)
@@ -207,14 +263,10 @@ def run_phase(name: str, command: list[str], timeout_s: float,
     """Run one child phase; return (succeeded, captured stdout when requested)."""
     print(f"Running {name}...", flush=True)
     try:
-        result = subprocess.run(command, cwd=ROOT, check=False, timeout=timeout_s,
-                                stdout=subprocess.PIPE if capture else None,
-                                text=True, encoding="utf-8", errors="replace")
+        result = run_child(command, timeout_s, capture=capture)
     except subprocess.TimeoutExpired as error:
-        if capture and error.stdout:
-            output = error.stdout
-            print(output.decode("utf-8", "replace") if isinstance(output, bytes)
-                  else output, end="", flush=True)
+        if capture and error.output:
+            print(error.output, end="", flush=True)
         print(f"ERROR: {name} timed out ({timeout_s:g} s).", file=sys.stderr)
         return False, ""
     except OSError as error:

@@ -25,7 +25,10 @@ the runner requires. Without `node` the render check prints
 `Foundation CI: passed with skipped checks (...)`, naming each skip; an
 all-skipped study suite is listed as `none executed`, never as a pass. Each child
 phase has a timeout (`--timeout SECONDS`, default 600; Git calls 60 s) and expiry
-fails the gate. Inherited `NODE_*` variables are removed from Node's environment,
+fails the gate. On POSIX each phase and Node call runs in its own process group;
+on expiry the whole group gets SIGTERM, then SIGKILL after a 2 s grace, so a
+grandchild holding an output pipe cannot stall the gate (elsewhere only the
+direct child is killed). Inherited `NODE_*` variables are removed from Node's environment,
 as `GIT_*` variables are for Git. `--require-node` (used by the hosted workflow)
 makes a missing `node` a failure. Whitespace is checked even in an otherwise clean
 checkout; this is broader than checking a working-tree diff. Untracked files are

@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 
@@ -306,6 +307,51 @@ class CiEntrypointTests(GitFixture):
         self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("Study tests (studies/e1-jsbsim) timed out", result.stderr)
         self.assertIn("Foundation CI: FAILED.", result.stdout)
+
+    @unittest.skipUnless(os.name == "posix", "process-group cleanup is POSIX-only")
+    def test_timeout_kills_grandchild_holding_output_pipe(self):
+        self.install_fake_node()
+        pid_file = self.outside.parent / "grandchild.pid"
+        for body in ("        time.sleep(60)\n", "        pass\n"):
+            with self.subTest(child_waits=body.strip() != "pass"):
+                pid_file.unlink(missing_ok=True)
+                # The grandchild inherits the captured study stdout and outlives the test.
+                self.write_study(
+                    "    def test_spawn(self):\n"
+                    "        import subprocess, sys, time\n"
+                    "        child = subprocess.Popen([sys.executable, '-c', "
+                    "'import time; time.sleep(120)'])\n"
+                    f"        open({str(pid_file)!r}, 'w').write(str(child.pid))\n" + body)
+                output_path = self.outside.parent / "gate.out"
+                with open(output_path, "w", encoding="utf-8") as output:
+                    started = time.monotonic()
+                    gate = subprocess.Popen(
+                        [sys.executable, str(self.runner), "--timeout", "4"],
+                        cwd=self.outside, stdout=output, stderr=subprocess.STDOUT,
+                        env=dict(os.environ, PATH=str(self.bin)))
+                    try:
+                        code = gate.wait(timeout=40)
+                    finally:
+                        if gate.poll() is None:
+                            gate.kill()
+                            gate.wait()
+                    elapsed = time.monotonic() - started
+                text = output_path.read_text(encoding="utf-8")
+                self.assertNotEqual(code, 0, text)
+                self.assertLess(elapsed, 30, text)
+                self.assertIn("Study tests (studies/e1-jsbsim) timed out", text)
+                self.assertIn("Foundation CI: FAILED.", text)
+                grandchild = int(pid_file.read_text(encoding="utf-8"))
+                deadline = time.monotonic() + 5
+                while time.monotonic() < deadline:
+                    try:
+                        os.kill(grandchild, 0)
+                    except ProcessLookupError:
+                        break
+                    time.sleep(0.05)
+                else:
+                    os.kill(grandchild, 9)
+                    self.fail(f"grandchild {grandchild} survived the timeout")
 
     def test_render_timeout_is_failure(self):
         self.install_fake_node(sleep_s=60)
