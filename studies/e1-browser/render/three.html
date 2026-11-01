@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E1 render: three.js</title>
+<!-- E1 browser-check study page (not product code). three.js 0.187.0 (r187), MIT,
+     loaded from the npm package via jsDelivr. No remote imagery or terrain. -->
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #87a9cf; }
+  canvas { display: block; }
+  #hud { position: absolute; left: 8px; top: 8px; z-index: 2; padding: 4px 8px;
+         font: 12px/1.4 ui-monospace, monospace; color: #fff; background: rgba(0,0,0,.6); }
+</style>
+<script src="geo.js"></script>
+<script src="stream.js"></script>
+<script src="meter.js"></script>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.min.js" } }
+</script>
+</head>
+<body>
+<div id="hud" role="status" aria-live="polite">loading three.js</div>
+<script type="module">
+import * as THREE from "three";
+
+const hud = document.getElementById("hud");
+const q = new URLSearchParams(location.search);
+const deviceDpr = q.get("dpr") === "device";
+
+// Frames and units.
+//   ENU: local tangent plane at the approximate EDFE reference point on the
+//        WGS-84 ellipsoid (h = 0 m, same ground height as the Cesium page);
+//        e/n/u in metres.
+//   three.js world: x = east, y = up, z = south (= -north); metres.
+//   Placeholder body: forward = -z, up = +y, right = +x before rotation.
+// Over a few km the flat plane departs from the ellipsoid by d^2 / (2 R)
+// (about 2 m at 5 km); acceptable for a pacing study, not for a product.
+const E = E1Stream.EDFE_APPROX;
+const enu = GeoWGS84.makeEnuFrame(E.lat_rad, E.lon_rad, 0);
+const enuToThree = (e_m, n_m, u_m, out) => out.set(e_m, u_m, -n_m);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+renderer.setPixelRatio(deviceDpr ? devicePixelRatio : 1);
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color("#87a9cf");
+scene.fog = new THREE.Fog("#87a9cf", 8000, 30000);
+// Match Cesium's default frustum: 60 deg across the larger screen dimension.
+const fovDeg = (aspect) => aspect >= 1 ? 2 * Math.atan(Math.tan(Math.PI / 6) / aspect) * 180 / Math.PI : 60;
+const camera = new THREE.PerspectiveCamera(fovDeg(innerWidth / innerHeight), innerWidth / innerHeight, 1, 40000);
+scene.add(new THREE.HemisphereLight("#ffffff", "#40502f", 1.2));
+const sun = new THREE.DirectionalLight("#ffffff", 1.5);
+sun.position.set(3000, 6000, 2000);
+scene.add(sun);
+
+// Ground plane and grid (procedural; 40 km square, 250 m cells).
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(40000, 40000),
+  new THREE.MeshLambertMaterial({ color: "#4d6b3a",
+    polygonOffset: true, polygonOffsetFactor: 4, polygonOffsetUnits: 4 }));  // keep grid in front
+ground.rotation.x = -Math.PI / 2;
+scene.add(ground);
+// Built from short segments: in headless SwiftShader, single 40 km grid lines
+// that extend far outside the frustum were dropped near the camera.
+function segmentedGrid(size_m, cell_m, seg_m) {
+  const v = [], half = size_m / 2;
+  for (let a = -half; a <= half + 1e-6; a += cell_m) {
+    for (let b = -half; b < half - 1e-6; b += seg_m) {
+      v.push(a, 0, b, a, 0, b + seg_m, b, 0, a, b + seg_m, 0, a);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(v, 3));
+  return new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: "#dfe8d0" }));
+}
+const grid = segmentedGrid(40000, 250, 500);
+grid.position.y = 0.5;
+scene.add(grid);
+// Approximate aerodrome reference marker.
+const arp = new THREE.Mesh(new THREE.CylinderGeometry(6, 6, 2, 16),
+  new THREE.MeshBasicMaterial({ color: "#ffff00" }));
+arp.position.set(0, 1, 0);
+scene.add(arp);
+
+// Aircraft placeholder; generic dimensions, not aircraft data.
+const aircraft = new THREE.Group();
+function box(w, h, d, x, y, z, color) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ color }));
+  m.position.set(x, y, z);
+  aircraft.add(m);
+}
+box(1.2, 1.2, 8, 0, 0, 0, "#f2f2f2");        // fuselage along -z (forward)
+box(11, 0.2, 1.6, 0, 0.6, -0.8, "#d23c3c");  // wing
+box(3.4, 0.15, 1.2, 0, 0.2, 3.6, "#d23c3c"); // tailplane
+box(0.15, 1.6, 1.2, 0, 1.0, 3.6, "#3c5ad2"); // fin
+aircraft.rotation.order = "YXZ";              // yaw, then pitch, then roll (intrinsic)
+scene.add(aircraft);
+
+addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.fov = fovDeg(camera.aspect);
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+const stream = E1Stream.startStream();
+const CHASE_RANGE_M = 60, CHASE_PITCH_RAD = 15 * Math.PI / 180;
+const tmp = new THREE.Vector3();
+let rendered = 0, lastStep = -1, staleFrames = 0;
+
+function frame() {
+  const s = stream.latest;
+  if (s) {
+    rendered += 1;
+    if (s.step === lastStep) staleFrames += 1;
+    lastStep = s.step;
+    const [e, n, u] = enu.geodeticToEnu(s.lat_rad, s.lon_rad, s.alt_msl_m);
+    enuToThree(e, n, u, aircraft.position);
+    // heading clockwise from true north -> rotation about +y by -heading;
+    // pitch nose-up -> +x rotation; roll right-wing-down -> -z rotation.
+    aircraft.rotation.set(s.pitch_rad, -s.heading_rad, -s.roll_rad);
+    // Chase camera: behind along the heading, raised by the chase pitch; no roll.
+    const back = CHASE_RANGE_M * Math.cos(CHASE_PITCH_RAD);
+    enuToThree(e - back * Math.sin(s.heading_rad), n - back * Math.cos(s.heading_rad),
+               u + CHASE_RANGE_M * Math.sin(CHASE_PITCH_RAD), camera.position);
+    camera.lookAt(tmp.copy(aircraft.position));
+  }
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+E1Meter.startMeter({
+  page: "three", overlay: hud,
+  collectExtra: () => ({
+    engine: { name: "three.js", version: THREE.REVISION, license: "MIT" },
+    imagery: "none (procedural ground plane and grid)",
+    terrain: "flat ENU plane at WGS-84 h = 0 m",
+    webgl: E1Meter.webglInfo(renderer.getContext()),
+    resolution_scale: deviceDpr ? "device" : "css",
+    frames_with_state: rendered, frames_same_step_as_previous: staleFrames,
+    draw_calls_last_frame: renderer.info.render.calls,
+    stream: E1Stream.streamSummary(stream),
+  }),
+});
+</script>
+</body>
+</html>

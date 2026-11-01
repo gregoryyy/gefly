@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E1 render: CesiumJS</title>
+<!-- E1 browser-check study page (not product code). CesiumJS 1.146.0, Apache-2.0,
+     loaded from the npm package via jsDelivr. No Cesium ion token, no ion assets:
+     ellipsoid terrain and a locally generated grid imagery layer only. -->
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
+  #view { position: absolute; inset: 0; }
+  #hud { position: absolute; left: 8px; top: 8px; z-index: 2; padding: 4px 8px;
+         font: 12px/1.4 ui-monospace, monospace; color: #fff; background: rgba(0,0,0,.6); }
+  #credits { position: absolute; right: 4px; bottom: 2px; z-index: 2;
+             font: 10px sans-serif; color: #ddd; }
+</style>
+<script>window.CESIUM_BASE_URL = "https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/";</script>
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/Cesium.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/Widgets/widgets.css">
+<script src="geo.js"></script>
+<script src="stream.js"></script>
+<script src="meter.js"></script>
+</head>
+<body>
+<div id="view"></div>
+<div id="hud" role="status" aria-live="polite">loading CesiumJS</div>
+<div id="credits"></div>
+<script>
+"use strict";
+(function () {
+  const hud = document.getElementById("hud");
+  const q = new URLSearchParams(location.search);
+  const deviceDpr = q.get("dpr") === "device";
+
+  // Never contact Cesium ion: clear the built-in default token before any use.
+  Cesium.Ion.defaultAccessToken = "";
+
+  const widget = new Cesium.CesiumWidget("view", {
+    baseLayer: false,                                   // no default (ion) imagery
+    terrainProvider: new Cesium.EllipsoidTerrainProvider(),
+    creditContainer: document.getElementById("credits"),
+    useBrowserRecommendedResolution: !deviceDpr,        // default: CSS-pixel buffer
+    skyBox: false, skyAtmosphere: false,                // avoid asset differences vs three.js
+  });
+  const scene = widget.scene;
+  scene.globe.baseColor = Cesium.Color.fromCssColorString("#4d6b3a");
+  // Procedural grid generated in the browser (no network, no data licence).
+  scene.imageryLayers.addImageryProvider(new Cesium.GridImageryProvider({
+    cells: 4, color: Cesium.Color.fromCssColorString("#dfe8d0").withAlpha(0.5),
+    glowColor: Cesium.Color.TRANSPARENT, backgroundColor: Cesium.Color.TRANSPARENT,
+  }));
+  scene.backgroundColor = Cesium.Color.fromCssColorString("#87a9cf");
+
+  // Aircraft placeholder: three boxes in a body frame whose +x is forward, +y left,
+  // +z up (Cesium HPR model frame). Dimensions are generic, not aircraft data.
+  const C = Cesium;
+  function part(dims_m, offset_m, css) {
+    return new C.GeometryInstance({
+      geometry: C.BoxGeometry.fromDimensions({ dimensions: new C.Cartesian3(...dims_m),
+        vertexFormat: C.PerInstanceColorAppearance.VERTEX_FORMAT }),
+      modelMatrix: C.Matrix4.fromTranslation(new C.Cartesian3(...offset_m)),
+      attributes: { color: C.ColorGeometryInstanceAttribute.fromColor(C.Color.fromCssColorString(css)) },
+    });
+  }
+  const aircraft = scene.primitives.add(new C.Primitive({
+    geometryInstances: [
+      part([8, 1.2, 1.2], [0, 0, 0], "#f2f2f2"),       // fuselage
+      part([1.6, 11, 0.2], [0.8, 0, 0.6], "#d23c3c"),   // wing
+      part([1.2, 3.4, 0.15], [-3.6, 0, 0.2], "#d23c3c"),// tailplane
+      part([1.2, 0.15, 1.6], [-3.6, 0, 1.0], "#3c5ad2"),// fin
+    ],
+    appearance: new C.PerInstanceColorAppearance({ flat: false }),
+    asynchronous: false,
+  }));
+
+  // Approximate aerodrome reference marker on the ellipsoid (h = 0 m).
+  const E = E1Stream.EDFE_APPROX;
+  scene.primitives.add(new C.PointPrimitiveCollection()).add({
+    position: C.Cartesian3.fromRadians(E.lon_rad, E.lat_rad, 0),
+    pixelSize: 10, color: C.Color.YELLOW,
+  });
+
+  // Self-check of the heading convention: at heading 0 the body +x axis must
+  // point local north, otherwise apply an offset. Recorded in the results.
+  const probe = C.Cartesian3.fromRadians(E.lon_rad, E.lat_rad, 0);
+  function bodyXInEnu(heading_rad) {
+    const m = C.Transforms.headingPitchRollToFixedFrame(probe, new C.HeadingPitchRoll(heading_rad, 0, 0));
+    const enu = C.Transforms.eastNorthUpToFixedFrame(probe);
+    const inv = C.Matrix4.inverseTransformation(enu, new C.Matrix4());
+    const x = C.Matrix4.multiplyByPointAsVector(m, C.Cartesian3.UNIT_X, new C.Cartesian3());
+    return C.Matrix4.multiplyByPointAsVector(inv, x, new C.Cartesian3());
+  }
+  const h0 = bodyXInEnu(0);
+  const HEADING_OFFSET_RAD = Math.atan2(h0.x, h0.y);  // 0 when +x already points north
+  const h90 = bodyXInEnu(Math.PI / 2 - HEADING_OFFSET_RAD);
+  const headingCheck = {
+    body_x_enu_at_0: [h0.x, h0.y, h0.z], offset_rad: HEADING_OFFSET_RAD,
+    heading_90_points_east: h90.x > 0.999,
+  };
+
+  const stream = E1Stream.startStream();
+  const hpr = new C.HeadingPitchRoll();
+  const pos = new C.Cartesian3();
+  const chase = new C.HeadingPitchRange(0, -15 * Math.PI / 180, 60);
+  let rendered = 0, lastStep = -1, staleFrames = 0;
+  scene.preUpdate.addEventListener(() => {
+    const s = stream.latest;
+    if (!s) return;
+    rendered += 1;
+    if (s.step === lastStep) staleFrames += 1;
+    lastStep = s.step;
+    C.Cartesian3.fromRadians(s.lon_rad, s.lat_rad, s.alt_msl_m, C.Ellipsoid.WGS84, pos);
+    // Contract roll: right wing down positive. Cesium roll is about +x with +y
+    // left, so right-wing-down is also positive; pitch nose-up positive.
+    hpr.heading = s.heading_rad - HEADING_OFFSET_RAD;
+    hpr.pitch = s.pitch_rad;
+    hpr.roll = s.roll_rad;
+    C.Transforms.headingPitchRollToFixedFrame(pos, hpr, C.Ellipsoid.WGS84, undefined, aircraft.modelMatrix);
+    chase.heading = s.heading_rad;          // camera behind, looking along heading
+    scene.camera.lookAt(pos, chase);
+  });
+
+  E1Meter.startMeter({
+    page: "cesium", overlay: hud,
+    collectExtra: () => ({
+      engine: { name: "CesiumJS", version: C.VERSION, license: "Apache-2.0" },
+      ion_token_empty: C.Ion.defaultAccessToken === "",
+      imagery: "GridImageryProvider (procedural, local); no remote imagery",
+      terrain: "EllipsoidTerrainProvider (WGS-84, h = 0 m)",
+      webgl: E1Meter.webglInfo(scene.context._gl),   // internal field; study only
+      resolution_scale: deviceDpr ? "device" : "css",
+      heading_check: headingCheck,
+      frames_with_state: rendered, frames_same_step_as_previous: staleFrames,
+      stream: E1Stream.streamSummary(stream),
+    }),
+  });
+})();
+</script>
+</body>
+</html>
