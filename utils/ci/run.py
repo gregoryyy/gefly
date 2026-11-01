@@ -98,7 +98,7 @@ def check_whitespace(root: Path) -> int:
     return 1 if failed else 0
 
 
-STUDY_TEST_DIRS = ("studies/e1-jsbsim",)
+STUDY_TEST_DIRS = ("studies/e1-jsbsim", "studies/e2-c172s")
 RENDER_CHECK = "studies/e1-browser/render/check-synthetic.mjs"
 
 

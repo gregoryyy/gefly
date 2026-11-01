@@ -3,6 +3,46 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 22:14 — Reconcile PR 27 with the assurance and CI layout
+
+TODO: 1.3.1 complete; 1.15 retained; 1.3.2–1.3.4 remain open.
+Agent: Codex orchestrator; code1/peer_runner, code2/peer_registration and
+housekeeping on disjoint integration paths. Independent quality and validate
+review the resulting integration separately.
+
+**Implementation notes**
+
+Merged main `aeb5d3f` after PR #27 into the PR #28 branch at `e8d0a07`.
+Resolved DONE by complete dated entries against both parents and their merge
+base: all 50 feature entries are byte-preserved, and the complete incoming E2
+entry is inserted chronologically. Task 1.3.1 now records the merged calculation
+tool and synthetic fixtures; its aircraft-specific follow-up tasks remain open.
+Utilities documentation retains the relocated tooling and adds the E2 study.
+
+The relocated runner includes both E1 and E2 study suites plus assurance.
+Its production functions retain their previous ASTs; the E2 registry addition
+and incoming zombie-aware timeout-test helper are preserved. All 38 CI test
+identities from the two parents remain present. The five E2 files remain
+byte-identical to merged main. The shared local gate passed 138 executed Python
+tool tests with one Linux-only skip, 25 E2 tests, 14 E1 tests and 72 assurance
+tests; nine optional JSBSim tests were also skipped. Synthetic rendering,
+assurance integrity and tracked whitespace passed. See independent
+[quality](reviews/2026-11-01-pr27-integration-quality.md) and
+[validation](reviews/2026-11-01-pr27-integration-validation.md).
+
+**Deviations**
+
+Peer pending for this integration and the merged E2 groundwork under the batched
+cadence. Earlier assurance/layout peer reports cover their recorded revisions,
+not this later merge. Calculation readiness supplies no aircraft-specific inputs,
+JSBSim tensor adapter, M-a acceptance, validated model or simulator milestone.
+
+**Insights**
+
+A task ID collision needs one reconciled scope and state. Preserving whole
+progress entries and comparing both parents avoids pairing a heading with an
+unrelated implementation or deviations body.
+
 ## 2026-11-01 21:42 — Organize assurance and CI tooling under utils
 
 TODO: 1.15 complete. Agent: Codex orchestrator; code1/peer_runner,
@@ -103,6 +143,42 @@ and normalized two legacy progress records without changing their observations.
 Integration and independent checks are in progress; this entry does not accept
 unreviewed implementation, an aircraft model or the MVP. Earlier peer coverage
 remains separate and TODO 0.19 open. No database, hooks or new agent role added.
+
+## 2026-11-01 19:35 — Prepare E2 component mass and inertia calculations
+
+TODO: 1.3.1; E2 preparation only. Agent: Codex orchestrator; code1/e2_math,
+code2/e2_cli and housekeeping/e2_docs in parallel; independent local quality/e2_quality
+and validate/e2_validate. User switched the builder to Codex and reviewer to Claude.
+
+**Implementation notes**
+
+Added the stdlib [mass-properties study](../studies/e2-c172s/README.md): positive
+component masses, common-reference body-axis CGs and intrinsic inertia tensors
+produce total mass, CG and a parallel-axis tensor. Strict JSON CLI retains the raw
+input hash and an explicit unvalidated-input label. Synthetic fixtures cover
+analytic bodies, off-axis products, scaling, translations, physicality and errors.
+The shared gate runs the new study and rejects a failing E2 suite. Final local
+gate: 134 tool tests, 25 E2 tests, 14 E1 tests and synthetic render check passed;
+9 optional JSBSim engine tests skipped.
+
+Fixed the existing CI timeout test's Linux liveness check: a killed zombie is
+terminated even when container PID 1 does not reap it. Live-child detection and
+actual process-group timeout checks remain exercised; production cleanup is unchanged.
+Local quality found a low-severity extreme mass/position order-sensitivity case;
+the calculation now selects a deterministic largest-mass reference, with regressions.
+
+**Deviations**
+
+No sourced 172S coefficients or mass values, structural/JSBSim tensor adaptation,
+gear model, aircraft acceptance, or milestone-2 implementation. M-a and TODO 1.3
+remain open. Claude peer review pending; the Claude CLI is absent in this instance.
+The [handoff evidence](reviews/2026-11-01-e2-mass-properties.md) distinguishes local
+reviews from the pending opposite-provider gate.
+
+**Insights**
+
+A zero-inertia point-mass fixture can verify tensor signs without borrowing an
+aircraft model. Separate calculation readiness from the missing aircraft evidence.
 
 ## 2026-11-01 19:06 — Repair post-merge records; record stack, fuel-chart and tolerance answers
 

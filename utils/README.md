@@ -14,8 +14,8 @@ The runner finds the checkout from its own location, independently of the caller
 working directory. Its required phases check the scaffold, discover and run the
 offline standard-library repository-tool tests, check the aircraft/source data,
 run the assurance integrity checks and tool tests, run the offline study tests
-(`studies/e1-jsbsim`, standard-library unittest discovery in a separate
-interpreter), run `node studies/e1-browser/render/check-synthetic.mjs`, and inspect
+(`studies/e1-jsbsim` and `studies/e2-c172s`, standard-library unittest discovery in
+separate interpreters), run `node studies/e1-browser/render/check-synthetic.mjs`, and inspect
 whitespace in the current contents of all tracked files.
 A missing/empty test suite, a missing study directory or render script, or a
 required phase failure returns nonzero. Study tests that need an absent optional
@@ -224,6 +224,21 @@ Only render trusted repository documents: pandoc can embed remote resources, and
 the LaTeX filter invokes local TeX tools. Generated HTML and the temporary Chrome
 profile are deleted after each build. Recipe command failures propagate as failures.
 
+## Aircraft sources and E2 calculation utilities
+
 `validate_manifest.py` checks aircraft manifests under `data/aircraft/` against
 `data/schema/aircraft-manifest.schema.json` plus source/revision cross-checks;
 `test_validate_manifest.py` covers its failure cases.
+
+The [E2 mass-properties study](../studies/e2-c172s/README.md) provides a
+standard-library component mass/CG/inertia calculation and a strict JSON CLI at
+`studies/e2-c172s/build_mass_properties.py`. Its synthetic examples and tests check
+arithmetic and invalid-input handling; they supply no aircraft mass distribution,
+structural-frame/JSBSim adapter or accepted 172S model. The study documents SI
+units, the common body-axis orientation, negative off-diagonal tensor products,
+input hashing and the remaining [FDM M-a work](../docs/design/FDM-172S.md).
+
+The shared gate runs E2's tests separately from the repository-tool and E1 suites.
+E2 needs no optional simulation package; its calculation tests do not replace
+source-provenance review, aircraft-specific fixtures or model acceptance. Use the
+study's documented CLI/test commands for a targeted calculation check.
