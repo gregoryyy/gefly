@@ -90,6 +90,7 @@ runs after the 8.3 ms missed-step definition (quality review fix):
 | --- | --- | --- | --- |
 | Paced step cost p50 / p99 (A) | 245 / 525 us | 260 / 510 us | p99 ≤ 830 us |
 | Paced step cost p99 (B) | 580 us | 660 us | |
+| Paced step cost p99, independent 10 s rerun (quality review) | 905 us | | over budget; container too noisy for a pass |
 | Max single step (A, B, L) | 12.4, 17.1, 7.5 ms | 6.5, 4.5, 4.3 ms | |
 | Unpaced burst, last of 5 blocks | 40.5 us/step | 35.4 us/step | |
 | Missed steps A / B / L (> 8.3 ms late) | 1 / 8 / 0 | 10 / 7 / 1 | ≤ 1 per 10 s |

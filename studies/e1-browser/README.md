@@ -91,7 +91,7 @@ reference M1; **no acceptance claim**. Details: [sim](sim/README.md), [render](r
 
 | Measure | Result | Budget |
 | --- | --- | --- |
-| Worker step cost p99, paced (2 × 30 s, after review fixes) | 510–525 µs (unpaced ≈ 24 µs) | ≤ 830 µs: pass |
+| Worker step cost p99, paced (across sessions) | 485–905 µs (two 30 s runs 510–525 µs; reviewer's 10 s rerun 905 µs); unpaced ≈ 24 µs | ≤ 830 µs: **unstable in container** |
 | Missed steps (> 8.3 ms late), worst replay | 2.67–3.33 per 10 s; max lag 5–6 steps / 45 ms, caught up within one tick, none dropped | ≤ 1 per 10 s: **fail in container** |
 | Input-to-state latency p95 (40 inputs) | 16.7–18.6 ms | ≤ 25 ms: pass |
 | Replay digest, same build | identical (`7c8783f3440f387a`) | identical |
@@ -100,8 +100,8 @@ reference M1; **no acceptance claim**. Details: [sim](sim/README.md), [render](r
 | Render pages with `?source=sim` | Cesium 3.2 fps, three.js 12.0 fps; ≈ 60 Hz state, no errors | functional |
 
 Under the stricter missed-step definition the real-time budget **fails** in the
-container (occasional 4–17 ms single steps, cause unknown); step cost, latency and
-replay determinism pass. Earlier "0 missed steps" used a 100 ms threshold. Rendering numbers reflect software GL
+container (occasional 4–17 ms single steps, cause unknown); latency and replay
+determinism pass; step-cost p99 is unstable in the noisy container (485–905 µs). Earlier "0 missed steps" used a 100 ms threshold. Rendering numbers reflect software GL
 and are not evidence for or against the budget. Next: the same runs on the reference
 M1/Chrome (exact versions, renderer string, refresh rate), then the stack decision
 (TODO 1.2.3).

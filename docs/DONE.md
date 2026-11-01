@@ -3,6 +3,25 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 12:13 — Review and fix the E1 browser check
+
+TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator; quality, code1 and
+code2 subagents.
+
+**Implementation notes**
+
+Local quality: 2 medium and 10 low findings; contract tightened by the
+orchestrator (true heading, 8.3 ms missed-step definition with lag reporting,
+refresh-relative frame budget, input echo at s+1), code fixes by code1/code2;
+renewed review at `b4581b6`: all fixed except CDN SRI (accepted for the study).
+Container results: latency and replay pass; missed-step budget fails (2.7–3.3 per
+10 s, 45 ms max lag, none dropped); step-cost p99 unstable (485–905 µs).
+
+**Deviations**
+
+Container results are preliminary; reference M1/Chrome run outstanding. Validate not
+run. Peer pending (batched).
+
 ## 2026-11-01 12:02 — Build the E1 browser check (worker + render)
 
 TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator; code1 (sim) and
