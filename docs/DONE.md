@@ -24,22 +24,42 @@ Other files were checked for duplicated lines and conflict markers only, not
 re-reviewed line by line. Peer pending (batched).
 ## 2026-11-01 18:49 — Plan the project-owned JSBSim 172S model (E2)
 
-TODO: E2 preparation. Agent: Claude Code orchestrator; product subagent.
+TODO: 1.1.2, 1.2.3, 1.4 complete. Agent: Claude Code orchestrator (no subagents).
 
 **Implementation notes**
 
-Added [FDM-172S](design/FDM-172S.md): JSBSim block structure with a source class
-(sourced, derived, estimated, plausibility) for every parameter group and a
-per-parameter provenance file with a CI check; OpenVSP geometry inputs; calibration
-vs frozen holdout sets (glide added for drag, forward-CG stall to holdout); proposed
-tolerances P-1..P-10; a `studies/e2-c172s/` harness reusing E1 and the WASM worker;
-licensing; milestones M-a..M-e with exit criteria. No coefficient values.
+After the user merged PRs #9–#23 with "accept both" conflict resolutions, DONE.md had
+truncated, mixed and out-of-order entries. Rebuilt it from the complete per-entry
+versions in main's history (44 entries, newest first; Exercise 01 entry no longer
+carries the iPhone and briefing bodies). Checked GAPS (unique headings; Q15 answers
+restored to newest first), README (stale "variant and stack open" sentence), TODO
+(merged/reviewed statuses), AGENTS and ARCH (stack). Recorded the user's answers:
+Q17 web stack (CesiumJS, three.js fallback, MapLibre, TypeScript, JSBSim worker), Q5
+Lycoming fuel-chart points, Q21 FDM tolerance proposals accepted as working proposals.
 
 **Deviations**
 
-Plan only; blockers: empty mass/CG (Q-1), geometry gaps (planform, airfoil, tail),
-tolerance acceptance (Q-11). Cruise/glide extraction is already authorised and
-running. Not yet reviewed. Peer pending (batched).
+Other files were checked for duplicated lines and conflict markers only, not
+re-reviewed line by line. Peer pending (batched).
+
+## 2026-11-01 19:00 — Extract Lycoming power points and POH cruise/glide values
+
+TODO: E2 data. Agent: Claude Code orchestrator; researcher/housekeeping subagent.
+
+**Implementation notes**
+
+New `data/aircraft/c172s-classic/performance-values.json` with its own schema:
+Lycoming 60297-12 ratings (p. 2-2) and selected sea-level power points read from
+curve 13516-A (p. 3-40) with reading uncertainty; POH cruise at 2000 ft (p. 5-19)
+and best-glide speed and distance (glide ratio derived). Lycoming manual registered
+as a facts-only source (manifest 0.2.0); validator extended, 21 tests (112 total).
+
+**Deviations**
+
+2300 rpm has no chart curve (unknown); the chart is for the 160 hp rating and an
+uninstalled engine; the glide figure is a single line, so one reading carries its
+whole content — flagged for the user against the no-piecemeal rule. Not yet reviewed.
+Peer pending (batched).
 
 ## 2026-11-01 18:46 — Select model size and reasoning effort per task
 

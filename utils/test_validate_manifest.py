@@ -341,5 +341,226 @@ class PohValuesValidationTests(unittest.TestCase):
                 self.assertEqual(vm.main([str(path)]), 1)
 
 
+PERFORMANCE_VALUES = MANIFEST.parent / "performance-values.json"
+
+
+class PerformanceValuesValidationTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.schema = vm.load_json(vm.PERFORMANCE_SCHEMA)
+        cls.manifest_schema = vm.load_json(vm.SCHEMA)
+        cls.poh_schema = vm.load_json(vm.POH_SCHEMA)
+        cls.valid = vm.load_json(PERFORMANCE_VALUES)
+        cls.manifest = vm.load_json(MANIFEST)
+
+    def values(self):
+        return copy.deepcopy(self.valid)
+
+    def assertRejected(self, document, fragment, manifest=None):
+        errors = vm.validate_performance_values(document, self.schema,
+                                                manifest or self.manifest)
+        self.assertTrue(any(fragment in error for error in errors),
+                        f"expected an error containing {fragment!r}, got {errors}")
+
+    def test_r_data_2_c172s_performance_values_are_valid(self):
+        self.assertEqual(
+            vm.validate_performance_values(self.values(), self.schema, self.manifest), [])
+
+    def test_shared_definitions_match_other_schemas(self):
+        for name in ("status", "citation", "citations", "status_rules"):
+            self.assertEqual(self.schema["$defs"][name], self.manifest_schema["$defs"][name], name)
+        self.assertEqual(self.schema["$defs"]["reading"], self.poh_schema["$defs"]["reading"])
+
+    def test_new_conversion_factors_match_exact_definitions(self):
+        self.assertEqual(vm.CONVERSIONS[("nm", "m")], 1852.0)
+        self.assertEqual(vm.CONVERSIONS[("inHg", "Pa")], 3386.389)
+        self.assertAlmostEqual(vm.CONVERSIONS[("in^3", "m^3")], 1.6387064e-5, places=15)
+        self.assertAlmostEqual(vm.CONVERSIONS[("gal/h", "m^3/s")] * 3600, 3.785411784e-3,
+                               places=15)
+        self.assertAlmostEqual(vm.CONVERSIONS[("lb/h", "kg/s")] * 3600, 0.45359237, places=15)
+        self.assertEqual(vm.CONVERSIONS[("%", "1")], 0.01)
+
+    def test_r_data_1_citation_must_resolve_in_named_manifest(self):
+        manifest = copy.deepcopy(self.manifest)
+        manifest["sources"] = [s for s in manifest["sources"] if s["id"] != "A14"]
+        self.assertRejected(self.values(), "'A14' is not in the source register", manifest)
+
+    def test_r_data_1_sourced_value_cannot_cite_unread_source(self):
+        manifest = copy.deepcopy(self.manifest)
+        for source in manifest["sources"]:
+            if source["id"] == "A14":
+                source["access_status"] = "not_read"
+        self.assertRejected(self.values(), "cites unread source 'A14'", manifest)
+
+    def test_r_data_1_manifest_id_mismatch_fails_closed(self):
+        document = self.values()
+        document["manifest"]["manifest_id"] = "gefly.aircraft.other"
+        self.assertRejected(document, "does not match the loaded manifest")
+
+    def test_r_data_2_wrong_engine_power_conversion_fails(self):
+        document = self.values()
+        document["engine_sea_level"]["full_throttle"]["points"][0]["power"]["value"] = 104000.0
+        self.assertRejected(document, "full_throttle.points[0].power: value 104000.0 W")
+
+    def test_r_data_2_wrong_manifold_pressure_conversion_fails(self):
+        document = self.values()
+        point = document["engine_sea_level"]["part_throttle"]["points"][0]
+        point["manifold_pressure"]["value"] = 67700.0  # 20 inHg at 3385 Pa/inHg
+        self.assertRejected(document, "manifold_pressure: value 67700.0 Pa")
+
+    def test_r_data_2_small_si_values_are_checked_relatively(self):
+        document = self.values()
+        point = document["cruise"]["pa_2000ft_standard_temperature"]["points"][0]
+        point["fuel_flow"]["value"] = point["fuel_flow"]["value"] * 1.01
+        self.assertRejected(document, "fuel_flow: value")
+        document = self.values()
+        document["engine_ratings"]["displacement"]["value"] = 0.0059
+        self.assertRejected(document, "displacement: value 0.0059 m^3")
+
+    def test_r_data_2_wrong_unit_pair_fails(self):
+        document = self.values()
+        document["glide"]["distance_12000ft"]["original_unit"] = "ft"
+        self.assertRejected(document, "distance_12000ft: value")
+        document = self.values()
+        point = document["cruise"]["pa_2000ft_standard_temperature"]["points"][0]
+        point["fuel_flow"]["original_unit"] = "%"
+        self.assertRejected(document, "fuel_flow.original_unit: must equal \"gal/h\"")
+
+    def test_r_data_2_cruise_speed_must_be_true_airspeed(self):
+        document = self.values()
+        point = document["cruise"]["pa_2000ft_standard_temperature"]["points"][0]
+        point["true_airspeed"]["reference"] = "IAS"
+        self.assertRejected(document, "true_airspeed.reference: must equal \"TAS\"")
+        del point["true_airspeed"]["reference"]
+        self.assertRejected(document, "true_airspeed: missing required field 'reference'")
+
+    def test_non_airspeed_quantity_cannot_carry_reference(self):
+        document = self.values()
+        document["glide"]["distance_12000ft"]["reference"] = "TAS"
+        self.assertRejected(document, "distance_12000ft.reference: not allowed")
+
+    def test_glide_key_suffix_must_match_reference(self):
+        document = self.values()
+        document["glide"]["best_glide_ias"]["reference"] = "CAS"
+        self.assertRejected(document, "key suffix '_ias' needs reference 'IAS'")
+
+    def test_r_data_2_condition_and_reading_are_required(self):
+        document = self.values()
+        del document["glide"]["best_glide_ias"]["condition"]
+        self.assertRejected(document, "best_glide_ias: missing required field 'condition'")
+        document = self.values()
+        del document["engine_sea_level"]["full_throttle"]["reading"]
+        self.assertRejected(document, "full_throttle: missing required field 'reading'")
+
+    def test_r_data_2_derived_value_needs_derivation(self):
+        document = self.values()
+        del document["glide"]["glide_ratio"]["derivation"]
+        self.assertRejected(document, "glide_ratio: missing required field 'derivation'")
+
+    def test_r_data_2_unknown_series_needs_todo_and_no_points(self):
+        document = self.values()
+        series = document["engine_sea_level"]["full_throttle_2300_rpm"]
+        del series["todo"]
+        self.assertRejected(document, "full_throttle_2300_rpm: missing required field 'todo'")
+        document = self.values()
+        series = document["engine_sea_level"]["full_throttle_2300_rpm"]
+        series["points"] = copy.deepcopy(
+            document["engine_sea_level"]["full_throttle"]["points"][:1])
+        self.assertRejected(document, "full_throttle_2300_rpm.points: must equal []")
+
+    def test_r_data_2_sourced_series_needs_points_and_conversion(self):
+        document = self.values()
+        document["cruise"]["pa_2000ft_standard_temperature"]["points"] = []
+        self.assertRejected(document, "pa_2000ft_standard_temperature.points: needs at least 1")
+        document = self.values()
+        del document["engine_sea_level"]["part_throttle"]["conversion"]
+        self.assertRejected(document, "part_throttle: missing required field 'conversion'")
+
+    def test_series_points_must_increase(self):
+        document = self.values()
+        points = document["cruise"]["pa_2000ft_standard_temperature"]["points"]
+        points[0], points[1] = points[1], points[0]
+        self.assertRejected(document, "pa_2000ft_standard_temperature.points[1]")
+        document = self.values()
+        points = document["engine_sea_level"]["part_throttle"]["points"]
+        points[1] = copy.deepcopy(points[0])
+        self.assertRejected(document, "part_throttle.points[1]: (2000, 20.0, 77) not above")
+        document = self.values()
+        points = document["engine_fuel"]["rpm_2400_best_power"]["points"]
+        points[0], points[1] = points[1], points[0]
+        self.assertRejected(document, "rpm_2400_best_power.points[1]: (2400, 120) not above")
+
+    def test_r_fid_3_fidelity_must_stay_not_validated(self):
+        document = self.values()
+        document["fidelity"] = "validated"
+        self.assertRejected(document, "$.fidelity: must equal")
+
+    def glide_ratio_mismatch(self, document):
+        """Recompute the derived glide ratio from its distance reading and 12,000 ft."""
+        glide = document["glide"]
+        distance = glide["distance_12000ft"]
+        self.assertIn("12,000 ft", distance["condition"])
+        expected = distance["value"] / (12000 * vm.CONVERSIONS[("ft", "m")])
+        ratio = glide["glide_ratio"]
+        return [name for name, value in (("value", ratio["value"]),
+                                         ("original_value", ratio["original_value"]))
+                if abs(value - expected) > vm.CONVERSION_TOLERANCE * max(1.0, expected)]
+
+    def test_r_data_2_derived_glide_ratio_matches_distance_and_height(self):
+        self.assertEqual(self.glide_ratio_mismatch(self.values()), [])
+        document = self.values()
+        document["glide"]["distance_12000ft"]["value"] = 17.0 * 1852
+        document["glide"]["distance_12000ft"]["original_value"] = 17.0
+        self.assertEqual(self.glide_ratio_mismatch(document), ["value", "original_value"])
+        document = self.values()
+        document["glide"]["glide_ratio"]["value"] = 9.5
+        self.assertEqual(self.glide_ratio_mismatch(document), ["value"])
+
+    def test_r_data_2_wrong_fuel_flow_conversion_fails(self):
+        document = self.values()
+        point = document["engine_fuel"]["rpm_2400_best_economy"]["points"][0]
+        point["fuel_flow"]["value"] = point["fuel_flow"]["original_value"] * 0.45359237 / 3600 * 1.01
+        self.assertRejected(document, "rpm_2400_best_economy.points[0].fuel_flow: value")
+
+    def test_fuel_series_needs_mixture_and_matching_units(self):
+        document = self.values()
+        del document["engine_fuel"]["rpm_2400_best_power"]["mixture"]
+        self.assertRejected(document, "rpm_2400_best_power: missing required field 'mixture'")
+        document = self.values()
+        document["engine_fuel"]["rpm_2400_best_power"]["points"][0]["fuel_flow"][
+            "original_unit"] = "gal/h"
+        self.assertRejected(document, "fuel_flow.original_unit: must equal \"lb/h\"")
+
+    def test_unknown_fuel_series_needs_todo(self):
+        document = self.values()
+        del document["engine_fuel"]["rpm_2700"]["todo"]
+        self.assertRejected(document, "rpm_2700: missing required field 'todo'")
+
+    def test_cli_validates_performance_values_with_sibling_manifest(self):
+        with tempfile.TemporaryDirectory(prefix="gefly-perf-test-") as directory:
+            bad = self.values()
+            bad["glide"]["best_glide_ias"]["unit"] = "m"
+            (Path(directory) / "manifest.json").write_text(json.dumps(self.manifest),
+                                                          encoding="utf-8")
+            path = Path(directory) / vm.PERFORMANCE_VALUES_NAME
+            path.write_text(json.dumps(bad), encoding="utf-8")
+            with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                self.assertEqual(vm.main([str(PERFORMANCE_VALUES)]), 0)
+                self.assertEqual(vm.main([str(path)]), 1)
+
+    def test_performance_values_reject_invalid_sibling_manifest(self):
+        with tempfile.TemporaryDirectory(prefix="gefly-perf-test-") as directory:
+            manifest = copy.deepcopy(self.manifest)
+            manifest["fidelity"] = "validated"
+            (Path(directory) / "manifest.json").write_text(json.dumps(manifest),
+                                                          encoding="utf-8")
+            path = Path(directory) / vm.PERFORMANCE_VALUES_NAME
+            path.write_text(json.dumps(self.values()), encoding="utf-8")
+            errors = vm.load_poh_values(path, self.schema, self.manifest_schema,
+                                        vm.validate_performance_values)
+            self.assertTrue(any(e.startswith("manifest manifest.json: $.fidelity") for e in errors),
+                            errors)
+
+
 if __name__ == "__main__":
     unittest.main()

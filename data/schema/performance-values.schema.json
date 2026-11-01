@@ -1,0 +1,285 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/gregoryyy/gefly/data/schema/performance-values.schema.json",
+  "title": "Gefly selected engine and cruise/glide performance values",
+  "description": "Individual cited engine-curve points and flight-manual cruise/glide values for one aircraft manifest (R-DATA-1, R-DATA-2, R-FID-3), for calibrating and judging a flight-dynamics model. Not a copy of a chart or table and not a flight model. Citations resolve against the source register of the manifest named in 'manifest'. The definitions citation, citations, status and status_rules must stay identical to aircraft-manifest.schema.json, and reading to poh-values.schema.json (checked by utils/test_validate_manifest.py). utils/validate_manifest.py implements this subset of JSON Schema plus cross-reference, conversion and ordering rules.",
+  "type": "object",
+  "required": [
+    "schema_version", "values_id", "values_version", "status", "fidelity", "manifest",
+    "extraction", "engine_ratings", "engine_sea_level", "engine_fuel", "cruise", "glide",
+    "not_extracted", "pending", "prepared"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$comment": {"type": "string"},
+    "schema_version": {"const": "1.0.0"},
+    "values_id": {"type": "string", "pattern": "^gefly\\.aircraft\\.[a-z0-9][a-z0-9-]*\\.performance-values$"},
+    "values_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "status": {"enum": ["draft", "reviewed", "superseded"]},
+    "fidelity": {"const": "not validated"},
+    "manifest": {
+      "description": "Sibling manifest whose source register the citations use. 'path' is a file name in the same directory.",
+      "type": "object",
+      "required": ["path", "manifest_id"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*\\.json$"},
+        "manifest_id": {"type": "string", "pattern": "^gefly\\.aircraft\\.[a-z0-9][a-z0-9-]*$"}
+      }
+    },
+    "extraction": {"type": "string", "minLength": 1},
+    "engine_ratings": {"$ref": "#/$defs/quantity_group"},
+    "engine_sea_level": {
+      "description": "Selected points of an engine power chart at sea level, one series per curve family.",
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/engine_series"}
+    },
+    "engine_fuel": {
+      "description": "Selected points of an engine fuel-consumption chart, one series per curve and mixture setting.",
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/fuel_series"}
+    },
+    "cruise": {
+      "description": "Selected cruise-table rows, one series per altitude/temperature column.",
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/cruise_series"}
+    },
+    "glide": {"$ref": "#/$defs/quantity_group"},
+    "not_extracted": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["item", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "item": {"type": "string", "minLength": 1},
+          "reason": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "pending": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "prepared": {
+      "type": "object",
+      "required": ["date", "by", "from"],
+      "additionalProperties": false,
+      "properties": {
+        "date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+        "by": {"type": "string", "minLength": 1},
+        "from": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      }
+    }
+  },
+  "$defs": {
+    "status": {
+      "description": "R-DATA-2 value status.",
+      "enum": ["sourced", "derived", "estimated", "unknown"]
+    },
+    "citation": {
+      "type": "object",
+      "required": ["source_id", "revision", "page"],
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {"type": "string", "minLength": 1},
+        "revision": {"type": "string", "minLength": 1},
+        "page": {"type": "string", "minLength": 1},
+        "section": {"type": "string", "minLength": 1}
+      }
+    },
+    "citations": {"type": "array", "items": {"$ref": "#/$defs/citation"}},
+    "status_rules": {
+      "description": "sourced needs a page citation; derived needs a derivation; unknown needs a TODO.",
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"const": "sourced"}}},
+          "then": {"properties": {"citations": {"minItems": 1}}}
+        },
+        {
+          "if": {"properties": {"status": {"const": "derived"}}},
+          "then": {"required": ["derivation"], "properties": {"citations": {"minItems": 1}}}
+        },
+        {
+          "if": {"properties": {"status": {"const": "unknown"}}},
+          "then": {"required": ["todo"]}
+        }
+      ]
+    },
+    "reading": {
+      "description": "How the value was taken from the source: printed in a table, or read off a graph.",
+      "enum": ["tabulated", "read_from_chart"]
+    },
+    "si_unit": {
+      "description": "SI storage units; '1' is a dimensionless number (fraction or ratio).",
+      "enum": ["m", "m/s", "W", "rad/s", "Pa", "m^3", "m^3/s", "kg/s", "1"]
+    },
+    "original_unit": {
+      "description": "Units as published. The validator's factor table decides which pairs with an SI unit are allowed.",
+      "enum": ["ft", "kt", "nm", "hp", "rpm", "inHg", "in^3", "gal/h", "lb/h", "%", "1"]
+    },
+    "quantity": {
+      "description": "A single cited value with its condition. Airspeeds (m/s) need reference IAS, CAS or TAS; no other unit may carry a reference. In a quantity group, a key ending in _ias, _cas or _tas must carry that reference (validator rule).",
+      "type": "object",
+      "required": ["value", "unit", "original_unit", "condition", "status", "citations", "reading", "uncertainty"],
+      "additionalProperties": false,
+      "properties": {
+        "value": {"type": ["number", "null"]},
+        "unit": {"$ref": "#/$defs/si_unit"},
+        "original_value": {"type": ["number", "null"]},
+        "original_unit": {"$ref": "#/$defs/original_unit"},
+        "reference": {"enum": ["IAS", "CAS", "TAS"]},
+        "condition": {"type": "string", "minLength": 1},
+        "status": {"$ref": "#/$defs/status"},
+        "citations": {"$ref": "#/$defs/citations"},
+        "reading": {"$ref": "#/$defs/reading"},
+        "conversion": {"type": "string", "minLength": 1},
+        "derivation": {"type": "string", "minLength": 1},
+        "uncertainty": {"type": "string", "minLength": 1},
+        "todo": {"type": "string", "minLength": 1}
+      },
+      "allOf": [
+        {"$ref": "#/$defs/status_rules"},
+        {
+          "if": {"properties": {"unit": {"const": "m/s"}}},
+          "then": {"required": ["reference"]}
+        },
+        {
+          "if": {"properties": {"unit": {"enum": ["m", "W", "rad/s", "Pa", "m^3", "m^3/s", "kg/s", "1"]}}},
+          "then": {"properties": {"reference": false}}
+        },
+        {
+          "if": {"properties": {"status": {"enum": ["sourced", "derived", "estimated"]}}},
+          "then": {
+            "required": ["original_value", "conversion"],
+            "properties": {"value": {"type": "number"}, "original_value": {"type": "number"}}
+          }
+        },
+        {
+          "if": {"properties": {"status": {"const": "unknown"}}},
+          "then": {"properties": {"value": {"type": "null"}, "original_value": {"type": "null"}}}
+        }
+      ]
+    },
+    "quantity_group": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/quantity"}
+    },
+    "measure": {
+      "description": "One number of a series point, in SI with its published value and unit.",
+      "type": "object",
+      "required": ["value", "unit", "original_value", "original_unit"],
+      "additionalProperties": false,
+      "properties": {
+        "value": {"type": "number"},
+        "unit": {"$ref": "#/$defs/si_unit"},
+        "original_value": {"type": "number"},
+        "original_unit": {"$ref": "#/$defs/original_unit"},
+        "reference": {"const": "TAS"}
+      }
+    },
+    "engine_speed": {"allOf": [{"$ref": "#/$defs/measure"}, {"properties": {"unit": {"const": "rad/s"}, "original_unit": {"const": "rpm"}, "reference": false}}]},
+    "engine_point": {
+      "type": "object",
+      "required": ["engine_speed", "manifold_pressure", "power"],
+      "additionalProperties": false,
+      "properties": {
+        "engine_speed": {"$ref": "#/$defs/engine_speed"},
+        "manifold_pressure": {"allOf": [{"$ref": "#/$defs/measure"}, {"properties": {"unit": {"const": "Pa"}, "original_unit": {"const": "inHg"}, "reference": false}}]},
+        "power": {"allOf": [{"$ref": "#/$defs/measure"}, {"properties": {"unit": {"const": "W"}, "original_unit": {"const": "hp"}, "reference": false}}]}
+      }
+    },
+    "fuel_point": {
+      "type": "object",
+      "required": ["engine_speed", "power", "fuel_flow"],
+      "additionalProperties": false,
+      "properties": {
+        "engine_speed": {"$ref": "#/$defs/engine_speed"},
+        "power": {"allOf": [{"$ref": "#/$defs/measure"}, {"properties": {"unit": {"const": "W"}, "original_unit": {"const": "hp"}, "reference": false}}]},
+        "fuel_flow": {"allOf": [{"$ref": "#/$defs/measure"}, {"properties": {"unit": {"const": "kg/s"}, "original_unit": {"const": "lb/h"}, "reference": false}}]}
+      }
+    },
+    "cruise_point": {
+      "type": "object",
+      "required": ["engine_speed", "power_fraction", "true_airspeed", "fuel_flow"],
+      "additionalProperties": false,
+      "properties": {
+        "engine_speed": {"$ref": "#/$defs/engine_speed"},
+        "power_fraction": {"allOf": [{"$ref": "#/$defs/measure"}, {"properties": {"unit": {"const": "1"}, "original_unit": {"const": "%"}, "reference": false}}]},
+        "true_airspeed": {"allOf": [{"$ref": "#/$defs/measure"}, {"required": ["reference"], "properties": {"unit": {"const": "m/s"}, "original_unit": {"const": "kt"}}}]},
+        "fuel_flow": {"allOf": [{"$ref": "#/$defs/measure"}, {"properties": {"unit": {"const": "m^3/s"}, "original_unit": {"const": "gal/h"}, "reference": false}}]}
+      }
+    },
+    "series_rules": {
+      "description": "Common rules for a series of selected points: sourced needs points and a conversion; unknown has none.",
+      "allOf": [
+        {"$ref": "#/$defs/status_rules"},
+        {
+          "if": {"properties": {"status": {"const": "sourced"}}},
+          "then": {"required": ["conversion"], "properties": {"points": {"minItems": 1}}}
+        },
+        {
+          "if": {"properties": {"status": {"const": "unknown"}}},
+          "then": {"properties": {"points": {"const": []}}}
+        }
+      ]
+    },
+    "engine_series": {
+      "description": "Selected points read off one engine chart. The validator requires points strictly increasing by engine speed, then manifold pressure.",
+      "type": "object",
+      "required": ["condition", "status", "citations", "reading", "selection", "uncertainty", "points"],
+      "additionalProperties": false,
+      "properties": {
+        "condition": {"type": "string", "minLength": 1},
+        "status": {"enum": ["sourced", "unknown"]},
+        "citations": {"$ref": "#/$defs/citations"},
+        "reading": {"$ref": "#/$defs/reading"},
+        "selection": {"type": "string", "minLength": 1},
+        "conversion": {"type": "string", "minLength": 1},
+        "uncertainty": {"type": "string", "minLength": 1},
+        "points": {"type": "array", "items": {"$ref": "#/$defs/engine_point"}},
+        "todo": {"type": "string", "minLength": 1}
+      },
+      "allOf": [{"$ref": "#/$defs/series_rules"}]
+    },
+    "fuel_series": {
+      "description": "Selected points read off one fuel-consumption curve. The validator requires points strictly increasing by engine speed, then power.",
+      "type": "object",
+      "required": ["mixture", "condition", "status", "citations", "reading", "selection", "uncertainty", "points"],
+      "additionalProperties": false,
+      "properties": {
+        "mixture": {"enum": ["best_power", "best_economy"]},
+        "condition": {"type": "string", "minLength": 1},
+        "status": {"enum": ["sourced", "unknown"]},
+        "citations": {"$ref": "#/$defs/citations"},
+        "reading": {"$ref": "#/$defs/reading"},
+        "selection": {"type": "string", "minLength": 1},
+        "conversion": {"type": "string", "minLength": 1},
+        "uncertainty": {"type": "string", "minLength": 1},
+        "points": {"type": "array", "items": {"$ref": "#/$defs/fuel_point"}},
+        "todo": {"type": "string", "minLength": 1}
+      },
+      "allOf": [{"$ref": "#/$defs/series_rules"}]
+    },
+    "cruise_series": {
+      "description": "Selected rows of one cruise-table column block. The validator requires points strictly increasing by engine speed.",
+      "type": "object",
+      "required": ["condition", "status", "citations", "reading", "selection", "uncertainty", "points"],
+      "additionalProperties": false,
+      "properties": {
+        "condition": {"type": "string", "minLength": 1},
+        "status": {"enum": ["sourced", "unknown"]},
+        "citations": {"$ref": "#/$defs/citations"},
+        "reading": {"$ref": "#/$defs/reading"},
+        "selection": {"type": "string", "minLength": 1},
+        "conversion": {"type": "string", "minLength": 1},
+        "uncertainty": {"type": "string", "minLength": 1},
+        "points": {"type": "array", "items": {"$ref": "#/$defs/cruise_point"}},
+        "todo": {"type": "string", "minLength": 1}
+      },
+      "allOf": [{"$ref": "#/$defs/series_rules"}]
+    }
+  }
+}

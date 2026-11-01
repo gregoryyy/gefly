@@ -1,0 +1,713 @@
+{
+  "$comment": "Selected engine-curve points and POH cruise/glide values as cited facts; not a copy of any chart or table and not a flight model. Field guide: README.md in this directory. Schema: data/schema/performance-values.schema.json.",
+  "schema_version": "1.0.0",
+  "values_id": "gefly.aircraft.c172s-classic.performance-values",
+  "values_version": "0.2.0",
+  "status": "draft",
+  "fidelity": "not validated",
+  "manifest": {
+    "path": "manifest.json",
+    "manifest_id": "gefly.aircraft.c172s-classic"
+  },
+  "extraction": "User decision 2026-11-01 18:43 (GAPS Q5): extract only the needed points of the Lycoming IO-360-L2A power curve as cited facts, never the whole chart; user decision 2026-11-01 19:04 (GAPS Q5): likewise selected points of the Lycoming fuel-consumption chart (Figure 3-9); the no-piecemeal rule of the POH extraction applies. POH cruise and glide values follow the user decision 2026-11-01 13:59. Purpose: calibration of a JSBSim piston engine and airframe in the circuit regime (research note docs/research/2026-11-01-c172s-poh-values.md). Chart points were read on page images rendered at 400 dpi.",
+  "engine_ratings": {
+    "rated_power_normal": {
+      "value": 119312.0,
+      "unit": "W",
+      "original_value": 160,
+      "original_unit": "hp",
+      "condition": "IO-360-L2A normal rating, at 2400 rpm",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "A14",
+          "revision": "60297-12, 8th ed. Oct 2005, revision 60297-12-5 Dec 2009",
+          "page": "2-2",
+          "section": "Section 2 Specifications, IO-360-L2A block and its footnote; no revision mark on page"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "hp x 745.69987158227022 W (mechanical horsepower), rounded to 0.1 W",
+      "uncertainty": "As published; uninstalled engine. The 172S uses the alternate rating (manifest engine.ratings)."
+    },
+    "rated_speed_normal": {
+      "value": 251.3274,
+      "unit": "rad/s",
+      "original_value": 2400,
+      "original_unit": "rpm",
+      "condition": "IO-360-L2A normal rating speed",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "A14",
+          "revision": "60297-12, 8th ed. Oct 2005, revision 60297-12-5 Dec 2009",
+          "page": "2-2",
+          "section": "Section 2 Specifications, IO-360-L2A block and its footnote; no revision mark on page"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "rpm x 2 pi / 60, rounded to 4 decimals",
+      "uncertainty": "As published."
+    },
+    "rated_power_alternate": {
+      "value": 134226.0,
+      "unit": "W",
+      "original_value": 180,
+      "original_unit": "hp",
+      "condition": "IO-360-L2A alternate rating, at 2700 rpm (footnote); the rating used by the 172S",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "A14",
+          "revision": "60297-12, 8th ed. Oct 2005, revision 60297-12-5 Dec 2009",
+          "page": "2-2",
+          "section": "Section 2 Specifications, IO-360-L2A block and its footnote; no revision mark on page"
+        },
+        {
+          "source_id": "S9",
+          "revision": "Issue 03, 24 Aug 2022",
+          "page": "11",
+          "section": "6"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "hp x 745.69987158227022 W (mechanical horsepower), rounded to 0.1 W",
+      "uncertainty": "As published; agrees with S9 (134 kW, 180 HP at 2700 rpm, alternate rating) and with the manifest rated_power."
+    },
+    "rated_speed_alternate": {
+      "value": 282.7433,
+      "unit": "rad/s",
+      "original_value": 2700,
+      "original_unit": "rpm",
+      "condition": "IO-360-L2A alternate rating speed (footnote)",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "A14",
+          "revision": "60297-12, 8th ed. Oct 2005, revision 60297-12-5 Dec 2009",
+          "page": "2-2",
+          "section": "Section 2 Specifications, IO-360-L2A block and its footnote; no revision mark on page"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "rpm x 2 pi / 60, rounded to 4 decimals",
+      "uncertainty": "As published; agrees with the 172S TCDS maximum rpm in the manifest."
+    },
+    "displacement": {
+      "value": 0.0059157,
+      "unit": "m^3",
+      "original_value": 361.0,
+      "original_unit": "in^3",
+      "condition": "Total piston displacement",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "A14",
+          "revision": "60297-12, 8th ed. Oct 2005, revision 60297-12-5 Dec 2009",
+          "page": "2-2",
+          "section": "Section 2 Specifications, IO-360-L2A block and its footnote; no revision mark on page"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "in^3 x 1.6387064e-5 m^3 (exact), rounded to 5 significant digits",
+      "uncertainty": "As published to 0.1 in^3."
+    }
+  },
+  "engine_sea_level": {
+    "full_throttle": {
+      "condition": "Uninstalled engine, sea-level standard temperature and pressure, maximum-power mixture, fuel minimum grade 91/96; point at the upper (full-throttle) end of each drawn sea-level curve. The chart is drawn for the 160 hp / 2400 rpm rating; curves for 2500-2700 rpm are dashed, and the chart legend read does not state what the dashing means.",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "A14",
+          "revision": "60297-12, 8th ed. Oct 2005, revision 60297-12-5 Dec 2009",
+          "page": "3-40",
+          "section": "Section 3, Figure 3-25 Sea Level and Altitude Performance IO-360-L2A, curve no. 13516-A, sea-level panel; no revision mark on page"
+        }
+      ],
+      "reading": "read_from_chart",
+      "selection": "Curve ends at 2000, 2400, 2500 and 2700 rpm: lower circuit power, the normal rating (check against p. 2-2), and the 2500-2700 rpm range of the 172S alternate rating. 4 of the 8 drawn curves; other curves not read.",
+      "conversion": "rpm x 2 pi / 60 (4 decimals); inHg x 3386.389 Pa (conventional inch of mercury, NIST SP 811; 0.1 Pa); hp x 745.69987158227022 W (0.1 W)",
+      "uncertainty": "Read off a scanned chart with pixel interpolation between grid lines (5 hp, 1 inHg); power +/-2 hp and manifold pressure +/-0.1 inHg, except 2500 rpm (curve ends in a short dash) +/-3 hp. The 2700 rpm curve ends at a small circle on the 180 hp grid line, whose top grid row is drawn wider than the others. Uninstalled-engine data: installation (induction, exhaust, cooling) losses and the fixed-pitch propeller's rpm limits are not included. Cross-check: altitude-panel sea-level intercepts agree within 1.5 hp (research note).",
+      "points": [
+        {
+          "engine_speed": {
+            "value": 209.4395,
+            "unit": "rad/s",
+            "original_value": 2000,
+            "original_unit": "rpm"
+          },
+          "manifold_pressure": {
+            "value": 99898.5,
+            "unit": "Pa",
+            "original_value": 29.5,
+            "original_unit": "inHg"
+          },
+          "power": {
+            "value": 104398.0,
+            "unit": "W",
+            "original_value": 140,
+            "original_unit": "hp"
+          }
+        },
+        {
+          "engine_speed": {
+            "value": 251.3274,
+            "unit": "rad/s",
+            "original_value": 2400,
+            "original_unit": "rpm"
+          },
+          "manifold_pressure": {
+            "value": 98543.9,
+            "unit": "Pa",
+            "original_value": 29.1,
+            "original_unit": "inHg"
+          },
+          "power": {
+            "value": 119312.0,
+            "unit": "W",
+            "original_value": 160,
+            "original_unit": "hp"
+          }
+        },
+        {
+          "engine_speed": {
+            "value": 261.7994,
+            "unit": "rad/s",
+            "original_value": 2500,
+            "original_unit": "rpm"
+          },
+          "manifold_pressure": {
+            "value": 98543.9,
+            "unit": "Pa",
+            "original_value": 29.1,
+            "original_unit": "inHg"
+          },
+          "power": {
+            "value": 123786.2,
+            "unit": "W",
+            "original_value": 166,
+            "original_unit": "hp"
+          }
+        },
+        {
+          "engine_speed": {
+            "value": 282.7433,
+            "unit": "rad/s",
+            "original_value": 2700,
+            "original_unit": "rpm"
+          },
+          "manifold_pressure": {
+            "value": 97189.4,
+            "unit": "Pa",
+            "original_value": 28.7,
+            "original_unit": "inHg"
+          },
+          "power": {
+            "value": 134226.0,
+            "unit": "W",
+            "original_value": 180,
+            "original_unit": "hp"
+          }
+        }
+      ]
+    },
+    "full_throttle_2300_rpm": {
+      "condition": "As full_throttle, at 2300 rpm",
+      "status": "unknown",
+      "citations": [
+        {
+          "source_id": "A14",
+          "revision": "60297-12, 8th ed. Oct 2005, revision 60297-12-5 Dec 2009",
+          "page": "3-40",
+          "section": "Section 3, Figure 3-25 Sea Level and Altitude Performance IO-360-L2A, curve no. 13516-A, sea-level panel; no revision mark on page"
+        }
+      ],
+      "reading": "read_from_chart",
+      "selection": "Requested for the circuit regime.",
+      "uncertainty": "The chart has no 2300 rpm curve (curves at 1600, 1800, 2000, 2200, 2400, 2500, 2600, 2700 rpm).",
+      "points": [],
+      "todo": "Decide in the engine model whether to interpolate between the 2200 and 2400 rpm curves (a derived value with its method) instead of reading a value the chart does not draw."
+    },
+    "part_throttle": {
+      "condition": "Uninstalled engine, sea-level standard temperature and pressure, maximum-power mixture; power on the sea-level curve at the given absolute manifold pressure",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "A14",
+          "revision": "60297-12, 8th ed. Oct 2005, revision 60297-12-5 Dec 2009",
+          "page": "3-40",
+          "section": "Section 3, Figure 3-25 Sea Level and Altitude Performance IO-360-L2A, curve no. 13516-A, sea-level panel; no revision mark on page"
+        }
+      ],
+      "reading": "read_from_chart",
+      "selection": "Three part-throttle points on curves traced without ambiguity: 2000 rpm at 20 and 24 inHg (approach/descent region) and 2400 rpm at 26 inHg (cruise/downwind region). The 2400 rpm curve is not read near 24 inHg, where its label and the chart's worked-example marks cover it.",
+      "conversion": "rpm x 2 pi / 60 (4 decimals); inHg x 3386.389 Pa (conventional inch of mercury, NIST SP 811; 0.1 Pa); hp x 745.69987158227022 W (0.1 W)",
+      "uncertainty": "Read off a scanned chart with pixel interpolation; manifold pressure taken exactly on the inHg grid line, power +/-2 hp. Uninstalled-engine data as for full_throttle.",
+      "points": [
+        {
+          "engine_speed": {
+            "value": 209.4395,
+            "unit": "rad/s",
+            "original_value": 2000,
+            "original_unit": "rpm"
+          },
+          "manifold_pressure": {
+            "value": 67727.8,
+            "unit": "Pa",
+            "original_value": 20.0,
+            "original_unit": "inHg"
+          },
+          "power": {
+            "value": 57418.9,
+            "unit": "W",
+            "original_value": 77,
+            "original_unit": "hp"
+          }
+        },
+        {
+          "engine_speed": {
+            "value": 209.4395,
+            "unit": "rad/s",
+            "original_value": 2000,
+            "original_unit": "rpm"
+          },
+          "manifold_pressure": {
+            "value": 81273.3,
+            "unit": "Pa",
+            "original_value": 24.0,
+            "original_unit": "inHg"
+          },
+          "power": {
+            "value": 77552.8,
+            "unit": "W",
+            "original_value": 104,
+            "original_unit": "hp"
+          }
+        },
+        {
+          "engine_speed": {
+            "value": 251.3274,
+            "unit": "rad/s",
+            "original_value": 2400,
+            "original_unit": "rpm"
+          },
+          "manifold_pressure": {
+            "value": 88046.1,
+            "unit": "Pa",
+            "original_value": 26.0,
+            "original_unit": "inHg"
+          },
+          "power": {
+            "value": 101415.2,
+            "unit": "W",
+            "original_value": 136,
+            "original_unit": "hp"
+          }
+        }
+      ]
+    }
+  },
+  "engine_fuel": {
+    "rpm_2400_best_power": {
+      "mixture": "best_power",
+      "condition": "Uninstalled engine, part-throttle fuel consumption, mixture manually set to best power; 2400 rpm curve; fuel minimum grade 91/96; chart drawn for the 160 hp rating (its percent-rated-power marks 55/65/75 % sit at 88/104/120 hp)",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "A14",
+          "revision": "60297-12, 8th ed. Oct 2005, revision 60297-12-5 Dec 2009",
+          "page": "3-24",
+          "section": "Section 3, Figure 3-9 Part Throttle Fuel Consumption IO-360-L2A, curve no. 13518 (label may be cut at the page edge); no revision mark on page"
+        }
+      ],
+      "reading": "read_from_chart",
+      "selection": "Two points on the 2400 rpm best-power curve: 120 hp (downwind/cruise power region) and the curve end at 160 hp (full-power climb region); together with best_economy they bound BSFC in the circuit regime. 1 of 6 curves for this series.",
+      "conversion": "rpm x 2 pi / 60 (4 decimals); hp x 745.69987158227022 W (0.1 W); lb/h x 0.45359237 kg / 3600 s, rounded to 5 significant digits",
+      "uncertainty": "Read off a scanned chart with pixel interpolation between grid lines (10 hp, 5 lb/h; the scan's horizontal grid spacing varies by up to 10 %): fuel flow +/-1 lb/h; power taken on the hp grid line or at the curve end (+/-1 hp). Uninstalled engine; fuel mass flow as charted, no fuel density needed.",
+      "points": [
+        {
+          "engine_speed": {
+            "value": 251.3274,
+            "unit": "rad/s",
+            "original_value": 2400,
+            "original_unit": "rpm"
+          },
+          "power": {
+            "value": 89484.0,
+            "unit": "W",
+            "original_value": 120,
+            "original_unit": "hp"
+          },
+          "fuel_flow": {
+            "value": 0.0076229,
+            "unit": "kg/s",
+            "original_value": 60.5,
+            "original_unit": "lb/h"
+          }
+        },
+        {
+          "engine_speed": {
+            "value": 251.3274,
+            "unit": "rad/s",
+            "original_value": 2400,
+            "original_unit": "rpm"
+          },
+          "power": {
+            "value": 119312.0,
+            "unit": "W",
+            "original_value": 160,
+            "original_unit": "hp"
+          },
+          "fuel_flow": {
+            "value": 0.0095254,
+            "unit": "kg/s",
+            "original_value": 75.6,
+            "original_unit": "lb/h"
+          }
+        }
+      ]
+    },
+    "rpm_2400_best_economy": {
+      "mixture": "best_economy",
+      "condition": "As rpm_2400_best_power, mixture manually set to best economy",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "A14",
+          "revision": "60297-12, 8th ed. Oct 2005, revision 60297-12-5 Dec 2009",
+          "page": "3-24",
+          "section": "Section 3, Figure 3-9 Part Throttle Fuel Consumption IO-360-L2A, curve no. 13518 (label may be cut at the page edge); no revision mark on page"
+        }
+      ],
+      "reading": "read_from_chart",
+      "selection": "The end of the 2400 rpm best-economy curve at 120 hp (75 % of the 160 hp rating), paired with the best-power point at the same power.",
+      "conversion": "rpm x 2 pi / 60 (4 decimals); hp x 745.69987158227022 W (0.1 W); lb/h x 0.45359237 kg / 3600 s, rounded to 5 significant digits",
+      "uncertainty": "As rpm_2400_best_power: fuel flow +/-1 lb/h.",
+      "points": [
+        {
+          "engine_speed": {
+            "value": 251.3274,
+            "unit": "rad/s",
+            "original_value": 2400,
+            "original_unit": "rpm"
+          },
+          "power": {
+            "value": 89484.0,
+            "unit": "W",
+            "original_value": 120,
+            "original_unit": "hp"
+          },
+          "fuel_flow": {
+            "value": 0.0065393,
+            "unit": "kg/s",
+            "original_value": 51.9,
+            "original_unit": "lb/h"
+          }
+        }
+      ]
+    },
+    "rpm_2700": {
+      "mixture": "best_power",
+      "condition": "As rpm_2400_best_power, at 2700 rpm",
+      "status": "unknown",
+      "citations": [
+        {
+          "source_id": "A14",
+          "revision": "60297-12, 8th ed. Oct 2005, revision 60297-12-5 Dec 2009",
+          "page": "3-24",
+          "section": "Section 3, Figure 3-9 Part Throttle Fuel Consumption IO-360-L2A, curve no. 13518 (label may be cut at the page edge); no revision mark on page"
+        }
+      ],
+      "reading": "read_from_chart",
+      "selection": "Requested for the 172S rating (180 hp at 2700 rpm).",
+      "uncertainty": "Figure 3-9 has curves for 2400 and 2200 rpm (best power) and 2400, 2200, 2000 and 1800 rpm (best economy) only.",
+      "points": [],
+      "todo": "No Lycoming 2700 rpm fuel curve was read; take full-power fuel flow from another cited source or treat extrapolation as a derived modelling choice."
+    }
+  },
+  "cruise": {
+    "pa_2000ft_standard_temperature": {
+      "condition": "2550 lb; recommended lean mixture at all altitudes (POH Section 4, cruise); pressure altitude 2000 ft; standard temperature column. Percent BHP as printed; the power it refers to is not stated on the page.",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-19",
+          "section": "Section 5, Figure 5-8 sheet 1 of 2, cruise performance; page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "selection": "All six rpm rows of the 2000 ft block (2100-2550 rpm), standard-temperature column only: the pressure altitude closest to the EDFE circuit; the two non-standard temperature columns and other altitudes are not extracted.",
+      "conversion": "rpm x 2 pi / 60 (4 decimals); percent / 100 (4 decimals); kt x 1852/3600 m/s (4 decimals); US gal/h x 3.785411784e-3 m^3 / 3600 s, rounded to 5 significant digits",
+      "uncertainty": "Tabulated to 1 %, 1 kt and 0.1 gal/h; no tolerance stated. POH performance data assume an airplane and engine in good condition and average piloting technique (p. 5-3).",
+      "points": [
+        {
+          "engine_speed": {
+            "value": 219.9115,
+            "unit": "rad/s",
+            "original_value": 2100,
+            "original_unit": "rpm"
+          },
+          "power_fraction": {
+            "value": 0.44,
+            "unit": "1",
+            "original_value": 44,
+            "original_unit": "%"
+          },
+          "true_airspeed": {
+            "value": 46.3,
+            "unit": "m/s",
+            "original_value": 90,
+            "original_unit": "kt",
+            "reference": "TAS"
+          },
+          "fuel_flow": {
+            "value": 6.9399e-06,
+            "unit": "m^3/s",
+            "original_value": 6.6,
+            "original_unit": "gal/h"
+          }
+        },
+        {
+          "engine_speed": {
+            "value": 230.3835,
+            "unit": "rad/s",
+            "original_value": 2200,
+            "original_unit": "rpm"
+          },
+          "power_fraction": {
+            "value": 0.5,
+            "unit": "1",
+            "original_value": 50,
+            "original_unit": "%"
+          },
+          "true_airspeed": {
+            "value": 49.9011,
+            "unit": "m/s",
+            "original_value": 97,
+            "original_unit": "kt",
+            "reference": "TAS"
+          },
+          "fuel_flow": {
+            "value": 7.676e-06,
+            "unit": "m^3/s",
+            "original_value": 7.3,
+            "original_unit": "gal/h"
+          }
+        },
+        {
+          "engine_speed": {
+            "value": 240.8554,
+            "unit": "rad/s",
+            "original_value": 2300,
+            "original_unit": "rpm"
+          },
+          "power_fraction": {
+            "value": 0.57,
+            "unit": "1",
+            "original_value": 57,
+            "original_unit": "%"
+          },
+          "true_airspeed": {
+            "value": 53.5022,
+            "unit": "m/s",
+            "original_value": 104,
+            "original_unit": "kt",
+            "reference": "TAS"
+          },
+          "fuel_flow": {
+            "value": 8.5172e-06,
+            "unit": "m^3/s",
+            "original_value": 8.1,
+            "original_unit": "gal/h"
+          }
+        },
+        {
+          "engine_speed": {
+            "value": 251.3274,
+            "unit": "rad/s",
+            "original_value": 2400,
+            "original_unit": "rpm"
+          },
+          "power_fraction": {
+            "value": 0.64,
+            "unit": "1",
+            "original_value": 64,
+            "original_unit": "%"
+          },
+          "true_airspeed": {
+            "value": 56.5889,
+            "unit": "m/s",
+            "original_value": 110,
+            "original_unit": "kt",
+            "reference": "TAS"
+          },
+          "fuel_flow": {
+            "value": 9.4635e-06,
+            "unit": "m^3/s",
+            "original_value": 9.0,
+            "original_unit": "gal/h"
+          }
+        },
+        {
+          "engine_speed": {
+            "value": 261.7994,
+            "unit": "rad/s",
+            "original_value": 2500,
+            "original_unit": "rpm"
+          },
+          "power_fraction": {
+            "value": 0.73,
+            "unit": "1",
+            "original_value": 73,
+            "original_unit": "%"
+          },
+          "true_airspeed": {
+            "value": 59.1611,
+            "unit": "m/s",
+            "original_value": 115,
+            "original_unit": "kt",
+            "reference": "TAS"
+          },
+          "fuel_flow": {
+            "value": 1.041e-05,
+            "unit": "m^3/s",
+            "original_value": 9.9,
+            "original_unit": "gal/h"
+          }
+        },
+        {
+          "engine_speed": {
+            "value": 267.0354,
+            "unit": "rad/s",
+            "original_value": 2550,
+            "original_unit": "rpm"
+          },
+          "power_fraction": {
+            "value": 0.77,
+            "unit": "1",
+            "original_value": 77,
+            "original_unit": "%"
+          },
+          "true_airspeed": {
+            "value": 60.7044,
+            "unit": "m/s",
+            "original_value": 118,
+            "original_unit": "kt",
+            "reference": "TAS"
+          },
+          "fuel_flow": {
+            "value": 1.1041e-05,
+            "unit": "m^3/s",
+            "original_value": 10.5,
+            "original_unit": "gal/h"
+          }
+        }
+      ]
+    }
+  },
+  "glide": {
+    "best_glide_ias": {
+      "value": 34.9822,
+      "unit": "m/s",
+      "original_value": 68,
+      "original_unit": "kt",
+      "reference": "IAS",
+      "condition": "Maximum glide speed; no weight stated",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "3-3",
+          "section": "Section 3, airspeeds for emergency operation; page mark May 30/00"
+        },
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "3-14",
+          "section": "Section 3, Figure 3-1 Maximum Glide, conditions box; page mark Revision 4"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "As published; no weight dependence given in this POH revision."
+    },
+    "distance_12000ft": {
+      "value": 33336.0,
+      "unit": "m",
+      "original_value": 18.0,
+      "original_unit": "nm",
+      "condition": "Maximum glide: ground distance from 12,000 ft height above terrain; 68 KIAS, propeller windmilling, flaps up, zero wind; no weight stated",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "3-14",
+          "section": "Section 3, Figure 3-1 Maximum Glide; page mark Revision 4"
+        }
+      ],
+      "reading": "read_from_chart",
+      "conversion": "nm x 1852 m (exact)",
+      "uncertainty": "Read off the chart line (a double stroke; centre used) where it meets the 12,000 ft top border: 17.97 nm, recorded as 18.0 +/-0.2 nm. The line passes through the origin."
+    },
+    "glide_ratio": {
+      "value": 9.1142,
+      "unit": "1",
+      "original_value": 9.1142,
+      "original_unit": "1",
+      "condition": "Maximum glide, conditions as distance_12000ft",
+      "status": "derived",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "3-14",
+          "section": "Section 3, Figure 3-1 Maximum Glide; page mark Revision 4"
+        }
+      ],
+      "reading": "read_from_chart",
+      "conversion": "dimensionless; no conversion",
+      "derivation": "distance_12000ft / height: 18.0 nm x 1852 m / (12000 ft x 0.3048 m) = 9.1142; the chart line is straight through the origin, so the ratio holds for every height on it.",
+      "uncertainty": "+/-0.1 from the distance reading; still-air ground distance over height, so equal to the lift-to-drag ratio only approximately."
+    }
+  },
+  "not_extracted": [
+    {
+      "item": "Lycoming Figure 3-25: the 1600, 1800, 2200 and 2600 rpm sea-level curves, the rest of the curves read, the altitude panel and the temperature-correction formula",
+      "reason": "Not needed for the circuit-regime calibration; whole-chart digitisation is excluded by the user decision of 2026-11-01 18:43. Altitude-panel readings appear only as a cross-check in the research note."
+    },
+    {
+      "item": "Lycoming Figure 3-9: the 2200 rpm best-power curve, the 2200/2000/1800 rpm best-economy curves and other points on the 2400 rpm curves",
+      "reason": "Only the points bounding BSFC at 2400 rpm are needed (user decision 2026-11-01 19:04, GAPS Q5); whole-chart digitisation stays excluded."
+    },
+    {
+      "item": "Lycoming operating-conditions table (75 %/65 % cruise for the 160 hp rating)",
+      "reason": "Drawn up for the 160 hp rating, not the 172S alternate rating; installed fuel flow comes from the POH cruise table."
+    },
+    {
+      "item": "POH cruise table: 20 deg C below/above standard columns, other pressure altitudes (Figure 5-8 sheets 1 and 2), range and endurance profiles (Figures 5-9, 5-10)",
+      "reason": "Not needed for circuit-regime calibration; only the block nearest the circuit altitude at standard temperature."
+    },
+    {
+      "item": "POH glide chart at other heights",
+      "reason": "The chart line is straight through the origin; one reading and the derived ratio carry it, so further points add nothing."
+    }
+  ],
+  "pending": [
+    "Cruise power_fraction is the POH's printed percent BHP; Figure 5-8 (p. 5-19) does not state its reference power. The POH rates the engine 180 BHP at 2700 rpm (S17 pp. 1-4 and 2-5), but that the percentages refer to 180 hp is an unverified inference: treat the basis as unknown and never multiply by the Lycoming 160 hp normal rating.",
+    "Select the propeller and installation model before using uninstalled Lycoming power for JSBSim calibration; the TCDS static rpm (2300-2400 at full throttle) is the propeller check.",
+    "Check later 172SPHUS revisions applicable to 172S9491-172S9809 for changed cruise and glide values (GAPS Q3 manual revision).",
+    "Read FAA engine TCDS 1E10 (S8) to confirm the IO-360-L2A ratings against the state-of-design document."
+  ],
+  "prepared": {
+    "date": "2026-11-01",
+    "by": "Claude Code subagent researcher + housekeeping, dispatched by the orchestrator",
+    "from": [
+      "docs/research/2026-11-01-c172s-poh-values.md"
+    ]
+  }
+}

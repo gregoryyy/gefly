@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Validate Gefly aircraft manifests and POH value files without third-party packages (R-AIR-1, R-DATA-1, R-DATA-2).
+"""Validate Gefly aircraft manifests and selected-value files without third-party packages (R-AIR-1, R-DATA-1, R-DATA-2).
 
-Implements the JSON Schema 2020-12 keywords used by data/schema/aircraft-manifest.schema.json
-and data/schema/poh-values.schema.json.
+Implements the JSON Schema 2020-12 keywords used by data/schema/aircraft-manifest.schema.json,
+data/schema/poh-values.schema.json and data/schema/performance-values.schema.json.
 The whole schema is audited before validation and any other keyword or unresolvable $ref
 is an error, so a schema change cannot silently weaken validation. Then
 applies rules that JSON Schema cannot express: every citation names a registered source
@@ -11,6 +11,8 @@ and each SI value matches its published value through a fixed conversion-factor 
 A poh-values.json file cites the source register of the sibling manifest it names (which is
 schema-validated too), its airspeed-calibration points must be strictly increasing in IAS,
 and a quantity key ending in _ias, _cas or _tas must carry that airspeed reference.
+A performance-values.json file follows the same sibling-manifest rules; its engine, fuel and
+cruise series points must be strictly increasing by engine speed, then manifold pressure/power.
 """
 
 from __future__ import annotations
@@ -29,6 +31,9 @@ POH_SCHEMA = ROOT / "data" / "schema" / "poh-values.schema.json"
 DEFAULT_MANIFESTS = "data/aircraft/*/manifest.json"
 DEFAULT_POH_VALUES = "data/aircraft/*/poh-values.json"
 POH_VALUES_NAME = "poh-values.json"
+PERFORMANCE_SCHEMA = ROOT / "data" / "schema" / "performance-values.schema.json"
+DEFAULT_PERFORMANCE_VALUES = "data/aircraft/*/performance-values.json"
+PERFORMANCE_VALUES_NAME = "performance-values.json"
 ANNOTATIONS = {"$schema", "$id", "$comment", "$defs", "title", "description"}
 KEYWORDS = {
     "$ref", "type", "enum", "const", "required", "properties", "additionalProperties",
@@ -44,8 +49,18 @@ CONVERSIONS = {
     ("hp", "W"): 745.69987158227022,  # mechanical horsepower
     ("ft", "m"): 0.3048,
     ("ft/min", "m/s"): 0.3048 / 60,
+    ("nm", "m"): 1852.0,
+    ("inHg", "Pa"): 3386.389,  # conventional inch of mercury (NIST SP 811)
+    ("in^3", "m^3"): 0.0254 ** 3,
+    ("gal/h", "m^3/s"): 3.785411784e-3 / 3600,  # US gallon, exact
+    ("lb/h", "kg/s"): 0.45359237 / 3600,
+    ("%", "1"): 0.01,
+    ("1", "1"): 1.0,
 }
-CONVERSION_TOLERANCE = 0.5e-4  # relative to max(1, |SI value|): manifests round to 4 decimals
+CONVERSION_TOLERANCE = 0.5e-4  # relative to max(floor, |SI value|): manifests round to 4 decimals
+# Units whose SI values are far below 1 are checked purely relatively (floor 0), so they
+# must be stated to about 5 significant digits; all other units use floor 1.
+TOLERANCE_FLOOR = {"m^3": 0.0, "m^3/s": 0.0, "kg/s": 0.0}
 
 
 class SchemaError(Exception):
@@ -230,7 +245,8 @@ def conversions(manifest, errors):
                           f"-> {node['unit']!r}")
             continue
         expected = original * factor
-        if abs(value - expected) > CONVERSION_TOLERANCE * max(1.0, abs(value)):
+        floor = TOLERANCE_FLOOR.get(node["unit"], 1.0)
+        if abs(value - expected) > CONVERSION_TOLERANCE * max(floor, abs(expected)):
             errors.append(f"{path}: value {value} {node['unit']} does not match "
                           f"{original} {node['original_unit']} (expected {expected:.4f})")
 
@@ -265,12 +281,13 @@ def calibration_order(document, errors):
 
 
 POH_GROUPS = ("stall_speeds", "takeoff_distance", "landing_distance", "climb")
+PERFORMANCE_GROUPS = ("engine_ratings", "glide")
 KEY_REFERENCES = {"_ias": "IAS", "_cas": "CAS", "_tas": "TAS"}
 
 
-def key_references(document, errors):
+def key_references(document, errors, groups=POH_GROUPS):
     """A quantity named ..._ias/_cas/_tas must carry the matching reference."""
-    for group in POH_GROUPS:
+    for group in groups:
         quantities = document.get(group)
         if not isinstance(quantities, dict):
             continue
@@ -282,11 +299,62 @@ def key_references(document, errors):
                                   f"{reference!r}, got {quantity.get('reference')!r}")
 
 
+def series_order(document, errors, groups=("engine_sea_level", "engine_fuel", "cruise")):
+    """Series points must be strictly increasing by engine speed, then manifold pressure/power."""
+    for group in groups:
+        series = document.get(group)
+        if not isinstance(series, dict):
+            continue
+        for name, item in series.items():
+            points = item.get("points") if isinstance(item, dict) else None
+            if not isinstance(points, list):
+                continue
+            keys = []
+            for point in points:
+                key = []
+                for field in ("engine_speed", "manifold_pressure", "power"):
+                    measure = point.get(field) if isinstance(point, dict) else None
+                    if isinstance(measure, dict):
+                        key.append(measure.get("original_value"))
+                if not key or not all(type_matches(part, "number") for part in key):
+                    keys = None
+                    break
+                keys.append(tuple(key))
+            if not keys:
+                continue
+            for index in range(1, len(keys)):
+                if keys[index] <= keys[index - 1]:
+                    errors.append(f"$.{group}.{name}.points[{index}]: {keys[index]} not above "
+                                  f"previous {keys[index - 1]} (engine speed, then manifold "
+                                  f"pressure and power)")
+
+
 def validate_poh_values(document, schema, manifest):
     """Validate a POH value file against its schema and the named manifest's sources.
 
     Returns a list of error strings; empty means valid. Raises SchemaError first.
     """
+    errors = sibling_checks(document, schema, manifest)
+    calibration_order(document, errors)
+    if isinstance(document, dict):
+        key_references(document, errors)
+    return errors
+
+
+def validate_performance_values(document, schema, manifest):
+    """Validate a performance value file against its schema and the named manifest's sources.
+
+    Returns a list of error strings; empty means valid. Raises SchemaError first.
+    """
+    errors = sibling_checks(document, schema, manifest)
+    if isinstance(document, dict):
+        series_order(document, errors)
+        key_references(document, errors, PERFORMANCE_GROUPS)
+    return errors
+
+
+def sibling_checks(document, schema, manifest):
+    """Schema, manifest-id, citation and conversion checks shared by value files."""
     audit(schema)
     errors = []
     check(document, schema, schema, "$", errors)
@@ -301,14 +369,11 @@ def validate_poh_values(document, schema, manifest):
         sources = manifest.get("sources")
     cross_references(document, errors, sources if isinstance(sources, list) else [])
     conversions(document, errors)
-    calibration_order(document, errors)
-    if isinstance(document, dict):
-        key_references(document, errors)
     return errors
 
 
-def load_poh_values(path, schema, manifest_schema):
-    """Load a POH value file and its sibling manifest; validate both.
+def load_poh_values(path, schema, manifest_schema, validator=None):
+    """Load a value file (POH or performance) and its sibling manifest; validate both.
 
     The manifest is schema-validated too, so a file checked alone cannot rely on an
     invalid source register. Manifest errors are reported with a 'manifest' prefix.
@@ -321,7 +386,7 @@ def load_poh_values(path, schema, manifest_schema):
         return [f"$.manifest.path: invalid manifest file name {name!r}"]
     manifest = load_json(Path(path).parent / name)
     errors = [f"manifest {name}: {error}" for error in validate(manifest, manifest_schema)]
-    return errors + validate_poh_values(document, schema, manifest)
+    return errors + (validator or validate_poh_values)(document, schema, manifest)
 
 
 def load_json(path):
@@ -333,18 +398,22 @@ def load_json(path):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("manifests", nargs="*", type=Path,
-                        help=f"manifest files, or {POH_VALUES_NAME} files "
-                             f"(default: {DEFAULT_MANIFESTS} and {DEFAULT_POH_VALUES})")
+                        help=f"manifest files, or {POH_VALUES_NAME} / {PERFORMANCE_VALUES_NAME} "
+                             f"files (default: {DEFAULT_MANIFESTS}, {DEFAULT_POH_VALUES} "
+                             f"and {DEFAULT_PERFORMANCE_VALUES})")
     parser.add_argument("--schema", type=Path, default=SCHEMA)
     parser.add_argument("--poh-schema", type=Path, default=POH_SCHEMA)
+    parser.add_argument("--performance-schema", type=Path, default=PERFORMANCE_SCHEMA)
     args = parser.parse_args(argv)
     paths = args.manifests or (sorted(ROOT.glob(DEFAULT_MANIFESTS))
-                               + sorted(ROOT.glob(DEFAULT_POH_VALUES)))
+                               + sorted(ROOT.glob(DEFAULT_POH_VALUES))
+                               + sorted(ROOT.glob(DEFAULT_PERFORMANCE_VALUES)))
     if not paths:
         print("ERROR: no manifests found.", file=sys.stderr)
         return 1
     schemas = {}
-    for key, schema_path in (("manifest", args.schema), ("poh", args.poh_schema)):
+    for key, schema_path in (("manifest", args.schema), ("poh", args.poh_schema),
+                             ("performance", args.performance_schema)):
         try:
             schemas[key] = load_json(schema_path)
         except (OSError, ValueError) as error:
@@ -355,6 +424,9 @@ def main(argv=None):
         try:
             if Path(path).name == POH_VALUES_NAME:
                 errors = load_poh_values(path, schemas["poh"], schemas["manifest"])
+            elif Path(path).name == PERFORMANCE_VALUES_NAME:
+                errors = load_poh_values(path, schemas["performance"], schemas["manifest"],
+                                         validate_performance_values)
             else:
                 errors = validate(load_json(path), schemas["manifest"])
         except (OSError, ValueError) as error:
