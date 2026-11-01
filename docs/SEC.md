@@ -33,7 +33,7 @@ code executes in the normal `pull_request` context, never a privileged
 `pull_request_target` context. The test process is not a sandbox for arbitrary
 local code; inspect contributions before running them on a developer machine.
 
-Dependabot proposes GitHub Actions pin updates weekly; verify the upstream
+Dependabot proposes GitHub Actions pin and app npm updates weekly; verify the upstream
 release/commit, review changes and rerun the gate before accepting an update.
 Hosted runner images and Python patch versions still change. This workflow does
 not configure branch protection, scan future application dependencies or replace

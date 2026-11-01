@@ -3,6 +3,26 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 00:30 — Apply foundation-review tooling fixes (TODO 1.6)
+
+TODO: 1.6 in progress. Agent: Claude Code orchestrator; code1 subagent implemented.
+
+**Implementation notes**
+
+The manifest validator rejects duplicate JSON keys. Value files pin the manifest by id,
+`manifest_version` and `manifest_sha256` (SHA-256 of the file bytes), and the schemas
+require these fields. The CI runner has an app npm phase (`npm ci --ignore-scripts`);
+an install failure counts as a skip only when the output shows a network or certificate
+error, and `--require-node` makes it a failure. test_run skips Node-dependent cases on
+Node older than 24.2 instead of failing. Dependabot watches `/app` npm weekly. EVAL
+CI2/CI5, SBOM and SEC text match. Checks on Node 24: 152 unit tests OK;
+`utils/ci/run.py --require-node` passed with skipped checks (e1-jsbsim 9 of 23).
+
+**Deviations**
+
+In this sandbox, `npm ci` needs `npm_config_cafile` because of the proxy certificate.
+Peer pending (batched).
+
 ## 2026-11-01 23:27 — Resolve PR 29 against merged browser prototype
 
 TODO: 1.5.2 and 2.0 retained with their distinct scope.

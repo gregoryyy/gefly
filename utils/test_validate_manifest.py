@@ -12,6 +12,25 @@ import validate_manifest as vm
 
 
 MANIFEST = vm.ROOT / "data" / "aircraft" / "c172s-classic" / "manifest.json"
+PINNED = vm.file_sha256(MANIFEST)
+
+
+class DuplicateKeyTests(unittest.TestCase):
+    def test_duplicate_object_keys_are_rejected(self):
+        with tempfile.TemporaryDirectory(prefix="gefly-dup-test-") as directory:
+            path = Path(directory) / "dup.json"
+            path.write_text('{"a": 1, "b": {"c": 1, "c": 2}}', encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "duplicate JSON object key 'c'"):
+                vm.load_json(path)
+            path.write_text('{"a": 1, "b": {"c": 1}}', encoding="utf-8")
+            self.assertEqual(vm.load_json(path), {"a": 1, "b": {"c": 1}})
+
+    def test_cli_reports_duplicate_keys_as_failure(self):
+        with tempfile.TemporaryDirectory(prefix="gefly-dup-test-") as directory:
+            path = Path(directory) / "manifest.json"
+            path.write_text('{"x": 1, "x": 2}', encoding="utf-8")
+            with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                self.assertEqual(vm.main([str(path)]), 1)
 
 
 class ManifestValidationTests(unittest.TestCase):
@@ -187,12 +206,13 @@ class PohValuesValidationTests(unittest.TestCase):
         return copy.deepcopy(self.valid)
 
     def assertRejected(self, document, fragment, manifest=None):
-        errors = vm.validate_poh_values(document, self.schema, manifest or self.manifest)
+        errors = vm.validate_poh_values(document, self.schema, manifest or self.manifest,
+                                        PINNED)
         self.assertTrue(any(fragment in error for error in errors),
                         f"expected an error containing {fragment!r}, got {errors}")
 
     def test_r_data_2_c172s_poh_values_are_valid(self):
-        self.assertEqual(vm.validate_poh_values(self.values(), self.schema, self.manifest), [])
+        self.assertEqual(vm.validate_poh_values(self.values(), self.schema, self.manifest, PINNED), [])
 
     def test_shared_definitions_match_manifest_schema(self):
         for name in ("status", "citation", "citations", "status_rules"):
@@ -206,7 +226,7 @@ class PohValuesValidationTests(unittest.TestCase):
     def test_r_data_1_manifest_id_mismatch_fails_closed(self):
         manifest = copy.deepcopy(self.manifest)
         manifest["manifest_id"] = "gefly.aircraft.other"
-        errors = vm.validate_poh_values(self.values(), self.schema, manifest)
+        errors = vm.validate_poh_values(self.values(), self.schema, manifest, PINNED)
         self.assertTrue(any("does not match the loaded manifest" in e for e in errors), errors)
         self.assertTrue(any("is not in the source register" in e for e in errors), errors)
 
@@ -224,7 +244,7 @@ class PohValuesValidationTests(unittest.TestCase):
         document = self.values()
         del document["climb"]["rate_sl_0c"]["condition"]
         del document["stall_speeds"]["flaps_0_rearward_cg_ias"]["reading"]
-        errors = vm.validate_poh_values(document, self.schema, self.manifest)
+        errors = vm.validate_poh_values(document, self.schema, self.manifest, PINNED)
         self.assertTrue(any("rate_sl_0c: missing required field 'condition'" in e for e in errors))
         self.assertTrue(any("flaps_0_rearward_cg_ias: missing required field 'reading'" in e
                             for e in errors))
@@ -263,7 +283,7 @@ class PohValuesValidationTests(unittest.TestCase):
     def test_r_data_2_unknown_calibration_needs_todo_and_no_points(self):
         document = self.values()
         document["airspeed_calibration"]["normal_flaps_0"]["status"] = "unknown"
-        errors = vm.validate_poh_values(document, self.schema, self.manifest)
+        errors = vm.validate_poh_values(document, self.schema, self.manifest, PINNED)
         self.assertTrue(any("normal_flaps_0: missing required field 'todo'" in e for e in errors))
         self.assertTrue(any("normal_flaps_0.points: must equal []" in e for e in errors), errors)
 
@@ -281,6 +301,33 @@ class PohValuesValidationTests(unittest.TestCase):
         document = self.values()
         document["fidelity"] = "validated"
         self.assertRejected(document, "$.fidelity: must equal")
+
+    def test_r_data_1_manifest_version_pin_mismatch_fails(self):
+        document = self.values()
+        document["manifest"]["manifest_version"] = "9.9.9"
+        self.assertRejected(document, "$.manifest.manifest_version")
+
+    def test_r_data_1_manifest_sha256_pin_mismatch_fails(self):
+        document = self.values()
+        document["manifest"]["manifest_sha256"] = "0" * 64
+        self.assertRejected(document, "$.manifest.manifest_sha256")
+
+    def test_r_data_1_unsupplied_digest_fails_closed(self):
+        errors = vm.validate_poh_values(self.values(), self.schema, self.manifest)
+        self.assertTrue(any("digest not supplied" in e for e in errors), errors)
+
+    def test_r_data_1_missing_pin_fields_fail_schema(self):
+        document = self.values()
+        del document["manifest"]["manifest_sha256"]
+        self.assertRejected(document, "manifest_sha256")
+
+    def test_r_data_1_edited_manifest_bytes_break_pin_via_loader(self):
+        with tempfile.TemporaryDirectory(prefix="gefly-poh-test-") as directory:
+            (Path(directory) / "manifest.json").write_bytes(MANIFEST.read_bytes() + b"\n")
+            path = Path(directory) / vm.POH_VALUES_NAME
+            path.write_text(json.dumps(self.values()), encoding="utf-8")
+            errors = vm.load_poh_values(path, self.schema, self.manifest_schema)
+            self.assertTrue(any("$.manifest.manifest_sha256" in e for e in errors), errors)
 
     def test_manifest_path_cannot_leave_directory(self):
         with tempfile.TemporaryDirectory(prefix="gefly-poh-test-") as directory:
@@ -358,13 +405,14 @@ class PerformanceValuesValidationTests(unittest.TestCase):
 
     def assertRejected(self, document, fragment, manifest=None):
         errors = vm.validate_performance_values(document, self.schema,
-                                                manifest or self.manifest)
+                                                manifest or self.manifest, PINNED)
         self.assertTrue(any(fragment in error for error in errors),
                         f"expected an error containing {fragment!r}, got {errors}")
 
     def test_r_data_2_c172s_performance_values_are_valid(self):
         self.assertEqual(
-            vm.validate_performance_values(self.values(), self.schema, self.manifest), [])
+            vm.validate_performance_values(self.values(), self.schema, self.manifest,
+                                           PINNED), [])
 
     def test_shared_definitions_match_other_schemas(self):
         for name in ("status", "citation", "citations", "status_rules"):
