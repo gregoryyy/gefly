@@ -4,6 +4,7 @@ from contextlib import redirect_stderr, redirect_stdout
 import io
 import os
 from pathlib import Path
+import shlex
 import shutil
 import subprocess
 import sys
@@ -222,10 +223,7 @@ class CiEntrypointTests(GitFixture):
         self.study_path = self.write("studies/e1-jsbsim/test_study.py", "import unittest\n"
                                     "class StudyTest(unittest.TestCase):\n"
                                     "    def test_offline(self):\n"
-                                    "        print('fixture study test executed')\n"
-                                    "    @unittest.skip('fixture optional engine absent')\n"
-                                    "    def test_engine(self):\n"
-                                    "        self.fail('skipped test must not run')\n")
+                                    "        print('fixture study test executed')\n")
         self.write("studies/e1-browser/render/check-synthetic.mjs",
                    "console.log('fixture render check');\n")
         self.commit()
@@ -234,24 +232,35 @@ class CiEntrypointTests(GitFixture):
         self.bin.mkdir()
         os.symlink(self.git_executable, self.bin / "git")
 
-    def install_fake_node(self, exit_code):
+    def install_fake_node(self, exit_code=0, version_exit=0, sleep_s=0):
+        implementation = self.outside.parent / "fake_node.py"
+        implementation.write_text(
+            "import os, sys, time\n"
+            "if sys.argv[1:] == ['--version']:\n"
+            "    print('v0.0.0-fixture')\n"
+            f"    raise SystemExit({version_exit})\n"
+            "leaked = sorted(k for k in os.environ if k.upper().startswith('NODE_'))\n"
+            "print('fake node ran', sys.argv[1], 'node env:', leaked or 'none', flush=True)\n"
+            f"time.sleep({sleep_s})\n"
+            f"raise SystemExit({exit_code})\n", encoding="utf-8")
         node = self.bin / "node"
-        node.write_text(f"#!{sys.executable}\n"
-                        "import sys\n"
-                        "if sys.argv[1:] == ['--version']:\n"
-                        "    print('v0.0.0-fixture'); raise SystemExit(0)\n"
-                        "print('fake node ran', sys.argv[1])\n"
-                        f"raise SystemExit({exit_code})\n", encoding="utf-8")
+        node.write_text("#!/bin/sh\nexec " + shlex.quote(sys.executable) + " "
+                        + shlex.quote(str(implementation)) + ' "$@"\n', encoding="utf-8")
         node.chmod(0o755)
 
-    def run_gate(self, *arguments):
-        environment = dict(os.environ, PATH=str(self.bin))
+    def write_study(self, body):
+        self.write("studies/e1-jsbsim/test_study.py",
+                   "import unittest\nclass StudyTest(unittest.TestCase):\n" + body)
+        self.commit()
+
+    def run_gate(self, *arguments, extra_environment=None):
+        environment = dict(os.environ, PATH=str(self.bin), **(extra_environment or {}))
         return subprocess.run([sys.executable, str(self.runner), *arguments],
                               cwd=self.outside, capture_output=True, text=True,
                               timeout=60, env=environment)
 
     def test_absolute_entrypoint_runs_all_gates_from_unrelated_directory(self):
-        self.install_fake_node(0)
+        self.install_fake_node()
         result = self.run_gate()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("fixture scaffold executed", result.stdout)
@@ -262,17 +271,66 @@ class CiEntrypointTests(GitFixture):
         self.assertIn("Synthetic render check: passed.", result.stdout)
         self.assertIn("Foundation CI: passed.", result.stdout)
 
-    def test_study_skip_is_counted_and_not_executed(self):
-        self.install_fake_node(0)
+    def test_study_skip_is_counted_and_reaches_final_line(self):
+        self.install_fake_node()
+        self.write_study("    def test_offline(self):\n        pass\n"
+                         "    @unittest.skip('fixture optional engine absent')\n"
+                         "    def test_engine(self):\n"
+                         "        self.fail('skipped test must not run')\n")
         result = self.run_gate()
         output = result.stdout + result.stderr
         self.assertEqual(result.returncode, 0, output)
         self.assertIn("1 executed, 1 skipped", output)
         self.assertIn("fixture optional engine absent", output)
         self.assertNotIn("skipped test must not run", output)
+        self.assertNotIn("Foundation CI: passed.", result.stdout)
+        self.assertIn("Foundation CI: passed with skipped checks "
+                      "(study studies/e1-jsbsim: 1 of 2 skipped).", result.stdout)
+
+    def test_all_skipped_study_is_skip_not_pass(self):
+        self.install_fake_node()
+        self.write_study("    @unittest.skip('fixture optional engine absent')\n"
+                         "    def test_engine(self):\n        pass\n")
+        result = self.run_gate()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("all were skipped (not a pass)", result.stdout)
+        self.assertIn("study studies/e1-jsbsim: all 1 skipped, none executed",
+                      result.stdout.splitlines()[-1])
+        self.assertNotIn("Foundation CI: passed.", result.stdout)
+
+    def test_study_timeout_is_failure(self):
+        self.install_fake_node()
+        self.write_study("    def test_hang(self):\n"
+                         "        import time; time.sleep(60)\n")
+        result = self.run_gate("--timeout", "5")
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("Study tests (studies/e1-jsbsim) timed out", result.stderr)
+        self.assertIn("Foundation CI: FAILED.", result.stdout)
+
+    def test_render_timeout_is_failure(self):
+        self.install_fake_node(sleep_s=60)
+        result = self.run_gate("--timeout", "5")
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("Synthetic render check timed out", result.stderr)
+        self.assertIn("Foundation CI: FAILED.", result.stdout)
+
+    def test_inherited_node_options_are_not_passed_to_node(self):
+        self.install_fake_node()
+        result = self.run_gate(extra_environment={
+            "NODE_OPTIONS": "--require /nonexistent/hook.js",
+            "NODE_PATH": str(self.outside), "node_debug": "fixture"})
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("node env: none", result.stdout)
+
+    def test_failing_node_version_is_not_success(self):
+        self.install_fake_node(version_exit=3)
+        result = self.run_gate()
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("node --version failed (exit 3)", result.stderr)
+        self.assertNotIn("fake node ran", result.stdout)
 
     def test_failing_study_test_is_not_success(self):
-        self.install_fake_node(0)
+        self.install_fake_node()
         self.write("studies/e1-jsbsim/test_study.py", "import unittest\n"
                    "class StudyTest(unittest.TestCase):\n"
                    "    def test_failure(self):\n"
@@ -285,7 +343,7 @@ class CiEntrypointTests(GitFixture):
         self.assertIn("Foundation CI: FAILED.", output)
 
     def test_study_import_error_is_not_success(self):
-        self.install_fake_node(0)
+        self.install_fake_node()
         self.write("studies/e1-jsbsim/test_study.py", "import fixture_missing_module\n")
         self.commit()
         result = self.run_gate()
@@ -293,7 +351,7 @@ class CiEntrypointTests(GitFixture):
         self.assertIn("fixture_missing_module", result.stdout + result.stderr)
 
     def test_missing_or_empty_study_suite_is_not_success(self):
-        self.install_fake_node(0)
+        self.install_fake_node()
         self.study_path.unlink()
         self.commit()
         result = self.run_gate()
@@ -310,7 +368,8 @@ class CiEntrypointTests(GitFixture):
         self.assertIn("Synthetic render check: skipped: node not found", result.stdout)
         self.assertNotIn("Synthetic render check: passed", result.stdout)
         self.assertNotIn("Foundation CI: passed.", result.stdout)
-        self.assertIn("Foundation CI: passed with skipped check", result.stdout)
+        self.assertIn("Foundation CI: passed with skipped checks "
+                      "(Synthetic render check: skipped: node not found).", result.stdout)
 
     def test_missing_node_fails_when_required(self):
         result = self.run_gate("--require-node")
@@ -319,14 +378,14 @@ class CiEntrypointTests(GitFixture):
         self.assertIn("Foundation CI: FAILED.", result.stdout)
 
     def test_failing_render_check_is_not_success(self):
-        self.install_fake_node(1)
+        self.install_fake_node(exit_code=1)
         result = self.run_gate()
         self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("Synthetic render check failed (exit 1)", result.stderr)
         self.assertIn("Foundation CI: FAILED.", result.stdout)
 
     def test_missing_render_script_is_not_success(self):
-        self.install_fake_node(0)
+        self.install_fake_node()
         (self.root / "studies/e1-browser/render/check-synthetic.mjs").unlink()
         result = self.run_gate()
         self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
@@ -363,6 +422,23 @@ class CiEntrypointTests(GitFixture):
         self.assertIn("fixture scaffold executed", result.stdout)
         self.assertIn("fixture tool test executed", result.stdout)
         self.assertIn("clean.txt", result.stdout + result.stderr)
+
+
+class StudyCountMarkerTests(unittest.TestCase):
+    def test_valid_marker_is_parsed(self):
+        output = f"noise\n{ci.STUDY_RESULT_MARKER} " \
+                 '{"discovered": 3, "executed": 2, "skipped": 1}\n'
+        self.assertEqual(ci.parse_study_counts(output),
+                         {"discovered": 3, "executed": 2, "skipped": 1})
+
+    def test_missing_or_inconsistent_marker_is_rejected(self):
+        marker = ci.STUDY_RESULT_MARKER
+        for output in ("", "no marker\n", f"{marker} not json\n",
+                       f'{marker} {{"discovered": 3, "executed": 3, "skipped": 1}}\n',
+                       f'{marker} {{"discovered": 1, "executed": true, "skipped": 0}}\n',
+                       f'{marker} {{"discovered": 1, "executed": 2, "skipped": -1}}\n'):
+            with self.subTest(output=output):
+                self.assertIsNone(ci.parse_study_counts(output))
 
 
 if __name__ == "__main__":
