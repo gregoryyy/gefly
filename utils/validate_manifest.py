@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Validate Gefly aircraft manifests without third-party packages (R-AIR-1, R-DATA-1, R-DATA-2).
+"""Validate Gefly aircraft manifests and POH value files without third-party packages (R-AIR-1, R-DATA-1, R-DATA-2).
 
-Implements the JSON Schema 2020-12 keywords used by data/schema/aircraft-manifest.schema.json.
+Implements the JSON Schema 2020-12 keywords used by data/schema/aircraft-manifest.schema.json
+and data/schema/poh-values.schema.json.
 The whole schema is audited before validation and any other keyword or unresolvable $ref
 is an error, so a schema change cannot silently weaken validation. Then
 applies rules that JSON Schema cannot express: every citation names a registered source
 with the same revision, sourced/derived values cite only sources that were actually read,
 and each SI value matches its published value through a fixed conversion-factor table.
+A poh-values.json file cites the source register of the sibling manifest it names, and its
+airspeed-calibration points must be strictly increasing in IAS.
 """
 
 from __future__ import annotations
@@ -21,7 +24,10 @@ import sys
 
 ROOT = Path(__file__).resolve().parent.parent
 SCHEMA = ROOT / "data" / "schema" / "aircraft-manifest.schema.json"
+POH_SCHEMA = ROOT / "data" / "schema" / "poh-values.schema.json"
 DEFAULT_MANIFESTS = "data/aircraft/*/manifest.json"
+DEFAULT_POH_VALUES = "data/aircraft/*/poh-values.json"
+POH_VALUES_NAME = "poh-values.json"
 ANNOTATIONS = {"$schema", "$id", "$comment", "$defs", "title", "description"}
 KEYWORDS = {
     "$ref", "type", "enum", "const", "required", "properties", "additionalProperties",
@@ -35,6 +41,8 @@ CONVERSIONS = {
     ("in", "m"): 0.0254,
     ("rpm", "rad/s"): 2 * math.pi / 60,
     ("hp", "W"): 745.69987158227022,  # mechanical horsepower
+    ("ft", "m"): 0.3048,
+    ("ft/min", "m/s"): 0.3048 / 60,
 }
 CONVERSION_TOLERANCE = 0.5e-4  # relative to max(1, |SI value|): manifests round to 4 decimals
 
@@ -179,8 +187,10 @@ def walk(node, path="$"):
             yield from walk(item, f"{path}[{index}]")
 
 
-def cross_references(manifest, errors):
-    sources = manifest.get("sources")
+def cross_references(manifest, errors, sources=None):
+    """Check citations in manifest against a source register (default: its own)."""
+    if sources is None:
+        sources = manifest.get("sources")
     if not isinstance(sources, list):
         return
     register = {}
@@ -234,6 +244,59 @@ def validate(manifest, schema):
     return errors
 
 
+def calibration_order(document, errors):
+    """Calibration points must be strictly increasing in IAS (no duplicates, interpolable)."""
+    series = document.get("airspeed_calibration")
+    if not isinstance(series, dict):
+        return
+    for name, item in series.items():
+        points = item.get("points") if isinstance(item, dict) else None
+        if not isinstance(points, list):
+            continue
+        speeds = [point.get("ias", {}).get("original_value") if isinstance(point, dict)
+                  and isinstance(point.get("ias"), dict) else None for point in points]
+        if not all(type_matches(speed, "number") for speed in speeds):
+            continue
+        for index in range(1, len(speeds)):
+            if speeds[index] <= speeds[index - 1]:
+                errors.append(f"$.airspeed_calibration.{name}.points[{index}]: IAS "
+                              f"{speeds[index]} not above previous {speeds[index - 1]}")
+
+
+def validate_poh_values(document, schema, manifest):
+    """Validate a POH value file against its schema and the named manifest's sources.
+
+    Returns a list of error strings; empty means valid. Raises SchemaError first.
+    """
+    audit(schema)
+    errors = []
+    check(document, schema, schema, "$", errors)
+    reference = document.get("manifest") if isinstance(document, dict) else None
+    expected_id = reference.get("manifest_id") if isinstance(reference, dict) else None
+    if not isinstance(manifest, dict) or manifest.get("manifest_id") != expected_id:
+        got = manifest.get("manifest_id") if isinstance(manifest, dict) else None
+        errors.append(f"$.manifest.manifest_id: {expected_id!r} does not match the loaded "
+                      f"manifest {got!r}")
+        sources = []
+    else:
+        sources = manifest.get("sources")
+    cross_references(document, errors, sources if isinstance(sources, list) else [])
+    conversions(document, errors)
+    calibration_order(document, errors)
+    return errors
+
+
+def load_poh_values(path, schema):
+    """Load a POH value file and its sibling manifest, then validate."""
+    document = load_json(path)
+    reference = document.get("manifest") if isinstance(document, dict) else None
+    name = reference.get("path") if isinstance(reference, dict) else None
+    # Schema restricts the name; re-check here so a bad file cannot escape the directory.
+    if not isinstance(name, str) or not re.fullmatch(r"[a-z0-9][a-z0-9-]*\.json", name):
+        return [f"$.manifest.path: invalid manifest file name {name!r}"]
+    return validate_poh_values(document, schema, load_json(Path(path).parent / name))
+
+
 def load_json(path):
     with Path(path).open(encoding="utf-8") as stream:
         return json.load(stream, parse_constant=lambda name: (_ for _ in ()).throw(
@@ -243,22 +306,30 @@ def load_json(path):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("manifests", nargs="*", type=Path,
-                        help=f"manifest files (default: {DEFAULT_MANIFESTS})")
+                        help=f"manifest files, or {POH_VALUES_NAME} files "
+                             f"(default: {DEFAULT_MANIFESTS} and {DEFAULT_POH_VALUES})")
     parser.add_argument("--schema", type=Path, default=SCHEMA)
+    parser.add_argument("--poh-schema", type=Path, default=POH_SCHEMA)
     args = parser.parse_args(argv)
-    paths = args.manifests or sorted(ROOT.glob(DEFAULT_MANIFESTS))
+    paths = args.manifests or (sorted(ROOT.glob(DEFAULT_MANIFESTS))
+                               + sorted(ROOT.glob(DEFAULT_POH_VALUES)))
     if not paths:
         print("ERROR: no manifests found.", file=sys.stderr)
         return 1
-    try:
-        schema = load_json(args.schema)
-    except (OSError, ValueError) as error:
-        print(f"ERROR: cannot read schema {args.schema}: {error}", file=sys.stderr)
-        return 1
+    schemas = {}
+    for key, schema_path in (("manifest", args.schema), ("poh", args.poh_schema)):
+        try:
+            schemas[key] = load_json(schema_path)
+        except (OSError, ValueError) as error:
+            print(f"ERROR: cannot read schema {schema_path}: {error}", file=sys.stderr)
+            return 1
     failed = False
     for path in paths:
         try:
-            errors = validate(load_json(path), schema)
+            if Path(path).name == POH_VALUES_NAME:
+                errors = load_poh_values(path, schemas["poh"])
+            else:
+                errors = validate(load_json(path), schemas["manifest"])
         except (OSError, ValueError) as error:
             errors = [f"cannot read: {error}"]
         except SchemaError as error:
