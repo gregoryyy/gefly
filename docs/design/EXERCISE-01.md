@@ -112,6 +112,12 @@ exercise, so the ranges below are the extracted ranges, not the POH's.
 
 Mapping rules (DEF, method IP):
 
+The bounded mapping/data-adapter implementation is frozen separately in
+[Assessment airspeed](ASSESSMENT-AIRSPEED.md). It implements rules 1–3 and
+preserves the source conditions below. Band decisions in rules 4–5 remain
+proposals; comparing rounded SI results with knot targets needs a separate
+quantization/boundary policy before implementation.
+
 1. **Flap table**: the 0°, 10° or 30° table applies when `sim.flap_rad` is within
    0.5° of that setting (same detent tolerance as the VFE gate, IP). Flaps 20° and
    flaps in transit have no tabulated calibration in S17: IAS is "not available".
@@ -135,10 +141,14 @@ Mapping rules (DEF, method IP):
 6. **Conditions**: the POH calibration states a power condition (power for level
    flight or maximum-power descent) and the normal static source only. Applying it in
    the full-power climb and on the take-off roll is IP and disclosed.
-7. **Replay**: the derived IAS is recorded in the `ind` group per step with the
-   poh-values `values_id`/`values_version` and the mapping version, so a replay
-   re-derives the same value (R-SIM-4, R-REVIEW-1). The m/s→kt display conversion is
-   ×3600/1852; band edges are inclusive (DEF).
+7. **Replay**: `cal_ias_mps` and `cal_ias_valid` are evaluator-derived, outside
+   `ind` and the simulation/replay digests (SCENARIO-CONTRACTS C4). A future
+   assessment record pins the source `values_id`/`values_version`, exact source-byte
+   SHA-256, mapping ID/version and evaluator artifact hash, then re-derives the
+   value from recorded per-step CAS/flaps (R-SIM-4, R-REVIEW-1). Optional recorded
+   annotations do not replace those authoritative inputs. This bounded slice
+   implements no recorder or replay. The m/s→kt display conversion is ×3600/1852;
+   proposed band edges are inclusive, with the rounded-SI comparison policy still open.
 
 Coverage of the speed criteria below: every band lies inside its extracted range.
 The rotation band's 50 KIAS lower edge (flaps 0° and 10°) and the flaps-30° final

@@ -3,6 +3,54 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 22:55 — Implement the bounded assessment-airspeed foundation
+
+TODO: 1.1.3, 1.5.1 and 1.5.2 complete; parent 1.1/1.5 remain open.
+Agent: Codex orchestrator; product/airspeed_product, code1/airspeed_mapper,
+code2/airspeed_adapter and housekeeping/airspeed_housekeeping; independent
+quality/airspeed_quality and validate/airspeed_validate.
+
+**Implementation notes**
+
+After PR #28 merged, selected the existing CAL IAS reconciliation and a narrow
+mapping/data-adapter slice. Product froze AA1–AA6 before parallel implementation.
+The pure TypeScript mapper uses the 16 existing normal-static POH anchors,
+source-backed SI interpolation and the declared instructional detent rule.
+Invalid/unsupported and out-of-table samples have no numeric IAS. The repository
+adapter preserves source identity, conditions/citations and draft/not-validated
+labels in a detached frozen bundle. Its caller-declared byte hash is format-
+checked, not independently bound to the parsed object by the adapter.
+
+Fixed the Exercise 01 replay wording: derived CAL IAS stays outside `ind` and
+the digest, with future source/mapping/evaluator pins. Added readonly contracts,
+a private ESM source boundary and separate fail-closed Node CI coverage without
+package installation. Source JSON and aircraft values are unchanged. Root
+integration caught and repaired skipped sparse-array entries in source validation.
+
+The full local gate passed: 141 Python tool tests discovered, 140 executed with
+one Linux-only skip; 25 E2 tests; 14 E1 tests with nine optional-engine skips;
+72 assurance tests; 11 training tests with zero skips; render/integrity/whitespace
+checks. Strict local no-emit TypeScript checking passed using the existing
+Propeller compiler. Independent reviewers found no blocking defect and recorded
+additional malformed-input and interpolation probes. See E15 in RESULTS and
+[quality](reviews/2026-11-01-assessment-airspeed-quality.md) /
+[validation](reviews/2026-11-01-assessment-airspeed-validation.md).
+
+**Deviations**
+
+Peer pending under the batched cadence. This completes the bounded component,
+not the full exercise/scenario specification, a browser application, recorder,
+ASI model or target-band classifier. The rounded-SI versus exact-knot comparison
+policy remains open before band classification. Data applicability/rights and
+physical or educational validity are not established by structural adaptation
+or numerical availability. All 14 seeded MVP criteria remain planned.
+
+**Insights**
+
+Keep assessment derivation separate from the cockpit instrument model. Preserve
+operational availability, source labels and approval as different states, and
+make the caller's source-byte binding responsibility explicit.
+
 ## 2026-11-01 22:14 — Reconcile PR 27 with the assurance and CI layout
 
 TODO: 1.3.1 complete; 1.15 retained; 1.3.2–1.3.4 remain open.

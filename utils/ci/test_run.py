@@ -296,6 +296,7 @@ class CiEntrypointTests(GitFixture):
                    "console.log('fixture render check');\n")
         self.write("utils/assure/src/cli.ts", "// Isolated assurance entry fixture.\n")
         self.write("utils/assure/src/gate.test.ts", "// Isolated assurance test fixture.\n")
+        self.write("packages/training/gate.test.ts", "// Isolated training test fixture.\n")
         self.write("utils/ci/assurance-reporter.mjs", "// Isolated reporter fixture.\n")
         self.commit()
         # Controlled PATH: Git only, plus a fake node when a test installs one.
@@ -304,7 +305,8 @@ class CiEntrypointTests(GitFixture):
         os.symlink(self.git_executable, self.bin / "git")
 
     def install_fake_node(self, exit_code=0, version_exit=0, sleep_s=0,
-                          assurance_exit=0, node_version="v26.0.0-fixture", test_skip=0):
+                          assurance_exit=0, node_version="v26.0.0-fixture", test_skip=0,
+                          training_exit=0):
         implementation = self.outside.parent / "fake_node.py"
         implementation.write_text(
             "import os, sys, time, json\n"
@@ -320,6 +322,8 @@ class CiEntrypointTests(GitFixture):
             "        print('GEFLY-ASSURE-RESULT ' + json.dumps(dict(file=path, success=True, counts=counts)))\n"
             "    total = {k: v * len(files) for k, v in counts.items()}\n"
             "    print('GEFLY-ASSURE-RESULT ' + json.dumps(dict(file=None, success=True, counts=total)))\n"
+            f"    if {training_exit} and any('/packages/training/' in p.replace(os.sep, '/') for p in files):\n"
+            f"        raise SystemExit({training_exit})\n"
             "if sys.argv[-1:] == ['check']:\n"
             f"    raise SystemExit({assurance_exit})\n"
             f"time.sleep({sleep_s})\n"
@@ -344,6 +348,21 @@ class CiEntrypointTests(GitFixture):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Study tests (studies/e2-c172s)", result.stdout)
         self.assertIn("mass study failure fixture", result.stderr)
+
+    def test_training_failure_fails_shared_gate_after_assurance_passes(self):
+        self.install_fake_node(training_exit=1)
+        result = self.run_gate()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Assurance integrity: passed", result.stdout)
+        self.assertIn("Assessment airspeed tests failed", result.stderr)
+
+    def test_missing_training_suite_fails_shared_gate(self):
+        self.install_fake_node()
+        (self.root / "packages/training/gate.test.ts").unlink()
+        self.commit()
+        result = self.run_gate()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Assessment airspeed entry point or test suite is missing", result.stderr)
 
     def run_gate(self, *arguments, extra_environment=None):
         environment = dict(os.environ, PATH=str(self.bin), **(extra_environment or {}))

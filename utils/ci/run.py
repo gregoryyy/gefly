@@ -259,25 +259,24 @@ def run_render_check(require_node: bool, timeout_s: float) -> str:
     return "passed"
 
 
-def run_assurance(timeout_s: float, tests_only: bool = False) -> bool:
-    """Run the required offline assurance suite and integrity checker."""
+def _run_node_suite(timeout_s: float, label: str, tests: list[Path],
+                    entry: Path | None = None, tests_only: bool = False) -> bool:
+    """Require declared passing Node tests; optionally run a suite's checker."""
     node = shutil.which("node")
     if node is None:
-        print("ERROR: Assurance requires Node 24.2 or newer; node not found.", file=sys.stderr)
+        print(f"ERROR: {label} requires Node 24.2 or newer; node not found.", file=sys.stderr)
         return False
-    entry = ROOT / "utils/assure/src/cli.ts"
     reporter = ROOT / "utils/ci/assurance-reporter.mjs"
-    tests = sorted([*(ROOT / "utils/assure/src").glob("*.test.ts"),
-                    *(ROOT / "utils/assure/upstream/src").rglob("*.test.ts")])
-    if not entry.is_file() or not reporter.is_file() or not tests:
-        print("ERROR: Assurance entry point or test suite is missing.", file=sys.stderr)
+    if ((entry is not None and not entry.is_file())
+            or not reporter.is_file() or not tests):
+        print(f"ERROR: {label} entry point or test suite is missing.", file=sys.stderr)
         return False
     environment = node_environment()
     try:
         version = run_child([node, "--version"], timeout_s, capture=True, env=environment)
         match = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)(?:[-+].*)?", version.stdout.strip())
         if version.returncode or not match or tuple(map(int, match.groups())) < (24, 2, 0):
-            print("ERROR: Assurance requires Node 24.2 or newer; "
+            print(f"ERROR: {label} requires Node 24.2 or newer; "
                   f"observed {version.stdout.strip()!r} (exit {version.returncode}).",
                   file=sys.stderr)
             return False
@@ -316,22 +315,36 @@ def run_assurance(timeout_s: float, tests_only: bool = False) -> bool:
         except (KeyError, TypeError, ValueError, OSError):
             summaries = []
         if result.returncode or not summaries:
-            print("ERROR: Assurance tests failed, skipped or produced no complete "
+            print(f"ERROR: {label} tests failed, skipped or produced no complete "
                   "passing declared-test summary for each file.", file=sys.stderr)
             return False
-        print(f"Assurance tests: passed ({global_summary[0]['tests']} tests).", flush=True)
-        if tests_only:
+        print(f"{label} tests: passed ({global_summary[0]['tests']} tests).", flush=True)
+        if tests_only or entry is None:
             return True
         result = run_child([node, str(entry), "check"], timeout_s, env=environment)
         if result.returncode:
-            print(f"ERROR: Assurance integrity failed (exit {result.returncode}).",
+            print(f"ERROR: {label} integrity failed (exit {result.returncode}).",
                   file=sys.stderr)
             return False
-        print("Assurance integrity: passed.", flush=True)
+        print(f"{label} integrity: passed.", flush=True)
         return True
     except (OSError, subprocess.TimeoutExpired) as error:
-        print(f"ERROR: Assurance could not complete: {error}", file=sys.stderr)
+        print(f"ERROR: {label} could not complete: {error}", file=sys.stderr)
         return False
+
+
+def run_assurance(timeout_s: float, tests_only: bool = False) -> bool:
+    """Run the required offline assurance suite and integrity checker."""
+    tests = sorted([*(ROOT / "utils/assure/src").glob("*.test.ts"),
+                    *(ROOT / "utils/assure/upstream/src").rglob("*.test.ts")])
+    return _run_node_suite(timeout_s, "Assurance", tests,
+                           ROOT / "utils/assure/src/cli.ts", tests_only)
+
+
+def run_training_tests(timeout_s: float) -> bool:
+    """Run the bounded assessment-airspeed module tests without a simulator."""
+    tests = sorted((ROOT / "packages/training").glob("*.test.ts"))
+    return _run_node_suite(timeout_s, "Assessment airspeed", tests)
 
 
 def run_phase(name: str, command: list[str], timeout_s: float,
@@ -370,6 +383,8 @@ def main(argv=None) -> int:
     parser.add_argument("--test-study", metavar="DIR", help=argparse.SUPPRESS)
     parser.add_argument("--assure-tests", action="store_true",
                         help="run only the required offline assurance tests")
+    parser.add_argument("--training-tests", action="store_true",
+                        help="run only the offline assessment-airspeed tests")
     parser.add_argument("--require-node", action="store_true",
                         help="fail instead of skipping when node is not on PATH")
     parser.add_argument("--timeout", type=positive_seconds, default=DEFAULT_PHASE_TIMEOUT_S,
@@ -379,6 +394,8 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     if args.assure_tests:
         return 0 if run_assurance(args.timeout, tests_only=True) else 1
+    if args.training_tests:
+        return 0 if run_training_tests(args.timeout) else 1
     if args.test_tools:
         return run_tests()
     if args.test_study:
@@ -437,6 +454,9 @@ def main(argv=None) -> int:
         skips.append("Synthetic render check: skipped: node not found")
     print("Running Assurance...", flush=True)
     if not run_assurance(args.timeout):
+        failed = True
+    print("Running Assessment airspeed...", flush=True)
+    if not run_training_tests(args.timeout):
         failed = True
     if check_whitespace(ROOT) != 0:
         failed = True

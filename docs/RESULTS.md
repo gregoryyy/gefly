@@ -262,3 +262,29 @@ scientific adequacy or every prose contradiction. Existing flight-model and
 exercise blockers remain; no new training, model, imagery or hardware claim is
 accepted. Peer disposition is in its separate report; no earlier peer-pending
 range is silently covered by this adoption.
+
+## 2026-11-01 22:55 — E15 assessment-airspeed mapping
+
+Scope: TODO 1.5.1/1.5.2 and the separate training test gate in 1.1.3; AA1–AA6
+were frozen before coder dispatch. Implemented mapper, source adapter and readonly
+contracts are in `packages/training/` and `packages/contracts/`. The source remains
+unchanged: SHA-256 `27d5c4f6ca58b27c08ab6a9cbae0af3398e56edf5c27113e4cc5d9a661f381de`.
+
+| Check | Observed result |
+| --- | --- |
+| Module suite | 11 declared tests pass, zero failures/skips/cancellations/TODOs. Covers all 16 anchors, exact endpoints/detent bounds and adjacent representable values, independent midpoint/quarter-point examples, invalid input and no extrapolation. Integrated tests use the actual file bytes/hash through both modules. |
+| Source validation | Preserves draft/not-validated status, normal-static conditions/citations and caller-declared hash; detached nested data is frozen. Sparse points/citations now reject with field paths; their negative fixture failed before repair. Full-file/citation/conversion/rights checks stay with the existing validator. |
+| Shared local gate | Python 3.11.12, Node 26.13.0, Apple Git 2.39.5: 141 tool tests discovered, 140 executed and one Linux-only skip; 25 E2 and 14 E1 tests executed, nine optional JSBSim skips; 72 assurance and 11 training tests pass. Synthetic rendering, integrity and tracked whitespace passed. |
+| CI refusal fixtures | A failed training process fails the whole gate even after assurance succeeds; a missing training suite fails. Existing supported per-file/global summaries also reject empty or skipped Node suites. |
+| Optional strict type check | No-emit strict TypeScript check passed with the already-installed Propeller compiler. No compiler installation/dependency was added; native stripping alone is not type checking. |
+| Independent review | Quality independently exercised 84 malformed cases, 1,287 interior interpolation samples and five malformed semantic versions. Validate checked AA1–AA6, actual source identity, invalid-field cases and independent arithmetic: 28.29445 and 32.152800000000006 m/s, within the predeclared 1e-12 arithmetic tolerance. |
+
+The source SHA supplied to the pure adapter is not verified by that adapter; the
+trusted caller must bind it to the same bytes that produced the parsed object.
+A mapped result means a numerical value is available, not approved fidelity.
+No browser, full exercise, recorded replay, pitot-static model, target bands,
+learning validity or training credit was tested/accepted. Parent tasks and the
+14 seeded MVP criteria remain open/planned; current peer coverage is pending.
+Final source/hash and review limits are recorded in the
+[quality](reviews/2026-11-01-assessment-airspeed-quality.md) and
+[validation](reviews/2026-11-01-assessment-airspeed-validation.md) reports.

@@ -110,6 +110,23 @@ The runtime lives in `utils/assure/`; the product contract/catalog remain in
 or invoke a provider. It complements existing source/schema/conversion validators;
 review still establishes source applicability and scientific meaning.
 
+## Assessment-airspeed foundation
+
+`packages/training/` contains the original GPL-3.0-or-later pure TypeScript mapper
+and repository-data adapter; `packages/contracts/assessment-airspeed.ts` declares
+their readonly interface. `packages/package.json` only declares a private ESM
+source boundary, without dependencies, installer scripts or a workspace build.
+The shared gate runs the module tests separately with Node 24.2+ and the existing
+per-file/global reporter. No package installation or new third-party code is used.
+Native type stripping is not type checking; optional local strict checking uses
+the already-installed compiler recorded with its actual result.
+
+The source remains the existing selected POH facts. The adapter preserves their
+draft/not-validated status and caller-declared hash; it does not verify the byte
+binding or grant data rights. Complete source/schema/conversion checks remain in
+the existing aircraft validator. The mapping is an instructional derivation, not
+an aircraft instrument model or accepted exercise.
+
 ## Selection and updates
 
 Prefer the smallest dependency set that meets measured requirements. Before adopting one, record its exact version, official source, license, maintenance/security posture, transitive obligations, browser compatibility, size/performance impact and alternatives. Commit lockfiles for the selected package manager. The current action-update configuration is described above; foundation TODO 1.1 still needs vulnerability/license checks and automated update proposals appropriate to the future application ecosystem.

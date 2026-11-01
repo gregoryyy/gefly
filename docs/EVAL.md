@@ -247,3 +247,29 @@ check deterministic substantive output; compare from an unrelated caller directo
 and an isolated committed fixture. Inspect the final merge result, not merely the
 feature-branch report. Record actual local/hosted outcomes and independent review
 in RESULTS; importing existing observations is not a new benchmark run.
+
+## E15. Does assessment airspeed preserve calibration limits and evaluator separation?
+
+Scope: TODO 1.5.1/1.5.2, R-TRAIN-2, R-SIM-3/R-SIM-4, R-DATA-1/R-DATA-2 and
+R-FID-3. The protocol was frozen in [AA1–AA6](design/ASSESSMENT-AIRSPEED.md)
+before implementation dispatch; this entry indexes that bounded protocol.
+
+Use the existing 16 normal-static calibration points, exact stored SI anchors,
+independently specified midpoint/quarter-point arithmetic, all detent boundaries
+and adjacent representable values, out-of-range samples and malformed consumed
+data. Test the adapter/mapper together with the exact source bytes and hash.
+The independent interpolation tolerance is arithmetic roundoff (1e-12 m/s),
+not an aircraft tolerance. Inspect imports and API/state boundaries for purity
+and separation from cockpit indications and digests. Freeze/detachment and
+source-label tests must not promote draft data or a caller hash to approval.
+
+Run `just test-training` and the shared `just ci` gate. Each Node file must
+declare positive passing tests, without failures, cancellations, skips or TODOs;
+a missing/empty/skipped suite is not a pass. Keep these results separate from
+assurance and optional-engine study skips. Quality checks correctness/security
+and tests; validate maps AA1–AA6 to observed results. Cross-provider review follows
+the recorded batched cadence. Outcomes belong in RESULTS and review records.
+
+No band classifier, whole exercise, replay recorder, cockpit ASI, aircraft fidelity
+or learning/training-credit claim is accepted by this evaluation. A separate
+rounded-SI versus exact-knot boundary policy precedes any band-classifier work.

@@ -56,6 +56,19 @@ truth, permission or fidelity. Accepted claims require current named evidence;
 missing/skipped/stale evidence cannot silently become a pass. The catalog records
 relationships and safeguards, not secrets or copies of restricted manuals.
 
+## Repository calibration adapter
+
+The assessment-airspeed adapter consumes parsed, CI-validated repository data and
+a caller-declared byte hash. It validates the consumed fields, copies/freezes its
+bundle and preserves draft/not-validated labels. It does not establish the binding
+between that object and the supplied hash. The trusted bundling/test caller must
+compute the exact source-byte hash and ensure the object comes from those bytes.
+This is not an arbitrary-file importer or a source-approval boundary. Future
+untrusted import needs separately scoped byte/hash, size and full-schema controls.
+Conditions/citations remain data; the pure modules execute no source text, load no
+files and make no network/provider calls. Numerical availability is separate from
+aircraft fidelity or an accepted exercise criterion.
+
 ## Developer peer review
 
 The peer router sends only the orchestrator's inspected packet to the selected
