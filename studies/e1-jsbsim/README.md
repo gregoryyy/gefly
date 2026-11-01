@@ -87,10 +87,11 @@ smoothness as dynamics accuracy.
 ```sh
 # run from the repository root; S = a scratch directory outside the repository
 python3 -m venv $S/venv-e1
-$S/venv-e1/bin/pip install "jsbsim==1.3.3" \
-  --hash=sha256:3a933792b350f2c2e75783ea746daa026dd59a160101682fdd32654faa7a5a6f
-# (that hash is the cp313 manylinux x86-64 wheel; numpy resolved unpinned as a dependency,
-#  so drop --hash or add numpy hashes when pip requires hashes for every package)
+$S/venv-e1/bin/python -m pip install --require-hashes -r studies/e1-jsbsim/requirements.txt
+# hash-checked pins: jsbsim 1.3.3 and numpy 2.5.4, cp313 manylinux x86-64 wheels only;
+# other Pythons/platforms need their own hashes added (see requirements.txt).
+# The original 2026-11-01 run installed jsbsim by hash with numpy unpinned (version
+# not recorded); the pinned file was verified later the same day (fresh venv, digests unchanged).
 $S/venv-e1/bin/python studies/e1-jsbsim/harness.py all --out $S/e1-results.json
 $S/venv-e1/bin/python -m unittest discover -s studies/e1-jsbsim -v
 python3 -m unittest discover -s studies/e1-jsbsim     # without jsbsim: engine tests skip
