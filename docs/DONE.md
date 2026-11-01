@@ -3,6 +3,42 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 19:35 — Prepare E2 component mass and inertia calculations
+
+TODO: 1.3.1; E2 preparation only. Agent: Codex orchestrator; code1/e2_math,
+code2/e2_cli and housekeeping/e2_docs in parallel; independent local quality/e2_quality
+and validate/e2_validate. User switched the builder to Codex and reviewer to Claude.
+
+**Implementation notes**
+
+Added the stdlib [mass-properties study](../studies/e2-c172s/README.md): positive
+component masses, common-reference body-axis CGs and intrinsic inertia tensors
+produce total mass, CG and a parallel-axis tensor. Strict JSON CLI retains the raw
+input hash and an explicit unvalidated-input label. Synthetic fixtures cover
+analytic bodies, off-axis products, scaling, translations, physicality and errors.
+The shared gate runs the new study and rejects a failing E2 suite. Final local
+gate: 134 tool tests, 25 E2 tests, 14 E1 tests and synthetic render check passed;
+9 optional JSBSim engine tests skipped.
+
+Fixed the existing CI timeout test's Linux liveness check: a killed zombie is
+terminated even when container PID 1 does not reap it. Live-child detection and
+actual process-group timeout checks remain exercised; production cleanup is unchanged.
+Local quality found a low-severity extreme mass/position order-sensitivity case;
+the calculation now selects a deterministic largest-mass reference, with regressions.
+
+**Deviations**
+
+No sourced 172S coefficients or mass values, structural/JSBSim tensor adaptation,
+gear model, aircraft acceptance, or milestone-2 implementation. M-a and TODO 1.3
+remain open. Claude peer review pending; the Claude CLI is absent in this instance.
+The [handoff evidence](reviews/2026-11-01-e2-mass-properties.md) distinguishes local
+reviews from the pending opposite-provider gate.
+
+**Insights**
+
+A zero-inertia point-mass fixture can verify tensor signs without borrowing an
+aircraft model. Separate calculation readiness from the missing aircraft evidence.
+
 ## 2026-11-01 19:06 — Repair post-merge records; record stack, fuel-chart and tolerance answers
 
 TODO: 1.1.2, 1.2.3, 1.4 complete. Agent: Claude Code orchestrator (no subagents).

@@ -1,0 +1,252 @@
+Repository: /workspace/gefly
+Python: 3.12.14 (/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12)
+Git: git version 2.52.0
+Running Scaffold...
+Scaffold check passed: 110 Markdown files, 9 native Codex agent definitions and a Claude peer dispatcher.
+Scope: file/link targets and declared agent routing; live discovery, provider identity, external URLs, heading anchors and simulator behavior are not checked.
+Running Offline tool tests...
+Offline repository-tool tests: 134 discovered.
+test_changed_claude_entrypoint_fails (test_check.ScaffoldTests.test_changed_claude_entrypoint_fails) ... ok
+test_complete_fixture_with_encoded_local_link_passes (test_check.ScaffoldTests.test_complete_fixture_with_encoded_local_link_passes) ... ok
+test_malformed_claude_peer_frontmatter_fails (test_check.ScaffoldTests.test_malformed_claude_peer_frontmatter_fails) ... ok
+test_malformed_native_toml_fails (test_check.ScaffoldTests.test_malformed_native_toml_fails) ... ok
+test_missing_local_link_target_fails_with_location (test_check.ScaffoldTests.test_missing_local_link_target_fails_with_location) ... ok
+test_missing_native_role_fails (test_check.ScaffoldTests.test_missing_native_role_fails) ... ok
+test_missing_required_document_fails (test_check.ScaffoldTests.test_missing_required_document_fails) ... ok
+test_same_provider_peer_route_fails (test_check.ScaffoldTests.test_same_provider_peer_route_fails) ... ok
+test_absolute_entrypoint_runs_all_gates_from_unrelated_directory (test_ci.CiEntrypointTests.test_absolute_entrypoint_runs_all_gates_from_unrelated_directory) ... ok
+test_all_skipped_study_is_skip_not_pass (test_ci.CiEntrypointTests.test_all_skipped_study_is_skip_not_pass) ... ok
+test_empty_suite_is_not_success (test_ci.CiEntrypointTests.test_empty_suite_is_not_success) ... ok
+test_failing_node_version_is_not_success (test_ci.CiEntrypointTests.test_failing_node_version_is_not_success) ... ok
+test_failing_render_check_is_not_success (test_ci.CiEntrypointTests.test_failing_render_check_is_not_success) ... ok
+test_failing_study_test_is_not_success (test_ci.CiEntrypointTests.test_failing_study_test_is_not_success) ... ok
+test_failing_test_is_not_success (test_ci.CiEntrypointTests.test_failing_test_is_not_success) ... ok
+test_full_gate_rejects_whitespace_in_clean_checkout (test_ci.CiEntrypointTests.test_full_gate_rejects_whitespace_in_clean_checkout) ... ok
+test_inherited_node_options_are_not_passed_to_node (test_ci.CiEntrypointTests.test_inherited_node_options_are_not_passed_to_node) ... ok
+test_mass_study_failure_fails_shared_gate (test_ci.CiEntrypointTests.test_mass_study_failure_fails_shared_gate) ... ok
+test_missing_node_fails_when_required (test_ci.CiEntrypointTests.test_missing_node_fails_when_required) ... ok
+test_missing_node_is_reported_skip_not_pass (test_ci.CiEntrypointTests.test_missing_node_is_reported_skip_not_pass) ... ok
+test_missing_or_empty_study_suite_is_not_success (test_ci.CiEntrypointTests.test_missing_or_empty_study_suite_is_not_success) ... ok
+test_missing_render_script_is_not_success (test_ci.CiEntrypointTests.test_missing_render_script_is_not_success) ... ok
+test_render_timeout_is_failure (test_ci.CiEntrypointTests.test_render_timeout_is_failure) ... ok
+test_scaffold_child_failure_is_not_success (test_ci.CiEntrypointTests.test_scaffold_child_failure_is_not_success) ... ok
+test_study_import_error_is_not_success (test_ci.CiEntrypointTests.test_study_import_error_is_not_success) ... ok
+test_study_skip_is_counted_and_reaches_final_line (test_ci.CiEntrypointTests.test_study_skip_is_counted_and_reaches_final_line) ... ok
+test_study_timeout_is_failure (test_ci.CiEntrypointTests.test_study_timeout_is_failure) ... ok
+test_timeout_kills_grandchild_holding_output_pipe (test_ci.CiEntrypointTests.test_timeout_kills_grandchild_holding_output_pipe) ... ok
+test_inherited_git_redirection_cannot_mutate_other_repository (test_ci.GitEnvironmentIsolationTests.test_inherited_git_redirection_cannot_mutate_other_repository) ... ok
+test_live_child_is_live_and_unreaped_child_has_exited (test_ci.ProcessStateTests.test_live_child_is_live_and_unreaped_child_has_exited) ... ok
+test_missing_or_inconsistent_marker_is_rejected (test_ci.StudyCountMarkerTests.test_missing_or_inconsistent_marker_is_rejected) ... ok
+test_valid_marker_is_parsed (test_ci.StudyCountMarkerTests.test_valid_marker_is_parsed) ... ok
+test_clean_committed_content_passes (test_ci.WhitespaceTests.test_clean_committed_content_passes) ... ok
+test_clean_committed_whitespace_fails_despite_empty_diff (test_ci.WhitespaceTests.test_clean_committed_whitespace_fails_despite_empty_diff) ... ok
+test_crlf_preservation_attribute_passes (test_ci.WhitespaceTests.test_crlf_preservation_attribute_passes) ... ok
+test_inherited_git_directory_or_index_cannot_hide_tracked_defect (test_ci.WhitespaceTests.test_inherited_git_directory_or_index_cannot_hide_tracked_defect) ... ok
+test_missing_git_fails (test_ci.WhitespaceTests.test_missing_git_fails) ... ok
+test_missing_tracked_working_file_fails (test_ci.WhitespaceTests.test_missing_tracked_working_file_fails) ... ok
+test_non_repository_git_error_fails (test_ci.WhitespaceTests.test_non_repository_git_error_fails) ... ok
+test_spaces_in_tracked_filename_pass (test_ci.WhitespaceTests.test_spaces_in_tracked_filename_pass) ... ok
+test_staged_trailing_whitespace_fails (test_ci.WhitespaceTests.test_staged_trailing_whitespace_fails) ... ok
+test_accept_with_high_quality_finding_blocks (test_peer_review.PeerReviewTests.test_accept_with_high_quality_finding_blocks) ... ok
+test_auth_or_nonzero_exit_never_exports_stderr (test_peer_review.PeerReviewTests.test_auth_or_nonzero_exit_never_exports_stderr) ... ok
+test_blank_markdown_revision_cannot_consume_following_header (test_peer_review.PeerReviewTests.test_blank_markdown_revision_cannot_consume_following_header) ... ok
+test_blocked_or_not_evaluated_cannot_pass (test_peer_review.PeerReviewTests.test_blocked_or_not_evaluated_cannot_pass) ... ok
+test_claude_error_wrapper_cannot_pass (test_peer_review.PeerReviewTests.test_claude_error_wrapper_cannot_pass) ... ok
+test_codex_tool_call_also_invalidates_a_valid_final_review (test_peer_review.PeerReviewTests.test_codex_tool_call_also_invalidates_a_valid_final_review) ... ok
+test_dry_run_has_no_provider_invocation_or_pass (test_peer_review.PeerReviewTests.test_dry_run_has_no_provider_invocation_or_pass) ... ok
+test_failed_criterion_is_completed_but_rejected (test_peer_review.PeerReviewTests.test_failed_criterion_is_completed_but_rejected) ... ok
+test_hash_revision_and_only_allowlisted_metadata (test_peer_review.PeerReviewTests.test_hash_revision_and_only_allowlisted_metadata) ... ok
+test_invalid_timeout_never_invokes_provider (test_peer_review.PeerReviewTests.test_invalid_timeout_never_invokes_provider) ... ok
+test_malformed_and_incomplete_reviews_block (test_peer_review.PeerReviewTests.test_malformed_and_incomplete_reviews_block) ... ok
+test_missing_binary_blocks_without_fallback (test_peer_review.PeerReviewTests.test_missing_binary_blocks_without_fallback) ... ok
+test_missing_revision_blocks_live_review (test_peer_review.PeerReviewTests.test_missing_revision_blocks_live_review) ... ok
+test_reciprocal_routing_and_flags (test_peer_review.PeerReviewTests.test_reciprocal_routing_and_flags) ... ok
+test_timeout_and_launch_failure_block (test_peer_review.PeerReviewTests.test_timeout_and_launch_failure_block) ... ok
+test_tool_output_cannot_supply_codex_review (test_peer_review.PeerReviewTests.test_tool_output_cannot_supply_codex_review) ... ok
+test_unreadable_packet_blocks (test_peer_review.PeerReviewTests.test_unreadable_packet_blocks) ... ok
+test_whitespace_only_json_revision_blocks_before_provider_process (test_peer_review.PeerReviewTests.test_whitespace_only_json_revision_blocks_before_provider_process) ... ok
+test_airspeed_requires_reference (test_validate_manifest.ManifestValidationTests.test_airspeed_requires_reference) ... ok
+test_cli_exit_codes (test_validate_manifest.ManifestValidationTests.test_cli_exit_codes) ... ok
+test_conversion_table_matches_exact_definitions (test_validate_manifest.ManifestValidationTests.test_conversion_table_matches_exact_definitions) ... ok
+test_nested_unsupported_schema_keyword_is_rejected_before_validation (test_validate_manifest.ManifestValidationTests.test_nested_unsupported_schema_keyword_is_rejected_before_validation) ... ok
+test_r_air_1_c172s_classic_manifest_is_valid (test_validate_manifest.ManifestValidationTests.test_r_air_1_c172s_classic_manifest_is_valid) ... ok
+test_r_data_1_citation_of_unregistered_source_fails (test_validate_manifest.ManifestValidationTests.test_r_data_1_citation_of_unregistered_source_fails) ... ok
+test_r_data_1_citation_revision_must_match_register (test_validate_manifest.ManifestValidationTests.test_r_data_1_citation_revision_must_match_register) ... ok
+test_r_data_1_conflict_citing_unregistered_source_fails (test_validate_manifest.ManifestValidationTests.test_r_data_1_conflict_citing_unregistered_source_fails) ... ok
+test_r_data_1_duplicate_source_id_fails (test_validate_manifest.ManifestValidationTests.test_r_data_1_duplicate_source_id_fails) ... ok
+test_r_data_1_missing_source_register_fails (test_validate_manifest.ManifestValidationTests.test_r_data_1_missing_source_register_fails) ... ok
+test_r_data_1_read_source_requires_checksum (test_validate_manifest.ManifestValidationTests.test_r_data_1_read_source_requires_checksum) ... ok
+test_r_data_1_redistribution_right_is_required (test_validate_manifest.ManifestValidationTests.test_r_data_1_redistribution_right_is_required) ... ok
+test_r_data_1_sourced_value_cannot_cite_unread_source (test_validate_manifest.ManifestValidationTests.test_r_data_1_sourced_value_cannot_cite_unread_source) ... ok
+test_r_data_2_derived_value_without_derivation_fails (test_validate_manifest.ManifestValidationTests.test_r_data_2_derived_value_without_derivation_fails) ... ok
+test_r_data_2_non_si_unit_fails (test_validate_manifest.ManifestValidationTests.test_r_data_2_non_si_unit_fails) ... ok
+test_r_data_2_sourced_value_without_citation_fails (test_validate_manifest.ManifestValidationTests.test_r_data_2_sourced_value_without_citation_fails) ... ok
+test_r_data_2_sourced_value_without_page_fails (test_validate_manifest.ManifestValidationTests.test_r_data_2_sourced_value_without_page_fails) ... ok
+test_r_data_2_status_outside_vocabulary_fails (test_validate_manifest.ManifestValidationTests.test_r_data_2_status_outside_vocabulary_fails) ... ok
+test_r_data_2_unknown_value_must_be_null_with_todo (test_validate_manifest.ManifestValidationTests.test_r_data_2_unknown_value_must_be_null_with_todo) ... ok
+test_r_data_2_unlisted_conversion_pair_fails (test_validate_manifest.ManifestValidationTests.test_r_data_2_unlisted_conversion_pair_fails) ... ok
+test_r_data_2_value_without_unit_fails (test_validate_manifest.ManifestValidationTests.test_r_data_2_value_without_unit_fails) ... ok
+test_r_data_2_wrong_si_conversion_fails (test_validate_manifest.ManifestValidationTests.test_r_data_2_wrong_si_conversion_fails) ... ok
+test_r_fid_3_fidelity_must_stay_not_validated (test_validate_manifest.ManifestValidationTests.test_r_fid_3_fidelity_must_stay_not_validated) ... ok
+test_unresolvable_ref_is_schema_error (test_validate_manifest.ManifestValidationTests.test_unresolvable_ref_is_schema_error) ... ok
+test_unsupported_schema_keyword_is_rejected (test_validate_manifest.ManifestValidationTests.test_unsupported_schema_keyword_is_rejected) ... ok
+test_cli_validates_performance_values_with_sibling_manifest (test_validate_manifest.PerformanceValuesValidationTests.test_cli_validates_performance_values_with_sibling_manifest) ... ok
+test_fuel_series_needs_mixture_and_matching_units (test_validate_manifest.PerformanceValuesValidationTests.test_fuel_series_needs_mixture_and_matching_units) ... ok
+test_glide_key_suffix_must_match_reference (test_validate_manifest.PerformanceValuesValidationTests.test_glide_key_suffix_must_match_reference) ... ok
+test_new_conversion_factors_match_exact_definitions (test_validate_manifest.PerformanceValuesValidationTests.test_new_conversion_factors_match_exact_definitions) ... ok
+test_non_airspeed_quantity_cannot_carry_reference (test_validate_manifest.PerformanceValuesValidationTests.test_non_airspeed_quantity_cannot_carry_reference) ... ok
+test_performance_values_reject_invalid_sibling_manifest (test_validate_manifest.PerformanceValuesValidationTests.test_performance_values_reject_invalid_sibling_manifest) ... ok
+test_r_data_1_citation_must_resolve_in_named_manifest (test_validate_manifest.PerformanceValuesValidationTests.test_r_data_1_citation_must_resolve_in_named_manifest) ... ok
+test_r_data_1_manifest_id_mismatch_fails_closed (test_validate_manifest.PerformanceValuesValidationTests.test_r_data_1_manifest_id_mismatch_fails_closed) ... ok
+test_r_data_1_sourced_value_cannot_cite_unread_source (test_validate_manifest.PerformanceValuesValidationTests.test_r_data_1_sourced_value_cannot_cite_unread_source) ... ok
+test_r_data_2_c172s_performance_values_are_valid (test_validate_manifest.PerformanceValuesValidationTests.test_r_data_2_c172s_performance_values_are_valid) ... ok
+test_r_data_2_condition_and_reading_are_required (test_validate_manifest.PerformanceValuesValidationTests.test_r_data_2_condition_and_reading_are_required) ... ok
+test_r_data_2_cruise_speed_must_be_true_airspeed (test_validate_manifest.PerformanceValuesValidationTests.test_r_data_2_cruise_speed_must_be_true_airspeed) ... ok
+test_r_data_2_derived_glide_ratio_matches_distance_and_height (test_validate_manifest.PerformanceValuesValidationTests.test_r_data_2_derived_glide_ratio_matches_distance_and_height) ... ok
+test_r_data_2_derived_value_needs_derivation (test_validate_manifest.PerformanceValuesValidationTests.test_r_data_2_derived_value_needs_derivation) ... ok
+test_r_data_2_small_si_values_are_checked_relatively (test_validate_manifest.PerformanceValuesValidationTests.test_r_data_2_small_si_values_are_checked_relatively) ... ok
+test_r_data_2_sourced_series_needs_points_and_conversion (test_validate_manifest.PerformanceValuesValidationTests.test_r_data_2_sourced_series_needs_points_and_conversion) ... ok
+test_r_data_2_unknown_series_needs_todo_and_no_points (test_validate_manifest.PerformanceValuesValidationTests.test_r_data_2_unknown_series_needs_todo_and_no_points) ... ok
+test_r_data_2_wrong_engine_power_conversion_fails (test_validate_manifest.PerformanceValuesValidationTests.test_r_data_2_wrong_engine_power_conversion_fails) ... ok
+test_r_data_2_wrong_fuel_flow_conversion_fails (test_validate_manifest.PerformanceValuesValidationTests.test_r_data_2_wrong_fuel_flow_conversion_fails) ... ok
+test_r_data_2_wrong_manifold_pressure_conversion_fails (test_validate_manifest.PerformanceValuesValidationTests.test_r_data_2_wrong_manifold_pressure_conversion_fails) ... ok
+test_r_data_2_wrong_unit_pair_fails (test_validate_manifest.PerformanceValuesValidationTests.test_r_data_2_wrong_unit_pair_fails) ... ok
+test_r_fid_3_fidelity_must_stay_not_validated (test_validate_manifest.PerformanceValuesValidationTests.test_r_fid_3_fidelity_must_stay_not_validated) ... ok
+test_series_points_must_increase (test_validate_manifest.PerformanceValuesValidationTests.test_series_points_must_increase) ... ok
+test_shared_definitions_match_other_schemas (test_validate_manifest.PerformanceValuesValidationTests.test_shared_definitions_match_other_schemas) ... ok
+test_unknown_fuel_series_needs_todo (test_validate_manifest.PerformanceValuesValidationTests.test_unknown_fuel_series_needs_todo) ... ok
+test_calibration_points_must_increase_in_ias (test_validate_manifest.PohValuesValidationTests.test_calibration_points_must_increase_in_ias) ... ok
+test_calibration_reference_cannot_be_swapped (test_validate_manifest.PohValuesValidationTests.test_calibration_reference_cannot_be_swapped) ... ok
+test_cli_validates_poh_values_with_sibling_manifest (test_validate_manifest.PohValuesValidationTests.test_cli_validates_poh_values_with_sibling_manifest) ... ok
+test_climb_rate_tagged_as_airspeed_fails (test_validate_manifest.PohValuesValidationTests.test_climb_rate_tagged_as_airspeed_fails) ... ok
+test_climb_speed_tagged_vertical_fails (test_validate_manifest.PohValuesValidationTests.test_climb_speed_tagged_vertical_fails) ... ok
+test_distance_in_wrong_si_unit_fails (test_validate_manifest.PohValuesValidationTests.test_distance_in_wrong_si_unit_fails) ... ok
+test_distance_with_reference_fails (test_validate_manifest.PohValuesValidationTests.test_distance_with_reference_fails) ... ok
+test_manifest_path_cannot_leave_directory (test_validate_manifest.PohValuesValidationTests.test_manifest_path_cannot_leave_directory) ... ok
+test_poh_values_reject_invalid_sibling_manifest (test_validate_manifest.PohValuesValidationTests.test_poh_values_reject_invalid_sibling_manifest) ... ok
+test_r_data_1_citation_must_resolve_in_named_manifest (test_validate_manifest.PohValuesValidationTests.test_r_data_1_citation_must_resolve_in_named_manifest) ... ok
+test_r_data_1_citation_revision_must_match_manifest_register (test_validate_manifest.PohValuesValidationTests.test_r_data_1_citation_revision_must_match_manifest_register) ... ok
+test_r_data_1_correction_needs_citation (test_validate_manifest.PohValuesValidationTests.test_r_data_1_correction_needs_citation) ... ok
+test_r_data_1_manifest_id_mismatch_fails_closed (test_validate_manifest.PohValuesValidationTests.test_r_data_1_manifest_id_mismatch_fails_closed) ... ok
+test_r_data_2_c172s_poh_values_are_valid (test_validate_manifest.PohValuesValidationTests.test_r_data_2_c172s_poh_values_are_valid) ... ok
+test_r_data_2_climb_rate_needs_reference (test_validate_manifest.PohValuesValidationTests.test_r_data_2_climb_rate_needs_reference) ... ok
+test_r_data_2_condition_and_reading_are_required (test_validate_manifest.PohValuesValidationTests.test_r_data_2_condition_and_reading_are_required) ... ok
+test_r_data_2_reading_outside_vocabulary_fails (test_validate_manifest.PohValuesValidationTests.test_r_data_2_reading_outside_vocabulary_fails) ... ok
+test_r_data_2_sourced_value_needs_conversion (test_validate_manifest.PohValuesValidationTests.test_r_data_2_sourced_value_needs_conversion) ... ok
+test_r_data_2_unknown_calibration_needs_todo_and_no_points (test_validate_manifest.PohValuesValidationTests.test_r_data_2_unknown_calibration_needs_todo_and_no_points) ... ok
+test_r_data_2_wrong_calibration_conversion_fails (test_validate_manifest.PohValuesValidationTests.test_r_data_2_wrong_calibration_conversion_fails) ... ok
+test_r_data_2_wrong_climb_rate_conversion_fails (test_validate_manifest.PohValuesValidationTests.test_r_data_2_wrong_climb_rate_conversion_fails) ... ok
+test_r_data_2_wrong_distance_conversion_fails (test_validate_manifest.PohValuesValidationTests.test_r_data_2_wrong_distance_conversion_fails) ... ok
+test_r_fid_3_fidelity_must_stay_not_validated (test_validate_manifest.PohValuesValidationTests.test_r_fid_3_fidelity_must_stay_not_validated) ... ok
+test_shared_definitions_match_manifest_schema (test_validate_manifest.PohValuesValidationTests.test_shared_definitions_match_manifest_schema) ... ok
+test_stall_key_suffix_must_match_reference (test_validate_manifest.PohValuesValidationTests.test_stall_key_suffix_must_match_reference) ... ok
+
+----------------------------------------------------------------------
+Ran 134 tests in 32.586s
+
+OK
+Offline repository-tool tests: 134 executed, 0 skipped (passed for executed tests).
+Running Study tests (studies/e1-jsbsim)...
+test_at_rest_stays_at_rest (test_harness.EngineTests.test_at_rest_stays_at_rest) ... skipped 'jsbsim package not importable'
+test_child_process_and_reset_identical (test_harness.EngineTests.test_child_process_and_reset_identical) ... skipped 'jsbsim package not importable'
+test_cli_stdout_is_json_and_cwd_unchanged (test_harness.EngineTests.test_cli_stdout_is_json_and_cwd_unchanged) ... skipped 'jsbsim package not importable'
+test_fixed_step_time_is_step_indexed (test_harness.EngineTests.test_fixed_step_time_is_step_indexed) ... skipped 'jsbsim package not importable'
+test_fresh_instances_bit_identical (test_harness.EngineTests.test_fresh_instances_bit_identical) ... skipped 'jsbsim package not importable'
+test_ic_set_in_si (test_harness.EngineTests.test_ic_set_in_si) ... skipped 'jsbsim package not importable'
+test_initial_state_change_changes_digest (test_harness.EngineTests.test_initial_state_change_changes_digest)
+Guard against a vacuous digest that ignores the initial state. ... skipped 'jsbsim package not importable'
+test_input_change_changes_digest (test_harness.EngineTests.test_input_change_changes_digest)
+Guard against a digest that ignores control inputs. ... skipped 'jsbsim package not importable'
+test_rejects_invalid_step (test_harness.EngineTests.test_rejects_invalid_step) ... skipped 'jsbsim package not importable'
+test_cost_rejects_false_run (test_harness.FailedStepTests.test_cost_rejects_false_run) ... ok
+test_cost_rejects_stalled_time (test_harness.FailedStepTests.test_cost_rejects_stalled_time) ... ok
+test_healthy_fake_passes_cost (test_harness.FailedStepTests.test_healthy_fake_passes_cost) ... ok
+test_healthy_fake_passes_stationary (test_harness.FailedStepTests.test_healthy_fake_passes_stationary) ... ok
+test_stationary_rejects_false_run (test_harness.FailedStepTests.test_stationary_rejects_false_run) ... ok
+test_stationary_rejects_false_run_while_observing (test_harness.FailedStepTests.test_stationary_rejects_false_run_while_observing) ... ok
+test_stationary_rejects_stalled_time (test_harness.FailedStepTests.test_stationary_rejects_stalled_time) ... ok
+test_consecutive_orders_first_and_second_order (test_harness.UnitConversionTests.test_consecutive_orders_first_and_second_order) ... ok
+test_consecutive_orders_zero_difference_is_none (test_harness.UnitConversionTests.test_consecutive_orders_zero_difference_is_none) ... ok
+test_exact_definitions (test_harness.UnitConversionTests.test_exact_definitions) ... ok
+test_pack_is_bitwise (test_harness.UnitConversionTests.test_pack_is_bitwise) ... ok
+test_rejects_non_finite (test_harness.UnitConversionTests.test_rejects_non_finite) ... ok
+test_round_trips (test_harness.UnitConversionTests.test_round_trips) ... ok
+test_sign_preserved (test_harness.UnitConversionTests.test_sign_preserved) ... ok
+
+----------------------------------------------------------------------
+Ran 23 tests in 0.003s
+
+OK (skipped=9)
+Study tests (studies/e1-jsbsim): 23 discovered.
+Study tests (studies/e1-jsbsim): 14 executed, 9 skipped (passed for executed tests).
+  skipped: test_harness.EngineTests.test_at_rest_stays_at_rest: jsbsim package not importable
+  skipped: test_harness.EngineTests.test_child_process_and_reset_identical: jsbsim package not importable
+  skipped: test_harness.EngineTests.test_cli_stdout_is_json_and_cwd_unchanged: jsbsim package not importable
+  skipped: test_harness.EngineTests.test_fixed_step_time_is_step_indexed: jsbsim package not importable
+  skipped: test_harness.EngineTests.test_fresh_instances_bit_identical: jsbsim package not importable
+  skipped: test_harness.EngineTests.test_ic_set_in_si: jsbsim package not importable
+  skipped: test_harness.EngineTests.test_initial_state_change_changes_digest: jsbsim package not importable
+  skipped: test_harness.EngineTests.test_input_change_changes_digest: jsbsim package not importable
+  skipped: test_harness.EngineTests.test_rejects_invalid_step: jsbsim package not importable
+GEFLY-STUDY-RESULT {"discovered": 23, "executed": 14, "skipped": 9}
+Running Study tests (studies/e2-c172s)...
+test_duplicate_keys_rejected_at_root_and_nested (test_build_mass_properties.CommandTests.test_duplicate_keys_rejected_at_root_and_nested) ... ok
+test_invalid_component_uses_core_validation (test_build_mass_properties.CommandTests.test_invalid_component_uses_core_validation) ... ok
+test_malformed_json_and_utf8_rejected (test_build_mass_properties.CommandTests.test_malformed_json_and_utf8_rejected) ... ok
+test_missing_input_file_fails_without_traceback (test_build_mass_properties.CommandTests.test_missing_input_file_fails_without_traceback) ... ok
+test_non_json_constants_and_overflowing_numbers_rejected (test_build_mass_properties.CommandTests.test_non_json_constants_and_overflowing_numbers_rejected) ... ok
+test_off_axis_points_have_negative_product_of_inertia (test_build_mass_properties.CommandTests.test_off_axis_points_have_negative_product_of_inertia) ... ok
+test_two_point_masses_and_raw_input_hash (test_build_mass_properties.CommandTests.test_two_point_masses_and_raw_input_hash) ... ok
+test_wrong_envelope_rejected (test_build_mass_properties.CommandTests.test_wrong_envelope_rejected) ... ok
+test_coincident_bodies_at_large_position_do_not_gain_spurious_inertia (test_mass_properties.MassPropertiesTests.test_coincident_bodies_at_large_position_do_not_gain_spurious_inertia) ... ok
+test_coupled_nonphysical_tensor_rejected_even_with_valid_diagonals (test_mass_properties.MassPropertiesTests.test_coupled_nonphysical_tensor_rejected_even_with_valid_diagonals) ... ok
+test_empty_malformed_unknown_and_duplicate_fields_rejected (test_mass_properties.MassPropertiesTests.test_empty_malformed_unknown_and_duplicate_fields_rejected) ... ok
+test_equal_mass_reference_tie_break_is_independent_of_input_order (test_mass_properties.MassPropertiesTests.test_equal_mass_reference_tie_break_is_independent_of_input_order) ... ok
+test_intrinsic_tensors_add_for_coincident_components (test_mass_properties.MassPropertiesTests.test_intrinsic_tensors_add_for_coincident_components) ... ok
+test_invalid_masses_and_coordinates_rejected (test_mass_properties.MassPropertiesTests.test_invalid_masses_and_coordinates_rejected) ... ok
+test_non_finite_intermediate_mass_and_inertia_rejected (test_mass_properties.MassPropertiesTests.test_non_finite_intermediate_mass_and_inertia_rejected) ... ok
+test_rotated_linear_body_is_allowed (test_mass_properties.MassPropertiesTests.test_rotated_linear_body_is_allowed) ... ok
+test_single_rectangular_block_keeps_own_cg_tensor (test_mass_properties.MassPropertiesTests.test_single_rectangular_block_keeps_own_cg_tensor) ... ok
+test_small_distant_component_cg_is_preserved_in_either_input_order (test_mass_properties.MassPropertiesTests.test_small_distant_component_cg_is_preserved_in_either_input_order) ... ok
+test_tiny_unphysical_tensor_cannot_hide_under_absolute_tolerance (test_mass_properties.MassPropertiesTests.test_tiny_unphysical_tensor_cannot_hide_under_absolute_tolerance) ... ok
+test_translation_and_component_order_do_not_change_tensor (test_mass_properties.MassPropertiesTests.test_translation_and_component_order_do_not_change_tensor) ... ok
+test_two_equal_point_masses_on_x_axis (test_mass_properties.MassPropertiesTests.test_two_equal_point_masses_on_x_axis) ... ok
+test_unequal_masses_and_off_diagonal_signs (test_mass_properties.MassPropertiesTests.test_unequal_masses_and_off_diagonal_signs) ... ok
+test_uniform_mass_and_length_scaling (test_mass_properties.MassPropertiesTests.test_uniform_mass_and_length_scaling) ... ok
+test_unphysical_symmetric_and_asymmetric_tensors_rejected (test_mass_properties.MassPropertiesTests.test_unphysical_symmetric_and_asymmetric_tensors_rejected) ... ok
+test_weighted_average_avoids_unnecessary_mass_times_position_overflow (test_mass_properties.MassPropertiesTests.test_weighted_average_avoids_unnecessary_mass_times_position_overflow) ... ok
+
+----------------------------------------------------------------------
+Ran 25 tests in 0.766s
+
+OK
+Study tests (studies/e2-c172s): 25 discovered.
+Study tests (studies/e2-c172s): 25 executed, 0 skipped (passed for executed tests).
+GEFLY-STUDY-RESULT {"discovered": 25, "executed": 25, "skipped": 0}
+Running Synthetic render check...
+Node: v24.19.0 (/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node)
+PASS ENU -> geodetic -> ENU round trip < 1 mm: 1.66e-10 m
+PASS north offset maps to +n: n=637.29 m
+PASS non-finite input rejected
+PASS left: ready posted
+PASS left: state has exactly the contract v0 fields
+PASS left: ground distance per step ~ tas*dt: 0.3858 vs 0.3858 m
+PASS left: level (constant alt_msl_m)
+PASS left: circuit closes: 0.094 m
+PASS left: roll sign in turn (right wing down +): -13.9 deg
+PASS left: downwind on the left side: lateral -1768..0 m
+PASS left: input for step s first echoed in state s+1
+PASS left: non-finite init rejected
+PASS right: ready posted
+PASS right: state has exactly the contract v0 fields
+PASS right: ground distance per step ~ tas*dt: 0.3858 vs 0.3858 m
+PASS right: level (constant alt_msl_m)
+PASS right: circuit closes: 0.094 m
+PASS right: roll sign in turn (right wing down +): 13.9 deg
+PASS right: downwind on the right side: lateral 0..1768 m
+PASS right: input for step s first echoed in state s+1
+PASS right: non-finite init rejected
+all checks passed
+Synthetic render check: passed.
+Tracked-content whitespace: passed (177 tracked paths; untracked files excluded).
+Foundation CI: passed with skipped checks (study studies/e1-jsbsim: 9 of 23 skipped).

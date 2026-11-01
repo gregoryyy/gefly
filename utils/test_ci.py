@@ -16,6 +16,43 @@ from unittest.mock import patch
 import ci
 
 
+def process_exited(pid):
+    """A zombie has exited even when a container's PID 1 has not reaped it."""
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return True
+    if sys.platform == "linux":
+        try:
+            # comm may contain spaces or parentheses; state follows its final ')'.
+            stat = Path(f"/proc/{pid}/stat").read_text()
+            return stat.rsplit(")", 1)[1].split()[0] == "Z"
+        except FileNotFoundError:
+            return True
+        except (OSError, IndexError):
+            pass  # Unknown state is not evidence that the process exited.
+    return False
+
+
+@unittest.skipUnless(sys.platform == "linux", "requires Linux process states")
+class ProcessStateTests(unittest.TestCase):
+    def test_live_child_is_live_and_unreaped_child_has_exited(self):
+        child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+        try:
+            self.assertFalse(process_exited(child.pid))
+            child.terminate()
+            deadline = time.monotonic() + 5
+            while time.monotonic() < deadline and not process_exited(child.pid):
+                time.sleep(0.01)
+            # Do not poll/wait yet: observe termination before the parent reaps it.
+            self.assertTrue(process_exited(child.pid))
+        finally:
+            if not process_exited(child.pid):
+                child.kill()
+            child.wait(timeout=5)
+        self.assertTrue(process_exited(child.pid))
+
+
 class GitFixture(unittest.TestCase):
     def setUp(self):
         directory = tempfile.TemporaryDirectory(prefix="gefly-ci-test-")
@@ -225,6 +262,10 @@ class CiEntrypointTests(GitFixture):
                                     "class StudyTest(unittest.TestCase):\n"
                                     "    def test_offline(self):\n"
                                     "        print('fixture study test executed')\n")
+        self.write("studies/e2-c172s/test_mass.py", "import unittest\n"
+                   "class MassTest(unittest.TestCase):\n"
+                   "    def test_offline(self):\n"
+                   "        print('fixture mass study executed')\n")
         self.write("studies/e1-browser/render/check-synthetic.mjs",
                    "console.log('fixture render check');\n")
         self.commit()
@@ -253,6 +294,17 @@ class CiEntrypointTests(GitFixture):
         self.write("studies/e1-jsbsim/test_study.py",
                    "import unittest\nclass StudyTest(unittest.TestCase):\n" + body)
         self.commit()
+
+    def test_mass_study_failure_fails_shared_gate(self):
+        self.install_fake_node()
+        self.write("studies/e2-c172s/test_mass.py", "import unittest\n"
+                   "class MassTest(unittest.TestCase):\n"
+                   "    def test_invalid_mass(self):\n"
+                   "        self.fail('mass study failure fixture')\n")
+        result = self.run_gate()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Study tests (studies/e2-c172s)", result.stdout)
+        self.assertIn("mass study failure fixture", result.stderr)
 
     def run_gate(self, *arguments, extra_environment=None):
         environment = dict(os.environ, PATH=str(self.bin), **(extra_environment or {}))
@@ -344,9 +396,7 @@ class CiEntrypointTests(GitFixture):
                 grandchild = int(pid_file.read_text(encoding="utf-8"))
                 deadline = time.monotonic() + 5
                 while time.monotonic() < deadline:
-                    try:
-                        os.kill(grandchild, 0)
-                    except ProcessLookupError:
+                    if process_exited(grandchild):
                         break
                     time.sleep(0.05)
                 else:
