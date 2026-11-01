@@ -121,6 +121,17 @@
       if (overlay) overlay.textContent = `done: median ${median?.toFixed(1)} ms ` +
         `(limit ${results.budget.median_interval_limit_ms?.toFixed(1)}), ` +
         `p99 ${p99?.toFixed(1)} ms, missed vsyncs ${missed}`;
+      // Visible, selectable results for manual runs on the reference Mac.
+      const doc = root.document;
+      if (doc && !doc.getElementById("e1-results")) {
+        const pre = doc.createElement("pre");
+        pre.id = "e1-results";
+        pre.style.cssText = "position:fixed;right:8px;bottom:8px;max-width:min(560px,90vw);" +
+          "max-height:45vh;overflow:auto;margin:0;padding:8px;font:11px/1.35 ui-monospace,monospace;" +
+          "background:rgba(10,14,20,.88);color:#e6edf3;border-radius:4px;z-index:10;user-select:text";
+        pre.textContent = JSON.stringify(results, null, 2);
+        doc.body.appendChild(pre);
+      }
     }
 
     function onFrame(now) {
