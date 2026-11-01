@@ -10,9 +10,13 @@
 //   as late. Later inputs for the same step win.
 // - wall_ms is the sender's performance.timeOrigin + performance.now() (epoch ms),
 //   so main thread and worker timestamps are comparable.
-// - Pacing: wall clock decides how many steps are due; up to MAX_CATCHUP steps
-//   run per tick. A deficit beyond that is counted as missed steps and dropped
-//   from the wall-clock schedule (simulation time slips; no integration step is
+// - Pacing: wall clock decides how many steps are due (step n+1 is due at
+//   t0 + (n+1)*dt); up to MAX_CATCHUP steps run per tick. A step is *missed*
+//   when it starts more than one step period (dt, 8.3 ms) after its due time
+//   (contract budget definition). max_lag_steps (due minus completed steps at a
+//   tick, before catch-up), max_lag_ms and max_catchup_batch are reported.
+//   A deficit beyond MAX_CATCHUP is additionally dropped from the wall-clock
+//   schedule (dropped_steps; simulation time slips, no integration step is
 //   skipped, so the trajectory stays step-indexed and replayable).
 //
 // Benchmark-only extensions (not in contract v0): ready.trim, {type:"stats"}
@@ -55,6 +59,9 @@ let pending = [];     // inputs sorted by step (stable)
 let lastInputWallMs = null;
 let lastStepCostUs = 0;
 let missedSteps = 0;
+let droppedSteps = 0;
+let maxLagSteps = 0;
+let maxLagMs = 0;
 let lateInputs = 0;
 let appliedInputs = 0;
 let maxBatch = 0;
@@ -112,6 +119,11 @@ function applyDueInputs() {
 
 function stepOnce() {
   const a = performance.now();
+  if (running) {                      // paced steps only (not burst)
+    const lagMs = a - (t0Ms + (stepIndex + 1 - stepBase) * dtMs);
+    if (lagMs > dtMs) missedSteps += 1;
+    if (lagMs > maxLagMs) maxLagMs = lagMs;
+  }
   if (!applyDueInputs()) return false;
   const rc = M._gf_step();
   const b = performance.now();
@@ -128,21 +140,22 @@ function tick() {
   ticks += 1;
   let now = performance.now();
   const target = stepBase + Math.floor((now - t0Ms) / dtMs + 1e-9);
+  if (target - stepIndex > maxLagSteps) maxLagSteps = target - stepIndex;
   let batch = 0;
   while (stepIndex < target && batch < MAX_CATCHUP && stepIndex < untilStep) {
     if (!stepOnce()) return;
     batch += 1;
   }
+  if (batch > maxBatch) maxBatch = batch;
   if (stepIndex >= untilStep) {
     postState();
     onHalt();
     postMessage(stats());
     return;
   }
-  if (batch > maxBatch) maxBatch = batch;
   if (stepIndex < target) {          // deficit beyond catch-up: drop it
     const deficit = target - stepIndex;
-    missedSteps += deficit;
+    droppedSteps += deficit;
     t0Ms += deficit * dtMs;
   }
   now = performance.now();
@@ -160,8 +173,9 @@ function stats() {
   return {
     type: 'stats', step: stepIndex, t_s: s[0], dt_s: dtS,
     digest: M.UTF8ToString(M._gf_digest_hex()),
-    final_state: Array.from(s),
-    missed_steps: missedSteps, late_inputs: lateInputs, applied_inputs: appliedInputs,
+    final_state: Array.from(M.HEAPF64.subarray(M._gf_state() >> 3, (M._gf_state() >> 3) + M._gf_state_len())),
+    missed_steps: missedSteps, dropped_steps: droppedSteps,
+    max_lag_steps: maxLagSteps, max_lag_ms: maxLagMs, late_inputs: lateInputs, applied_inputs: appliedInputs,
     pending_inputs: pending.length, max_catchup_batch: maxBatch, ticks,
     run_wall_ms: runWallMs + (running ? performance.now() - runWallStartMs : 0),
     step_cost_us: costs.slice(0, costCount),
@@ -180,7 +194,7 @@ async function onInit(msg) {
   if (rc !== 0) { fail(`init rc=${rc}`); return; }
   dtS = dt; dtMs = dt * 1000; statePeriodMs = 1000 / hz;
   stepIndex = 0; pending = []; lastInputWallMs = null; lastStepCostUs = 0;
-  missedSteps = 0; lateInputs = 0; appliedInputs = 0; maxBatch = 0; ticks = 0;
+  missedSteps = 0; droppedSteps = 0; maxLagSteps = 0; maxLagMs = 0; lateInputs = 0; appliedInputs = 0; maxBatch = 0; ticks = 0;
   costs = new Float32Array(COST_CAPACITY); costCount = 0; runWallMs = 0;
   initialized = true;
   postMessage({

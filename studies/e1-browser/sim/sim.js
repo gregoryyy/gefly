@@ -123,7 +123,8 @@ async function runOnce(label, mode, seconds) {
     label, mode, seconds, ready_ms: readyMs, build: ready.build, trim: ready.trim,
     steps: st.step, t_s: st.t_s, run_wall_ms: st.run_wall_ms,
     sim_to_wall: st.t_s / (st.run_wall_ms / 1000),
-    missed_steps: st.missed_steps, late_inputs: st.late_inputs, applied_inputs: st.applied_inputs,
+    missed_steps: st.missed_steps, dropped_steps: st.dropped_steps,
+    max_lag_steps: st.max_lag_steps, max_lag_ms: st.max_lag_ms, late_inputs: st.late_inputs, applied_inputs: st.applied_inputs,
     pending_inputs: st.pending_inputs, max_catchup_batch: st.max_catchup_batch, ticks: st.ticks,
     worker_cross_origin_isolated: st.cross_origin_isolated,
     step_cost_us: { n: cost.length, p50: pct(cost, 50), p99: pct(cost, 99), max: pct(cost, 100),
@@ -176,17 +177,23 @@ async function main() {
       burst_us_per_step_last_block: results.burst.us_per_step[results.burst.us_per_step.length - 1],
       missed_steps_a: a.missed_steps, missed_steps_b: b.missed_steps,
       missed_per_10s_a: a.missed_steps / wall_s * 10,
+      missed_per_10s_b: b.missed_steps / (b.run_wall_ms / 1000) * 10,
+      missed_steps_live: l ? l.missed_steps : null,
+      max_lag_ms: Math.max(...results.runs.map((r) => r.max_lag_ms)),
+      max_lag_steps: Math.max(...results.runs.map((r) => r.max_lag_steps)),
+      max_catchup_batch: Math.max(...results.runs.map((r) => r.max_catchup_batch)),
+      late_inputs_live: l ? `${l.late_inputs}/${l.applied_inputs}` : null,
       latency_ms_p50: l ? l.latency_ms.p50 : null, latency_ms_p95: l ? l.latency_ms.p95 : null,
       digest_a: a.digest, digest_b: b.digest, final_state_identical: sameFinal,
       deterministic: a.digest === b.digest && sameFinal && a.steps === b.steps
         && a.late_inputs === 0 && b.late_inputs === 0,
-      note: 'digest = FNV-1a 64 over 14 post-step state doubles at every step; A and B both stop at the same step (run.until_step)',
+      note: 'missed = step started > 1 step period (dt) after its due time; digest = FNV-1a 64 over the 14 post-step state doubles (final_state) at every step; A and B both stop at the same step (run.until_step)',
     };
     // Budgets from ../README.md (reference Mac); here informational only.
     const s = results.summary;
     results.budgets_informational = {
       step_cost_p99_le_830us: s.step_cost_us_p99 <= 830,
-      missed_le_1_per_10s: s.missed_per_10s_a <= 1,
+      missed_le_1_per_10s: Math.max(s.missed_per_10s_a, s.missed_per_10s_b) <= 1,
       latency_p95_le_25ms: s.latency_ms_p95 !== null ? s.latency_ms_p95 <= 25 : null,
       deterministic_replay: s.deterministic,
     };

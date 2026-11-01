@@ -40,10 +40,15 @@ any static server (COOP/COEP recommended) and open `sim.html?seconds=30&live=10`
   applied before the next step and counted as late. Later inputs for the same step win.
 - `wall_ms` = sender's `performance.timeOrigin + performance.now()`, comparable
   between page and worker. `last_input_wall_ms` is that of the last applied input.
-- Pacing: the wall clock decides how many steps are due; at most 12 steps (100 ms)
-  run per tick. A deficit beyond that is counted in `missed_steps` and dropped from
-  the schedule: simulation time slips, no integration step is skipped, so replay
-  stays step-indexed. States post on a fixed `1/state_hz` cadence, latest only.
+- Pacing: the wall clock decides how many steps are due (step n+1 due at
+  t0 + (n+1)·dt). A step is **missed** when it starts more than one step period
+  (8.3 ms) after its due time (contract budget definition). Reported alongside:
+  `max_lag_steps` (due minus completed steps at a tick, before catch-up),
+  `max_lag_ms` and `max_catchup_batch`. At most 12 steps (100 ms) run per tick; a
+  larger deficit is counted in `dropped_steps` and dropped from the schedule
+  (simulation time slips, no integration step is skipped, replay stays
+  step-indexed). States post on a fixed `1/state_hz` cadence, latest only.
+- `heading_rad` is **true** heading (JSBSim `attitude/psi-rad`).
 - Control mapping: `elevator`, `aileron`, `rudder`, `throttle` → JSBSim
   `fcs/*-cmd-norm`, with JSBSim sign conventions (not verified against a real rig).
 - `init` also runs JSBSim's longitudinal trim (mode 0) so neutral elevator holds
@@ -62,51 +67,61 @@ fixture choice, not aircraft data), short rudder pulses, throttle 0.6875/0.75.
 
 - Runs **A** and **B**: fresh worker each, whole log posted before `run`, stop at
   step 3600 (`until_step`). Measures per-step cost (set-inputs + `Run()` + state
-  read, `performance.now()` in the worker), missed steps, late inputs, digest.
+  read, `performance.now()` in the worker), missed steps, lag, late inputs, digest.
 - Run **L** (live, 10 s): same values sent at their wall time plus a deterministic
-  0-25 ms phase jitter, with `step` = latest received state step (so applied at the
-  next step, counted late by design). Latency = page receive time of the first state
+  0-25 ms phase jitter, with `step` = latest received state step, so it is applied
+  at the next step. It counts as late only if the worker had already advanced past
+  that step when it arrived (observed 18/40 and 21/40; late here is expected, not an error). Latency = page receive time of the first state
   with `last_input_wall_ms >= wall_ms` minus `wall_ms` (excludes the render frame).
 - **Burst**: fresh worker, 5 × 2400 steps back to back without timer sleeps.
 - Digest: FNV-1a 64 over 14 post-step state doubles (time, position, attitude,
-  TAS, body velocities and rates) at every step.
+  TAS, body velocities and rates) at every step; `final_state` in `stats` holds the
+  same 14 doubles (bridge layout in [bridge.cpp](bridge.cpp)).
 
 ## Results (preliminary, 2026-11-01, cloud container)
 
 Environment: Intel Xeon @ 2.80 GHz, 4 vCPU (KVM), Linux 6.18; Playwright 1.63.0,
 headless Chromium 153.0.8010.12, cross-origin isolated; Node 22.23.4 for the
 runner. Build: emcc 6.0.13, `jsbsim.wasm` 1 728 736 bytes (495 328 gzip -9),
-SHA-256 `ec4a73ec...cb78a4`. Two complete `run-headless.mjs --seconds 30 --live 10` runs:
+SHA-256 `ec4a73ec...cb78a4`. Two complete `run-headless.mjs --seconds 30 --live 10`
+runs after the 8.3 ms missed-step definition (quality review fix):
 
 | Measure | Run 1 | Run 2 | Proposed budget (reference Mac) |
 | --- | --- | --- | --- |
-| Paced step cost p50 / p99 (A) | 210 / 485 us | 215 / 505 us | p99 ≤ 830 us |
-| Paced step cost p99 (B) | 435 us | 550 us | |
-| Max single step (A, B, L) | 3.6, 6.0, 8.6 ms | 4.3, 2.7, 12.0 ms | |
-| Unpaced burst, last of 5 blocks | 25.0 us/step | 23.5 us/step | |
-| Missed steps A / B / L | 0 / 0 / 0 | 0 / 0 / 0 | ≤ 1 per 10 s |
-| Input-to-state latency p50 / p95 / max (L, 40 inputs) | 10.5 / 20.1 / 21.2 ms | 9.2 / 18.8 / 21.0 ms | p95 ≤ 25 ms |
-| State interval p50 / p95 (A) | 16.7 / 20.6 ms | 16.5 / 20.6 ms | |
+| Paced step cost p50 / p99 (A) | 245 / 525 us | 260 / 510 us | p99 ≤ 830 us |
+| Paced step cost p99 (B) | 580 us | 660 us | |
+| Max single step (A, B, L) | 12.4, 17.1, 7.5 ms | 6.5, 4.5, 4.3 ms | |
+| Unpaced burst, last of 5 blocks | 40.5 us/step | 35.4 us/step | |
+| Missed steps A / B / L (> 8.3 ms late) | 1 / 8 / 0 | 10 / 7 / 1 | ≤ 1 per 10 s |
+| Missed per 10 s A / B | 0.33 / 2.67 | 3.33 / 2.33 | **fails here** |
+| Max lag (steps / ms), all runs | 5 / 45.1 | 6 / 44.7 | report |
+| Max catch-up batch A / B / L | 2 / 5 / 1 | 4 / 6 / 2 | report |
+| Dropped steps (> 12 behind) | 0 | 0 | |
+| Input-to-state latency p50 / p95 / max (L, 40 inputs) | 8.5 / 18.6 / 20.2 ms | 7.1 / 16.7 / 20.6 ms | p95 ≤ 25 ms |
+| State interval p50 / p95 (A) | 16.5 / 20.6 ms | 16.5 / 20.8 ms | |
 | Digest A = B (3600 steps) | `7c8783f3440f387a` both | `7c8783f3440f387a` both | identical |
-| Worker ready (load + init + trim) | about 0.2 s | about 0.2 s | |
 
-The same digest was produced by an earlier full run during development
-(separate browser sessions, same build). Trim at the IC succeeded (throttle 0.693,
-pitch trim 0.168). Final state after 30 s: 1008 m MSL, TAS 46.3 m/s.
+Under the earlier 100 ms threshold (superseded) two earlier runs showed 0 missed
+steps everywhere, paced p50 210-215 us and burst about 24 us/step; this container
+is noisy between sessions. The same digest was produced by every full run during
+development (separate browser sessions, same build). Worker ready (load + init +
+trim) about 0.2 s. Trim at the IC succeeded (throttle 0.693, pitch trim 0.168).
+Final state after 30 s: 1008 m MSL, TAS 46.3 m/s.
 
 Observations:
 
-- Paced step cost (about 210-250 us) is roughly 10× the unpaced burst cost
-  (about 24 us). In an ad hoc probe, a step after an 8 ms timer sleep cost about
-  200 us while back-to-back steps cost about 26 us: the paced figure is dominated by
-  post-idle wake effects (cache/vCPU) in this container, not WASM compute. The
-  reference Mac may behave differently; measure both there.
-- WASM warm-up: the first 2400-step block costs about 75 us/step (tier-up), later
-  blocks about 24 us/step.
-- An earlier development run (before the fixed state cadence and jitter) showed
-  one 63 ms step and 26 missed steps in run L; not reproduced in later runs.
-  Isolated multi-millisecond steps occur (max column); cause not determined
-  (likely GC or VM scheduling).
+- The real-time budget fails in this container: lags of up to about 45 ms (5-6
+  steps) occur a few times per 30 s and are caught up within one tick, so no step
+  was dropped and replay is unaffected. Isolated slow steps (4-17 ms) and late
+  timer wake-ups are the visible causes; their origin (GC, VM scheduling, timer
+  clamping) is not determined. This needs the reference Mac before any conclusion.
+- Paced step cost (about 210-300 us) is roughly 6-10× the unpaced burst cost
+  (about 24-40 us). **Unverified hypothesis:** the difference is a post-idle wake
+  cost (cache/vCPU) after each timer sleep, not WASM compute. An ad hoc probe (not
+  kept in the repository) saw about 200 us per step after an 8 ms sleep versus about
+  26 us back to back, at 100 us timer resolution. Measure both on the reference Mac.
+- WASM warm-up: the first 2400-step burst block costs 57-175 us/step (tier-up),
+  later blocks 24-40 us/step.
 
 ## Limitations
 

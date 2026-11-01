@@ -27,7 +27,12 @@ if (!fs.existsSync(path.join(ROOT, 'dist', 'jsbsim.wasm'))) {
 }
 
 const server = http.createServer((req, res) => {
-  const rel = decodeURIComponent(new URL(req.url, 'http://x').pathname).replace(/^\/+/, '');
+  let rel;
+  try {
+    rel = decodeURIComponent(new URL(req.url, 'http://x').pathname).replace(/^\/+/, '');
+  } catch {
+    res.writeHead(400); res.end(); return;
+  }
   const file = path.resolve(ROOT, rel || 'sim.html');
   if (!file.startsWith(ROOT + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) {
     res.writeHead(404); res.end(); return;

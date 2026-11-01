@@ -114,7 +114,8 @@ EMSCRIPTEN_KEEPALIVE int gf_init(double dt_s, double lat_rad, double lon_rad,
   f.SetPropertyValue("propulsion/set-running", -1);
   // Longitudinal trim (JSBSim mode 0) so a neutral elevator command holds
   // approximately level flight; the result lands in fcs/pitch-trim-cmd-norm,
-  // which later elevator inputs add to. Trim failure is reported, not fatal.
+  // which later elevator inputs add to. Trim failure is reported, not fatal;
+  // a failed trim may leave partially adjusted state/controls (not rolled back).
   g_trim_ok = 0;
   try {
     f.SetPropertyValue("fcs/throttle-cmd-norm", 0.7);
@@ -159,7 +160,8 @@ EMSCRIPTEN_KEEPALIVE int gf_step() {
 EMSCRIPTEN_KEEPALIVE double* gf_state() { return g_state; }
 EMSCRIPTEN_KEEPALIVE int gf_state_len() { return kStateLen; }
 EMSCRIPTEN_KEEPALIVE double gf_step_index() { return g_steps; }
-// 1 trimmed, -1 trim failed (state as after RunIC), 0 not attempted.
+// 1 trimmed, -1 trim threw (state and controls are whatever the partial trim
+// left, not restored to the post-RunIC state), 0 not attempted.
 EMSCRIPTEN_KEEPALIVE int gf_trim_status() { return g_trim_ok; }
 EMSCRIPTEN_KEEPALIVE double gf_trim_throttle() { return g_trim_throttle; }
 EMSCRIPTEN_KEEPALIVE double gf_trim_pitch() { return g_trim_pitch; }
