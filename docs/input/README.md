@@ -11,6 +11,7 @@ These records preserve the user's original intent. Do not edit accepted input re
 - [2026-10-31 Q4/Q11 answers](2026-10-31-mac-controls-briefing-answers.md): Mac keyboard/touchpad, optional yoke/joystick and pedals, GeoFS-inspired settings, scenario-first briefing.
 - [2026-10-31 licence-specific roadmap](2026-10-31-license-specific-roadmap.md): additional sailplane and ultralight pilot-training tracks.
 - [2026-10-31 independent peer](2026-10-31-independent-peer-agent.md): opposite-provider quality and specification review, Claude for Codex and vice versa.
+- [2026-11-01 peer gate scope](2026-11-01-peer-gate-scope.md): cross-provider peer review is not required on every PR.
 - [2026-11-01 Q3/Q5/Q7/Q10/Q12 answers](2026-11-01-aircraft-license-exercise-answers.md): FR172 and/or 172S engine variants, GPL-3 with permissive-preferred third-party policy, first circuit exercise at Egelsbach, community rules in phase 3.
 
 These inputs are included in the local repository. Recheck privacy before remote publication.

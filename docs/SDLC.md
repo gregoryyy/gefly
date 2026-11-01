@@ -10,6 +10,13 @@ Integrate before final reviews. Quality reviews code quality/security/numerics/t
 
 ## Cross-provider peer gate
 
+**Scope (GAPS Q15).** The gate is **required** for integrated milestone results,
+changes to simulation/dynamics, aircraft or navigation data, avionics, training
+assessment, security-relevant code or agent/peer tooling, and release candidates.
+It is **not required** for documentation-only decision recording, research notes,
+bookkeeping and editorial fixes. Each PR states whether the gate applies and why;
+the user can request it on any PR. Where it applies, the rules below hold in full.
+
 Use **Claude to review Codex-authored contributions**, and **Codex to review
 Claude-authored contributions**, in addition to the existing quality and validate
 roles. A different model or subagent inside the author's provider is not a
@@ -51,7 +58,7 @@ Record TODO IDs and requirement IDs in changes. Commit descriptions include `Ref
 
 - The in-scope specification criteria are supported by observable evidence; untested criteria are explicitly blocked or not evaluated.
 - Relevant checks pass at the integrated revision; numerical/reference tests are independent of tuning data where possible.
-- Quality, validate and the additional cross-provider peer gate have independent eligible reviewers, resolved findings and current revision/packet evidence; affected reviews are renewed after fixes. Missing provider prerequisites remain explicit blockers.
+- Quality, validate and, where its scope applies (GAPS Q15), the cross-provider peer gate have independent eligible reviewers, resolved findings and current revision/packet evidence; affected reviews are renewed after fixes. Missing provider prerequisites remain explicit blockers.
 - Units, coordinate frames, aircraft configuration, source versions/rights and limitations are explicit when applicable.
 - Documentation, requirement references, TODO status and clock-derived DONE entry reflect the delivered state.
 - No secrets, personal data, unlicensed assets or generated document outputs enter the tracked change unintentionally.

@@ -3,6 +3,22 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 07:22 — Scope the cross-provider peer gate
+
+TODO: 0.18 complete. Agent: Claude Code orchestrator (no subagents).
+
+**Implementation notes**
+
+Per the user's direction (GAPS Q15), the peer gate applies to integrated milestones,
+simulation/data/avionics/assessment code, security-relevant or agent tooling and
+release candidates; documentation-only decision records, research notes and
+bookkeeping do not need it. Updated SDLC, AGENTS, SPEC R-AGENT-7, agent workflow,
+peer role and PR template. PR #4 is therefore outside the peer scope.
+
+**Deviations**
+
+The exact scope boundary is an orchestrator interpretation of the user's statement.
+
 ## 2026-11-01 07:04 — Record aircraft, license, first-exercise, airport and community answers
 
 TODO: 0.9 complete; 0.10.2 recorded; 1.3, 1.5, 1.7 and 1.11 refined.
