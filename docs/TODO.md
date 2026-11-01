@@ -31,6 +31,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 ## 1. Foundation
 
 - [ ] 1.1 Add stack-appropriate quality gates and CI with reproducible local equivalents; extend the repository-tool gate when the simulator stack is chosen. Q6 publication is resolved.
+  - [ ] 1.1.2 Run the study tests (`studies/e1-jsbsim`, offline, skip without jsbsim) and the synthetic render check (node) in the shared gate; `--require-node` in hosted CI; skips reported, never passes. Pending review and hosted run.
   - [x] 1.1.1 Add the shared offline repository-tool gate and GitHub Actions matrix, negative fixtures, pinned action/update policy and independent E0-CI review; local, hosted and actual Claude peer evidence are recorded in RESULTS and the CI review reports.
 - [ ] 1.2 Choose web stack, rendering/geography strategy and dynamics architecture through a bounded E1 study. *(decision)*
   - [ ] 1.2.1 Reference platform selected (Q16): MacBook Pro M1, current macOS, Chrome latest first, Safari second; pin exact versions per measurement. Specify optional yoke/joystick/pedals and the paired-iPhone profile; refine GeoFS-inspired settings and measure trial timestep, latency and numerical budgets using Q4's selected baseline.
