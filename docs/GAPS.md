@@ -65,6 +65,28 @@ ROAD, EVAL and TODO. Exact reference Mac, macOS/browser versions, peripheral
 models, settings details and measured budgets remain foundation implementation
 choices in TODO 1.2.1; they were not selected by this answer.
 
+### Q17. Which dynamics engine and web stack (E1)?
+
+Why: TODO 1.2 needs a reuse-first engine and browser stack decision (R-REUSE-1).
+
+Answer: **2026-11-01 11:38, user** (recorded by orchestrator, Claude Code;
+[input](input/2026-11-01-e1-decisions.md)): “yes accept lgpl, skip contacting, pr,
+jsbsim, check yes, pr”.
+
+Decided: **JSBSim** is the dynamics engine (evidence: [JSBSim study](../studies/e1-jsbsim/README.md),
+[candidate survey](research/2026-11-01-e1-engine-stack-candidates.md)). Its
+**LGPL-2.1-or-later license is an accepted copyleft exception** under Q5; it is used
+as a separately replaceable library (WASM module) to keep LGPL relinking obligations
+and later relicensing manageable. JSBSim's bundled C172 aircraft data is **not**
+shipped; a project-owned 172S model is built from sourced data (E2). No outreach to
+the JSBSim/FlightGear teams. Still proposals until the browser check on the
+reference M1/Chrome (TODO 1.2.1/1.2.3): WASM in a Web Worker at a fixed 1/120 s step,
+replay by re-running logged inputs on the same build, CesiumJS (hosted-service token
+disabled) with three.js fallback, MapLibre for 2D maps, TypeScript.
+
+Resolved (engine): 2026-11-01 11:38, user; carried into [ARCH](ARCH.md), [SBOM](SBOM.md),
+[TODO](TODO.md) 1.2 and AGENTS.
+
 ### Q16. Reference Mac, browsers and optional paired-phone control?
 
 Why: TODO 1.2.1 needs a measured reference platform for timestep, latency and
@@ -124,6 +146,7 @@ proposals implementing this policy, pending user confirmation:* copyleft compone
 would constrain a later relaxation; non-commercial/no-derivatives material is not
 distributed, only referenced; reading "non-proprietary" as OSI-approved software
 licenses and open data/content licenses is also an orchestrator interpretation.
+Exception accepted 2026-11-01: JSBSim engine (LGPL-2.1-or-later), see Q17.
 Note: a later relaxation needs permission from every copyright holder, including
 the upstream Propeller holders for the derived files (or their replacement); a DCO
 alone does not grant this, so contributor terms that keep the option open remain to

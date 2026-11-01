@@ -3,6 +3,22 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 11:38 — Select JSBSim as the dynamics engine
+
+TODO: 1.2.3 partly decided. Agent: Claude Code orchestrator (no subagents).
+
+**Implementation notes**
+
+User decision (GAPS Q17): JSBSim, with LGPL-2.1 accepted as a copyleft exception
+under Q5; bundled C172 data not shipped; no licence outreach. Recorded in input,
+GAPS, ARCH, SBOM, AGENTS and TODO. Rendering/map/language remain proposals pending
+the browser check.
+
+**Deviations**
+
+Treating JSBSim as a separately replaceable WASM library is an orchestrator design
+note for LGPL compliance, not a user statement.
+
 ## 2026-11-01 11:18 — Review and fix the E1 study slice
 
 TODO: 1.2.2 in progress. Agent: Claude Code orchestrator; quality, code1 and
