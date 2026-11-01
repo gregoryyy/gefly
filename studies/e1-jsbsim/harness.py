@@ -13,6 +13,8 @@ model, not the 172S/FR172 selected for Gefly.
 from __future__ import annotations
 
 import argparse
+import atexit
+import contextlib
 import hashlib
 import json
 import math
@@ -21,6 +23,7 @@ import platform
 import struct
 import subprocess
 import sys
+import tempfile
 import time
 
 # --- Unit conversions (exact definitions) ---------------------------------
@@ -92,6 +95,37 @@ INTEGRATOR_NAMES = {0: "none", 1: "rect-euler", 2: "trapezoidal", 3: "adams-bash
                     7: "buss-2", 8: "local-linearization", 9: "adams-bashforth-5"}
 
 
+_OUTPUT_DIR: tempfile.TemporaryDirectory | None = None
+
+
+def _output_sink() -> str:
+    """Harness-owned temporary directory for JSBSim's model-declared CSV output.
+
+    ``c172x.xml`` declares a CSV ``<output>`` that JSBSim opens at ``run_ic()``
+    even after ``disable_output()``; it would otherwise land in the working
+    directory. The directory is removed at interpreter exit.
+    """
+    global _OUTPUT_DIR
+    if _OUTPUT_DIR is None:
+        _OUTPUT_DIR = tempfile.TemporaryDirectory(prefix="e1-jsbsim-out-")
+        atexit.register(_OUTPUT_DIR.cleanup)
+    return _OUTPUT_DIR.name
+
+
+@contextlib.contextmanager
+def native_stdout_to_stderr():
+    """Route C/C++-level writes to fd 1 into stderr so stdout carries only results."""
+    sys.stdout.flush()
+    saved = os.dup(1)
+    try:
+        os.dup2(2, 1)
+        yield
+    finally:
+        sys.stdout.flush()
+        os.dup2(saved, 1)
+        os.close(saved)
+
+
 def _jsbsim():
     import jsbsim  # imported lazily so unit helpers work without the package
     return jsbsim
@@ -108,9 +142,7 @@ def make_fdm(dt_s: float, aircraft: str = AIRCRAFT):
     fdm.set_debug_level(0)
     if not fdm.load_model(aircraft):
         raise RuntimeError(f"cannot load aircraft {aircraft!r}")
-    # The model file declares its own CSV output, opened at run_ic() even when
-    # output is disabled; send it to the null device so no file is written.
-    fdm.set_output_filename(0, os.devnull)
+    fdm.set_output_filename(0, os.path.join(_output_sink(), f"out-{id(fdm)}.csv"))
     fdm.disable_output()
     fdm.set_dt(dt_s)
     return fdm
@@ -162,11 +194,11 @@ def pack(values) -> bytes:
     return struct.pack(f"<{len(values)}d", *values)
 
 
-def run_hashed(fdm, steps: int, dt_s: float) -> str:
-    """Advance ``steps`` fixed steps applying scripted inputs; hash every state."""
+def run_hashed(fdm, steps: int, dt_s: float, inputs=scripted_inputs) -> str:
+    """Advance ``steps`` fixed steps applying ``inputs(t)``; hash every state."""
     digest = hashlib.sha256()
     for k in range(steps):
-        for name, value in scripted_inputs(k * dt_s).items():
+        for name, value in inputs(k * dt_s).items():
             fdm[name] = value
         if not fdm.run():
             raise RuntimeError(f"run() returned False at step {k}")
@@ -250,6 +282,7 @@ def refinement_run(dt_s: float, sample_times_s=(10.0, 20.0, 30.0, 40.0)) -> dict
     steps_per_s = round(1.0 / dt_s)
     samples = {}
     total = int(round(sample_times_s[-1] * steps_per_s))
+    t_after = 0.0
     for k in range(total):
         t = k / steps_per_s
         climb = 5.0 <= t < 25.0
@@ -263,6 +296,26 @@ def refinement_run(dt_s: float, sample_times_s=(10.0, 20.0, 30.0, 40.0)) -> dict
                 samples[ts] = si_sample(fdm)
     return {"dt_s": dt_s, "trim": trim_result, "samples": samples,
             "sim_time_s": fdm["simulation/sim-time-sec"], "t_end_s": t_after}
+
+
+def consecutive_orders(samples_by_hz: dict, rates_hz, keys) -> tuple[dict, dict]:
+    """Reference-free convergence estimate from runs at halving step sizes.
+
+    d(dt) = max over sample times |y(dt) - y(dt/2)|; p = log2(d(dt) / d(dt/2)).
+    Returns (differences keyed by coarse rate, orders keyed "coarse/fine").
+    """
+    diffs = {}
+    for coarse, fine in zip(rates_hz[:-1], rates_hz[1:]):
+        times = samples_by_hz[fine]
+        diffs[coarse] = {key: max(abs(samples_by_hz[coarse][t][key] - times[t][key])
+                                  for t in times) for key in keys}
+    orders = {}
+    for coarse, fine in zip(rates_hz[:-2], rates_hz[1:-1]):
+        orders[f"{coarse}/{fine}"] = {
+            k: (math.log2(diffs[coarse][k] / diffs[fine][k])
+                if diffs[fine][k] > 0 and diffs[coarse][k] > 0 else None)
+            for k in keys}
+    return diffs, orders
 
 
 def fixture_refinement(rates_hz=(60, 120, 240, 480)) -> dict:
@@ -281,21 +334,11 @@ def fixture_refinement(rates_hz=(60, 120, 240, 480)) -> dict:
             k: (math.log2(errors[coarse][k] / errors[fine][k])
                 if errors[fine][k] > 0 and errors[coarse][k] > 0 else None)
             for k in errors[coarse]}
-    # Reference-free estimate: consecutive-run differences d(dt) = max|y(dt) - y(dt/2)|;
-    # p = log2(d(dt) / d(dt/2)). With the finest run as reference, first order
-    # would appear as log2(7/3) = 1.22 and log2(3) = 1.58 for these rate ladders.
-    diffs = {}
-    for coarse, fine in zip(rates_hz[:-1], rates_hz[1:]):
-        diffs[coarse] = {key: max(abs(runs[coarse]["samples"][t][key]
-                                      - runs[fine]["samples"][t][key])
-                                  for t in ref["samples"])
-                         for key in ("alt_msl_m", "tas_mps", "pitch_deg")}
-    consecutive = {}
-    for coarse, fine in zip(rates_hz[:-2], rates_hz[1:-1]):
-        consecutive[f"{coarse}/{fine}"] = {
-            k: (math.log2(diffs[coarse][k] / diffs[fine][k])
-                if diffs[fine][k] > 0 and diffs[coarse][k] > 0 else None)
-            for k in diffs[coarse]}
+    # With the finest run as reference, first order would appear as
+    # log2(7/3) = 1.22 and log2(3) = 1.58 for this rate ladder.
+    diffs, consecutive = consecutive_orders(
+        {hz: runs[hz]["samples"] for hz in rates_hz}, rates_hz,
+        ("alt_msl_m", "tas_mps", "pitch_deg"))
     return {"reference_hz": rates_hz[-1],
             "consecutive_diffs": diffs, "observed_order_consecutive": consecutive,
             "reference_samples": ref["samples"],
@@ -330,7 +373,19 @@ def fixture_stationary(dt_s: float = 1.0 / 120.0, settle_s: float = 5.0,
             "airborne_trim": trim(trim_fdm)}
 
 
-def fixture_cost(steps: int = 12000, dt_s: float = 1.0 / 120.0) -> dict:
+def fixture_cost(steps: int = 12000, dt_s: float = 1.0 / 120.0, runs: int = 3) -> dict:
+    """Repeat the single-run cost measurement; report each metric separately."""
+    samples = [_cost_once(steps, dt_s) for _ in range(runs)]
+    out = {"steps_per_run": steps, "dt_s": dt_s, "runs": runs, "per_run": samples}
+    for metric in ("run_only", "with_io_hash"):
+        us = [r[f"{metric}_us_per_step"] for r in samples]
+        rtf = [r[f"{metric}_realtime_factor"] for r in samples]
+        out[metric] = {"us_per_step_min": min(us), "us_per_step_max": max(us),
+                       "realtime_factor_min": min(rtf), "realtime_factor_max": max(rtf)}
+    return out
+
+
+def _cost_once(steps: int, dt_s: float) -> dict:
     fdm = make_fdm(dt_s)
     init_airborne(fdm)
     t0 = time.perf_counter()
@@ -342,8 +397,7 @@ def fixture_cost(steps: int = 12000, dt_s: float = 1.0 / 120.0) -> dict:
     t0 = time.perf_counter()
     run_hashed(fdm, steps, dt_s)
     full = (time.perf_counter() - t0) / steps
-    return {"steps": steps, "dt_s": dt_s,
-            "run_only_us_per_step": bare * 1e6, "run_only_realtime_factor": dt_s / bare,
+    return {"run_only_us_per_step": bare * 1e6, "run_only_realtime_factor": dt_s / bare,
             "with_io_hash_us_per_step": full * 1e6,
             "with_io_hash_realtime_factor": dt_s / full}
 
@@ -376,20 +430,24 @@ def main(argv=None) -> int:
     parser.add_argument("--out", help="write JSON results to this path")
     args = parser.parse_args(argv)
     if args.command == "digest":
-        print(determinism_digest(args.steps, args.dt))
+        with native_stdout_to_stderr():
+            digest = determinism_digest(args.steps, args.dt)
+        print(digest)
         return 0
     if args.command == "fnv":
-        digest, values = fnv1a64_final(args.steps, args.dt)
+        with native_stdout_to_stderr():
+            digest, values = fnv1a64_final(args.steps, args.dt)
         print(f"fnv1a64 {digest}")
         for name, value in zip(STATE_PROPERTIES, values):
             print(name, value.hex())
         return 0
     t0 = time.perf_counter()
-    results = {"environment": environment(),
-               "F1_determinism": fixture_determinism(),
-               "F2_refinement": fixture_refinement(),
-               "F3_stationary_trim": fixture_stationary(),
-               "F4_cost": fixture_cost()}
+    with native_stdout_to_stderr():
+        results = {"environment": environment(),
+                   "F1_determinism": fixture_determinism(),
+                   "F2_refinement": fixture_refinement(),
+                   "F3_stationary_trim": fixture_stationary(),
+                   "F4_cost": fixture_cost()}
     results["harness_wall_s"] = time.perf_counter() - t0
     text = json.dumps(results, indent=2, sort_keys=True, default=str)
     if args.out:

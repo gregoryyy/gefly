@@ -31,7 +31,10 @@ int main(int argc, char** argv) {
   fdm.SetDebugLevel(0);
   fdm.SetRootDir(SGPath(root));
   if (!fdm.LoadModel(SGPath("aircraft"), SGPath("engine"), SGPath("systems"), "c172x")) return 3;
-  // The model declares a CSV output opened at RunIC even when disabled.
+  // The model declares a CSV output that JSBSim tries to open at RunIC even
+  // when disabled. Pointing it at /dev/null makes that open fail (JSBSim logs
+  // "unable to open the file /dev/null") so no file is written; the state
+  // digest is unaffected. Results go to stdout; JSBSim messages may interleave.
   fdm.SetOutputFileName(0, "/dev/null");
   fdm.DisableOutput();
   fdm.Setdt(dt);
@@ -47,7 +50,7 @@ int main(int argc, char** argv) {
   if (!fdm.RunIC()) return 4;
   fdm.SetPropertyValue("propulsion/set-running", -1);
   uint64_t h = 1469598103934665603ULL;
-  double v[16];
+  double v[16] = {0.0};  // reported as zeros when steps == 0
   for (int k = 0; k < steps; ++k) {
     const double t = k * dt;
     fdm.SetPropertyValue("fcs/throttle-cmd-norm", 0.7 + 0.3 * (t >= 4.0 ? 1.0 : 0.0));

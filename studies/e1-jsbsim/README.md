@@ -41,7 +41,9 @@ into the repository.
 Script: [harness.py](harness.py) (stdlib + `jsbsim` only). Tests:
 [test_harness.py](test_harness.py). SI at the boundary: helper functions convert
 JSBSim's ft, ft/s, kt, deg and slug units once (`ft_to_m` uses the exact
-0.3048 m/ft; kt uses 1852/3600 m/s). JSBSim stdout is suppressed (debug level 0).
+0.3048 m/ft; kt uses 1852/3600 m/s). JSBSim runs at debug level 0; any remaining native
+console output (for example its output-file error below) is routed to stderr
+while the fixtures run, so `harness.py all` writes only JSON to stdout.
 Time is step-indexed (`k * dt`); no wall clock enters the simulation. Integrator
 settings are the model defaults and are recorded in the output.
 
@@ -61,7 +63,7 @@ Fixtures:
 - **F3 stationary/trim.** `reset_at_rest` ground IC, engine off, parking brakes
   full; 5 s settling then 25 s observation. Plus a simple longitudinal trim at
   the F1 IC: trim status, controls and residual accelerations.
-- **F4 cost.** Wall-clock (`time.perf_counter`) for `run()` alone and with F1 state
+- **F4 cost.** Three repetitions of: wall-clock (`time.perf_counter`) for `run()` alone and with F1 state
   capture, 12 000 steps at 1/120 s; per-step microseconds and real-time factor.
 
 ## Proposed budgets and stop criteria (declared before running)
@@ -83,26 +85,42 @@ smoothness as dynamics accuracy.
 ## Commands (as run, 2026-11-01)
 
 ```sh
-S=<scratchpad>                     # outside the repository
-python3 -m venv $S/venv-e1 && $S/venv-e1/bin/pip install jsbsim   # resolved 1.3.3 (+ numpy)
+# run from the repository root; S = a scratch directory outside the repository
+python3 -m venv $S/venv-e1
+$S/venv-e1/bin/pip install "jsbsim==1.3.3" \
+  --hash=sha256:3a933792b350f2c2e75783ea746daa026dd59a160101682fdd32654faa7a5a6f
+# (that hash is the cp313 manylinux x86-64 wheel; numpy resolved unpinned as a dependency,
+#  so drop --hash or add numpy hashes when pip requires hashes for every package)
 $S/venv-e1/bin/python studies/e1-jsbsim/harness.py all --out $S/e1-results.json
 $S/venv-e1/bin/python -m unittest discover -s studies/e1-jsbsim -v
 python3 -m unittest discover -s studies/e1-jsbsim     # without jsbsim: engine tests skip
-python3 utils/ci.py
-# optional WASM path (scratchpad only; SRC = git clone --depth 1 --branch v1.3.3)
-git clone --depth 1 https://github.com/emscripten-core/emsdk && ./emsdk install latest && ./emsdk activate latest
+python3 utils/ci.py   # repository gate; it discovers tests under utils/ only and does NOT run these
+# optional WASM path, all in $S (SRC = $S/src/jsbsim-1.3.3 from
+#   git clone --depth 1 --branch v1.3.3 https://github.com/JSBSim-Team/jsbsim.git)
+git clone https://github.com/emscripten-core/emsdk && cd emsdk && ./emsdk install 6.0.13 \
+  && ./emsdk activate 6.0.13 && source ./emsdk_env.sh   # run used emsdk@d7b4130 "latest" = 6.0.13
+mkdir $S/build-wasm-exc && cd $S/build-wasm-exc   # working directory for the next two commands
 emcmake cmake $SRC -DCMAKE_BUILD_TYPE=Release -DBUILD_PYTHON_MODULE=OFF -DBUILD_DOCS=OFF \
   -DCMAKE_CXX_FLAGS=-fwasm-exceptions -DCMAKE_C_FLAGS=-fwasm-exceptions && emmake make -j4 libJSBSim
-em++ -O2 -std=c++17 -fwasm-exceptions -I$SRC/src -Isrc wasm/driver.cpp src/libJSBSim.a \
-  -sNODERAWFS=1 -sALLOW_MEMORY_GROWTH=1 -o driver-wasm.js && node driver-wasm.js <jsbsim data root>
-# native comparison: same cmake without emcmake/flags, then g++ -O2 -std=c++17 ... -o driver-native
+em++ -O2 -std=c++17 -fwasm-exceptions -I$SRC/src -Isrc <repo>/studies/e1-jsbsim/wasm/driver.cpp \
+  src/libJSBSim.a -sNODERAWFS=1 -sALLOW_MEMORY_GROWTH=1 -o $S/driver-wasm.js
+node $S/driver-wasm.js $S/venv-e1/lib/python3.13/site-packages/jsbsim   # data root = wheel's files
+# native comparison: in $S/build-native, cmake $SRC (same options, no emcmake/flags) && make libJSBSim,
+# then g++ -O2 -std=c++17 -I$SRC/src -Isrc <driver.cpp> src/libJSBSim.a -o $S/driver-native
 ```
 
-Side finding: `c172x.xml` declares a CSV `<output>` that JSBSim opens at
-`run_ic()` even after `disable_output()`; the harness redirects it to the null
-device so runs write no files into the working directory.
+No WASM/native build artefacts, logs or emsdk installation are retained or
+committed; only `wasm/driver.cpp` is kept.
 
-The harness run takes about 2-3 s wall time on this container.
+Side finding: `c172x.xml` declares a CSV `<output>` that JSBSim tries to open at
+`run_ic()` even after `disable_output()`; by default it lands in the working
+directory. The harness points it at a harness-owned temporary directory removed
+at exit (in this sandbox the open is refused, so JSBSim logs "unable to open
+the file ..." to the redirected stream and writes nothing); `driver.cpp` points
+it at `/dev/null`, whose open JSBSim likewise reports as failed. A test checks that
+`harness.py all` leaves its working directory empty and prints parseable JSON.
+
+The harness run takes about 3-4 s wall time on this container (child-process digest included).
 
 ## Results (Linux container; not the reference Mac)
 
@@ -116,7 +134,7 @@ Adams-Bashforth 3.
 | F1 | SHA-256 `9daa3605...fa4e7c` identical for two fresh instances, a fresh child process and the same instance after `reset_to_initial_conditions` (2400 steps) | pass (same build) |
 | F2 | Max diff vs 1/480 s over t = 10-40 s: 1/60 s: 0.097 m, 0.011 m/s, 0.017 deg; **1/120 s: 0.042 m, 0.0047 m/s, 0.0071 deg**; 1/240 s: 0.014 m, 0.0016 m/s, 0.0024 deg. Consecutive-difference order 1.00 +/- 0.002 for all three states | pass; **first-order** convergence |
 | F3 | After 5 s settling: horizontal drift 0.00035 m, max speed 0.00050 m/s, height change 0.00008 m over 25 s. The bundled IC needs about 4 s to settle (0.135 m/s at 0.5 s). Trim at the F1 IC succeeds: throttle 0.749, pitch-trim 0.201, alpha = pitch 1.12 deg, residual udot -6.2e-6 m/s^2, wdot -4.0e-5 m/s^2 | pass; settling transient must be hidden or pre-run at scenario start |
-| F4 | `run()` alone 15-23 us/step; with 3 inputs, 16 reads and hashing 23-31 us/step: **274-552x real time** at 1/120 s, single thread, three runs | pass |
+| F4 | Recorded `all` run, 3 repetitions x 12 000 steps at 1/120 s, single thread. `run()` alone: 14.2-22.9 us/step = **364-588x** real time. With 3 inputs, 16 reads and hashing: 20.2-35.0 us/step = **238-413x**. An independent reviewer run (with I/O) observed 234x, 299x, 347x. Lowest observation is about 11.7x the 20x budget; variance between runs is large (shared VM) | pass |
 
 Reference-based order estimates (1.22 and 1.58) are the expected artefact of
 using the finest run as truth for a first-order method (log2(7/3), log2(3)).

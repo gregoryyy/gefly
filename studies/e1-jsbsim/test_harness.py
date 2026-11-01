@@ -8,8 +8,11 @@ from __future__ import annotations
 
 import importlib.util
 import math
+import json
 import os
+import subprocess
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -42,6 +45,22 @@ class UnitConversionTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     func(bad)
 
+    def test_consecutive_orders_first_and_second_order(self):
+        rates = (60, 120, 240, 480)
+        for order in (1, 2):
+            samples = {hz: {t: {"y": t + 3.0 * (1.0 / hz) ** order} for t in (1.0, 2.0)}
+                       for hz in rates}
+            diffs, orders = harness.consecutive_orders(samples, rates, ("y",))
+            self.assertEqual(set(diffs), {60, 120, 240})
+            for value in orders.values():
+                self.assertAlmostEqual(value["y"], float(order), places=9)
+
+    def test_consecutive_orders_zero_difference_is_none(self):
+        rates = (60, 120, 240)
+        samples = {hz: {1.0: {"y": 5.0}} for hz in rates}
+        _, orders = harness.consecutive_orders(samples, rates, ("y",))
+        self.assertIsNone(orders["60/120"]["y"])
+
     def test_pack_is_bitwise(self):
         self.assertNotEqual(harness.pack([0.0]), harness.pack([-0.0]))
         self.assertEqual(len(harness.pack([1.0, 2.0])), 16)
@@ -62,12 +81,42 @@ class EngineTests(unittest.TestCase):
         b = harness.determinism_digest(self.STEPS, self.DT_S)
         self.assertEqual(a, b)
 
-    def test_input_change_changes_digest(self):
-        """Guard against a vacuous digest that ignores state."""
+    def test_initial_state_change_changes_digest(self):
+        """Guard against a vacuous digest that ignores the initial state."""
         a = harness.determinism_digest(self.STEPS, self.DT_S)
         fdm = harness.make_fdm(self.DT_S)
         harness.init_airborne(fdm, alt_msl_m=harness.IC_ALT_MSL_M + 1.0)
         self.assertNotEqual(a, harness.run_hashed(fdm, self.STEPS, self.DT_S))
+
+    def test_input_change_changes_digest(self):
+        """Guard against a digest that ignores control inputs."""
+        a = harness.determinism_digest(self.STEPS, self.DT_S)
+
+        def nudged(t_s):
+            inputs = harness.scripted_inputs(t_s)
+            inputs["fcs/elevator-cmd-norm"] += 0.01 * (t_s >= 1.0)
+            return inputs
+
+        fdm = harness.make_fdm(self.DT_S)
+        harness.init_airborne(fdm)
+        self.assertNotEqual(a, harness.run_hashed(fdm, self.STEPS, self.DT_S, nudged))
+
+    def test_child_process_and_reset_identical(self):
+        result = harness.fixture_determinism(self.STEPS, self.DT_S)
+        self.assertEqual(result["fresh_a"], result["child_process"])
+        self.assertEqual(result["fresh_a"], result["after_reset"])
+        self.assertTrue(result["fresh_identical"])
+        self.assertTrue(result["reset_identical"])
+
+    def test_cli_stdout_is_json_and_cwd_unchanged(self):
+        script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "harness.py")
+        with tempfile.TemporaryDirectory() as cwd:
+            done = subprocess.run([sys.executable, script, "all"], cwd=cwd,
+                                  capture_output=True, text=True, check=True)
+            self.assertEqual(os.listdir(cwd), [])
+        results = json.loads(done.stdout)
+        self.assertTrue(results["F1_determinism"]["fresh_identical"])
+        self.assertEqual(results["F4_cost"]["runs"], 3)
 
     def test_fixed_step_time_is_step_indexed(self):
         fdm = harness.make_fdm(self.DT_S)
