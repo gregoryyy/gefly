@@ -3,6 +3,22 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 11:00 — Record reference platform and paired-iPhone control
+
+TODO: 1.2.1 refined; 1.13 added. Agent: Claude Code orchestrator; researcher and
+code1 subagents running the E1 study in parallel on separate paths.
+
+**Implementation notes**
+
+GAPS Q16: MacBook Pro M1, current macOS, Chrome latest first (Safari second).
+Added R-INPUT-3 for optional orientation control from a paired iPhone, with a
+SEC threat row and CONTROLS note.
+
+**Deviations**
+
+Chrome desktop is Blink, not WebKit; both are recorded. Transport, pairing and
+latency budget for the phone control are open.
+
 ## 2026-11-01 10:27 — Select the first 172S configuration
 
 TODO: 1.3 in progress. Agent: Claude Code orchestrator (no subagents).

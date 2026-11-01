@@ -65,6 +65,29 @@ ROAD, EVAL and TODO. Exact reference Mac, macOS/browser versions, peripheral
 models, settings details and measured budgets remain foundation implementation
 choices in TODO 1.2.1; they were not selected by this answer.
 
+### Q16. Reference Mac, browsers and optional paired-phone control?
+
+Why: TODO 1.2.1 needs a measured reference platform for timestep, latency and
+frame budgets, and the optional input profiles.
+
+Answer: **2026-11-01 11:00, user** (recorded by orchestrator, Claude Code;
+[input](input/2026-11-01-reference-platform.md)): “macbook pro m1, latest macos,
+webkit browsers esp. chrome latest. optional controls: bind orientation from
+paired iphone”.
+
+Recorded: reference **MacBook Pro (Apple M1)** on the **current macOS release**;
+**Chrome (latest stable) as primary browser**, Safari secondary. Orchestrator note:
+desktop Chrome uses the Blink engine, not WebKit; Safari is the WebKit browser, so
+both are listed. "Latest" is pinned to exact versions whenever a measurement is
+recorded. New optional control: **device orientation from a paired iPhone**
+driving the Mac session (R-INPUT-3), in addition to the existing optional
+yoke/joystick/pedals profile; no specific peripheral models were named.
+Still open: transport (e.g. local WebRTC/WebSocket), pairing method, latency
+budget and iOS browser/app choice.
+
+Resolved: 2026-11-01 11:00, user; carried into [SPEC](SPEC.md) R-INPUT-1/R-INPUT-3,
+[SEC](SEC.md), [CONTROLS](design/CONTROLS.md) and [TODO](TODO.md) 1.2.1/1.13.
+
 ### Q11. Which briefing data mode ships first?
 
 Why: determines the initial data dependency, scenario repeatability and later
