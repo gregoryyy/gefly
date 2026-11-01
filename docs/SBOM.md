@@ -58,6 +58,10 @@ Both action sources declare the MIT license at their pinned revisions:
 and [setup-python license](https://github.com/actions/setup-python/blob/6d4fd22b20465ccc0f7354476588e8df7c9ca0e0/LICENSE).
 They are referenced by CI, not vendored into the application.
 
+The Foundation workflow uses the ubuntu-24.04 runner's preinstalled Node.js for the
+offline synthetic render check (no setup action, no packages); its version follows the
+runner image and is printed in the log.
+
 The runtime requirements are recorded in the pinned
 [checkout source](https://github.com/actions/checkout/blob/3d3c42e5aac5ba805825da76410c181273ba90b1/README.md)
 and [setup-python source](https://github.com/actions/setup-python/blob/6d4fd22b20465ccc0f7354476588e8df7c9ca0e0/README.md).

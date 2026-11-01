@@ -21,6 +21,122 @@ mass) are recorded as unknown with both readings. JSON Schema, stdlib validator 
 Draft; FAA 3A12 Rev 88 and engine TCDS 1E10 not read; avionics fit TBD; not yet
 reviewed. Aircraft data: peer pending (batched), required before milestone acceptance.
 
+## 2026-11-01 13:06 — Add study checks to the shared CI gate
+
+TODO: 1.1.2 in progress. Agent: Claude Code orchestrator; code1 subagent.
+
+**Implementation notes**
+
+`utils/ci.py` now runs the `studies/e1-jsbsim` tests in a separate interpreter
+(fails on missing/empty/failing/import errors, reports skips) and
+`check-synthetic.mjs` with node; a missing node is reported as a skip and the final
+line says "passed with skipped check". Hosted CI uses `--require-node` with the
+runner's preinstalled Node.js. 8 new negative/positive tests (49 tool tests total).
+
+**Deviations**
+
+Local only: hosted run and independent review pending. Peer pending (batched).
+
+## 2026-11-01 13:59 — Confirm the height datum; contracts v1 agreed
+
+TODO: 1.4 complete pending merge. Agent: Claude Code orchestrator (no subagents).
+
+**Implementation notes**
+
+The user accepted the physical-height convention (GAPS Q18 O-3); CONTRACTS no longer
+marks it pending. With Q18 resolved and three review rounds closed, contracts v1 is
+the agreed basis for parallel product coding.
+
+**Deviations**
+
+Peer pending (batched); geoid grid full hashes and terrain beyond Hessen remain open.
+
+## 2026-11-01 12:58 — Draft shared contracts v1
+
+TODO: 1.4 in progress. Agent: Claude Code orchestrator; product subagent.
+
+**Implementation notes**
+
+Added [CONTRACTS](design/CONTRACTS.md): SI units and frames with conversion
+boundaries, fixed 1/120 s step and step-index clock, pilot-sense input schema with
+applied-step logging, three-layer state (sim/instruments/teaching), replay metadata
+with seed set before RunIC, 17 sourced fixtures, versioning and a v0.1→v1 message
+table. Proposed SPEC wording for R-SIM-3/R-SIM-4 is not applied.
+
+**Deviations**
+
+Draft only; nine open questions (O-1..O-9) need decisions; not yet independently
+reviewed. Peer pending (batched).
+## 2026-11-01 13:07 — Draft the flight-experience package and LLM boundary
+
+TODO: 1.10 in progress. Agent: Claude Code orchestrator; product subagent.
+
+**Implementation notes**
+
+Added [EXPERIENCES](design/EXPERIENCES.md): declarative versioned package (no code,
+unit- and reference-bearing values, per-value provenance status), stable-ID source
+catalog starting with `eddf-100nm`/EDFE, LLM boundary (draft and catalog lookup
+only), nine validation stages with failure codes, review states with author ≠
+reviewer, security rules, and an EDFE circuit example with every real value TBD.
+
+**Deviations**
+
+Draft; cites the holding-point start from branch `design/contracts-1-4` (not yet on
+main); runway in the example is illustrative; Q13 provider open; not yet reviewed.
+
+## 2026-11-01 13:06 — Draft the pilot-qualification profile contract
+
+TODO: 1.12 in progress. Agent: Claude Code orchestrator; product subagent.
+
+**Implementation notes**
+
+Added [QUALIFICATIONS](design/QUALIFICATIONS.md): sourced-value model with per-field
+status and source register, profile schema (jurisdiction, authority, full
+qualification, privileges, objectives→exercises, aircraft-manifest references,
+mandatory no-training-credit flag), 12 invalidity rules, versioning, a draft EASA
+PPL(A)/C172S example and placeholder SPL/ultralight shapes bound to Q14.
+
+**Deviations**
+
+Draft; most PPL values unverified until Part-FCL sections are read; Q14 choices not
+made; proposed SPEC edits not applied; not yet reviewed. Peer pending (batched).
+
+## 2026-11-01 12:56 — Record M1 render runs; fix the hosted Cesium page
+
+TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator (no subagents); runs
+by the user on the reference Mac (WebGL: Apple M1 Pro, 120 Hz), Chrome 156.
+
+**Implementation notes**
+
+three.js with the JSBSim stream: median 8.3 ms, p99 9.4 ms at 120 Hz: both render
+budgets pass (1232×817 viewport, CSS resolution). CesiumJS run invalid: 300×150 px
+drawing buffer because the host CSP blocks `widgets.css`; added inline canvas CSS
+and an invalid-run guard, republished the page (version 2). Recorded the hosted
+launcher and its file map under `studies/e1-browser/hosted/` for later repeats.
+
+**Deviations**
+
+Cesium repeat pending. GAPS Q16 says M1; the GPU string says M1 Pro (to confirm).
+Peer pending (batched).
+
+## 2026-11-01 12:53 — Record the reference M1 worker benchmark
+
+TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator (no subagents); run
+performed by the user on the reference MacBook Pro M1, Chrome 156.
+
+**Implementation notes**
+
+Stored the user's JSON under `studies/e1-browser/results/`. Missed steps 0.33 per
+10 s, latency p95 16.9 ms and same-build replay pass; paced step-cost p99 800–1000 µs
+exceeds 830 µs as measured but is limited by 100 µs timer coarsening (page not
+cross-origin isolated); unpaced compute ≈ 15 µs per step. Replay digest equals the
+container's for the same WASM build.
+
+**Deviations**
+
+Render runs on the M1 pending; step cost to be re-measured cross-origin isolated.
+Peer pending (batched).
+
 ## 2026-11-01 12:33 — Validate the E1 browser check; publish the M1 test page
 
 TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator; validate subagent.

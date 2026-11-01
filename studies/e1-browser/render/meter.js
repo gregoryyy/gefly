@@ -116,6 +116,19 @@
         user_agent: navigator.userAgent,
         ...(collectExtra ? collectExtra({ t0_ms: phase.t0_ms, t1_ms: phase.t1_ms }) : {}),
       };
+      // A drawing buffer far smaller than the viewport means the canvas was not sized
+      // (e.g. a blocked stylesheet); frame times are then not comparable.
+      const db = results.webgl && results.webgl.drawing_buffer;
+      if (Array.isArray(db)) {
+        const ok = db[0] * db[1] >= 0.5 * innerWidth * innerHeight;
+        results.canvas_size_valid = ok;
+        if (!ok) {
+          results.budget.median_interval_pass = null;
+          results.budget.p99_pass = null;
+          results.budget.note = "INVALID: drawing buffer " + db.join("x") +
+            " is much smaller than the viewport; canvas not sized";
+        }
+      }
       root.__results = results;
       root.__done = true;
       if (overlay) overlay.textContent = `done: median ${median?.toFixed(1)} ms ` +

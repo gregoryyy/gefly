@@ -1,8 +1,8 @@
 # E1 browser check: JSBSim WASM worker and 3D rendering
 
 Status: implemented and run in the cloud container; quality-reviewed (renewed review
-clean except accepted CDN SRI) and validated as preliminary evidence (2026-11-01).
-(2026-11-01). Decision context: [GAPS Q17](../../docs/GAPS.md) selected JSBSim;
+clean except accepted CDN SRI) and validated as preliminary evidence (2026-11-01); reference M1 worker run recorded.
+Decision context: [GAPS Q17](../../docs/GAPS.md) selected JSBSim;
 rendering, 2D map, language and the worker arrangement remain proposals until this
 check. Prior evidence: [native JSBSim study](../e1-jsbsim/README.md) and the
 [candidate survey](../../docs/research/2026-11-01-e1-engine-stack-candidates.md).
@@ -113,3 +113,69 @@ and are not evidence for or against the budget. Next: the same runs on the refer
 M1/Chrome (exact versions, renderer string, refresh rate), then the stack decision
 (TODO 1.2.3). Deferred to that run: worker and main-thread CPU headroom, and the
 R-SIM-2 check that different render rates leave the simulation unchanged.
+
+## Results on the reference M1/Chrome (hosted test page)
+
+Run by the user on 2026-11-01 (11:37–11:39 UTC) on the MacBook Pro M1, Chrome 156
+(user agent; `hardwareConcurrency` 8), through the private hosted test page.
+**Not cross-origin isolated**: `performance.now()` is coarsened to 100 µs, which
+quantizes per-step cost. Raw JSON: [worker benchmark](results/2026-11-01-m1-chrome156-sim.json).
+
+| Measure | Result | Budget |
+| --- | --- | --- |
+| Step cost p99 (paced, A / B / live) | 1000 / 900 / 800 µs; p50 200 µs; max 5.3 ms | ≤ 830 µs: **fail as measured**, timer-limited |
+| Unpaced burst cost | 14.8–18.9 µs per step (≈ 0.2% of a 8.33 ms step) | headroom indicator |
+| Missed steps (> 8.3 ms late) | 1 per 30 s in A and B (0.33 per 10 s), 1 in the 10 s live run; max lag 13.2 ms (2 steps); none dropped | ≤ 1 per 10 s: pass |
+| Input-to-state latency p95 (40 live inputs) | 16.9 ms (p50 8.7 ms; 17/40 inputs late) | ≤ 25 ms: pass |
+| Replay digest A = B | `7c8783f3440f387a`, identical | identical: pass |
+
+The paced p99 is dominated by the 100 µs timer granularity and worker wake-up cost:
+the burst run shows ≈ 15 µs of actual WASM compute per step, and simulation time
+tracked wall time to 0.99995. Re-measure step cost cross-origin isolated (local
+runner) before treating the p99 as a budget failure. The replay digest equals the
+container's WASM digest for the same build and inputs, so this build replayed
+bit-identically on Intel Xeon/Linux and Apple M1/macOS.
+
+### three.js render driven by JSBSim (reference Mac)
+
+Run by the user on 2026-11-01, same Chrome 156, `?source=sim`. Raw JSON:
+[three.js run](results/2026-11-01-m1-chrome156-three-sim.json) (the user pasted the
+object without its outer braces; they were added, values unchanged).
+
+| Measure | Result | Budget |
+| --- | --- | --- |
+| Display refresh (measured) | 120.5 Hz (8.3 ms period) | recorded |
+| Median frame interval | 8.3 ms (120.5 fps) | ≤ 1.05 × 8.3 = 8.7 ms: pass |
+| p99 / max frame time | 9.4 / 10 ms; 0 missed vsyncs; 0 frames > 25 ms | ≤ 25 ms: pass |
+| State stream | 60.0 Hz, p99 interval 20.9 ms, no errors | functional |
+| JS heap | 9.6 → 10.0 MB over 20 s | recorded |
+
+Observations:
+
+- **Chip:** the WebGL renderer string reports "Apple M1 Pro" and the display ran at
+  120 Hz; the user confirmed the machine is an **M1** (GAPS Q16, 2026-11-01). The
+  120 Hz refresh suggests an external display; record the display on the next run.
+  The budget scales to the measured refresh, so it still applies.
+- Viewport was 1232×817 CSS px at device pixel ratio 2 rendered at CSS resolution,
+  not the declared 1440×900; repeat at 1440×900 and with `?dpr=device` for the
+  full-resolution case.
+- Half the rendered frames (1200 of 2400) showed the same simulation step as the
+  previous frame, because state arrives at 60 Hz while the display runs at 120 Hz.
+  Smooth motion at 120 Hz needs either `state_hz` 120 or render-side interpolation
+  between states; the contract work (TODO 1.4) should decide which.
+- The scene is a light workload (6 draw calls, no terrain or imagery).
+
+### CesiumJS render driven by JSBSim (reference Mac): invalid run
+
+Run by the user on 2026-11-01, Chrome 156, `?source=sim`. Raw JSON:
+[Cesium run, invalid](results/2026-11-01-m1-chrome156-cesium-sim-INVALID.json)
+(re-serialized from the pasted object; values unchanged).
+
+The WebGL drawing buffer was **300×150 px** against a 1512×817 viewport: the hosted
+page's content-security policy blocks Cesium's external `widgets.css`, so the canvas
+kept its default size. The reported 120 fps and 9.4 ms p99 therefore measure a
+thumbnail and are **not evidence** for the budget. Heading self-check, ion-free
+loading and the 60 Hz JSBSim stream did work. Fix: inline canvas-sizing CSS in
+`render/cesium.html` and an invalid-run guard in `render/meter.js`; the hosted page
+was republished, and the Cesium step needs a repeat. Hosting details:
+[hosted test page](hosted/README.md).
