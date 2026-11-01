@@ -165,8 +165,9 @@ renderer-reported **Apple M1 Pro, 120 Hz**; the reference-platform name in Q16 s
 "MacBook Pro (Apple silicon)" until confirmed.
 
 Confirmation: **2026-11-01 13:25, user** (recorded by orchestrator, Claude Code;
-[input](input/2026-11-01-chip-confirmation.md)): “M1 not pro”. The reference Mac is
-an Apple M1. Observation to reconcile: Chrome's WebGL renderer string on the
+[input](input/2026-11-01-chip-confirmation.md)): “M1 not pro”. ~~The reference Mac is
+an Apple M1.~~ (Superseded by the 13:28 updates: built-in 120 Hz display and a 14-inch
+model identify an Apple M1 Pro.) Observation to reconcile: Chrome's WebGL renderer string on the
 recorded runs reported "Apple M1 Pro", and the display measured 120 Hz, which the
 13-inch M1 MacBook Pro's built-in panel does not provide (an external 120 Hz display
 would explain it). Results keep the reported strings; budgets scale to the measured
@@ -315,7 +316,7 @@ to all”. Tolerance proposals P-1..P-15 are accepted **as working proposals** (
 judgement, each with its stated basis) for freezing the E2 fixtures; they remain
 revisable with evidence, and any change after a holdout comparison is recorded.
 
-Resolved: 2026-11-01 19:04, user; applies to FDM-172S Q-11 when PR #24 merges.
+Resolved: 2026-11-01 19:04, user; applies to FDM-172S Q-11 (merged with PR #24).
 
 ### Q20. How are model size and reasoning effort chosen for agent work?
 
@@ -333,6 +334,32 @@ no model identifiers in repository files. Carried into [AGENTS](../AGENTS.md),
 [agent workflow](agents/README.md#runtime-setup).
 
 ## Open questions
+
+### Q23. Design open questions carried from the drafts (register)
+
+Why: SDLC keeps open decisions in GAPS; the foundation review (TODO 1.6, 2026-11-02 00:21) found
+them only in the design documents. This register points to their detail; the design
+documents keep the technical discussion. Status as of 2026-11-02 00:21; recommendations are
+orchestrator proposals, not decisions.
+
+| Item | Source | Status | Blocks M2? | Recommendation |
+| --- | --- | --- | --- | --- |
+| Q-S3 radio/briefing/checklists in milestone 2 | [SCENARIO-CONTRACTS](design/SCENARIO-CONTRACTS.md) §7 | open, **user** | yes (2.1) | M2 = circuit flight + sensed checklist items + static scenario briefing; text radio state machine stays in roadmap phase 3 |
+| Q-S8 engine/fuel gauges in the `ind` digest | SCENARIO-CONTRACTS §4 | open, **user** | yes (2.2/2.3) | include the 172S classic-panel engine/fuel indications, computed in the worker |
+| Q-S5 experimental (draft) packages runnable | SCENARIO-CONTRACTS §7 | open | no | yes, labelled experimental, never accepted |
+| Q-S1, Q-S6, Q-S7 | SCENARIO-CONTRACTS §7 | open | no | session-log hash suffices; store parsed intents, keep free text local; accept C1–C17 |
+| Q-S2 altimeter match tolerance | SCENARIO-CONTRACTS §7, EXERCISE-01 | open | before 2.5 | instructional proposal labelled IP |
+| Q-S4 QFE datum and AIP vertical reference | SCENARIO-CONTRACTS §7 | open | before 2.5 | source from the AIP (TODO 1.7) |
+| S5/S9 EASA TCDS values classed `reference_only` but used as facts | CONTRACTS §10.5, data manifest | open, **user** (Q5) | yes (2.2 builder) | class them `facts_only` like the POH (cited values, no text) |
+| Q19 scope: 60 s phone resume window and recentring | [PHONE-CONTROL](design/PHONE-CONTROL.md) | open | no (1.13 is Later) | treat as covered by "yes to proposals" |
+| FDM Q-1 empty mass/CG | [FDM-172S](design/FDM-172S.md) §7 | open | yes (1.3.2) | POH sample loading example, labelled; no aircraft available |
+| FDM Q-3..Q-7, Q-9, Q-10, Q-12 | FDM-172S §7 | open | 1.3.x only | estimates, labelled; detail in FDM-172S |
+| EXERCISE-01 open questions 1, 3–6 | [EXERCISE-01](design/EXERCISE-01.md) | open | before 2.5 freeze | AIP circuit data (1.7); instructional proposals labelled IP |
+| BRIEFING open questions 1–8 | [BRIEFING](design/BRIEFING.md) §6 | open | if Q-S3 includes briefing | generated reports first; English first |
+
+Resolved items already recorded elsewhere: FDM Q-11 (Q21), Q-13 (Q5, 19:04), Q-2 (no
+aircraft available, 2026-11-01). Answers are recorded here or in the referenced
+question as they arrive.
 
 ### Q3. Which Cessna 172 variant, year and avionics fit?
 
