@@ -195,6 +195,11 @@ coverage, rights and live rollout remain future implementation selections.
 
 Why: affects code reuse, distribution, aircraft manuals, avionics depictions, maps and navigation data. The user's direction is now free/open source; select a compatible open-source license and review separately licensed assets/data. Blocking: license-dependent distribution and restricted asset ingestion.
 
+Answer (glide figure): **2026-11-01 23:54, user** ([input](input/2026-11-01-glide-extraction.md)): “accept”.
+The single reading of the POH maximum-glide figure (68 KIAS, 18.0 nm from 12,000 ft),
+which carries that figure's whole content, is accepted as a cited fact; no further
+glide figure content is extracted.
+
 Answer (fuel chart): **2026-11-01 19:04, user** ([input](input/2026-11-01-renderer-fuel-tolerances.md)):
 “yes to all”. The facts-only, selective extraction allowance extends to the needed
 points of the Lycoming fuel-consumption chart (Fig. 3-9), under the same

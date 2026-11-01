@@ -23,6 +23,7 @@ These records preserve the user's original intent. Do not edit accepted input re
 - [2026-11-01 first 172S configuration](2026-11-01-first-172s-configuration.md): 172S serials 9491–9809, classic panel, accepted.
 - [2026-11-01 confirmations](2026-11-01-confirmations.md): GPL-3.0-or-later, "depends on data" reading and 172S-first order confirmed; PR authorized.
 - [2026-11-01 peer gate scope](2026-11-01-peer-gate-scope.md): cross-provider peer review is not required on every PR.
+- [2026-11-01 glide extraction](2026-11-01-glide-extraction.md): the single-line glide figure reading is accepted.
 - [2026-11-01 renderer, fuel chart, tolerances](2026-11-01-renderer-fuel-tolerances.md): CesiumJS stack accepted; Lycoming fuel-chart points allowed; FDM tolerance proposals accepted; post-merge check requested.
 - [2026-11-01 model and effort selection](2026-11-01-model-effort-selection.md): choose model tier and reasoning effort per task.
 - [2026-11-01 Lycoming and OpenVSP](2026-11-01-lycoming-openvsp-decisions.md): selective engine-curve extraction and offline OpenVSP estimation accepted.
