@@ -3,6 +3,10 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 13:34 — Draft scenario briefing, AFIS radio and checklist scope
+
+TODO: 1.8 in progress. Agent: Claude Code orchestrator; product subagent (with source
+
 ## 2026-11-01 13:31 — Draft Exercise 01 acceptance criteria
 
 TODO: 1.5 in progress. Agent: Claude Code orchestrator; product subagent (with source
@@ -10,6 +14,18 @@ research).
 
 **Implementation notes**
 
+Added [BRIEFING](design/BRIEFING.md) and its
+[source note](research/2026-11-01-briefing-radio-sources.md): snapshot briefing
+schema validated against scenario time with explicit failure states; QNH/QFE/STD flow
+into the environment; a later live adapter frozen into replay; AFIS (information, not
+clearances) text-radio scope with AI text limited to proposing intents; POH checklist
+items classified by modeled state. EDFE has no METAR in the checked feed, so briefings
+pair EDDF METAR/TAF with a generated EDFE report.
+
+**Deviations**
+
+Draft; WMO-No. 306, ICAO Annex 3/Doc 4444/9432 and DFS AIP not read; not yet
+reviewed. Peer pending (batched).
 Added [EXERCISE-01](design/EXERCISE-01.md): holding-point start with engine running,
 12 phases with measures, units and state fields, pass/fail/feedback rules, assists,
 replay markers and environment cases; and its
