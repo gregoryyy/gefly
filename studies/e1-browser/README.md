@@ -1,8 +1,8 @@
 # E1 browser check: JSBSim WASM worker and 3D rendering
 
 Status: implemented and run in the cloud container; quality-reviewed (renewed review
-clean except accepted CDN SRI) and validated as preliminary evidence (2026-11-01).
-(2026-11-01). Decision context: [GAPS Q17](../../docs/GAPS.md) selected JSBSim;
+clean except accepted CDN SRI) and validated as preliminary evidence (2026-11-01); reference M1 worker run recorded.
+Decision context: [GAPS Q17](../../docs/GAPS.md) selected JSBSim;
 rendering, 2D map, language and the worker arrangement remain proposals until this
 check. Prior evidence: [native JSBSim study](../e1-jsbsim/README.md) and the
 [candidate survey](../../docs/research/2026-11-01-e1-engine-stack-candidates.md).
