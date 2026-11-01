@@ -31,7 +31,22 @@
           "path": "docs/TODO.md",
           "required": [],
           "forbidden": [
-            "then the stack decision"
+            "then the stack decision",
+            "when the simulator stack is chosen"
+          ]
+        },
+        {
+          "path": "docs/SBOM.md",
+          "required": [],
+          "forbidden": [
+            "JSBSim is a **candidate**"
+          ]
+        },
+        {
+          "path": "docs/EVAL.md",
+          "required": [],
+          "forbidden": [
+            "no engine or aircraft model is selected"
           ]
         }
       ]

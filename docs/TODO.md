@@ -31,7 +31,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 ## 1. Foundation
 
-- [ ] 1.1 Add stack-appropriate quality gates and CI with reproducible local equivalents; extend the repository-tool gate when the simulator stack is chosen. Q6 publication is resolved.
+- [ ] 1.1 Add stack-appropriate quality gates and CI with reproducible local equivalents; extend the repository-tool gate for the selected TypeScript/browser stack as product implementation is added. Q6 publication is resolved.
   - [x] 1.1.2 Run the study tests (`studies/e1-jsbsim`, offline, skip without jsbsim) and the synthetic render check (node) in the shared gate; `--require-node` in hosted CI; skips reported, never passes. Reviewed; hosted CI green (PR #13); process-group timeout follow-up merged. Previously: pending review and hosted run.
   - [x] 1.1.1 Add the shared offline repository-tool gate and GitHub Actions matrix, negative fixtures, pinned action/update policy and independent E0-CI review; local, hosted and actual Claude peer evidence are recorded in RESULTS and the CI review reports.
 - [ ] 1.2 Choose web stack, rendering/geography strategy and dynamics architecture through a bounded E1 study. *(decision)*
@@ -54,11 +54,11 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 - [ ] 1.11 Choose contributor terms that keep a later relaxation of GPL-3.0-or-later possible (a DCO alone does not; options: a CLA with a relicensing grant, copyright assignment, or permissive inbound licensing), plan replacement or upstream consent for the Propeller-derived files, and data distribution rules; community library, roles, sharing/review, moderation and hosting are deferred to roadmap phase 3 (Q5/Q6/Q12). *(decision)*
 - [ ] 1.12 (Draft: [QUALIFICATIONS](design/QUALIFICATIONS.md); open questions listed there; reviewed (local quality/validate), merged; peer pending.) Define the pilot-qualification profile contract for future sailplane/ultralight tracks: jurisdiction, authority, full licence/category, privileges, applicable source revisions and aircraft/objective mappings; retain Q14 choices until each track starts. *(decision)*
 - [ ] 1.13 (Draft: [PHONE-CONTROL](design/PHONE-CONTROL.md) — local WebRTC data channel, QR + confirmation-code pairing; Q-P1..Q-P6 decided in Q19; reviewed.) Specify and prototype the paired-iPhone orientation control (R-INPUT-3): pairing, transport, latency budget, fallback and SEC review; optional, after the input boundary in 1.4.
-- [ ] 1.14 Adopt bounded level 2 assurance (Q22, R-ASR-1–R-ASR-5); evidence in AS1–AS8 and RESULTS.
+- [x] 1.14 Adopt bounded level 2 assurance (Q22, R-ASR-1–R-ASR-5); AS1–AS8 locally reviewed, hosted matrix observed; scoped peer disposition is recorded separately in the assurance review report.
   - [x] 1.14.1 Record the adoption, frozen assurance criteria, source-of-truth rules and exclusive implementation ownership.
-  - [ ] 1.14.2 Reuse the pinned Propeller core, adapt Gefly lineage/status extraction and provide check/report/trace/diff/impact commands.
-  - [ ] 1.14.3 Add aircraft provenance, versioned evidence/decision guards, acceptance freshness and calibration/holdout checks with negative fixtures.
-  - [ ] 1.14.4 Reconcile known status drift, integrate offline local/CI checks and record independent quality/validation plus scoped peer disposition.
+  - [x] 1.14.2 Reuse the pinned Propeller core, adapt Gefly lineage/status extraction and provide check/report/trace/diff/impact commands.
+  - [x] 1.14.3 Add aircraft provenance, versioned evidence/decision guards, acceptance freshness and calibration/holdout checks with negative fixtures.
+  - [x] 1.14.4 Reconcile known status drift, integrate offline local/CI checks and record independent quality/validation plus scoped peer disposition.
 
 ## 2. First browser exercise
 

@@ -85,7 +85,7 @@ Local gate observations and actual hosted outcomes are separate records under
 Workflow presence does not establish a hosted pass or branch protection; peer
 acceptance is also a separate gate. Future application lint/type checks,
 dependency vulnerability/license checks and package-manager update automation
-remain TODO 1.1 work after the runtime stack is selected.
+remain TODO 1.1 work as package/workspace tooling and product implementation are added.
 
 ## Assurance toolchain
 
@@ -113,7 +113,7 @@ review still establishes source applicability and scientific meaning.
 
 Prefer the smallest dependency set that meets measured requirements. Before adopting one, record its exact version, official source, license, maintenance/security posture, transitive obligations, browser compatibility, size/performance impact and alternatives. Commit lockfiles for the selected package manager. The current action-update configuration is described above; foundation TODO 1.1 still needs vulnerability/license checks and automated update proposals appropriate to the future application ecosystem.
 
-JSBSim is a **candidate**, not an installed dependency. GeoFS is a reference product, not a library or asset grant. Check primary source documents and actual licenses before reuse; see [foundation research](research/2026-10-31-foundation-sources.md).
+JSBSim is the selected dynamics engine; it is not yet a pinned product dependency. GeoFS is a reference product, not a library or asset grant. Check primary source documents and actual licenses before reuse; see [foundation research](research/2026-10-31-foundation-sources.md).
 
 ## Reuse and regional-data candidates, not adopted dependencies
 

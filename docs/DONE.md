@@ -3,6 +3,47 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 21:05 — Complete bounded assurance adoption and status reconciliation
+
+TODO: 1.14 complete. Agent: Codex orchestrator; product, code1/peer_runner,
+code2/peer_registration and housekeeping on disjoint paths, then independent
+quality and validate. PR: [#28](https://github.com/gregoryyy/gefly/pull/28).
+
+**Implementation notes**
+
+The new tracker reuses 13 byte-preserved pure Propeller files from commit
+99dc6005. Gefly adapters derive requirements, tasks, decisions, progress,
+commit/file/test identities and aircraft JSON-pointer provenance. Catalog
+relationships distinguish outcomes, certainty, freshness and acceptance.
+All 14 seeded MVP criteria remain planned, with no accepted claims. Archived
+measurements retain three recorded passes, one failed step-cost observation and
+their incomplete-provenance limits.
+
+Local checks passed 137 tooling tests, 72 assurance tests and 14 study tests;
+nine optional JSBSim tests were explicitly skipped. Both hosted Python jobs
+passed the same implementation at 2900ca38. Seven independent quality findings
+prompted rejection/impact/ledger/report regressions; affected checks and reviews
+were renewed. Current status contradictions and the damaged FDM progress entry
+were reconciled from decisions/data/Git history. See [RESULTS](RESULTS.md) and
+the [quality](reviews/2026-11-01-assurance-quality.md) /
+[validation](reviews/2026-11-01-assurance-validation.md) records.
+
+**Deviations**
+
+This accepts bounded tooling and its documented limits, not aircraft fidelity,
+an MVP or the entire foundation. Historical references and archival provenance
+remain advisory warnings; skips remain skips. No new flight run was performed.
+The [scoped external peer disposition](reviews/2026-11-01-assurance-peer.md) is
+recorded separately under the existing batched cadence; older peer coverage in
+TODO 0.19 remains open. No database, hooks, extra agent or runtime package added.
+
+**Insights**
+
+A passing test file is not proof that it declares tests. Accepted evidence must
+remain valid after dependency resolution, and field-level impact must include
+whole-file pins. Status records are now included in the assurance review snapshot;
+generated review records remain outside it to avoid self-referential hashes.
+
 ## 2026-11-01 20:40 — Adopt bounded assurance (integration in progress)
 
 TODO: 1.14.1 complete; 1.14.2–1.14.4 in progress. Agent: Codex orchestrator;

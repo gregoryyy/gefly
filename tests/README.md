@@ -1,7 +1,7 @@
 # Future simulator checks
 
 The current structural check is `just check`; it does not test a simulator.
-When the stack is selected, add independent unit/frame and reference-dynamics
+For the selected stack, add independent unit/frame and reference-dynamics
 fixtures, input/avionics state tests, deterministic replay, numerical bounds,
 browser interactions/accessibility and requirement acceptance cases as needed.
 
