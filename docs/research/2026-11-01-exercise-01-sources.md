@@ -158,10 +158,14 @@ on the same branch. Used by Exercise 01 as follows (product proposal):
 
 - Fig. 5-1 (p. 5-9), normal static source, flaps 0°/10°/30°, 50–110/50–90/50–80 KIAS:
   assessment IAS derived from `sim.cas_mps` by linear interpolation between the
-  tabulated points (instructional derivation, label CAL); out-of-table or untabulated
-  flap setting → criterion not evaluated.
+  extracted points (instructional derivation, label CAL). An out-of-table sample at a
+  band edge that coincides with the table edge reports below/above band (monotone
+  reading); other out-of-table samples and untabulated flap settings → not evaluated.
+  Further POH points (e.g. 40 KIAS at flaps 10°/30°, 85 KIAS at flaps 30°) exist but
+  are not extracted (extraction-share rule).
 - Stall speeds (p. 5-12, 2,550 lb, power off, wings level): stall-margin warning in
-  KCAS with an IP threshold; not a stall gate.
+  KCAS with an IP threshold; not a stall gate. Flaps in transit 0°–10° use the
+  flaps-0° value. The 30° and steeper bank stall speeds on p. 5-12 are not extracted.
 - VFE flaps 10°: p. 2-4 gives 107 KCAS, Fig. 5-1 gives 109 KCAS at 110 KIAS; the
   exercise keeps the conservative 107 KCAS (IP).
 - Take-off/landing distances (pp. 5-14, 5-23/5-24) are short-field technique only:
