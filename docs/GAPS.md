@@ -87,9 +87,8 @@ Answer: **2026-11-01 07:04, user** (recorded by orchestrator, Claude Code; [2026
 “gpl 3 for the project now, can adjust later. third party policy: non-proprietary
 licenses, with preference for permissive licenses so gpl3 can be relaxed later”.
 
-Recorded as **GPL-3.0-or-later** for original project material. This matches the
-Propeller-derived files already distributed on those terms; the user can correct
-it to GPL-3.0-only. Third-party policy: dependencies, models, data and assets must
+Recorded as **GPL-3.0-or-later** for original project material, matching the
+Propeller-derived files already distributed on those terms. Confirmed: **2026-11-01 07:08, user** (recorded by orchestrator, Claude Code): “gpl3+, yes, yes”. Third-party policy: dependencies, models, data and assets must
 use non-proprietary (open-source or open-data) licenses; **prefer permissive**
 licenses (e.g. MIT, BSD, Apache-2.0, public domain/CC0, CC-BY). Copyleft
 components (e.g. LGPL, GPL, ODbL share-alike data) need a recorded justification,
@@ -130,6 +129,9 @@ Resolved (deferred): 2026-11-01 07:04, user; carried into ROAD and TODO 1.11.
 
 Why: operating limits, engine/propeller, systems, instrument ranges and procedures must refer to one applicable configuration. Proposed: research availability and redistribution rights for a specific C172S configuration before recommending a conventional panel or glass cockpit. Blocking: TODO 1.3 and aircraft-specific implementation; generic studies may continue.
 
+Confirmation: **2026-11-01 07:08, user** (recorded by orchestrator, Claude Code): “gpl3+, yes, yes”. The user confirms the *it depends on the data* reading and the
+order: **classic-panel 172S first, FR172 second** when its data suffice.
+
 Answer: partial update, **2026-11-01 07:04, user** (recorded by orchestrator, Claude Code; [2026-11-01 answers](input/2026-11-01-aircraft-license-exercise-answers.md)):
 “FR172 and/or 172S with their different engine configs to show performance
 differences. it fried on the actual data available, but from public FAA
@@ -140,11 +142,10 @@ and engine to be sourced) and **Cessna 172S** (fixed-pitch propeller), modeled a
 distinct configurations so learners can compare performance. Primary public
 sources: FAA type certificate data sheets and other public FAA/EASA records;
 FR172 is a Reims-built model, so its EASA/French certification records may be
-needed alongside FAA material. Proposed by orchestrator (pending research, not a
-user decision): a classic-panel 172S before the factory glass-cockpit fit as the
+needed alongside FAA material. Proposed by orchestrator and confirmed by the user at 07:08: a classic-panel 172S before the factory glass-cockpit fit as the
 first configuration, then FR172 when its data suffice. Still open: exact
-sub-models/years/serial ranges, engine/propeller, avionics fit and which comes
-first. Manufacturer POH/AFM text remains copyrighted; extract facts with source
+sub-models/years/serial ranges, engine/propeller, avionics fit (the 172S-first order
+holds unless the data research contradicts it). Manufacturer POH/AFM text remains copyrighted; extract facts with source
 references, without copying manuals (R-DATA-1).
 
 Answer: partial update, **2026-10-31 15:09, user** (recorded by orchestrator):

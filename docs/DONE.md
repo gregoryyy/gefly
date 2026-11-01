@@ -22,8 +22,8 @@ CONCEPT, README, THIRD_PARTY_NOTICES and TODO.
 **Deviations**
 
 Records decisions only; no aircraft data, aerodrome data or simulator code.
-The GPL-3.0-*or-later* variant and the "it fried on" reading are orchestrator
-interpretations awaiting user confirmation. No independent quality/validate or
+The user confirmed GPL-3.0-or-later, the "it depends" reading and the
+172S-first order at 07:08. No independent quality/validate or
 peer review was run for this documentation change.
 
 ## 2026-10-31 17:17 — Add and exercise the independent opposite-provider peer

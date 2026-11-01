@@ -33,7 +33,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
   - [ ] 1.2.1 Specify the reference Mac, macOS/browser versions and optional yoke/joystick/pedals; refine GeoFS-inspired settings and measure trial timestep, latency and numerical budgets using Q4's selected baseline.
   - [ ] 1.2.2 Compare open physics engines and applicable aircraft-model/adapter reuse first, including browser deployment and distinct licenses; justify custom code only for documented gaps or reference harnesses. *(variant)*
   - [ ] 1.2.3 Review observations and record the decision in ARCH/SBOM/RESULTS.
-- [ ] 1.3 Select the exact FR172 and/or 172S configurations (sub-model/year, engine/propeller, classic avionics) and their order; source public FAA/EASA type-certificate and other applicable documents; create a rights/applicability manifest per configuration (Q3/Q5). *(decision)*
+- [ ] 1.3 Select the exact classic-panel 172S configuration first, then the FR172 (sub-model/year, engine/propeller, classic avionics); source public FAA/EASA type-certificate and other applicable documents; create a rights/applicability manifest per configuration (Q3/Q5). *(decision)*
 - [ ] 1.4 Agree units, frames, state/input schemas, replay metadata and independent reference fixtures before parallel coding.
 - [ ] 1.5 Freeze the first exercise's (take-off, circuit, landing at EDFE) acceptance criteria and numeric tolerances in SPEC/EVAL with product and instructor review; identify the review partner (Q7).
 - [ ] 1.6 Review foundation independently through quality and validate before milestone 2.
