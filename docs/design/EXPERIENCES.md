@@ -1,139 +1,152 @@
 # Flight-experience packages and the LLM boundary
 
 Status: **proposed product design** for [TODO](../TODO.md) 1.10, 2026-11-01, by the
-product role (Claude Code subagent). Nothing here is implemented or validated.
-[SPEC](../SPEC.md) owns requirement statements (R-AUTHOR-1, R-REGION-1, R-NAV-2,
-R-NAV-3, R-BRIEF-1, R-DATA-1, R-DATA-2, R-TRAIN-2, R-TRAIN-4, R-TRAIN-5, R-COMM-1,
-R-COMMUNITY-1); this document proposes the package contract that satisfies them.
-The LLM provider and execution model are open ([GAPS Q13](../GAPS.md)); the design
-is provider-independent and names provider assumptions only as open questions.
+product role (Claude Code subagent); revised after quality review the same day.
+Nothing here is implemented or validated. [SPEC](../SPEC.md) owns requirement
+statements (R-AUTHOR-1, R-REGION-1, R-NAV-2, R-NAV-3, R-BRIEF-1, R-DATA-1, R-DATA-2,
+R-TRAIN-2, R-TRAIN-4, R-TRAIN-5, R-COMM-1, R-COMMUNITY-1); this document proposes the
+package contract for them. The LLM provider and execution model are open
+([GAPS Q13](../GAPS.md)); the design is provider-independent.
 
 ## Problem and intended behavior
 
 An instructor or learner describes a territory and a learning intent. Authoring
 (by hand or with LLM assistance) yields a **declarative, versioned experience
 package**: data that the simulator, briefing, checklist, radio and assessment
-components interpret. Every real-world fact in the package is a **reference to a
-versioned source-catalog entry**, never a value asserted by the author or a model.
-A package passes machine validation, then human review, before it is accepted.
-Replay and review use the accepted package and its frozen inputs; they never call
-a generator again (ARCH, "LLM-assisted flight-experience authoring").
+components interpret. Every real-world fact in it is a **reference to a versioned
+source-catalog entry**, never a value asserted by an author or a model. A package
+passes machine validation, then human review, before it is accepted. Replay uses
+the accepted package and its frozen inputs and never calls a generator again
+(ARCH, "LLM-assisted flight-experience authoring").
 
-Scope limits: the first catalog is the EDDF 100 NM region with EDFE as the first
-aerodrome ([GAPS Q10](../GAPS.md)); the first package is the EDFE circuit
-([GAPS Q7](../GAPS.md)). Community publication, roles and moderation are deferred to
-roadmap phase 3 ([GAPS Q12](../GAPS.md)); AI radio/instructor interaction is a later
-stage that reuses the same boundary.
+Scope: first catalog EDDF 100 NM with EDFE ([GAPS Q10](../GAPS.md)); first package
+the EDFE circuit ([GAPS Q7](../GAPS.md)); publication waits for phase 3 ([GAPS Q12](../GAPS.md)).
 
 ## Principles
 
-1. **Declarative only.** A package is a JSON-compatible document. No scripts,
-   expressions, templates with evaluation, URLs that are fetched, HTML or binary
-   payloads. Behavior comes from typed hooks that the runtime already implements.
+1. **Declarative only.** A package is a JSON-compatible document: no scripts,
+   expressions, evaluated templates, fetched URLs, HTML or binary payloads.
+   Behavior comes from typed hooks the runtime already implements.
 2. **Facts by reference.** Airports, runways, holding points, navaids, frequencies,
    airspace, elevations, charts, weather/NOTAM records and aircraft data are
-   referenced by stable catalog ID. The validator resolves the ID; the package
-   does not repeat the value as authority.
-3. **Explicit quantities.** Every number that is not a reference carries a unit
-   and, where relevant, a reference (MSL/AGL/QNH/QFE, true/magnetic, IAS/TAS/GS).
-   Bare numbers and non-finite values are rejected. SI is used internally.
-4. **Value classes are visible** (R-DATA-2): `sourced` (catalog), `derived` (named
-   rule over sourced inputs), `instructional` (author-chosen teaching value, e.g. a
-   session duration), `generated` (labelled synthetic content) and `tbd` (missing,
-   with the source expected to supply it). A `tbd` value blocks acceptance.
-5. **Frozen for replay.** An accepted package pins the catalog edition, aircraft
-   manifest version, briefing snapshot and its own content hash.
-6. **Provider independence.** The schema, validators and review do not depend on
-   who drafted the package; an LLM is one optional drafting client.
+   referenced by stable catalog ID; the package does not repeat them as authority.
+3. **Explicit quantities.** Every non-reference number carries a unit and, where
+   relevant, a reference (MSL/AGL, QNH/QFE, true/magnetic, IAS/TAS/GS). Bare or
+   non-finite numbers are rejected. SI is used internally.
+4. **Value classes follow R-DATA-2.** `sourced` (catalog entry), `derived` (named
+   rule over sourced inputs), `estimated` and `unknown` (written `tbd`, naming the
+   expected source). `sourced`, `derived` and `estimated` values carry `uncertainty`
+   `{value, unit}` or `{bound: [low, high], unit}`, or `uncertainty: unknown`.
+   Two labels are not real-world claims: `instructional` (an author's teaching
+   choice, e.g. session length) and `generated` (labelled synthetic content). An
+   `unknown` value blocks acceptance; `estimated` never supports an aircraft claim.
+5. **Frozen for replay.** A package pins its catalog edition, aircraft manifest,
+   qualification profile and briefing snapshot; it is identified by its hash.
+6. **Fail closed.** A validator error, timeout, unknown schema major version or
+   unknown/unresolvable catalog edition is a blocking failure, never a pass.
 
 ## Source catalog contract
 
 The catalog is a separate, versioned dataset built by research/ingestion (TODO 1.7,
-E10), not by authoring. Packages can reference only entries in it.
+E10), not by authoring. Packages reference only its entries.
 
 | Element | Contract |
 | --- | --- |
-| Catalog identity | `catalog` name (first: `eddf-100nm`) and `edition` (date-stamped build ID). The edition records its region definition (sourced EDDF ARP, 185 200 m geodesic radius, datum) once those are sourced. |
-| Entry ID | `<kind>:<key>`, stable across editions, e.g. `aerodrome:EDFE`, `runway:EDFE/26`, `holding-point:EDFE/26/<designator>`, `frequency:EDFE/afis`, `circuit:EDFE/26/north`, `airspace:<key>`. Keys use published designators only; no invented names. |
-| Entry fields | Typed values, each with original value and unit, SI value, datum/reference, `source_id`, source edition/AIRAC or date, access date, confidence and status (`validated`, `approximate`, `placeholder`, `unavailable`). |
-| Sources | Register entries as in the [EDFE source survey](../research/2026-11-01-edfe-aerodrome-sources.md) (E1 DFS AIP, E2a operator flyer, E3 OurAirports): publisher, title, edition, URL, inspected flag, hash and rights class. |
-| Rights class | `public-domain`, `open-attribution`, `odbl` (separate attributed database), `project` (GPL-3.0-or-later), `permission` (written grant on record), `reference-only` (cite edition/hash; do not store or ship content). |
+| Identity | `catalog` name (first: `eddf-100nm`) and `edition` (date-stamped build). The edition defines the region: sourced EDDF ARP, 185 200 m geodesic radius, horizontal/vertical datum. |
+| Entry ID | `<kind>:<key>`, stable across editions, e.g. `aerodrome:EDFE`, `runway:EDFE/26`, `holding-point:EDFE/26/<designator>`, `frequency:EDFE/afis`, `circuit:EDFE/26/<side>`. Keys use published designators only. |
+| Entry fields | Original value and unit, SI value, datum/reference, uncertainty, value class, `source_id`, source edition/AIRAC, access date and status (`validated`, `approximate`, `placeholder`, `unavailable`). |
+| Sources | Register as in the [EDFE source survey](../research/2026-11-01-edfe-aerodrome-sources.md) (E1 DFS AIP, E2a operator flyer, E3 OurAirports): publisher, edition, URL, inspected flag, hash, rights class. |
+| Rights class | `public-domain`, `open-attribution`, `odbl` (separate attributed database), `project` (GPL-3.0-or-later), `permission` (written grant on record), `reference-only` (cite edition/hash; store or ship no content). |
 | Coverage | Per kind and area: validated, approximate, unavailable (R-REGION-1). |
 
-`reference-only` entries (for example DFS AIP charts, E1/E1a §8) may be cited for
-a reviewer but cannot supply a shipped value or a derived chart. A package that
-needs such a value stays `tbd` until an independently shippable source or written
-permission exists.
+`reference-only` sources (DFS AIP E1 under E1a §8; operator material E2a–E2c) may be
+cited to a reviewer but cannot supply a shipped value or derived chart. A value
+known only from them stays `unknown` until a shippable source or permission exists.
 
 ## Package schema (version 0, proposed)
 
-Top level; each field is required unless marked optional.
+All fields are required unless marked optional. The package holds **content only**;
+lifecycle and review state live outside it (see "Hash scope and review records").
 
 | Field | Content |
 | --- | --- |
-| `schema` | `gefly.experience` and `schema_version` (semantic version; validators reject unknown major versions and unknown fields). |
-| `id`, `version` | Stable package ID (lower-case slug) and package version; a content change increments `version`. |
-| `title`, `summary` | Plain text, escaped on render; `summary` is classed `instructional` or `generated`. |
-| `catalog` | `{name, edition}` pinned for every reference in the package. |
-| `aircraft` | `{manifest, manifest_version, configuration}` referencing an R-AIR-1 manifest (first: classic-panel 172S); `assists` and `fidelity` settings by enumerated name. |
-| `objectives` | List of `{id, text, syllabus_ref}`; `syllabus_ref` points to the selected EASA source revision (R-TRAIN-1) or is `tbd`. |
-| `prerequisites` | Optional list of package/objective IDs or learner skills (enumerated). |
+| `schema`, `schema_version` | `gefly.experience` and a semantic version; unknown major versions and unknown fields are rejected. |
+| `id`, `version` | Stable lower-case slug; any content change increments `version`. |
+| `title`, `summary` | Plain text, escaped on render; `summary` labelled `instructional` or `generated`. |
+| `catalog` | `{name, edition}` pinned for every reference. |
+| `extent` | Catalog area reference (first: the edition's region) and the catalog's declared datum; the package cannot redefine either. |
+| `qualification_profile` | `profile_id@profile_version+hash` (`docs/design/QUALIFICATIONS.md`, branch `design/qualification-profile`) and the `objective_ids` this package serves. |
+| `aircraft` | `{manifest, manifest_version, manifest_hash, configuration}` (R-AIR-1; first: classic-panel 172S); `assists` and `fidelity` by enumerated name. |
+| `prerequisites` | Optional profile objective IDs or package IDs. |
 | `initial_conditions` | See below. |
-| `environment` | Briefing snapshot reference and applied-conditions record. |
-| `geography` | References used by the exercise: aerodromes, runways, circuits, reporting points, airspace, frequencies, charts. |
-| `procedure` | Ordered `phases` (e.g. take-off, crosswind, downwind, base, final, landing, roll-out), each with entry/exit conditions from an enumerated condition vocabulary. |
+| `environment` | Briefing snapshot reference and applied conditions. |
+| `geography` | Catalog references with a `role`: departure, destination, circuit, reporting-point, avoid, airspace-limit, chart. |
+| `procedure` | Ordered `phases`, each with entry/exit conditions from an enumerated vocabulary. |
+| `interaction` | `roles` (`learner`; scripted `station`; later `ai-station`, `ai-instructor`) and per role the enumerated `allowed_actions` (below). |
 | `hooks` | `checklists`, `radio`, `assessment` (below). |
-| `narrative` | Optional briefing/teaching prose, each block labelled `instructional` or `generated`. |
-| `provenance` | Authorship and generator record. |
-| `review` | Review state and history. |
+| `narrative` | Optional prose blocks labelled `instructional` or `generated`. |
+| `provenance` | Authors and generator record (below). |
 | `limitations` | Visible unsupported/simplified behavior (R-SCOPE-1). |
 
+**Profile linkage.** The package → profile reference is authoritative. Profiles do
+not pin packages; any profile → package index is derived from accepted packages and
+lies outside both hashes. The package does not restate objective text.
+
 **Initial conditions.** `position` is a catalog reference (first exercise:
-`holding-point:EDFE/<rwy>/<designator>`), never coordinates typed by the author.
-`heading` is `derived` from the referenced runway or holding-point entry.
-`aircraft_state` names a state defined in the aircraft manifest (first exercise:
-engine running, before-take-off checks complete, per the user's 2026-11-01 13:00
-answer on branch `design/contracts-1-4`); fuel, mass and centre-of-gravity cite a
-manifest loading case. `scenario_time` is UTC with the local-time zone named.
-`altimeter_setting` cites the briefing snapshot's QNH/QFE value; the learner sets it.
+`holding-point:EDFE/<rwy>/<designator>`), never typed coordinates. `heading` is
+`derived` from the referenced entry. `aircraft_state` names a manifest state (first
+exercise: engine running at the holding point, per the user's 2026-11-01 13:00
+answer on branch `design/contracts-1-4`); fuel, mass and centre of gravity cite a
+manifest loading case. `scenario_time` is UTC with the local zone named.
+`altimeter_setting` cites the snapshot's QNH/QFE; the learner sets it.
 
-**Environment and briefing snapshot** (R-BRIEF-1, GAPS Q11). The package
-references a frozen snapshot by ID and hash. Snapshot mode is `historical` (real
-reports with publisher, station, issue/validity times and rights) or `generated`
-(structured values from a declared rule set; rendered report text is derived from
-those values, never parsed back as authority). Each snapshot records scenario
-time, validity at scenario time, missing items as `unavailable` (not empty), and an
-`applied_conditions` block (wind, visibility, cloud, temperature, pressure) with
-its stated relationship to the reports (`matches` or an explained training
-variation). The briefing displays "historical" or "generated — not current
-operational information" on every report and notice.
+**Environment and briefing snapshot** (R-BRIEF-1, GAPS Q11). Referenced by ID and
+hash. Mode is `historical` (real reports with publisher, station, issue/validity
+times, rights) or `generated` (structured values from a declared rule set; report
+text is rendered from them, never parsed back as authority). The snapshot records
+scenario time, validity at scenario time, NOTAM replacement/cancellation links
+where the source supports them, missing items as `unavailable` (not empty), and
+`applied_conditions` with their relation to the reports (`matches` or an explained
+training variation). Every report and notice is shown as "historical" or
+"generated — not current operational information".
 
-**Geography and navigation.** Lists of catalog IDs with a `role` (departure,
-destination, circuit, reporting-point, avoid, airspace-limit, chart). Generated
-training maps declare `generated-map` and the catalog entries they draw (R-NAV-3).
-
-**Hooks.** Hooks name runtime-implemented behavior; the package supplies only
-references and parameters.
+**Hooks.** The package supplies references and parameters; the runtime owns behavior.
 
 | Hook | Package supplies | Runtime owns |
 | --- | --- | --- |
-| `checklists` | Checklist IDs from the aircraft manifest and the phase where each applies (R-TRAIN-4). | Item definitions, sensed vs acknowledged state. |
-| `radio` | Station references (`frequency:` entries), the station's service type (e.g. AFIS gives information, not clearances), and an ordered list of exchange intents from an enumerated vocabulary (e.g. `report-holding-point`, `report-downwind`, `report-vacated`). | Phrasing, readback checking and scenario-state changes (R-COMM-1, ARCH radio state machine). |
-| `assessment` | Criterion IDs from the training catalogue (TODO 1.5) with phase, measured quantity, reference and tolerance. | Measurement, events and debrief traces (R-TRAIN-2). |
+| `checklists` | Manifest checklist IDs and the phase where each applies (R-TRAIN-4). | Items, sensed vs acknowledged state. |
+| `radio` | `frequency:` station references, service type (AFIS informs, it does not clear) and ordered exchange intents from an enumerated vocabulary (`report-holding-point`, `report-downwind`, `report-vacated`). | Phrasing, readback checks and scenario transitions (R-COMM-1, ARCH radio state machine). |
+| `assessment` | Criterion IDs from the frozen exercise criteria (TODO 1.5) and phase. | Measurement, events, debrief traces (R-TRAIN-2). |
 
-Assessment tolerances are taken from the frozen exercise criteria (TODO 1.5) and
-cite them; a package cannot introduce a new aircraft-specific tolerance.
+Tolerances come from the cited criteria; a package cannot introduce one.
 
-**Provenance.** `authors` (role and display name; no contact data), `created`,
-`tool` (`manual` or `llm-assisted`), and for LLM assistance a `generator` record:
-provider, model identifier as reported by the provider, request/prompt-template
-version, retrieval-tool versions, catalog edition, timestamps and the hash of the
-draft it produced. Unknown model metadata is recorded as unknown, not guessed.
+**Interaction and AI output.** `allowed_actions` are enumerated intents (e.g.
+`station.give-traffic-info`, `instructor.explain-criterion`). AI radio or
+instructor output is presentation and intent proposal only: it **never changes
+simulation, avionics, aircraft or clearance state**. Only the scenario state
+machine accepts an intent, and only one the package allows (ARCH radio section,
+R-COMM-1). Accepted interaction events belong to the **session record** on the
+simulation clock and are replayed from it, not regenerated. AI interaction is
+deferred; until specified, packages may declare only `learner` and scripted
+`station` roles (proposed SPEC note below).
 
-**Review.** `state` (below), reviewer entries `{role, reviewer, date, outcome,
-findings}`, the validator report hash and the accepted `content_hash`.
+**Provenance.** `authors`: stable project identities (`identity:<id>`) with role;
+display names and contact data resolve outside the package. An `llm-assisted`
+package must list the requesting human as an author. `tool` is `manual` or
+`llm-assisted`; for the latter a `generator` record holds provider, model ID as
+reported by the provider, frozen prompt/template and request (stored artifacts
+referenced by hash), retrieval-tool versions, catalog edition, timestamps and the
+draft hash. Unreported metadata is `unknown`, never guessed.
 
-## Review states
+## Hash scope and review records
+
+`content_hash` = SHA-256 over the RFC 8785 (JCS) canonical serialization of the
+entire package document. Every field above is in scope; referenced artifacts are
+included through their pinned hashes. Nothing outside the document is in scope.
+
+Review and lifecycle are **separate records keyed by `content_hash`**: `{content_hash,
+state, reviewer identity, role, date, outcome, findings, validator_report_hash}`.
+V2 rejects any author-supplied `review`, `state`, `status` or `content_hash` field.
 
 ```
 draft --validate--> validated --submit--> in-review --accept--> accepted
@@ -141,88 +154,77 @@ draft --validate--> validated --submit--> in-review --accept--> accepted
   +------ any edit ----+------ reject -------+            supersede/withdraw
 ```
 
-- `draft`: any author or tool may edit. Not runnable except in an author preview
-  labelled "unvalidated draft".
-- `validated`: all blocking validator stages pass; warnings listed for review.
-- `in-review`: a reviewer who is not an author checks objectives, briefing, map,
-  sources, rights and limitations against the catalog. Training content needs the
-  instructor review partner (GAPS Q7, still open).
-- `accepted`: runnable as `reviewed`; content hash frozen. Until a reviewer exists,
-  packages can run only as `experimental` with that label visible (R-COMMUNITY-1).
-- Any edit returns the package to `draft` with a new version. `superseded` and
-  `withdrawn` keep history; replays of old versions stay reproducible.
-- Publication beyond the local project waits for phase 3 rules (GAPS Q12).
+- `draft`: editable; runs only in an author preview labelled "unvalidated draft".
+- `validated`: V1–V8 have no blocking finding; warnings go to the reviewer.
+- `in-review`: a reviewer whose identity is not among the authors checks the
+  package against the catalog. Training content needs the instructor review partner
+  (GAPS Q7, open).
+- `accepted`: runs as `reviewed`. Without an eligible reviewer, a package runs only
+  as `experimental` with that label visible (R-COMMUNITY-1).
+- An edit yields a new version and hash in `draft`; old records remain and replays
+  of old versions stay reproducible. Publication waits for phase 3 (GAPS Q12).
 
 ## LLM boundary
 
-The LLM may: turn a request into a draft package; call **retrieval tools** that
-search the pinned catalog and return entry IDs with their values; propose which
-catalog entries, objectives, phases, checklists and radio intents to use; write
-`generated` narrative; and ask the author an explicit question when an entry is
-missing, ambiguous or `tbd`.
+The LLM may draft a package; call read-only **retrieval tools** over the pinned
+catalog edition; propose entries, profile objectives, phases, checklists and radio
+intents; write `generated` narrative; and ask the author a question when an entry
+is missing, ambiguous or `unknown`.
 
-The LLM may not: supply a real-world value (coordinate, elevation, frequency,
-runway data, airspace limit, procedure, NOTAM, weather report, aircraft parameter
-or tolerance); create catalog entries; fetch URLs or read sources outside the
-retrieval tools; set review state; or emit code, markup or tool instructions in a
-package. Generated prose cannot establish a fact: validators never read narrative
-for state, and a reviewer sees prose that mentions identifiers or numbers not
-present in referenced entries flagged for checking.
-
-Retrieval tools are read-only, scoped to one catalog edition, return structured
-data with source and rights, and mark source-derived free text as untrusted
-quoted data. The same validators apply to hand-written and LLM-drafted packages.
-The simulator runs published packages with no LLM available (R-OPEN-1).
+The LLM may not supply a real-world value (coordinate, elevation, frequency, runway
+data, circuit side or altitude, airspace limit, procedure, NOTAM, weather report,
+aircraft parameter or tolerance); create catalog entries; fetch URLs or read
+sources outside the tools; create review records; or emit code, markup or tool
+instructions in a package. Generated prose cannot establish a fact: validators never
+read narrative for state, and V5 flags prose naming identifiers or numbers absent
+from referenced entries. Retrieval results carry source and rights and mark
+source-derived free text as untrusted quoted data. The same validators apply to
+hand-written and LLM-drafted packages; published packages run with no LLM (R-OPEN-1).
 
 ## Validation pipeline
 
-Stages run in order; a blocking failure stops later stages that depend on it.
-Each finding has `code`, `stage`, JSON-pointer `path`, `message` and `remedy`.
+Stages run in order. A blocking finding stops the stages that depend on it; those
+are reported `not evaluated`, never passed. Each finding has `code`, `stage`,
+`severity`, JSON-pointer `path`, `message` and `remedy`.
 
-| Stage | Checks | Example failure message |
+| Stage | Checks | Example finding |
 | --- | --- | --- |
-| V1 Intake | Size limit, UTF-8, JSON-compatible data only (no YAML tags/anchors), no binary/HTML/script content, depth/array limits. | `V1-EXEC /narrative/0: markup or script content is not allowed; use plain text.` |
-| V2 Schema | Known `schema_version`, required fields, no unknown fields, enumerations, value classes present. | `V2-UNKNOWN-FIELD /initial_conditions/lat: field is not in schema 0.x; reference a catalog position instead.` |
-| V3 Quantities | Units, references and frames declared; finite and in schema bounds; conversions round-trip. | `V3-UNIT /hooks/assessment/2/tolerance: missing unit and altitude reference (MSL/AGL).` |
-| V4 References | Every ID resolves in the pinned catalog edition and aircraft manifest; kind matches role; status not `unavailable`. | `V4-UNRESOLVED /geography/2: 'waypoint:EDFE/NOVEMBER' is not in eddf-100nm@<edition>; choose an existing entry or request catalog ingestion.` |
-| V5 Fabrication | No literal value where the schema requires a reference; literals equal to a catalog field but entered by hand are rejected; `tbd` and `placeholder` values listed. | `V5-LITERAL /radio/stations/0/frequency_mhz: real frequencies must reference a frequency: entry.` |
-| V6 Rights | Every referenced entry's rights class permits the package's use (run, ship, render map); `reference-only` content is not embedded. | `V6-RIGHTS /geography/5: chart entry is reference-only (DFS AIP E1); cite it in review or use a generated map from shippable entries.` |
-| V7 Coherence | Inside region; runway/circuit/holding point belong to the same aerodrome; pattern side matches the circuit entry; aircraft supports referenced equipment, checklists and radio fit; phase graph reachable and terminating. | `V7-EQUIPMENT /hooks/radio/1: station requires a second COM radio not in configuration 172S-<id>.` |
-| V8 Briefing | Snapshot hash matches; mode labelled; validity evaluated at scenario time; missing data explicit; applied conditions agree or explain the difference. | `V8-VALIDITY /environment: report validity ends before scenario_time; mark as expired or replace.` |
-| V9 Acceptance gate | No `tbd` or `placeholder` values, no blocking findings, reviewer is not an author, content hash matches the reviewed hash. | `V9-TBD: 4 values are tbd; acceptance requires sourced catalog entries.` |
+| V1 Intake | Size/depth limits, UTF-8, JSON-compatible data (no YAML tags/anchors), no binary/HTML/script. | `V1-EXEC /narrative/0: markup or script is not allowed; use plain text.` |
+| V2 Schema | Known version, required/unknown fields, enumerations, value classes and uncertainty present, no review/lifecycle fields; lists `unknown` values (warning). | `V2-REVIEW-FIELD /review: review data is recorded outside the package.` |
+| V3 Quantities | Units, references, frames; finite and in bounds; conversions round-trip. | `V3-UNIT /hooks/assessment/2: missing unit and altitude reference (MSL/AGL).` |
+| V4 References | Catalog edition, profile, manifest and snapshot resolve with matching hashes; every ID resolves, kind matches role, status not `unavailable`. Fails closed. | `V4-UNRESOLVED /geography/2: 'waypoint:EDFE/NOVEMBER' is not in eddf-100nm@<edition>; choose an entry or request ingestion.` |
+| V5 Fabrication | No literal where a reference is required; hand-entered copies of catalog values rejected; prose claims flagged (warning). | `V5-LITERAL /hooks/radio/stations/0: real frequencies must reference a frequency: entry.` |
+| V6 Rights | Each entry's rights class permits run/ship/render; no `reference-only` content embedded. | `V6-RIGHTS /geography/5: chart is reference-only (DFS AIP E1); use a generated map from shippable entries.` |
+| V7 Coherence | Inside `extent`; runway, circuit and holding point share an aerodrome; objective IDs exist in the profile; equipment, checklists and radio fit supported; `allowed_actions` within role; phase graph reachable and terminating. | `V7-EQUIPMENT /hooks/radio/1: station needs a second COM radio not in configuration 172S-<id>.` |
+| V8 Briefing | Mode labelled; validity at scenario time; replaced/cancelled notices resolved; missing data explicit; applied conditions agree or explain. | `V8-VALIDITY /environment: report validity ends before scenario_time.` |
+| V9 Acceptance | No `unknown` or `placeholder` values; V1–V8 clean of blocking findings; reviewer not an author; reviewed hash equals `content_hash`. | `V9-UNKNOWN: 9 values are unknown; acceptance requires sourced entries.` |
 
-V1–V8 run on every draft save; V9 runs on accept. Reports are deterministic for
-the same package and catalog edition and are stored with the review.
+V1–V8 run on each draft save, V9 on accept. Reports are deterministic for the same
+package and catalog edition and are stored with the review record.
 
 ## Security
 
-Threats follow [SEC](../SEC.md) ("LLM authoring fabricating facts…" and "Malicious
-aircraft, scenario or replay import").
+Follows [SEC](../SEC.md) (LLM authoring and malicious import threats).
 
-- **Prompt injection from sources.** Source text (operator flyers, NOTAM text,
-  chart notes, community packages) is data. Retrieval returns it in quoted,
-  typed fields; it never enters the system/instruction part of a prompt and cannot
-  trigger tools. Tool calls are limited to the catalog retrieval allowlist.
-- **No execution.** Packages contain no code; the runtime interprets enumerated
-  hooks only. Rendered strings are escaped; no package-supplied URL is fetched.
+- **Prompt injection.** Source text (flyers, NOTAMs, chart notes, community
+  packages) is data, both at catalog ingestion (TODO 1.7) and at authoring. It is
+  returned in quoted, typed fields, never enters instruction context and cannot
+  trigger tools; tool calls are limited to the retrieval allowlist.
+- **No execution.** Runtime interprets enumerated hooks only; strings are escaped;
+  no package-supplied URL is fetched.
 - **No secrets or personal data.** Provider keys stay out of packages, prompts,
-  logs and client bundles. Provenance stores roles/display names, not contact data
-  or learner telemetry. Prompts sent to a provider contain the request and catalog
-  extracts only, subject to the Q13 data-flow decision.
-- **Rights.** V6 prevents embedding `reference-only` material; DFS portal pages are
-  not machine-retrieved (EDFE survey, E1a).
-- **Abuse and size.** Bounded size/depth, rate and cost limits on generation; a
-  provider failure leaves the draft unchanged and reports the failure.
-- **Integrity.** Accepted packages are identified by a content hash over a
-  canonical serialization (proposal: SHA-256 over RFC 8785 JSON canonicalization).
+  logs and bundles. Packages hold identity IDs only; provider prompts contain the
+  request and catalog extracts, subject to the Q13 data-flow decision.
+- **Rights.** V6 blocks embedded `reference-only` material; DFS portal pages are not
+  machine-retrieved (EDFE survey, E1a).
+- **Abuse.** Bounded size and generation rate/cost; provider failure is reported.
 
 ## Worked example: first EDFE circuit (draft, not acceptable)
 
-Every real value is `tbd` with the source expected to supply it. Source IDs refer
-to the [EDFE source survey](../research/2026-11-01-edfe-aerodrome-sources.md).
-Runway choice and holding-point designator are open (TODO 1.5/1.7); RWY 26 is
-used only to show structure. The notation is YAML-style for readability; the
-stored form is JSON-compatible data.
+Every real value is `tbd` (class `unknown`) naming the expected source, from the
+[EDFE source survey](../research/2026-11-01-edfe-aerodrome-sources.md). Runway,
+circuit side and holding point are open (TODO 1.5/1.7); RWY 26 only shows structure.
+YAML-style notation for readability; the stored form is JSON-compatible.
 
 ```yaml
 schema: gefly.experience
@@ -231,90 +233,87 @@ id: edfe-circuit-1
 version: 1
 title: "Circuit at Frankfurt-Egelsbach"
 summary: {class: instructional, text: "Take-off, one circuit and a full-stop landing."}
-catalog: {name: eddf-100nm, edition: tbd}          # E10 / TODO 1.7 build
+catalog: {name: eddf-100nm, edition: tbd}            # E10 / TODO 1.7 build
+extent: {ref: "area:eddf-100nm/region"}              # ARP and datum from the edition
+qualification_profile: {ref: "easa-ppl-a@tbd+tbd", objective_ids: [tbd]}  # TODO 1.5
 aircraft:
-  manifest: c172s-classic                          # R-AIR-1, TODO 1.3
-  manifest_version: tbd
-  configuration: tbd                               # serial range 172S9491-9809; avionics fit TBD
-  assists: [none]
-  fidelity: tbd
-objectives:
-  - {id: obj-circuit, text: "Fly a circuit and land", syllabus_ref: tbd}   # EASA source revision, TODO 1.5
+  {manifest: c172s-classic, manifest_version: tbd, manifest_hash: tbd,
+   configuration: tbd, assists: [none], fidelity: tbd}   # TODO 1.3; avionics fit TBD
 initial_conditions:
-  position: {ref: "holding-point:EDFE/26/tbd"}     # designator TBD, E1 aerodrome chart (reference-only)
-  heading: {class: derived, from: "runway:EDFE/26"}
-  aircraft_state: {ref: "c172s-classic#state/before-take-off-complete"}  # engine running (Q7)
+  position: {ref: "holding-point:EDFE/26/tbd"}       # designator TBD: E1 (reference-only)
+  heading: {class: derived, from: "runway:EDFE/26", uncertainty: unknown}
+  aircraft_state: {ref: "c172s-classic#state/engine-running-holding-point"}  # Q7
   loading: {ref: "c172s-classic#loading/tbd"}
   scenario_time: {utc: tbd, zone: Europe/Berlin}
-  altimeter_setting: {ref: "environment#qnh"}      # learner sets QNH
+  altimeter_setting: {ref: "environment#qnh"}        # learner sets QNH
 environment:
-  snapshot: {id: tbd, hash: tbd, mode: generated}  # Q11; label "not current operational information"
+  snapshot: {id: tbd, hash: tbd, mode: generated}    # Q11 label shown
   applied_conditions: {relation: matches}
 geography:
-  - {ref: "aerodrome:EDFE", role: departure}       # ARP/elevation TBD: E1 (AIP), cross-check E3
-  - {ref: "runway:EDFE/26", role: departure}       # dimensions/thresholds TBD: E1; E3 placeholder only
-  - {ref: "circuit:EDFE/26/north", role: circuit}  # side per E2a; circuit altitude TBD: E1
-  - {ref: "airspace:EDFE/atz", role: airspace-limit}  # vertical limit TBD: E1 (E2a cite-only)
-  - {ref: "map:eddf-100nm/generated-vfr", role: chart}  # generated training map, labelled
-procedure:
-  phases: [take-off, crosswind, downwind, base, final, landing, roll-out]
+  - {ref: "aerodrome:EDFE", role: departure}         # ARP/elevation TBD: E1
+  - {ref: "runway:EDFE/26", role: departure}         # dimensions TBD: E1; E3 placeholder
+  - {ref: "circuit:EDFE/26/tbd", role: circuit}      # side and altitude TBD: E1 or permission
+  - {ref: "airspace:EDFE/atz", role: airspace-limit} # limits TBD: E1
+  - {ref: "map:eddf-100nm/generated-vfr", role: chart}  # generated, labelled
+procedure: {phases: [take-off, crosswind, downwind, base, final, landing, roll-out]}
+interaction:
+  roles:
+    - {role: learner, allowed_actions: [radio.transmit-intent, checklist.confirm]}
+    - {role: station, allowed_actions: [station.give-traffic-info]}  # scripted AFIS
 hooks:
   checklists:
     - {ref: "c172s-classic#checklist/before-take-off", phase: pre}   # POH revision TBD
     - {ref: "c172s-classic#checklist/before-landing", phase: downwind}
   radio:
     stations:
-      - {ref: "frequency:EDFE/afis", service: afis}       # value TBD: E1; E2a cite-only
-      - {ref: "frequency:EDFE/apron", service: apron}     # value TBD: E1; E2a cite-only
+      - {ref: "frequency:EDFE/afis", service: afis}  # value TBD: E1
+      - {ref: "frequency:EDFE/apron", service: apron} # value TBD: E1
     intents: [report-holding-point, report-downwind, report-final, report-vacated]
-  assessment:
-    - {criterion: "tbd", phase: downwind}          # TODO 1.5 criteria and tolerances
-narrative:
-  - {class: generated, text: "..."}                # cannot establish any value above
+  assessment: [{criterion: tbd, phase: downwind}]    # TODO 1.5
+narrative: [{class: generated, text: "..."}]         # establishes no value
 provenance:
-  authors: [{role: product, name: "Claude Code (product subagent)"}]
+  authors: [{id: "identity:tbd", role: product}]     # stable project identity
   created: 2026-11-01
   tool: manual
-review: {state: draft, reviewers: []}
 limitations: ["South circuit out of scope", "Engine start and taxi not included (Q7)"]
 ```
 
-Expected validator outcome today: V4 fails (catalog edition does not exist), V9
-lists every `tbd`. That is the correct result: the package cannot be accepted
-before TODO 1.3, 1.5 and 1.7 supply sourced entries.
+Expected outcome today: V1 and V3 pass; V2 passes with warnings listing the
+`unknown` values; V4 fails closed because catalog edition, profile and manifest do
+not resolve; V5–V8 are not evaluated; V9 is unreachable. That is correct: the
+package cannot be accepted before TODO 1.3, 1.5 and 1.7 supply sourced entries.
 
 ## Proposed SPEC and SEC edits (for the orchestrator)
 
-1. SPEC R-AUTHOR-1: cite this document as the package contract; add "a package
-   cannot run as `reviewed` while any value is `tbd`/`placeholder`" and "the same
-   validators apply to hand-written and LLM-drafted packages".
-2. SPEC: propose a new requirement for the **source catalog** (stable IDs,
-   editions, per-field provenance, rights classes, coverage) shared by R-REGION-1,
-   R-NAV-2 and R-AUTHOR-1, rather than repeating it in each.
-3. SPEC R-TRAIN-2: state that scenario records are experience packages with
-   initial conditions by catalog reference (first: holding point, engine running).
-4. SPEC R-BRIEF-1: add the snapshot `mode` label and `applied_conditions` relation.
-5. SEC threat table: add "rights violation through embedded reference-only
-   material" (control: V6) and name retrieval-tool allowlisting and quoted source
-   fields as the prompt-injection control.
-6. EVAL E9: use V1–V9 failure codes as fixture expectations; add a hand-written
-   package to show validators are generator-independent.
-7. ARCH: add a `packages/experiences/` (schema, validators) and a catalog boundary
-   to the component table once the stack is selected.
+1. R-AUTHOR-1: cite this contract; "no `reviewed` run while any value is `unknown`
+   or `placeholder`"; "same validators for hand-written and LLM-drafted packages";
+   note that AI interaction roles/actions and accepted interaction events are
+   **deferred**, specified with the later AI-interaction stage, and recorded in the
+   session record rather than the package.
+2. R-DATA-2: allow the non-claim labels `instructional` and `generated` beside
+   sourced/derived/estimated/unknown, and require uncertainty on numeric values.
+3. New requirement for the **source catalog** (stable IDs, editions, per-field
+   provenance, rights classes, coverage), shared by R-REGION-1, R-NAV-2, R-AUTHOR-1.
+4. R-TRAIN-2: scenario records are experience packages with catalog-referenced
+   initial conditions (first: holding point, engine running).
+5. R-BRIEF-1: add snapshot `mode` and the `applied_conditions` relation.
+6. R-COMM-1: state that AI output never changes simulation, avionics or clearance
+   state.
+7. SEC: add "rights violation through embedded reference-only material" (V6) and
+   name quoted source fields, retrieval allowlisting and ingestion-time handling as
+   the prompt-injection controls; fail-closed validation.
+8. EVAL E9: use V1–V9 codes as fixture expectations; include a hand-written package.
+9. ARCH: add an experiences component (schema, validators) and catalog boundary.
 
 ## Open questions
 
-- **Q13 provider assumptions (open):** local versus hosted model; which data may
-  leave the machine; key handling for a free/open-source build; cost/rate limits;
-  whether tool/function calling is required (the design assumes structured tool
-  calls but works with a client-side retrieval step); model metadata a provider
-  actually reports; retention of prompts and outputs.
-- Serialization and schema language (JSON Schema or a stack-native type) follow
-  the stack decision (TODO 1.2, Q17).
-- Catalog edition cadence versus AIRAC cycles; whether a package may be revalidated
-  automatically against a newer edition or must be re-reviewed.
-- Shippable sources for values DFS publishes only as `reference-only` (EDFE survey
-  recommendation: DFS written approval or independent sources).
-- Who may review (instructor partner, Q7); single or dual review for `accepted`.
-- Holding-point designator, runway choice and circuit altitude for the first
-  package (TODO 1.5/1.7); whether `generated` weather rule sets live in the catalog.
+- **Q13 provider assumptions (open):** local or hosted model; which data may leave
+  the machine; key handling in a free/open-source build; cost/rate limits; whether
+  structured tool calling is required (a client-side retrieval step also works);
+  which model metadata a provider actually reports; prompt/output retention.
+- Schema language (JSON Schema or stack-native) follows TODO 1.2/Q17.
+- Catalog edition cadence versus AIRAC; automatic revalidation versus re-review.
+- Shippable sources or DFS permission for values now only `reference-only`.
+- Identity scheme for authors/reviewers; single or dual review; the instructor
+  partner (Q7).
+- Runway, circuit side/altitude, holding point (TODO 1.5/1.7); weather rule-set home.
