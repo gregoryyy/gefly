@@ -225,7 +225,7 @@ conditions, not from the model):
 | P-11 | Calibration glide (M-b) | best-glide speed ±2 kt CAS, glide ratio ±5 % | chart reading resolution; windmilling-prop uncertainty |
 | P-12 | M-a static load split, rest | load split ±1 % of weight; at rest drift and speed within E1 F3 budget | CG arithmetic; E1 study |
 | P-13 | Gear timestep refinement | ground-roll distance at 1/120 vs 1/480 s within 0.1 % | gear stiffness must not need a smaller dt |
-| P-14 | Native vs WASM | per-state difference ≤ max(1e-9 × |value|, absolute floor per state: 1e-9 m, 1e-9 m/s, 1e-12 rad) over 40 s | E1 observed 2e-13; margin, still a proposal |
+| P-14 | Native vs WASM | per-state difference ≤ max(1e-9 × abs(value), absolute floor per state: 1e-9 m, 1e-9 m/s, 1e-12 rad) over 40 s | E1 observed 2e-13; margin, still a proposal |
 
 Each result reports the residual, the case conditions (mass, CG, atmosphere, power,
 flaps, speed reference, source page, interpolation) and the declared uncertainty (E2).
