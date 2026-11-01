@@ -206,6 +206,25 @@ def run_hashed(fdm, steps: int, dt_s: float, inputs=scripted_inputs) -> str:
     return digest.hexdigest()
 
 
+SIM_TIME = "simulation/sim-time-sec"
+
+
+def _check_elapsed(start_s: float, end_s: float, expected_s: float, where: str) -> None:
+    """Raise unless simulation time advanced by ``expected_s`` (stall/hold guard)."""
+    elapsed = end_s - start_s
+    if not math.isclose(elapsed, expected_s, rel_tol=1e-6, abs_tol=1e-12):
+        raise RuntimeError(f"{where}: simulation time advanced {elapsed!r} s, "
+                           f"expected {expected_s!r} s")
+
+
+def step_checked(fdm, dt_s: float, where: str) -> None:
+    """One fixed step; a False return or a step that does not advance time fails."""
+    t0 = fdm[SIM_TIME]
+    if not fdm.run():
+        raise RuntimeError(f"{where}: run() returned False")
+    _check_elapsed(t0, fdm[SIM_TIME], dt_s, where)
+
+
 def fnv1a64_final(steps: int = 2400, dt_s: float = 1.0 / 120.0) -> tuple[str, list[float]]:
     """Same run as F1, hashed with FNV-1a 64 to compare with wasm/driver.cpp."""
     fdm = make_fdm(dt_s)
@@ -351,14 +370,14 @@ def fixture_stationary(dt_s: float = 1.0 / 120.0, settle_s: float = 5.0,
                        observe_s: float = 25.0) -> dict:
     fdm = make_fdm(dt_s)
     init_at_rest(fdm)
-    for _ in range(int(round(settle_s / dt_s))):
-        fdm.run()
+    for k in range(int(round(settle_s / dt_s))):
+        step_checked(fdm, dt_s, f"stationary settle step {k}")
     r_earth_m = 6371008.8  # IUGG mean radius; adequate for a small drift estimate
     lat0, lon0 = fdm["position/lat-geod-rad"], fdm["position/long-gc-rad"]
     h0 = ft_to_m(fdm["position/h-agl-ft"])
     max_speed = 0.0
-    for _ in range(int(round(observe_s / dt_s))):
-        fdm.run()
+    for k in range(int(round(observe_s / dt_s))):
+        step_checked(fdm, dt_s, f"stationary observe step {k}")
         u, v, w = (ft_to_m(fdm[p]) for p in ("velocities/u-fps", "velocities/v-fps",
                                             "velocities/w-fps"))
         max_speed = max(max_speed, math.sqrt(u * u + v * v + w * w))
@@ -386,17 +405,25 @@ def fixture_cost(steps: int = 12000, dt_s: float = 1.0 / 120.0, runs: int = 3) -
 
 
 def _cost_once(steps: int, dt_s: float) -> dict:
+    # Return values are checked inside the timed loop (one branch per step);
+    # elapsed simulation time is checked after timing so a stalled or held
+    # engine cannot report a cost for steps it did not take.
     fdm = make_fdm(dt_s)
     init_airborne(fdm)
+    sim0 = fdm[SIM_TIME]
     t0 = time.perf_counter()
-    for _ in range(steps):
-        fdm.run()
+    for k in range(steps):
+        if not fdm.run():
+            raise RuntimeError(f"cost run-only step {k}: run() returned False")
     bare = (time.perf_counter() - t0) / steps
+    _check_elapsed(sim0, fdm[SIM_TIME], steps * dt_s, "cost run-only")
     fdm = make_fdm(dt_s)
     init_airborne(fdm)
+    sim0 = fdm[SIM_TIME]
     t0 = time.perf_counter()
     run_hashed(fdm, steps, dt_s)
     full = (time.perf_counter() - t0) / steps
+    _check_elapsed(sim0, fdm[SIM_TIME], steps * dt_s, "cost with-io-hash")
     return {"run_only_us_per_step": bare * 1e6, "run_only_realtime_factor": dt_s / bare,
             "with_io_hash_us_per_step": full * 1e6,
             "with_io_hash_realtime_factor": dt_s / full}
