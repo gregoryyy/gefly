@@ -188,6 +188,14 @@ coverage, rights and live rollout remain future implementation selections.
 
 Why: affects code reuse, distribution, aircraft manuals, avionics depictions, maps and navigation data. The user's direction is now free/open source; select a compatible open-source license and review separately licensed assets/data. Blocking: license-dependent distribution and restricted asset ingestion.
 
+Answer (aircraft-model sources): **2026-11-01 18:43, user** (recorded by orchestrator, Claude Code;
+[input](input/2026-11-01-lycoming-openvsp-decisions.md)): “yes to both”. (a) Only
+the needed points of the copyrighted Lycoming IO-360-L2A power curve may be extracted
+as cited facts, never the whole chart, under the same no-piecemeal rule as the POH
+values. (b) OpenVSP (NASA Open Source Agreement) may be used offline as an estimation
+tool; it is not distributed, and only its results ship, labelled `estimated` with
+inputs and version recorded.
+
 Confirmation: **2026-11-01 07:08, user** (recorded by orchestrator, Claude Code;
 [confirmations](input/2026-11-01-confirmations.md)): “gpl3+” — GPL-3.0-or-later,
 not GPL-3.0-only.

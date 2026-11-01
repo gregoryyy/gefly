@@ -3,6 +3,24 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 18:21 — Survey open Cessna 172 aerodynamic data for the E2 model
+
+TODO: E2 preparation. Agent: Claude Code orchestrator; researcher subagent.
+
+**Implementation notes**
+
+Added [C172 aero data sources](research/2026-11-01-c172-aero-data-sources.md): no
+open 172S-specific aero, propeller, inertia or gear data found. Usable earlier-model
+sources: NASA TM-80163 flight-test derivatives (public domain, aircraft identity
+inferred), KU-M-407-7 1974 172M identification (cite-only), consistent inertia sets,
+NASA CR-2605 DATCOM estimates, NASA SP-468 drag/L-D; Lycoming IO-360-L2A curve is
+copyrighted; no public McCauley 1A170E data. Proposed calibration vs holdout split.
+
+**Deviations**
+
+No coefficients added. Needs Q5 decisions (digitising the Lycoming curve, OpenVSP
+licence) before a model can be built. Not yet reviewed. Peer pending (batched).
+
 ## 2026-11-01 16:47 — Draft the paired-iPhone control specification
 
 TODO: 1.13 in progress. Agent: Claude Code orchestrator; product subagent (with source

@@ -23,6 +23,7 @@ These records preserve the user's original intent. Do not edit accepted input re
 - [2026-11-01 first 172S configuration](2026-11-01-first-172s-configuration.md): 172S serials 9491–9809, classic panel, accepted.
 - [2026-11-01 confirmations](2026-11-01-confirmations.md): GPL-3.0-or-later, "depends on data" reading and 172S-first order confirmed; PR authorized.
 - [2026-11-01 peer gate scope](2026-11-01-peer-gate-scope.md): cross-provider peer review is not required on every PR.
+- [2026-11-01 Lycoming and OpenVSP](2026-11-01-lycoming-openvsp-decisions.md): selective engine-curve extraction and offline OpenVSP estimation accepted.
 - [2026-11-01 Q3/Q5/Q7/Q10/Q12 answers](2026-11-01-aircraft-license-exercise-answers.md): FR172 and/or 172S engine variants, GPL-3 with permissive-preferred third-party policy, first circuit exercise at Egelsbach, community rules in phase 3.
 
 These inputs are included in the local repository. Recheck privacy before remote publication.
