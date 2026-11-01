@@ -32,7 +32,7 @@
     };
     let w;
     try {
-      w = new Worker(url);
+      w = new Worker(url, source === "sim" ? { type: "module" } : undefined);
     } catch (e) {
       s.errors.push(`worker construction failed: ${e.message}`);
       return s;
