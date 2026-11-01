@@ -6,9 +6,13 @@ Cessna 172S, serials 172S9491–172S9809, conventional panel. It serves R-AIR-1,
 R-DATA-2 and R-FID-3 ([SPEC](../../../docs/SPEC.md)) and supports TODO 1.3.
 
 **This manifest is not a flight model.** It identifies the configuration, records
-type-design limits already verified with page citations in the
+type-design limits verified with page citations in the
 [172S/FR172 source survey](../../../docs/research/2026-11-01-c172s-fr172-sources.md), and
-states each source's rights. It holds no performance tables, aerodynamic coefficients,
+states each source's rights. Exception: the S17 pages for the first serial
+(pp. 7-24, 7-34) come from the 172S controls research note
+(`docs/research/2026-11-01-jsbsim-datum-172s-controls.md`), which is still on branch
+`design/contracts-1-4` (PR #12); those citations are **pending PR #12 research note**
+until it merges. It holds no performance tables, aerodynamic coefficients,
 procedures or document copies (`not_included`), and its `fidelity` is fixed to
 `not validated`. Nothing here establishes simulator fidelity or training credit.
 
@@ -28,7 +32,10 @@ procedures or document copies (`not_included`), and its `fidelity` is fixed to
 
 A **quantity** has `value` in SI (`kg`, `m/s`, `m`, `rad/s`, `W`), `original_value` and
 `original_unit` as published, `status`, `citations`, `conversion`, `uncertainty` and
-optionally `condition`, `reference`, `conflicts` and `todo`. A **fact** (identification
+optionally `condition`, `reference`, `conflicts` and `todo`. `reference` (`IAS`, `CAS`,
+`TAS`) is required for every `m/s` quantity. The validator recomputes each SI value from
+`original_value` with a fixed factor table (lb, kt, in, rpm, hp) and rejects a difference
+above 0.5e-4·max(1, |value|) or an unlisted unit pair. A **fact** (identification
 text) has `value`, `status`, `citations` and optional `derivation`, `note`, `todo`. A
 **citation** names `source_id`, the source's `revision`, `page` and optional `section`.
 
@@ -54,7 +61,7 @@ always `false`; see [SBOM](../../../docs/SBOM.md#aircraft-avionics-and-geographi
 1. Verify every new value in the primary document and record it, with page, in a
    research note first. AI output or search snippets are never a source.
 2. Add or update the source register entry (revision, URL, access date, access status,
-   checksum prefix, rights) before citing it; a citation's `revision` must match it.
+   checksum prefix, required for read sources, rights) before citing it; a citation's `revision` must match it.
 3. Add the quantity with SI value, original value/unit, status, citations, conversion
    and uncertainty. Use `unknown` plus `todo` rather than a guess.
 4. Increase `manifest_version` (patch for corrections, minor for added values, major for a
@@ -65,6 +72,7 @@ python3 utils/validate_manifest.py
 python3 utils/ci.py
 ```
 
-The validator checks the schema subset and cross-references (registered source, matching
+The validator first audits the whole schema and refuses any keyword or `$ref` it does not
+implement, then checks the schema subset, conversions and cross-references (registered source, matching
 revision, sourced values citing read sources). It cannot check that a cited page really
 contains the value; that remains a review task.

@@ -48,7 +48,7 @@
         "citations": [
           {"source_id": "S17", "revision": "172SPHUS Rev 5, 19 Jul 2004", "page": "7-24", "section": "Section 7 fuel system, Figure 7-6 sheet 2"}
         ],
-        "note": "First serial with the fuel return system; also after the split avionics master change at 172S8704 (S17 p. 7-34)."
+        "note": "First serial with the fuel return system; also after the split avionics master change at 172S8704 (S17 p. 7-34). Page citations pending PR #12 research note (docs/research/2026-11-01-jsbsim-datum-172s-controls.md, branch design/contracts-1-4); the merged source survey records the 172S9491 change without a page."
       },
       "last": {
         "value": "172S9809",
@@ -116,8 +116,8 @@
             {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "18", "section": "Section 2 C.5"},
             {"source_id": "S9", "revision": "Issue 03, 24 Aug 2022", "page": "11", "section": "6"}
           ],
-          "conversion": "hp x 745.69987158227022 W (mechanical horsepower assumed), rounded to 1 W",
-          "uncertainty": "Rated (minimum) value as published; actual engine power not stated. Engine TCDS 1E10 (S8) not read."
+          "conversion": "hp x 745.69987158227022 W (mechanical horsepower), rounded to 1 W",
+          "uncertainty": "Rating as published; installed engine power not stated. S9 gives 134 kW (180 HP), consistent with mechanical horsepower. Engine TCDS 1E10 (S8) not read."
         },
         "engine_dry_mass": {
           "value": 121.5628,
@@ -539,7 +539,7 @@
     "by": "Claude Code subagent housekeeping, dispatched by the orchestrator",
     "from": [
       "docs/research/2026-11-01-c172s-fr172-sources.md",
-      "docs/research/2026-11-01-jsbsim-datum-172s-controls.md (branch design/contracts-1-4)"
+      "docs/research/2026-11-01-jsbsim-datum-172s-controls.md (branch design/contracts-1-4, PR #12, not merged)"
     ]
   }
 }

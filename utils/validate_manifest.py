@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Validate Gefly aircraft manifests without third-party packages (R-AIR-1, R-DATA-1, R-DATA-2).
 
-Implements the JSON Schema 2020-12 keywords used by data/schema/aircraft-manifest.schema.json
-and rejects any other keyword, so a schema change cannot silently weaken validation. Then
-applies cross-reference rules that JSON Schema cannot express: every citation names a
-registered source with the same revision, and sourced/derived values cite only sources
-that were actually read.
+Implements the JSON Schema 2020-12 keywords used by data/schema/aircraft-manifest.schema.json.
+The whole schema is audited before validation and any other keyword or unresolvable $ref
+is an error, so a schema change cannot silently weaken validation. Then
+applies rules that JSON Schema cannot express: every citation names a registered source
+with the same revision, sourced/derived values cite only sources that were actually read,
+and each SI value matches its published value through a fixed conversion-factor table.
 """
 
 from __future__ import annotations
@@ -22,7 +23,20 @@ ROOT = Path(__file__).resolve().parent.parent
 SCHEMA = ROOT / "data" / "schema" / "aircraft-manifest.schema.json"
 DEFAULT_MANIFESTS = "data/aircraft/*/manifest.json"
 ANNOTATIONS = {"$schema", "$id", "$comment", "$defs", "title", "description"}
+KEYWORDS = {
+    "$ref", "type", "enum", "const", "required", "properties", "additionalProperties",
+    "minProperties", "items", "minItems", "minLength", "pattern", "allOf", "if", "then",
+}
 READ_STATUSES = {"read", "read_selected_pages"}
+# Exact SI factors: (original unit, SI unit) -> SI value per original unit.
+CONVERSIONS = {
+    ("lb", "kg"): 0.45359237,
+    ("kt", "m/s"): 1852 / 3600,
+    ("in", "m"): 0.0254,
+    ("rpm", "rad/s"): 2 * math.pi / 60,
+    ("hp", "W"): 745.69987158227022,  # mechanical horsepower
+}
+CONVERSION_TOLERANCE = 0.5e-4  # relative to max(1, |SI value|): manifests round to 4 decimals
 
 
 class SchemaError(Exception):
@@ -49,12 +63,46 @@ def type_matches(value, name):
 
 
 def resolve(root, reference):
-    if not reference.startswith("#/"):
+    if not isinstance(reference, str) or not reference.startswith("#/"):
         raise SchemaError(f"only local $ref is supported: {reference!r}")
     node = root
-    for part in reference[2:].split("/"):
-        node = node[part]
+    try:
+        for part in reference[2:].split("/"):
+            node = node[part]
+    except (KeyError, TypeError, IndexError):
+        raise SchemaError(f"unresolvable $ref {reference!r}") from None
+    if not isinstance(node, (dict, bool)):
+        raise SchemaError(f"$ref {reference!r} does not name a schema")
     return node
+
+
+def audit(schema, root=None, path="#"):
+    """Statically reject unsupported keywords and bad $ref anywhere in the schema."""
+    root = schema if root is None else root
+    if isinstance(schema, bool):
+        return
+    if not isinstance(schema, dict):
+        raise SchemaError(f"{path}: schema must be an object or boolean")
+    unknown = set(schema) - ANNOTATIONS - KEYWORDS
+    if unknown:
+        raise SchemaError(f"unsupported keyword(s) {sorted(unknown)} at {path}")
+    if "$ref" in schema:
+        resolve(root, schema["$ref"])
+    children = []
+    for key in ("properties", "$defs"):
+        if key in schema:
+            if not isinstance(schema[key], dict):
+                raise SchemaError(f"{path}/{key}: must be an object")
+            children += [(f"{path}/{key}/{name}", item) for name, item in schema[key].items()]
+    for key in ("items", "additionalProperties", "if", "then"):
+        if key in schema:
+            children.append((f"{path}/{key}", schema[key]))
+    if "allOf" in schema:
+        if not isinstance(schema["allOf"], list):
+            raise SchemaError(f"{path}/allOf: must be an array")
+        children += [(f"{path}/allOf/{index}", item) for index, item in enumerate(schema["allOf"])]
+    for child_path, child in children:
+        audit(child, root, child_path)
 
 
 def check(value, schema, root, path, errors):
@@ -64,10 +112,7 @@ def check(value, schema, root, path, errors):
     if schema is False:
         errors.append(f"{path}: not allowed")
         return
-    unknown = set(schema) - ANNOTATIONS - {
-        "$ref", "type", "enum", "const", "required", "properties", "additionalProperties",
-        "minProperties", "items", "minItems", "minLength", "pattern", "allOf", "if", "then",
-    }
+    unknown = set(schema) - ANNOTATIONS - KEYWORDS
     if unknown:
         raise SchemaError(f"unsupported keyword(s) {sorted(unknown)} at {path}")
     if "$ref" in schema:
@@ -160,11 +205,32 @@ def cross_references(manifest, errors):
                                   f"unread source {citation['source_id']!r}")
 
 
+def conversions(manifest, errors):
+    """Recompute SI values from published values with the fixed factor table."""
+    for path, node in walk(manifest):
+        value, original = node.get("value"), node.get("original_value")
+        if "unit" not in node or "original_unit" not in node:
+            continue
+        if not all(type_matches(item, "number") for item in (value, original)):
+            continue
+        factor = CONVERSIONS.get((node["original_unit"], node["unit"]))
+        if factor is None:
+            errors.append(f"{path}: no conversion factor for {node['original_unit']!r} "
+                          f"-> {node['unit']!r}")
+            continue
+        expected = original * factor
+        if abs(value - expected) > CONVERSION_TOLERANCE * max(1.0, abs(value)):
+            errors.append(f"{path}: value {value} {node['unit']} does not match "
+                          f"{original} {node['original_unit']} (expected {expected:.4f})")
+
+
 def validate(manifest, schema):
-    """Return a list of error strings; empty means valid."""
+    """Return a list of error strings; empty means valid. Raises SchemaError first."""
+    audit(schema)
     errors = []
     check(manifest, schema, schema, "$", errors)
     cross_references(manifest, errors)
+    conversions(manifest, errors)
     return errors
 
 

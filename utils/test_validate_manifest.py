@@ -96,6 +96,63 @@ class ManifestValidationTests(unittest.TestCase):
         manifest["fidelity"] = "validated"
         self.assertRejected(manifest, "$.fidelity: must equal")
 
+    def test_r_data_1_duplicate_source_id_fails(self):
+        manifest = self.manifest()
+        manifest["sources"].append(copy.deepcopy(manifest["sources"][1]))
+        self.assertRejected(manifest, "duplicate source id 'S1b'")
+
+    def test_r_data_1_conflict_citing_unregistered_source_fails(self):
+        manifest = self.manifest()
+        manifest["speed_limits"]["vfe_cas"]["conflicts"][0]["citation"]["source_id"] = "S99"
+        self.assertRejected(manifest, "conflicts[0].citation: source 'S99' is not in")
+
+    def test_r_data_1_read_source_requires_checksum(self):
+        manifest = self.manifest()
+        del manifest["sources"][1]["sha256_prefix"]
+        self.assertRejected(manifest, "$.sources[1]: missing required field 'sha256_prefix'")
+
+    def test_r_data_2_derived_value_without_derivation_fails(self):
+        manifest = self.manifest()
+        del manifest["configuration"]["serial_range"]["last"]["derivation"]
+        self.assertRejected(manifest, "serial_range.last: missing required field 'derivation'")
+
+    def test_r_data_2_wrong_si_conversion_fails(self):
+        manifest = self.manifest()
+        manifest["mass_limits"]["max_takeoff_normal"]["value"] = 1160.2893  # ramp mass
+        self.assertRejected(manifest, "max_takeoff_normal: value 1160.2893 kg does not match")
+
+    def test_r_data_2_unlisted_conversion_pair_fails(self):
+        manifest = self.manifest()
+        manifest["mass_limits"]["max_takeoff_normal"]["original_unit"] = "kgf"
+        self.assertRejected(manifest, "no conversion factor for 'kgf'")
+
+    def test_conversion_table_matches_exact_definitions(self):
+        self.assertAlmostEqual(vm.CONVERSIONS[("kt", "m/s")] * 3600, 1852)
+        self.assertEqual(vm.CONVERSIONS[("lb", "kg")], 0.45359237)
+        self.assertEqual(vm.CONVERSIONS[("in", "m")], 0.0254)
+
+    def test_airspeed_requires_reference(self):
+        manifest = self.manifest()
+        del manifest["speed_limits"]["vne_cas"]["reference"]
+        self.assertRejected(manifest, "vne_cas: missing required field 'reference'")
+
+    def test_nested_unsupported_schema_keyword_is_rejected_before_validation(self):
+        schema = copy.deepcopy(self.schema)
+        # Unreached for this manifest's values: only a static audit can see it.
+        schema["$defs"]["conflict"]["properties"]["note"]["maxLength"] = 10
+        with self.assertRaises(vm.SchemaError):
+            vm.validate(self.manifest(), schema)
+        schema = copy.deepcopy(self.schema)
+        schema["$defs"]["unused"] = {"oneOf": [True]}
+        with self.assertRaises(vm.SchemaError):
+            vm.validate({}, schema)
+
+    def test_unresolvable_ref_is_schema_error(self):
+        schema = copy.deepcopy(self.schema)
+        schema["properties"]["mass_limits"] = {"$ref": "#/$defs/missing"}
+        with self.assertRaises(vm.SchemaError):
+            vm.validate(self.manifest(), schema)
+
     def test_unsupported_schema_keyword_is_rejected(self):
         schema = copy.deepcopy(self.schema)
         schema["oneOf"] = [True]

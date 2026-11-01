@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/gregoryyy/gefly/data/schema/aircraft-manifest.schema.json",
   "title": "Gefly aircraft rights/applicability manifest",
-  "description": "Identifies one aircraft configuration, its source-cited limits and the rights of each source (R-AIR-1, R-DATA-1, R-DATA-2, R-FID-3). Not a flight model. utils/validate_manifest.py implements this subset of JSON Schema plus cross-reference rules.",
+  "description": "Identifies one aircraft configuration, its source-cited limits and the rights of each source (R-AIR-1, R-DATA-1, R-DATA-2, R-FID-3). Not a flight model. utils/validate_manifest.py implements this subset of JSON Schema plus cross-reference and unit-conversion rules.",
   "type": "object",
   "required": [
     "schema_version", "manifest_id", "manifest_version", "status", "fidelity",
@@ -150,6 +150,10 @@
       "allOf": [
         {"$ref": "#/$defs/status_rules"},
         {
+          "if": {"properties": {"unit": {"const": "m/s"}}},
+          "then": {"required": ["reference"]}
+        },
+        {
           "if": {"properties": {"status": {"enum": ["sourced", "derived", "estimated"]}}},
           "then": {
             "required": ["original_value"],
@@ -254,6 +258,10 @@
         {
           "if": {"properties": {"url": {"type": "null"}}},
           "then": {"required": ["todo"]}
+        },
+        {
+          "if": {"properties": {"access_status": {"enum": ["read", "read_selected_pages"]}}},
+          "then": {"required": ["sha256_prefix"]}
         }
       ]
     }
