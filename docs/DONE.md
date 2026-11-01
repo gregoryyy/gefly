@@ -35,6 +35,180 @@ failed before reviewer initialization on the read-only filesystem; formal peer
 acceptance remains blocked and TODO 0.19 stays open. No product fixes made.
 Current foundation CI passed 41 tests; study tests passed 7 and skipped 9.
 
+## 2026-11-01 18:18 — Draft scenario and review contract extension v1.1
+
+TODO: 1.9 in progress. Agent: Claude Code orchestrator; product subagent.
+
+**Implementation notes**
+
+Added [SCENARIO-CONTRACTS](design/SCENARIO-CONTRACTS.md) as a minor extension of
+CONTRACTS v1: one-directional scenario record (package, briefing, catalog snapshot,
+aircraft manifest, environment), shared event envelope with logged/derived and digest
+group per event type, review record with re-simulated seek, a code1/code2 field
+ownership table for milestone 2, and 15 reconciled naming conflicts across the
+CONTRACTS, BRIEFING, EXERCISE-01, EXPERIENCES and PHONE-CONTROL drafts.
+
+**Deviations**
+
+Orchestrator accepts C3 (`magvar_east_rad` JS-computed, `ind` group, consistent with
+the WASM-only `sim` digest rule) and C5 (altimeter state holds the set pressure; the
+reference is scenario-expected plus a derived match, since the knob only sets a
+pressure) as technical consistency fixes within Q18; the user can revise them. Not
+yet reviewed. Peer pending (batched).
+## 2026-11-01 18:21 — Survey open Cessna 172 aerodynamic data for the E2 model
+
+TODO: E2 preparation. Agent: Claude Code orchestrator; researcher subagent.
+
+**Implementation notes**
+
+Added [C172 aero data sources](research/2026-11-01-c172-aero-data-sources.md): no
+open 172S-specific aero, propeller, inertia or gear data found. Usable earlier-model
+sources: NASA TM-80163 flight-test derivatives (public domain, aircraft identity
+inferred), KU-M-407-7 1974 172M identification (cite-only), consistent inertia sets,
+NASA CR-2605 DATCOM estimates, NASA SP-468 drag/L-D; Lycoming IO-360-L2A curve is
+copyrighted; no public McCauley 1A170E data. Proposed calibration vs holdout split.
+
+**Deviations**
+
+No coefficients added. Needs Q5 decisions (digitising the Lycoming curve, OpenVSP
+licence) before a model can be built. Not yet reviewed. Peer pending (batched).
+
+## 2026-11-01 16:47 — Draft the paired-iPhone control specification
+
+TODO: 1.13 in progress. Agent: Claude Code orchestrator; product subagent (with source
+
+## 2026-11-01 14:07 — Extract cited 172S POH values
+
+TODO: 1.3/1.5 support. Agent: Claude Code orchestrator; researcher/housekeeping
+subagent.
+
+**Implementation notes**
+
+Per the user's decision, extracted only needed POH (172SPHUS Rev 5, S17) values as
+cited facts into `data/aircraft/c172s-classic/poh-values.json` (66 tabulated numbers
+checked against rendered pages): airspeed calibration points for the Exercise 01
+bands (p. 5-9), stall speeds (p. 5-12), short-field take-off/landing distances at
+2,550 lb near EDFE elevation (pp. 5-14, 5-23/24), climb (p. 5-17), and paraphrased
+correction notes. Separate schema, extended validator, 25 POH tests (19 initial, 6 after review) and a
+[research note](research/2026-11-01-c172s-poh-values.md).
+
+**Deviations**
+
+POH gives short-field distances only; VFE 10° KCAS differs between p. 2-4 (107) and
+p. 5-9 (109), recorded as pending; applicability of later POH revisions to
+172S9491–9809 unchecked; not yet reviewed. Peer pending (batched).
+## 2026-11-01 13:34 — Draft scenario briefing, AFIS radio and checklist scope
+
+TODO: 1.8 in progress. Agent: Claude Code orchestrator; product subagent (with source
+
+## 2026-11-01 13:31 — Draft Exercise 01 acceptance criteria
+
+TODO: 1.5 in progress. Agent: Claude Code orchestrator; product subagent (with source
+research).
+
+**Implementation notes**
+
+Added [PHONE-CONTROL](design/PHONE-CONTROL.md) and its
+[source note](research/2026-11-01-phone-control-sources.md). Proposal: direct WebRTC
+data channel on the local network (unordered, no retransmission, no STUN/TURN), a
+short-lived encrypted pairing mailbox, single-use QR code plus a 6-digit code
+confirmed on both devices, mapping into the CONTRACTS input boundary with staleness
+and replay rejection, and keyboard/touchpad fallback.
+
+**Deviations**
+
+Draft; iOS orientation needs an HTTPS page, so hosting (open) blocks it; sensor rate
+and latency unmeasured, budget values are proposals; not yet reviewed. Peer pending
+(batched).
+Added [BRIEFING](design/BRIEFING.md) and its
+[source note](research/2026-11-01-briefing-radio-sources.md): snapshot briefing
+schema validated against scenario time with explicit failure states; QNH/QFE/STD flow
+into the environment; a later live adapter frozen into replay; AFIS (information, not
+clearances) text-radio scope with AI text limited to proposing intents; POH checklist
+items classified by modeled state. EDFE has no METAR in the checked feed, so briefings
+pair EDDF METAR/TAF with a generated EDFE report.
+
+**Deviations**
+
+Draft; WMO-No. 306, ICAO Annex 3/Doc 4444/9432 and DFS AIP not read; not yet
+reviewed. Peer pending (batched).
+Added [EXERCISE-01](design/EXERCISE-01.md): holding-point start with engine running,
+12 phases with measures, units and state fields, pass/fail/feedback rules, assists,
+replay markers and environment cases; and its
+[source note](research/2026-11-01-exercise-01-sources.md). Tolerances are labelled by
+source: EASA AMC1 FCL.235 skill-test guidance (used as instructional adaptation),
+C172S POH (page-cited), EDFE operator material (cite-only), or instructional proposal
+pending instructor review.
+
+**Deviations**
+
+Draft, not frozen: runway, instructor reviewer, AIP circuit data and the POH climb-
+speed discrepancy are open; not yet reviewed. Peer pending (batched).
+
+## 2026-11-01 13:29 — Draft the 172S classic-panel aircraft manifest
+
+TODO: 1.3 in progress. Agent: Claude Code orchestrator; housekeeping subagent.
+
+**Implementation notes**
+
+Added `data/aircraft/c172s-classic/manifest.json` (v0.1.0, fidelity not validated):
+serials 172S9491–172S9809, IO-360-L2A, McCauley propeller, masses and speed limits
+only where page-cited, with SI and original units, R-DATA-2 status, uncertainty and
+a source register with rights and hashes. Conflicting sources (VFE CAS, utility ramp
+mass) are recorded as unknown with both readings. JSON Schema, stdlib validator and
+15 tests added to the shared gate.
+
+**Deviations**
+
+Draft; FAA 3A12 Rev 88 and engine TCDS 1E10 not read; avionics fit TBD; not yet
+reviewed. Aircraft data: peer pending (batched), required before milestone acceptance.
+
+## 2026-11-01 13:06 — Add study checks to the shared CI gate
+
+TODO: 1.1.2 in progress. Agent: Claude Code orchestrator; code1 subagent.
+
+**Implementation notes**
+
+`utils/ci.py` now runs the `studies/e1-jsbsim` tests in a separate interpreter
+(fails on missing/empty/failing/import errors, reports skips) and
+`check-synthetic.mjs` with node; a missing node is reported as a skip and the final
+line says "passed with skipped check". Hosted CI uses `--require-node` with the
+runner's preinstalled Node.js. 8 new negative/positive tests (49 tool tests total).
+
+**Deviations**
+
+Local only: hosted run and independent review pending. Peer pending (batched).
+
+## 2026-11-01 13:59 — Confirm the height datum; contracts v1 agreed
+
+TODO: 1.4 complete pending merge. Agent: Claude Code orchestrator (no subagents).
+
+**Implementation notes**
+
+The user accepted the physical-height convention (GAPS Q18 O-3); CONTRACTS no longer
+marks it pending. With Q18 resolved and three review rounds closed, contracts v1 is
+the agreed basis for parallel product coding.
+
+**Deviations**
+
+Peer pending (batched); geoid grid full hashes and terrain beyond Hessen remain open.
+
+## 2026-11-01 12:58 — Draft shared contracts v1
+
+TODO: 1.4 in progress. Agent: Claude Code orchestrator; product subagent.
+
+**Implementation notes**
+
+Added [CONTRACTS](design/CONTRACTS.md): SI units and frames with conversion
+boundaries, fixed 1/120 s step and step-index clock, pilot-sense input schema with
+applied-step logging, three-layer state (sim/instruments/teaching), replay metadata
+with seed set before RunIC, 17 sourced fixtures, versioning and a v0.1→v1 message
+table. Proposed SPEC wording for R-SIM-3/R-SIM-4 is not applied.
+
+**Deviations**
+
+Draft only; nine open questions (O-1..O-9) need decisions; not yet independently
+reviewed. Peer pending (batched).
 ## 2026-11-01 13:07 — Draft the flight-experience package and LLM boundary
 
 TODO: 1.10 in progress. Agent: Claude Code orchestrator; product subagent.

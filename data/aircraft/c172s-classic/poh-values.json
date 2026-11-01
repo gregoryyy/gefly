@@ -1,0 +1,1178 @@
+{
+  "$comment": "Selected POH values as cited facts; not a copy of any POH table or figure and not a flight model. Field guide: README.md in this directory. Schema: data/schema/poh-values.schema.json.",
+  "schema_version": "1.0.0",
+  "values_id": "gefly.aircraft.c172s-classic.poh-values",
+  "values_version": "0.1.0",
+  "status": "draft",
+  "fidelity": "not validated",
+  "manifest": {
+    "path": "manifest.json",
+    "manifest_id": "gefly.aircraft.c172s-classic"
+  },
+  "extraction": "User decision 2026-11-01 13:59: extract only values the project needs (Exercise 01 IAS assessment and plausibility checks near EDFE), as individual cited facts; no Cessna text, whole table or figure. Each quantity was read in S17 and checked against a rendered page image.",
+  "airspeed_calibration": {
+    "normal_flaps_0": {
+      "static_source": "normal",
+      "flaps_deg": 0,
+      "condition": "Flaps up; power required for level flight or maximum power descent",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-9",
+          "section": "Section 5, Figure 5-1 sheet 1 of 2, normal static source; page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "selection": "Points 50-110 KIAS: Exercise 01 flaps-up bands (climb, approach) and a downwind target still TBD up to about 110 KIAS.",
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 1 kt; no tolerance stated. Applies only to the normal static source, with the stated power condition; behaviour between points is not given (interpolation is a user choice).",
+      "points": [
+        {
+          "ias": {
+            "value": 25.7222,
+            "unit": "m/s",
+            "original_value": 50,
+            "original_unit": "kt",
+            "reference": "IAS"
+          },
+          "cas": {
+            "value": 28.8089,
+            "unit": "m/s",
+            "original_value": 56,
+            "original_unit": "kt",
+            "reference": "CAS"
+          }
+        },
+        {
+          "ias": {
+            "value": 30.8667,
+            "unit": "m/s",
+            "original_value": 60,
+            "original_unit": "kt",
+            "reference": "IAS"
+          },
+          "cas": {
+            "value": 31.8956,
+            "unit": "m/s",
+            "original_value": 62,
+            "original_unit": "kt",
+            "reference": "CAS"
+          }
+        },
+        {
+          "ias": {
+            "value": 36.0111,
+            "unit": "m/s",
+            "original_value": 70,
+            "original_unit": "kt",
+            "reference": "IAS"
+          },
+          "cas": {
+            "value": 36.0111,
+            "unit": "m/s",
+            "original_value": 70,
+            "original_unit": "kt",
+            "reference": "CAS"
+          }
+        },
+        {
+          "ias": {
+            "value": 41.1556,
+            "unit": "m/s",
+            "original_value": 80,
+            "original_unit": "kt",
+            "reference": "IAS"
+          },
+          "cas": {
+            "value": 40.1267,
+            "unit": "m/s",
+            "original_value": 78,
+            "original_unit": "kt",
+            "reference": "CAS"
+          }
+        },
+        {
+          "ias": {
+            "value": 46.3,
+            "unit": "m/s",
+            "original_value": 90,
+            "original_unit": "kt",
+            "reference": "IAS"
+          },
+          "cas": {
+            "value": 44.7567,
+            "unit": "m/s",
+            "original_value": 87,
+            "original_unit": "kt",
+            "reference": "CAS"
+          }
+        },
+        {
+          "ias": {
+            "value": 51.4444,
+            "unit": "m/s",
+            "original_value": 100,
+            "original_unit": "kt",
+            "reference": "IAS"
+          },
+          "cas": {
+            "value": 49.9011,
+            "unit": "m/s",
+            "original_value": 97,
+            "original_unit": "kt",
+            "reference": "CAS"
+          }
+        },
+        {
+          "ias": {
+            "value": 56.5889,
+            "unit": "m/s",
+            "original_value": 110,
+            "original_unit": "kt",
+            "reference": "IAS"
+          },
+          "cas": {
+            "value": 55.0456,
+            "unit": "m/s",
+            "original_value": 107,
+            "original_unit": "kt",
+            "reference": "CAS"
+          }
+        }
+      ]
+    },
+    "normal_flaps_10": {
+      "static_source": "normal",
+      "flaps_deg": 10,
+      "condition": "Flaps 10 deg; power required for level flight or maximum power descent",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-9",
+          "section": "Section 5, Figure 5-1 sheet 1 of 2, normal static source; page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "selection": "Points 50-90 KIAS: Exercise 01 rotation and initial-climb bands with take-off flaps.",
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 1 kt; no tolerance stated. Applies only to the normal static source, with the stated power condition; behaviour between points is not given (interpolation is a user choice).",
+      "points": [
+        {
+          "ias": {
+            "value": 25.7222,
+            "unit": "m/s",
+            "original_value": 50,
+            "original_unit": "kt",
+            "reference": "IAS"
+          },
+          "cas": {
+            "value": 29.3233,
+            "unit": "m/s",
+            "original_value": 57,
+            "original_unit": "kt",
+            "reference": "CAS"
+          }
+        },
+        {
+          "ias": {
+            "value": 30.8667,
+            "unit": "m/s",
+            "original_value": 60,
+            "original_unit": "kt",
+            "reference": "IAS"
+          },
+          "cas": {
+            "value": 32.41,
+            "unit": "m/s",
+            "original_value": 63,
+            "original_unit": "kt",
+            "reference": "CAS"
+          }
+        },
+        {
+          "ias": {
+            "value": 36.0111,
+            "unit": "m/s",
+            "original_value": 70,
+            "original_unit": "kt",
+            "reference": "IAS"
+          },
+          "cas": {
+            "value": 36.5256,
+            "unit": "m/s",
+            "original_value": 71,
+            "original_unit": "kt",
+            "reference": "CAS"
+          }
+        },
+        {
+          "ias": {
+            "value": 41.1556,
+            "unit": "m/s",
+            "original_value": 80,
+            "original_unit": "kt",
+            "reference": "IAS"
+          },
+          "cas": {
+            "value": 41.1556,
+            "unit": "m/s",
+            "original_value": 80,
+            "original_unit": "kt",
+            "reference": "CAS"
+          }
+        },
+        {
+          "ias": {
+            "value": 46.3,
+            "unit": "m/s",
+            "original_value": 90,
+            "original_unit": "kt",
+            "reference": "IAS"
+          },
+          "cas": {
+            "value": 45.7856,
+            "unit": "m/s",
+            "original_value": 89,
+            "original_unit": "kt",
+            "reference": "CAS"
+          }
+        }
+      ]
+    },
+    "normal_flaps_30": {
+      "static_source": "normal",
+      "flaps_deg": 30,
+      "condition": "Flaps 30 deg; power required for level flight or maximum power descent",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-9",
+          "section": "Section 5, Figure 5-1 sheet 1 of 2, normal static source; page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "selection": "Points 50-80 KIAS: Exercise 01 flaps-30 final-approach band (60-80 KIAS).",
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 1 kt; no tolerance stated. Applies only to the normal static source, with the stated power condition; behaviour between points is not given (interpolation is a user choice).",
+      "points": [
+        {
+          "ias": {
+            "value": 25.7222,
+            "unit": "m/s",
+            "original_value": 50,
+            "original_unit": "kt",
+            "reference": "IAS"
+          },
+          "cas": {
+            "value": 28.8089,
+            "unit": "m/s",
+            "original_value": 56,
+            "original_unit": "kt",
+            "reference": "CAS"
+          }
+        },
+        {
+          "ias": {
+            "value": 30.8667,
+            "unit": "m/s",
+            "original_value": 60,
+            "original_unit": "kt",
+            "reference": "IAS"
+          },
+          "cas": {
+            "value": 32.41,
+            "unit": "m/s",
+            "original_value": 63,
+            "original_unit": "kt",
+            "reference": "CAS"
+          }
+        },
+        {
+          "ias": {
+            "value": 36.0111,
+            "unit": "m/s",
+            "original_value": 70,
+            "original_unit": "kt",
+            "reference": "IAS"
+          },
+          "cas": {
+            "value": 37.04,
+            "unit": "m/s",
+            "original_value": 72,
+            "original_unit": "kt",
+            "reference": "CAS"
+          }
+        },
+        {
+          "ias": {
+            "value": 41.1556,
+            "unit": "m/s",
+            "original_value": 80,
+            "original_unit": "kt",
+            "reference": "IAS"
+          },
+          "cas": {
+            "value": 41.67,
+            "unit": "m/s",
+            "original_value": 81,
+            "original_unit": "kt",
+            "reference": "CAS"
+          }
+        }
+      ]
+    }
+  },
+  "stall_speeds": {
+    "flaps_0_rearward_cg_ias": {
+      "value": 24.6933,
+      "unit": "m/s",
+      "original_value": 48,
+      "original_unit": "kt",
+      "reference": "IAS",
+      "condition": "2550 lb, power off, wings level (0 deg bank), flaps up, most rearward CG",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-12",
+          "section": "Section 5, Figure 5-3, 0 deg bank columns; page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "POH note: KIAS values are approximate. Tabulated to 1 kt; no tolerance stated."
+    },
+    "flaps_0_rearward_cg_cas": {
+      "value": 27.2656,
+      "unit": "m/s",
+      "original_value": 53,
+      "original_unit": "kt",
+      "reference": "CAS",
+      "condition": "2550 lb, power off, wings level (0 deg bank), flaps up, most rearward CG",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-12",
+          "section": "Section 5, Figure 5-3, 0 deg bank columns; page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 1 kt; no tolerance stated."
+    },
+    "flaps_10_rearward_cg_ias": {
+      "value": 21.6067,
+      "unit": "m/s",
+      "original_value": 42,
+      "original_unit": "kt",
+      "reference": "IAS",
+      "condition": "2550 lb, power off, wings level (0 deg bank), flaps 10 deg, most rearward CG",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-12",
+          "section": "Section 5, Figure 5-3, 0 deg bank columns; page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "POH note: KIAS values are approximate. Tabulated to 1 kt; no tolerance stated."
+    },
+    "flaps_10_rearward_cg_cas": {
+      "value": 25.7222,
+      "unit": "m/s",
+      "original_value": 50,
+      "original_unit": "kt",
+      "reference": "CAS",
+      "condition": "2550 lb, power off, wings level (0 deg bank), flaps 10 deg, most rearward CG",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-12",
+          "section": "Section 5, Figure 5-3, 0 deg bank columns; page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 1 kt; no tolerance stated."
+    },
+    "flaps_30_rearward_cg_ias": {
+      "value": 20.5778,
+      "unit": "m/s",
+      "original_value": 40,
+      "original_unit": "kt",
+      "reference": "IAS",
+      "condition": "2550 lb, power off, wings level (0 deg bank), flaps 30 deg, most rearward CG",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-12",
+          "section": "Section 5, Figure 5-3, 0 deg bank columns; page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "POH note: KIAS values are approximate. Tabulated to 1 kt; no tolerance stated."
+    },
+    "flaps_30_rearward_cg_cas": {
+      "value": 24.6933,
+      "unit": "m/s",
+      "original_value": 48,
+      "original_unit": "kt",
+      "reference": "CAS",
+      "condition": "2550 lb, power off, wings level (0 deg bank), flaps 30 deg, most rearward CG",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-12",
+          "section": "Section 5, Figure 5-3, 0 deg bank columns; page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 1 kt; no tolerance stated."
+    },
+    "flaps_0_forward_cg_ias": {
+      "value": 24.6933,
+      "unit": "m/s",
+      "original_value": 48,
+      "original_unit": "kt",
+      "reference": "IAS",
+      "condition": "2550 lb, power off, wings level (0 deg bank), flaps up, most forward CG",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-12",
+          "section": "Section 5, Figure 5-3, 0 deg bank columns; page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "POH note: KIAS values are approximate. Tabulated to 1 kt; no tolerance stated."
+    },
+    "flaps_0_forward_cg_cas": {
+      "value": 27.2656,
+      "unit": "m/s",
+      "original_value": 53,
+      "original_unit": "kt",
+      "reference": "CAS",
+      "condition": "2550 lb, power off, wings level (0 deg bank), flaps up, most forward CG",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-12",
+          "section": "Section 5, Figure 5-3, 0 deg bank columns; page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 1 kt; no tolerance stated."
+    },
+    "flaps_10_forward_cg_ias": {
+      "value": 22.1211,
+      "unit": "m/s",
+      "original_value": 43,
+      "original_unit": "kt",
+      "reference": "IAS",
+      "condition": "2550 lb, power off, wings level (0 deg bank), flaps 10 deg, most forward CG",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-12",
+          "section": "Section 5, Figure 5-3, 0 deg bank columns; page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "POH note: KIAS values are approximate. Tabulated to 1 kt; no tolerance stated."
+    },
+    "flaps_10_forward_cg_cas": {
+      "value": 26.2367,
+      "unit": "m/s",
+      "original_value": 51,
+      "original_unit": "kt",
+      "reference": "CAS",
+      "condition": "2550 lb, power off, wings level (0 deg bank), flaps 10 deg, most forward CG",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-12",
+          "section": "Section 5, Figure 5-3, 0 deg bank columns; page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 1 kt; no tolerance stated."
+    },
+    "flaps_30_forward_cg_ias": {
+      "value": 20.5778,
+      "unit": "m/s",
+      "original_value": 40,
+      "original_unit": "kt",
+      "reference": "IAS",
+      "condition": "2550 lb, power off, wings level (0 deg bank), flaps 30 deg, most forward CG",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-12",
+          "section": "Section 5, Figure 5-3, 0 deg bank columns; page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "POH note: KIAS values are approximate. Tabulated to 1 kt; no tolerance stated."
+    },
+    "flaps_30_forward_cg_cas": {
+      "value": 24.6933,
+      "unit": "m/s",
+      "original_value": 48,
+      "original_unit": "kt",
+      "reference": "CAS",
+      "condition": "2550 lb, power off, wings level (0 deg bank), flaps 30 deg, most forward CG",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-12",
+          "section": "Section 5, Figure 5-3, 0 deg bank columns; page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 1 kt; no tolerance stated."
+    }
+  },
+  "takeoff_distance": {
+    "ground_roll_sl_10c": {
+      "value": 281.94,
+      "unit": "m",
+      "original_value": 925,
+      "original_unit": "ft",
+      "condition": "Short-field technique; 2550 lb; flaps 10 deg; full throttle before brake release; paved, level, dry runway; zero wind; lift-off 51 KIAS; 50 ft at 56 KIAS; sea-level pressure altitude; 10 deg C",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-14",
+          "section": "Section 5, Figure 5-5 sheet 1 of 3 (2550 lb); page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "ft x 0.3048 m, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 5 ft; computed from flight tests with airplane and engine in good condition and average piloting technique (p. 5-3); no tolerance stated."
+    },
+    "total_50ft_sl_10c": {
+      "value": 480.06,
+      "unit": "m",
+      "original_value": 1575,
+      "original_unit": "ft",
+      "condition": "Short-field technique; 2550 lb; flaps 10 deg; full throttle before brake release; paved, level, dry runway; zero wind; lift-off 51 KIAS; 50 ft at 56 KIAS; sea-level pressure altitude; 10 deg C; total distance to clear a 50 ft obstacle",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-14",
+          "section": "Section 5, Figure 5-5 sheet 1 of 3 (2550 lb); page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "ft x 0.3048 m, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 5 ft; computed from flight tests with airplane and engine in good condition and average piloting technique (p. 5-3); no tolerance stated."
+    },
+    "ground_roll_sl_20c": {
+      "value": 303.276,
+      "unit": "m",
+      "original_value": 995,
+      "original_unit": "ft",
+      "condition": "Short-field technique; 2550 lb; flaps 10 deg; full throttle before brake release; paved, level, dry runway; zero wind; lift-off 51 KIAS; 50 ft at 56 KIAS; sea-level pressure altitude; 20 deg C",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-14",
+          "section": "Section 5, Figure 5-5 sheet 1 of 3 (2550 lb); page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "ft x 0.3048 m, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 5 ft; computed from flight tests with airplane and engine in good condition and average piloting technique (p. 5-3); no tolerance stated."
+    },
+    "total_50ft_sl_20c": {
+      "value": 515.112,
+      "unit": "m",
+      "original_value": 1690,
+      "original_unit": "ft",
+      "condition": "Short-field technique; 2550 lb; flaps 10 deg; full throttle before brake release; paved, level, dry runway; zero wind; lift-off 51 KIAS; 50 ft at 56 KIAS; sea-level pressure altitude; 20 deg C; total distance to clear a 50 ft obstacle",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-14",
+          "section": "Section 5, Figure 5-5 sheet 1 of 3 (2550 lb); page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "ft x 0.3048 m, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 5 ft; computed from flight tests with airplane and engine in good condition and average piloting technique (p. 5-3); no tolerance stated."
+    },
+    "ground_roll_1000ft_10c": {
+      "value": 307.848,
+      "unit": "m",
+      "original_value": 1010,
+      "original_unit": "ft",
+      "condition": "Short-field technique; 2550 lb; flaps 10 deg; full throttle before brake release; paved, level, dry runway; zero wind; lift-off 51 KIAS; 50 ft at 56 KIAS; pressure altitude 1000 ft; 10 deg C",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-14",
+          "section": "Section 5, Figure 5-5 sheet 1 of 3 (2550 lb); page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "ft x 0.3048 m, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 5 ft; computed from flight tests with airplane and engine in good condition and average piloting technique (p. 5-3); no tolerance stated."
+    },
+    "total_50ft_1000ft_10c": {
+      "value": 524.256,
+      "unit": "m",
+      "original_value": 1720,
+      "original_unit": "ft",
+      "condition": "Short-field technique; 2550 lb; flaps 10 deg; full throttle before brake release; paved, level, dry runway; zero wind; lift-off 51 KIAS; 50 ft at 56 KIAS; pressure altitude 1000 ft; 10 deg C; total distance to clear a 50 ft obstacle",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-14",
+          "section": "Section 5, Figure 5-5 sheet 1 of 3 (2550 lb); page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "ft x 0.3048 m, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 5 ft; computed from flight tests with airplane and engine in good condition and average piloting technique (p. 5-3); no tolerance stated."
+    },
+    "ground_roll_1000ft_20c": {
+      "value": 332.232,
+      "unit": "m",
+      "original_value": 1090,
+      "original_unit": "ft",
+      "condition": "Short-field technique; 2550 lb; flaps 10 deg; full throttle before brake release; paved, level, dry runway; zero wind; lift-off 51 KIAS; 50 ft at 56 KIAS; pressure altitude 1000 ft; 20 deg C",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-14",
+          "section": "Section 5, Figure 5-5 sheet 1 of 3 (2550 lb); page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "ft x 0.3048 m, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 5 ft; computed from flight tests with airplane and engine in good condition and average piloting technique (p. 5-3); no tolerance stated."
+    },
+    "total_50ft_1000ft_20c": {
+      "value": 563.88,
+      "unit": "m",
+      "original_value": 1850,
+      "original_unit": "ft",
+      "condition": "Short-field technique; 2550 lb; flaps 10 deg; full throttle before brake release; paved, level, dry runway; zero wind; lift-off 51 KIAS; 50 ft at 56 KIAS; pressure altitude 1000 ft; 20 deg C; total distance to clear a 50 ft obstacle",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-14",
+          "section": "Section 5, Figure 5-5 sheet 1 of 3 (2550 lb); page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "ft x 0.3048 m, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 5 ft; computed from flight tests with airplane and engine in good condition and average piloting technique (p. 5-3); no tolerance stated."
+    }
+  },
+  "landing_distance": {
+    "ground_roll_sl_10c": {
+      "value": 172.212,
+      "unit": "m",
+      "original_value": 565,
+      "original_unit": "ft",
+      "condition": "Short-field technique; 2550 lb; flaps 30 deg; power off; maximum braking; paved, level, dry runway; zero wind; 50 ft at 61 KIAS; sea-level pressure altitude; 10 deg C",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-23/5-24",
+          "section": "Section 5, Figure 5-11 (2550 lb); page mark Revision 4"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "ft x 0.3048 m, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 5 ft; computed from flight tests with airplane and engine in good condition and average piloting technique (p. 5-3); no tolerance stated."
+    },
+    "total_50ft_sl_10c": {
+      "value": 402.336,
+      "unit": "m",
+      "original_value": 1320,
+      "original_unit": "ft",
+      "condition": "Short-field technique; 2550 lb; flaps 30 deg; power off; maximum braking; paved, level, dry runway; zero wind; 50 ft at 61 KIAS; sea-level pressure altitude; 10 deg C; total distance from a 50 ft obstacle",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-23/5-24",
+          "section": "Section 5, Figure 5-11 (2550 lb); page mark Revision 4"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "ft x 0.3048 m, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 5 ft; computed from flight tests with airplane and engine in good condition and average piloting technique (p. 5-3); no tolerance stated."
+    },
+    "ground_roll_sl_20c": {
+      "value": 178.308,
+      "unit": "m",
+      "original_value": 585,
+      "original_unit": "ft",
+      "condition": "Short-field technique; 2550 lb; flaps 30 deg; power off; maximum braking; paved, level, dry runway; zero wind; 50 ft at 61 KIAS; sea-level pressure altitude; 20 deg C",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-23/5-24",
+          "section": "Section 5, Figure 5-11 (2550 lb); page mark Revision 4"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "ft x 0.3048 m, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 5 ft; computed from flight tests with airplane and engine in good condition and average piloting technique (p. 5-3); no tolerance stated."
+    },
+    "total_50ft_sl_20c": {
+      "value": 411.48,
+      "unit": "m",
+      "original_value": 1350,
+      "original_unit": "ft",
+      "condition": "Short-field technique; 2550 lb; flaps 30 deg; power off; maximum braking; paved, level, dry runway; zero wind; 50 ft at 61 KIAS; sea-level pressure altitude; 20 deg C; total distance from a 50 ft obstacle",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-23/5-24",
+          "section": "Section 5, Figure 5-11 (2550 lb); page mark Revision 4"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "ft x 0.3048 m, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 5 ft; computed from flight tests with airplane and engine in good condition and average piloting technique (p. 5-3); no tolerance stated."
+    },
+    "ground_roll_1000ft_10c": {
+      "value": 178.308,
+      "unit": "m",
+      "original_value": 585,
+      "original_unit": "ft",
+      "condition": "Short-field technique; 2550 lb; flaps 30 deg; power off; maximum braking; paved, level, dry runway; zero wind; 50 ft at 61 KIAS; pressure altitude 1000 ft; 10 deg C",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-23/5-24",
+          "section": "Section 5, Figure 5-11 (2550 lb); page mark Revision 4"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "ft x 0.3048 m, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 5 ft; computed from flight tests with airplane and engine in good condition and average piloting technique (p. 5-3); no tolerance stated."
+    },
+    "total_50ft_1000ft_10c": {
+      "value": 411.48,
+      "unit": "m",
+      "original_value": 1350,
+      "original_unit": "ft",
+      "condition": "Short-field technique; 2550 lb; flaps 30 deg; power off; maximum braking; paved, level, dry runway; zero wind; 50 ft at 61 KIAS; pressure altitude 1000 ft; 10 deg C; total distance from a 50 ft obstacle",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-23/5-24",
+          "section": "Section 5, Figure 5-11 (2550 lb); page mark Revision 4"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "ft x 0.3048 m, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 5 ft; computed from flight tests with airplane and engine in good condition and average piloting technique (p. 5-3); no tolerance stated."
+    },
+    "ground_roll_1000ft_20c": {
+      "value": 184.404,
+      "unit": "m",
+      "original_value": 605,
+      "original_unit": "ft",
+      "condition": "Short-field technique; 2550 lb; flaps 30 deg; power off; maximum braking; paved, level, dry runway; zero wind; 50 ft at 61 KIAS; pressure altitude 1000 ft; 20 deg C",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-23/5-24",
+          "section": "Section 5, Figure 5-11 (2550 lb); page mark Revision 4"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "ft x 0.3048 m, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 5 ft; computed from flight tests with airplane and engine in good condition and average piloting technique (p. 5-3); no tolerance stated."
+    },
+    "total_50ft_1000ft_20c": {
+      "value": 422.148,
+      "unit": "m",
+      "original_value": 1385,
+      "original_unit": "ft",
+      "condition": "Short-field technique; 2550 lb; flaps 30 deg; power off; maximum braking; paved, level, dry runway; zero wind; 50 ft at 61 KIAS; pressure altitude 1000 ft; 20 deg C; total distance from a 50 ft obstacle",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-23/5-24",
+          "section": "Section 5, Figure 5-11 (2550 lb); page mark Revision 4"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "ft x 0.3048 m, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 5 ft; computed from flight tests with airplane and engine in good condition and average piloting technique (p. 5-3); no tolerance stated."
+    }
+  },
+  "climb": {
+    "climb_speed_sl": {
+      "value": 38.0689,
+      "unit": "m/s",
+      "original_value": 74,
+      "original_unit": "kt",
+      "reference": "IAS",
+      "condition": "Maximum rate of climb; 2550 lb; flaps up; full throttle; sea-level pressure altitude; climb speed column",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-17",
+          "section": "Section 5, Figure 5-6; page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 1 kt; no tolerance stated."
+    },
+    "rate_sl_0c": {
+      "value": 3.9878,
+      "unit": "m/s",
+      "original_value": 785,
+      "original_unit": "ft/min",
+      "reference": "vertical",
+      "condition": "Maximum rate of climb; 2550 lb; flaps up; full throttle; sea-level pressure altitude; 0 deg C; at the tabulated climb speed",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-17",
+          "section": "Section 5, Figure 5-6; page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "ft/min x 0.00508 m/s, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 5 ft/min; computed from flight tests with airplane and engine in good condition and average piloting technique (p. 5-3); no tolerance stated."
+    },
+    "rate_sl_20c": {
+      "value": 3.6068,
+      "unit": "m/s",
+      "original_value": 710,
+      "original_unit": "ft/min",
+      "reference": "vertical",
+      "condition": "Maximum rate of climb; 2550 lb; flaps up; full throttle; sea-level pressure altitude; 20 deg C; at the tabulated climb speed",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-17",
+          "section": "Section 5, Figure 5-6; page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "ft/min x 0.00508 m/s, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 5 ft/min; computed from flight tests with airplane and engine in good condition and average piloting technique (p. 5-3); no tolerance stated."
+    },
+    "climb_speed_2000ft": {
+      "value": 37.5544,
+      "unit": "m/s",
+      "original_value": 73,
+      "original_unit": "kt",
+      "reference": "IAS",
+      "condition": "Maximum rate of climb; 2550 lb; flaps up; full throttle; pressure altitude 2000 ft; climb speed column",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-17",
+          "section": "Section 5, Figure 5-6; page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 1 kt; no tolerance stated."
+    },
+    "rate_2000ft_0c": {
+      "value": 3.5306,
+      "unit": "m/s",
+      "original_value": 695,
+      "original_unit": "ft/min",
+      "reference": "vertical",
+      "condition": "Maximum rate of climb; 2550 lb; flaps up; full throttle; pressure altitude 2000 ft; 0 deg C; at the tabulated climb speed",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-17",
+          "section": "Section 5, Figure 5-6; page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "ft/min x 0.00508 m/s, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 5 ft/min; computed from flight tests with airplane and engine in good condition and average piloting technique (p. 5-3); no tolerance stated."
+    },
+    "rate_2000ft_20c": {
+      "value": 3.175,
+      "unit": "m/s",
+      "original_value": 625,
+      "original_unit": "ft/min",
+      "reference": "vertical",
+      "condition": "Maximum rate of climb; 2550 lb; flaps up; full throttle; pressure altitude 2000 ft; 20 deg C; at the tabulated climb speed",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-17",
+          "section": "Section 5, Figure 5-6; page mark July 8/98"
+        }
+      ],
+      "reading": "tabulated",
+      "conversion": "ft/min x 0.00508 m/s, rounded to 4 decimals",
+      "uncertainty": "Tabulated to 5 ft/min; computed from flight tests with airplane and engine in good condition and average piloting technique (p. 5-3); no tolerance stated."
+    }
+  },
+  "corrections": [
+    {
+      "applies_to": "takeoff_distance",
+      "summary": "Headwind shortens both distances by 10 % for every 9 kt of headwind.",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-14",
+          "section": "Section 5, Figure 5-5 sheet 1 of 3 (2550 lb); page mark July 8/98"
+        }
+      ]
+    },
+    {
+      "applies_to": "takeoff_distance",
+      "summary": "Tailwind up to 10 kt lengthens both distances by 10 % for every 2 kt; tailwinds above 10 kt are not covered.",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-14",
+          "section": "Section 5, Figure 5-5 sheet 1 of 3 (2550 lb); page mark July 8/98"
+        }
+      ]
+    },
+    {
+      "applies_to": "takeoff_distance",
+      "summary": "Dry grass: add 15 % of the tabulated ground-roll figure to the distances.",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-14",
+          "section": "Section 5, Figure 5-5 sheet 1 of 3 (2550 lb); page mark July 8/98"
+        }
+      ]
+    },
+    {
+      "applies_to": "takeoff_distance",
+      "summary": "Distances assume the short-field technique of Section 4; above 3000 ft field elevation the mixture is leaned before take-off (not relevant near EDFE).",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-14",
+          "section": "Section 5, Figure 5-5 sheet 1 of 3 (2550 lb); page mark July 8/98"
+        }
+      ]
+    },
+    {
+      "applies_to": "takeoff_distance",
+      "summary": "The sample problem recommends reading the next higher weight, altitude and temperature for a conservative figure.",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-4",
+          "section": "Section 5, sample problem, take-off; page mark July 8/98"
+        }
+      ]
+    },
+    {
+      "applies_to": "landing_distance",
+      "summary": "Headwind and tailwind corrections as for take-off (10 % per 9 kt headwind; 10 % per 2 kt tailwind up to 10 kt).",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-23/5-24",
+          "section": "Section 5, Figure 5-11 (2550 lb); page mark Revision 4"
+        }
+      ]
+    },
+    {
+      "applies_to": "landing_distance",
+      "summary": "Dry grass: add 45 % of the tabulated ground-roll figure to the distances.",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-23/5-24",
+          "section": "Section 5, Figure 5-11 (2550 lb); page mark Revision 4"
+        }
+      ]
+    },
+    {
+      "applies_to": "landing_distance",
+      "summary": "Flaps-up landing: approach 9 KIAS faster and expect distances about 35 % longer.",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-23/5-24",
+          "section": "Section 5, Figure 5-11 (2550 lb); page mark Revision 4"
+        }
+      ]
+    },
+    {
+      "applies_to": "landing_distance",
+      "summary": "Distances assume the short-field technique of Section 4.",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-23/5-24",
+          "section": "Section 5, Figure 5-11 (2550 lb); page mark Revision 4"
+        }
+      ]
+    },
+    {
+      "applies_to": "climb",
+      "summary": "Above 3000 ft the mixture is leaned for maximum RPM.",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-17",
+          "section": "Section 5, Figure 5-6; page mark July 8/98"
+        }
+      ]
+    },
+    {
+      "applies_to": "stall_speeds",
+      "summary": "Altitude loss in a stall recovery can reach 230 ft; KIAS values are approximate.",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "5-12",
+          "section": "Section 5, Figure 5-3, 0 deg bank columns; page mark July 8/98"
+        }
+      ]
+    }
+  ],
+  "not_extracted": [
+    {
+      "item": "Airspeed calibration points below 50 KIAS (all flap settings), above 110 KIAS (flaps up), above 90 KIAS (flaps 10 deg) and above 80 KIAS (flaps 30 deg)",
+      "reason": "Outside the Exercise 01 IAS bands; flap limit speeds are gated in KCAS (POH p. 2-4), and stall-region speeds are covered by the stall-speed values. Extract further points only when a criterion needs them."
+    },
+    {
+      "item": "Airspeed calibration, alternate static source (Figure 5-1 sheet 2, p. 5-10)",
+      "reason": "Not needed: Exercise 01 has no alternate-static case."
+    },
+    {
+      "item": "Stall speeds at 30, 45 and 60 deg bank",
+      "reason": "Not needed now; Exercise 01 proposes bank up to 30 deg but no bank-dependent stall criterion."
+    },
+    {
+      "item": "Take-off distances at 2400 and 2200 lb, other pressure altitudes and temperatures",
+      "reason": "Only the points bracketing EDFE elevation (sea level and 1000 ft) and ISA (10 and 20 deg C) at maximum weight are needed."
+    },
+    {
+      "item": "Normal-technique take-off and landing distances",
+      "reason": "Not published in S17 Section 5; the POH charts cover the short-field technique only."
+    },
+    {
+      "item": "Landing distances at other pressure altitudes and temperatures",
+      "reason": "As for take-off."
+    },
+    {
+      "item": "Rate of climb at other altitudes and temperatures; time, fuel and distance to climb; cruise, range and endurance",
+      "reason": "Not needed for Exercise 01."
+    }
+  ],
+  "pending": [
+    "Check later 172SPHUS revisions applicable to 172S9491-172S9809 for changed Section 5 values (GAPS Q3 manual revision).",
+    "Resolve the POH-internal difference at VFE flaps 10 deg: p. 2-4 pairs 110 KIAS with 107 KCAS, while Figure 5-1 (p. 5-9, point not extracted) gives a different KCAS at 110 KIAS with flaps 10 deg; see the research note."
+  ],
+  "prepared": {
+    "date": "2026-11-01",
+    "by": "Claude Code subagent researcher + housekeeping, dispatched by the orchestrator",
+    "from": [
+      "docs/research/2026-11-01-c172s-poh-values.md"
+    ]
+  }
+}
