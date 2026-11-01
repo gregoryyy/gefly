@@ -3,6 +3,26 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 18:18 — Draft scenario and review contract extension v1.1
+
+TODO: 1.9 in progress. Agent: Claude Code orchestrator; product subagent.
+
+**Implementation notes**
+
+Added [SCENARIO-CONTRACTS](design/SCENARIO-CONTRACTS.md) as a minor extension of
+CONTRACTS v1: one-directional scenario record (package, briefing, catalog snapshot,
+aircraft manifest, environment), shared event envelope with logged/derived and digest
+group per event type, review record with re-simulated seek, a code1/code2 field
+ownership table for milestone 2, and 15 reconciled naming conflicts across the
+CONTRACTS, BRIEFING, EXERCISE-01, EXPERIENCES and PHONE-CONTROL drafts.
+
+**Deviations**
+
+Orchestrator accepts C3 (`magvar_east_rad` JS-computed, `ind` group, consistent with
+the WASM-only `sim` digest rule) and C5 (altimeter state holds the set pressure; the
+reference is scenario-expected plus a derived match, since the knob only sets a
+pressure) as technical consistency fixes within Q18; the user can revise them. Not
+yet reviewed. Peer pending (batched).
 ## 2026-11-01 18:21 — Survey open Cessna 172 aerodynamic data for the E2 model
 
 TODO: E2 preparation. Agent: Claude Code orchestrator; researcher subagent.
