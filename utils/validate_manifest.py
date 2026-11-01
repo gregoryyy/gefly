@@ -18,6 +18,7 @@ cruise series points must be strictly increasing by engine speed, then manifold 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -329,32 +330,37 @@ def series_order(document, errors, groups=("engine_sea_level", "engine_fuel", "c
                                   f"pressure and power)")
 
 
-def validate_poh_values(document, schema, manifest):
+def validate_poh_values(document, schema, manifest, manifest_sha256=None):
     """Validate a POH value file against its schema and the named manifest's sources.
 
     Returns a list of error strings; empty means valid. Raises SchemaError first.
     """
-    errors = sibling_checks(document, schema, manifest)
+    errors = sibling_checks(document, schema, manifest, manifest_sha256)
     calibration_order(document, errors)
     if isinstance(document, dict):
         key_references(document, errors)
     return errors
 
 
-def validate_performance_values(document, schema, manifest):
+def validate_performance_values(document, schema, manifest, manifest_sha256=None):
     """Validate a performance value file against its schema and the named manifest's sources.
 
     Returns a list of error strings; empty means valid. Raises SchemaError first.
     """
-    errors = sibling_checks(document, schema, manifest)
+    errors = sibling_checks(document, schema, manifest, manifest_sha256)
     if isinstance(document, dict):
         series_order(document, errors)
         key_references(document, errors, PERFORMANCE_GROUPS)
     return errors
 
 
-def sibling_checks(document, schema, manifest):
-    """Schema, manifest-id, citation and conversion checks shared by value files."""
+def sibling_checks(document, schema, manifest, manifest_sha256=None):
+    """Schema, manifest-pin, citation and conversion checks shared by value files.
+
+    The pin is manifest_id, manifest_version and manifest_sha256, the SHA-256 of the
+    manifest file's exact bytes (not a canonical JSON form). The caller supplies the
+    digest of the bytes it loaded; without it the pin cannot be verified, which is an error.
+    """
     audit(schema)
     errors = []
     check(document, schema, schema, "$", errors)
@@ -367,6 +373,16 @@ def sibling_checks(document, schema, manifest):
         sources = []
     else:
         sources = manifest.get("sources")
+        pin = reference if isinstance(reference, dict) else {}
+        if pin.get("manifest_version") != manifest.get("manifest_version"):
+            errors.append(f"$.manifest.manifest_version: {pin.get('manifest_version')!r} does not "
+                          f"match the loaded manifest {manifest.get('manifest_version')!r}")
+        if manifest_sha256 is None:
+            errors.append("$.manifest.manifest_sha256: manifest file digest not supplied; "
+                          "the pin is unverified")
+        elif pin.get("manifest_sha256") != manifest_sha256:
+            errors.append(f"$.manifest.manifest_sha256: {pin.get('manifest_sha256')!r} does not "
+                          f"match the SHA-256 of the manifest file {manifest_sha256!r}")
     cross_references(document, errors, sources if isinstance(sources, list) else [])
     conversions(document, errors)
     return errors
@@ -384,15 +400,33 @@ def load_poh_values(path, schema, manifest_schema, validator=None):
     # Schema restricts the name; re-check here so a bad file cannot escape the directory.
     if not isinstance(name, str) or not re.fullmatch(r"[a-z0-9][a-z0-9-]*\.json", name):
         return [f"$.manifest.path: invalid manifest file name {name!r}"]
-    manifest = load_json(Path(path).parent / name)
+    manifest_path = Path(path).parent / name
+    manifest = load_json(manifest_path)
     errors = [f"manifest {name}: {error}" for error in validate(manifest, manifest_schema)]
-    return errors + (validator or validate_poh_values)(document, schema, manifest)
+    return errors + (validator or validate_poh_values)(document, schema, manifest,
+                                                       file_sha256(manifest_path))
+
+
+def file_sha256(path):
+    """SHA-256 hex digest of a file's exact bytes (the manifest pin definition)."""
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def reject_duplicate_keys(pairs):
+    """object_pairs_hook: a repeated key would silently keep only the last value."""
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON object key {key!r}")
+        result[key] = value
+    return result
 
 
 def load_json(path):
     with Path(path).open(encoding="utf-8") as stream:
-        return json.load(stream, parse_constant=lambda name: (_ for _ in ()).throw(
-            ValueError(f"non-finite number {name} is not JSON")))
+        return json.load(stream, object_pairs_hook=reject_duplicate_keys,
+                         parse_constant=lambda name: (_ for _ in ()).throw(
+                             ValueError(f"non-finite number {name} is not JSON")))
 
 
 def main(argv=None):

@@ -22,6 +22,10 @@ DEFAULT_PHASE_TIMEOUT_S = 600.0
 STUDY_RESULT_MARKER = "GEFLY-STUDY-RESULT"
 KILL_GRACE_S = 2.0
 POSIX = os.name == "posix"
+MIN_NODE = (24, 2)  # app/package.json engines.node ">=24.2"
+APP_DIR = "app"
+NETWORK_FAILURE = re.compile(r"ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ECONNREFUSED|ECONNRESET|"
+                             r"ENETUNREACH|SELF_SIGNED_CERT|UNABLE_TO_VERIFY|network|proxy|registry\.npmjs", re.IGNORECASE)
 
 
 def git_environment() -> dict[str, str]:
@@ -195,11 +199,12 @@ def _terminate_tree(process: subprocess.Popen) -> None:
 
 
 def run_child(command: list[str], timeout_s: float, capture: bool = False,
-              env: dict[str, str] | None = None) -> subprocess.CompletedProcess:
+              env: dict[str, str] | None = None,
+              merge_stderr: bool = False) -> subprocess.CompletedProcess:
     """Run a child with a whole-group timeout; raise TimeoutExpired after cleanup."""
     process = subprocess.Popen(
         command, cwd=ROOT, env=env, stdout=subprocess.PIPE if capture else None,
-        text=True, encoding="utf-8", errors="replace", start_new_session=POSIX)
+        stderr=subprocess.STDOUT if capture and merge_stderr else None, text=True, encoding="utf-8", errors="replace", start_new_session=POSIX)
     try:
         output, _ = process.communicate(timeout=timeout_s)
     except BaseException as error:  # timeout, or interruption of the gate itself
@@ -256,6 +261,78 @@ def run_render_check(require_node: bool, timeout_s: float) -> str:
               file=sys.stderr)
         return "failed"
     print("Synthetic render check: passed.", flush=True)
+    return "passed"
+
+
+def parse_node_version(text: str) -> tuple[int, int] | None:
+    """Return (major, minor) from `node --version` output such as v24.2.0, else None."""
+    match = re.match(r"v?(\d+)\.(\d+)", text.strip())
+    return (int(match.group(1)), int(match.group(2))) if match else None
+
+
+def node_meets_minimum(node: str | None = None, timeout_s: float = 30.0) -> bool:
+    """True when node (default: PATH) reports at least MIN_NODE; never raises."""
+    node = node or shutil.which("node")
+    if node is None:
+        return False
+    try:
+        result = run_child([node, "--version"], timeout_s, capture=True,
+                           env=node_environment())
+    except (subprocess.TimeoutExpired, OSError):
+        return False
+    parsed = parse_node_version(result.stdout or "") if result.returncode == 0 else None
+    return parsed is not None and parsed >= MIN_NODE
+
+
+def run_app_tests(require_node: bool, timeout_s: float) -> str:
+    """Install locked app dependencies without scripts and run its tests.
+
+    Returns passed/failed/skipped. A skip (never a pass) is reported when node is
+    absent or older than MIN_NODE, npm is absent, or the install fails for a network
+    reason; --require-node turns every skip into a failure (hosted CI).
+    """
+    label = "Browser application tests"
+    app = ROOT / APP_DIR
+    if not (app / "package.json").is_file():
+        print(f"ERROR: {label}: {APP_DIR}/package.json is missing.", file=sys.stderr)
+        return "failed"
+
+    def skip(reason: str) -> str:
+        if require_node:
+            print(f"ERROR: {label}: {reason} but --require-node was given.", file=sys.stderr)
+            return "failed"
+        print(f"{label}: skipped: {reason} (not a pass).", flush=True)
+        return "skipped"
+
+    if shutil.which("node") is None:
+        return skip("node not found")
+    if not node_meets_minimum(timeout_s=timeout_s):
+        return skip(f"node older than {MIN_NODE[0]}.{MIN_NODE[1]} or unusable")
+    npm = shutil.which("npm")
+    if npm is None:
+        return skip("npm not found")
+    environment = node_environment()
+    try:
+        install = run_child([npm, "--prefix", str(app), "ci", "--ignore-scripts"],
+                            timeout_s, capture=True, env=environment, merge_stderr=True)
+        print(install.stdout or "", end="", flush=True)
+        if install.returncode != 0:
+            if NETWORK_FAILURE.search(install.stdout or ""):
+                return skip("dependencies unavailable (network)")
+            print(f"ERROR: {label}: npm ci failed (exit {install.returncode}).",
+                  file=sys.stderr)
+            return "failed"
+        result = run_child([npm, "--prefix", str(app), "test"], timeout_s, env=environment)
+    except subprocess.TimeoutExpired:
+        print(f"ERROR: {label} timed out ({timeout_s:g} s).", file=sys.stderr)
+        return "failed"
+    except OSError as error:
+        print(f"ERROR: cannot run {label}: {error}", file=sys.stderr)
+        return "failed"
+    if result.returncode != 0:
+        print(f"ERROR: {label} failed (exit {result.returncode}).", file=sys.stderr)
+        return "failed"
+    print(f"{label}: passed.", flush=True)
     return "passed"
 
 
@@ -452,6 +529,13 @@ def main(argv=None) -> int:
         failed = True
     elif render == "skipped":
         skips.append("Synthetic render check: skipped: node not found")
+    print("Running Browser application tests...", flush=True)
+    app = run_app_tests(args.require_node, args.timeout)
+    if app == "failed":
+        failed = True
+    elif app == "skipped":
+        skips.append("Browser application tests: skipped: node >= 24.2, npm or "
+                     "dependencies unavailable")
     print("Running Assurance...", flush=True)
     if not run_assurance(args.timeout):
         failed = True

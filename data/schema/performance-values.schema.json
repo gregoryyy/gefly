@@ -18,13 +18,15 @@
     "status": {"enum": ["draft", "reviewed", "superseded"]},
     "fidelity": {"const": "not validated"},
     "manifest": {
-      "description": "Sibling manifest whose source register the citations use. 'path' is a file name in the same directory.",
+      "description": "Sibling manifest whose source register the citations use. 'path' is a file name in the same directory; version and SHA-256 (of the file bytes) pin the exact manifest.",
       "type": "object",
-      "required": ["path", "manifest_id"],
+      "required": ["path", "manifest_id", "manifest_version", "manifest_sha256"],
       "additionalProperties": false,
       "properties": {
         "path": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*\\.json$"},
-        "manifest_id": {"type": "string", "pattern": "^gefly\\.aircraft\\.[a-z0-9][a-z0-9-]*$"}
+        "manifest_id": {"type": "string", "pattern": "^gefly\\.aircraft\\.[a-z0-9][a-z0-9-]*$"},
+        "manifest_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$", "description": "SHA-256 of the exact bytes of the manifest file."}
       }
     },
     "extraction": {"type": "string", "minLength": 1},
