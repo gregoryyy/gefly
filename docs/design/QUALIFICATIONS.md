@@ -116,8 +116,10 @@ from the manifest.
 ### Hash scope and separate records
 
 `content_hash` covers the canonical serialization (format chosen with the stack)
-of the schema table's content fields only, excluding `content_hash` itself, the
-derived package index, lifecycle and review records. A published version and its
+of the schema table's content fields, explicitly including the jurisdiction and
+qualification groups, `source_register`, `objectives`, `aircraft_applicability`,
+`assessment` references and `changelog`, and excluding only `content_hash` itself,
+the derived package index, lifecycle and review records. A published version and its
 hash are immutable.
 
 Lifecycle (`placeholder`, `draft`, `in_review`, `accepted`, `superseded`,
@@ -153,7 +155,8 @@ A profile is **invalid** (cannot be referenced by an accepted package) if any of
    `lifecycle` is `in_review` or later; `competent_authority` is `tbd` at `accepted`.
    At `accepted`, `privileges`, `limitations`, `prerequisites`,
    `class_type_ratings` and `launch_or_variant_scope` (where present), and every
-   identity, jurisdiction and qualification field, are `sourced` or `derived`
+   jurisdiction and qualification field (not Gefly metadata such as `profile_id`,
+   `profile_version` or `schema_version`), are `sourced` or `derived`
    (R-TRAIN-6); no `unverified` or `tbd` remains.
 3. A `sourced` value has no source with a section, or cites a source whose
    `read_status` is `not_read` (use `unverified` instead).
