@@ -38,6 +38,10 @@ assure *args:
 assure-test:
     python3 "{{justfile_directory()}}/utils/ci/run.py" --assure-tests
 
+# Run the bounded, source-backed training airspeed module tests
+test-training:
+    python3 "{{justfile_directory()}}/utils/ci/run.py" --training-tests
+
 # Write rebuildable graph JSON and Markdown report under ignored utils/assure/out
 lineage:
     node "{{justfile_directory()}}/utils/assure/src/cli.ts" lineage

@@ -35,6 +35,14 @@ R-REUSE-1 and E1/E2.
 
 ## Components and ownership boundaries
 
+The first bounded runtime foundation is the pure assessment-airspeed mapper and
+repository-data adapter under `packages/training/`, with shared types under
+`packages/contracts/`. See [its contract](design/ASSESSMENT-AIRSPEED.md).
+Evaluator-derived IAS remains outside `ind` and simulation/replay digests; the
+component accepts a trusted adapted calibration bundle and returns explicit
+mapped/range/unavailable results. It has no renderer or platform dependency and
+does not implement the browser flight application, instrument model or recorder.
+
 | Boundary | Responsibility | Proposed implementation stream |
 | --- | --- | --- |
 | `packages/contracts/` | Units, frames, versioned state/input/event/schema contracts | Orchestrator integrates agreed changes before parallel work |

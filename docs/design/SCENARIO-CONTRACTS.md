@@ -9,10 +9,10 @@ no digest group, encoding or `digest_layout` changes. Anything that would need
 `digest_layout` 2 is listed as **deferred to a future major version** (§6).
 [SPEC](../SPEC.md) owns requirement text (R-SIM-4, R-REVIEW-1, R-BRIEF-1, R-COMM-1,
 R-AIR-3, R-TRAIN-2, R-TRAIN-4, R-TRAIN-5, R-NAV-2, R-NAV-3, R-INPUT-3, R-FID-2). It
-ties together four unmerged drafts, cited by path and branch because they are not
-on this branch:
+ties together four merged design drafts. Their proposal status remains as
+recorded in each document; the branch names below identify their origins:
 
-| Short name | File @ branch | Owns |
+| Short name | File @ originating branch | Owns |
 | --- | --- | --- |
 | BRIEFING | `docs/design/BRIEFING.md` @ `design/briefing-radio-1-8` | Briefing snapshot (rules R1–R7), radio (calls R1–R7), checklists |
 | EXERCISE-01 | `docs/design/EXERCISE-01.md` @ `design/exercise-criteria-1-5` | Phases, measures, criteria |
@@ -233,6 +233,10 @@ interprets `checklist.*`, `radio.*` or `assess.*`. Cross-slice fixtures (R-1, R-
 with events) are authored by the non-implementing side.
 
 ## 5. Name reconciliation and conflicts
+
+C4 is adopted for the bounded [assessment-airspeed mapping](ASSESSMENT-AIRSPEED.md)
+slice: evaluator-derived `cal_ias_mps`/`cal_ias_valid` remain outside `ind` and its
+digest. This does not adopt all scenario v1.1 proposals or implement a recorder.
 
 | # | Conflict found | Drafts | Proposed resolution |
 | --- | --- | --- | --- |

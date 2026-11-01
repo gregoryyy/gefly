@@ -70,6 +70,7 @@ just assure trace R-AIR-1  # trace a stable identifier
 just assure diff main     # lineage changes against a Git revision
 just assure impact docs/design/FDM-172S.md  # declared downstream effects
 just assure-test          # assurance tool tests
+just test-training        # bounded assessment-airspeed mapper and adapter tests
 just lineage              # JSON + Markdown under ignored utils/assure/out/; no browser
 just clean                # remove generated document outputs
 ```
@@ -141,7 +142,11 @@ utils/assure/       generated lineage/evidence checks; disposable out/ outputs
 utils/              peer review, validators and document build assets
 ```
 
-The product runtime boundaries still contain scope notes; study and repository
+The first runtime foundation is the bounded assessment-airspeed mapper and
+repository-data adapter in `packages/training/`, with shared types in
+`packages/contracts/`. `just test-training` runs its offline tests. It supplies
+evaluator-derived IAS from the existing calibration points; connecting it to the
+experimental browser application and completing the validated exercise remain future work. Study and repository
 tool implementations live under `studies/` and `utils/`. The initial
 public repository destination is [gregoryyy/gefly](https://github.com/gregoryyy/gefly),
 selected under the user's publication instruction. Gefly is licensed

@@ -13,7 +13,8 @@ python3 /path/to/checkout/utils/ci/run.py
 The runner finds the checkout from its own location, independently of the caller's
 working directory. Its required phases check the scaffold, discover and run the
 offline standard-library repository-tool tests, check the aircraft/source data,
-run the assurance integrity checks and tool tests, run the offline study tests
+run the assurance integrity checks and tool tests, run the separate training
+assessment airspeed tests, run the offline study tests
 (`studies/e1-jsbsim` and `studies/e2-c172s`, standard-library unittest discovery in
 separate interpreters), run `node studies/e1-browser/render/check-synthetic.mjs`, and inspect
 whitespace in the current contents of all tracked files.
@@ -31,13 +32,18 @@ grandchild holding an output pipe cannot stall the gate (elsewhere only the
 direct child is killed). Inherited `NODE_*` variables are removed from Node's environment,
 as `GIT_*` variables are for Git. Assurance is required in the shared gate:
 missing Node or a version below 24.2 is a failure, and assurance TAP tests must be
-nonempty with zero skips. `just check` remains the Python-only lower-level
+nonempty with zero skips. The training suite also requires nonempty tests with
+zero skips and is reported separately from assurance. Both suites use the shared
+[Node reporter](ci/assurance-reporter.mjs), whose legacy filename does not limit
+it to assurance. `just test-training` runs the training suite alone using native
+TypeScript support, without new dependencies or a workspace build.
+`just check` remains the Python-only lower-level
 structural check. Whitespace is checked even in an otherwise clean
 checkout; this is broader than checking a working-tree diff. Untracked files are
 excluded until added to Git, so add intended new files before the final gate.
 
 After checkout and interpreter setup, the hosted gate uses Git, the Python
-standard library and Node.js for assurance and synthetic rendering. The required
+standard library and Node.js for assurance, training module tests and synthetic rendering. The required
 Node version and hosted setup are recorded in [SBOM](../docs/SBOM.md); actual
 versions are printed with the run. It performs no
 project-package installation, live peer

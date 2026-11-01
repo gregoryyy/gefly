@@ -7,9 +7,9 @@ export default async function* assuranceReporter(events) {
       const { file, success, counts } = event.data;
       yield `GEFLY-ASSURE-RESULT ${JSON.stringify({ file: file ?? null, success, counts })}\n`;
     } else if (event.type === 'test:fail') {
-      yield `Assurance test failure: ${JSON.stringify(event.data)}\n`;
+      yield `Node test failure: ${JSON.stringify(event.data)}\n`;
     } else if (event.type === 'test:diagnostic' && event.data.message) {
-      yield `Assurance diagnostic: ${JSON.stringify(event.data.message)}\n`;
+      yield `Node diagnostic: ${JSON.stringify(event.data.message)}\n`;
     }
   }
 }
