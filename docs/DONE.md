@@ -3,6 +3,22 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 07:25 — Add 172S/FR172 source survey
+
+TODO: 1.3 started. Agent: Claude Code orchestrator; researcher subagent.
+
+**Implementation notes**
+
+Integrated the researcher's note. Leads: FAA TCDS 3A12 (172S, IO-360-L2A), A18EU
+(Reims FR172E–K, several Continental IO-360 variants); no sourced classic/G1000
+serial cutoff. JSBSim verified on GitHub: no 172S/FR172 model; C172 files carry
+mixed LGPL/GPL and "not to be sold" terms.
+
+**Deviations**
+
+FAA/EASA hosts were blocked by the session network policy; no TCDS was opened and
+every aircraft value is an unverified lead. No values were adopted into SPEC or data.
+
 ## 2026-11-01 07:24 — Resolve PR #4 quality/validate findings; add EDFE source survey
 
 TODO: 1.7 started. Agent: Claude Code orchestrator; quality, validate and researcher
