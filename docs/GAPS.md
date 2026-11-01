@@ -217,6 +217,11 @@ verified against official AIP/aerodrome publications (TODO 1.7). Source survey:
 [EDFE sources](research/2026-11-01-edfe-aerodrome-sources.md); the official DFS
 AIP and operator sites were unreachable from the research session, so only
 non-authoritative OurAirports values (runway 08/26, conflicting elevations) exist.
+Update after network access was enabled: the operator's published pilot information
+gives runway 08/26, a standard north circuit (right-hand 26, left-hand 08), reporting
+points and frequencies (cite-only). DFS AIP terms forbid automated retrieval and
+derived works without written approval, so official AIP values still need a
+person-read citation or DFS permission.
 
 Answer: **2026-10-31 15:15, user**: “model a region like EDDF and 100 nm radius
 around from real available map material”. Recorded in SPEC, ARCH and ROAD.

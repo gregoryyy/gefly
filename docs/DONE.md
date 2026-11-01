@@ -3,6 +3,22 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 10:08 — Complete EDFE source survey with operator material
+
+TODO: 1.7 in progress. Agent: Claude Code orchestrator; researcher subagent.
+
+**Implementation notes**
+
+After the user enabled network access, the researcher retrieved the operator's
+(TRIWO Egelsbach Airfield GmbH) published pilot information: runway 08/26, north
+circuit standard, reporting points, frequencies and altitude limits, all cite-only.
+
+**Deviations**
+
+DFS AIP pages were deliberately not downloaded: DFS terms forbid automated tools
+and derived works without written approval. Official AIRAC values, ARP, elevations
+and circuit altitude remain open.
+
 ## 2026-11-01 07:25 — Add 172S/FR172 source survey
 
 TODO: 1.3 started. Agent: Claude Code orchestrator; researcher subagent.
