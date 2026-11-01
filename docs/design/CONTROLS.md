@@ -11,7 +11,9 @@ flight hardware is required to complete the introductory exercise. Optional
 hardware is a **yoke or joystick and rudder pedals**, with explicit axis/button
 assignment and calibration. An external landing-gear switch is not in the
 selected hardware scope. Aircraft-system functionality still follows the selected
-actual configuration. Mobile orientation remains a later capability.
+actual configuration. A paired iPhone's orientation is an optional control for the
+Mac session (R-INPUT-3, GAPS Q16); stand-alone mobile orientation remains a later
+capability.
 
 The exact macOS/browser versions, reference Mac/display and supported peripheral
 models are foundation choices to document and test; no compatibility is claimed

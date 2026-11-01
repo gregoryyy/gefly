@@ -3,6 +3,78 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 11:38 — Select JSBSim as the dynamics engine
+
+TODO: 1.2.3 partly decided. Agent: Claude Code orchestrator (no subagents).
+
+**Implementation notes**
+
+User decision (GAPS Q17): JSBSim, with LGPL-2.1 accepted as a copyleft exception
+under Q5; bundled C172 data not shipped; no licence outreach. Recorded in input,
+GAPS, ARCH, SBOM, AGENTS and TODO. Rendering/map/language remain proposals pending
+the browser check.
+
+**Deviations**
+
+Treating JSBSim as a separately replaceable WASM library is an orchestrator design
+note for LGPL compliance, not a user statement.
+
+## 2026-11-01 11:18 — Review and fix the E1 study slice
+
+TODO: 1.2.2 in progress. Agent: Claude Code orchestrator; quality, code1 and
+researcher subagents.
+
+**Implementation notes**
+
+Integrated the [E1 candidate survey](research/2026-11-01-e1-engine-stack-candidates.md).
+Local quality returned 2 medium and 5 low findings on the JSBSim study (non-JSON
+stdout, mixed cost metrics, unpinned reproduction, test gaps, edge cases, doc
+assumptions). code1 and the orchestrator fixed them; renewed quality review at
+`4a28775` reports all seven fixed. Corrected cost: run-only 364–588×, with-I/O
+238–413× real time (one recorded run of 3 repeats).
+
+**Deviations**
+
+Study code only; no product dynamics code, so the cross-provider peer gate does
+not apply (GAPS Q15) until an engine is integrated. No validate pass yet; E1
+decision (1.2.3) awaits the user's Q5 ruling on JSBSim's LGPL-2.1.
+
+## 2026-11-01 11:11 — Run the JSBSim fixed-step E1 study
+
+TODO: 1.2.2 started. Agent: Claude Code orchestrator; code1 subagent.
+
+**Implementation notes**
+
+Added `studies/e1-jsbsim/` (README with predeclared budgets, harness, tests, WASM
+driver). JSBSim 1.3.3 with the bundled generic `c172x` (not the 172S): bit-identical
+determinism within one build; timestep refinement 1/120 vs 1/480 s differs by
+≤0.042 m altitude over 40 s (first-order convergence); ground rest and trim pass;
+15–31 µs per step. An emscripten build runs repeatably under Node 22 but differs
+from native at ~1e-13 relative, so replay must re-run on the same build.
+
+**Deviations**
+
+Measured on a cloud Intel Xeon, not the reference M1 Mac; no browser, latency or
+force/torque fixtures yet. Study tests run with `python -m unittest discover -s
+studies/e1-jsbsim` (11 tests with JSBSim, 6 skipped without); `utils/ci.py` does
+not discover them. Not yet independently reviewed.
+
+## 2026-11-01 11:00 — Record reference platform and paired-iPhone control
+
+TODO: 1.2.1 refined; 1.13 added. Agent: Claude Code orchestrator; researcher and
+code1 subagents running the E1 study in parallel on separate paths.
+
+**Implementation notes**
+
+GAPS Q16: MacBook Pro M1, current macOS, Chrome latest first (Safari second).
+Added R-INPUT-3 for optional orientation control from a paired iPhone, with a
+SEC threat row and CONTROLS note.
+
+**Deviations**
+
+Chrome desktop is Blink, not WebKit; both are recorded. Transport, pairing and
+latency budget for the phone control are open.
+
 ## 2026-11-01 10:27 — Select the first 172S configuration
 
 TODO: 1.3 in progress. Agent: Claude Code orchestrator (no subagents).
