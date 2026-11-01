@@ -1,27 +1,22 @@
 # Shared simulation contracts v1
 
-Status: **product proposal for TODO 1.4, revised 2026-11-01 after quality review;
-open design choices decided by the user (GAPS Q18, 2026-11-01 13:00; §8).** It
-defines the shared contracts that code1 and code2 must agree on before parallel
-product coding (R-SIM-2, R-SIM-3, R-SIM-4, R-SIM-6, R-INPUT-1..3, R-REVIEW-1,
-R-BRIEF-1, R-REUSE-1). [SPEC](../SPEC.md) owns requirement text; this document owns
-contract detail. The study contract v0/v0.1 in
-[E1 browser](../../studies/e1-browser/README.md) is evidence, not product authority.
-Engine: JSBSim v1.3.3 as a replaceable WASM library (GAPS Q17). Aircraft:
-classic-panel 172S, serials 172S9491–172S9809 (GAPS Q3). Code location:
-`packages/contracts/` ([ARCH](../ARCH.md)); one writer per change, integrated by the
-orchestrator.
+Status: **product proposal for TODO 1.4, revised 2026-11-01 after review; design
+choices decided by the user (GAPS Q18, 2026-11-01 13:00; §8).** Shared contracts
+for parallel coding (R-SIM-2..6, R-INPUT-1..3, R-REVIEW-1, R-BRIEF-1, R-REUSE-1).
+[SPEC](../SPEC.md) owns requirement text; the study contract v0/v0.1 in
+[E1 browser](../../studies/e1-browser/README.md) is evidence, not authority. Engine:
+JSBSim v1.3.3 as a replaceable WASM library (Q17); aircraft: classic-panel 172S
+9491–9809 (Q3); code in `packages/contracts/` ([ARCH](../ARCH.md)), one writer per
+change, integrated by the orchestrator.
 
 Marking: **TBD-src** = value or behavior needs a cited source before use; no number
 may be filled in from memory, another C172 variant or AI output (R-DATA-2).
 **Proposal** = product choice not yet decided. **Later** = outside contract v1.0.
 
-Reference-Mac evidence used below is recorded in `studies/e1-browser/README.md`,
-section "Results on the reference M1/Chrome", on branch `study/e1-m1-results`
-(**PR #9, pending merge**; not yet on main). It is one user-run session and is
-treated as preliminary. GAPS Q16 names a MacBook Pro **M1**; the WebGL renderer
-string in a later run reported **Apple M1 Pro** — the exact chip is for the user
-to confirm.
+Reference-Mac evidence: `studies/e1-browser/README.md`, "Results on the reference
+M1/Chrome", branch `study/e1-m1-results` (**PR #9, pending merge**); one user-run
+session, preliminary. Open for the user: GAPS Q16 says **M1**, the WebGL string
+reported **Apple M1 Pro**.
 
 ## 1. Units and frames
 
@@ -72,22 +67,25 @@ heights elsewhere).
 - `h_agl_m` from a **terrain ground callback in C++ inside the WASM bridge** that
   serves DGM1 (Hessen) heights **unchanged** (already DHHN2016), so terrain, field
   elevations and atmosphere share one datum. The callback is a pure function of
-  location; its tiles are loaded before stepping (no asynchronous fetch inside a
-  step). JSBSim's Python bindings expose no callback hook (C++ only).
-- `h_ell_m = h_msl_m + ζ(lat, lon)`, computed **outside the dynamics** (bridge or
-  environment module, once per published state) and never fed back: **GCG2016**
+  location with tiles loaded before stepping (no asynchronous fetch in a step).
+- `h_ell_m = h_msl_m + ζ(lat, lon)`, computed **outside the dynamics** (in JS,
+  once per published state; `ind` digest group, §4) and never fed back: **GCG2016**
   quasigeoid inside Germany (BKG, CC BY 4.0 per PROJ-data, attribution required),
   **EGM2008** elsewhere and outside GCG2016 coverage (NGA, public domain). Model
   ids and grid hashes are recorded in `env`. Renderers (CesiumJS) receive `h_ell_m`.
-- Positions are set with geodetic latitude only (`ic/lat-geod-*`, or
-  `type="geod"` in an `<initialize>` file; JSBSim's XML default is geocentric,
-  0.19° ≈ 21 km off at 50° N). The bridge **never writes `position/h-sl-ft` at
+- Initial position: `ic/lat-geod-rad`, `ic/long-gc-rad`, then `ic/h-sl-ft` from
+  `h_msl_m` (this order keeps the geodetic latitude); geodetic latitude only
+  (`type="geod"` in an `<initialize>` file; JSBSim's XML default is geocentric,
+  0.19° ≈ 21 km off at 50° N). Read-back via `geod-alt` within U-6 tolerance. The bridge **never writes `position/h-sl-ft` at
   run time** (it shifts geodetic latitude).
 - `h_pressure_m` is pressure altitude from static pressure (standard atmosphere).
 
-Still open: WGS-84 vs ETRS89 horizontal offset (≈ 1 m, not computed) and the
-vertical reference of German AIP elevations (**TBD-src**). DGM1 rights follow
-SBOM/R-DATA-1. Field, threshold and airport reference elevations remain separate
+Coverage: DGM1 covers **Hessen only**; terrain for the rest of the 100 NM region
+(Rhineland-Palatinate, Bavaria, Baden-Württemberg etc.) is **TBD-src**. Switching
+from GCG2016 to EGM2008 at the German border makes `h_ell_m` step by up to
+≈ 0.26 m (note, Part A); rendering must tolerate it. Still open: WGS-84 vs ETRS89
+horizontal offset (≈ 1 m, not computed) and the vertical reference of German AIP
+elevations (**TBD-src**). DGM1 rights follow SBOM/R-DATA-1. Field, threshold and airport reference elevations remain separate
 scenario fields ([ARCH](../ARCH.md)).
 
 Direction references: `heading_true_rad` and `track_true_rad` (from NED ground
@@ -170,14 +168,14 @@ extracted in the [datum/controls note](../research/2026-11-01-jsbsim-datum-172s-
 | `flaps_detent` | {0, 1, 2, 3} | 0°, 10°, 20°, 30° | discrete; electric, slotted-panel lever with stops at 10°/20°/30° (p. 7-13; S5 travel 0–30°); extension/retraction time and lever behaviour (spring-return vs follow-up) **TBD-src** |
 | `ignition` | {OFF, R, L, BOTH, START} | rotary key, clockwise | discrete (p. 7-22); START spring-returns to BOTH; **START use is Later** (O-8) |
 | `master_bat`, `master_alt` | {0, 1} | up = ON | discrete; split rocker, right half BAT, left half ALT (p. 7-33) |
-| `avionics_master_1`, `avionics_master_2` | {0, 1} | up = ON | discrete; split rocker, one section per avionics bus, from s/n 172S8704 (p. 7-34) |
+| `avionics_master_1`, `avionics_master_2` | {0, 1} | up = ON | discrete; split rocker, one section per avionics bus, from s/n 172S8704 (p. 7-34); **optional/Later** for R-AIR-2 tests in v1.0 |
 | `fuel_selector` | {LEFT, BOTH, RIGHT} | — | discrete; no OFF position (p. 7-24, p. 7-26) |
 | `fuel_shutoff` | {ON, OFF} | ON = pushed in | discrete (p. 7-12, Fig. 7-6) |
 | `aux_fuel_pump` | {0, 1} | on | discrete; FUEL PUMP switch, off for normal take-off (p. 4-12, Fig. 7-7A) |
-| `pitot_heat` | {0, 1} | on | discrete (p. 7-41); effect requires an icing model, otherwise labeled unsupported |
-| `alt_static` | {0, 1} | 1 = pulled on (cabin static) | discrete (p. 7-41); static-error effect **TBD-src** |
-| `lights` | set of {BCN, LAND, TAXI, NAV, STROBE} | on | discrete (p. 7-37, Fig. 7-7A); panel order **TBD-src**; visual effect only |
-| `xpdr_mode` | {OFF, SBY, TST, ON, ALT} | — | discrete; KT 76C (p. 7-46, Sect. 9 Suppl. 2); detent order **TBD-src**; no ATC effect in v1.0 (labeled) |
+| `pitot_heat` | {0, 1} | on | discrete (p. 7-41); effect requires an icing model, otherwise labeled unsupported; **optional/Later** for R-AIR-2 tests in v1.0 |
+| `alt_static` | {0, 1} | 1 = pulled on (cabin static) | discrete (p. 7-41); static-error effect **TBD-src**; **optional/Later** for R-AIR-2 tests in v1.0 |
+| `lights` | set of {BCN, LAND, TAXI, NAV, STROBE} | on | discrete (p. 7-37, Fig. 7-7A); panel order **TBD-src**; visual effect only; **optional/Later** for R-AIR-2 tests in v1.0 |
+| `xpdr_mode` | {OFF, SBY, TST, ON, ALT} | — | discrete; KT 76C (p. 7-46, Sect. 9 Suppl. 2); detent order **TBD-src**; no ATC effect in v1.0 (labeled); **optional/Later** for R-AIR-2 tests in v1.0 |
 | `altimeter_setting_pa` | finite, bounded | — | discrete instrument knob (p. 7-43); range/units **TBD-src** |
 | starter cranking, priming, taxi from parking | — | — | **Later** (engine start/taxi, GAPS Q18 O-8) |
 
@@ -226,8 +224,12 @@ Four layers, separately owned (AGENTS design rules):
 | Layer | Owner | Authority | Digest group |
 | --- | --- | --- | --- |
 | `sim` | `packages/simulation/` (code1) | Authoritative dynamics state, **computed inside WASM** | `sim` |
-| `env` | `packages/simulation/` env module (code1) | Authoritative environment at the aircraft, computed inside WASM | `sim` |
+| `env` | `packages/simulation/` env module (code1) | Environment at the aircraft; WASM-computed fields authoritative | `sim` (WASM fields); `ind` (JS fields) |
 | `ind` | `packages/avionics/` (code2) | Derived from `sim`/`env` + instrument state at the same step | `ind` |
+
+**Digest rule:** only values produced inside WASM enter the `sim` digest group.
+Every value computed in JavaScript — `magvar_east_rad`, `zeta_m`, `h_ell_m` and all
+of `ind` — enters the `ind` group.
 | `teach` | `packages/training/` (code2) | Annotations only; never read by `sim`, `env` or `ind` | none |
 
 `sim` fields (SI, frames per §1): `lat_rad`, `lon_rad` (geodetic), `h_msl_m`
@@ -245,10 +247,8 @@ trim failure, non-finite guard; R-SIM-6).
 `rho_kgpm3`, sea-level reference pressure/temperature of the atmosphere model,
 wind NED vector, turbulence model/intensity setting, `magvar_east_rad` with
 model id and decimal date, terrain elevation below the aircraft (DGM1 tile id and
-hash), `zeta_m` and `h_ell_m` with geoid/quasigeoid model id (GCG2016 or EGM2008)
-and grid hash.
-If WMM2025 evaluation is not implemented inside WASM, `magvar_east_rad` moves to
-the `ind` digest group (it feeds only instruments and display).
+hash); JS-computed (`ind` group): `magvar_east_rad`, `zeta_m`, `h_ell_m` with
+geoid/quasigeoid model id (GCG2016 or EGM2008) and grid hash.
 
 `ind` (instrument indications): ASI IAS, altimeter indication with setting and
 reference, VSI, attitude indicator, heading indicator/compass, tachometer,
@@ -280,26 +280,12 @@ A replay record is a declarative package (validated on import, [SEC](../SEC.md))
 | `digests` | Rolling and checkpoint digests per group (below) |
 | `trace?` | Optional downsampled `sim`/`env`/`ind` trace for viewing without re-simulation (GAPS Q18); labeled "recorded trace, not re-simulated"; never overrides the input log |
 
-**Seed handling in JSBSim v1.3.3** (source read at tag `v1.3.3`, commit
-`66f7faf`): `simulation/randomseed` is tied to `FGFDMExec::SRand`
-(`src/FGFDMExec.cpp:155`), which stores the value and re-seeds the shared
-generator (`src/FGFDMExec.cpp:1373–1377`). The property is an `int`, stored as
-`unsigned int` (`src/FGFDMExec.h:633, 691`). The executive is constructed with
-seed 0 (`src/FGFDMExec.cpp:83`), so an unseeded run is deterministic, not
-clock-seeded. The generator is `std::default_random_engine` with
-`uniform_real_distribution` on [−1, 1) and `normal_distribution(0, 1)`
-(`src/FGJSBBase.h:72–97`); both the engine and the distribution algorithms are
-implementation-defined by the C++ library, so sequences can differ between
-toolchains — another reason replay is same-build. Consumers of the shared
-generator: turbulence in `FGWinds` (`src/models/atmosphere/FGWinds.cpp:76, 227,
-308–311`), sensor noise in `FGSensor` (`src/models/flight_control/FGSensor.cpp:55,
-190–192`) and `<random>`-type functions without a `seed` attribute
-(`src/math/FGFunction.cpp:298–309`). `atmosphere/randomseed` and
-`<sensor>/randomseed` create separate generators (`FGWinds.cpp:500–503, 598`;
-`FGSensor.cpp:289–292`). A `seed="time_now"` attribute seeds from the system clock
-(`FGFunction.cpp:303–304`, `FGJSBBase.h:75–78`); aircraft-package validation
-rejects it. `ResetToInitialConditions` (`src/FGFDMExec.cpp:685`) does not re-seed
-(no seed call in its body), so the generator continues. **Rule:** the bridge sets
+**Seed handling.** JSBSim v1.3.3 seeds a shared `std::default_random_engine`
+through `simulation/randomseed` (default 0; implementation-defined generator and
+distributions), has separate `atmosphere/randomseed` and sensor seeds, accepts a
+clock-based `seed="time_now"`, and does not re-seed on reset. Source citations:
+[datum/controls note, JSBSim seed handling](../research/2026-11-01-jsbsim-datum-172s-controls.md#jsbsim-seed-handling).
+**Rule:** the bridge sets
 `simulation/randomseed`, and any separate seed properties, after `LoadModel` and
 before `RunIC` and trim, and again after every reset; it records each value it
 read back.
@@ -308,12 +294,15 @@ read back.
 `step` as uint64 little-endian, then the group's fields in schema order — reals as
 IEEE-754 binary64 little-endian, booleans as uint32 0/1, enums as uint32 of the
 schema's code table, `flags` as a uint32 bitmask (all little-endian). The `sim`
-group (`sim` + `env`) bytes are **produced inside WASM**; JavaScript only relays
-them, because JS `Math` is not bit-reproducible across engines.
+group bytes are **produced inside WASM**; JavaScript only relays them, because JS
+`Math` is not bit-reproducible across engines.
 
 - **Rolling digest:** FNV-1a 64 (offset basis 14695981039346656037, prime
   1099511628211), initialized once at run start and updated with every completed
-  step's bytes, never reset within a run. Cheap divergence detection.
+  step's bytes, never reset within a run. Cheap divergence detection. The E1
+  study `bridge.cpp` uses 1469598103934665603 (last digit missing), so **study
+  digests are not standard FNV-1a**; product code uses the standard constant and
+  does not copy study code.
 - **Checkpoints** every 120 steps (and at the final step):
   `C_k = SHA-256(prev ‖ uint32 digest_layout ‖ step bytes ‖ group bytes)`, where
   `prev` is the previous checkpoint's 32-byte digest of the same group, and for
@@ -349,7 +338,7 @@ assigns. Tolerances are fixed before execution (R-EVAL-1).
 | U-4 | Control direction: each normalized axis → JSBSim command → surface sign/rate | Analytic sign expectation; travel limits S5 §2 C.21 | validate |
 | U-5 | Magnetic variation (env module) | WMM2025 report test values | validate (env module is code1's) |
 | U-6 | JSBSim height semantics: `h-sl` ≈ `geod-alt` (\|Δ\| < 0.02 m below 3,000 m); `h-agl` = `geod-alt` − terrain (default callback); geodetic-latitude IC preserved; no run-time `h-sl` writes | JSBSim v1.3.3 source and checks in the datum/controls note, Part A | validate |
-| U-9 | Geoid/quasigeoid ζ: near EDFE (49.96° N 8.64° E, approximate point) GCG2016 47.80 m, EGM2008 48.00 m; GCG2016 − EGM2008 within −0.26…−0.09 m over the region | Researcher's PROJ 9.8.1 evaluation of the hashed grids (datum/controls note); proposed tolerance: same grid and interpolation reproduce the PROJ reference value to 0.01 m (implementation agreement, not model accuracy) | validate |
+| U-9 | Geoid/quasigeoid ζ at fixture point exactly 49.96000° N, 8.64000° E (ETRS89/WGS-84; near EDFE, not an aerodrome reference): GCG2016 ≈ 47.80 m, EGM2008 ≈ 48.00 m (rounded, informative); reference values regenerated at full precision. GCG2016 − EGM2008 (−0.26…−0.09 m) is informative only | PROJ 9.8.1 / pyproj 3.8.0 **bilinear** grid interpolation of `de_bkg_gcg2016.tif` and `us_nga_egm08_25.tif`, full SHA-256 pinned with the fixture (datum/controls note). Tolerance **1 mm** for the same grid and method (implementation agreement, not model accuracy) | validate |
 | U-7 | Pressure altitude, QNH/QFE/STD indication | ICAO standard atmosphere; EDFE elevation TBD-src | validate (R-AIR-3) |
 | U-8 | Structural-frame CG from datum and mass items | TCDS datum/CG range (S1b/S5) | quality |
 | S-1 | Static/no-force: at rest, brakes set, no wind | Analytic: zero velocity, drift within E1 F3 budget; specific force = −g | quality |
@@ -375,20 +364,7 @@ assigns. Tolerances are fixed before execution (R-EVAL-1).
 - A replay record is valid only with the same major and `digest_layout`.
 - `ready` reports `contract_version`; the main thread refuses a mismatched worker.
 
-v0.1 → v1 worker messages:
-
-| v0.1 (study) | v1 (product) | Change |
-| --- | --- | --- |
-| `init {dt_s, aircraft: "c172x", ic, state_hz}` | `init {v, dt: {num, den}, aircraft: {id, sha256}, ic, env, seeds, scenario, state_hz: 60}` | Rational dt; aircraft hash; seeds and environment explicit |
-| implicit trim in `init`, `ready.trim` | `ic.trim` request; `ready.trim {status, values}` | Trim requested, not implicit |
-| `input {step, wall_ms, elevator, aileron, rudder, throttle}` | `input {v, seq, step, wall_ms, source, controls, assists?}` | Pilot-sense names; partial fields; discrete controls; `seq` |
-| application rule (v0.1 text) | unchanged; worker logs `applied_step`; paused inputs not late | Log carries applied step |
-| `run {until_step?}`, `pause`, `stop` | `run`, `pause`, `reset`, `stop` | `until_step` test-only; `reset` re-seeds |
-| `ready.build {jsbsim_tag, jsbsim_commit, emsdk, wasm_bytes, wasm_sha256, flags}` | same + `contract_version`, bridge revision, `js_bundle_sha256` | Main thread adds browser engine/version |
-| `state {step, t_s, lat_rad, lon_rad, alt_msl_m, roll_rad, pitch_rad, heading_rad, tas_mps, …}` | `state {v, run_id, step, sim.core, env?, ind?}` | Explicit height fields; `psi_true_rad`; `t_s` derived |
-| `stats` (benchmark) | `stats {missed, dropped, max_lag, max_batch, late_inputs, digests, checkpoint}` | Product overload reporting |
-| `burst`, `stats.step_cost_us` array | test harness only | Not product |
-| `error {message}` | `error {v, code, field?, step?, message}` | Machine-readable code |
+The v0.1 → v1 worker-message mapping is in [Appendix A](#appendix-a-v01--v1-worker-messages).
 
 ## 8. Decisions (GAPS Q18, user, 2026-11-01 13:00)
 
@@ -403,9 +379,6 @@ v0.1 → v1 worker messages:
 | O-7 | 172S control list | Researcher extracts from POH Section 7 (cite, not copy). Done (datum/controls note, Part B); remaining items TBD-src | §3 |
 | O-8 | First exercise start | Starts at the runway holding point, engine running; engine start/taxi Later | §3 |
 | O-9 | Paired iPhone | Stays in TODO 1.13, not v1.0 | §3 |
-
-Still open for the user: the exact reference chip (M1 per GAPS Q16 vs M1 Pro per
-the WebGL string in PR #9).
 
 ## 9. Proposed SPEC acceptance edits (not applied)
 
@@ -432,3 +405,18 @@ R-SIM-4, replace the acceptance text with:
 > checked and reported, not guaranteed; cross-build comparison uses an explicitly
 > documented tolerance and is not called bitwise deterministic. Render rate and
 > presentation interpolation do not affect digests.
+
+## Appendix A. v0.1 → v1 worker messages
+
+| v0.1 (study) | v1 (product) | Change |
+| --- | --- | --- |
+| `init {dt_s, aircraft: "c172x", ic, state_hz}` | `init {v, dt: {num, den}, aircraft: {id, sha256}, ic, env, seeds, scenario, state_hz: 60}` | Rational dt; aircraft hash; seeds and environment explicit |
+| implicit trim in `init`, `ready.trim` | `ic.trim` request; `ready.trim {status, values}` | Trim requested, not implicit |
+| `input {step, wall_ms, elevator, aileron, rudder, throttle}` | `input {v, seq, step, wall_ms, source, controls, assists?}` | Pilot-sense names; partial fields; discrete controls; `seq` |
+| application rule (v0.1 text) | unchanged; worker logs `applied_step`; paused inputs not late | Log carries applied step |
+| `run {until_step?}`, `pause`, `stop` | `run`, `pause`, `reset`, `stop` | `until_step` test-only; `reset` re-seeds |
+| `ready.build {jsbsim_tag, jsbsim_commit, emsdk, wasm_bytes, wasm_sha256, flags}` | same + `contract_version`, bridge revision, `js_bundle_sha256` | Main thread adds browser engine/version |
+| `state {step, t_s, lat_rad, lon_rad, alt_msl_m, roll_rad, pitch_rad, heading_rad, tas_mps, …}` | `state {v, run_id, step, sim.core, env?, ind?}` | Explicit height fields; `psi_true_rad`; `t_s` derived |
+| `stats` (benchmark) | `stats {missed, dropped, max_lag, max_batch, late_inputs, digests, checkpoint}` | Product overload reporting |
+| `burst`, `stats.step_cost_us` array | test harness only | Not product |
+| `error {message}` | `error {v, code, field?, step?, message}` | Machine-readable code |

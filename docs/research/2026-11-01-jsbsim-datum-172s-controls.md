@@ -202,3 +202,29 @@ FAA TCDS values are US government works; EASA values are cited facts from a
   `master_bat`/`master_alt` confirmed; carb heat absent confirmed; add `pitot_heat`,
   `alt_static`, lights {BCN, LAND, TAXI, NAV, STROBE} and transponder mode if in scope.
 - Remaining TBD-src items are listed under the open points above.
+
+## JSBSim seed handling
+
+Appended by the product role, 2026-11-01, from a direct read of the JSBSim
+source at tag `v1.3.3`, commit `66f7faf` (same tree as Part A). Supports
+[CONTRACTS](../design/CONTRACTS.md) §5 and fixture R-8.
+
+`simulation/randomseed` is tied to `FGFDMExec::SRand`
+(`src/FGFDMExec.cpp:155`), which stores the value and re-seeds the shared
+generator (`src/FGFDMExec.cpp:1373–1377`). The property is an `int`, stored as
+`unsigned int` (`src/FGFDMExec.h:633, 691`). The executive is constructed with
+seed 0 (`src/FGFDMExec.cpp:83`), so an unseeded run is deterministic, not
+clock-seeded. The generator is `std::default_random_engine` with
+`uniform_real_distribution` on [−1, 1) and `normal_distribution(0, 1)`
+(`src/FGJSBBase.h:72–97`); both the engine and the distribution algorithms are
+implementation-defined by the C++ library, so sequences can differ between
+toolchains — another reason replay is same-build. Consumers of the shared
+generator: turbulence in `FGWinds` (`src/models/atmosphere/FGWinds.cpp:76, 227,
+308–311`), sensor noise in `FGSensor` (`src/models/flight_control/FGSensor.cpp:55,
+190–192`) and `<random>`-type functions without a `seed` attribute
+(`src/math/FGFunction.cpp:298–309`). `atmosphere/randomseed` and
+`<sensor>/randomseed` create separate generators (`FGWinds.cpp:500–503, 598`;
+`FGSensor.cpp:289–292`). A `seed="time_now"` attribute seeds from the system clock
+(`FGFunction.cpp:303–304`, `FGJSBBase.h:75–78`); aircraft-package validation
+rejects it. `ResetToInitialConditions` (`src/FGFDMExec.cpp:685`) does not re-seed
+(no seed call in its body), so the generator continues.
