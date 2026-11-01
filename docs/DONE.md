@@ -3,6 +3,42 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 12:56 — Record M1 render runs; fix the hosted Cesium page
+
+TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator (no subagents); runs
+by the user on the reference Mac (WebGL: Apple M1 Pro, 120 Hz), Chrome 156.
+
+**Implementation notes**
+
+three.js with the JSBSim stream: median 8.3 ms, p99 9.4 ms at 120 Hz: both render
+budgets pass (1232×817 viewport, CSS resolution). CesiumJS run invalid: 300×150 px
+drawing buffer because the host CSP blocks `widgets.css`; added inline canvas CSS
+and an invalid-run guard, republished the page (version 2). Recorded the hosted
+launcher and its file map under `studies/e1-browser/hosted/` for later repeats.
+
+**Deviations**
+
+Cesium repeat pending. GAPS Q16 says M1; the GPU string says M1 Pro (to confirm).
+Peer pending (batched).
+
+## 2026-11-01 12:53 — Record the reference M1 worker benchmark
+
+TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator (no subagents); run
+performed by the user on the reference MacBook Pro M1, Chrome 156.
+
+**Implementation notes**
+
+Stored the user's JSON under `studies/e1-browser/results/`. Missed steps 0.33 per
+10 s, latency p95 16.9 ms and same-build replay pass; paced step-cost p99 800–1000 µs
+exceeds 830 µs as measured but is limited by 100 µs timer coarsening (page not
+cross-origin isolated); unpaced compute ≈ 15 µs per step. Replay digest equals the
+container's for the same WASM build.
+
+**Deviations**
+
+Render runs on the M1 pending; step cost to be re-measured cross-origin isolated.
+Peer pending (batched).
+
 ## 2026-11-01 12:33 — Validate the E1 browser check; publish the M1 test page
 
 TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator; validate subagent.
