@@ -60,7 +60,8 @@ scenario_record {
 qfe_datum { kind: aerodrome | threshold, ref, elevation_m, vertical_ref }
 nav_entry { id, kind, edition, entry_sha256, rights_class, status, value_class,
             value?: { si, original {value, unit}, datum, source_id },
-            derivation?: { from, rule, magnetic_model, decimal_year } }
+            derivation?: { from, rule, magnetic_model, decimal_year,
+                          wmm_lat_rad, wmm_lon_rad, wmm_h_ell_m } }
 ```
 
 Rules:
@@ -83,14 +84,18 @@ Rules:
   (aerodrome, threshold and true bearing, holding point, circuit, frequency,
   airspace) by id, edition and `entry_sha256`. `value` is embedded **only** for
   rights classes that permit sharing (`public-domain`, `open-attribution`, `odbl`,
-  `project`, `permission`). A `reference-only` value (e.g. DFS AIP) is **never
-  embedded** in a record that can be shared: it is resolved at load from a local
-  copy of the pinned catalog edition, verified by `entry_sha256`; if absent the run
-  or review is refused, never fetched. Such entries and `placeholder` entries block
-  a `reviewed` run (EXPERIENCES V6/V9). The runtime never queries the live catalog.
+  `project`, `permission`; the last only with the written grant on record). A
+  `reference-only` value (e.g. DFS AIP) is **never stored or shipped** by Gefly
+  ("store or ship no content", EXPERIENCES): records, logs, caches and traces hold
+  its id and hashes only. It may be resolved at load only from a **user-supplied
+  local copy** that Gefly never distributes or records, verified by
+  `entry_sha256`; if absent the run or review is refused, never fetched. Such
+  entries and `placeholder` entries block a `reviewed` run (EXPERIENCES V6/V9).
+  The runtime never queries the live catalog.
 - **S5. Runway bearing.** A true bearing derived from a published magnetic one
   (EXERCISE-01) is converted **once, in the scenario-record builder** (§4), with the
-  recorded WMM2025 model and decimal year; `value_class: derived` and `derivation`
+  recorded WMM2025 model, decimal year and the evaluation position
+  (`wmm_lat_rad`, `wmm_lon_rad`, `wmm_h_ell_m`, which entry it comes from); `value_class: derived` and `derivation`
   record it. Nothing converts it per step.
 - **S6. Wind** is the CONTRACTS NED air-mass vector (blows toward); "from" exists
   only in briefing display. Height profile and gusts are **Later**.
@@ -130,10 +135,12 @@ properties**, so no free field (such as clearance text) can be added.
 | `radio.intent_proposed` | logged | `station_ref`, `frequency_ref`, `intent`, `text?`, `parser {id, version}` | none | Re-applied; text is presentation |
 | `radio.intent_resolved` | derived | `accepted`, `reason`, `mismatch[]` (frequency, position, call sign) | `teach` | State machine re-run from logged intents + state + `nav` |
 | `radio.reply` | derived structure + logged text (C16) | `kind ∈ {info, say_again, correction, no_reply}`, info fields from `environment`/`nav` only, `template_id`; **no clearance or instruction field** | `teach` (fields); none (text) | Fields re-derived and checked against the logged `radio.reply_shown {text, template_id}` |
+| `radio.reply_shown` | logged | `of_event` (the reply's key), `text`, `template_id` | none | Shown text replayed as shown (C16); never parsed as state |
 | `assess.phase` | derived | `phase_id` (P0–P11), `enter`/`exit` | `teach` | Evaluator re-run per step (EXERCISE-01) |
 | `assess.measure` | derived | `criterion_id`, value SI, `result ∈ {within, outside, gate_fail, not_evaluated}`, `reason?` | `teach` | Never a pass when `not_evaluated` |
 | `teach.annotation` | derived | `kind` (reminder, finding, cue), `label`, refs | `teach` | Never read by `sim`/`env`/`ind` |
 | `run.pause` / `.resume` | logged | `reason ∈ {user, error}` | none | `step` frozen while paused (CONTRACTS §2) |
+| `run.started` | logged | `run_id`, `previous_run_id?`, scenario-record `sha256` | none | First event of every run (step 0) |
 | `run.reset` | logged | `next_run_id` | none | **Last event of the run**: the recording ends; the new run starts at step 0 with a new `run_id` and `run.started {previous_run_id}` (CONTRACTS §2) |
 | `device.pairing` | logged (session metadata) | `state ∈ {started, confirmed, failed, ended}`, `profile_id` | none | Not needed to replay; **no keys, codes, nonces or fingerprints** |
 | `input.source_lost` / `.source_changed` | logged | `source`, `reason` (PHONE-CONTROL §6 enum), `fallback` | none | Informative; the controls that follow are ordinary inputs |
@@ -171,13 +178,17 @@ Rules:
   re-applying logged events at their step/seq and recomputing derived events. The
   view shows events with `step ≤ target`. No snapshot/restore in v1.1.
 - **D2. Reopen** never fetches weather, NOTAMs, catalog or package content; a
-  missing or mismatching scenario-record, snapshot, session-log or evaluator-pin
-  hash refuses the record (BRIEFING §1.6), apart from S4 local resolution.
+  missing or mismatching scenario-record, snapshot or session-log hash, or a stored
+  evaluator pin that does not match its own `evaluator_pin_sha256`, refuses the
+  record (BRIEFING §1.6), apart from S4 local resolution. D2 checks integrity only;
+  a different current evaluator is handled by D3.
 - **D3. Re-derivation check.** With a matching pin, recomputed derived events must
   equal the cache; events depending on `ind` are compared only on the **same
   browser engine and version** (CONTRACTS §4), otherwise reported "not
-  comparable". Inequality is a defect report. A changed evaluator or criteria
-  version re-evaluates explicitly and labels both results (EXERCISE-01).
+  comparable". Inequality is a defect report. Re-evaluation under a different
+  evaluator or criteria version is **allowed**: it is reported as a separate
+  evaluation with its own pin, beside the recorded one, never refused and never
+  silently substituted (EXERCISE-01).
 - **D4. Trace-only.** A build mismatch (CONTRACTS §5) opens trace-only mode; derived
   events from the trace are labelled "from recorded trace, not re-simulated".
 - **D5. Display values.** Interpolated frames never feed events (CONTRACTS §2).
