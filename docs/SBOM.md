@@ -1,12 +1,18 @@
 # Software, tools and source inventory
 
-JSBSim is the selected dynamics engine, with TypeScript, CesiumJS, a three.js fallback and MapLibre selected for the web application (GAPS Q17). These are not yet pinned product dependencies; the package manager/workspaces remain undecided and no application lockfiles exist. Study/tool versions are recorded below. This overview does not replace future machine-readable inventories.
+JSBSim is the selected dynamics engine, with TypeScript, CesiumJS, a three.js fallback and MapLibre selected for the web application (GAPS Q17). The experimental local application now pins three.js and its build/test tools with npm in `app/package-lock.json`; CesiumJS and MapLibre integration remain future work. No repository-wide workspace layout is selected. Study/tool versions are recorded below. This overview does not replace future machine-readable inventories.
 
 The user intends a **free/open-source project** and directs **reuse of open physics
 engines/models wherever practical**. Original project material is **GPL-3.0-or-later** (GAPS Q5);
 engine, aircraft model, wrapper, imagery, geodata, charts and community content
 must each retain their own license/provenance. Select a compatible distribution
 plan rather than assuming a single engine license covers all these materials.
+
+## Experimental browser application
+
+The local [application](../app/README.md) pins three.js 0.187.0 (MIT) as the selected fallback renderer, Vite 7.3.7 (MIT), TypeScript 5.9.3 (Apache-2.0), @types/three 0.187.0 (MIT) and Playwright 1.64.1 (Apache-2.0). Exact transitive versions/integrity hashes are in `app/package-lock.json`; installation audited with zero reported advisories on 2026-11-01. The three.js license is retained under [LICENSES](../LICENSES/three-MIT.txt). Fonts use local system fallbacks; the running application makes no external asset or service requests.
+
+JSBSim and c172x remain generated local research assets under the existing study recipe and rights limitations below. Vite serves only the four named worker/runtime files in development; the production UI build excludes all of them and is not a deployable flight simulator. No runtime model assets or source SDKs are committed or published.
 
 ## Current development tools
 
@@ -128,8 +134,8 @@ validated aircraft/region model.
 | JSBSim engine and included aircraft data / Aeromatic | Can an applicable C172 model meet reference cases through a suitable browser/deployment adapter? Pin engine/model versions and inspect rights separately. **Selected** (Q17; LGPL-2.1-or-later accepted as copyleft exception; bundled aircraft data not shipped). Studied in [studies/e1-jsbsim](../studies/e1-jsbsim/README.md): PyPI 1.3.3 / `v1.3.3`@`66f7faf`, engine LGPL-2.1-or-later per source headers; `c172x` data says "GPL" (unversioned) and "not to be sold"; engine/propeller/systems files carry no notice. Q5 compatibility review pending. |
 | FlightGear C172P model/package | Which flight/model/cockpit components are portable and applicable? Inspect component/asset rights and dependencies instead of importing a whole package by assumption. |
 | Existing JSBSim WASM wrapper | Is the actual early-stage wrapper maintainable and adequate? Review wrapper and bundled engine licenses and run browser/replay budgets before adoption. |
-| CesiumJS 1.146.0 | Studied in [studies/e1-browser/render](../studies/e1-browser/render/README.md) via CDN; Apache-2.0 (permissive). Ion token disabled, no ion/Bing assets. Not adopted; CDN load without SRI in the study. |
-| three.js 0.187.0 | Studied in [studies/e1-browser/render](../studies/e1-browser/render/README.md) via CDN; MIT (permissive). Not adopted; CDN load without SRI in the study. |
+| CesiumJS 1.146.0 | Studied in [studies/e1-browser/render](../studies/e1-browser/render/README.md) via CDN; Apache-2.0 (permissive). Ion token disabled, no ion/Bing assets. Adopted through the application lockfile for the local prototype; the older study still uses CDN loading without SRI. |
+| three.js 0.187.0 | Studied in [studies/e1-browser/render](../studies/e1-browser/render/README.md) via CDN; MIT (permissive). Adopted through the application lockfile for the local prototype; the older study still uses CDN loading without SRI. |
 | emsdk 6.0.13 | Build tool for the JSBSim WASM study ([sim](../studies/e1-browser/sim/README.md)); not bundled; build outputs not committed. |
 | OpenStreetMap data | Assess relevant basemap/coverage and ODbL obligations; public tile service access is a separate policy and hosting decision. |
 | OurAirports data | Candidate airport records with stated public-domain terms and accuracy limitations; not an accepted substitute for EDDF's official ARP or authoritative procedures. |

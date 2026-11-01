@@ -2,6 +2,8 @@
 
 Status: selected stack with proposed product component boundaries. **Web application**, **Cessna 172**, **EASA PPL first**, **classic instruments before glass** and **QNH/QFE/standard-pressure coverage** are user decisions. Aircraft: a classic-panel 172S first, then the Reims FR172, as distinct engine configurations (Q3); the first exercise is a circuit at Frankfurt-Egelsbach (EDFE). The dynamics engine is **JSBSim** (Q17), used as a replaceable LGPL library; the web stack is TypeScript with a CesiumJS renderer (three.js fallback), MapLibre 2D maps and JSBSim in a module Web Worker at a fixed **1/120 s** step (Q17). Exact radio fit and geographic data provider remain open. Native and browser studies exist; the product simulator and project-owned 172S flight model are not implemented. Expanded scope and proposed delivery slices are in [the training design](design/TRAINING.md).
 
+An experimental [local browser application](../app/README.md) now integrates the existing study worker with a TypeScript flight deck and three.js fallback scene. npm/Vite owns this bounded application; the reusable package boundaries below remain the target for subsequent extraction. Its generic study aircraft is built only for local research, and its scenery is procedural. The project-owned 172S model, real EDFE circuit and production runtime distribution remain incomplete.
+
 Additional user decisions: a **free/open-source flight-school community site**,
 **LLM-assisted flight-experience authoring and AI interaction**, an initial
 **EDDF/100 NM regional model from real source material**, and **reuse of open
