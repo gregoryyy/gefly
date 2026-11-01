@@ -5,7 +5,7 @@ Status: focused primary-source research for TODO 1.13 (R-INPUT-3, GAPS
 browser behaviour on the reference iPhone/Mac, update rates and latency are
 **not measured**. Nothing was built or run on a device.
 Author: Claude Code subagent `product` (own source research), dispatched by the
-orchestrator. Accessed: 2026-11-01 16:30–16:45, Europe/Berlin.
+orchestrator. Accessed: 2026-11-01 16:30–16:45 and 16:46–16:52 (review follow-up), Europe/Berlin.
 Used by: [PHONE-CONTROL](../design/PHONE-CONTROL.md).
 
 ## Question and method
@@ -42,9 +42,11 @@ Access permission prompt".
 | P13 | The WebSocket Protocol, RFC 6455 | IETF | Dec 2011 | [rfc-editor.org](https://www.rfc-editor.org/rfc/rfc6455) | Downloaded; TCP framing known, not re-read in depth |
 | P14 | Announcing WebRTC and Media Capture | WebKit (Apple) | 2017 blog post | [webkit.org](https://webkit.org/blog/7726/announcing-webrtc-and-media-capture/) | Read (availability sentence) |
 | P15 | CTAP 2.2, §11.5 hybrid transports | FIDO Alliance | PS 14 Jul 2025 | [fidoalliance.org](https://fidoalliance.org/specs/fido-v2.2-ps-20250714/fido-client-to-authenticator-protocol-v2.2-ps-20250714.html) | Read §11.5, §11.5.1 |
-| P16 | ZRTP, RFC 6189 | IETF | Apr 2011 | [rfc-editor.org](https://www.rfc-editor.org/rfc/rfc6189) | Read intro and §7 SAS concept |
+| P16 | ZRTP, RFC 6189 | IETF | Apr 2011 | [rfc-editor.org](https://www.rfc-editor.org/rfc/rfc6189) | Read intro, §4.4.1.1 hash commitment, §7 SAS concept |
 | P17 | Screen Wake Lock API | W3C | Working Draft as accessed | [w3.org/TR/screen-wake-lock](https://www.w3.org/TR/screen-wake-lock/) | Read `request()` steps |
 | P18 | WebKit Features in Safari 16.4 | WebKit (Apple) | 2023 blog post | [webkit.org](https://webkit.org/blog/13966/webkit-features-in-safari-16-4/) | Read (Screen Wake Lock entry) |
+| P19 | URI Generic Syntax, RFC 3986 | IETF | Jan 2005 | [rfc-editor.org](https://www.rfc-editor.org/rfc/rfc3986) | Read §3.5 |
+| P20 | HTTP Semantics, RFC 9110 | IETF | Jun 2022 | [rfc-editor.org](https://www.rfc-editor.org/rfc/rfc9110) | Read §4.2.5 note, §7.1, §10.1.3 |
 
 ## Verified findings
 
@@ -109,7 +111,17 @@ Pairing patterns (P15, P16) and screen (P17, P18):
   authenticates the phone; traffic goes through a tunnel service, with BLE
   advertisements to show proximity (P15 §11.5–11.5.1).
 - F15. ZRTP displays a short authentication string on both ends so users can
-  detect a man in the middle by comparing it verbally (P16 §7).
+  detect a man in the middle by comparing it verbally (P16 §7); in DH mode the
+  initiator's Commit carries a hash commitment to its public value before the
+  responder's value is used (P16 §4.4.1.1), which limits SAS grinding.
+- F17. The fragment is separated from the URI before dereference and handled
+  solely by the user agent (P19 §3.5); the HTTP target URI excludes it (P20
+  §7.1) and a user agent MUST NOT include it in `Referer` (P20 §10.1.3).
+  Browser history and sync storage are outside these rules (not verified).
+- F18. `deviceorientation` fires "whenever a significant change in orientation
+  occurs"; what counts as significant is left to the implementation, and each
+  angle is `null` if the implementation cannot provide it (P1 §6). **Inference:**
+  a still phone may produce no events, so silence is not proof of loss.
 - F16. Screen Wake Lock `request()` rejects with `NotAllowedError` when the
   document is hidden (P17); Safari 16.4 lists Screen Wake Lock (P18).
 
@@ -130,4 +142,4 @@ Transport and pairing proposals, the latency budget and the SEC/SPEC edits are
 in [PHONE-CONTROL](../design/PHONE-CONTROL.md). The hard platform constraint is
 F1/F7: whatever transport is chosen, the iPhone page must be a secure context,
 and samples stop whenever it is hidden (F3). Confidence: high for F1–F11, F14–F16
-(normative text read); medium for the inferences in F7, F11, F13.
+and F17–F18 (normative text read); medium for the inferences in F7, F11, F13, F18.
