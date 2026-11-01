@@ -48,7 +48,7 @@ Frames and sign conventions:
 
 | Frame | Definition |
 | --- | --- |
-| Geodetic | WGS-84 ellipsoid (NGA TR8350.2): `lat_rad` geodetic, `lon_rad` east-positive, `h_ell_m` above ellipsoid |
+| Geodetic | WGS-84 ellipsoid (NGA TR8350.2): `lat_rad` **geodetic** (never geocentric), `lon_rad` east-positive; heights per *Heights* below |
 | ECEF | WGS-84 Earth-centered, Earth-fixed, metres; x through (0°, 0°), z north pole |
 | Local NED | Tangent plane at the current geodetic position: x north (true), y east, z down. Authoritative velocity frame |
 | Local ENU | Render/map boundary only (CesiumJS/three.js); never stored as sim state |
@@ -57,12 +57,38 @@ Frames and sign conventions:
 | Structural | Origin at the sourced datum (lower front face of firewall, [172S sources](../research/2026-11-01-c172s-fr172-sources.md), S1b/S5); x aft, y right, z up, metres (TCDS station convention, as JSBSim's structural frame). **CG and mass items are expressed here**, never relative to the body origin |
 | Scenario/runway | Runway threshold point + true bearing, from the scenario's navigation snapshot |
 
-Heights are distinct fields: `h_ell_m`, `h_msl_m`, `h_agl_m` (terrain model named
-in the scenario) and `h_pressure_m` (pressure altitude from static pressure,
-standard atmosphere). The vertical datum of JSBSim's `h-sl` is **TBD-src**: the
-researcher establishes it from the v1.3.3 source, then the geoid model is chosen
-to match (GAPS Q18, fixture U-6). Field, threshold and airport reference elevations
-remain separate scenario fields ([ARCH](../ARCH.md)).
+**Heights.** Finding ([datum/controls note](../research/2026-11-01-jsbsim-datum-172s-controls.md), Part A): JSBSim v1.3.3 has **no geoid**; `h-sl`,
+`geod-alt`, terrain elevation and AGL all refer to the WGS-84 ellipsoid (radial vs
+normal direction differ by millimetres), and the atmosphere is evaluated at
+`h-sl`. Feeding true ellipsoidal heights would evaluate the atmosphere about 48 m
+too high near EDFE, conflicting with QNH/QFE realism.
+
+**Height convention (orchestrator proposal from the researcher's recommendation;
+pending user confirmation):** JSBSim runs on **physical heights treated as its
+ellipsoid height** (DHHN2016 normal heights in Germany, EGM2008 orthometric
+heights elsewhere).
+
+- `h_msl_m` = JSBSim `position/geod-alt-ft` × 0.3048 (physical height).
+- `h_agl_m` from a **terrain ground callback in C++ inside the WASM bridge** that
+  serves DGM1 (Hessen) heights **unchanged** (already DHHN2016), so terrain, field
+  elevations and atmosphere share one datum. The callback is a pure function of
+  location; its tiles are loaded before stepping (no asynchronous fetch inside a
+  step). JSBSim's Python bindings expose no callback hook (C++ only).
+- `h_ell_m = h_msl_m + ζ(lat, lon)`, computed **outside the dynamics** (bridge or
+  environment module, once per published state) and never fed back: **GCG2016**
+  quasigeoid inside Germany (BKG, CC BY 4.0 per PROJ-data, attribution required),
+  **EGM2008** elsewhere and outside GCG2016 coverage (NGA, public domain). Model
+  ids and grid hashes are recorded in `env`. Renderers (CesiumJS) receive `h_ell_m`.
+- Positions are set with geodetic latitude only (`ic/lat-geod-*`, or
+  `type="geod"` in an `<initialize>` file; JSBSim's XML default is geocentric,
+  0.19° ≈ 21 km off at 50° N). The bridge **never writes `position/h-sl-ft` at
+  run time** (it shifts geodetic latitude).
+- `h_pressure_m` is pressure altitude from static pressure (standard atmosphere).
+
+Still open: WGS-84 vs ETRS89 horizontal offset (≈ 1 m, not computed) and the
+vertical reference of German AIP elevations (**TBD-src**). DGM1 rights follow
+SBOM/R-DATA-1. Field, threshold and airport reference elevations remain separate
+scenario fields ([ARCH](../ARCH.md)).
 
 Direction references: `heading_true_rad` and `track_true_rad` (from NED ground
 velocity) are authoritative. Magnetic values are **derived**: `magvar_east_rad`
@@ -83,7 +109,8 @@ Pressure references (R-SIM-3, R-AIR-3): altimeter state stores `setting_pa`,
 `setting_ref ∈ {QNH, QFE, STD}` and `setting_unit_display ∈ {hPa, inHg}`. STD
 means `setting_pa = 101325`. QFE requires the scenario's declared QFE datum
 (aerodrome or threshold elevation, **TBD-src**, EDFE AIP). The 172S altimeter scale
-units and setting range are **TBD-src** (S17 Section 7). The reference is a
+units and setting range are **TBD-src** (not stated in S17 p. 7-43; depends on
+the installed instrument and US/EU configuration, GAPS Q3). The reference is a
 recorded label; the knob only sets a pressure (no invented mode switch).
 
 ## 2. Time and step
@@ -127,29 +154,41 @@ schema. Pilot-sense conventions (product), mapped to JSBSim signs in the bridge.
 Contract v1.0 covers the first exercise, which **starts at the runway holding
 point with the engine running** (GAPS Q18): no engine start or taxi from parking.
 
-| Field | Range | Positive means | Kind / status |
-| --- | --- | --- | --- |
-| `pitch` | [−1, 1] | yoke aft (nose-up command) | continuous |
-| `roll` | [−1, 1] | yoke right (right wing down) | continuous |
-| `yaw` | [−1, 1] | right rudder pedal forward | continuous; nose-wheel steering where modeled (TBD-src) |
-| `brake_left`, `brake_right` | [0, 1] | toe brake applied | continuous |
-| `parking_brake` | {0, 1} | set | discrete |
-| `throttle` | [0, 1] | full forward | continuous |
-| `mixture` | [0, 1] | full rich | continuous; idle-cutoff position TBD-src |
-| `pitch_trim` | [−1, 1] | nose-up trim | continuous; wheel travel/rate TBD-src |
-| `flaps_detent` | index | larger index = more flap | discrete; travel 0–30° sourced (S5 §2 C.21); **detent set and positions TBD-src** |
-| `ignition` | {OFF, R, L, BOTH} | key position | discrete; positions TBD-src; `START` is **Later** |
-| `master_bat`, `master_alt` | {0, 1} | on | discrete; switch arrangement TBD-src |
-| `fuel_selector` | enum | — | discrete; positions TBD-src |
-| `altimeter_setting_pa` | finite, bounded | — | discrete instrument knob; range TBD-src |
-| `fuel_shutoff`, `aux_fuel_pump`, starter/priming | — | — | **Later** (engine start, GAPS Q18) |
+Control facts below are cited by page from POH/AFM 172SPHUS Rev 5 (S17) as
+extracted in the [datum/controls note](../research/2026-11-01-jsbsim-datum-172s-controls.md), Part B (cite, not copy; GAPS Q18 O-7).
 
-All TBD-src items stay open until the researcher extracts the 172S control list
-from POH S17 Section 7 (cite, do not copy; GAPS Q18). **Carburettor heat** is not
-listed: the IO-360-L2A is expected to be fuel-injected, so no carb-heat control is
-expected; this needs a citation from S17 Section 7 (engine/fuel system) or the
-engine TCDS (S9) before it is closed. Radios, lights, avionics and the KAP 140
-option are outside v1.0 until the avionics fit is decided (GAPS Q3).
+| Field | Range | Positive / meaning | Kind / source / status |
+| --- | --- | --- | --- |
+| `pitch` | [−1, 1] | control wheel aft (nose-up command) | continuous; cable/linkage (p. 7-6); elevator up 28°/down 23° (S5 §2 C.21) |
+| `roll` | [−1, 1] | control wheel right (right wing down) | continuous; ailerons up 20°/down 15° (S5) |
+| `yaw` | [−1, 1] | right rudder pedal forward | continuous; rudder 16°10′ each way (S5); nose-wheel steering via pedals, spring bungee ≈ 10° each side, up to 30° with differential braking (p. 7-12); bungee force law **TBD-src** |
+| `brake_left`, `brake_right` | [0, 1] | toe brake applied | continuous; hydraulic disc per main wheel, pilot/copilot pedals interconnected (p. 7-29) |
+| `parking_brake` | {0, 1} | set | discrete; handle under left panel, set with pedals applied (p. 7-29) |
+| `throttle` | [0, 1] | full forward = open | continuous; push-pull with friction lock (p. 7-19); travel **TBD-src** |
+| `mixture` | [0, 1] | 1 = full rich, 0 = idle cutoff (full aft) | continuous, no intermediate detents stated (p. 7-19) |
+| `pitch_trim` | [−1, 1] | wheel aft = nose-up trim | continuous; manual wheel on pedestal with indicator (p. 7-6, p. 7-12); travel, turns and take-off mark **TBD-src**; electric trim only if installed (not modeled) |
+| `flaps_detent` | {0, 1, 2, 3} | 0°, 10°, 20°, 30° | discrete; electric, slotted-panel lever with stops at 10°/20°/30° (p. 7-13; S5 travel 0–30°); extension/retraction time and lever behaviour (spring-return vs follow-up) **TBD-src** |
+| `ignition` | {OFF, R, L, BOTH, START} | rotary key, clockwise | discrete (p. 7-22); START spring-returns to BOTH; **START use is Later** (O-8) |
+| `master_bat`, `master_alt` | {0, 1} | up = ON | discrete; split rocker, right half BAT, left half ALT (p. 7-33) |
+| `avionics_master_1`, `avionics_master_2` | {0, 1} | up = ON | discrete; split rocker, one section per avionics bus, from s/n 172S8704 (p. 7-34) |
+| `fuel_selector` | {LEFT, BOTH, RIGHT} | — | discrete; no OFF position (p. 7-24, p. 7-26) |
+| `fuel_shutoff` | {ON, OFF} | ON = pushed in | discrete (p. 7-12, Fig. 7-6) |
+| `aux_fuel_pump` | {0, 1} | on | discrete; FUEL PUMP switch, off for normal take-off (p. 4-12, Fig. 7-7A) |
+| `pitot_heat` | {0, 1} | on | discrete (p. 7-41); effect requires an icing model, otherwise labeled unsupported |
+| `alt_static` | {0, 1} | 1 = pulled on (cabin static) | discrete (p. 7-41); static-error effect **TBD-src** |
+| `lights` | set of {BCN, LAND, TAXI, NAV, STROBE} | on | discrete (p. 7-37, Fig. 7-7A); panel order **TBD-src**; visual effect only |
+| `xpdr_mode` | {OFF, SBY, TST, ON, ALT} | — | discrete; KT 76C (p. 7-46, Sect. 9 Suppl. 2); detent order **TBD-src**; no ATC effect in v1.0 (labeled) |
+| `altimeter_setting_pa` | finite, bounded | — | discrete instrument knob (p. 7-43); range/units **TBD-src** |
+| starter cranking, priming, taxi from parking | — | — | **Later** (engine start/taxi, GAPS Q18 O-8) |
+
+The holding-point initial state implied by the before-take-off checklist (p. 4-15,
+cited not copied): engine running, master and avionics on, fuel selector BOTH,
+shutoff ON, fuel pump OFF, ignition BOTH, mixture rich, trim and flaps for
+take-off (0°–10°); parking brake per scenario. **Carburettor heat is absent**: the
+engine is fuel injected (S17 p. 1-4) with an automatic alternate air door
+(p. 7-22) and no carb-heat control in the panel list (Fig. 7-2). Radios (KX 155A,
+KMA 26) and optional ADF/GPS/KAP 140 stay outside v1.0 until the avionics fit is
+decided (GAPS Q3); S17 is Rev 5 (2004) and later applicable revisions are unchecked.
 
 The JSBSim sign mapping is **not** assumed: in the native
 [E1 JSBSim study](../../studies/e1-jsbsim/README.md) fixture F2 the climb used an
@@ -191,8 +230,8 @@ Four layers, separately owned (AGENTS design rules):
 | `ind` | `packages/avionics/` (code2) | Derived from `sim`/`env` + instrument state at the same step | `ind` |
 | `teach` | `packages/training/` (code2) | Annotations only; never read by `sim`, `env` or `ind` | none |
 
-`sim` fields (SI, frames per §1): `lat_rad`, `lon_rad`, `h_ell_m`, `h_msl_m`,
-`h_agl_m`; `phi_rad`, `theta_rad`, `psi_true_rad`; NED velocity `vn_mps, ve_mps,
+`sim` fields (SI, frames per §1): `lat_rad`, `lon_rad` (geodetic), `h_msl_m`
+(JSBSim-native physical height), `h_agl_m` (terrain callback); `phi_rad`, `theta_rad`, `psi_true_rad`; NED velocity `vn_mps, ve_mps,
 vd_mps`; body velocity `u_mps, v_mps, w_mps`; body rates `p_radps, q_radps,
 r_radps`; body accelerations and specific force; `alpha_rad`, `beta_rad`,
 `cas_mps`, `tas_mps`; mass `mass_kg`, CG position `cg_struct_m` (structural frame,
@@ -205,7 +244,9 @@ trim failure, non-finite guard; R-SIM-6).
 `env` fields: static pressure `p_static_pa`, temperature `t_static_k`, density
 `rho_kgpm3`, sea-level reference pressure/temperature of the atmosphere model,
 wind NED vector, turbulence model/intensity setting, `magvar_east_rad` with
-model id and decimal date, terrain elevation below the aircraft and its model id.
+model id and decimal date, terrain elevation below the aircraft (DGM1 tile id and
+hash), `zeta_m` and `h_ell_m` with geoid/quasigeoid model id (GCG2016 or EGM2008)
+and grid hash.
 If WMM2025 evaluation is not implemented inside WASM, `magvar_east_rad` moves to
 the `ind` digest group (it feeds only instruments and display).
 
@@ -232,7 +273,7 @@ A replay record is a declarative package (validated on import, [SEC](../SEC.md))
 | `aircraft` | Model id (e.g. `c172s-classic-9491-9809`), package version and sha256, source manifest reference (R-AIR-1), fidelity/limitations labels |
 | `ic` | Initial position/attitude/velocity in §1 frames, configuration (flaps, trim, fuel, mass), trim request and result |
 | `seed` | Every JSBSim seed property set and read back (below) |
-| `env` | Atmosphere model, QNH/temperature, wind/turbulence settings, WMM2025 coefficient hash and date, terrain/geoid model ids |
+| `env` | Atmosphere model, QNH/temperature, wind/turbulence settings, WMM2025 coefficient hash and date, DGM1 tile hashes, GCG2016/EGM2008 grid hashes |
 | `scenario` | Scenario/briefing package id, version, sha256; navigation edition; weather/NOTAM snapshot hashes (R-BRIEF-1) |
 | `run` | `run_id`, dt rational, `max_catchup`, assists/fidelity settings, device profiles used, measured display refresh rate |
 | `inputs` | Ordered input log (§3) with `applied_step` — **the authoritative replay content** |
@@ -307,7 +348,8 @@ assigns. Tolerances are fixed before execution (R-EVAL-1).
 | U-3 | Euler/body sign conventions; pitch range | Analytic rotations | code2 |
 | U-4 | Control direction: each normalized axis → JSBSim command → surface sign/rate | Analytic sign expectation; travel limits S5 §2 C.21 | validate |
 | U-5 | Magnetic variation (env module) | WMM2025 report test values | validate (env module is code1's) |
-| U-6 | Height datums (ellipsoid/MSL/AGL) and JSBSim `h-sl` meaning | JSBSim v1.3.3 source + chosen geoid model values | researcher → validate |
+| U-6 | JSBSim height semantics: `h-sl` ≈ `geod-alt` (\|Δ\| < 0.02 m below 3,000 m); `h-agl` = `geod-alt` − terrain (default callback); geodetic-latitude IC preserved; no run-time `h-sl` writes | JSBSim v1.3.3 source and checks in the datum/controls note, Part A | validate |
+| U-9 | Geoid/quasigeoid ζ: near EDFE (49.96° N 8.64° E, approximate point) GCG2016 47.80 m, EGM2008 48.00 m; GCG2016 − EGM2008 within −0.26…−0.09 m over the region | Researcher's PROJ 9.8.1 evaluation of the hashed grids (datum/controls note); proposed tolerance: same grid and interpolation reproduce the PROJ reference value to 0.01 m (implementation agreement, not model accuracy) | validate |
 | U-7 | Pressure altitude, QNH/QFE/STD indication | ICAO standard atmosphere; EDFE elevation TBD-src | validate (R-AIR-3) |
 | U-8 | Structural-frame CG from datum and mass items | TCDS datum/CG range (S1b/S5) | quality |
 | S-1 | Static/no-force: at rest, brakes set, no wind | Analytic: zero velocity, drift within E1 F3 budget; specific force = −g | quality |
@@ -354,11 +396,11 @@ v0.1 → v1 worker messages:
 | --- | --- | --- | --- |
 | O-1 | State streaming vs display rate | Render-side interpolation for display only; state stream 60 Hz; never in digests or replay | §2 |
 | O-2 | Magnetic model | WMM2025 | §1, §4 |
-| O-3 | Geoid/MSL datum | Researcher establishes JSBSim `h-sl` datum; geoid then chosen to match (TBD-src) | §1, U-6 |
+| O-3 | Geoid/MSL datum | Researcher establishes JSBSim `h-sl` datum; geoid then chosen to match. Found: ellipsoid, no geoid; physical-height convention with GCG2016/EGM2008 is an **orchestrator proposal pending user confirmation** | §1, §4, U-6, U-9 |
 | O-4 | Digest scheme | Per-step FNV-1a 64 + SHA-256 checkpoints every 120 steps | §5 |
 | O-5 | Review seek | Re-simulate from step 0; snapshot/restore only if too slow | §2, R-9 |
 | O-6 | Recorded trace | Optional downsampled trace allowed; input log stays authoritative | §5 |
-| O-7 | 172S control list | Researcher extracts from POH Section 7 (cite, not copy); items TBD-src until then | §3 |
+| O-7 | 172S control list | Researcher extracts from POH Section 7 (cite, not copy). Done (datum/controls note, Part B); remaining items TBD-src | §3 |
 | O-8 | First exercise start | Starts at the runway holding point, engine running; engine start/taxi Later | §3 |
 | O-9 | Paired iPhone | Stays in TODO 1.13, not v1.0 | §3 |
 
