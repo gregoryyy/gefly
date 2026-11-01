@@ -3,6 +3,23 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 13:07 — Draft the flight-experience package and LLM boundary
+
+TODO: 1.10 in progress. Agent: Claude Code orchestrator; product subagent.
+
+**Implementation notes**
+
+Added [EXPERIENCES](design/EXPERIENCES.md): declarative versioned package (no code,
+unit- and reference-bearing values, per-value provenance status), stable-ID source
+catalog starting with `eddf-100nm`/EDFE, LLM boundary (draft and catalog lookup
+only), nine validation stages with failure codes, review states with author ≠
+reviewer, security rules, and an EDFE circuit example with every real value TBD.
+
+**Deviations**
+
+Draft; cites the holding-point start from branch `design/contracts-1-4` (not yet on
+main); runway in the example is illustrative; Q13 provider open; not yet reviewed.
+
 ## 2026-11-01 13:06 — Draft the pilot-qualification profile contract
 
 TODO: 1.12 in progress. Agent: Claude Code orchestrator; product subagent.
