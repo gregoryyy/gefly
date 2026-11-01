@@ -3,6 +3,23 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 13:06 — Draft the pilot-qualification profile contract
+
+TODO: 1.12 in progress. Agent: Claude Code orchestrator; product subagent.
+
+**Implementation notes**
+
+Added [QUALIFICATIONS](design/QUALIFICATIONS.md): sourced-value model with per-field
+status and source register, profile schema (jurisdiction, authority, full
+qualification, privileges, objectives→exercises, aircraft-manifest references,
+mandatory no-training-credit flag), 12 invalidity rules, versioning, a draft EASA
+PPL(A)/C172S example and placeholder SPL/ultralight shapes bound to Q14.
+
+**Deviations**
+
+Draft; most PPL values unverified until Part-FCL sections are read; Q14 choices not
+made; proposed SPEC edits not applied; not yet reviewed. Peer pending (batched).
+
 ## 2026-11-01 12:56 — Record M1 render runs; fix the hosted Cesium page
 
 TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator (no subagents); runs
