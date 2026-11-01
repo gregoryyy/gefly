@@ -2,7 +2,7 @@
   "$comment": "Rights/applicability manifest, not a flight model. Field guide: README.md in this directory. Schema: data/schema/aircraft-manifest.schema.json.",
   "schema_version": "1.0.0",
   "manifest_id": "gefly.aircraft.c172s-classic",
-  "manifest_version": "0.1.1",
+  "manifest_version": "0.2.0",
   "status": "draft",
   "fidelity": "not validated",
   "configuration": {
@@ -521,11 +521,24 @@
       "sha256_prefix": "2ee729856d72359d",
       "applicability": "G1000 (NAV III) 172S, serials 172S9810 and on; used only for the serial boundary.",
       "rights": {"holder": "Cessna Aircraft Company (copyright 2005)", "basis": "Copyrighted manual; third-party hosting grants no reuse right", "redistribution": "facts_only", "copy_in_repository": false}
+    },
+    {
+      "id": "A14",
+      "title": "Operator's Manual O-360, HO-360, IO-360, AIO-360, HIO-360 & TIO-360 Series (ID from the 172 aero-data source note)",
+      "publisher": "Lycoming Engines; copy hosted by an EAA chapter",
+      "document": "Lycoming P/N 60297-12",
+      "revision": "60297-12, 8th ed. Oct 2005, revision 60297-12-5 Dec 2009",
+      "url": "https://chapters.eaa.org/eaa245/-/media/3B5A3308519148D58C389A05AEEC001F.ashx",
+      "accessed": "2026-11-01",
+      "access_status": "read_selected_pages",
+      "sha256_prefix": "150de015b2d1bce7",
+      "applicability": "Uninstalled IO-360-L2A data: ratings (p. 2-2) and sea-level/altitude performance curve 13516-A (Figure 3-25, p. 3-40), drawn for the 160 hp rating; the 172S uses the 180 hp / 2700 rpm alternate rating. Cited pages carry no revision mark.",
+      "rights": {"holder": "Lycoming (copyright 2005 and 2009, all rights reserved)", "basis": "Copyrighted manual; third-party hosting grants no reuse right; selected chart points only (user decision 2026-11-01 18:43, GAPS Q5)", "redistribution": "facts_only", "copy_in_repository": false}
     }
   ],
   "not_included": [
-    {"item": "performance tables (take-off, landing, climb, cruise, fuel flow)", "reason": "Copyrighted POH content; cite individual values by page only (R-DATA-1)."},
-    {"item": "aerodynamic coefficients, inertias, engine power curves, propeller maps", "reason": "Not provided by TCDS; must come from a separately reviewed model with independent validation."},
+    {"item": "performance tables (take-off, landing, climb, cruise, fuel flow)", "reason": "Copyrighted POH content; cite individual values by page only (R-DATA-1). Selected values are in poh-values.json and performance-values.json."},
+    {"item": "aerodynamic coefficients, inertias, engine power curves, propeller maps", "reason": "Not provided by TCDS; must come from a separately reviewed model with independent validation. Selected cited points of the Lycoming power chart (A14) are in performance-values.json; no whole curve is included."},
     {"item": "procedures and checklists", "reason": "Copyrighted POH content; not reproduced."},
     {"item": "copies of any source document", "reason": "Linked and cited only; see each source's rights."}
   ],
@@ -539,7 +552,8 @@
     "by": "Claude Code subagent housekeeping, dispatched by the orchestrator",
     "from": [
       "docs/research/2026-11-01-c172s-fr172-sources.md",
-      "docs/research/2026-11-01-jsbsim-datum-172s-controls.md (branch design/contracts-1-4, PR #12, not merged)"
+      "docs/research/2026-11-01-jsbsim-datum-172s-controls.md (branch design/contracts-1-4, PR #12, not merged)",
+      "docs/research/2026-11-01-c172s-poh-values.md (source A14 added with the engine and cruise extraction)"
     ]
   }
 }

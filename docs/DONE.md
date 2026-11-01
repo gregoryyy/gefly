@@ -3,6 +3,25 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 19:00 — Extract Lycoming power points and POH cruise/glide values
+
+TODO: E2 data. Agent: Claude Code orchestrator; researcher/housekeeping subagent.
+
+**Implementation notes**
+
+New `data/aircraft/c172s-classic/performance-values.json` with its own schema:
+Lycoming 60297-12 ratings (p. 2-2) and selected sea-level power points read from
+curve 13516-A (p. 3-40) with reading uncertainty; POH cruise at 2000 ft (p. 5-19)
+and best-glide speed and distance (glide ratio derived). Lycoming manual registered
+as a facts-only source (manifest 0.2.0); validator extended, 21 tests (112 total).
+
+**Deviations**
+
+2300 rpm has no chart curve (unknown); the chart is for the 160 hp rating and an
+uninstalled engine; the glide figure is a single line, so one reading carries its
+whole content — flagged for the user against the no-piecemeal rule. Not yet reviewed.
+Peer pending (batched).
+
 ## 2026-11-01 14:07 — Extract cited 172S POH values
 
 TODO: 1.3/1.5 support. Agent: Claude Code orchestrator; researcher/housekeeping

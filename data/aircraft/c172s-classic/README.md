@@ -34,7 +34,7 @@ A **quantity** has `value` in SI (`kg`, `m/s`, `m`, `rad/s`, `W`), `original_val
 `original_unit` as published, `status`, `citations`, `conversion`, `uncertainty` and
 optionally `condition`, `reference`, `conflicts` and `todo`. `reference` (`IAS`, `CAS`,
 `TAS`) is required for every `m/s` quantity. The validator recomputes each SI value from
-`original_value` with a fixed factor table (lb, kt, in, rpm, hp, ft, ft/min) and rejects a difference
+`original_value` with a fixed factor table (lb, kt, in, rpm, hp, ft, ft/min; for the value files also nm, inHg, in^3, gal/h, %) and rejects a difference
 above 0.5e-4·max(1, |value|) or an unlisted unit pair. A **fact** (identification
 text) has `value`, `status`, `citations` and optional `derivation`, `note`, `todo`. A
 **citation** names `source_id`, the source's `revision`, `page` and optional `section`.
@@ -75,8 +75,44 @@ note; do not add values that would assemble a whole table. These are comparison 
 not validation results: the S17 performance data assume the short-field technique and an
 airplane in good condition, and nothing here establishes simulator fidelity.
 
+## Selected engine and cruise/glide values
+
+[performance-values.json](performance-values.json) holds the few values needed to
+calibrate a JSBSim piston engine and airframe in the circuit regime, as cited facts
+([research note](../../../docs/research/2026-11-01-c172s-poh-values.md#engine-cruise-and-glide-extraction);
+user decision 2026-11-01 18:43, GAPS Q5: only the needed points of the Lycoming power curve,
+never the whole chart):
+
+- `engine_ratings`: IO-360-L2A normal rating 160 hp / 2400 rpm, alternate rating
+  180 hp / 2700 rpm (the 172S rating, agreeing with S9 and the manifest), displacement
+  (Lycoming operator's manual 60297-12, source A14, p. 2-2).
+- `engine_sea_level`: points read from Lycoming curve 13516-A (Figure 3-25, p. 3-40),
+  uninstalled engine at sea-level standard conditions, maximum-power mixture. Full throttle
+  at 2000, 2400, 2500 and 2700 rpm with the manifold pressure at the curve end; part throttle
+  at 2000 rpm / 20 and 24 inHg and 2400 rpm / 26 inHg. 2300 rpm is `unknown`: the chart
+  has no such curve. `reading: read_from_chart` with ±2–3 hp.
+- `cruise`: POH Figure 5-8 (p. 5-19), 2550 lb, recommended lean, pressure altitude 2000 ft,
+  standard temperature: rpm, percent BHP (as a fraction), KTAS and fuel flow for the six
+  rows 2100–2550 rpm.
+- `glide`: best glide 68 KIAS (p. 3-3), ground distance from 12,000 ft (Figure 3-1,
+  p. 3-14) and the glide ratio `derived` from it (about 9.1, zero wind).
+
+Series (`engine_sea_level`, `cruise`) hold points of several numbers, each with SI
+`value`/`unit` and published `original_value`/`original_unit`; points must be strictly
+increasing by engine speed, then manifold pressure. SI units are `W`, `rad/s`, `Pa`,
+`m^3`, `m^3/s`, `m`, `m/s` (with `IAS`/`CAS`/`TAS`) and `1` (fraction or ratio); `m^3`
+and `m^3/s` are checked relatively, so give them about 5 significant digits. A separate
+file and [schema](../../schema/performance-values.schema.json) were chosen instead of
+extending `poh-values.json` because these values mix an engine-manufacturer chart with
+POH tables, need new units and multi-number points, and leave the POH file of PR #17
+unchanged. Lycoming data describe an uninstalled engine; installation losses and the
+propeller (TCDS static rpm 2300–2400) still have to be modelled. These are calibration
+inputs, not validation results.
+
 ## Rights
 
+Lycoming manuals are copyrighted ("all rights reserved"): cite individual chart points by
+page; never trace, digitise or reproduce a whole curve or chart.
 FAA TCDS are US government works (public domain in the US). EASA TCDS are marked "all
 rights reserved": reference and cite facts only. Cessna manuals are copyrighted: cite
 individual facts by page; never copy text, tables or figures. `copy_in_repository` is
