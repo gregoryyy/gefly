@@ -27,7 +27,7 @@ SPEC). Build outputs (`.wasm`, bundles, SDKs) are not committed; recipes are.
 ## Shared worker message contract (v0)
 
 Plain `postMessage` with structured-clone objects. Units SI, angles in radians,
-geodetic WGS-84; `t_s` is simulation time, `step` the integer step index. The
+`heading_rad` is **true** heading (not magnetic), geodetic WGS-84; `t_s` is simulation time, `step` the integer step index. The
 simulation step is fixed; the render loop never changes it.
 
 Main → worker:
@@ -50,9 +50,13 @@ synthetic source emitting the same objects (a level circuit around EDFE).
 ## Budgets (declared before running; proposals)
 
 - Worker step cost p99 ≤ 0.83 ms (10% of a 1/120 s step) on the reference Mac.
-- Simulation keeps real time: ≤ 1 missed step per 10 s of wall time.
+- Simulation keeps real time: ≤ 1 missed step per 10 s of wall time, where a step is
+  *missed* if it runs more than one step period (8.3 ms) behind schedule; report the
+  maximum lag and maximum catch-up batch alongside.
 - Input-to-state latency (input `wall_ms` → first `state` reflecting it) p95 ≤ 25 ms.
-- Rendering: ≥ 60 fps median, p99 frame time ≤ 25 ms, at 1440×900 on the reference Mac.
+- Rendering: median frame interval ≤ 1.05 × the display refresh period (≥ 60 fps on
+  the reference 60 Hz panel, recorded per run), p99 frame time ≤ 25 ms, at 1440×900
+  on the reference Mac.
 - Deterministic replay: identical input log ⇒ identical final-state digest within one build.
 
 Stop if a budget fails by more than 2× on the reference Mac with no identified fix.
@@ -73,7 +77,8 @@ not part of v0:
 - `init` also runs JSBSim's longitudinal trim so the study starts near level flight;
   the worker reports it in `ready.trim`.
 - Input step rule: an input with `step: s` is applied before the step from `s` to
-  `s+1`; inputs arriving after `s` apply at the next step and are counted late.
+  `s+1` and first appears in the `state` for step `s+1` (both sources); inputs
+  arriving after `s` apply at the next step and are counted late.
   `wall_ms` is `performance.timeOrigin + performance.now()` in both page and worker.
 - Benchmark-only messages in `sim/`: `run.until_step`, `stats` request/reply and a
   `burst` mode.
@@ -87,11 +92,11 @@ reference M1; **no acceptance claim**. Details: [sim](sim/README.md), [render](r
 | Measure | Result | Budget |
 | --- | --- | --- |
 | Worker step cost p99, paced (2 × 30 s) | 485–505 µs (unpaced ≈ 24 µs; gap attributed to thread wake-up) | ≤ 830 µs |
-| Missed steps | 0 | ≤ 1 per 10 s |
+| Missed steps | 0 (under the original 100 ms lag threshold; re-measure under the 8.3 ms definition) | ≤ 1 per 10 s |
 | Input-to-state latency p95 (40 inputs) | 18.8–20.1 ms | ≤ 25 ms |
 | Replay digest, same build | identical (`7c8783f3440f387a`) | identical |
-| Cesium median fps / p99 frame (synthetic) | 2.3–2.5 fps / 733–950 ms | ≥ 60 / ≤ 25 ms |
-| three.js median fps / p99 frame (synthetic) | 12–15 fps / 117–133 ms | ≥ 60 / ≤ 25 ms |
+| Cesium median fps / p99 frame (synthetic) | 2.3–2.5 fps / 733–950 ms | ≤ 1.05 × refresh / ≤ 25 ms |
+| three.js median fps / p99 frame (synthetic) | 12–15 fps / 117–133 ms | ≤ 1.05 × refresh / ≤ 25 ms |
 | Render pages with `?source=sim` | Cesium 3.2 fps, three.js 12.0 fps; ≈ 60 Hz state, no errors | functional |
 
 The worker budgets pass on the container CPU. Rendering numbers reflect software GL
