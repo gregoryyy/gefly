@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E1 worker benchmark</title>
+<style>
+  body { font: 14px/1.4 system-ui, sans-serif; margin: 16px; background: #fff; color: #111; }
+  pre { white-space: pre-wrap; word-break: break-word; background: #f4f4f4; padding: 8px; }
+  @media (prefers-color-scheme: dark) { body { background: #111; color: #eee; } pre { background: #222; } }
+</style>
+</head>
+<body>
+<h1>E1 JSBSim worker benchmark</h1>
+<p>Study page (preliminary evidence). Runs the JSBSim WASM worker on a scripted input log:
+two pre-scheduled replays (step cost, pacing, determinism) and one live run (input-to-state
+latency). Query parameters: <code>seconds</code>, <code>live</code>, <code>state_hz</code>.
+Aircraft data: JSBSim c172x (generic 1982 172P model), not a validated 172S/FR172.</p>
+<p>Status: <span id="status" role="status">starting</span></p>
+<pre id="out" aria-live="polite"></pre>
+<script type="module" src="sim.js"></script>
+</body>
+</html>
