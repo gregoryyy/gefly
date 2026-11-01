@@ -6,8 +6,10 @@ The intended product is **free and open source**, with a community site organize
 around flight-school practice. The first regional model is **EDDF plus a 100 NM
 radius**, using real source material. Later experience authoring should use LLMs
 to assemble sourced territory/navigation/chart packages and support AI interaction.
-The architecture favors reusing open physics engines and aircraft models. Exact
-license, providers, engine, hosting and deployment are still decisions.
+The architecture favors reusing open physics engines and aircraft models. The
+license is GPL-3.0-or-later; the first exercise is a take-off, circuit and landing
+at Frankfurt-Egelsbach (EDFE) in a classic-panel Cessna 172S, with the Reims FR172 as a second configuration. Providers,
+engine, hosting and deployment are still decisions.
 
 The aim is to connect each modeled behavior to aircraft documentation and each exercise to an explicit learning objective. Assistance and model limitations should stay visible as realism increases. Aircraft fidelity and learning benefits are goals to evaluate; this repository does not yet contain a runnable simulator or establish eligibility for training credit.
 
@@ -102,6 +104,6 @@ utils/              repository checks and document build assets
 
 The runtime directories contain scope notes, not implementations. The initial
 public repository destination is [gregoryyy/gefly](https://github.com/gregoryyy/gefly),
-selected under the user's publication instruction. Exact project-wide licensing
-remains GAPS Q5; the Propeller-derived bootstrap material retains GPL-3.0-or-later
-with its full license text and [upstream notices](THIRD_PARTY_NOTICES.md).
+selected under the user's publication instruction. Gefly is licensed
+**GPL-3.0-or-later** ([LICENSE](LICENSE), GAPS Q5). Third-party material keeps its
+own license; see the [upstream notices](THIRD_PARTY_NOTICES.md) and [SBOM](docs/SBOM.md).

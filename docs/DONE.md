@@ -3,6 +3,133 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 10:27 — Select the first 172S configuration
+
+TODO: 1.3 in progress. Agent: Claude Code orchestrator (no subagents).
+
+**Implementation notes**
+
+The user accepted the researcher's proposal: Cessna 172S serials 172S9491–172S9809
+with the classic panel. Recorded in a new input record, GAPS Q3, SPEC and TODO 1.3.
+
+**Deviations**
+
+Avionics/radio fit, flight-manual revision and FR172 sub-model remain open.
+
+## 2026-11-01 10:11 — Verify 172S sources; FR172 still open
+
+TODO: 1.3 in progress. Agent: Claude Code orchestrator; researcher subagent.
+
+**Implementation notes**
+
+With network access enabled, the researcher verified the 172S against EASA TCDS
+IM.A.051 Issue 11 and a public copy of FAA TCDS 3A12 Rev 80, with page citations,
+and recorded two small discrepancies between them. The NAV III (G1000) manual
+title page puts G1000 at 172S9810 and on. The researcher proposes 172S9491–9809
+as the first classic configuration.
+
+**Deviations**
+
+FAA DRS returned 403 to non-browser downloads; no workaround was attempted.
+Current FAA 3A12 Rev 88, A18EU (FR172), 1E10 and Continental engine sheets were
+not read directly. FR172 values remain unverified. Downloaded PDFs stay in the
+session scratchpad, not the repository.
+
+## 2026-11-01 10:08 — Complete EDFE source survey with operator material
+
+TODO: 1.7 in progress. Agent: Claude Code orchestrator; researcher subagent.
+
+**Implementation notes**
+
+After the user enabled network access, the researcher retrieved the operator's
+(TRIWO Egelsbach Airfield GmbH) published pilot information: runway 08/26, north
+circuit standard, reporting points, frequencies and altitude limits, all cite-only.
+
+**Deviations**
+
+DFS AIP pages were deliberately not downloaded: DFS terms forbid automated tools
+and derived works without written approval. Official AIRAC values, ARP, elevations
+and circuit altitude remain open.
+
+## 2026-11-01 07:25 — Add 172S/FR172 source survey
+
+TODO: 1.3 started. Agent: Claude Code orchestrator; researcher subagent.
+
+**Implementation notes**
+
+Integrated the researcher's note. Leads: FAA TCDS 3A12 (172S, IO-360-L2A), A18EU
+(Reims FR172E–K, several Continental IO-360 variants); no sourced classic/G1000
+serial cutoff. JSBSim verified on GitHub: no 172S/FR172 model; C172 files carry
+mixed LGPL/GPL and "not to be sold" terms.
+
+**Deviations**
+
+FAA/EASA hosts were blocked by the session network policy; no TCDS was opened and
+every aircraft value is an unverified lead. No values were adopted into SPEC or data.
+
+## 2026-11-01 07:24 — Resolve PR #4 quality/validate findings; add EDFE source survey
+
+TODO: 1.7 started. Agent: Claude Code orchestrator; quality, validate and researcher
+subagents (same provider, local).
+
+**Implementation notes**
+
+Local quality (needs changes) and validate (accept after fixes) reviewed `c1da267`.
+Fixed: restored the 07:04 input record and moved the 07:08 follow-up to a new
+record; labelled orchestrator additions to the third-party policy and the Q7/Q12
+readings as interpretations; removed the unsourced FR172/172S engine/propeller
+claims; propagated the 172S-first order; corrected the DCO relicensing statement
+and added the Propeller-holder caveat; added an SBOM license-compatibility check;
+cleared stale license/airport wording in AGENTS, CONCEPT, TRAINING, BOOT and
+GAPS A9; history/strikethrough and TODO order fixes. The researcher's EDFE note
+is integrated: official DFS AIP and operator hosts were unreachable, so only
+OurAirports values (non-authoritative) were obtained.
+
+**Deviations**
+
+The fixes have not had a renewed independent review. Per GAPS Q15 this
+documentation-only PR is outside the cross-provider peer scope. RESULTS.md keeps its
+historical "licensing remains Q5" line unchanged.
+
+## 2026-11-01 07:22 — Scope the cross-provider peer gate
+
+TODO: 0.18 complete. Agent: Claude Code orchestrator (no subagents).
+
+**Implementation notes**
+
+Per the user's direction (GAPS Q15), the peer gate applies to integrated milestones,
+simulation/data/avionics/assessment code, security-relevant or agent tooling and
+release candidates; documentation-only decision records, research notes and
+bookkeeping do not need it. Updated SDLC, AGENTS, SPEC R-AGENT-7, agent workflow,
+peer role and PR template. PR #4 is therefore outside the peer scope.
+
+**Deviations**
+
+The exact scope boundary is an orchestrator interpretation of the user's statement.
+
+## 2026-11-01 07:04 — Record aircraft, license, first-exercise, airport and community answers
+
+TODO: 0.9 complete; 0.10.2 recorded; 1.3, 1.5, 1.7 and 1.11 refined.
+Agent: Claude Code orchestrator (no subagents).
+
+**Implementation notes**
+
+Preserved the user's answers in a new input record and GAPS. Q5 resolved:
+GPL-3.0-or-later for original material (`LICENSE` added from the existing
+`LICENSES/` text) and a non-proprietary, permissive-preferred third-party policy
+in SBOM. Q12 resolved as deferred to roadmap phase 3. Partial answers: Q3
+(Reims FR172 and/or 172S as distinct engine configurations from public FAA/EASA
+documentation), Q7 (first exercise: take-off, circuit, landing) and Q10 (first
+airport Frankfurt-Egelsbach, EDFE). Propagated to SPEC, ROAD, ARCH, IDEA,
+CONCEPT, README, THIRD_PARTY_NOTICES and TODO.
+
+**Deviations**
+
+Records decisions only; no aircraft data, aerodrome data or simulator code.
+The user confirmed GPL-3.0-or-later, the "it depends" reading and the
+172S-first order at 07:08. No independent quality/validate or
+peer review was run for this documentation change.
+
 ## 2026-10-31 21:51 — Add and independently review repository-tool CI
 
 TODO: 1.1.1 complete; parent 1.1 remains open for simulator-stack gates.

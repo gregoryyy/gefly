@@ -2,7 +2,7 @@
 
 ## Purpose and current scope
 
-Build a progressively realistic flight simulator for PPL and later CPL learning. User decisions: Cessna 172, EASA PPL first, web application similar to GeoFS; classic instruments before glass; QNH/QFE/standard pressure; a free/open-source flight-school community; AI-assisted flight-experience creation; EDDF and a 100 NM radius as the first regional model. Prefer reuse of open physics engines and models. See [SPEC](docs/SPEC.md). This delivery is the project foundation and its requirements refinements; implementing the roadmap is subsequent work. Runtime language, rendering engine, dynamics engine, exact open-source license and hosting are **not decided**.
+Build a progressively realistic flight simulator for PPL and later CPL learning. User decisions: Cessna 172, EASA PPL first, web application similar to GeoFS; classic instruments before glass; QNH/QFE/standard pressure; a free/open-source flight-school community; AI-assisted flight-experience creation; EDDF and a 100 NM radius as the first regional model. Prefer reuse of open physics engines and models. See [SPEC](docs/SPEC.md). This delivery is the project foundation and its requirements refinements; implementing the roadmap is subsequent work. Project license: GPL-3.0-or-later, with non-proprietary, permissive-preferred third-party licenses (GAPS Q5). First aircraft: classic-panel 172S, then Reims FR172; first exercise: take-off, circuit and landing at Frankfurt-Egelsbach (EDFE). Runtime language, rendering engine, dynamics engine and hosting are **not decided**.
 
 Read [SDLC](docs/SDLC.md), [STYLE](docs/STYLE.md), [SEC](docs/SEC.md), [TODO](docs/TODO.md) and the relevant specification before changing work. The root documents are defaults; a subproject document may supersede a counterpart only within its stated scope. Keep requirements and task status authoritative in one place.
 
@@ -14,7 +14,8 @@ Run **code1 and code2 in parallel** on separate specification slices and disjoin
 
 **Quality** independently checks correctness, security, maintainability, test quality, units and numerical risks. **Validate** independently checks the delivered behavior against each in-scope specification criterion. Neither approves its own implementation. Failed checks return to a coder; changed artifacts require renewed affected reviews. Missing evidence is blocked or not evaluated, never a pass. Full dispatch and return contracts are in [the workflow](docs/agents/README.md).
 
-**Peer** adds actual cross-provider quality and specification validation: Claude
+**Peer** adds actual cross-provider quality and specification validation where
+[its scope](docs/SDLC.md#cross-provider-peer-gate) applies (not every PR; GAPS Q15): Claude
 reviews Codex-authored work; Codex reviews Claude-authored work. Use a fresh
 external provider process and the frozen packet via [the peer contract](docs/agents/peer.md).
 A local dispatcher, same-provider subagent or model alias does not satisfy this
@@ -38,7 +39,7 @@ Changes to these rules require a recorded design decision and corresponding SPEC
 
 ## Work and documentation
 
-Work on feature branches after initial bootstrap; main changes through PRs when a remote exists. The user wants a free/open-source project; the public source repository is `gregoryyy/gefly`. Exact project-wide licensing, future asset rights and hosting remain to be selected. Do not create a remote or choose a license as a side effect of ordinary implementation. User authorization governs commits, pushes and external actions. Avoid committing another worker's unfinished changes.
+Work on feature branches after initial bootstrap; main changes through PRs when a remote exists. The user wants a free/open-source project; the public source repository is `gregoryyy/gefly`. The project license is GPL-3.0-or-later (GAPS Q5); future asset rights, contributor terms and hosting remain to be selected. Do not create a remote or change the license as a side effect of ordinary implementation. User authorization governs commits, pushes and external actions. Avoid committing another worker's unfinished changes.
 
 Keep task IDs stable. Requirements are declared once in SPEC; use IDs in tasks, test names and review evidence. Commit messages use `Refs:` trailers when commits are made. Update TODO and prepend a clock-derived `YYYY-MM-DD HH:MM` entry to DONE in **Europe/Berlin**, naming the actual agent and subagents. Do not invent model versions or test results. Raw `docs/input/` records are immutable; add corrections as new records.
 

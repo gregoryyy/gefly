@@ -22,11 +22,10 @@ tooling comments also identify earlier Kibitz/OrgFab provenance.
 
 ## Project-wide license status
 
-The user intends Gefly to be free and open source. The exact license for original
-project material is still an open decision in [GAPS Q5](docs/GAPS.md); no blanket
-license for that material is granted by this notice. The upstream license above
-remains applicable to the identified derived files. Public repository visibility
-does not replace a license decision.
+Original Gefly material is licensed GPL-3.0-or-later (user decision,
+2026-11-01; [GAPS Q5](docs/GAPS.md)); see [LICENSE](LICENSE). The upstream license
+above remains applicable to the identified derived files. Separately licensed
+dependencies, data and assets keep their own terms.
 
 No aircraft manuals/models, geographic/chart datasets, JSBSim/FlightGear code,
 community add-ons or LLM runtime libraries have been bundled. Research links are

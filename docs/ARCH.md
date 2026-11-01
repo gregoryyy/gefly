@@ -1,12 +1,12 @@
 # Target architecture
 
-Status: proposed component boundaries; **web application**, **Cessna 172**, **EASA PPL first**, **classic instruments before glass** and **QNH/QFE/standard-pressure coverage** are user decisions. Exact aircraft/radio fit, language, renderer, geographic data provider and dynamics engine are open. This describes the target before code exists. Expanded scope and proposed delivery slices are in [the training design](design/TRAINING.md).
+Status: proposed component boundaries; **web application**, **Cessna 172**, **EASA PPL first**, **classic instruments before glass** and **QNH/QFE/standard-pressure coverage** are user decisions. Aircraft: a classic-panel 172S first, then the Reims FR172, as distinct engine configurations (Q3); the first exercise is a circuit at Frankfurt-Egelsbach (EDFE). Exact sub-model/radio fit, language, renderer, geographic data provider and dynamics engine are open. This describes the target before code exists. Expanded scope and proposed delivery slices are in [the training design](design/TRAINING.md).
 
 Additional user decisions: a **free/open-source flight-school community site**,
 **LLM-assisted flight-experience authoring and AI interaction**, an initial
 **EDDF/100 NM regional model from real source material**, and **reuse of open
-physics engines/models wherever practical**. These guide the target; no engine,
-license, hosting service, dataset or LLM provider has been selected.
+physics engines/models wherever practical**. These guide the target; the project license is GPL-3.0-or-later
+(Q5); no engine, hosting service, dataset or LLM provider has been selected.
 
 ## Reuse-first physics and aircraft models
 
@@ -175,12 +175,13 @@ exercise does not acquire that status automatically.
 
 Keep community storage, identity, submissions and moderation behind service
 interfaces so local simulation and self-hosting do not depend on a central account.
-Source-code licensing, build instructions and contribution workflow should permit
-an open-source release once selected, while separately licensed data/assets retain
+Source code is GPL-3.0-or-later; build instructions and contribution workflow
+should keep the release reproducible and a later relaxation possible, while separately licensed data/assets retain
 their own obligations. Define deployment, public-data retention and service costs
 without silently restricting the requested free core experience. Community does
 not automatically require real-time multiplayer or voice services. R-COMMUNITY-1
-and R-OPEN-1 govern the outcome; exact hosting and license remain open.
+and R-OPEN-1 govern the outcome; hosting remains open and community
+rules/roles are scoped in roadmap phase 3.
 
 ## Fidelity evolution
 

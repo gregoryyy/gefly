@@ -10,6 +10,9 @@ establish provider independence.
 
 ## Dispatch mode
 
+Dispatch only for changes inside the [SDLC peer scope](../SDLC.md#cross-provider-peer-gate)
+(GAPS Q15) or when the user requests it.
+
 The orchestrator identifies actual authorship before dispatch:
 
 | Authoring provider | Required external reviewer |
