@@ -1,0 +1,25 @@
+{
+  "status": "blocked",
+  "accepted": false,
+  "author_provider": "claude",
+  "reviewer_provider": "codex",
+  "packet": {
+    "path": "output/peer-first-prs/packet.md",
+    "sha256": "388fb4887888299b1139cf1e3469b50d8d15769c617b561c4f0fdaadd573b78f",
+    "revision": "48b2991a2727174626af11439d9c053970562305"
+  },
+  "cli": {
+    "executable": "codex",
+    "version": "0.163.0"
+  },
+  "model_evidence": [
+    "unknown"
+  ],
+  "review": null,
+  "limitations": [
+    "CLI routing and returned model names are evidence, not backend attestation.",
+    "Packet review does not independently execute the packet's test commands.",
+    "Codex uses an enforced read-only sandbox; no-tools/packet-only behavior is instructed, not a tool-disable switch in the installed CLI."
+  ],
+  "diagnostic": "reviewer_nonzero_exit"
+}

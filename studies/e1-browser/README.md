@@ -179,3 +179,24 @@ loading and the 60 Hz JSBSim stream did work. Fix: inline canvas-sizing CSS in
 `render/cesium.html` and an invalid-run guard in `render/meter.js`; the hosted page
 was republished, and the Cesium step needs a repeat. Hosting details:
 [hosted test page](hosted/README.md).
+
+### CesiumJS render driven by JSBSim (reference Mac): valid repeat
+
+Run by the user on 2026-11-01 after the canvas fix (hosted page version 2), Chrome
+156, `?source=sim`. Raw JSON: [Cesium run](results/2026-11-01-m1-chrome156-cesium-sim.json)
+(re-serialized from the pasted object; values unchanged). `canvas_size_valid: true`.
+
+| Measure | Result | Budget |
+| --- | --- | --- |
+| Display refresh (measured) | 120.5 Hz (8.3 ms) | recorded |
+| Median frame interval | 8.3 ms (120.5 fps) | ≤ 8.7 ms: pass |
+| p99 / max frame time | 9.4 / 14.8 ms; 2 missed vsyncs; 0 frames > 25 ms | ≤ 25 ms: pass |
+| State stream | 60.0 Hz, p99 interval 21 ms, no errors | functional |
+| Heading self-check | 0°/90°/180° correct | pass |
+| JS heap | 24.1 → 26.7 MB over 20 s | recorded |
+
+Both CesiumJS and three.js meet the render budgets on the reference Mac with the
+JSBSim stream. Limits: the Cesium window was 739×817 CSS px (three.js 1232×817), both
+at CSS resolution (device pixel ratio 2 not used), ellipsoid terrain and procedural
+imagery only; neither run exercised real terrain or imagery tiles. Same 60 Hz state
+on a 120 Hz display applies (display-only interpolation, CONTRACTS O-1).
