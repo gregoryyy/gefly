@@ -75,7 +75,7 @@ lifecycle and review state live outside it (see "Hash scope and review records")
 | `title`, `summary` | Plain text, escaped on render; `summary` labelled `instructional` or `generated`. |
 | `catalog` | `{name, edition}` pinned for every reference. |
 | `extent` | Catalog area reference (first: the edition's region) and the catalog's declared datum; the package cannot redefine either. |
-| `qualification_profile` | `profile_id@profile_version+hash` (`docs/design/QUALIFICATIONS.md`, branch `design/qualification-profile`) and the `objective_ids` this package serves. |
+| `qualification_profile` | `profile_id@profile_version+hash` (`docs/design/QUALIFICATIONS.md`, arriving with PR #10; link once merged) and the `objective_ids` this package serves. |
 | `aircraft` | `{manifest, manifest_version, manifest_hash, configuration}` (R-AIR-1; first: classic-panel 172S); `assists` and `fidelity` by enumerated name. |
 | `prerequisites` | Optional profile objective IDs or package IDs. |
 | `initial_conditions` | See below. |
