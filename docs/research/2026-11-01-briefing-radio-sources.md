@@ -138,6 +138,9 @@ All sources accessed 2026-11-01. "Read" means the cited part was actually inspec
     | — | "PISTE VERLASSEN / RUNWAY VACATED" | pp. 68–69 |
 
     The tables do not mark AFIS applicability.
+  - Main text section 20, "Verwenden von Blindsendungen (SERA.14085)", p. 21: blind
+    transmission is a communication-failure procedure, not a procedure for operating
+    at an aerodrome without AFIS; BRIEFING cites it only for that failure case.
   - EDFE's permitted language(s) are **TBD-src (AIP AD 2 EDFE, C4)**.
 - **EDFE procedure** (E2a, earlier note): call INFORMATION at the holding point;
   take-off and landing are at the pilot's discretion, and AFIS gives traffic
