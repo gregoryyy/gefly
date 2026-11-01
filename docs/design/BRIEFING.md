@@ -108,7 +108,7 @@ for display.
 
 ```text
 briefing_snapshot {
-  snapshot_id, schema_version, sha256          # hash over canonical items
+  snapshot_id, schema_version, sha256          # hash over canonical items, applied_environment_ref and differences[] (SCENARIO-CONTRACTS S2)
   scenario_time_utc                            # the simulated "now"
   mode: historical | generated | mixed | live  # live: later adapter only
   coverage: { stations[], area, notice_scope } # declared, so "none" can be verified
