@@ -59,7 +59,7 @@ normal direction differ by millimetres), and the atmosphere is evaluated at
 too high near EDFE, conflicting with QNH/QFE realism.
 
 **Height convention (orchestrator proposal from the researcher's recommendation;
-pending user confirmation):** JSBSim runs on **physical heights treated as its
+user-confirmed (GAPS Q18, 2026-11-01 13:59)):** JSBSim runs on **physical heights treated as its
 ellipsoid height** (DHHN2016 normal heights in Germany, EGM2008 orthometric
 heights elsewhere).
 
@@ -372,7 +372,7 @@ The v0.1 → v1 worker-message mapping is in [Appendix A](#appendix-a-v01--v1-wo
 | --- | --- | --- | --- |
 | O-1 | State streaming vs display rate | Render-side interpolation for display only; state stream 60 Hz; never in digests or replay | §2 |
 | O-2 | Magnetic model | WMM2025 | §1, §4 |
-| O-3 | Geoid/MSL datum | Researcher establishes JSBSim `h-sl` datum; geoid then chosen to match. Found: ellipsoid, no geoid; physical-height convention with GCG2016/EGM2008 is an **orchestrator proposal pending user confirmation** | §1, §4, U-6, U-9 |
+| O-3 | Geoid/MSL datum | Researcher establishes JSBSim `h-sl` datum; geoid then chosen to match. Found: ellipsoid, no geoid; physical-height convention with GCG2016/EGM2008 is an **user-confirmed (GAPS Q18, 2026-11-01 13:59)** | §1, §4, U-6, U-9 |
 | O-4 | Digest scheme | Per-step FNV-1a 64 + SHA-256 checkpoints every 120 steps | §5 |
 | O-5 | Review seek | Re-simulate from step 0; snapshot/restore only if too slow | §2, R-9 |
 | O-6 | Recorded trace | Optional downsampled trace allowed; input log stays authoritative | §5 |

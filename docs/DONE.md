@@ -3,6 +3,20 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 13:59 — Confirm the height datum; contracts v1 agreed
+
+TODO: 1.4 complete pending merge. Agent: Claude Code orchestrator (no subagents).
+
+**Implementation notes**
+
+The user accepted the physical-height convention (GAPS Q18 O-3); CONTRACTS no longer
+marks it pending. With Q18 resolved and three review rounds closed, contracts v1 is
+the agreed basis for parallel product coding.
+
+**Deviations**
+
+Peer pending (batched); geoid grid full hashes and terrain beyond Hessen remain open.
+
 ## 2026-11-01 12:58 — Draft shared contracts v1
 
 TODO: 1.4 in progress. Agent: Claude Code orchestrator; product subagent.

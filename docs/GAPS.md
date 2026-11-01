@@ -69,6 +69,11 @@ choices in TODO 1.2.1; they were not selected by this answer.
 
 Why: TODO 1.4 contracts must be agreed before parallel product coding.
 
+Answer (O-3 datum): **2026-11-01 13:59, user** ([input](input/2026-11-01-datum-runway-poh-decisions.md)):
+“yes to proposals”. JSBSim runs on DHHN2016 physical heights treated as its
+ellipsoid height; ellipsoidal heights are computed outside the dynamics with GCG2016
+in Germany and EGM2008 elsewhere ([CONTRACTS](design/CONTRACTS.md) §1).
+
 Answer: **2026-11-01 13:00, user** (recorded by orchestrator, Claude Code;
 [input](input/2026-11-01-contracts-decisions.md)): “accept all, 8 start at hold
 point”. Decided: display-only interpolation with a 60 Hz state stream (never in
