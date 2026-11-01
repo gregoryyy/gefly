@@ -262,6 +262,15 @@ and product. Glass is a later configuration; A320 is a reference, not an initial
 
 Why: determines whether the first slice is aircraft handling, instrument interpretation or a procedure, and how training claims can be reviewed. ~~Proposed: a bounded straight-and-level control/trim exercise, then coordinated turns;~~ (superseded by the 2026-11-01 answer below) product should refine objectives against the selected EASA syllabus with instructor review. Blocking: milestone 2 exercise acceptance, not generic physics experiments.
 
+Answer: **2026-11-01 13:59, user** (recorded by orchestrator, Claude Code; input record
+`docs/input/2026-11-01-datum-runway-poh-decisions.md` on branch design/contracts-1-4):
+“yes to proposals, no instructor reviewer yet, go with what we learn from research”.
+Exercise 01 uses **runway 26** (proposed default) with the standard north circuit
+(right-hand for 26, per operator material); **no instructor reviewer** for now, so
+criteria stay labelled source-based or instructional proposals and are refined from
+research; POH values (ASI calibration, performance) may be extracted as cited facts
+without copying tables.
+
 Answer: **2026-11-01 07:04, user** (recorded by orchestrator, Claude Code; [2026-11-01 answers](input/2026-11-01-aircraft-license-exercise-answers.md)):
 “first learning exercise is start fly a pattern and land”. The first exercise is a
 complete **circuit: take-off, traffic pattern and landing** at the first airport
