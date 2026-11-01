@@ -233,7 +233,7 @@ of `ind` — enters the `ind` group.
 | `teach` | `packages/training/` (code2) | Annotations only; never read by `sim`, `env` or `ind` | none |
 
 `sim` fields (SI, frames per §1): `lat_rad`, `lon_rad` (geodetic), `h_msl_m`
-(JSBSim-native physical height), `h_agl_m` (terrain callback); `phi_rad`, `theta_rad`, `psi_true_rad`; NED velocity `vn_mps, ve_mps,
+(JSBSim-native physical height), `h_agl_m` (terrain callback); `phi_rad`, `theta_rad`, `heading_true_rad`; NED velocity `vn_mps, ve_mps,
 vd_mps`; body velocity `u_mps, v_mps, w_mps`; body rates `p_radps, q_radps,
 r_radps`; body accelerations and specific force; `alpha_rad`, `beta_rad`,
 `cas_mps`, `tas_mps`; mass `mass_kg`, CG position `cg_struct_m` (structural frame,
@@ -416,7 +416,7 @@ R-SIM-4, replace the acceptance text with:
 | application rule (v0.1 text) | unchanged; worker logs `applied_step`; paused inputs not late | Log carries applied step |
 | `run {until_step?}`, `pause`, `stop` | `run`, `pause`, `reset`, `stop` | `until_step` test-only; `reset` re-seeds |
 | `ready.build {jsbsim_tag, jsbsim_commit, emsdk, wasm_bytes, wasm_sha256, flags}` | same + `contract_version`, bridge revision, `js_bundle_sha256` | Main thread adds browser engine/version |
-| `state {step, t_s, lat_rad, lon_rad, alt_msl_m, roll_rad, pitch_rad, heading_rad, tas_mps, …}` | `state {v, run_id, step, sim.core, env?, ind?}` | Explicit height fields; `psi_true_rad`; `t_s` derived |
+| `state {step, t_s, lat_rad, lon_rad, alt_msl_m, roll_rad, pitch_rad, heading_rad, tas_mps, …}` | `state {v, run_id, step, sim.core, env?, ind?}` | Explicit height fields; `heading_true_rad`; `t_s` derived |
 | `stats` (benchmark) | `stats {missed, dropped, max_lag, max_batch, late_inputs, digests, checkpoint}` | Product overload reporting |
 | `burst`, `stats.step_cost_us` array | test harness only | Not product |
 | `error {message}` | `error {v, code, field?, step?, message}` | Machine-readable code |
