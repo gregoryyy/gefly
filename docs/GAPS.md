@@ -159,10 +159,10 @@ About This Mac can confirm the chip.
 Update: **2026-11-01 13:28, user** ([input](input/2026-11-01-mac-model.md)): “late 2020
 macbook pro 14””. Orchestrator note: Apple's late-2020 MacBook Pro is the 13-inch M1
 (60 Hz); the 14-inch MacBook Pro (late 2021) has an M1 Pro or M1 Max and a 120 Hz
-ProMotion display, which matches the recorded renderer string and refresh. Pending
-the user's check (Apple menu → About This Mac), results are attributed to the
-renderer-reported **Apple M1 Pro, 120 Hz**; the reference-platform name in Q16 stays
-"MacBook Pro (Apple silicon)" until confirmed.
+ProMotion display, which matches the recorded renderer string and refresh. Results
+and the reference-platform name are attributed to the renderer-reported **Apple M1
+Pro, 120 Hz** (consistent with the no-external-monitor answer); About This Mac can
+confirm it but is not required.
 
 Confirmation: **2026-11-01 13:25, user** (recorded by orchestrator, Claude Code;
 [input](input/2026-11-01-chip-confirmation.md)): “M1 not pro”. ~~The reference Mac is
@@ -178,7 +178,8 @@ Answer: **2026-11-01 11:00, user** (recorded by orchestrator, Claude Code;
 webkit browsers esp. chrome latest. optional controls: bind orientation from
 paired iphone”.
 
-Recorded: reference **MacBook Pro (Apple M1)** on the **current macOS release**;
+Recorded: reference ~~**MacBook Pro (Apple M1)**~~ **14-inch MacBook Pro, Apple M1 Pro
+(120 Hz built-in)** per the 13:28 updates below, on the **current macOS release**;
 **Chrome (latest stable) as primary browser**; Safari secondary is an orchestrator
 assumption from “webkit browsers”, to be confirmed. Orchestrator note:
 desktop Chrome uses the Blink engine, not WebKit; Safari is the WebKit browser, so
