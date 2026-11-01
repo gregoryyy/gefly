@@ -129,6 +129,28 @@ Resolved (engine): 2026-11-01 11:38, user; carried into [ARCH](ARCH.md), [SBOM](
 Why: TODO 1.2.1 needs a measured reference platform for timestep, latency and
 frame budgets, and the optional input profiles.
 
+Update: **2026-11-01 13:28, user** ([input](input/2026-11-01-no-external-monitor.md)): no
+external monitor. The 120 Hz refresh therefore came from the built-in panel, which
+together with the renderer string identifies a 14-inch MacBook Pro with Apple M1 Pro.
+Results stay attributed to the measured hardware (Apple M1 Pro, 120 Hz built-in);
+About This Mac can confirm the chip.
+
+Update: **2026-11-01 13:28, user** ([input](input/2026-11-01-mac-model.md)): “late 2020
+macbook pro 14””. Orchestrator note: Apple's late-2020 MacBook Pro is the 13-inch M1
+(60 Hz); the 14-inch MacBook Pro (late 2021) has an M1 Pro or M1 Max and a 120 Hz
+ProMotion display, which matches the recorded renderer string and refresh. Pending
+the user's check (Apple menu → About This Mac), results are attributed to the
+renderer-reported **Apple M1 Pro, 120 Hz**; the reference-platform name in Q16 stays
+"MacBook Pro (Apple silicon)" until confirmed.
+
+Confirmation: **2026-11-01 13:25, user** (recorded by orchestrator, Claude Code;
+[input](input/2026-11-01-chip-confirmation.md)): “M1 not pro”. The reference Mac is
+an Apple M1. Observation to reconcile: Chrome's WebGL renderer string on the
+recorded runs reported "Apple M1 Pro", and the display measured 120 Hz, which the
+13-inch M1 MacBook Pro's built-in panel does not provide (an external 120 Hz display
+would explain it). Results keep the reported strings; budgets scale to the measured
+refresh.
+
 Answer: **2026-11-01 11:00, user** (recorded by orchestrator, Claude Code;
 [input](input/2026-11-01-reference-platform.md)): “macbook pro m1, latest macos,
 webkit browsers esp. chrome latest. optional controls: bind orientation from
@@ -299,6 +321,15 @@ and product. Glass is a later configuration; A320 is a reference, not an initial
 
 Why: determines whether the first slice is aircraft handling, instrument interpretation or a procedure, and how training claims can be reviewed. ~~Proposed: a bounded straight-and-level control/trim exercise, then coordinated turns;~~ (superseded by the 2026-11-01 answer below) product should refine objectives against the selected EASA syllabus with instructor review. Blocking: milestone 2 exercise acceptance, not generic physics experiments.
 
+Answer: **2026-11-01 13:59, user** (recorded by orchestrator, Claude Code; input record
+`docs/input/2026-11-01-datum-runway-poh-decisions.md` on branch design/contracts-1-4):
+“yes to proposals, no instructor reviewer yet, go with what we learn from research”.
+Exercise 01 uses **runway 26** (proposed default) with the standard north circuit
+(right-hand for 26, per operator material); **no instructor reviewer** for now, so
+criteria stay labelled source-based or instructional proposals and are refined from
+research; POH values (ASI calibration, performance) may be extracted as cited facts
+without copying tables.
+
 Answer: **2026-11-01 13:00, user** (recorded by orchestrator, Claude Code;
 [input](input/2026-11-01-contracts-decisions.md)): “8 start at hold point”. The first
 exercise **starts at the runway holding point with the engine running**; engine
@@ -313,6 +344,8 @@ user may include engine start/taxi), replacing the earlier straight-and-level pr
 pattern direction from sourced aerodrome data, assessment criteria/tolerances
 (TODO 1.5) and the instructor review partner. Owner: product proposes criteria;
 orchestrator resolves with user.
+
+TODO: needs resolution.
 
 ~~Answer: pending.~~
 

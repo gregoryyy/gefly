@@ -6,6 +6,34 @@ above previous entries. This log records implementation, not simulator validity.
 ## 2026-11-01 16:47 — Draft the paired-iPhone control specification
 
 TODO: 1.13 in progress. Agent: Claude Code orchestrator; product subagent (with source
+
+## 2026-11-01 14:07 — Extract cited 172S POH values
+
+TODO: 1.3/1.5 support. Agent: Claude Code orchestrator; researcher/housekeeping
+subagent.
+
+**Implementation notes**
+
+Per the user's decision, extracted only needed POH (172SPHUS Rev 5, S17) values as
+cited facts into `data/aircraft/c172s-classic/poh-values.json` (66 tabulated numbers
+checked against rendered pages): airspeed calibration points for the Exercise 01
+bands (p. 5-9), stall speeds (p. 5-12), short-field take-off/landing distances at
+2,550 lb near EDFE elevation (pp. 5-14, 5-23/24), climb (p. 5-17), and paraphrased
+correction notes. Separate schema, extended validator, 25 POH tests (19 initial, 6 after review) and a
+[research note](research/2026-11-01-c172s-poh-values.md).
+
+**Deviations**
+
+POH gives short-field distances only; VFE 10° KCAS differs between p. 2-4 (107) and
+p. 5-9 (109), recorded as pending; applicability of later POH revisions to
+172S9491–9809 unchecked; not yet reviewed. Peer pending (batched).
+## 2026-11-01 13:34 — Draft scenario briefing, AFIS radio and checklist scope
+
+TODO: 1.8 in progress. Agent: Claude Code orchestrator; product subagent (with source
+
+## 2026-11-01 13:31 — Draft Exercise 01 acceptance criteria
+
+TODO: 1.5 in progress. Agent: Claude Code orchestrator; product subagent (with source
 research).
 
 **Implementation notes**
@@ -22,6 +50,64 @@ and replay rejection, and keyboard/touchpad fallback.
 Draft; iOS orientation needs an HTTPS page, so hosting (open) blocks it; sensor rate
 and latency unmeasured, budget values are proposals; not yet reviewed. Peer pending
 (batched).
+Added [BRIEFING](design/BRIEFING.md) and its
+[source note](research/2026-11-01-briefing-radio-sources.md): snapshot briefing
+schema validated against scenario time with explicit failure states; QNH/QFE/STD flow
+into the environment; a later live adapter frozen into replay; AFIS (information, not
+clearances) text-radio scope with AI text limited to proposing intents; POH checklist
+items classified by modeled state. EDFE has no METAR in the checked feed, so briefings
+pair EDDF METAR/TAF with a generated EDFE report.
+
+**Deviations**
+
+Draft; WMO-No. 306, ICAO Annex 3/Doc 4444/9432 and DFS AIP not read; not yet
+reviewed. Peer pending (batched).
+Added [EXERCISE-01](design/EXERCISE-01.md): holding-point start with engine running,
+12 phases with measures, units and state fields, pass/fail/feedback rules, assists,
+replay markers and environment cases; and its
+[source note](research/2026-11-01-exercise-01-sources.md). Tolerances are labelled by
+source: EASA AMC1 FCL.235 skill-test guidance (used as instructional adaptation),
+C172S POH (page-cited), EDFE operator material (cite-only), or instructional proposal
+pending instructor review.
+
+**Deviations**
+
+Draft, not frozen: runway, instructor reviewer, AIP circuit data and the POH climb-
+speed discrepancy are open; not yet reviewed. Peer pending (batched).
+
+## 2026-11-01 13:29 — Draft the 172S classic-panel aircraft manifest
+
+TODO: 1.3 in progress. Agent: Claude Code orchestrator; housekeeping subagent.
+
+**Implementation notes**
+
+Added `data/aircraft/c172s-classic/manifest.json` (v0.1.0, fidelity not validated):
+serials 172S9491–172S9809, IO-360-L2A, McCauley propeller, masses and speed limits
+only where page-cited, with SI and original units, R-DATA-2 status, uncertainty and
+a source register with rights and hashes. Conflicting sources (VFE CAS, utility ramp
+mass) are recorded as unknown with both readings. JSON Schema, stdlib validator and
+15 tests added to the shared gate.
+
+**Deviations**
+
+Draft; FAA 3A12 Rev 88 and engine TCDS 1E10 not read; avionics fit TBD; not yet
+reviewed. Aircraft data: peer pending (batched), required before milestone acceptance.
+
+## 2026-11-01 13:06 — Add study checks to the shared CI gate
+
+TODO: 1.1.2 in progress. Agent: Claude Code orchestrator; code1 subagent.
+
+**Implementation notes**
+
+`utils/ci.py` now runs the `studies/e1-jsbsim` tests in a separate interpreter
+(fails on missing/empty/failing/import errors, reports skips) and
+`check-synthetic.mjs` with node; a missing node is reported as a skip and the final
+line says "passed with skipped check". Hosted CI uses `--require-node` with the
+runner's preinstalled Node.js. 8 new negative/positive tests (49 tool tests total).
+
+**Deviations**
+
+Local only: hosted run and independent review pending. Peer pending (batched).
 
 ## 2026-11-01 13:59 — Confirm the height datum; contracts v1 agreed
 
@@ -53,6 +139,75 @@ table. Proposed SPEC wording for R-SIM-3/R-SIM-4 is not applied.
 
 Draft only; nine open questions (O-1..O-9) need decisions; not yet independently
 reviewed. Peer pending (batched).
+## 2026-11-01 13:07 — Draft the flight-experience package and LLM boundary
+
+TODO: 1.10 in progress. Agent: Claude Code orchestrator; product subagent.
+
+**Implementation notes**
+
+Added [EXPERIENCES](design/EXPERIENCES.md): declarative versioned package (no code,
+unit- and reference-bearing values, per-value provenance status), stable-ID source
+catalog starting with `eddf-100nm`/EDFE, LLM boundary (draft and catalog lookup
+only), nine validation stages with failure codes, review states with author ≠
+reviewer, security rules, and an EDFE circuit example with every real value TBD.
+
+**Deviations**
+
+Draft; cites the holding-point start from branch `design/contracts-1-4` (not yet on
+main); runway in the example is illustrative; Q13 provider open; not yet reviewed.
+
+## 2026-11-01 13:06 — Draft the pilot-qualification profile contract
+
+TODO: 1.12 in progress. Agent: Claude Code orchestrator; product subagent.
+
+**Implementation notes**
+
+Added [QUALIFICATIONS](design/QUALIFICATIONS.md): sourced-value model with per-field
+status and source register, profile schema (jurisdiction, authority, full
+qualification, privileges, objectives→exercises, aircraft-manifest references,
+mandatory no-training-credit flag), 12 invalidity rules, versioning, a draft EASA
+PPL(A)/C172S example and placeholder SPL/ultralight shapes bound to Q14.
+
+**Deviations**
+
+Draft; most PPL values unverified until Part-FCL sections are read; Q14 choices not
+made; proposed SPEC edits not applied; not yet reviewed. Peer pending (batched).
+
+## 2026-11-01 12:56 — Record M1 render runs; fix the hosted Cesium page
+
+TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator (no subagents); runs
+by the user on the reference Mac (WebGL: Apple M1 Pro, 120 Hz), Chrome 156.
+
+**Implementation notes**
+
+three.js with the JSBSim stream: median 8.3 ms, p99 9.4 ms at 120 Hz: both render
+budgets pass (1232×817 viewport, CSS resolution). CesiumJS run invalid: 300×150 px
+drawing buffer because the host CSP blocks `widgets.css`; added inline canvas CSS
+and an invalid-run guard, republished the page (version 2). Recorded the hosted
+launcher and its file map under `studies/e1-browser/hosted/` for later repeats.
+
+**Deviations**
+
+Cesium repeat pending. GAPS Q16 says M1; the GPU string says M1 Pro (to confirm).
+Peer pending (batched).
+
+## 2026-11-01 12:53 — Record the reference M1 worker benchmark
+
+TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator (no subagents); run
+performed by the user on the reference MacBook Pro M1, Chrome 156.
+
+**Implementation notes**
+
+Stored the user's JSON under `studies/e1-browser/results/`. Missed steps 0.33 per
+10 s, latency p95 16.9 ms and same-build replay pass; paced step-cost p99 800–1000 µs
+exceeds 830 µs as measured but is limited by 100 µs timer coarsening (page not
+cross-origin isolated); unpaced compute ≈ 15 µs per step. Replay digest equals the
+container's for the same WASM build.
+
+**Deviations**
+
+Render runs on the M1 pending; step cost to be re-measured cross-origin isolated.
+Peer pending (batched).
 
 ## 2026-11-01 12:33 — Validate the E1 browser check; publish the M1 test page
 
