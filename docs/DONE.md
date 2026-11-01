@@ -3,6 +3,29 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 07:04 — Record aircraft, license, first-exercise, airport and community answers
+
+TODO: 0.9 complete; 0.10.2 recorded; 1.3, 1.5, 1.7 and 1.11 refined.
+Agent: Claude Code orchestrator (no subagents).
+
+**Implementation notes**
+
+Preserved the user's answers in a new input record and GAPS. Q5 resolved:
+GPL-3.0-or-later for original material (`LICENSE` added from the existing
+`LICENSES/` text) and a non-proprietary, permissive-preferred third-party policy
+in SBOM. Q12 resolved as deferred to roadmap phase 3. Partial answers: Q3
+(Reims FR172 and/or 172S as distinct engine configurations from public FAA/EASA
+documentation), Q7 (first exercise: take-off, circuit, landing) and Q10 (first
+airport Frankfurt-Egelsbach, EDFE). Propagated to SPEC, ROAD, ARCH, IDEA,
+CONCEPT, README, THIRD_PARTY_NOTICES and TODO.
+
+**Deviations**
+
+Records decisions only; no aircraft data, aerodrome data or simulator code.
+The user confirmed GPL-3.0-or-later, the "it depends" reading and the
+172S-first order at 07:08. No independent quality/validate or
+peer review was run for this documentation change.
+
 ## 2026-10-31 17:17 — Add and exercise the independent opposite-provider peer
 
 TODO: 0.17 complete. PR: [#2](https://github.com/gregoryyy/gefly/pull/2), following merged #1.

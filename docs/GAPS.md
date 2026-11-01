@@ -79,44 +79,30 @@ ROAD, EVAL and TODO. Evaluate historical/generated report/NOTAM validity against
 scenario time; preserve data/condition snapshots for replay. Exact source/provider,
 coverage, rights and live rollout remain future implementation selections.
 
-## Open questions
-
-### Q3. Which Cessna 172 variant, year and avionics fit?
-
-Why: operating limits, engine/propeller, systems, instrument ranges and procedures must refer to one applicable configuration. Proposed: research availability and redistribution rights for a specific C172S configuration before recommending a conventional panel or glass cockpit. Blocking: TODO 1.3 and aircraft-specific implementation; generic studies may continue.
-
-Answer: partial update, **2026-10-31 15:09, user** (recorded by orchestrator):
-“Classic instruments first, glass later”. The exact variant/year and conventional
-instrument/radio fit remain pending. Owner: orchestrator, informed by researcher
-and product. Glass is a later configuration; A320 is a reference, not an initial type.
-
 ### Q5. Source license and third-party data policy?
 
-Why: affects code reuse, distribution, aircraft manuals, avionics depictions, maps and navigation data. The user's direction is now free/open source; select a compatible open-source license and review separately licensed assets/data. Blocking: license-dependent distribution and restricted asset ingestion. A source `LICENSE` file is intentionally absent until a specific license is chosen.
+Why: affects code reuse, distribution, aircraft manuals, avionics depictions, maps and navigation data. The user's direction is now free/open source; select a compatible open-source license and review separately licensed assets/data. Blocking: license-dependent distribution and restricted asset ingestion. 
 
-Answer: partial update, **2026-10-31 15:15, user**: “The idea is to make this free
+Answer: **2026-11-01 07:04, user** (recorded by orchestrator, Claude Code; [2026-11-01 answers](input/2026-11-01-aircraft-license-exercise-answers.md)):
+“gpl 3 for the project now, can adjust later. third party policy: non-proprietary
+licenses, with preference for permissive licenses so gpl3 can be relaxed later”.
+
+Recorded as **GPL-3.0-or-later** for original project material, matching the
+Propeller-derived files already distributed on those terms. Confirmed: **2026-11-01 07:08, user** (recorded by orchestrator, Claude Code): “gpl3+, yes, yes”. Third-party policy: dependencies, models, data and assets must
+use non-proprietary (open-source or open-data) licenses; **prefer permissive**
+licenses (e.g. MIT, BSD, Apache-2.0, public domain/CC0, CC-BY). Copyleft
+components (e.g. LGPL, GPL, ODbL share-alike data) need a recorded justification,
+because they would constrain a later relaxation. Note: a later relaxation needs
+permission from every copyright holder, so contributor terms that keep this option
+open remain to be chosen (TODO 1.11).
+
+~~Answer: partial update, **2026-10-31 15:15, user**: “The idea is to make this free
 and open source”. Exact code license, contributor terms and asset/data compatibility
-remain pending. Owner: orchestrator. [SBOM](SBOM.md) records source provenance.
+remain pending.~~ Owner: orchestrator. [SBOM](SBOM.md) records source provenance.
 
-### Q7. First useful learning exercise and review partner?
-
-Why: determines whether the first slice is aircraft handling, instrument interpretation or a procedure, and how training claims can be reviewed. Proposed: a bounded straight-and-level control/trim exercise, then coordinated turns; product should refine objectives against the selected EASA syllabus with instructor review. Blocking: milestone 2 exercise acceptance, not generic physics experiments.
-
-Answer: pending. Owner: product proposes; orchestrator resolves with user.
-
-### Q10. Which first training region, airport and runway?
-
-Why: determines geography, elevations, navigation/briefing coverage and source rights.
-Blocking: verified region geometry, selected training-airport/runway fixtures and
-source-specific acceptance; the region direction itself is resolved.
-
-Answer: **2026-10-31 15:15, user**: “model a region like EDDF and 100 nm radius
-around from real available map material”. Recorded in SPEC, ARCH and ROAD.
-The radius is 185.2 km; use a geodesic boundary around the sourced official EDDF
-airport reference point. Exact current reference coordinates and training airports,
-runways, data versions and chart permissions remain pending. EDDF is the regional
-center, not a decision to conduct every exercise at its runways. Owner: orchestrator
-with researcher/product. See [regional source study](research/2026-10-31-eddf-open-foundation.md).
+Resolved: 2026-11-01 07:04, user; carried into `LICENSE`, README, THIRD_PARTY_NOTICES,
+SPEC R-OPEN-1, SBOM and TODO 0.9. Contributor terms and per-asset rights stay open in
+TODO 1.11 and R-DATA-1.
 
 ### Q12. Community publication and content roles?
 
@@ -126,9 +112,80 @@ Proposed: a reusable exercise library and discussion/debrief workflow first;
 specific roles and sequencing remain proposals. Blocking: community deployment,
 not simulator or source-research studies.
 
+Answer: **2026-11-01 07:04, user** (recorded by orchestrator, Claude Code; [2026-11-01 answers](input/2026-11-01-aircraft-license-exercise-answers.md)):
+“community publishing: rules and roles follow later in phase 3.” Deferred: the
+publication rules, roles, moderation and hosting are scoped during roadmap
+phase 3, not before. No community workflow is enabled until then.
+
 Answer: direction confirmed **2026-10-31 15:15, user**: community site similar to
 GeoFS, more flight-school oriented, free/open source. Hosting, data retention,
 moderation, contribution workflow and funding/operating model remain pending.
+
+Resolved (deferred): 2026-11-01 07:04, user; carried into ROAD and TODO 1.11.
+
+## Open questions
+
+### Q3. Which Cessna 172 variant, year and avionics fit?
+
+Why: operating limits, engine/propeller, systems, instrument ranges and procedures must refer to one applicable configuration. Proposed: research availability and redistribution rights for a specific C172S configuration before recommending a conventional panel or glass cockpit. Blocking: TODO 1.3 and aircraft-specific implementation; generic studies may continue.
+
+Confirmation: **2026-11-01 07:08, user** (recorded by orchestrator, Claude Code): “gpl3+, yes, yes”. The user confirms the *it depends on the data* reading and the
+order: **classic-panel 172S first, FR172 second** when its data suffice.
+
+Answer: partial update, **2026-11-01 07:04, user** (recorded by orchestrator, Claude Code; [2026-11-01 answers](input/2026-11-01-aircraft-license-exercise-answers.md)):
+“FR172 and/or 172S with their different engine configs to show performance
+differences. it fried on the actual data available, but from public FAA
+documentation we should have a fairly good picture”. Reading: *it depends on*
+the available data. Candidate set: **Reims FR172** (higher-power engine with a
+constant-speed propeller, per the model family's certification data; exact sub-model
+and engine to be sourced) and **Cessna 172S** (fixed-pitch propeller), modeled as
+distinct configurations so learners can compare performance. Primary public
+sources: FAA type certificate data sheets and other public FAA/EASA records;
+FR172 is a Reims-built model, so its EASA/French certification records may be
+needed alongside FAA material. Proposed by orchestrator and confirmed by the user at 07:08: a classic-panel 172S before the factory glass-cockpit fit as the
+first configuration, then FR172 when its data suffice. Still open: exact
+sub-models/years/serial ranges, engine/propeller, avionics fit (the 172S-first order
+holds unless the data research contradicts it). Manufacturer POH/AFM text remains copyrighted; extract facts with source
+references, without copying manuals (R-DATA-1).
+
+Answer: partial update, **2026-10-31 15:09, user** (recorded by orchestrator):
+“Classic instruments first, glass later”. The exact variant/year and conventional
+instrument/radio fit remain pending. Owner: orchestrator, informed by researcher
+and product. Glass is a later configuration; A320 is a reference, not an initial type.
+
+### Q7. First useful learning exercise and review partner?
+
+Why: determines whether the first slice is aircraft handling, instrument interpretation or a procedure, and how training claims can be reviewed. Proposed: a bounded straight-and-level control/trim exercise, then coordinated turns; product should refine objectives against the selected EASA syllabus with instructor review. Blocking: milestone 2 exercise acceptance, not generic physics experiments.
+
+Answer: **2026-11-01 07:04, user** (recorded by orchestrator, Claude Code; [2026-11-01 answers](input/2026-11-01-aircraft-license-exercise-answers.md)):
+“first learning exercise is start fly a pattern and land”. The first exercise is a
+complete **circuit: take-off, traffic pattern and landing** at the first airport
+(Q10), replacing the earlier straight-and-level proposal. Still open: runway and
+pattern direction from sourced aerodrome data, assessment criteria/tolerances
+(TODO 1.5) and the instructor review partner. Owner: product proposes criteria;
+orchestrator resolves with user.
+
+~~Answer: pending.~~
+
+### Q10. Which first training region, airport and runway?
+
+Why: determines geography, elevations, navigation/briefing coverage and source rights.
+Blocking: verified region geometry, selected training-airport/runway fixtures and
+source-specific acceptance; the region direction itself is resolved.
+
+Answer: **2026-11-01 07:04, user** (recorded by orchestrator, Claude Code; [2026-11-01 answers](input/2026-11-01-aircraft-license-exercise-answers.md)):
+“first airport is egelsbach in germany”. First airport: **Frankfurt-Egelsbach
+(ICAO EDFE)**, inside the EDDF 100 NM region. Still open: runway(s), circuit
+pattern, elevation, frequencies and chart sources with editions and rights,
+verified against official AIP/aerodrome publications (TODO 1.7).
+
+Answer: **2026-10-31 15:15, user**: “model a region like EDDF and 100 nm radius
+around from real available map material”. Recorded in SPEC, ARCH and ROAD.
+The radius is 185.2 km; use a geodesic boundary around the sourced official EDDF
+airport reference point. Exact current reference coordinates and training airports,
+runways, data versions and chart permissions remain pending. EDDF is the regional
+center, not a decision to conduct every exercise at its runways. Owner: orchestrator
+with researcher/product. See [regional source study](research/2026-10-31-eddf-open-foundation.md).
 
 ### Q13. LLM authoring and interaction provider/execution model?
 
