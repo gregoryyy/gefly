@@ -76,8 +76,11 @@ Findings from the source note:
   returned none in 24 h. The operator states that EDFE's AWOS issues local MET
   REPORT/SPECIAL (E2b).
 - EDDF METAR and TAF exist. Historical EDDF METARs are retrievable from the IEM
-  archive (B8, public domain as distributed). DWD is the originator, and DWD
-  located weather information is CC BY 4.0 (B5). The AWC holds 30 days (B7).
+  archive (B8). IEM's public-domain statement covers IEM's own distribution, not
+  the rights of the originator (DWD). DWD's CC BY 4.0 grant (B5) covers *freely
+  accessible* geodata. It is not established that it covers aviation weather,
+  which DWD offers through a fee-based portal (B6). EDDF reports are therefore
+  `rights_unknown` until DWD confirms. The AWC holds 30 days (B7).
 - DWD open data has no METAR/TAF directory (B4). The DWD aviation portal is
   fee-based (B6).
 - No open historical German NOTAM source was found. The DFS AIS portal forbids
@@ -87,8 +90,8 @@ Proposed first content set:
 
 | Item | Mode | Provenance | Rights class |
 | --- | --- | --- | --- |
-| EDDF METAR at or before scenario time | historical | IEM archive record (station, issue time, raw text, retrieval time) | `cc-by-4.0` (originator DWD, TBD-confirm) plus IEM attribution |
-| EDDF TAF covering scenario time | historical, or generated if no archived TAF is available | Archive record, or a generator rule | As above, or `generated` |
+| EDDF METAR at or before scenario time | historical | IEM archive record (station, issue time, raw text, retrieval time) | **`rights_unknown`** (blocks shipping) until DWD confirms; keep IEM attribution as distributor. Usable only in local/author builds meanwhile |
+| EDDF TAF covering scenario time | historical, or generated if no archived TAF is available | Archive record, or a generator rule | As above (`rights_unknown`), or `generated` |
 | EDFE local report (MET REPORT-like) | generated, derived from the applied environment | Generator id and version; inputs | `generated` (project GPL) |
 | Notices (NOTAM-like) | generated | Scenario author; fictional serial clearly marked | `generated` |
 | Aerodrome data (runway, elevation, frequencies) | reference | EDFE note: E2a operator, E3 OurAirports placeholder, E1 AIP pending | Per EDFE note; `reference-only` items are cited, not shipped |
@@ -140,12 +143,16 @@ Rules:
   scenario time and its age is within `max_obs_age`. `max_obs_age` is proposed to
   be one routine reporting interval plus a margin. The interval is TBD-src: the IEM
   sample shows EDDF issuing at :20 and :50, and the Annex 3 criteria were not read.
-  An older report gets state `stale`.
+  An older report gets state `stale`. When several METAR/SPECI items for one
+  station are applicable, the latest issue wins and the earlier ones are
+  `superseded`.
 - **R3. A TAF is applicable** when its validity period contains scenario time and it
   is the latest issue before scenario time. Earlier issues are `superseded`. The
   meaning of amended, corrected and cancelled forecasts is TBD-src (WMO-No. 306
   FM 51, B1, not read). Until it is sourced, the parser rejects AMD/COR/CNL as
-  `malformed` rather than guessing.
+  `malformed` rather than guessing. If a TAF is required and none covers
+  scenario time, the TAF slot is `missing`; non-covering issues are listed as
+  inactive.
 - **R4. A notice is active** when its period contains scenario time. It is
   inactive but listed when the period is outside scenario time. Permanent or
   estimated end times are TBD-src (PANS-AIM).
@@ -182,8 +189,26 @@ display unit. These follow the CONTRACTS draft on `design/contracts-1-4`.
 
 1. **QNH.** The scenario declares one QNH value with its source item (for example
    the EDDF METAR's QNH group) or a generated value. Reported QNH is rounded per
-   the code form (TBD-src, B1/B3). The environment's sea-level reference pressure
-   is set from the declared value. The value is not recomputed from another station.
+   the code form (TBD-src, B1/B3). The value is not recomputed from another station.
+   **Modelling.** Setting the atmosphere model's sea-level reference pressure
+   directly to QNH is correct only when the model atmosphere is ISA. In a non-ISA
+   temperature profile, the indicated altitude at the field would then differ from
+   field elevation. The proposed definition: the environment is fixed at the QFE
+   datum. The static pressure at datum elevation is the pressure that a
+   standard-atmosphere altimeter set to QNH converts to datum elevation. The
+   temperature profile (from the reported temperature) is applied above and below
+   the datum. Using sea-level reference pressure = QNH with ISA temperature is
+   allowed only as a labelled **modelling simplification**. The scenario records
+   which definition is used.
+   **Fixture (proposed U-7a, CONTRACTS style).** With the aircraft on the ground
+   at the declared datum, altimeter set to QNH, and (a) ISA and (b) a non-ISA
+   temperature offset (*example* ±15 K), the altimeter must read datum elevation
+   within a tolerance. A second case reads 0 at the datum with QFE set. The
+   tolerance is TBD-src from the instrument's specification or the reporting
+   resolution. Until sourced, it is labelled a proposal (*example*: one hPa
+   rounding step converted to height). Height errors aloft under non-ISA
+   temperature are expected behaviour, not failures; the fixture only covers the
+   datum point.
    If the applied value differs from the reported one, for example because of
    rounding or an EDDF-to-EDFE spatial difference, that is a `differences` entry.
 2. **QFE.** It is derived in the atmosphere model as the pressure at the declared
@@ -277,7 +302,7 @@ call sign is scenario-defined and fictional.
 | R3 | Established downwind (geometry from the exercise) | "Downwind" position report | Traffic information or acknowledgement | App. 1 §1.4.14 a) (C2b p. 23); NfL §1.4.14 (C3 p. 75) |
 | R4 | Base (optional, scenario flag) | "Base" report | As R3 | Same |
 | R5 | Final | "Final" report | Runway and wind information, traffic on or near the runway. **No landing clearance.** | Same; App. 1 note on FINAL/LONG FINAL (C2b p. 23) |
-| R6 | Entire aircraft beyond the runway-holding position after landing | "Runway vacated", then change to VORFELD | Acknowledgement; frequency information | App. 1 "RUNWAY VACATED" pilot transmission (C2b pp. 19–20); NfL (C3 pp. 68–69); E2a "call VORFELD after vacating" |
+| R6 | Entire aircraft beyond the runway-holding position after landing | "Runway vacated", then change to VORFELD | Acknowledgement; VORFELD frequency as *information* (no frequency-change instruction; C2d p. 5) | App. 1 "RUNWAY VACATED" pilot transmission (C2b pp. 19–20); NfL (C3 pp. 68–69); E2a "call VORFELD after vacating" |
 | R7 | Balked landing or go-around (if flown) | Report | Traffic information | TBD-src (App. 1, phrase not located) |
 
 The exact wording of every pilot template and AFIS reply is **TBD-src**. It is
@@ -309,6 +334,8 @@ on the FIS column for that phrase. Until then it is disabled (TBD-src).
 | Clearance request | The pilot asks for a take-off clearance | Reply states information only (wording TBD-src); no state change |
 | Generator conflict | Injected generated reply with a wrong QNH | Displayed QNH comes from state; conflict logged; test fails if the generated value appears |
 | Timeout | No R1 within a scenario limit | A visible reminder (teaching assist, labelled); no automatic call |
+| Incorrect readback | After R1 the pilot acknowledges with a wrong QNH or runway in use | AFIS issues no clearance, and whether AFIS information *requires* a readback is TBD-src (§2.3). Proposal: the mismatch is detected against state, the unit corrects the value ("correction", wording TBD-src), and the debrief records it. No state changes from the wrong value. If the source shows no readback expectation, the case becomes a debrief-only check |
+| Unavailable station | AFIS outside its hours, or the unit silent (scenario flag) | No reply is generated. After a declared number of calls the learner is told the station is not answering (teaching assist, labelled). The procedure for operating without AFIS at EDFE (e.g. blind transmissions per SERA.14085, C3 §20) is TBD-src from the AIP/operator rules (E1, E2d); until sourced, the scenario ends with a labelled "procedure not modeled" outcome rather than inventing one |
 | Replay | Re-run the input log | Same exchange events in the same order (text may differ only if it is regenerated, which the first exercise does not do) |
 
 ## 3. Checklists for the holding-point start (R-TRAIN-4)
@@ -331,7 +358,7 @@ Each item gets one of the following support classes:
 
 | Checklist (D1 page) | In first exercise | Item handling (proposal) |
 | --- | --- | --- |
-| Before Takeoff (p. 4-15) | Yes. The run-up items are optional, because the start is at the holding point and the IC implies the run-up is done | Parking brake (sensed); seats, belts, doors, seat backs (confirm); flight controls free and correct (sensed if the learner moves them, otherwise confirm); flight instruments check and set, including altimeter (sensed: `setting_pa` vs briefed QNH); fuel quantity (sensed); mixture, fuel selector (sensed, pre-satisfied); magneto check, vacuum gage, engine instruments/ammeter, annunciators (unsupported until engine and electrical indications are sourced; TBD); throttle idle/RPM items (sensed via tachometer, if modeled); throttle friction (unsupported); strobes (sensed if lights modeled); radios/avionics set (sensed: INFORMATION frequency tuned, once the radio fit is chosen); NAV/GPS switch, autopilot, manual electric trim (n/a-config, pending Q3); elevator trim set for take-off (sensed; take-off mark TBD-src); wing flaps set for take-off (sensed; range TBD-src p. 4-15); brakes release (sensed) |
+| Before Takeoff (p. 4-15) | Yes. The run-up items are optional, because the start is at the holding point and the IC implies the run-up is done | Parking brake (sensed); seats, belts, doors, seat backs (confirm); flight controls free and correct (sensed if the learner moves them, otherwise confirm); flight instruments check and set, including altimeter (sensed: `setting_pa` vs briefed QNH); fuel quantity (sensed); mixture, fuel selector (sensed, pre-satisfied); magneto check, vacuum gage, engine instruments/ammeter, annunciators (unsupported until engine and electrical indications are sourced; TBD); throttle idle/RPM items (sensed via tachometer, if modeled); throttle friction (unsupported); strobes (sensed if lights modeled); radios/avionics set (sensed: INFORMATION frequency tuned, once the radio fit is chosen); NAV/GPS switch, autopilot, manual electric trim (n/a-config, pending Q3); elevator trim set for take-off (sensed and pre-satisfied by the IC; the learner can still change it; take-off mark TBD-src); wing flaps set for take-off (sensed and pre-satisfied by the IC; range TBD-src p. 4-15); brakes release (sensed) |
 | "Line-up" | Optional, **generic** | D1 has no line-up checklist. A school-style list (lights, transponder, heading check) is labelled **generic instructional, not POH**, and needs instructor review |
 | Normal Takeoff (p. 4-15) | Yes | Flaps, full throttle, mixture (sensed); nose-wheel lift speed and climb speed (sensed via IAS indication; values TBD-src); flaps retract (sensed) |
 | "After take-off" | Covered by Normal Takeoff steps 5–6 and Enroute Climb (p. 4-16) | No separate POH list. A generic after-take-off list is labelled as such |
@@ -349,6 +376,13 @@ Rules (R-TRAIN-4):
   and whether the sensed state agrees.
 - If an item is out of order or skipped, the step stays visible as unmet, with its
   condition shown.
+- A *pre-satisfied* item is still *sensed*. If the learner changes the control,
+  for example flaps, the item reverts to unmet.
+- **Blocked lesson step.** When a step's condition is unmet, the lesson names the
+  unmet condition. The learner can then recover by correcting the control, retry
+  the step, or reset to the holding-point initial state (R-SIM-4 reset). The
+  checklist stays accessible throughout, and nothing changes aircraft settings
+  silently. Reset and retry are recorded as events.
 
 The holding-point initial state is engine running, master/avionics on, fuel
 selector BOTH, shutoff ON, aux fuel pump OFF, ignition BOTH, mixture rich, and trim

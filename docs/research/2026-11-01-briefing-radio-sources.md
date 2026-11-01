@@ -48,7 +48,7 @@ All sources accessed 2026-11-01. "Read" means the cited part was actually inspec
 | B5 | DWD, "Rechtliche Hinweise / Copyright" | Live | https://www.dwd.de/copyright | Yes | Website content reusable under **CC BY 4.0** with source attribution. All freely accessible geodata, including "meteorological weather and climate information with location reference", are reusable under CC BY 4.0. Third-party content is marked separately. |
 | B6 | DWD aviation weather portal flugwetter.de (pc_met) | Live | https://www.flugwetter.de/ | Front page only | "Der Zugriff ist kostenpflichtig" (access is fee-based). Its terms of use were not read. |
 | B7 | NOAA Aviation Weather Center, Data API | Live | https://aviationweather.gov/data/api/ | Yes | "Up to the previous 30 days of data"; rate limit 100 requests/min. US-government service, but German reports originate from DWD. Treat as a **retrieval route, not a rights grant** (inference). |
-| B8 | Iowa Environmental Mesonet (IEM), ASOS/METAR archive and disclaimer | Live | https://mesonet.agron.iastate.edu/disclaimer.php | Yes | "The materials found on this website are in the public domain and may be used freely by anyone for any lawful purpose"; no accuracy warranty. The originator of German reports is DWD (B5 CC BY 4.0, inference), so attribute both. |
+| B8 | Iowa Environmental Mesonet (IEM), ASOS/METAR archive and disclaimer | Live | https://mesonet.agron.iastate.edu/disclaimer.php | Yes | "The materials found on this website are in the public domain and may be used freely by anyone for any lawful purpose"; no accuracy warranty. This statement covers IEM's distribution, not the originator's rights; German reports originate from DWD. Keep IEM attribution as distributor. |
 | C1 | ICAO Doc 4444 *PANS-ATM* (Chapter 12 phraseologies), Doc 9432 *Manual of Radiotelephony*, Annex 10 Vol II | Editions not checked | ICAO store | No | Cite only. |
 | C2a | EASA, ED Decision 2021/014/R (24 Nov 2021), Amendment 4 to the AMC/GM to SERA (introduces FIS/AFIS phraseologies) | Decision text: "It shall apply from 1 December 2022" (p. 2); sha256 prefix bc46fd0e64599e2e | https://www.easa.europa.eu/en/document-library/agency-decisions/ed-decision-2021014r | Yes | EU agency publication; cite. Later amendments (search leads mention ED Decision 2022/020/R, Amendment 5) **not checked**. |
 | C2b | Annex: *AMC and GM to SERA, Issue 1, Amendment 4*, Appendix 1 to AMC1 SERA.14001 | 37 pp.; sha256 prefix 78383a215b578406 | https://www.easa.europa.eu/en/downloads/132543/en | Yes (searched) | As C2a. |
@@ -78,10 +78,12 @@ All sources accessed 2026-11-01. "Read" means the cited part was actually inspec
     hour (observed in the sample). IEM states its site materials are public domain.
   - AWC (B7) holds only 30 days.
   - DWD open data (B4) offers no METAR/TAF directory. DWD's aviation portal (B6) is fee-based.
-  - Rights inference: German reports originate from DWD. DWD weather information with
-    a location reference is CC BY 4.0 (B5). A frozen snapshot should therefore carry
-    an attribution to DWD as originator and to IEM/AWC as distributor until DWD
-    confirms how B5 applies to aviation reports.
+  - Rights: German reports originate from DWD. B5's CC BY 4.0 grant covers
+    *freely accessible* geodata. DWD offers aviation weather through a fee-based
+    portal (B6), so it is not established that B5 covers METAR/TAF. IEM's
+    public-domain statement covers its own distribution only. **Classify EDDF
+    reports as `rights_unknown` (not shippable) until DWD confirms**, and keep both
+    the originator (DWD) and distributor (IEM/AWC) attribution.
 - **NOTAM:**
   - The format is defined by ICAO PANS-AIM / Annex 15, which was not read (TBD-src).
   - DFS AIS-portal terms forbid automated use and derived works without approval
@@ -177,7 +179,7 @@ Each checklist's page in D1, Section 4, with its relevance to a holding-point st
 - **Medium:** EDFE has no METAR. The evidence is only one 24-hour query to one
   distributor; another distributor or time window may differ.
 - **Low or open:**
-  - Rights in historical German aviation reports (inference across B5/B8);
+  - Rights in historical German aviation reports (treated as `rights_unknown`; B5 scope unconfirmed);
   - per-phrase AFIS applicability (column ticks unread);
   - whether later SERA AMC/GM amendments changed the phrases;
   - EDFE language(s);
