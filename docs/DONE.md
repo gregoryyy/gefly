@@ -3,6 +3,22 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 18:45 — Record the valid CesiumJS run on the reference Mac
+
+TODO: 1.2.3 in progress. Agent: Claude Code orchestrator (no subagents); run by the
+user on the reference Mac (Apple M1 Pro GPU, 120 Hz), Chrome 156.
+
+**Implementation notes**
+
+CesiumJS 1.146.0 with the JSBSim stream after the canvas fix: median 8.3 ms, p99
+9.4 ms, 2 missed vsyncs, heading check pass; both render budgets pass. With the
+earlier three.js result, both candidates meet the budgets.
+
+**Deviations**
+
+Smaller window (739×817) than the three.js run, CSS resolution only, no real terrain
+or imagery tiles. Renderer choice awaits the user. Peer pending (batched).
+
 ## 2026-11-01 13:59 — Confirm the height datum; contracts v1 agreed
 
 TODO: 1.4 complete pending merge. Agent: Claude Code orchestrator (no subagents).
