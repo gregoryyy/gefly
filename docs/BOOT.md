@@ -346,6 +346,6 @@ have not been copied.
 Subsequent user direction makes Gefly a **free/open-source flight-school community
 project**. Propeller's private-repository command above remains an upstream
 example, not Gefly's target visibility. The user-authorized public repository is
-`gregoryyy/gefly`; exact project-wide licensing remains open. The roadmap also includes LLM-created flight experiences,
+`gregoryyy/gefly`; project-wide licensing was later selected as GPL-3.0-or-later (2026-11-01, GAPS Q5). The roadmap also includes LLM-created flight experiences,
 an EDDF/100 NM source-backed region and reuse-first open physics/models; current
 scope and acceptance criteria remain authoritative in SPEC, ARCH and ROAD.

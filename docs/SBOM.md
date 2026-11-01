@@ -74,11 +74,13 @@ are research examples, not preapproved dependencies or accepted aircraft data.
 
 ## Third-party license policy (GAPS Q5)
 
-Admit only non-proprietary licenses: OSI-approved software licenses and open
-data/content licenses. **Prefer permissive** terms (MIT, BSD, Apache-2.0, ISC,
+Admit only non-proprietary licenses (orchestrator reading: OSI-approved software licenses and open
+data/content licenses). **Prefer permissive** terms (MIT, BSD, Apache-2.0, ISC,
 CC0/public domain, CC-BY) so the project's GPL-3.0-or-later can be relaxed later.
-A copyleft component (for example LGPL/GPL software such as JSBSim or FlightGear
+*Orchestrator proposals pending user confirmation (GAPS Q5):* a copyleft component (for example LGPL/GPL software such as JSBSim or FlightGear
 aircraft packages, or ODbL share-alike data such as OpenStreetMap) needs a
-recorded justification and an isolation/replacement note before adoption.
+recorded justification, a license-compatibility check (for example, GPL-2.0-only
+material cannot be combined with GPL-3.0-or-later) and an isolation/replacement
+note before adoption.
 Proprietary, non-commercial-only or no-derivatives material is excluded from the
 distribution; link to it instead when it is a needed reference.

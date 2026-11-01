@@ -81,27 +81,36 @@ coverage, rights and live rollout remain future implementation selections.
 
 ### Q5. Source license and third-party data policy?
 
-Why: affects code reuse, distribution, aircraft manuals, avionics depictions, maps and navigation data. The user's direction is now free/open source; select a compatible open-source license and review separately licensed assets/data. Blocking: license-dependent distribution and restricted asset ingestion. 
+Why: affects code reuse, distribution, aircraft manuals, avionics depictions, maps and navigation data. The user's direction is now free/open source; select a compatible open-source license and review separately licensed assets/data. Blocking: license-dependent distribution and restricted asset ingestion.
+
+Confirmation: **2026-11-01 07:08, user** (recorded by orchestrator, Claude Code;
+[confirmations](input/2026-11-01-confirmations.md)): “gpl3+” — GPL-3.0-or-later,
+not GPL-3.0-only.
 
 Answer: **2026-11-01 07:04, user** (recorded by orchestrator, Claude Code; [2026-11-01 answers](input/2026-11-01-aircraft-license-exercise-answers.md)):
 “gpl 3 for the project now, can adjust later. third party policy: non-proprietary
 licenses, with preference for permissive licenses so gpl3 can be relaxed later”.
 
 Recorded as **GPL-3.0-or-later** for original project material, matching the
-Propeller-derived files already distributed on those terms. Confirmed: **2026-11-01 07:08, user** (recorded by orchestrator, Claude Code): “gpl3+, yes, yes”. Third-party policy: dependencies, models, data and assets must
+Propeller-derived files already distributed on those terms. Third-party policy: dependencies, models, data and assets must
 use non-proprietary (open-source or open-data) licenses; **prefer permissive**
-licenses (e.g. MIT, BSD, Apache-2.0, public domain/CC0, CC-BY). Copyleft
-components (e.g. LGPL, GPL, ODbL share-alike data) need a recorded justification,
-because they would constrain a later relaxation. Note: a later relaxation needs
-permission from every copyright holder, so contributor terms that keep this option
-open remain to be chosen (TODO 1.11).
+licenses (e.g. MIT, BSD, Apache-2.0, public domain/CC0, CC-BY). *Orchestrator
+proposals implementing this policy, pending user confirmation:* copyleft components
+(e.g. LGPL, GPL, ODbL share-alike data) need a recorded justification, because they
+would constrain a later relaxation; non-commercial/no-derivatives material is not
+distributed, only referenced; reading "non-proprietary" as OSI-approved software
+licenses and open data/content licenses is also an orchestrator interpretation.
+Note: a later relaxation needs permission from every copyright holder, including
+the upstream Propeller holders for the derived files (or their replacement); a DCO
+alone does not grant this, so contributor terms that keep the option open remain to
+be chosen (TODO 1.11).
 
 ~~Answer: partial update, **2026-10-31 15:15, user**: “The idea is to make this free
 and open source”. Exact code license, contributor terms and asset/data compatibility
 remain pending.~~ Owner: orchestrator. [SBOM](SBOM.md) records source provenance.
 
 Resolved: 2026-11-01 07:04, user; carried into `LICENSE`, README, THIRD_PARTY_NOTICES,
-SPEC R-OPEN-1, SBOM and TODO 0.9. Contributor terms and per-asset rights stay open in
+[SPEC](SPEC.md) R-OPEN-1, [SBOM](SBOM.md) and [TODO](TODO.md) 0.9. Contributor terms and per-asset rights stay open in
 TODO 1.11 and R-DATA-1.
 
 ### Q12. Community publication and content roles?
@@ -115,13 +124,15 @@ not simulator or source-research studies.
 Answer: **2026-11-01 07:04, user** (recorded by orchestrator, Claude Code; [2026-11-01 answers](input/2026-11-01-aircraft-license-exercise-answers.md)):
 “community publishing: rules and roles follow later in phase 3.” Deferred: the
 publication rules, roles, moderation and hosting are scoped during roadmap
-phase 3, not before. No community workflow is enabled until then.
+phase 3, not before (orchestrator mapping to [ROAD](ROAD.md) phase 3). Orchestrator
+consequence: no community workflow is enabled until then.
 
 Answer: direction confirmed **2026-10-31 15:15, user**: community site similar to
-GeoFS, more flight-school oriented, free/open source. Hosting, data retention,
-moderation, contribution workflow and funding/operating model remain pending.
+GeoFS, more flight-school oriented, free/open source. ~~Hosting, data retention,
+moderation, contribution workflow and funding/operating model remain pending.~~
+(Now deferred to phase 3, above.)
 
-Resolved (deferred): 2026-11-01 07:04, user; carried into ROAD and TODO 1.11.
+Resolved (deferred): 2026-11-01 07:04, user; carried into [ROAD](ROAD.md), [SPEC](SPEC.md) R-COMMUNITY-1 and [TODO](TODO.md) 1.11.
 
 ### Q15. Which changes need the cross-provider peer gate?
 
@@ -150,16 +161,15 @@ Resolved: 2026-11-01 07:22, user; carried into SDLC, AGENTS, SPEC R-AGENT-7, the
 
 Why: operating limits, engine/propeller, systems, instrument ranges and procedures must refer to one applicable configuration. Proposed: research availability and redistribution rights for a specific C172S configuration before recommending a conventional panel or glass cockpit. Blocking: TODO 1.3 and aircraft-specific implementation; generic studies may continue.
 
-Confirmation: **2026-11-01 07:08, user** (recorded by orchestrator, Claude Code): “gpl3+, yes, yes”. The user confirms the *it depends on the data* reading and the
+Confirmation: **2026-11-01 07:08, user** (recorded by orchestrator, Claude Code; [confirmations](input/2026-11-01-confirmations.md)): “gpl3+, yes, yes”. The user confirms the *it depends on the data* reading and the
 order: **classic-panel 172S first, FR172 second** when its data suffice.
 
 Answer: partial update, **2026-11-01 07:04, user** (recorded by orchestrator, Claude Code; [2026-11-01 answers](input/2026-11-01-aircraft-license-exercise-answers.md)):
 “FR172 and/or 172S with their different engine configs to show performance
 differences. it fried on the actual data available, but from public FAA
 documentation we should have a fairly good picture”. Reading: *it depends on*
-the available data. Candidate set: **Reims FR172** (higher-power engine with a
-constant-speed propeller, per the model family's certification data; exact sub-model
-and engine to be sourced) and **Cessna 172S** (fixed-pitch propeller), modeled as
+the available data. Candidate set: **Reims FR172** and **Cessna 172S** (their engine/propeller
+configurations are unverified here and must be sourced in TODO 1.3), modeled as
 distinct configurations so learners can compare performance. Primary public
 sources: FAA type certificate data sheets and other public FAA/EASA records;
 FR172 is a Reims-built model, so its EASA/French certification records may be
@@ -176,12 +186,13 @@ and product. Glass is a later configuration; A320 is a reference, not an initial
 
 ### Q7. First useful learning exercise and review partner?
 
-Why: determines whether the first slice is aircraft handling, instrument interpretation or a procedure, and how training claims can be reviewed. Proposed: a bounded straight-and-level control/trim exercise, then coordinated turns; product should refine objectives against the selected EASA syllabus with instructor review. Blocking: milestone 2 exercise acceptance, not generic physics experiments.
+Why: determines whether the first slice is aircraft handling, instrument interpretation or a procedure, and how training claims can be reviewed. ~~Proposed: a bounded straight-and-level control/trim exercise, then coordinated turns;~~ (superseded by the 2026-11-01 answer below) product should refine objectives against the selected EASA syllabus with instructor review. Blocking: milestone 2 exercise acceptance, not generic physics experiments.
 
 Answer: **2026-11-01 07:04, user** (recorded by orchestrator, Claude Code; [2026-11-01 answers](input/2026-11-01-aircraft-license-exercise-answers.md)):
 “first learning exercise is start fly a pattern and land”. The first exercise is a
 complete **circuit: take-off, traffic pattern and landing** at the first airport
-(Q10), replacing the earlier straight-and-level proposal. Still open: runway and
+(Q10) (orchestrator reading of “start” as take-off and of the airport link; the
+user may include engine start/taxi), replacing the earlier straight-and-level proposal. Still open: runway and
 pattern direction from sourced aerodrome data, assessment criteria/tolerances
 (TODO 1.5) and the instructor review partner. Owner: product proposes criteria;
 orchestrator resolves with user.
@@ -198,7 +209,10 @@ Answer: **2026-11-01 07:04, user** (recorded by orchestrator, Claude Code; [2026
 “first airport is egelsbach in germany”. First airport: **Frankfurt-Egelsbach
 (ICAO EDFE)**, inside the EDDF 100 NM region. Still open: runway(s), circuit
 pattern, elevation, frequencies and chart sources with editions and rights,
-verified against official AIP/aerodrome publications (TODO 1.7).
+verified against official AIP/aerodrome publications (TODO 1.7). Source survey:
+[EDFE sources](research/2026-11-01-edfe-aerodrome-sources.md); the official DFS
+AIP and operator sites were unreachable from the research session, so only
+non-authoritative OurAirports values (runway 08/26, conflicting elevations) exist.
 
 Answer: **2026-10-31 15:15, user**: “model a region like EDDF and 100 nm radius
 around from real available map material”. Recorded in SPEC, ARCH and ROAD.
@@ -273,5 +287,5 @@ Q3 retains the unresolved exact C172 configuration.
 | A6 | Replay/debrief is the initial interpretation of “video review”; exported video remains a separate option. | User likes GeoFS flight review; orchestrator proposal, 2026-10-31 15:09. | Pending user correction. |
 | A7 | A320 is an interaction reference; fewer/deeper aircraft means no second initial type. | Existing C172-first decision and user feedback; orchestrator interpretation, 2026-10-31 15:09. | Pending user correction. |
 | A8 | ILS and advanced traffic systems get separate later equipment/objective scopes. | EASA PPL first plus expanded wishlist; orchestrator proposal, 2026-10-31 15:09. | Ordering pending user correction and syllabus/equipment research. |
-| A9 | Free access and open-source release are product directions; exact license/hosting and third-party rights need separate selections. | User's free/open-source community direction, 2026-10-31 15:15. | Specific release choices pending. |
+| A9 | Free access and open-source release are product directions; exact license/hosting and third-party rights need separate selections. | User's free/open-source community direction, 2026-10-31 15:15. | License selected 2026-11-01 07:04 (Q5: GPL-3.0-or-later); hosting and per-asset rights pending. |
 | A10 | AI-assisted authoring assembles validated declarative packages rather than executing arbitrary generated code or inventing navigation data. | Source-backed realism and reuse direction; orchestrator architecture proposal, 2026-10-31 15:15. | Provider/interface and review scope pending. |
