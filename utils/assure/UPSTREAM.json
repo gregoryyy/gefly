@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "project": "Propeller",
+  "repository": "../propeller",
+  "commit": "99dc60050cd904f7b25cd929b5a6b1e1420f9fc6",
+  "license": "GPL-3.0-or-later",
+  "scope": "Pure model, Markdown/ID readers and requirements/plan/Refs extractors; no database, UI or external packages",
+  "files": [
+    {
+      "source": "assure/src/model/facts.ts",
+      "destination": "utils/assure/upstream/src/model/facts.ts",
+      "sha256": "70c99a6fbb32fa3399334a6aa8c4165f4651c72ca9fb63932d075797bd2d8e0f",
+      "adaptations": "none; original bytes"
+    },
+    {
+      "source": "assure/src/model/store.ts",
+      "destination": "utils/assure/upstream/src/model/store.ts",
+      "sha256": "00ed37104c748ca17f572ae79252947684b5d7d433f2d6f30ff8c53a8fc2935f",
+      "adaptations": "none; original bytes"
+    },
+    {
+      "source": "assure/src/model/ledger.ts",
+      "destination": "utils/assure/upstream/src/model/ledger.ts",
+      "sha256": "9c27873badaf3822094187296b280883cc71f3bae47a58fbe2880663da7dfebc",
+      "adaptations": "none; original bytes"
+    },
+    {
+      "source": "assure/src/model/store.test.ts",
+      "destination": "utils/assure/upstream/src/model/store.test.ts",
+      "sha256": "2398aabaf3aec91cbd75dcf4f1303ab3dd45dc104775e891b3e582f61457be67",
+      "adaptations": "none; original bytes"
+    },
+    {
+      "source": "assure/src/read/markdown.ts",
+      "destination": "utils/assure/upstream/src/read/markdown.ts",
+      "sha256": "bf526abd1cc2c48d278fdd2c2fe8c59422a41211c1b96c585d9073f4f3a8ae95",
+      "adaptations": "none; original bytes"
+    },
+    {
+      "source": "assure/src/read/ids.ts",
+      "destination": "utils/assure/upstream/src/read/ids.ts",
+      "sha256": "aeb1dda74d520971c78a536c09b07a44d6ed6a314ff2c308f7b3100e2e36d603",
+      "adaptations": "none; original bytes"
+    },
+    {
+      "source": "assure/src/read/markdown.test.ts",
+      "destination": "utils/assure/upstream/src/read/markdown.test.ts",
+      "sha256": "528f32411abde4295e4a65ccfce69fed2dc9cec6573264b410b8e565a480647c",
+      "adaptations": "none; original bytes"
+    },
+    {
+      "source": "assure/src/read/ids.test.ts",
+      "destination": "utils/assure/upstream/src/read/ids.test.ts",
+      "sha256": "41f43c3de2cdb0552338221bf274be2ffbf77b8dd84d452eb30a877fcbb99e08",
+      "adaptations": "none; original bytes"
+    },
+    {
+      "source": "assure/src/extract/requirements.ts",
+      "destination": "utils/assure/upstream/src/extract/requirements.ts",
+      "sha256": "cb2a23ead20fd0310bb4f5d33574a9e52c22abe1d6d4a109e85a8ba7fbd56e5c",
+      "adaptations": "none; original bytes"
+    },
+    {
+      "source": "assure/src/extract/plan.ts",
+      "destination": "utils/assure/upstream/src/extract/plan.ts",
+      "sha256": "bbd738b3459bb8eeaa1ca6ebb181b42b4e72dd75cab1b30998e142a24b8ca923",
+      "adaptations": "none; original bytes"
+    },
+    {
+      "source": "assure/src/extract/refs.ts",
+      "destination": "utils/assure/upstream/src/extract/refs.ts",
+      "sha256": "bb34b56321ff891caf9f905dfc4cc7aa91ccca34a179b1a81db03516981b7c07",
+      "adaptations": "none; original bytes"
+    },
+    {
+      "source": "assure/src/extract/requirements.test.ts",
+      "destination": "utils/assure/upstream/src/extract/requirements.test.ts",
+      "sha256": "1903ce35f593d5fffe40b4983ad610d47e543a96c927a7ef4ff5fd5076bd557f",
+      "adaptations": "none; original bytes"
+    },
+    {
+      "source": "assure/src/extract/refs.test.ts",
+      "destination": "utils/assure/upstream/src/extract/refs.test.ts",
+      "sha256": "84efa96bbe59e7cb13fd96718315410def5c49e3fb46c3ea44fd63edd39b6bb8",
+      "adaptations": "none; original bytes"
+    }
+  ]
+}

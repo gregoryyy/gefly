@@ -4,6 +4,20 @@ All times are Europe/Berlin. Answers record the author and recording time. New a
 
 ## Resolved questions
 
+### Q22. Adopt assurance like Propeller?
+
+Answer: **2026-11-01 20:33, user** (recording time, Europe/Berlin): “adopt assurance”.
+The preceding proposal was bounded level 2: reuse Propeller's core with Gefly
+adapters, derive lineage and plan-integrity reports, track aircraft provenance and
+versioned test/acceptance evidence, and integrate offline checks in CI. Existing
+quality, validate and peer roles remain independent. No database, service or hooks
+are selected. Original request: [input](input/2026-11-01-assurance-adoption.md).
+
+Resolved: carried into [SPEC](SPEC.md) R-ASR-1 through R-ASR-5, the
+[assurance contract](assure/SPEC.md), AGENTS, SDLC, SEC and TODO 1.14. Link certainty
+and recorded outcomes remain distinct from aircraft or learning validation.
+
+
 ### Q1. Initial aircraft and training framework
 
 Why: determines source applicability, exercises and assessment. Proposed: Cessna 172, EASA PPL first. Blocking: foundation aircraft/curriculum selection, not project setup.

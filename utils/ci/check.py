@@ -15,7 +15,7 @@ if sys.version_info < (3, 11):
 import tomllib
 
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 ROLES = {
     "orchestrator", "researcher", "product", "code1", "code2", "quality", "validate",
     "housekeeping", "peer",

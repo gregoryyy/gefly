@@ -18,15 +18,29 @@ default:
 
 # Check the scaffold, local document links and native agent definitions; no PDF tools needed
 check:
-    python3 "{{justfile_directory()}}/utils/check.py"
+    python3 "{{justfile_directory()}}/utils/ci/check.py"
 
 # Run the same offline foundation gates used by the hosted workflow
 ci:
-    python3 "{{justfile_directory()}}/utils/ci.py"
+    python3 "{{justfile_directory()}}/utils/ci/run.py"
 
 # Run standard-library repository-tool tests without invoking live providers
 test-tools:
     python3 -m unittest discover -s "{{justfile_directory()}}/utils" -p 'test_*.py'
+
+# Query or check the generated assurance lineage; no providers or browser
+assure *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    node "{{justfile_directory()}}/utils/assure/src/cli.ts" "$@"
+
+# Run the offline assurance suite, rejecting missing, empty or skipped tests
+assure-test:
+    python3 "{{justfile_directory()}}/utils/ci/run.py" --assure-tests
+
+# Write rebuildable graph JSON and Markdown report under ignored utils/assure/out
+lineage:
+    node "{{justfile_directory()}}/utils/assure/src/cli.ts" lineage
 
 # Review a frozen packet through the provider opposite its declared author
 peer-review author packet:
@@ -123,7 +137,7 @@ docs *PATHS: (pdfs PATHS)
 
 # Print requirement identifiers and their authoritative source locations
 reqs area="":
-    python3 "{{justfile_directory()}}/utils/check.py" --reqs "$1"
+    python3 "{{justfile_directory()}}/utils/ci/check.py" --reqs "$1"
 
 # Print commit references; optional literal ID filter
 refs id="":

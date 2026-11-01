@@ -13,7 +13,32 @@ import time
 import unittest
 from unittest.mock import patch
 
-import ci
+from . import run as ci
+
+
+class AssuranceRuntimeTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which("node"), "Node is required for actual reporter fixtures")
+    def test_actual_node_rejects_empty_and_skipped_files_accepts_declared_test(self):
+        with tempfile.TemporaryDirectory(prefix="gefly-declared-tests-") as directory:
+            root = Path(directory)
+            (root / "utils/assure/src").mkdir(parents=True)
+            (root / "utils/ci").mkdir(parents=True)
+            (root / "utils/assure/src/cli.ts").write_text("// No-op checker fixture.\n")
+            shutil.copyfile(ci.ROOT / "utils/ci/assurance-reporter.mjs",
+                            root / "utils/ci/assurance-reporter.mjs")
+            test_file = root / "utils/assure/src/fixture.test.ts"
+            with patch.object(ci, "ROOT", root), redirect_stdout(io.StringIO()), \
+                    redirect_stderr(io.StringIO()):
+                test_file.write_text("// Intentionally declares no tests.\n")
+                self.assertFalse(ci.run_assurance(15, tests_only=True))
+                test_file.write_text("import {test} from 'node:test'; test('declared',()=>{});\n")
+                self.assertTrue(ci.run_assurance(15, tests_only=True))
+                (root / "utils/assure/src/empty.test.ts").write_text("// Empty alongside a real test.\n")
+                self.assertFalse(ci.run_assurance(15, tests_only=True))
+                (root / "utils/assure/src/empty.test.ts").unlink()
+                test_file.write_text("import {test} from 'node:test'; "
+                                     "test('skipped',{skip:true},()=>{});\n")
+                self.assertFalse(ci.run_assurance(15, tests_only=True))
 
 
 def process_exited(pid):
@@ -246,10 +271,11 @@ class WhitespaceTests(GitFixture):
 class CiEntrypointTests(GitFixture):
     def setUp(self):
         super().setUp()
-        self.runner = self.root / "utils/ci.py"
-        shutil.copyfile(Path(ci.__file__), self.write("utils/ci.py", ""))
-        self.write("utils/check.py", "from pathlib import Path\n"
-                   "assert Path.cwd() == Path(__file__).resolve().parent.parent\n"
+        self.runner = self.root / "utils/ci/run.py"
+        shutil.copyfile(Path(ci.__file__), self.write("utils/ci/run.py", ""))
+        self.write("utils/ci/__init__.py", "")
+        self.write("utils/ci/check.py", "from pathlib import Path\n"
+                   "assert Path.cwd() == Path(__file__).resolve().parents[2]\n"
                    "print('fixture scaffold executed')\n")
         self.test_path = self.write("utils/test_gate.py", "from pathlib import Path\n"
                                    "import unittest\n"
@@ -268,21 +294,34 @@ class CiEntrypointTests(GitFixture):
                    "        print('fixture mass study executed')\n")
         self.write("studies/e1-browser/render/check-synthetic.mjs",
                    "console.log('fixture render check');\n")
+        self.write("utils/assure/src/cli.ts", "// Isolated assurance entry fixture.\n")
+        self.write("utils/assure/src/gate.test.ts", "// Isolated assurance test fixture.\n")
+        self.write("utils/ci/assurance-reporter.mjs", "// Isolated reporter fixture.\n")
         self.commit()
         # Controlled PATH: Git only, plus a fake node when a test installs one.
         self.bin = self.outside.parent / "bin"
         self.bin.mkdir()
         os.symlink(self.git_executable, self.bin / "git")
 
-    def install_fake_node(self, exit_code=0, version_exit=0, sleep_s=0):
+    def install_fake_node(self, exit_code=0, version_exit=0, sleep_s=0,
+                          assurance_exit=0, node_version="v26.0.0-fixture", test_skip=0):
         implementation = self.outside.parent / "fake_node.py"
         implementation.write_text(
-            "import os, sys, time\n"
+            "import os, sys, time, json\n"
             "if sys.argv[1:] == ['--version']:\n"
-            "    print('v0.0.0-fixture')\n"
+            f"    print({node_version!r})\n"
             f"    raise SystemExit({version_exit})\n"
             "leaked = sorted(k for k in os.environ if k.upper().startswith('NODE_'))\n"
             "print('fake node ran', sys.argv[1], 'node env:', leaked or 'none', flush=True)\n"
+            "if '--test' in sys.argv:\n"
+            "    files = [p for p in sys.argv if p.endswith('.test.ts')]\n"
+            f"    counts = dict(tests=1, passed={1-test_skip}, failed=0, cancelled=0, skipped={test_skip}, todo=0)\n"
+            "    for path in files:\n"
+            "        print('GEFLY-ASSURE-RESULT ' + json.dumps(dict(file=path, success=True, counts=counts)))\n"
+            "    total = {k: v * len(files) for k, v in counts.items()}\n"
+            "    print('GEFLY-ASSURE-RESULT ' + json.dumps(dict(file=None, success=True, counts=total)))\n"
+            "if sys.argv[-1:] == ['check']:\n"
+            f"    raise SystemExit({assurance_exit})\n"
             f"time.sleep({sleep_s})\n"
             f"raise SystemExit({exit_code})\n", encoding="utf-8")
         node = self.bin / "node"
@@ -460,12 +499,38 @@ class CiEntrypointTests(GitFixture):
 
     def test_missing_node_is_reported_skip_not_pass(self):
         result = self.run_gate()
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("Synthetic render check: skipped: node not found", result.stdout)
         self.assertNotIn("Synthetic render check: passed", result.stdout)
         self.assertNotIn("Foundation CI: passed.", result.stdout)
-        self.assertIn("Foundation CI: passed with skipped checks "
-                      "(Synthetic render check: skipped: node not found).", result.stdout)
+        self.assertIn("Assurance requires Node", result.stderr)
+        self.assertIn("Foundation CI: FAILED.", result.stdout)
+
+    def test_assurance_integrity_failure_is_not_a_pass(self):
+        self.install_fake_node(assurance_exit=1)
+        result = self.run_gate()
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("Synthetic render check: passed.", result.stdout)
+        self.assertIn("Assurance integrity failed", result.stderr)
+
+    def test_missing_assurance_entry_or_tests_is_not_a_pass(self):
+        self.install_fake_node()
+        (self.root / "utils/assure/src/cli.ts").unlink()
+        result = self.run_gate()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Assurance entry point or test suite is missing", result.stderr)
+
+    def test_old_node_cannot_silently_skip_assurance(self):
+        self.install_fake_node(node_version="v22.0.0")
+        result = self.run_gate()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Assurance requires Node 24.2", result.stderr)
+
+    def test_skipped_assurance_test_is_not_acceptance(self):
+        self.install_fake_node(test_skip=1)
+        result = self.run_gate()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Assurance tests failed, skipped", result.stderr)
 
     def test_missing_node_fails_when_required(self):
         result = self.run_gate("--require-node")
@@ -488,7 +553,7 @@ class CiEntrypointTests(GitFixture):
         self.assertIn("synthetic render check is missing", result.stderr)
 
     def test_scaffold_child_failure_is_not_success(self):
-        self.write("utils/check.py", "raise SystemExit('fixture scaffold rejected')\n")
+        self.write("utils/ci/check.py", "raise SystemExit('fixture scaffold rejected')\n")
         result = self.run_gate()
         self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("fixture scaffold rejected", result.stdout + result.stderr)

@@ -27,11 +27,15 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ matrix.python-version }}
-      # Node is the ubuntu-24.04 runner's preinstalled binary (no setup action);
-      # --require-node turns a missing node into a failure instead of a skip.
+      - name: Set up assurance Node runtime
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26'
+          package-manager-cache: false
       - name: Run offline foundation gates
-        run: python3 utils/ci.py --require-node
+        run: python3 utils/ci/run.py --require-node

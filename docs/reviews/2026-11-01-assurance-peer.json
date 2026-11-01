@@ -1,0 +1,146 @@
+{
+  "status": "completed",
+  "accepted": true,
+  "author_provider": "codex",
+  "reviewer_provider": "claude",
+  "packet": {
+    "path": "output/assurance/peer-packet.md",
+    "sha256": "28a91cc8e8f21f9b25b63ab02be6cd90c6233dd102606ea5fec64c8b8db01ce3",
+    "revision": "d038ec087a31cec45c4a7ca0d760aae5945a167b"
+  },
+  "cli": {
+    "executable": "claude",
+    "version": "2.1.193"
+  },
+  "model_evidence": [
+    "claude-haiku-4-5-20251001",
+    "claude-opus-4-8"
+  ],
+  "review": {
+    "quality": [
+      {
+        "severity": "low",
+        "location": "assure/src/evidence.ts (referenceRequirement) and assure/src/graph.ts (dangling-reference check)",
+        "description": "When a catalog evidence/criterion references an undefined canonical requirement, evidence.ts emits an 'evidence.requirement' error AND still pushes a declared edge to the nonexistent requirement node; graph.ts then also raises a 'dangling-reference' error for the same endpoint. The result is duplicate diagnostics for one root cause. Behavior is still fail-closed (an error is raised), so this is cosmetic/maintainability only. Reproduction: set a criterion/evidence requirement to 'R-MISSING-1' (see evidence.test.ts 'missing hashes, escaped paths...' which already exercises R-MISSING-1) and observe both check names.",
+        "evidence": "assure/src/evidence.ts referenceRequirement emits edge unconditionally after the error; assure/src/graph.ts endpoint loop raises dangling-reference for object kind 'requirement'."
+      },
+      {
+        "severity": "low",
+        "location": "assure/src/snapshot.ts (committedLedger) / assure/src/graph.ts (ledger block)",
+        "description": "committedLedger is only populated for the 'worktree' snapshot, so the append-only HEAD-prefix enforcement is narrower when an explicit non-worktree revision is checked (committedLedger undefined). This is disclosed in graph.ts limitations ('Ledger checks are append-only against HEAD for the worktree'), so it is a documented scope narrowing rather than a correctness defect; noted for completeness.",
+        "evidence": "assure/src/snapshot.ts sets committedLedger only inside the worktree branch; assure/src/graph.ts limitations array documents the HEAD/worktree scope."
+      }
+    ],
+    "validation": [
+      {
+        "criterion": "AS1 / R-ASR-1 rebuildable lineage with honest coverage",
+        "expected": "Deterministic typed graph from revision/worktree with node identity, source, revision, relation, certainty; file-level code + JSON pointers; no declaration-level claims for file-level languages; external docs as local records; identical sorted output on rebuild.",
+        "observed": "graph.ts/snapshot.ts build sorted deduped nodes/facts with inputHash; code objects marked 'lexical test-case identity; not execution'; JSON walked by RFC6901 pointer; SPEC owns requirement declarations, other mentions are refs; docs/input and docs/reviews excluded from current declarations. graph.test.ts (AS1 cases) and snapshot.test.ts assert determinism and opacity; recorded run reports byte-identical repeat output.",
+        "status": "pass",
+        "evidence": "assure/src/graph.ts buildGraph/limitations; assure/src/snapshot.ts loadSnapshot; graph.test.ts 'AS1 deterministic graph...', 'AS1 code files ... opaque'; Recorded verification (CLI byte-identical)."
+      },
+      {
+        "criterion": "AS2 / R-ASR-1 plan, decision and record integrity",
+        "expected": "Recognize Answer:/Resolved:/TODO: conventions; flag duplicate declarations, undefined referenced IDs, completed-but-blocked tasks, completed tasks lacking DONE records, malformed trailers; keep partial/historical distinct from current.",
+        "observed": "status.ts parses GAPS Q-headings (open/resolved/partial), DONE headings/order/metadata/duplicate-body; graph.ts emits duplicate-definition, dangling-reference, completed-blocked, done-missing-record, legacy-refs (warning). status.test.ts and graph.test.ts assert each check including partial-resolution and version-vs-task disambiguation.",
+        "status": "pass",
+        "evidence": "assure/src/status.ts extractStatus; assure/src/graph.ts status checks; status.test.ts 'AS2 ...'; graph.test.ts 'AS2 strict dangling...', 'AS2 explicit TODO slash/range...'."
+      },
+      {
+        "criterion": "AS3 / R-ASR-2 aircraft and JSON provenance",
+        "expected": "Link aircraft JSON-pointer values to declared source/revision/page/unit/applicability/rights or derivation; preserve unknown/unvalidated; diagnostics for missing refs, mismatched versions, malformed pointers; no new data rights.",
+        "observed": "evidence.ts inspectAircraft inherits citation/status/conversion context, retains pointer/units/reference/rights, links parameters to source objects, errors on missing/mismatched citation revision and manifest identity, notes unknown/unvalidated. evidence.test.ts 'known aircraft values retain ... lineage' reads real data files (recorded pass) and exercises the manifest-mismatch negative.",
+        "status": "pass",
+        "evidence": "assure/src/evidence.ts inspectAircraft; evidence.test.ts aircraft test; FORMAT.md 'Aircraft provenance and seed limits'. Limitation: actual data/aircraft/c172s-classic/*.json content is not in the packet (verified only via in-packet test source + recorded check)."
+      },
+      {
+        "criterion": "AS4 / R-ASR-3 versioned run and acceptance evidence",
+        "expected": "Machine-readable evidence with stable ID, schema version, requirement refs, provenance roles, explicit outcome, content hashes/selectors; manual/source records say so; missing run evidence not inferred from titles/exit codes.",
+        "observed": "evidence.ts parseCatalog enforces strict schema: seven role coverage, pin hashes, RFC6901 selectors, mode-specific rules (recorded_run requires assertions, cannot use notApplicable; manual_review requires review identity), outcome enum. FORMAT.md documents the contract. Catalog's four archival recorded_run records carry unavailableRoles making them ineligible.",
+        "status": "pass",
+        "evidence": "assure/src/evidence.ts parseCatalog/evidence loop; assure/FORMAT.md 'Evidence records'; docs/assure/catalog.json evidence entries; evidence.test.ts schema/role tests."
+      },
+      {
+        "criterion": "AS5 / R-ASR-3 freshness and invalid acceptance rejection",
+        "expected": "Reject accepted claims backed by missing/malformed/failed/skipped/blocked/not-evaluated/stale evidence; detect changed pinned inputs incl. transitive deps; disjoint calibration/holdout and frozen sets; negative fixtures establish rejection.",
+        "observed": "evidence.ts propagates freshness/validity/eligibility transitively (resolve), re-checks accepted criteria/fixtures after resolution, rejects terminal non-pass promotion, enforces calibration/holdout disjointness, spent holdouts, freeze-hash membership, cycles. evidence.test.ts covers stale-input, each nonpassing outcome, overlap, freeze, cycles, self-review; all 14 catalog criteria are planned (0 accepted).",
+        "status": "pass",
+        "evidence": "assure/src/evidence.ts checkPin/resolve/criteria+fixture re-checks; evidence.test.ts 'failed, skipped...never supports acceptance', 'changed run input stales...', 'calibration/holdout identity is disjoint', 'spent holdouts...refused'; docs/assure/catalog.json (0 accepted)."
+      },
+      {
+        "criterion": "AS6 / R-ASR-4 useful trace, report and change impact",
+        "expected": "trace/report/diff/impact with documented CLI and machine-readable output; report separates planned/claims/outcomes/certainty/stale/unresolved; impact conservative with unknown-not-all-clear; PR lineage not auto-posted; rendering optional.",
+        "observed": "graph.ts trace/impact/diffGraphs/markdownReport separate implementation links, criteria/acceptance, evidence outcomes, certainty and limits; impact closure is conservative incl. same-file JSON fields and reports unknowns/truncation; cli.ts writes only ignored assure/out and never posts. cli.test.ts and graph.test.ts assert field impact, unknown handling, failed-observation/planned reporting.",
+        "status": "pass",
+        "evidence": "assure/src/graph.ts trace/impact/diffGraphs/markdownReport; assure/src/cli.ts writeLineage; graph.test.ts 'AS6 ...'; cli.test.ts 'AS6 CLI ...', 'AS7 lineage writes only ignored...'."
+      },
+      {
+        "criterion": "AS7 / R-ASR-4 shared offline gate and safe operation",
+        "expected": "Integrate through the existing gate with compatible findings/status; run deterministically from repo root or unrelated cwd; no install/fetch/browser/simulator/provider; no Git/source mutation during checking; safe handling of malformed/oversized/cyclic/path-escaping inputs; test supported runtimes and negative cases offline.",
+        "observed": "ci.py run_assurance mandates Node>=24.2, runs offline tests with per-file+global summary cross-check (rejects empty/comment-only/skipped files) then 'cli.ts check'; workflow pins setup-node by SHA and adds fetch-depth; snapshot.ts strips GIT_/NODE_ env, blocks lazy fetch/prompt, bounds file/path/history sizes, blocks symlink escapes; cli.ts confines outputs and requires them git-ignored. Tests cover env isolation, oversized/symlink inputs, unrelated-cwd resolution, missing/old node, skipped-test rejection.",
+        "status": "pass",
+        "evidence": "utils/ci.py run_assurance + test_ci.py AssuranceRuntimeTests/CiEntrypointTests; .github/workflows/foundation.yml diff; assure/src/snapshot.ts git()/readFile; snapshot.test.ts 'AS7 ...'; cli.test.ts 'AS7 ...'."
+      },
+      {
+        "criterion": "AS8 / R-ASR-5 integrated adoption, drift repair and review boundaries",
+        "expected": "Record upstream commit/license and local adaptations; reconcile known status contradictions (stack, runway/instructor, delivered data vs blockers, duplicated/misassigned progress); preserve historical/open records; separate completed doc work from unimplemented runtime; show fixtures/findings/current checks; keep quality/validate/peer independent.",
+        "observed": "UPSTREAM.json records pinned commit 99dc6005/GPL and byte adaptations (integrity enforced in graph.ts and CLI); DONE/TODO/EVAL/RESULTS/SBOM reconciliation removes stale stack/ASI/extraction prose (also enforced by catalog decision guards), restores/orders progress entries, and keeps compound 1.14 distinct from unimplemented 1.2/1.3/1.5 runtime work; archival observations and open peer TODO 0.19 remain visible; representative positive/negative fixtures are in the test files.",
+        "status": "pass",
+        "evidence": "Pinned dependency inventory (UPSTREAM.json); docs/DONE.md, docs/TODO.md, docs/EVAL.md, docs/RESULTS.md, docs/SBOM.md diffs; docs/assure/catalog.json guards. Limitation: the referenced independent quality/validation/peer review records (docs/reviews) are excluded from the packet, so the claimed seven findings and their fixes are not verifiable here."
+      },
+      {
+        "criterion": "Evidence semantics/enforcement: certainty vs outcome vs acceptance kept separate; gate fails only on current errors; planned stays advisory",
+        "expected": "Link certainty (declared/derived/uncertain/confirmed/stale) distinct from outcome (pass/fail/blocked/skipped/not_evaluated); confirmed link ≠ test ran/passed; gate fails current malformed/invalid-accepted; future work reported planned; no blanket baseline suppression.",
+        "observed": "facts.ts enums and schema validate() enforce certainty/relations; evidence.ts stales fact certainty for stale records; markdownReport prints certainty, outcome and acceptance as separate columns; 'check' exits 1 only on summary.errors (warnings/notes/recorded fail reported separately). Tests assert planned criteria never emit 'implements' and recorded fail is shown but non-blocking.",
+        "status": "pass",
+        "evidence": "Dependency type/schema interface (facts.ts); assure/src/graph.ts markdownReport + cli.ts exit code; assure/FORMAT.md 'Diagnostics and output'; graph.test.ts 'AS6 Markdown exposes failed observations...'."
+      }
+    ],
+    "recommendation": "accept",
+    "limitations": [
+      "External packet-only review: I did not and may not execute any tool, test or CI; all runtime outcomes (local 'just ci', 72 assurance tests, hosted runs 41344361172/41345842002) are treated as untrusted recorded observations, not reviewer-executed results.",
+      "Pinned evidence/aircraft source files referenced by docs/assure/catalog.json (studies/e1-browser/results/*.json and data/aircraft/c172s-classic/*.json) are not included in the packet; their sha256 freshness and assertion/provenance resolution are corroborated only by in-packet test source plus the recorded 'zero integrity errors' observation. The four archival records' ineligibility is, however, verifiable in-packet from their unavailableRoles plus the evidence.ts logic.",
+      "The independent quality, validation and scoped-peer review records (docs/reviews) are explicitly excluded; the DONE/RESULTS claims of seven quality findings and their renewal cannot be verified from this packet.",
+      "The 13 vendored Propeller files were reviewed only at the integration/interface level (byte-pin inventory + CLI tamper rejection); their upstream implementation was not re-accepted.",
+      "Hosted CI URLs and GitHub run metadata could not be fetched; declared review 'independent' flags and provider/backend identity are declarations checked elsewhere by the orchestrator, not attestations verifiable here.",
+      "No whole-MVP, flight-model fidelity, aircraft source rights, physics/learning validity or certification is accepted; the catalog deliberately accepts nothing (14 planned criteria, 0 accepted)."
+    ]
+  },
+  "limitations": [
+    "CLI routing and returned model names are evidence, not backend attestation.",
+    "Packet review does not independently execute the packet's test commands.",
+    "Returned model names include Opus and Haiku; per-subtask attribution and backend reasoning effort are not independently attested. Opus/high were explicitly requested; no silent lower-tier fallback is claimed."
+  ],
+  "invocation": {
+    "requested_model": "opus",
+    "requested_effort": "high",
+    "transport": "fresh Claude CLI print JSON via utils/peer_review.py",
+    "safe_mode": true,
+    "tools": [],
+    "session_persistence": false,
+    "timeout_seconds": 600
+  },
+  "source_snapshot": {
+    "base": "65faaeabb41b8b82cd632fe79f8ee9e4c8fa4c2c",
+    "files": 189,
+    "sha256": "dfbfbc3c9ac45c5ed0c6b7c58e2a3790e79aa1469fcbce8a6d81eada2b34f31d",
+    "includes": "TODO, DONE and RESULTS; excludes docs/reviews and ignored generated output"
+  },
+  "scope": {
+    "included": "New Codex-authored assurance adapters, integration, catalog and status reconciliation in PR28",
+    "dependency": "13 byte-preserved Propeller files reviewed at integration/interface level only",
+    "excluded": "Prior Claude-authored Gefly PRs and generated review records; TODO0.19 remains open"
+  },
+  "finding_dispositions": [
+    {
+      "finding": 1,
+      "status": "accepted_nonblocking",
+      "reason": "Duplicate errors share one root cause but preserve fail-closed rejection. Cosmetic output duplication is acceptable in the bounded interface; no acceptance gap or source repair."
+    },
+    {
+      "finding": 2,
+      "status": "within_documented_scope",
+      "reason": "Append-only comparison is intentionally against committed HEAD in worktree mode. Historical revision snapshots do not claim comparison against their parents. No change to the specified contract."
+    }
+  ]
+}

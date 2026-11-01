@@ -2,26 +2,26 @@
 
 ## Shared local and hosted gate
 
-`just ci` delegates to [ci.py](ci.py), the same entry point invoked by
+`just ci` delegates to [ci/run.py](ci/run.py), the same entry point invoked by
 [GitHub Actions](../.github/workflows/foundation.yml). The direct command needs Python
-3.11+ and Git, without `just` or third-party Python packages:
+3.11+, Git and **Node.js 24.2+**, without `just` or third-party Python packages:
 
 ```bash
-python3 /path/to/checkout/utils/ci.py
+python3 /path/to/checkout/utils/ci/run.py
 ```
 
 The runner finds the checkout from its own location, independently of the caller's
 working directory. Its required phases check the scaffold, discover and run the
-offline standard-library repository-tool tests, run the offline study tests
-(`studies/e1-jsbsim` and `studies/e2-c172s`, standard-library unittest discovery in a separate
-interpreter), run `node studies/e1-browser/render/check-synthetic.mjs` when `node`
-is on `PATH`, and inspect whitespace in the current contents of all tracked files.
+offline standard-library repository-tool tests, check the aircraft/source data,
+run the assurance integrity checks and tool tests, run the offline study tests
+(`studies/e1-jsbsim` and `studies/e2-c172s`, standard-library unittest discovery in
+separate interpreters), run `node studies/e1-browser/render/check-synthetic.mjs`, and inspect
+whitespace in the current contents of all tracked files.
 A missing/empty test suite, a missing study directory or render script, or a
 required phase failure returns nonzero. Study tests that need an absent optional
 package (such as `jsbsim`) are skipped; the study child prints executed and
 skipped counts with each skip reason and a `GEFLY-STUDY-RESULT` count line that
-the runner requires. Without `node` the render check prints
-`skipped: node not found`. Any skip keeps exit 0 but changes the final line to
+the runner requires. Optional-study skips keep exit 0 but change the final line to
 `Foundation CI: passed with skipped checks (...)`, naming each skip; an
 all-skipped study suite is listed as `none executed`, never as a pass. Each child
 phase has a timeout (`--timeout SECONDS`, default 600; Git calls 60 s) and expiry
@@ -29,14 +29,17 @@ fails the gate. On POSIX each phase and Node call runs in its own process group;
 on expiry the whole group gets SIGTERM, then SIGKILL after a 2 s grace, so a
 grandchild holding an output pipe cannot stall the gate (elsewhere only the
 direct child is killed). Inherited `NODE_*` variables are removed from Node's environment,
-as `GIT_*` variables are for Git. `--require-node` (used by the hosted workflow)
-makes a missing `node` a failure. Whitespace is checked even in an otherwise clean
+as `GIT_*` variables are for Git. Assurance is required in the shared gate:
+missing Node or a version below 24.2 is a failure, and assurance TAP tests must be
+nonempty with zero skips. `just check` remains the Python-only lower-level
+structural check. Whitespace is checked even in an otherwise clean
 checkout; this is broader than checking a working-tree diff. Untracked files are
 excluded until added to Git, so add intended new files before the final gate.
 
-After checkout and interpreter setup, the hosted gate uses only Git, the
-Python standard library and the runner image's preinstalled Node.js (no setup
-action; its version is printed and can change with the image). It performs no
+After checkout and interpreter setup, the hosted gate uses Git, the Python
+standard library and Node.js for assurance and synthetic rendering. The required
+Node version and hosted setup are recorded in [SBOM](../docs/SBOM.md); actual
+versions are printed with the run. It performs no
 project-package installation, live peer
 review, provider authentication, PDF/browser/TeX build or simulator/data ingestion.
 Peer-router tests use mocked provider processes; they do not establish live access
@@ -46,7 +49,7 @@ targeted checks rather than replacements for the complete gate.
 The workflow targets pushes and pull requests to `main` with `contents: read`,
 `persist-credentials: false`, `ubuntu-24.04` and a Python 3.11/3.15 matrix. Exact
 interpreter patches and hosted runner images can change. [SBOM](../docs/SBOM.md)
-records immutable action pins and the reviewed update policy. The matrix tests
+records immutable action pins, explicit Node 26 setup and the reviewed update policy. The matrix tests
 supported lines rather than promising hermetic or identical environments.
 
 [E0-CI](../docs/EVAL.md#e0-ci-are-repository-tool-quality-gates-reproducible-locally-and-in-ci)
@@ -60,7 +63,7 @@ local quality, specification-validation and live peer gates remain separate.
 
 ## Lower-level scaffold check
 
-`just check` runs [check.py](check.py) with Python 3.11 or newer and only the standard
+`just check` runs [ci/check.py](ci/check.py) with Python 3.11 or newer and only the standard
 library. It checks required scaffold files, local Markdown link targets, the Claude
 entrypoint, the nine native Codex agent definitions, the native Claude peer dispatcher
 and their role-document references.
@@ -146,11 +149,59 @@ instruction is not a tool-disable guarantee. Provider CLI configuration may
 still exist outside the packet, and returned model names are not backend
 attestation. Preserve these limits with the review evidence.
 
-`just test-tools` runs standard-library `unittest` discovery over `utils/test_*.py`.
+`just test-tools` runs standard-library `unittest` discovery recursively from
+`utils/`, matching `test_*.py`. The `ci/` package keeps its relocated checker/runner
+tests in that discovery alongside the existing peer and validator tests.
 These tool tests are separate from live provider runs and do not establish live
 authentication, model identity, review quality or simulator correctness. `just check`
 stays offline and never invokes this peer helper or a provider. See
 [SDLC](../docs/SDLC.md) for acceptance and [SEC](../docs/SEC.md) for data boundaries.
+
+## Assurance and change impact
+
+The bounded [assurance contract](../docs/assure/SPEC.md) adopts generated lineage
+and checks from Propeller's pinned GPL-3.0-or-later core. Canonical inputs remain
+the source documents, Git records, aircraft/source values and versioned evidence;
+generated graph/report files are disposable. The runtime and its tests live in
+[assure/](assure/README.md), under `utils/`; the product contract and catalog stay
+in `docs/assure/`. The CLI uses Node.js 24.2+ to run
+the checked-in TypeScript, with no package installation, network retrieval,
+provider call or browser launch during checking.
+
+```bash
+just assure check
+just assure report
+just assure trace R-AIR-1
+just assure diff main
+just assure impact data/aircraft/c172s-classic/poh-values.json
+just assure-test
+just lineage
+```
+
+`check` reports integrity/freshness findings and fails on current errors; warnings
+and extraction limits remain visible. `report` separates planned requirements,
+implementation claims, evidence outcomes, link certainty and accepted claims.
+`trace` follows a stable ID, `diff` compares lineage against a Git revision, and
+`impact` identifies downstream effects through declared dependencies. Missing
+edges are a coverage limit, not proof of no impact. `assure-test` exercises the
+tool; `lineage` writes generated JSON and Markdown under ignored `utils/assure/out/`,
+without automatically opening a browser or publishing anything.
+
+The shared local/hosted gate runs the offline assurance checks alongside existing
+aircraft validators rather than treating graph extraction as source verification.
+A named test or a declared/confirmed relationship does not prove execution or
+acceptance. Planned requirements may remain unimplemented without failing every
+gate; accepted claims require current passing evidence with valid dependencies.
+Failed, blocked, skipped, not-evaluated, missing or stale evidence cannot support
+an accepted claim. Optional-dependency study skips stay visible as unexecuted
+evidence, even when the overall tooling command exits successfully.
+
+Review source truth/applicability/rights, numerical adequacy, case selection and
+prose meaning manually. The catalog's known-drift guards cover selected decisions
+and stale literals; they do not interpret every document or establish aircraft
+fidelity. Keep independent quality/specification review and the batched external
+peer range under [SDLC](../docs/SDLC.md). See [ASSR](../docs/assure/ASSR.md) for
+source provenance, certainty and acceptance boundaries.
 
 ## Document builds
 
@@ -173,6 +224,21 @@ Only render trusted repository documents: pandoc can embed remote resources, and
 the LaTeX filter invokes local TeX tools. Generated HTML and the temporary Chrome
 profile are deleted after each build. Recipe command failures propagate as failures.
 
+## Aircraft sources and E2 calculation utilities
+
 `validate_manifest.py` checks aircraft manifests under `data/aircraft/` against
 `data/schema/aircraft-manifest.schema.json` plus source/revision cross-checks;
 `test_validate_manifest.py` covers its failure cases.
+
+The [E2 mass-properties study](../studies/e2-c172s/README.md) provides a
+standard-library component mass/CG/inertia calculation and a strict JSON CLI at
+`studies/e2-c172s/build_mass_properties.py`. Its synthetic examples and tests check
+arithmetic and invalid-input handling; they supply no aircraft mass distribution,
+structural-frame/JSBSim adapter or accepted 172S model. The study documents SI
+units, the common body-axis orientation, negative off-diagonal tensor products,
+input hashing and the remaining [FDM M-a work](../docs/design/FDM-172S.md).
+
+The shared gate runs E2's tests separately from the repository-tool and E1 suites.
+E2 needs no optional simulation package; its calculation tests do not replace
+source-provenance review, aircraft-specific fixtures or model acceptance. Use the
+study's documented CLI/test commands for a targeted calculation check.

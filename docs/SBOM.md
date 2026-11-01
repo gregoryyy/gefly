@@ -1,6 +1,6 @@
 # Software, tools and source inventory
 
-JSBSim is the selected dynamics engine (GAPS Q17; not yet a pinned application dependency). No runtime language, package manager or graphics engine has been selected. There are no application dependencies or lockfiles yet. This overview does not replace future machine-readable inventories.
+JSBSim is the selected dynamics engine, with TypeScript, CesiumJS, a three.js fallback and MapLibre selected for the web application (GAPS Q17). These are not yet pinned product dependencies; the package manager/workspaces remain undecided and no application lockfiles exist. Study/tool versions are recorded below. This overview does not replace future machine-readable inventories.
 
 The user intends a **free/open-source project** and directs **reuse of open physics
 engines/models wherever practical**. Original project material is **GPL-3.0-or-later** (GAPS Q5);
@@ -13,7 +13,7 @@ plan rather than assuming a single engine license covers all these materials.
 | Tool or asset | Use and provenance | Version / rights status |
 | --- | --- | --- |
 | Python | Standard-library scaffold checks, tool tests and shared CI runner, including `tomllib` | 3.11+ required; CI supports minor lines 3.11 and 3.15; exact observed patches recorded in RESULTS |
-| just | Local command entry point; `just ci` delegates to `utils/ci.py` | Version recorded in RESULTS; not bundled or required by hosted CI |
+| just | Local command entry point; `just ci` delegates to `utils/ci/run.py` | Version recorded in RESULTS; not bundled or required by hosted CI |
 | pandoc | Trusted Markdown to embedded HTML | Version recorded in RESULTS; not bundled |
 | Google Chrome | Headless A4 PDF print | Locally installed; `CHROME` can override executable |
 | `utils/pdf/style.css`, `mermaid.html`, `latex.lua` | Copied from `../propeller/utils/pdf/` by the requested bootstrap procedure | Propeller declares GPL-3.0-or-later; original comments retained, notices and full GPL text included for publication |
@@ -31,7 +31,7 @@ are recorded for derived BOOT/build/PDF material in
 
 ## Repository-tool CI inventory
 
-The [shared runner](../utils/ci.py) checks scaffold structure, offline standard-
+The [shared runner](../utils/ci/run.py) checks scaffold structure, offline standard-
 library tool tests and whitespace in all tracked current files. Empty/missing
 tests or required-phase failures return nonzero. Untracked files are outside the
 whitespace gate until added to Git. This is TODO 1.1.1's bounded tool slice, not a
@@ -58,16 +58,16 @@ Both action sources declare the MIT license at their pinned revisions:
 and [setup-python license](https://github.com/actions/setup-python/blob/6d4fd22b20465ccc0f7354476588e8df7c9ca0e0/LICENSE).
 They are referenced by CI, not vendored into the application.
 
-The Foundation workflow uses the ubuntu-24.04 runner's preinstalled Node.js for the
-offline synthetic render check (no setup action, no packages); its version follows the
-runner image and is printed in the log.
+The Foundation workflow sets up the Node 26 line for the offline synthetic render
+and required assurance checks; see the pinned action and limits below. The resolved
+patch version is printed in the log. No project packages are installed.
 
 The runtime requirements are recorded in the pinned
 [checkout source](https://github.com/actions/checkout/blob/3d3c42e5aac5ba805825da76410c181273ba90b1/README.md)
 and [setup-python source](https://github.com/actions/setup-python/blob/6d4fd22b20465ccc0f7354476588e8df7c9ca0e0/README.md).
 These are CI action runtimes, not application dependencies. Action/interpreter
-setup can download tools; the shared gate then needs only Git and the Python
-standard library. It installs no project packages and invokes no live peer
+setup can download tools; the shared gate then uses Git, Node standard libraries
+and the Python standard library. It installs no project packages and invokes no live peer
 provider, PDF/browser/TeX process or simulator runtime. Tests mock provider calls.
 
 [Dependabot configuration](../.github/dependabot.yml) monitors the
@@ -85,13 +85,36 @@ Local gate observations and actual hosted outcomes are separate records under
 Workflow presence does not establish a hosted pass or branch protection; peer
 acceptance is also a separate gate. Future application lint/type checks,
 dependency vulnerability/license checks and package-manager update automation
-remain TODO 1.1 work after the runtime stack is selected.
+remain TODO 1.1 work as package/workspace tooling and product implementation are added.
+
+## Assurance toolchain
+
+The bounded assurance tool uses Node 24.2+ built-in TypeScript stripping and only
+Node standard libraries; it installs no runtime packages. Type stripping is not
+TypeScript type checking. The selected pure Propeller core is GPL-3.0-or-later,
+pinned to `99dc60050cd904f7b25cd929b5a6b1e1420f9fc6`; [UPSTREAM](../utils/assure/UPSTREAM.json)
+records each copied file's original path/hash, and [notices](../THIRD_PARTY_NOTICES.md)
+preserve attribution. Gefly adapters are tested separately from the reused tests.
+
+CI explicitly sets up the Node 26 line with `actions/setup-node` v7.1.0 at
+`949feb2413d6458794dcd2491c4babbbce0c15c1`. Its official tag API was verified before
+selection; the [pinned MIT license](https://github.com/actions/setup-node/blob/949feb2413d6458794dcd2491c4babbbce0c15c1/LICENSE)
+and [source](https://github.com/actions/setup-node/tree/949feb2413d6458794dcd2491c4babbbce0c15c1)
+are recorded here. Automatic package-manager caching is disabled. Interpreter
+patches can move within that line; actual versions belong in RESULTS. Existing
+weekly GitHub Actions update proposals also cover this immutable action pin.
+
+The runtime lives in `utils/assure/`; the product contract/catalog remain in
+`docs/assure/`. Assurance reads catalog/evidence files offline and creates ignored reports under
+`utils/assure/out/`. It does not fetch source documents, install an SDK, run a simulator
+or invoke a provider. It complements existing source/schema/conversion validators;
+review still establishes source applicability and scientific meaning.
 
 ## Selection and updates
 
 Prefer the smallest dependency set that meets measured requirements. Before adopting one, record its exact version, official source, license, maintenance/security posture, transitive obligations, browser compatibility, size/performance impact and alternatives. Commit lockfiles for the selected package manager. The current action-update configuration is described above; foundation TODO 1.1 still needs vulnerability/license checks and automated update proposals appropriate to the future application ecosystem.
 
-JSBSim is a **candidate**, not an installed dependency. GeoFS is a reference product, not a library or asset grant. Check primary source documents and actual licenses before reuse; see [foundation research](research/2026-10-31-foundation-sources.md).
+JSBSim is the selected dynamics engine; it is not yet a pinned product dependency. GeoFS is a reference product, not a library or asset grant. Check primary source documents and actual licenses before reuse; see [foundation research](research/2026-10-31-foundation-sources.md).
 
 ## Reuse and regional-data candidates, not adopted dependencies
 

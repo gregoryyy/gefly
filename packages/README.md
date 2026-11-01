@@ -1,7 +1,7 @@
 # Runtime module boundaries
 
-These scope notes reserve responsibilities without selecting a language, package
-manager or workspace tool. Root documents apply; no local document supersedes them.
+These scope notes reserve responsibilities; current runtime decisions live in
+[ARCH](../docs/ARCH.md), while package/workspace tooling remains to be selected. Root documents apply; no local document supersedes them.
 
 | Module | Scope |
 | --- | --- |

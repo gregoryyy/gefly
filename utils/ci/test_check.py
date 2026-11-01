@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-import check
+from . import check
 
 
 class ScaffoldTests(unittest.TestCase):

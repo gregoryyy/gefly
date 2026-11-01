@@ -3,6 +3,147 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 22:14 — Reconcile PR 27 with the assurance and CI layout
+
+TODO: 1.3.1 complete; 1.15 retained; 1.3.2–1.3.4 remain open.
+Agent: Codex orchestrator; code1/peer_runner, code2/peer_registration and
+housekeeping on disjoint integration paths. Independent quality and validate
+review the resulting integration separately.
+
+**Implementation notes**
+
+Merged main `aeb5d3f` after PR #27 into the PR #28 branch at `e8d0a07`.
+Resolved DONE by complete dated entries against both parents and their merge
+base: all 50 feature entries are byte-preserved, and the complete incoming E2
+entry is inserted chronologically. Task 1.3.1 now records the merged calculation
+tool and synthetic fixtures; its aircraft-specific follow-up tasks remain open.
+Utilities documentation retains the relocated tooling and adds the E2 study.
+
+The relocated runner includes both E1 and E2 study suites plus assurance.
+Its production functions retain their previous ASTs; the E2 registry addition
+and incoming zombie-aware timeout-test helper are preserved. All 38 CI test
+identities from the two parents remain present. The five E2 files remain
+byte-identical to merged main. The shared local gate passed 138 executed Python
+tool tests with one Linux-only skip, 25 E2 tests, 14 E1 tests and 72 assurance
+tests; nine optional JSBSim tests were also skipped. Synthetic rendering,
+assurance integrity and tracked whitespace passed. See independent
+[quality](reviews/2026-11-01-pr27-integration-quality.md) and
+[validation](reviews/2026-11-01-pr27-integration-validation.md).
+
+**Deviations**
+
+Peer pending for this integration and the merged E2 groundwork under the batched
+cadence. Earlier assurance/layout peer reports cover their recorded revisions,
+not this later merge. Calculation readiness supplies no aircraft-specific inputs,
+JSBSim tensor adapter, M-a acceptance, validated model or simulator milestone.
+
+**Insights**
+
+A task ID collision needs one reconciled scope and state. Preserving whole
+progress entries and comparing both parents avoids pairing a heading with an
+unrelated implementation or deviations body.
+
+## 2026-11-01 21:42 — Organize assurance and CI tooling under utils
+
+TODO: 1.15 complete. Agent: Codex orchestrator; code1/peer_runner,
+code2/peer_registration and housekeeping on disjoint paths. Independent quality,
+validation and scoped external peer dispositions are recorded separately below.
+
+**Implementation notes**
+
+Moved the assurance runtime, tests and pinned upstream core to `utils/assure/`.
+Grouped the CI runner, structural checker, Node reporter and CI tests under
+`utils/ci/`; its Python package preserves recursive discovery from `utils`.
+The `just` commands retain their names. Updated root detection, workflow paths,
+inventory destinations, output guards, current documentation and source links.
+Canonical assurance documents/catalog stay in `docs/assure/`; all 13 reused
+Propeller files retain their original bytes and original source identities.
+Committed pre-relocation snapshots remain readable without worktree fallback.
+
+The shared local gate passed: 137 Python tooling tests, 72 assurance tests,
+synthetic rendering and 14 executed study tests. Nine optional JSBSim checks
+were skipped because the engine package is unavailable. Tracked-content
+whitespace passed on 208 paths. The relocated checker and CLI were exercised
+from an unrelated directory. Five historical review navigation links are pinned
+to their recorded source revisions; their commands, findings and outcomes remain
+unchanged. Request: [input](input/2026-11-01-tool-layout.md).
+
+**Deviations**
+
+This is a tooling layout change. Simulator requirements, aircraft values and the
+14 planned/zero accepted MVP criteria retain their existing scope. Independent
+[quality](reviews/2026-11-01-tool-layout-quality.md),
+[validation](reviews/2026-11-01-tool-layout-validation.md) and
+[peer](reviews/2026-11-01-tool-layout-peer.md) records carry their own outcomes;
+prior peer acceptance is historical evidence for its earlier revision.
+
+**Insights**
+
+Moving Python tests into a directory also requires a discoverable package.
+Historical revision inspection needs an explicit old-layout reader, while
+current checks must not silently accept a missing new-layout inventory.
+
+## 2026-11-01 21:05 — Complete bounded assurance adoption and status reconciliation
+
+TODO: 1.14 complete. Agent: Codex orchestrator; product, code1/peer_runner,
+code2/peer_registration and housekeeping on disjoint paths, then independent
+quality and validate. PR: [#28](https://github.com/gregoryyy/gefly/pull/28).
+
+**Implementation notes**
+
+The new tracker reuses 13 byte-preserved pure Propeller files from commit
+99dc6005. Gefly adapters derive requirements, tasks, decisions, progress,
+commit/file/test identities and aircraft JSON-pointer provenance. Catalog
+relationships distinguish outcomes, certainty, freshness and acceptance.
+All 14 seeded MVP criteria remain planned, with no accepted claims. Archived
+measurements retain three recorded passes, one failed step-cost observation and
+their incomplete-provenance limits.
+
+Local checks passed 137 tooling tests, 72 assurance tests and 14 study tests;
+nine optional JSBSim tests were explicitly skipped. Both hosted Python jobs
+passed the same implementation at 2900ca38. Seven independent quality findings
+prompted rejection/impact/ledger/report regressions; affected checks and reviews
+were renewed. Current status contradictions and the damaged FDM progress entry
+were reconciled from decisions/data/Git history. See [RESULTS](RESULTS.md) and
+the [quality](reviews/2026-11-01-assurance-quality.md) /
+[validation](reviews/2026-11-01-assurance-validation.md) records.
+
+**Deviations**
+
+This accepts bounded tooling and its documented limits, not aircraft fidelity,
+an MVP or the entire foundation. Historical references and archival provenance
+remain advisory warnings; skips remain skips. No new flight run was performed.
+The [scoped external peer disposition](reviews/2026-11-01-assurance-peer.md) is
+recorded separately under the existing batched cadence; older peer coverage in
+TODO 0.19 remains open. No database, hooks, extra agent or runtime package added.
+
+**Insights**
+
+A passing test file is not proof that it declares tests. Accepted evidence must
+remain valid after dependency resolution, and field-level impact must include
+whole-file pins. Status records are now included in the assurance review snapshot;
+generated review records remain outside it to avoid self-referential hashes.
+
+## 2026-11-01 20:40 — Adopt bounded assurance (integration in progress)
+
+TODO: 1.14.1 complete; 1.14.2–1.14.4 in progress. Agent: Codex orchestrator;
+product, code1/peer_runner, code2/peer_registration and housekeeping on disjoint
+paths; independent quality review started, integrated validation pending.
+
+**Implementation notes**
+
+Recorded Q22 and R-ASR-1 through R-ASR-5 with AS1–AS8. Reusing pinned Propeller
+pure lineage code with Gefly adapters, catalog evidence/freshness checks and the
+shared offline CI gate. Reconciled current decisions and data availability,
+restored the complete FDM progress entry from the last correct main revision,
+and normalized two legacy progress records without changing their observations.
+
+**Deviations**
+
+Integration and independent checks are in progress; this entry does not accept
+unreviewed implementation, an aircraft model or the MVP. Earlier peer coverage
+remains separate and TODO 0.19 open. No database, hooks or new agent role added.
+
 ## 2026-11-01 19:35 — Prepare E2 component mass and inertia calculations
 
 TODO: 1.3.1; E2 preparation only. Agent: Codex orchestrator; code1/e2_math,
@@ -58,25 +199,6 @@ Lycoming fuel-chart points, Q21 FDM tolerance proposals accepted as working prop
 
 Other files were checked for duplicated lines and conflict markers only, not
 re-reviewed line by line. Peer pending (batched).
-## 2026-11-01 18:49 — Plan the project-owned JSBSim 172S model (E2)
-
-TODO: 1.1.2, 1.2.3, 1.4 complete. Agent: Claude Code orchestrator (no subagents).
-
-**Implementation notes**
-
-After the user merged PRs #9–#23 with "accept both" conflict resolutions, DONE.md had
-truncated, mixed and out-of-order entries. Rebuilt it from the complete per-entry
-versions in main's history (44 entries, newest first; Exercise 01 entry no longer
-carries the iPhone and briefing bodies). Checked GAPS (unique headings; Q15 answers
-restored to newest first), README (stale "variant and stack open" sentence), TODO
-(merged/reviewed statuses), AGENTS and ARCH (stack). Recorded the user's answers:
-Q17 web stack (CesiumJS, three.js fallback, MapLibre, TypeScript, JSBSim worker), Q5
-Lycoming fuel-chart points, Q21 FDM tolerance proposals accepted as working proposals.
-
-**Deviations**
-
-Other files were checked for duplicated lines and conflict markers only, not
-re-reviewed line by line. Peer pending (batched).
 
 ## 2026-11-01 19:00 — Extract Lycoming power points and POH cruise/glide values
 
@@ -96,6 +218,25 @@ as a facts-only source (manifest 0.2.0); validator extended, 21 tests (112 total
 uninstalled engine; the glide figure is a single line, so one reading carries its
 whole content — flagged for the user against the no-piecemeal rule. Not yet reviewed.
 Peer pending (batched).
+
+## 2026-11-01 18:49 — Plan the project-owned JSBSim 172S model (E2)
+
+TODO: E2 preparation. Agent: Claude Code orchestrator; product subagent.
+
+**Implementation notes**
+
+Added [FDM-172S](design/FDM-172S.md): JSBSim block structure with a source class
+(sourced, derived, estimated, plausibility) for every parameter group and a
+per-parameter provenance file with a CI check; OpenVSP geometry inputs; calibration
+vs frozen holdout sets (glide added for drag, forward-CG stall to holdout); proposed
+tolerances P-1..P-10; a `studies/e2-c172s/` harness reusing E1 and the WASM worker;
+licensing; milestones M-a..M-e with exit criteria. No coefficient values.
+
+**Deviations**
+
+Plan only; blockers: empty mass/CG (Q-1), geometry gaps (planform, airfoil, tail),
+tolerance acceptance (Q-11). Cruise/glide extraction is already authorised and
+running. Not yet reviewed. Peer pending (batched).
 
 ## 2026-11-01 18:46 — Select model size and reasoning effort per task
 
@@ -192,13 +333,20 @@ yet reviewed. Peer pending (batched).
 
 ## 2026-11-01 18:16 — Record local review of first Claude PRs
 
-Agent: Codex orchestrator; first_pr_docs_review performed independent local
-source inspection. Reviewed Claude PRs #4–#6 at `48b2991`; three medium findings
+TODO: 0.19 in progress. Agent: Codex orchestrator; first_pr_docs_review.
+
+**Implementation notes**
+
+Performed independent local source inspection. Reviewed Claude PRs #4–#6 at `48b2991`; three medium findings
 remain unresolved. [Report](reviews/2026-11-01-first-claude-prs.md) includes
 reproductions, validation scope and frozen packet hash. The fresh Codex CLI
 failed before reviewer initialization on the read-only filesystem; formal peer
 acceptance remains blocked and TODO 0.19 stays open. No product fixes made.
 Current foundation CI passed 41 tests; study tests passed 7 and skipped 9.
+
+**Deviations**
+
+Formal peer initialization failed; the local review is not a passed peer gate.
 
 ## 2026-11-01 16:47 — Draft the paired-iPhone control specification
 
@@ -331,22 +479,6 @@ Draft; cites the holding-point start from branch `design/contracts-1-4` (not yet
 main); runway in the example is illustrative; Q13 provider open; not yet reviewed.
 Peer pending (batched).
 
-## 2026-11-01 13:06 — Add study checks to the shared CI gate
-
-TODO: 1.1.2 in progress. Agent: Claude Code orchestrator; code1 subagent.
-
-**Implementation notes**
-
-`utils/ci.py` now runs the `studies/e1-jsbsim` tests in a separate interpreter
-(fails on missing/empty/failing/import errors, reports skips) and
-`check-synthetic.mjs` with node; a missing node is reported as a skip and the final
-line says "passed with skipped check". Hosted CI uses `--require-node` with the
-runner's preinstalled Node.js. 8 new negative/positive tests (49 tool tests total).
-
-**Deviations**
-
-Local only: hosted run and independent review pending. Peer pending (batched).
-
 ## 2026-11-01 13:06 — Draft the pilot-qualification profile contract
 
 TODO: 1.12 in progress. Agent: Claude Code orchestrator; product subagent.
@@ -363,6 +495,22 @@ PPL(A)/C172S example and placeholder SPL/ultralight shapes bound to Q14.
 
 Draft; most PPL values unverified until Part-FCL sections are read; Q14 choices not
 made; proposed SPEC edits not applied; not yet reviewed. Peer pending (batched).
+
+## 2026-11-01 13:06 — Add study checks to the shared CI gate
+
+TODO: 1.1.2 in progress. Agent: Claude Code orchestrator; code1 subagent.
+
+**Implementation notes**
+
+`utils/ci.py` now runs the `studies/e1-jsbsim` tests in a separate interpreter
+(fails on missing/empty/failing/import errors, reports skips) and
+`check-synthetic.mjs` with node; a missing node is reported as a skip and the final
+line says "passed with skipped check". Hosted CI uses `--require-node` with the
+runner's preinstalled Node.js. 8 new negative/positive tests (49 tool tests total).
+
+**Deviations**
+
+Local only: hosted run and independent review pending. Peer pending (batched).
 
 ## 2026-11-01 12:58 — Draft shared contracts v1
 
@@ -488,7 +636,7 @@ Updated GAPS Q15 (per-PR scope struck), SDLC, AGENTS, SPEC R-AGENT-7, agent
 workflow, peer role and PR template. proclens has no hooks; nothing to adopt there.
 Router and tests unchanged: proclens's copies are gefly's own with only naming edits.
 
-**Peer status**
+**Deviations**
 
 **Peer pending** for Claude-authored work merged since `3faf9c8` (PRs #4, #5, #6) and
 this change; Codex CLI unavailable in this cloud session. Last recorded peer review:

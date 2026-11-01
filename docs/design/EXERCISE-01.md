@@ -1,17 +1,20 @@
 # Exercise 01: take-off, circuit and landing at EDFE
 
-Status: **product draft for TODO 1.5, 2026-11-01. Not frozen.** Freezing needs the
-user's decisions and a qualified flight-instructor review (GAPS [Q7](../GAPS.md)).
+Status: **research-based product draft for TODO 1.5, 2026-11-01. Not frozen.**
+GAPS [Q7](../GAPS.md) selects runway **26**, the north/right-hand circuit and an
+engine-running holding-point start, with **no instructor reviewer yet**. The user
+authorized research-based refinement; instructor availability does not block the
+experimental prototype. Stronger instructional/training claims require appropriate
+review. Freezing still needs the remaining source-data, model and criterion decisions.
 [SPEC](../SPEC.md) owns the requirements (R-TRAIN-1, R-TRAIN-2, R-TRAIN-3, R-TRAIN-4,
 R-TRAIN-5, R-FID-2, R-FID-3, R-REVIEW-1, R-SIM-2, R-SIM-4, R-EVAL-1); this document
 proposes the exercise definition and criteria that SPEC/EVAL would reference.
 Sources: [exercise sources](../research/2026-11-01-exercise-01-sources.md) (X1 EASA,
 S17 POH, E2a operator), [EDFE sources](../research/2026-11-01-edfe-aerodrome-sources.md),
-[172S sources](../research/2026-11-01-c172s-fr172-sources.md); extracted POH values:
-data/aircraft/c172s-classic/poh-values.json (arriving with PR #17, values_version
-0.1.0, status draft). State field names follow
-the contracts v1 draft `docs/design/CONTRACTS.md` on branch `design/contracts-1-4`
-(not yet on main).
+[172S sources](../research/2026-11-01-c172s-fr172-sources.md); extracted
+[POH values](../../data/aircraft/c172s-classic/poh-values.json) (values_version
+0.1.0, status draft) are available. State field names follow the merged
+[contracts v1 draft](CONTRACTS.md) and [scenario contracts](SCENARIO-CONTRACTS.md).
 
 ## Source labels
 
@@ -25,9 +28,9 @@ Every number below carries one label. No unlabelled number is a criterion.
 | **AIP** | Value required from the DFS AIP VFR EDFE (not read; **TBD-src**). |
 | **POH+ST** | Composite: one POH target speed with the ST +15/−5 kt (take-off/approach) or ±15 kt band applied around that single target. Choosing one target inside a POH range is itself IP. |
 | **CAL** | Instructional derivation from the POH airspeed calibration (S17 Fig. 5-1, p. 5-9) as defined in [Assessment airspeed](#assessment-airspeed): linear interpolation between tabulated points. The tabulated points are POH; the interpolation and flap-detent mapping are IP. |
-| **IP** | **Instructional proposal pending instructor review.** Product choice with rationale; not sourced; may change at review. |
+| **IP** | **Instructional proposal from research, without instructor review.** Product choice with rationale, not sourced; subject to explicit review/refinement. Q7 permits experimental work with this label. |
 | **DEF** | Measurement definition (how a quantity is computed), not a tolerance. |
-| **TBD** | No value proposed; needs a source or instructor input. |
+| **TBD** | No value proposed; needs applicable source research or an explicit reviewed experimental criterion. Instructor input is required before any instructor-reviewed claim. |
 
 ## Learner objective
 
@@ -46,10 +49,10 @@ noise-abatement procedures are not in this exercise.
 | Item | Proposal | Label / status |
 | --- | --- | --- |
 | Aircraft | `c172s-classic-9491-9809`, 2,550 lb or less, mass/CG within limits | Q3; mass case **TBD** (E2) |
-| Model fidelity | JSBSim with an instructional C172 model until a 172S model passes E2; labelled "generic C172 dynamics, not validated 172S" | R-FID-3; 172S sources note |
-| Start | Runway holding point, **engine running** (GAPS Q18 O-8 on contracts branch) | User decision |
+| Model fidelity | Project-owned 172S model not yet implemented or E2-validated. Generic C172 dynamics are available only in the bounded study; any experimental exercise using them must be labelled "generic C172 dynamics, not validated 172S" and respect Q17's no-shipped-bundled-data decision | R-FID-3; [FDM plan](FDM-172S.md) |
+| Start | Runway holding point, **engine running** (GAPS Q7/Q18 O-8; [CONTRACTS](CONTRACTS.md)) | User decision |
 | Initial configuration | Fuel selector BOTH and shutoff ON (POH p. 4-11); master ON, auxiliary fuel pump OFF after start, ignition BOTH (START spring-returns), avionics master ON (POH p. 4-12, p. 7-22); mixture rich, trim and flaps set for take-off, parking brake set (POH p. 4-15); flaps 0° (IP within 0°–10°); altimeter at scenario QNH | POH as cited; trim index **TBD-src** |
-| Runway | **Proposed default RWY 26**, second case RWY 08 | IP; open question (below) |
+| Runway | **Selected default RWY 26**, second experimental case RWY 08 remains proposed | User decision Q7; second case IP |
 | Circuit | North circuit: right-hand for 26, left-hand for 08 | OPR p. 1 |
 | Circuit altitude | **AIP**; development placeholder 1300 ft MSL (operator join altitude for 08 arrivals), visibly labelled unverified | OPR p. 2; AIP TBD-src |
 | Altitude ceiling | 1500 ft MSL. The operator states it for "all departures and arrivals"; applying it to the whole circuit is an inference | OPR p. 2 + IP inference |
@@ -93,7 +96,7 @@ Assessment reads only per-step recorded state, never interpolated display values
 The simulator supplies calibrated airspeed (`sim.cas_mps`); the POH targets are in
 KIAS. The exercise derives the indicated airspeed used for assessment from the POH
 airspeed calibration, normal static source (S17 Fig. 5-1, p. 5-9), using the points
-in data/aircraft/c172s-classic/poh-values.json (arriving with PR #17), group
+in [poh-values.json](../../data/aircraft/c172s-classic/poh-values.json), group
 `airspeed_calibration`. The KIAS↔KCAS pairs are POH facts; everything else in this
 section is a CAL/IP instructional derivation, not a pitot-static model, and is
 disclosed in the debrief. The POH figure has further points that were not
@@ -187,12 +190,12 @@ Detection thresholds are DEF/IP and part of the review.
 | P2 Take-off roll | Throttle > 0.9 and `gs_mps` increasing | Flap setting; throttle; mixture; lateral offset; nose-wheel steering use | **Gate**: flaps ≤ 10° (POH p. 4-15, 4-25: > 10° not approved). **Gate**: main gear remain on runway surface (geometry AIP). Feedback: full throttle (POH p. 4-15), mixture rich (POH, field < 3000 ft) |
 | P3 Rotation | Nose-gear weight off | IAS at nose lift-off (KIAS) | IAS (CAL) at nose lift-off: target 55 KIAS (POH p. 4-15), +15/−5 kt (POH+ST) → 50–70 KIAS, flaps 0° or 10° table. Below 50 KIAS (below the extracted table) reported below band, early rotation (rule 4) |
 | P4 Initial climb | All gear off ground | IAS, pitch, bank, `track_true_rad`, flap retraction speed | Target 75 KIAS (IP choice inside POH 70–80, p. 4-15; p. 4-5 says 75–85, unresolved), +15/−5 kt (POH+ST) → 70–90 KIAS, IAS (CAL) from the 0° or 10° table. 10° flaps retracted not below 60 KIAS (POH p. 4-25), IAS (CAL) at the start of retraction from the 10° table. Stall-margin warning (IP) active. `track_true_rad` within ±10° of runway true bearing until the crosswind turn (ST "tracking" limit applied to a visual track, IP adaptation) |
-| P5 Crosswind | First turn toward circuit side | Turn height above runway (ft); bank (°) | Turn height **TBD** (instructor; operator gives only a landmark). Bank ≤ 30° (IP; 30° is the skill-test "medium turn", X1 p. 249) |
-| P6 Downwind | Second turn completed; track within 30° of reciprocal runway track (DEF) | Indicated altitude (`ind`) vs circuit altitude (ft); `track_true_rad` vs reciprocal runway true bearing (°); IAS; before-landing items | Indicated altitude ±150 ft about circuit altitude (ST; altitude AIP). `track_true_rad` within ±10° of the reciprocal true bearing (ST "tracking" adapted, IP). IAS (CAL) ±15 kt about a target (ST); target **TBD** (no POH circuit speed); once set, evaluable up to 110 KIAS flaps 0°. Before-landing items fuel BOTH, mixture rich (POH p. 4-16). **Gate**: `h_qnh_ref_m` ≤ 1500 ft = 457.2 m (OPR + IP inference); margin 0 ft unless the instructor sets one (any margin is IP) |
+| P5 Crosswind | First turn toward circuit side | Turn height above runway (ft); bank (°) | Turn height **TBD** (source research or reviewed experimental criterion; operator gives only a landmark). Bank ≤ 30° (IP; 30° is the skill-test "medium turn", X1 p. 249) |
+| P6 Downwind | Second turn completed; track within 30° of reciprocal runway track (DEF) | Indicated altitude (`ind`) vs circuit altitude (ft); `track_true_rad` vs reciprocal runway true bearing (°); IAS; before-landing items | Indicated altitude ±150 ft about circuit altitude (ST; altitude AIP). `track_true_rad` within ±10° of the reciprocal true bearing (ST "tracking" adapted, IP). IAS (CAL) ±15 kt about a target (ST); target **TBD** (no POH circuit speed); once set, evaluable up to 110 KIAS flaps 0°. Before-landing items fuel BOTH, mixture rich (POH p. 4-16). **Gate**: `h_qnh_ref_m` ≤ 1500 ft = 457.2 m (OPR + IP inference); margin 0 ft unless separately reviewed (any margin is IP) |
 | P7 Base | Third turn | Bank; `sim.cas_mps` vs flap setting; descent | **Gate** (all phases): `sim.cas_mps` ≤ VFE from `sim.flap_rad`: 107 KCAS for 0° < flap ≤ 10°, 85 KCAS for flap > 10° (POH p. 2-4, KCAS column). The POH bands meet at 10°; assigning exactly 10° to the 107 KCAS band and a 0.5° detent tolerance are IP. 107 rather than 109 KCAS is the conservative IP choice ([VFE conflict](#vfe-flaps-10-conflict)). No VFE gate at 0°. Bank ≤ 30° (IP) |
 | P8 Final | Track within 30° of runway track and lateral offset < 1 runway width × 4 (DEF/IP) | IAS; flap; lateral offset; descent path; configuration gate | IAS (CAL). Flaps 30°: target 65 KIAS (IP choice inside POH 60–70, p. 4-17), +15/−5 kt (POH+ST) → 60–80 KIAS; above 80 KIAS (above the extracted table) reported above band (rule 4). Flaps up: target 70 KIAS (IP inside POH 65–75, p. 4-5), → 65–85 KIAS. Flaps 10° and 20° targets **TBD**; flaps 20° IAS not available (no table). VFE gate as P7; stall-margin warning (IP) active. Approach-stability gate at a height **TBD** (IP: 300 ft above threshold, configuration set, IAS within tolerance, bank ≤ 15°; all IP) |
 | P9 Flare | Height above threshold < 30 ft (DEF/IP) | Throttle; pitch; sink rate; IAS | Throttle idle by touchdown (POH p. 4-32 "power off") — feedback. Flare height threshold IP |
-| P10 Touchdown | First main-gear contact | Gear contact order; `vs_mps` at contact; along-track `x_rwy_m`; lateral offset; drift (track − heading); bank | **Gate**: main wheels before nose wheel (POH pp. 4-17, 4-32). **Gate**: touchdown at or beyond the landing threshold (AIP geometry) and within the first third of LDA (IP; LDA AIP). Lateral: all gear within runway edges (**Gate**, geometry AIP); feedback when \|`y_rwy_m`\| > ¼ runway width (IP). Sink rate: feedback threshold and hard-landing gate **TBD** (no POH value); not evaluated until sourced or set by the instructor |
+| P10 Touchdown | First main-gear contact | Gear contact order; `vs_mps` at contact; along-track `x_rwy_m`; lateral offset; drift (track − heading); bank | **Gate**: main wheels before nose wheel (POH pp. 4-17, 4-32). **Gate**: touchdown at or beyond the landing threshold (AIP geometry) and within the first third of LDA (IP; LDA AIP). Lateral: all gear within runway edges (**Gate**, geometry AIP); feedback when \|`y_rwy_m`\| > ¼ runway width (IP). Sink rate: feedback threshold and hard-landing gate **TBD** (no POH value); not evaluated until an applicable source or explicitly reviewed experimental criterion is recorded |
 | P11 Rollout and stop | All gear on ground | Nose-wheel lowering; braking; lateral offset; stop position | Nose wheel lowered gently, minimum braking (POH p. 4-17) — feedback. **Gate**: stop on the runway surface. Stopped = `gs_mps` < 0.3 m/s for 2 s (DEF/IP) |
 
 Heading/altitude excursions are counted only when outside tolerance continuously for
@@ -265,29 +268,39 @@ operator rules; this exercise does not replace them.
 
 ## Proposed SPEC/EVAL edits (not applied)
 
-- R-TRAIN-5 acceptance: add "the first circuit exercise's criteria, sources and labels
-  are frozen in `design/EXERCISE-01.md` at a stated version after instructor review;
-  ST/POH/OPR/AIP-labelled values cite their source; IP values record the reviewer."
+- R-TRAIN-5 acceptance: freeze the first circuit exercise's criteria, sources and
+  labels in `design/EXERCISE-01.md` at a stated version after the remaining
+  source/criterion review. ST/POH/OPR/AIP-labelled values cite their source; IP
+  values identify their research basis and actual review status. Under Q7, no
+  instructor reviewer is required for the experimental prototype; a later
+  instructor-reviewed claim records that separate review.
 - R-TRAIN-2: add that assessment re-evaluates identically from the replay record and
   records evaluator and criterion-set versions.
 - New EVAL section (E7 or a dedicated E14) "Does Exercise 01 assess what it claims?":
   scripted input fixtures (nominal circuit; flaps 20° take-off; VFE exceedance; long
   touchdown; nose-first touchdown; go-around; 1500 ft exceedance; ENV-1 crosswind)
   with expected gate/feedback outcomes fixed before execution, plus re-evaluation
-  equality on replay; instructor walkthrough recorded in RESULTS.
+  equality on replay; record the research/experimental walkthrough in RESULTS,
+  and any later instructor walkthrough separately.
 - E3: name Exercises 12/13 (AMC1 FCL.210, EAR Aircrew Oct 2026) as the objective.
 
 ## Open questions
 
-1. Instructor review partner (Q7): who, with which qualification (FI(A)), and does a
-   German ATO's circuit standard override IP values?
-2. Runway: default RWY 26 (right-hand) or RWY 08 (left-hand, short final)?
+1. Q7 permits research-based prototype development with no instructor reviewer yet.
+   Keep IP criteria explicit. Before stronger instructional claims, identify the
+   qualified review and whether a selected ATO's standard changes those criteria.
+2. Runway choice is resolved: default RWY 26, north/right-hand circuit. A later
+   RWY 08 left-hand case is separate proposed scope.
 3. AIP circuit altitude, thresholds, LDA and width: person-read citation or DFS
    permission (EDFE note G1).
 4. Which POH climb speed applies (70–80 vs 75–85 KIAS), and which POH revision?
 5. Crosswind-turn height, downwind target speed, stability-gate height, touchdown
-   zone, sink-rate feedback and ENV-1 magnitude: instructor values.
-6. ~~Extract the S17 Fig. 5-1 airspeed calibration~~ extracted (PR #17, 2026-11-01);
-   open: instructor acceptance of the CAL interpolation, the stall-margin threshold,
-   flaps-20° IAS (no S17 calibration) and the VFE 107/109 KCAS conflict.
+   zone, sink-rate feedback and ENV-1 magnitude: source research or explicitly
+   reviewed experimental values, with instructor review before stronger claims.
+6. Selected S17 Fig. 5-1 airspeed calibration points are available in
+   [poh-values.json](../../data/aircraft/c172s-classic/poh-values.json); extraction
+   is not a remaining blanket blocker. Still open: review/freeze of CAL
+   interpolation and stall-margin thresholds, flaps-20° IAS (no S17 calibration),
+   table-range/transition limitations and the VFE 107/109 KCAS conflict. Unsupported
+   samples stay not evaluated; the available points are not a complete ASI model.
 7. Exact `ind` altimeter and weight-on-wheels field names in contracts v1.

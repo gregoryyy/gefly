@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import signal
 import subprocess
@@ -15,7 +16,7 @@ import time
 import unittest
 
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 GIT_TIMEOUT_S = 60.0
 DEFAULT_PHASE_TIMEOUT_S = 600.0
 STUDY_RESULT_MARKER = "GEFLY-STUDY-RESULT"
@@ -159,9 +160,9 @@ def parse_study_counts(output: str) -> dict[str, int] | None:
 
 
 def node_environment() -> dict[str, str]:
-    """Keep normal process settings while dropping inherited Node.js options."""
+    """Drop inherited Node hooks and Git repository/config redirection."""
     return {key: value for key, value in os.environ.items()
-            if not key.upper().startswith("NODE_")}
+            if not key.upper().startswith(("NODE_", "GIT_"))}
 
 
 def _terminate_tree(process: subprocess.Popen) -> None:
@@ -258,6 +259,81 @@ def run_render_check(require_node: bool, timeout_s: float) -> str:
     return "passed"
 
 
+def run_assurance(timeout_s: float, tests_only: bool = False) -> bool:
+    """Run the required offline assurance suite and integrity checker."""
+    node = shutil.which("node")
+    if node is None:
+        print("ERROR: Assurance requires Node 24.2 or newer; node not found.", file=sys.stderr)
+        return False
+    entry = ROOT / "utils/assure/src/cli.ts"
+    reporter = ROOT / "utils/ci/assurance-reporter.mjs"
+    tests = sorted([*(ROOT / "utils/assure/src").glob("*.test.ts"),
+                    *(ROOT / "utils/assure/upstream/src").rglob("*.test.ts")])
+    if not entry.is_file() or not reporter.is_file() or not tests:
+        print("ERROR: Assurance entry point or test suite is missing.", file=sys.stderr)
+        return False
+    environment = node_environment()
+    try:
+        version = run_child([node, "--version"], timeout_s, capture=True, env=environment)
+        match = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)(?:[-+].*)?", version.stdout.strip())
+        if version.returncode or not match or tuple(map(int, match.groups())) < (24, 2, 0):
+            print("ERROR: Assurance requires Node 24.2 or newer; "
+                  f"observed {version.stdout.strip()!r} (exit {version.returncode}).",
+                  file=sys.stderr)
+            return False
+        result = run_child([node, "--test", f"--test-reporter={reporter}", *map(str, tests)],
+                           timeout_s, capture=True, env=environment)
+        print(result.stdout, end="", flush=True)
+        summaries = []
+        try:
+            for line in result.stdout.splitlines():
+                if line.startswith("GEFLY-ASSURE-RESULT "):
+                    summaries.append(json.loads(line.removeprefix("GEFLY-ASSURE-RESULT ")))
+            files = {}
+            global_summary = []
+            for summary in summaries:
+                counts = summary["counts"]
+                required = ("tests", "passed", "failed", "cancelled", "skipped", "todo")
+                if (summary["success"] is not True or not isinstance(counts, dict)
+                        or any(type(counts.get(key)) is not int or counts[key] < 0
+                               for key in required)
+                        or counts["tests"] == 0 or counts["passed"] != counts["tests"]
+                        or any(counts[key] for key in ("failed", "cancelled", "skipped", "todo"))):
+                    raise ValueError("nonpassing or incomplete declared-test summary")
+                if summary["file"] is None:
+                    global_summary.append(counts)
+                else:
+                    if not isinstance(summary["file"], str):
+                        raise ValueError("invalid summary file")
+                    path = str(Path(summary["file"]).resolve())
+                    if path in files:
+                        raise ValueError("duplicate file summary")
+                    files[path] = counts
+            expected = {str(path.resolve()) for path in tests}
+            if (set(files) != expected or len(global_summary) != 1
+                    or global_summary[0]["tests"] != sum(c["tests"] for c in files.values())):
+                raise ValueError("missing or inconsistent declared-test summaries")
+        except (KeyError, TypeError, ValueError, OSError):
+            summaries = []
+        if result.returncode or not summaries:
+            print("ERROR: Assurance tests failed, skipped or produced no complete "
+                  "passing declared-test summary for each file.", file=sys.stderr)
+            return False
+        print(f"Assurance tests: passed ({global_summary[0]['tests']} tests).", flush=True)
+        if tests_only:
+            return True
+        result = run_child([node, str(entry), "check"], timeout_s, env=environment)
+        if result.returncode:
+            print(f"ERROR: Assurance integrity failed (exit {result.returncode}).",
+                  file=sys.stderr)
+            return False
+        print("Assurance integrity: passed.", flush=True)
+        return True
+    except (OSError, subprocess.TimeoutExpired) as error:
+        print(f"ERROR: Assurance could not complete: {error}", file=sys.stderr)
+        return False
+
+
 def run_phase(name: str, command: list[str], timeout_s: float,
               capture: bool = False) -> tuple[bool, str]:
     """Run one child phase; return (succeeded, captured stdout when requested)."""
@@ -292,6 +368,8 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--test-tools", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--test-study", metavar="DIR", help=argparse.SUPPRESS)
+    parser.add_argument("--assure-tests", action="store_true",
+                        help="run only the required offline assurance tests")
     parser.add_argument("--require-node", action="store_true",
                         help="fail instead of skipping when node is not on PATH")
     parser.add_argument("--timeout", type=positive_seconds, default=DEFAULT_PHASE_TIMEOUT_S,
@@ -299,6 +377,8 @@ def main(argv=None) -> int:
                         help="per-phase child-process timeout; expiry fails the gate "
                              f"(default {DEFAULT_PHASE_TIMEOUT_S:g})")
     args = parser.parse_args(argv)
+    if args.assure_tests:
+        return 0 if run_assurance(args.timeout, tests_only=True) else 1
     if args.test_tools:
         return run_tests()
     if args.test_study:
@@ -326,7 +406,7 @@ def main(argv=None) -> int:
     skips: list[str] = []
     runner = str(Path(__file__).resolve())
     for name, command in (
-        ("Scaffold", [sys.executable, str(ROOT / "utils" / "check.py")]),
+        ("Scaffold", [sys.executable, str(ROOT / "utils/ci/check.py")]),
         ("Offline tool tests", [sys.executable, runner, "--test-tools"]),
     ):
         ok, _ = run_phase(name, command, args.timeout)
@@ -355,6 +435,9 @@ def main(argv=None) -> int:
         failed = True
     elif render == "skipped":
         skips.append("Synthetic render check: skipped: node not found")
+    print("Running Assurance...", flush=True)
+    if not run_assurance(args.timeout):
+        failed = True
     if check_whitespace(ROOT) != 0:
         failed = True
     # Skips keep exit 0 (optional local prerequisites) but never read as a plain pass.

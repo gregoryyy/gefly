@@ -80,6 +80,32 @@ TODO mode starts only when the user invokes it. Work through actionable mileston
 
 Open separate milestone PRs when a remote and authorization exist; otherwise prepare local reviewable changes and report the missing prerequisite. Keep status authoritative in TODO, evaluations in EVAL/RESULTS and decisions in their affected documents. New scope requires revised specification and gates. This bootstrap task does not itself invoke TODO mode.
 
+## Assurance at the integrated revision
+
+The [assurance contract](assure/SPEC.md) implements bounded level 2 tracking.
+Run `just assure check` and inspect the lineage diff after integration, especially
+after conflict resolution; a passing earlier branch review does not cover changed
+records. The orchestrator applies shared TODO/DONE/GAPS updates through one
+integration owner. Reconcile whole DONE records, then check record order and
+identity. Completing a dependency requires revisiting the tasks and design
+statements that still call it missing. A decision update replaces obsolete current
+conditions while retaining clearly marked answer history.
+
+Use the catalog for declared provenance, decision guards and versioned evidence;
+Git, SPEC, source records and artifacts remain authoritative. Store exact input
+and result hashes and explicit outcomes; altered inputs invalidate dependent
+acceptance until affected checks/reviews are renewed. Keep calibration and holdout
+cases separate. Initially, unverified planned requirements are reported as pending;
+integrity errors and invalid accepted claims fail the gate. Historical-only
+references are advisory rather than an instruction to rewrite Git history.
+
+Housekeeping maintains mechanics, validate reviews whether relationships and
+claims are justified, quality checks implementation/numerics/security, and peer
+keeps its existing independent-provider cadence. Generated reports never confirm
+their own semantic correctness. Source/page applicability and scientific judgement
+still require review. The shared CI runs the offline assurance checker and tests;
+no hooks, database service, provider calls or automatic PR comments are added.
+
 ## Releases
 
 Before distribution, resolve license/asset rights, pin dependency versions, review SEC and run the relevant integrated gates, including current cross-provider peer evidence. Identify aircraft/model and scenario versions, supported environments, assists, fidelity envelope and known limitations in release notes. Training-credit or approval claims require a separately scoped evidence and review process; they are not inferred from an EASA curriculum reference.

@@ -1,6 +1,6 @@
 # Evaluation results
 
-No simulator, aircraft fidelity, performance or learner study has run. Planned methods and stop criteria are in [EVAL](EVAL.md). Source research is indexed separately in [research](research/README.md).
+Native/WASM feasibility and reference-Mac browser performance studies have run, with the scope and limitations summarized below and in their versioned study records. A complete simulator exercise, accepted 172S fidelity and learner outcomes remain unvalidated. Planned methods are in [EVAL](EVAL.md); source research is indexed in [research](research/README.md).
 
 ## 2026-10-31 15:03 — E0 bootstrap checks and PDF smoke build
 
@@ -201,3 +201,64 @@ vulnerability/license automation and simulator tests remain parent TODO 1.1 work
 No simulator stack, aircraft model, training fidelity, community deployment,
 blanket source licence, live reverse-provider review or updated PDF is accepted
 by this result.
+
+
+## 2026-11-01 — E1 feasibility evidence reconciliation
+
+This summary indexes existing observations; it is not a new benchmark execution.
+The [native/WASM study](../studies/e1-jsbsim/README.md) records same-build replay,
+first-order timestep refinement and stationary/trim/cost measurements on a cloud
+Xeon. Native and WASM digests differ, so cross-build bit identity is not claimed.
+The study uses the bundled generic 172P data for evaluation, not a shipped 172S.
+
+The [reference-Mac browser record](../studies/e1-browser/README.md) links raw JSON.
+The worker run recorded p95 input-to-state latency 16.9 ms and matching replay
+hashes. Paced step-cost p99 failed its proposed budget as measured, with a coarse
+non-isolated timer; isolated measurement remains open. Both lightweight renderers
+met their recorded frame budgets. The valid Cesium repeat measured median 8.3 ms
+and p99 9.4 ms; the earlier invalid canvas run is retained as invalid evidence.
+Window sizes differed, CSS resolution was used, and no real terrain, imagery or
+cockpit load was measured. These results support the selected Q17 architecture,
+not accepted aircraft fidelity or full product performance.
+
+The selected stack is JSBSim in a fixed-step Web Worker, TypeScript, CesiumJS with
+three.js fallback and MapLibre (Q17). Real-terrain/device-resolution/load checks
+remain TODO 1.2.1; source/configuration and reference-flight work remain TODO 1.3.
+The first experimental exercise remains unfrozen in TODO 1.5. The user deferred
+an instructor reviewer for now (Q7); no validated learning claim follows.
+
+
+## 2026-11-01 21:05 — E14 bounded assurance adoption
+
+Scope: TODO 1.14 / R-ASR-1 through R-ASR-5 and AS1–AS8. The implementation
+checkpoint is 2900ca38; later decision/record refinements are reviewed separately.
+The final source revision/hash and exclusions are recorded in the
+[quality](reviews/2026-11-01-assurance-quality.md),
+[validation](reviews/2026-11-01-assurance-validation.md) and
+[scoped peer](reviews/2026-11-01-assurance-peer.md) records. Status documents are
+included in this assurance source snapshot, unlike earlier tooling reviews.
+
+| Check / artifact | Observed result |
+| --- | --- |
+| Shared local `just ci` | Python 3.11.12 / Apple Git 2.39.5 / Node 26.13.0: 137 tooling tests passed, 72 declared Node assurance tests passed without skips, synthetic rendering passed, 14 study tests executed and nine optional JSBSim tests skipped because the package is unavailable. Final gate explicitly reports those skips. |
+| Real-Node suite fixtures | Comment-only test files, empty files alongside real tests and skipped tests reject; genuinely declared passing tests accept. Per-file and global supported runner summaries are cross-checked. |
+| Assurance checker | Zero integrity errors. The seeded catalog has 14 planned MVP criteria and zero accepted claims; 167 aircraft value objects and eight source records, with unknown/unvalidated states preserved. |
+| Archival measurements | Three recorded passes and one failed step-cost observation are visible, all ineligible for acceptance due to declared missing run provenance. Importing the records is not a new benchmark run. |
+| Determinism / queries | Independent repeated CLI reports matched; committed/worktree snapshots, requirement trace, JSON-field impact, unknown-impact handling and base diff were exercised. Impact is conservative declared-dependency coverage, not proof of complete semantic understanding. |
+| Local additional type check | Strict TypeScript checking passed using the already-installed Propeller compiler; the shared gate requires no compiler installation and Node stripping alone is not type checking. |
+| Actual hosted matrix | [Run 41344361172](https://github.com/gregoryyy/gefly/actions/runs/41344361172) passed both jobs for head 2900ca38. Python 3.11.17 and 3.15.1, Node 26.13.0, Git 2.56.0, Ubuntu image 20261025.353.1. Logs checked the synthetic PR merge ed62fb72 of that head into main 65faaea; later documentation refinements are not misreported as part of that first run. |
+| Independent reviews | Quality found seven medium issues, now fixed and rechecked. Validation maps AS1–AS8 separately and verifies provenance limits, record restoration and hosted observations. Final record-only changes receive affected renewal. |
+
+The imported core's 13 files match their pinned upstream bytes and inventory;
+no sibling checkout is needed at runtime. Existing schema/conversion checks remain
+in use. Current decision guards reject the known stale engine/stack/ASI statements.
+Complete progress records were restored, ordered and checked; draft/review/merge
+work was separated from pending implementation and acceptance in TODO.
+
+Warnings retain historical-only references and incomplete archival provenance;
+an integrity pass does not promote those links or observations to acceptance.
+The tool checks explicit hashes/dependencies, not source truth, permission,
+scientific adequacy or every prose contradiction. Existing flight-model and
+exercise blockers remain; no new training, model, imagery or hardware claim is
+accepted. Peer disposition is in its separate report; no earlier peer-pending
+range is silently covered by this adoption.

@@ -20,7 +20,7 @@ The protocol is fixed before implementation; observations belong in RESULTS.
 
 | Criterion | Acceptance and required evidence |
 | --- | --- |
-| CI1 — One entry point, independent of caller directory | `python3 <checkout>/utils/ci.py` resolves the repository from its own location; `just ci` delegates to it. The hosted workflow invokes that same committed runner. Exercise a clean checkout from an unrelated working directory without sibling repositories, undeclared packages or a prior build. |
+| CI1 — One entry point, independent of caller directory | `python3 <checkout>/utils/ci/run.py` resolves the repository from its own location; `just ci` delegates to it. The hosted workflow invokes that same committed runner. Exercise a clean checkout from an unrelated working directory without sibling repositories, undeclared packages or a prior build. |
 | CI2 — Complete, fail-closed local gates | The runner executes scaffold checking, all declared standard-library offline tool tests, the offline study tests (`studies/e1-jsbsim`, skipping cleanly without the `jsbsim` package) and the synthetic render self-check (Node.js), and tracked-content whitespace checks (study and render phases added 2026-11-01, TODO 1.1.2). Skipped checks are reported in the final line and never as a plain pass. Every required phase runs on a passing fixture; any phase failure or missing/empty test suite returns nonzero with useful diagnostics. Whitespace checking inspects tracked file contents even when the checkout has no diff. Untracked files are outside that gate until added; record this limit. |
 | CI3 — Negative fixtures establish rejection | Isolated fixtures demonstrate that a missing scaffold/link target, malformed native configuration, failing tool test and tracked whitespace defect each fail the relevant gate. Include a whitespace defect in an otherwise clean fixture checkout, so an empty `git diff --check` cannot masquerade as coverage. Existing peer-router failure cases use mocked provider processes; test fixtures never invoke a real provider. Preserve error diagnostics rather than reporting a failure as success. |
 | CI4 — Supported Python lines | Run the shared gate on Python 3.11, the documented minimum, and an explicitly selected current stable minor line verified from official sources when the workflow is authored. Record exact observed Python versions and runner environment. Pin the supported minor lines in the matrix; setup-python may select updated patches within them. Do not claim hermetic or identical interpreter binaries across local and hosted runs. |
@@ -39,7 +39,7 @@ hosted matrix results are separate records; none establishes aircraft fidelity.
 
 ## E1. Which web simulation architecture is adequate?
 
-Compare existing open engines/models and bounded deployment adapters first, using the same initial state, normalized controls and force/moment reference cases. JSBSim and applicable FlightGear-related models are candidates; no engine or aircraft model is selected. A minimal custom model is a reference harness or a documented gap-specific alternative, not the default product engine. Fixtures: stationary/no-force state, known acceleration/torque, unit/frame conversions and timestep refinement. Record engine/model/adapter licenses separately, maintenance, browser integration, fixed step, seed, latency, frame pacing, CPU headroom and integration error. Rejecting suitable reuse needs an explicit requirement mismatch and recorded evidence (R-REUSE-1).
+Compare existing open engines/models and bounded deployment adapters first, using the same initial state, normalized controls and force/moment reference cases. The initial source survey considered JSBSim and applicable FlightGear-related models; Q17 now selects JSBSim. The project-owned 172S model and product integration still require E2 evidence. A minimal custom model is a reference harness or a documented gap-specific alternative, not the default product engine. Fixtures: stationary/no-force state, known acceleration/torque, unit/frame conversions and timestep refinement. Record engine/model/adapter licenses separately, maintenance, browser integration, fixed step, seed, latency, frame pacing, CPU headroom and integration error. Rejecting suitable reuse needs an explicit requirement mismatch and recorded evidence (R-REUSE-1).
 
 Before running: use Q4's Mac desktop keyboard/touchpad baseline and select exact reference Mac/macOS/browser versions and optional yoke/joystick/pedal models. Publish candidate versions, reference equations, numerical error and latency budgets. Commands are added with the study in TODO 1.2. Stop a candidate if it cannot meet declared budgets, preserve replay or fit rights/deployment constraints. Do not count visual smoothness as dynamics accuracy. Record the review and resulting architecture decision.
 
@@ -233,3 +233,17 @@ reciprocal coverage excluding each provider's own contributions. Recheck affecte
 criteria after repairs. One live route plus mocked reciprocal tests must not be
 reported as two live provider runs. Packet-only inspection cannot claim commands
 were independently executed or establish simulator fidelity/training credit.
+
+
+## E14. Does bounded assurance reject stale or unsupported acceptance?
+
+Use [AS1–AS8](assure/SPEC.md) and R-ASR-1 through R-ASR-5. Run the offline
+assurance suite, inspect the graph/report/trace and compare the integrated
+revision with its base. Negative fixtures must reject malformed IDs/records,
+wrong heading/body composition, changed evidence inputs, invalid outcomes,
+missing reviews and calibration/holdout overlap. Historical source text and
+planned MVP work remain visibly distinct from accepted claims. Rebuild twice to
+check deterministic substantive output; compare from an unrelated caller directory
+and an isolated committed fixture. Inspect the final merge result, not merely the
+feature-branch report. Record actual local/hosted outcomes and independent review
+in RESULTS; importing existing observations is not a new benchmark run.

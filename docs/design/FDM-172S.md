@@ -1,23 +1,27 @@
 # Project-owned JSBSim 172S model: build and validation plan
 
-Status: **product proposal (E2 preparation), 2026-11-01; not decided, no model built.**
-No coefficient, curve or table is given; numbers below are cited-source pointers or
-labelled tolerance *proposals* to fix before tuning. Product role, code1 input.
+Status: **E2 preparation, 2026-11-01; no model built.** The JSBSim/worker stack is
+selected (GAPS Q17), and P-1..P-15 are accepted as **working proposals** under Q21.
+Fixture/case selection, model inputs and the pre-tuning freeze remain open; no
+model-test or fidelity pass is claimed. No coefficient, curve or table is given;
+numbers below are cited-source pointers or working engineering tolerances.
 
 Scope: [EVAL E2](../EVAL.md#e2-does-one-aircraft-configuration-match-its-evidence) and
 E1 integration; SPEC R-AIR-1, R-AIR-2, R-SIM-5, R-SIM-6, R-FID-1..4, R-REUSE-1, R-DATA-1/2
 ([SPEC](../SPEC.md) owns their text). Configuration: classic-panel **Cessna 172S,
 s/n 172S9491–172S9809** ([GAPS](../GAPS.md) Q3). Engine: JSBSim v1.3.3 as a replaceable
 WASM library; its bundled C172 data is not shipped (Q17). Rights: Q5, including the
-2026-11-01 18:43 decision (needed Lycoming IO-360-L2A curve points as cited facts only;
-OpenVSP offline, not distributed, results labelled `estimated`).
+2026-11-01 18:43 decision (needed Lycoming IO-360-L2A power-curve points as cited
+facts only; OpenVSP offline, not distributed, results labelled `estimated`) and
+the 19:04 extension to selected fuel-chart points, both under the no-piecemeal rule.
 
 Evidence base: [aero data survey](../research/2026-11-01-c172-aero-data-sources.md) (IDs
 A1–A18, P1–P2), [172S sources](../research/2026-11-01-c172s-fr172-sources.md) (S1b, S5,
-S9, S17), the POH value extraction and manifest in branch `data/c172s-poh-values`
-(`data/aircraft/c172s-classic/{manifest.json,poh-values.json}`), the shared contracts and
-datum/controls note in branch `design/contracts-1-4` (`docs/design/CONTRACTS.md`,
-`docs/research/2026-11-01-jsbsim-datum-172s-controls.md`, both pending merge) and the
+S9, S17), the current [manifest](../../data/aircraft/c172s-classic/manifest.json),
+[POH values](../../data/aircraft/c172s-classic/poh-values.json) and
+[engine/cruise/glide/fuel values](../../data/aircraft/c172s-classic/performance-values.json),
+the merged [shared contracts](CONTRACTS.md) and
+[datum/controls note](../research/2026-11-01-jsbsim-datum-172s-controls.md), and the
 [E1 JSBSim study](../../studies/e1-jsbsim/README.md).
 
 ## 1. Model structure and source class per parameter group
@@ -91,7 +95,7 @@ run starts.
 | Rating, max rpm, displacement, cylinders | sourced | S1b/S5, S9 (alternate 180 hp / 2700 rpm rating) |
 | FGPiston elements (volumetric efficiency, BSFC, friction, intake/manifold, installed-power factor) | estimated, then calibrated (§3); FGPiston computes power from these, so no XML element is `sourced` from the curve | method record |
 | Calibration targets: BHP vs manifold pressure, rpm, altitude | sourced points (only those needed, Q5 18:43), used as targets, not XML values | A14 Lycoming curve 13516-A |
-| Fuel-flow target | POH cruise fuel flow (S17 Section 5). A14 Fig. 3-9 (fuel chart) is **not** covered by Q5 18:43; use needs a Q5 extension | S17 |
+| Fuel-flow target | POH cruise fuel flow (S17 Figure 5-8) and selected A14 Fig. 3-9 points in `performance-values.json`; Q5's 19:04 extension permits those needed facts only | S17/A14; uninstalled Lycoming versus installed POH conditions kept distinct |
 | Thrust line (engine/thruster location and orient pitch/yaw angles) | estimated (geometry §2); offsets TBD-src | measurement |
 | Idle, friction, starter, temperatures | estimated `generic` (engine start is Later in contracts v1) | — |
 | Propeller diameter, blades, fixed pitch, static-rpm band | sourced | S1b/S5 |
@@ -110,14 +114,14 @@ hinge-moment model, pitch trim is an **elevator bias labelled `generic`**; tab t
 
 ### 1.7 `aerodynamics` (JSBSim axes DRAG, SIDE, LIFT, ROLL, PITCH, YAW)
 
-All coefficient functions are `estimated` or calibrated; none is 172S-sourced (survey:
-no public 172S aerodynamic data exists).
+All coefficient functions are planned as `estimated` or calibrated; none is
+172S-sourced. The survey did not identify a usable public 172S coefficient set.
 
 | Axis / term | Primary method | Calibration / check |
 | --- | --- | --- |
 | LIFT: CL(α), flap increments | VSPAERO on the §2 geometry; section data from the verified airfoil (Q-3) | CLmax per flap calibrated to POH stall speeds |
 | LIFT: post-stall shape, hysteresis | `generic` (no source); flagged out-of-envelope beyond the declared α range | — |
-| DRAG: CD0, induced factor, flap/gear increments | estimated (VSPAERO + component build-up) | calibrated to POH glide (if extracted) and cruise |
+| DRAG: CD0, induced factor, flap/gear increments | estimated (VSPAERO + component build-up) | calibrate to the selected POH glide and cruise values now in `performance-values.json`; preserve their conditions and uncertainty |
 | PITCH: Cm0, Cmα, Cmq, Cmδe, Cmα̇, flap/power effects | VSPAERO/DATCOM method | trim elevator within travel; static-margin sign; A1/A2 bands reported only (§1.9), never a criterion |
 | SIDE/ROLL/YAW: β, p, r, δa, δr derivatives | VSPAERO/DATCOM method | U-4 signs and sourced criteria; A1/A2 mode bands reported only (§1.9) |
 | Ground effect | estimated (literature method, cited) | take-off/landing holdout |
@@ -185,10 +189,10 @@ From the survey's proposal; frozen (fixture file + hash in DONE/RESULTS) **befor
 | --- | --- | --- | --- |
 | Fixed | TCDS geometry, weights, CG limits, travels, engine/prop limits; computed mass/inertia | none | exact arithmetic checks |
 | Calibration | POH stall speeds, rearward CG, flaps 0/10/30, KCAS (P1, Fig. 5-3) | CLmax per flap | CAS at CLmax in a ≤ 1 kt/s power-off deceleration (method to cite, Q-9) |
-| Calibration | POH glide (Section 5, **not extracted**) | CD0, induced factor, jointly with the prop windmilling region (glide drag includes it) | best-glide speed and ratio |
-| Calibration | POH cruise table (Section 5, **not extracted**) | drag residual, prop pitch scale, installed-power factor, fuel-flow scale | level trim at POH KTAS: rpm, %BHP, fuel flow |
+| Calibration | Selected POH glide values (Section 3, Fig. 3-1 and best-glide speed), in `performance-values.json` | CD0, induced factor, jointly with the prop windmilling region (glide drag includes it) | best-glide speed and ratio; speed is published in KIAS, requiring the declared IAS/CAS treatment |
+| Calibration | Selected POH cruise rows (Section 5, Fig. 5-8), in `performance-values.json` | drag residual, prop pitch scale, installed-power factor, fuel-flow scale | level trim at POH KTAS: rpm, printed %BHP and fuel flow; the percent-power reference remains unresolved |
 | Calibration | TCDS static rpm band (S1b/S5) | prop pitch/efficiency | full-throttle static rpm inside band |
-| Calibration | Lycoming 13516-A needed points (A14) | engine map | BHP at MP/rpm/altitude points |
+| Calibration | Lycoming 13516-A selected sea-level points and 13518 fuel points (A14), in `performance-values.json` | engine map and fuel-flow parameters | BHP at extracted rpm/MP and fuel mass flow at extracted rpm/power/mixture; unavailable curves and altitude data remain explicit |
 | **Holdout** | POH max rate of climb, SL and 2,000 ft, 0/20 °C (Fig. 5-6) | none | steady ROC at POH climb speed |
 | **Holdout** | POH short-field take-off and landing, SL/1,000 ft, 10/20 °C (Figs. 5-5, 5-11) | none | ground roll, distance to/from 50 ft |
 | **Holdout** | S17 max speed at sea level, service ceiling (**needed extractions**: their conditions and the ceiling's rate-of-climb criterion are not in `poh-values.json`) | none | level-flight max KTAS; altitude at the ceiling ROC criterion |
@@ -207,13 +211,18 @@ the dynamics model never contains that mapping. Holdout cases run only on a froz
 candidate; a holdout failure is reported, never tuned away. Changing model structure
 after a holdout failure is recorded and that case counts as spent; acceptance then
 needs the remaining untouched holdouts. If all are spent, a new independent holdout
-must be sourced and frozen before acceptance; spent cases are never reused. Extracting glide and
-cruise values needs a user decision (the 13:59 rule limits extraction to needed values);
-without them, max speed would move into calibration and weaken the holdout (Q-8).
+must be sourced and frozen before acceptance; spent cases are never reused.
+Selected glide, cruise and engine/fuel values are now extracted under Q5; their
+availability does not freeze a case list or establish a fit. Remaining blockers
+include the cruise percent-power basis, applicable later POH revisions, max-speed/
+ceiling conditions and their criterion, model geometry/mass/propeller inputs, and
+the explicit pre-tuning calibration/holdout split (Q-8).
 
-**Tolerance proposals** (product, engineering judgment; P-labels for the orchestrator
-to accept, change or reject before tuning; derived from source resolution and stated
-conditions, not from the model):
+**Working tolerance proposals accepted under GAPS Q21** (2026-11-01 19:04).
+P-1..P-15 remain engineering judgment with their stated bases, not validated
+aircraft tolerances or observed residuals. Freeze their exact cases, conditions,
+versions and hashes before tuning; record evidence-backed changes and any holdout
+use explicitly.
 
 | ID | Case | Proposed tolerance | Basis |
 | --- | --- | --- | --- |
@@ -231,6 +240,7 @@ conditions, not from the model):
 | P-12 | M-a static load split, rest | load split ±1 % of weight; at rest drift and speed within E1 F3 budget | CG arithmetic; E1 study |
 | P-13 | Gear timestep refinement | ground-roll distance at 1/120 vs 1/480 s within 0.1 % | gear stiffness must not need a smaller dt |
 | P-14 | Native vs WASM | per-state difference ≤ max(1e-9 × abs(value), absolute floor per state: 1e-9 m, 1e-9 m/s, 1e-12 rad) over 40 s | E1 observed 2e-13; margin, still a proposal |
+| P-15 | Lateral-directional modes (M-c) | all modes stable, or spiral divergence with time to double amplitude ≥ 20 s, labelled | working engineering judgment accepted under Q21; not an A1/A2-derived criterion |
 
 Each result reports the residual, the case conditions (mass, CG, atmosphere, power,
 flaps, speed reference, source page, interpolation) and the declared uncertainty (E2).
@@ -288,7 +298,7 @@ flaps, speed reference, source page, interpolation) and the declared uncertainty
 | --- | --- | --- |
 | M-a mass/inertia + gear ground roll | metrics, mass_balance, tanks, ground_reactions; aero explicitly empty and labelled | P-1 and U-8 pass for POH sample loadings; static nose/main load split and rest state within P-12; S-1, S-2 pass; towed/braked roll finite with P-13 met; friction values fixed; provenance check passes |
 | M-b longitudinal trim/cruise | LIFT/DRAG/PITCH, flaps, elevator, trim bias (`generic`); provisional propulsion and windmilling prop labelled `estimated` | trim converges at all cruise points with elevator inside travel; P-2 stall and P-11 glide residuals met; negative Cmα at the aft CG limit; cruise residuals reported (acceptance in M-d) |
-| M-c lateral-directional | SIDE/ROLL/YAW | U-4 signs; 30° coordinated turn trims inside travel; all modes stable, or spiral divergence with time to double amplitude ≥ 20 s (proposal P-15, engineering judgement pending Q-11) and labelled; sourced/holdout criteria only. A1/A2 band comparison reported, never a pass criterion or tuning target |
+| M-c lateral-directional | SIDE/ROLL/YAW | U-4 signs; 30° coordinated turn trims inside travel; P-15 working mode criterion (Q21), with any spiral divergence labelled; sourced/holdout criteria only. A1/A2 band comparison reported, never a pass criterion or tuning target |
 | M-d engine/prop | Lycoming points, prop tables, fuel flow; joint cruise fit | P-3, P-4, P-5 met (Lycoming points as targets); then single holdout run: P-6, P-7, P-8 |
 | M-e handling checks | take-off/landing, power/flap trim changes, stall behaviour, envelope flags; WASM worker run | P-9, P-10 holdout; R-1, R-6 pass in WASM; P-14 native vs WASM; quality and validate reviews; peer pending per Q15; E2 report with residuals and unsupported regimes |
 
@@ -299,8 +309,12 @@ flaps, speed reference, source page, interpolation) and the declared uncertainty
   source for the airfoil section. Q-4 Main-gear construction and tyre size (S17 §7/8).
 - Q-5 Waterline (z) datum and level reference. Q-6 Propeller mass/inertia and blade
   geometry (P-857, McCauley, measurement). Q-7 Speed fairings as the default?
-- Q-8 Extract POH cruise, glide, max-speed/ceiling conditions (optionally climb
-  time/fuel/distance)? Q-9 Cited stall-speed determination method.
-- Q-10 Aeromatic++ output or Digital DATCOM use and terms? Q-11 Accept P-1..P-15 and
-  the forward-CG holdout? Q-12 File locations (`data/aircraft/c172s-classic/jsbsim/`,
-  `studies/e2-c172s/`)? Q-13 Extend Q5 to needed Lycoming Fig. 3-9 points?
+- Q-8 Partly resolved: selected cruise/glide values are available in
+  [performance-values.json](../../data/aircraft/c172s-classic/performance-values.json).
+  Still needed: max-speed/ceiling conditions and criterion, percent-power basis and
+  any further facts justified for the frozen cases. Q-9 Cited stall-speed determination method.
+- Q-10 Aeromatic++ output or Digital DATCOM use and terms? Q-11 Resolved to working
+  P-1..P-15 proposals under Q21; the exact calibration/holdout cases and hashes still
+  need freezing before tuning. Q-12 File locations (`data/aircraft/c172s-classic/jsbsim/`,
+  `studies/e2-c172s/`)? Q-13 Resolved by Q5's 19:04 extension; selected Lycoming
+  Fig. 3-9 points are in `performance-values.json`, with excluded curves still unknown.

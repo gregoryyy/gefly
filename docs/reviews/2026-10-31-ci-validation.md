@@ -106,8 +106,8 @@ runner, workflow and test implementation did not change. Existing clean-checkout
 execution logs apply to that unchanged implementation; current-document link and
 snapshot checks were also performed.
 
-Inspected [runner](../../utils/ci.py), [CI fixtures](../../utils/test_ci.py),
-[scaffold fixtures](../../utils/test_check.py), existing peer tests,
+Inspected [runner](https://github.com/gregoryyy/gefly/blob/a6f701667282295d0868bdc74fcdf07ff823d8e8/utils/ci.py), [CI fixtures](https://github.com/gregoryyy/gefly/blob/a6f701667282295d0868bdc74fcdf07ff823d8e8/utils/test_ci.py),
+[scaffold fixtures](https://github.com/gregoryyy/gefly/blob/a6f701667282295d0868bdc74fcdf07ff823d8e8/utils/test_check.py), existing peer tests,
 [workflow](../../.github/workflows/foundation.yml),
 [update configuration](../../.github/dependabot.yml), recipes and documented
 tool/security/process limits. Exact criteria remain authoritative in E0-CI.
@@ -202,3 +202,7 @@ commands/remote verification; its stated source/provenance and excluded-status
 limits remain intact. CLI/model evidence does not attest the backend or establish
 a live reciprocal Codex run, simulator fidelity or training approval. Closure
 timestamp comes from the execution clock; implementation was unchanged.
+
+Navigation note (2026-11-01): source links above are pinned to the recorded
+implementation/review revisions after tooling moved under `utils/ci/`. Historical
+commands, findings and reported outcomes are unchanged.
