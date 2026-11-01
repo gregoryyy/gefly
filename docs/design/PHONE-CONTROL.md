@@ -192,10 +192,12 @@ their `step` and `seq`**, so replay reproduces the timeline without phone data.
 
 Whenever the iPhone profile stops being the trusted source it emits
 `source_lost` with a reason; the Mac shows a banner and text cue;
-keyboard/touchpad become active immediately; and, by default, **the simulation
-pauses** so control is never lost silently mid-flight (setting "pause on phone
-loss", default on). The sim never resumes by itself: the learner resumes on the
-Mac, either on keyboard/touchpad or, where the table allows, back on the phone.
+keyboard/touchpad become active immediately and override; the phone-driven axes
+hold their last values for 0.5 s and then centre, with a visible warning (GAPS Q19),
+so control is never lost silently mid-flight. Pausing on phone loss is an optional
+setting (default off, per Q19); when enabled, the sim never resumes by itself and
+the learner resumes on the Mac, on keyboard/touchpad or, where the table allows,
+back on the phone.
 
 | Trigger | Detection | Reason | Return to phone control |
 | --- | --- | --- | --- |
