@@ -3,6 +3,25 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 11:54 — Adopt proclens's batched peer-review cadence
+
+TODO: 0.18 updated; 0.19 added. Agent: Claude Code orchestrator (no subagents).
+
+**Implementation notes**
+
+Per the user, adopted proclens's review-gate logic (`gregoryyy/proclens` main
+`3d671a3`): peer review every few PRs, one review per revision range since the last
+peer-reviewed revision, *peer pending* in between, plus its packet-egress rule.
+Updated GAPS Q15 (per-PR scope struck), SDLC, AGENTS, SPEC R-AGENT-7, agent
+workflow, peer role and PR template. proclens has no hooks; nothing to adopt there.
+Router and tests unchanged: proclens's copies are gefly's own with only naming edits.
+
+**Peer status**
+
+**Peer pending** for Claude-authored work merged since `3faf9c8` (PRs #4, #5, #6) and
+this change; Codex CLI unavailable in this cloud session. Last recorded peer review:
+Claude on Codex-authored CI work (PR #3 at `397a1b0`).
+
 ## 2026-11-01 11:38 — Select JSBSim as the dynamics engine
 
 TODO: 1.2.3 partly decided. Agent: Claude Code orchestrator (no subagents).

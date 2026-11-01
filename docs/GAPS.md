@@ -190,16 +190,26 @@ Answer: **2026-11-01 07:22, user** (recorded by orchestrator, Claude Code;
 [input](input/2026-11-01-peer-gate-scope.md)): “again, not all prs need the
 adversarial check (different provider)”.
 
-Scope (orchestrator interpretation, correctable by the user): **required** for
+Answer: **2026-11-01 11:54, user** (recorded by orchestrator, Claude Code;
+[input](input/2026-11-01-proclens-peer-logic.md)): “get the peer review and hooks
+logic from proclens”. Adopted proclens's review-gate logic: the peer review runs
+**every few PRs** (batched), whenever a machine with the other provider's CLI is
+available; one review covers every change merged since the last peer-reviewed
+revision; merged work in between is marked **peer pending**, not blocked. Packet
+egress rule added. proclens has no hooks, so none were adopted. The scope below is
+kept only as the list of changes a batched review must have covered before a
+milestone is accepted or a release is made.
+
+~~Scope (orchestrator interpretation, correctable by the user): **required** for
 integrated milestone results, changes to simulation/dynamics, aircraft or
 navigation data, avionics, training assessment, security-relevant code or agent/
 peer tooling, and release candidates. **Not required** for documentation-only
 decision recording, research notes, bookkeeping and editorial fixes. The
 orchestrator states in each PR whether the gate applies and why; the user can
 request a peer review on any PR. Local quality/validate remain proportionate to
-the change.
+the change.~~
 
-Resolved: 2026-11-01 07:22, user; carried into SDLC, AGENTS, SPEC R-AGENT-7, the
+Resolved: 2026-11-01 11:54, user (supersedes the 07:22 per-PR scope); carried into SDLC, AGENTS, SPEC R-AGENT-7, the
 [agent workflow](agents/README.md), [peer](agents/peer.md) and the PR template.
 
 ## Open questions
