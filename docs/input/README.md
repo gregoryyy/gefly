@@ -15,6 +15,9 @@ These records preserve the user's original intent. Do not edit accepted input re
 - [2026-11-01 contracts decisions](2026-11-01-contracts-decisions.md): all O-1..O-9 recommendations accepted; first exercise starts at the holding point.
 - [2026-11-01 proclens peer logic](2026-11-01-proclens-peer-logic.md): batched peer cadence and packet-egress rule from proclens; proclens has no hooks.
 - [2026-11-01 E1 decisions](2026-11-01-e1-decisions.md): JSBSim selected; its LGPL-2.1 accepted; no licence outreach; browser check next.
+- [2026-11-01 no external monitor](2026-11-01-no-external-monitor.md): runs used the built-in display.
+- [2026-11-01 Mac model](2026-11-01-mac-model.md): "late 2020 MacBook Pro 14-inch".
+- [2026-11-01 chip confirmation](2026-11-01-chip-confirmation.md): reference Mac is an M1, not M1 Pro.
 - [2026-11-01 reference platform](2026-11-01-reference-platform.md): MacBook Pro M1, latest macOS, Chrome latest first; optional orientation control from a paired iPhone.
 - [2026-11-01 first 172S configuration](2026-11-01-first-172s-configuration.md): 172S serials 9491–9809, classic panel, accepted.
 - [2026-11-01 confirmations](2026-11-01-confirmations.md): GPL-3.0-or-later, "depends on data" reading and 172S-first order confirmed; PR authorized.

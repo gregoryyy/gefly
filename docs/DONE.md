@@ -33,6 +33,75 @@ table. Proposed SPEC wording for R-SIM-3/R-SIM-4 is not applied.
 
 Draft only; nine open questions (O-1..O-9) need decisions; not yet independently
 reviewed. Peer pending (batched).
+## 2026-11-01 13:07 — Draft the flight-experience package and LLM boundary
+
+TODO: 1.10 in progress. Agent: Claude Code orchestrator; product subagent.
+
+**Implementation notes**
+
+Added [EXPERIENCES](design/EXPERIENCES.md): declarative versioned package (no code,
+unit- and reference-bearing values, per-value provenance status), stable-ID source
+catalog starting with `eddf-100nm`/EDFE, LLM boundary (draft and catalog lookup
+only), nine validation stages with failure codes, review states with author ≠
+reviewer, security rules, and an EDFE circuit example with every real value TBD.
+
+**Deviations**
+
+Draft; cites the holding-point start from branch `design/contracts-1-4` (not yet on
+main); runway in the example is illustrative; Q13 provider open; not yet reviewed.
+
+## 2026-11-01 13:06 — Draft the pilot-qualification profile contract
+
+TODO: 1.12 in progress. Agent: Claude Code orchestrator; product subagent.
+
+**Implementation notes**
+
+Added [QUALIFICATIONS](design/QUALIFICATIONS.md): sourced-value model with per-field
+status and source register, profile schema (jurisdiction, authority, full
+qualification, privileges, objectives→exercises, aircraft-manifest references,
+mandatory no-training-credit flag), 12 invalidity rules, versioning, a draft EASA
+PPL(A)/C172S example and placeholder SPL/ultralight shapes bound to Q14.
+
+**Deviations**
+
+Draft; most PPL values unverified until Part-FCL sections are read; Q14 choices not
+made; proposed SPEC edits not applied; not yet reviewed. Peer pending (batched).
+
+## 2026-11-01 12:56 — Record M1 render runs; fix the hosted Cesium page
+
+TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator (no subagents); runs
+by the user on the reference Mac (WebGL: Apple M1 Pro, 120 Hz), Chrome 156.
+
+**Implementation notes**
+
+three.js with the JSBSim stream: median 8.3 ms, p99 9.4 ms at 120 Hz: both render
+budgets pass (1232×817 viewport, CSS resolution). CesiumJS run invalid: 300×150 px
+drawing buffer because the host CSP blocks `widgets.css`; added inline canvas CSS
+and an invalid-run guard, republished the page (version 2). Recorded the hosted
+launcher and its file map under `studies/e1-browser/hosted/` for later repeats.
+
+**Deviations**
+
+Cesium repeat pending. GAPS Q16 says M1; the GPU string says M1 Pro (to confirm).
+Peer pending (batched).
+
+## 2026-11-01 12:53 — Record the reference M1 worker benchmark
+
+TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator (no subagents); run
+performed by the user on the reference MacBook Pro M1, Chrome 156.
+
+**Implementation notes**
+
+Stored the user's JSON under `studies/e1-browser/results/`. Missed steps 0.33 per
+10 s, latency p95 16.9 ms and same-build replay pass; paced step-cost p99 800–1000 µs
+exceeds 830 µs as measured but is limited by 100 µs timer coarsening (page not
+cross-origin isolated); unpaced compute ≈ 15 µs per step. Replay digest equals the
+container's for the same WASM build.
+
+**Deviations**
+
+Render runs on the M1 pending; step cost to be re-measured cross-origin isolated.
+Peer pending (batched).
 
 ## 2026-11-01 12:33 — Validate the E1 browser check; publish the M1 test page
 
