@@ -28,6 +28,20 @@ ci:
 test-tools:
     python3 -m unittest discover -s "{{justfile_directory()}}/utils" -p 'test_*.py'
 
+# Query or check the generated assurance lineage; no providers or browser
+assure *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    node "{{justfile_directory()}}/assure/src/cli.ts" "$@"
+
+# Run the offline assurance suite, rejecting missing, empty or skipped tests
+assure-test:
+    python3 "{{justfile_directory()}}/utils/ci.py" --assure-tests
+
+# Write rebuildable graph JSON and Markdown report under ignored assure/out
+lineage:
+    node "{{justfile_directory()}}/assure/src/cli.ts" lineage
+
 # Review a frozen packet through the provider opposite its declared author
 peer-review author packet:
     python3 "{{justfile_directory()}}/utils/peer_review.py" --author-provider "$1" --packet "$2"

@@ -1,6 +1,6 @@
 # Evaluation results
 
-No simulator, aircraft fidelity, performance or learner study has run. Planned methods and stop criteria are in [EVAL](EVAL.md). Source research is indexed separately in [research](research/README.md).
+Native/WASM feasibility and reference-Mac browser performance studies have run, with the scope and limitations summarized below and in their versioned study records. A complete simulator exercise, accepted 172S fidelity and learner outcomes remain unvalidated. Planned methods are in [EVAL](EVAL.md); source research is indexed in [research](research/README.md).
 
 ## 2026-10-31 15:03 — E0 bootstrap checks and PDF smoke build
 
@@ -201,3 +201,28 @@ vulnerability/license automation and simulator tests remain parent TODO 1.1 work
 No simulator stack, aircraft model, training fidelity, community deployment,
 blanket source licence, live reverse-provider review or updated PDF is accepted
 by this result.
+
+
+## 2026-11-01 — E1 feasibility evidence reconciliation
+
+This summary indexes existing observations; it is not a new benchmark execution.
+The [native/WASM study](../studies/e1-jsbsim/README.md) records same-build replay,
+first-order timestep refinement and stationary/trim/cost measurements on a cloud
+Xeon. Native and WASM digests differ, so cross-build bit identity is not claimed.
+The study uses the bundled generic 172P data for evaluation, not a shipped 172S.
+
+The [reference-Mac browser record](../studies/e1-browser/README.md) links raw JSON.
+The worker run recorded p95 input-to-state latency 16.9 ms and matching replay
+hashes. Paced step-cost p99 failed its proposed budget as measured, with a coarse
+non-isolated timer; isolated measurement remains open. Both lightweight renderers
+met their recorded frame budgets. The valid Cesium repeat measured median 8.3 ms
+and p99 9.4 ms; the earlier invalid canvas run is retained as invalid evidence.
+Window sizes differed, CSS resolution was used, and no real terrain, imagery or
+cockpit load was measured. These results support the selected Q17 architecture,
+not accepted aircraft fidelity or full product performance.
+
+The selected stack is JSBSim in a fixed-step Web Worker, TypeScript, CesiumJS with
+three.js fallback and MapLibre (Q17). Real-terrain/device-resolution/load checks
+remain TODO 1.2.1; source/configuration and reference-flight work remain TODO 1.3.
+The first experimental exercise remains unfrozen in TODO 1.5. The user deferred
+an instructor reviewer for now (Q7); no validated learning claim follows.

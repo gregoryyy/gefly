@@ -1,6 +1,11 @@
 # Roadmap
 
-Only phase 0 is underway. Later phases become numbered TODO milestones when scoped; the roadmap does not authorize an unbounded implementation run.
+Phase 1 technical foundation is underway: native/browser studies, source-data
+extractions and shared-contract work have been implemented alongside the phase 0
+project records. The stack is selected; the project-owned 172S model and first
+complete learner exercise remain unimplemented. [TODO](TODO.md) owns current task
+status. Later phases become numbered milestones when scoped; the roadmap does
+not authorize an unbounded implementation run.
 
 The product direction is a **free, open-source flight-school community around the
 web simulator**. The first regional model is **EDDF and a 100 NM radius** using
@@ -14,8 +19,8 @@ detailed phase order remain to be selected.
 | Phase | Goal | Measured gate |
 | --- | --- | --- |
 | 0. Project foundation | Traceable brief, questions, specification, roles and document/check tooling | E0 scaffold checks and a usable document-build path; unresolved decisions explicit |
-| 1. Technical foundation | Choose web stack and reuse-first open dynamics/model integration, classic C172/radio fit, device/input matrix and EDDF-region source strategy | E1 meets predeclared budgets; engine/model/adapter rights reviewed separately; exact EDDF ARP and source coverage resolved before accepted geometry |
-| 2. First useful PPL exercise | One accessible Mac desktop keyboard/touchpad circuit exercise (take-off, pattern, landing) at Frankfurt-Egelsbach (EDFE), optional yoke/joystick/pedals, classic cockpit subset, declared geography, views, assists and flight review | Agreed bounded exercise acceptance, repeatable replay, reference Mac/browser and controller E5 checks, independent quality/validation |
+| 1. Technical foundation | Integrate the selected TypeScript/CesiumJS (three.js fallback)/MapLibre stack with JSBSim in a fixed-1/120 s worker; complete project-owned classic 172S model/data preparation, contracts, device/input matrix and EDDF-region source strategy | Preserve E1 study limits; pass real terrain/device-resolution/load checks and independently frozen E2 cases; engine/model/adapter rights reviewed separately; exact EDDF ARP and source coverage resolved before accepted geometry |
+| 2. First useful PPL exercise | One accessible Mac desktop keyboard/touchpad circuit exercise at Frankfurt-Egelsbach (EDFE): engine-running holding point, runway 26 north/right-hand circuit, take-off and landing; optional yoke/joystick/pedals, classic cockpit subset, declared geography, views, assists and flight review | Freeze source-based/experimental criteria and remaining aerodrome/model inputs; repeatable replay, reference Mac/browser and controller E5 checks, independent quality/validation. Q7 permits research-based prototype work with no instructor reviewer yet; stronger instructional/training claims need their own review. |
 | 3. Classic C172 practice loop | Deepen source-backed controls/systems/physics; add QNH/QFE/standard, coherent elevation/maps, checklists, briefing, text radio, circuit variations and the second (FR172) engine configuration for performance comparison, in separate slices; scope community publication rules and roles | E2/E6/E7 cases pass for selected data/configuration; missing/stale input and unsupported regimes explicit; objective reviewed |
 | 4. Navigation depth and later glass | Working cockpit VOR/DME and applicable navigation controls; real identifiers/fixes, chart/path support, separately scoped ILS drills, then selected glass configuration | Applicable manuals and data mapped to tested indications/actions; E6/E7 pass; E3 evaluates learner benefit separately |
 | 5. CPL and advanced equipment | Add explicitly scoped CPL objectives and applicable traffic-awareness/advisory equipment; assess any additional aircraft separately | Separate aircraft/equipment/learning specification and source-based cases before ACAS/TCAS or expanded training claims |

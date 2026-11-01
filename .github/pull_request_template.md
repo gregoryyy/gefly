@@ -17,6 +17,7 @@ Record exact commands, outcomes, evidence paths, and material limitations.
 - [ ] Shared interfaces and both coding streams have been integrated and checked together.
 - [ ] Security and dependency impacts are recorded; no secrets or unlicensed data are included.
 - [ ] Documentation, TODO status and a timestamped DONE entry describe the completed change.
+- [ ] Assurance integrity passes on the integrated revision; the lineage diff and affected evidence/reviews have been inspected after any merge resolution. Planned work and skipped/stale evidence are not accepted claims.
 - [ ] Deviations and unresolved blockers are explicit; no blocked criterion is reported as a pass.
 
 ## Review evidence
@@ -40,5 +41,7 @@ Peer specification matrix, criterion evidence and pass/fail/blocked/not evaluate
 Reciprocal reports for mixed authorship; renewed evidence after repairs:
 
 Security/dependency impact:
+
+Assurance diff base, affected criteria/data/results and evidence freshness:
 
 Deviations, risks and unresolved questions:

@@ -3,7 +3,10 @@
 Status: implemented and run in the cloud container (2026-11-01).
 **Preliminary evidence only** (headless Chromium, Intel Xeon container CPU, not the
 reference M1/Chrome). Quality-reviewed and validated as preliminary evidence; see
-[the study summary](../README.md). Implements the worker side of the
+[the study summary](../README.md), which also records the later reference-Mac runs.
+Q17 now selects JSBSim in a module Web Worker at a fixed 1/120 s step with the
+TypeScript/CesiumJS (three.js fallback)/MapLibre stack. These original container
+measurements are not upgraded by that decision. Implements the worker side of the
 [shared message contract v0](../README.md#shared-worker-message-contract-v0).
 
 ## Files
@@ -128,9 +131,13 @@ Observations:
 ## Limitations
 
 - Container/headless numbers are not reference-platform evidence; no rendering
-  load was present on the main thread (see `../render/`).
-- Determinism is shown within one build on one platform only; WASM vs native and
-  cross-CPU identity do not hold ([prior study](../../e1-jsbsim/README.md)).
+  load was present on the main thread (see [render study](../render/README.md)).
+- These container runs establish same-build replay only. The later
+  [reference-Mac run](../README.md#results-on-the-reference-m1chrome-hosted-test-page)
+  matched this particular WASM digest across those two environments; that narrow
+  observation is not a general cross-CPU/build identity guarantee. WASM/native
+  differences remain subject to the [prior study](../../e1-jsbsim/README.md) and
+  the working E2 comparison tolerance.
 - Latency excludes main-thread render delay and input-device latency.
 - `alt_msl_m` is JSBSim `position/h-sl-ft` converted to m; geodetic/MSL datum
   details and JSBSim's default flat sea-level terrain are not checked against EDFE.
@@ -148,3 +155,8 @@ engine/system files are used only for this study, embedded in the local build,
 and are not shipped; their compatibility with GPL-3.0-or-later remains open
 (GAPS Q5 review, see the [prior study](../../e1-jsbsim/README.md)). The model is a
 generic 1982 172P, not the selected 172S/FR172; no number here is aircraft-performance evidence.
+Q17 accepts the engine's LGPL exception and explicitly excludes the bundled C172
+data from the shipped simulator. The [project-owned 172S model plan](../../../docs/design/FDM-172S.md)
+remains unimplemented; this study does not satisfy its source, fixture-freeze or
+independent validation gates. Real terrain/imagery, device resolution, optional
+controllers and representative cockpit/load measurements remain separate work.

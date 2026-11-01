@@ -1,0 +1,12 @@
+{
+  "name": "gefly-assure",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "GPL-3.0-or-later",
+  "engines": { "node": ">=24.2" },
+  "scripts": {
+    "test": "node --test 'src/*.test.ts' 'upstream/src/**/*.test.ts'",
+    "assure": "node src/cli.ts"
+  }
+}

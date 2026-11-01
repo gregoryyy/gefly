@@ -1,6 +1,6 @@
 # Target architecture
 
-Status: proposed component boundaries; **web application**, **Cessna 172**, **EASA PPL first**, **classic instruments before glass** and **QNH/QFE/standard-pressure coverage** are user decisions. Aircraft: a classic-panel 172S first, then the Reims FR172, as distinct engine configurations (Q3); the first exercise is a circuit at Frankfurt-Egelsbach (EDFE). The dynamics engine is **JSBSim** (Q17), used as a replaceable LGPL library; the web stack is TypeScript with a CesiumJS renderer (three.js fallback), MapLibre 2D maps and JSBSim in a module Web Worker (Q17); exact radio fit and geographic data provider are open. This describes the target before code exists. Expanded scope and proposed delivery slices are in [the training design](design/TRAINING.md).
+Status: selected stack with proposed product component boundaries. **Web application**, **Cessna 172**, **EASA PPL first**, **classic instruments before glass** and **QNH/QFE/standard-pressure coverage** are user decisions. Aircraft: a classic-panel 172S first, then the Reims FR172, as distinct engine configurations (Q3); the first exercise is a circuit at Frankfurt-Egelsbach (EDFE). The dynamics engine is **JSBSim** (Q17), used as a replaceable LGPL library; the web stack is TypeScript with a CesiumJS renderer (three.js fallback), MapLibre 2D maps and JSBSim in a module Web Worker at a fixed **1/120 s** step (Q17). Exact radio fit and geographic data provider remain open. Native and browser studies exist; the product simulator and project-owned 172S flight model are not implemented. Expanded scope and proposed delivery slices are in [the training design](design/TRAINING.md).
 
 Additional user decisions: a **free/open-source flight-school community site**,
 **LLM-assisted flight-experience authoring and AI interaction**, an initial
@@ -11,18 +11,21 @@ LLM provider has been selected.
 
 ## Reuse-first physics and aircraft models
 
-Evaluate existing open flight-dynamics engines and applicable aircraft models
-before implementing replacement physics. JSBSim and FlightGear-related models
-are candidates to inspect, not selected dependencies. Distinguish engine,
+The reuse-first E1 assessment led to JSBSim's selection; keep it a separately
+replaceable WASM library rather than duplicating its equations. Its bundled C172
+aircraft data is not shipped. A project-owned 172S model is planned from the
+[source manifest](../data/aircraft/c172s-classic/README.md) and
+[FDM plan](design/FDM-172S.md); neither source data nor the generic C172 study
+establishes that model's fidelity. Distinguish engine,
 aircraft coefficients/configuration, cockpit code and visual/audio asset licenses;
 one project's license does not establish rights to an unrelated model or texture.
 Assess fixed-step/replay behavior, supported aircraft/envelope, browser integration,
 performance, maintenance and compatibility with the intended open-source release.
 
-Prefer the smallest adapter around a suitable engine/model over duplicating its
-equations. Native-to-browser/WASM compilation, worker isolation and a headless
-service are architecture alternatives to measure, not claims of existing browser
-support. A custom reference harness or gap-specific component is acceptable when
+The [browser study](../studies/e1-browser/README.md) implements a WASM adapter and
+module worker, with bounded reference-Mac observations. It does not yet establish
+real terrain/imagery loading, the full device-resolution budget or the product
+cockpit workload. A custom reference harness or gap-specific component is acceptable when
 its purpose is explicit; replacing an available model needs a recorded mismatch
 or unmet requirement and independent validation. Reuse does not establish C172
 configuration accuracy. See [open-engine/regional sources](research/2026-10-31-eddf-open-foundation.md),
@@ -42,15 +45,15 @@ R-REUSE-1 and E1/E2.
 | `tests/`, `studies/` | Evidence, reference scenarios and bounded engine/browser experiments | Explicit task ownership; reviews independent |
 
 The expanded requirements add logical geography/navigation, briefing and
-communications services. Their physical packaging is undecided; do not create
-separate runtime stacks before the foundation study. Their contracts feed the
+communications services. Their physical packaging is undecided; use the selected
+TypeScript/web stack unless a recorded requirement justifies another runtime. Their contracts feed the
 existing aircraft/avionics/training modules and web presentation.
 
-These are source boundaries, not chosen package-manager workspaces. Reconsider physical packaging when selecting the stack. Shared interfaces and dependencies have one writer per change.
+These are source boundaries, not chosen package-manager workspaces. Finalize physical packaging through bounded implementation work. Shared interfaces and dependencies have one writer per change.
 
 ## Model and flows
 
-Inputs become timestamped, normalized control events. The simulation advances by an explicit fixed time step independent of display frames; the renderer reads snapshots and may interpolate. If the machine cannot keep up, report overload or deliberate simulation slow-down rather than silently changing physics. JSBSim runs as WASM in a module Web Worker (E1 browser check, Q17).
+Inputs become timestamped, normalized control events. The simulation advances at the selected fixed **1/120 s** step independent of display frames; the renderer reads the 60 Hz state stream and interpolates for display only (Q17/Q18, [CONTRACTS](design/CONTRACTS.md)). If the machine cannot keep up, report overload or deliberate simulation slow-down rather than silently changing physics. JSBSim runs as WASM in a module Web Worker; the E1 study is evidence for that integration boundary, not an accepted 172S model.
 
 The versioned state includes simulation time, aircraft identity/configuration, position/orientation in declared frames, velocities/rates, mass/configuration, environmental conditions, systems/sensors and control positions. SI is the internal default. Cockpit presentation converts explicitly to aircraft-appropriate units. State labels distinguish IAS/TAS/groundspeed, altitude references and magnetic/true headings. A real instrument model derives readings from simulated sensors rather than reusing a visual attitude or speed guess.
 
@@ -196,6 +199,36 @@ Downloaded source material, aircraft definitions, URLs and imported replay/scena
 
 ## Proposed budgets and decision gates
 
-The initial target is a responsive **Mac desktop web experience with keyboard/touchpad**, plus optional yoke/joystick and rudder pedals. Mobile orientation follows later. This platform/input sequence is user-selected (GAPS Q4); exact macOS/browser/device/peripheral versions and budgets remain foundation choices. A 60 Hz presentation target and 120 Hz physics trial step are **study candidates**, not requirements or observed performance. TODO 1.2 selects the reference Mac/browser/display and optional controllers, measures input latency/frame pacing/headroom, geography load and cockpit readability, and chooses a justified step and budgets. Compare reuse candidates and their browser/deployment adapters first; use a minimal custom harness for reference checks or a justified gap only. JSBSim has not been selected.
+The initial target is a responsive **Mac desktop web experience with keyboard/touchpad**,
+plus optional yoke/joystick and rudder pedals. Mobile orientation follows later.
+Q16/Q17 select the reference M1/Chrome direction and the TypeScript/CesiumJS
+(three.js fallback)/MapLibre/JSBSim worker stack; Q18 selects 60 Hz state delivery
+with display-only interpolation, and the physics step is fixed at 1/120 s.
+The [E1 observations](../studies/e1-browser/README.md) preserve measured viewport,
+timer-resolution and workload limits. Valid light-scene runs support the renderer
+choice; the invalid thumbnail run remains excluded. Real terrain and imagery tiles
+at device resolution, exact reference versions/display, optional controllers, CPU
+headroom and a representative cockpit/load case still require measurement.
 
-Before milestone 2: choose stack/engine with recorded evidence, agree contracts/frames, resolve exact aircraft configuration and rights, fix numerical tolerances and establish regression fixtures. See [EVAL](EVAL.md), [GAPS](GAPS.md) and [TODO](TODO.md).
+Before milestone 2: complete those load/device checks, finalize remaining
+contracts/aircraft fit and data rights, freeze numerical fixtures and criteria,
+and run the project-owned model's independent tests. Q21 accepts P-1..P-15 as
+working FDM tolerances, not completed E2 validation. See [EVAL](EVAL.md),
+[GAPS](GAPS.md) and [TODO](TODO.md).
+
+## Assurance tooling
+
+The bounded [assurance design](assure/ASSR.md) generates lineage and checks from
+the authoritative documents, Git records, code/data objects and versioned evidence.
+It reuses Propeller's pinned core; no database, persistent service or new agent is
+introduced. The shared offline CI gate includes assurance integrity checks, while
+`just assure report`, `trace`, `diff` and `impact` support review. `just lineage`
+writes disposable JSON and Markdown under ignored `assure/out/`, without opening
+a browser or posting externally.
+
+Planned requirements, declared links, observed outcomes and accepted claims are
+separate states. Missing, skipped or stale evidence cannot establish acceptance;
+current accepted claims must pass their dependency/freshness checks. The graph
+does not verify source truth, numerical adequacy or every prose contradiction.
+Independent semantic quality/specification review and the batched peer gate remain
+required under SDLC; see [assurance criteria AS1–AS8](assure/SPEC.md).

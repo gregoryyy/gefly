@@ -3,26 +3,27 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
-## 2026-11-01 19:06 — Repair post-merge records; record stack, fuel-chart and tolerance answers
+## 2026-11-01 20:40 — Adopt bounded assurance (integration in progress)
 
-TODO: 1.1.2, 1.2.3, 1.4 complete. Agent: Claude Code orchestrator (no subagents).
+TODO: 1.14.1 complete; 1.14.2–1.14.4 in progress. Agent: Codex orchestrator;
+product, code1/peer_runner, code2/peer_registration and housekeeping on disjoint
+paths; independent quality review started, integrated validation pending.
 
 **Implementation notes**
 
-After the user merged PRs #9–#23 with "accept both" conflict resolutions, DONE.md had
-truncated, mixed and out-of-order entries. Rebuilt it from the complete per-entry
-versions in main's history (44 entries, newest first; Exercise 01 entry no longer
-carries the iPhone and briefing bodies). Checked GAPS (unique headings; Q15 answers
-restored to newest first), README (stale "variant and stack open" sentence), TODO
-(merged/reviewed statuses), AGENTS and ARCH (stack). Recorded the user's answers:
-Q17 web stack (CesiumJS, three.js fallback, MapLibre, TypeScript, JSBSim worker), Q5
-Lycoming fuel-chart points, Q21 FDM tolerance proposals accepted as working proposals.
+Recorded Q22 and R-ASR-1 through R-ASR-5 with AS1–AS8. Reusing pinned Propeller
+pure lineage code with Gefly adapters, catalog evidence/freshness checks and the
+shared offline CI gate. Reconciled current decisions and data availability,
+restored the complete FDM progress entry from the last correct main revision,
+and normalized two legacy progress records without changing their observations.
 
 **Deviations**
 
-Other files were checked for duplicated lines and conflict markers only, not
-re-reviewed line by line. Peer pending (batched).
-## 2026-11-01 18:49 — Plan the project-owned JSBSim 172S model (E2)
+Integration and independent checks are in progress; this entry does not accept
+unreviewed implementation, an aircraft model or the MVP. Earlier peer coverage
+remains separate and TODO 0.19 open. No database, hooks or new agent role added.
+
+## 2026-11-01 19:06 — Repair post-merge records; record stack, fuel-chart and tolerance answers
 
 TODO: 1.1.2, 1.2.3, 1.4 complete. Agent: Claude Code orchestrator (no subagents).
 
@@ -60,6 +61,25 @@ as a facts-only source (manifest 0.2.0); validator extended, 21 tests (112 total
 uninstalled engine; the glide figure is a single line, so one reading carries its
 whole content — flagged for the user against the no-piecemeal rule. Not yet reviewed.
 Peer pending (batched).
+
+## 2026-11-01 18:49 — Plan the project-owned JSBSim 172S model (E2)
+
+TODO: E2 preparation. Agent: Claude Code orchestrator; product subagent.
+
+**Implementation notes**
+
+Added [FDM-172S](design/FDM-172S.md): JSBSim block structure with a source class
+(sourced, derived, estimated, plausibility) for every parameter group and a
+per-parameter provenance file with a CI check; OpenVSP geometry inputs; calibration
+vs frozen holdout sets (glide added for drag, forward-CG stall to holdout); proposed
+tolerances P-1..P-10; a `studies/e2-c172s/` harness reusing E1 and the WASM worker;
+licensing; milestones M-a..M-e with exit criteria. No coefficient values.
+
+**Deviations**
+
+Plan only; blockers: empty mass/CG (Q-1), geometry gaps (planform, airfoil, tail),
+tolerance acceptance (Q-11). Cruise/glide extraction is already authorised and
+running. Not yet reviewed. Peer pending (batched).
 
 ## 2026-11-01 18:46 — Select model size and reasoning effort per task
 
@@ -156,13 +176,20 @@ yet reviewed. Peer pending (batched).
 
 ## 2026-11-01 18:16 — Record local review of first Claude PRs
 
-Agent: Codex orchestrator; first_pr_docs_review performed independent local
-source inspection. Reviewed Claude PRs #4–#6 at `48b2991`; three medium findings
+TODO: 0.19 in progress. Agent: Codex orchestrator; first_pr_docs_review.
+
+**Implementation notes**
+
+Performed independent local source inspection. Reviewed Claude PRs #4–#6 at `48b2991`; three medium findings
 remain unresolved. [Report](reviews/2026-11-01-first-claude-prs.md) includes
 reproductions, validation scope and frozen packet hash. The fresh Codex CLI
 failed before reviewer initialization on the read-only filesystem; formal peer
 acceptance remains blocked and TODO 0.19 stays open. No product fixes made.
 Current foundation CI passed 41 tests; study tests passed 7 and skipped 9.
+
+**Deviations**
+
+Formal peer initialization failed; the local review is not a passed peer gate.
 
 ## 2026-11-01 16:47 — Draft the paired-iPhone control specification
 
@@ -295,22 +322,6 @@ Draft; cites the holding-point start from branch `design/contracts-1-4` (not yet
 main); runway in the example is illustrative; Q13 provider open; not yet reviewed.
 Peer pending (batched).
 
-## 2026-11-01 13:06 — Add study checks to the shared CI gate
-
-TODO: 1.1.2 in progress. Agent: Claude Code orchestrator; code1 subagent.
-
-**Implementation notes**
-
-`utils/ci.py` now runs the `studies/e1-jsbsim` tests in a separate interpreter
-(fails on missing/empty/failing/import errors, reports skips) and
-`check-synthetic.mjs` with node; a missing node is reported as a skip and the final
-line says "passed with skipped check". Hosted CI uses `--require-node` with the
-runner's preinstalled Node.js. 8 new negative/positive tests (49 tool tests total).
-
-**Deviations**
-
-Local only: hosted run and independent review pending. Peer pending (batched).
-
 ## 2026-11-01 13:06 — Draft the pilot-qualification profile contract
 
 TODO: 1.12 in progress. Agent: Claude Code orchestrator; product subagent.
@@ -327,6 +338,22 @@ PPL(A)/C172S example and placeholder SPL/ultralight shapes bound to Q14.
 
 Draft; most PPL values unverified until Part-FCL sections are read; Q14 choices not
 made; proposed SPEC edits not applied; not yet reviewed. Peer pending (batched).
+
+## 2026-11-01 13:06 — Add study checks to the shared CI gate
+
+TODO: 1.1.2 in progress. Agent: Claude Code orchestrator; code1 subagent.
+
+**Implementation notes**
+
+`utils/ci.py` now runs the `studies/e1-jsbsim` tests in a separate interpreter
+(fails on missing/empty/failing/import errors, reports skips) and
+`check-synthetic.mjs` with node; a missing node is reported as a skip and the final
+line says "passed with skipped check". Hosted CI uses `--require-node` with the
+runner's preinstalled Node.js. 8 new negative/positive tests (49 tool tests total).
+
+**Deviations**
+
+Local only: hosted run and independent review pending. Peer pending (batched).
 
 ## 2026-11-01 12:58 — Draft shared contracts v1
 
@@ -452,7 +479,7 @@ Updated GAPS Q15 (per-PR scope struck), SDLC, AGENTS, SPEC R-AGENT-7, agent
 workflow, peer role and PR template. proclens has no hooks; nothing to adopt there.
 Router and tests unchanged: proclens's copies are gefly's own with only naming edits.
 
-**Peer status**
+**Deviations**
 
 **Peer pending** for Claude-authored work merged since `3faf9c8` (PRs #4, #5, #6) and
 this change; Codex CLI unavailable in this cloud session. Last recorded peer review:

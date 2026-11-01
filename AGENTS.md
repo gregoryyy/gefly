@@ -46,3 +46,19 @@ Keep task IDs stable. Requirements are declared once in SPEC; use IDs in tasks, 
 Central documents use upper-case names; notes, code and research use lower case. Preserve answer history with date, time and author, newest first; strike through superseded answers and link resolved gaps to affected documents. Research informs decisions; product proposes requirements; the orchestrator records decisions within the user's direction.
 
 Run `just check` for foundation changes. Run implementation-specific tests once added; a scaffold check is not a physics or training validation. Follow the definition of done in SDLC. Keep secrets and personal telemetry out of source control. Track licenses, source applicability and permitted redistribution before adding dependencies, aircraft data, imagery or avionics assets.
+
+## Assurance at integration
+
+Use the bounded [assurance contract](docs/assure/SPEC.md). Run `just assure check`
+and inspect `just assure diff BASE` on the final integrated revision, including
+merge resolutions. Feature branches return proposed shared-record changes to one
+integration owner; preserve complete DONE entries when reconciling them. Retire
+obsolete current conditions when recording decisions or delivered dependencies.
+Keep historical answers distinct from current status. Run the shared `just ci`
+gate before publication; it includes assurance tests and integrity checks.
+
+Generated lineage is disposable output. Declare exceptional evidence/decision
+relationships in the versioned catalog, with explicit source/input hashes and
+review scope. Validate reviews the meaning of links; no author confirms its own
+claim through another role name. Planned criteria are not accepted, skipped checks
+are not passes, and a complete graph does not validate aircraft physics.

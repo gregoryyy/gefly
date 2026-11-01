@@ -1,0 +1,494 @@
+{
+  "schemaVersion": 1,
+  "guards": [
+    {
+      "id": "decision-q17-engine-stack",
+      "sources": [
+        {
+          "path": "docs/input/2026-11-01-e1-decisions.md",
+          "sha256": "5edf62bcc76bda253eb4cd2265e50e6d8880e4f9473364f94f0d831b0419f406"
+        },
+        {
+          "path": "docs/input/2026-11-01-renderer-fuel-tolerances.md",
+          "sha256": "bb0b669ff2a7b45e181e8457acfa8ce4cbdfa811c6d5085f56f5c5298653ad13"
+        }
+      ],
+      "rules": [
+        {
+          "path": "docs/ARCH.md",
+          "required": [
+            "JSBSim",
+            "CesiumJS",
+            "MapLibre",
+            "TypeScript",
+            "Web Worker"
+          ],
+          "forbidden": [
+            "JSBSim has not been selected"
+          ]
+        },
+        {
+          "path": "docs/TODO.md",
+          "required": [],
+          "forbidden": [
+            "then the stack decision"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "decision-q7-runway-research",
+      "sources": [
+        {
+          "path": "docs/input/2026-11-01-datum-runway-poh-decisions.md",
+          "sha256": "c9c9f50caf51a5b6a2b70285f76483a86ea8f216ef5350852fc46996ff983f17"
+        }
+      ],
+      "rules": [
+        {
+          "path": "docs/design/EXERCISE-01.md",
+          "required": [
+            "research-based",
+            "no instructor",
+            "26"
+          ],
+          "forbidden": []
+        }
+      ]
+    },
+    {
+      "id": "decision-extracted-aircraft-data",
+      "sources": [
+        {
+          "path": "docs/input/2026-11-01-datum-runway-poh-decisions.md",
+          "sha256": "c9c9f50caf51a5b6a2b70285f76483a86ea8f216ef5350852fc46996ff983f17"
+        },
+        {
+          "path": "docs/input/2026-11-01-renderer-fuel-tolerances.md",
+          "sha256": "bb0b669ff2a7b45e181e8457acfa8ce4cbdfa811c6d5085f56f5c5298653ad13"
+        }
+      ],
+      "rules": [
+        {
+          "path": "docs/TODO.md",
+          "required": [],
+          "forbidden": [
+            "ASI calibration needed before freezing"
+          ]
+        },
+        {
+          "path": "docs/design/FDM-172S.md",
+          "required": [],
+          "forbidden": [
+            "POH glide (Section 5, **not extracted**)",
+            "POH cruise table (Section 5, **not extracted**)"
+          ]
+        }
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "mode": "recorded_run",
+      "revision": "not recorded in raw result; archival observation only",
+      "procedure": "Inspect the preserved JSON fields. This catalog does not execute or reconstruct the original browser run.",
+      "scope": "Recorded Mac/Chrome156 study observation; generic study aircraft, not validated 172S behavior or MVP acceptance. Recorded replay digest equality only.",
+      "limitations": [
+        "Raw file introductory evidence label says preliminary; platform identity is as recorded, not newly attested.",
+        "Only preserved JSON bytes and selected reported fields are pinned; original executable/model and evaluator versions cannot be reconstructed from this catalog.",
+        "No new run, aircraft fidelity, real-terrain readiness, instructor validation or training approval is established."
+      ],
+      "requirements": [
+        "R-SIM-2",
+        "R-SIM-4"
+      ],
+      "inputs": [
+        {
+          "role": "source",
+          "path": "studies/e1-browser/results/2026-11-01-m1-chrome156-sim.json",
+          "sha256": "57a0b851b0d6f0eca53920cd577353add76000d171f76aae485f4a359faddd82",
+          "pointer": ""
+        },
+        {
+          "role": "fixture",
+          "path": "studies/e1-browser/results/2026-11-01-m1-chrome156-sim.json",
+          "sha256": "57a0b851b0d6f0eca53920cd577353add76000d171f76aae485f4a359faddd82",
+          "pointer": "/params"
+        },
+        {
+          "role": "criteria",
+          "path": "studies/e1-browser/results/2026-11-01-m1-chrome156-sim.json",
+          "sha256": "57a0b851b0d6f0eca53920cd577353add76000d171f76aae485f4a359faddd82",
+          "pointer": "/budgets_informational"
+        },
+        {
+          "role": "environment",
+          "path": "studies/e1-browser/results/2026-11-01-m1-chrome156-sim.json",
+          "sha256": "57a0b851b0d6f0eca53920cd577353add76000d171f76aae485f4a359faddd82",
+          "pointer": "/env"
+        }
+      ],
+      "unavailableRoles": [
+        {
+          "role": "model",
+          "reason": "Original generic aircraft XML/model closure is not preserved here."
+        },
+        {
+          "role": "build",
+          "reason": "Raw JSON reports a WASM hash and build metadata, but executable bytes/build closure are unavailable to this record."
+        },
+        {
+          "role": "evaluator",
+          "reason": "Exact executed evaluator source revision is not recorded in the raw file."
+        }
+      ],
+      "notApplicableRoles": [],
+      "dependsOn": [],
+      "id": "mac-study-replay-observation",
+      "outcome": "pass",
+      "result": {
+        "path": "studies/e1-browser/results/2026-11-01-m1-chrome156-sim.json",
+        "sha256": "57a0b851b0d6f0eca53920cd577353add76000d171f76aae485f4a359faddd82",
+        "assertions": [
+          {
+            "pointer": "/budgets_informational/deterministic_replay",
+            "equals": true
+          }
+        ]
+      }
+    },
+    {
+      "mode": "recorded_run",
+      "revision": "not recorded in raw result; archival observation only",
+      "procedure": "Inspect the preserved JSON fields. This catalog does not execute or reconstruct the original browser run.",
+      "scope": "Recorded Mac/Chrome156 study observation; generic study aircraft, not validated 172S behavior or MVP acceptance. Recorded step-cost p99 budget failed; timing granularity/headroom interpretation remains limited.",
+      "limitations": [
+        "Raw file introductory evidence label says preliminary; platform identity is as recorded, not newly attested.",
+        "Only preserved JSON bytes and selected reported fields are pinned; original executable/model and evaluator versions cannot be reconstructed from this catalog.",
+        "No new run, aircraft fidelity, real-terrain readiness, instructor validation or training approval is established."
+      ],
+      "requirements": [
+        "R-SIM-2",
+        "R-SIM-4"
+      ],
+      "inputs": [
+        {
+          "role": "source",
+          "path": "studies/e1-browser/results/2026-11-01-m1-chrome156-sim.json",
+          "sha256": "57a0b851b0d6f0eca53920cd577353add76000d171f76aae485f4a359faddd82",
+          "pointer": ""
+        },
+        {
+          "role": "fixture",
+          "path": "studies/e1-browser/results/2026-11-01-m1-chrome156-sim.json",
+          "sha256": "57a0b851b0d6f0eca53920cd577353add76000d171f76aae485f4a359faddd82",
+          "pointer": "/params"
+        },
+        {
+          "role": "criteria",
+          "path": "studies/e1-browser/results/2026-11-01-m1-chrome156-sim.json",
+          "sha256": "57a0b851b0d6f0eca53920cd577353add76000d171f76aae485f4a359faddd82",
+          "pointer": "/budgets_informational"
+        },
+        {
+          "role": "environment",
+          "path": "studies/e1-browser/results/2026-11-01-m1-chrome156-sim.json",
+          "sha256": "57a0b851b0d6f0eca53920cd577353add76000d171f76aae485f4a359faddd82",
+          "pointer": "/env"
+        }
+      ],
+      "unavailableRoles": [
+        {
+          "role": "model",
+          "reason": "Original generic aircraft XML/model closure is not preserved here."
+        },
+        {
+          "role": "build",
+          "reason": "Raw JSON reports a WASM hash and build metadata, but executable bytes/build closure are unavailable to this record."
+        },
+        {
+          "role": "evaluator",
+          "reason": "Exact executed evaluator source revision is not recorded in the raw file."
+        }
+      ],
+      "notApplicableRoles": [],
+      "dependsOn": [],
+      "id": "mac-study-step-cost-observation",
+      "outcome": "fail",
+      "result": {
+        "path": "studies/e1-browser/results/2026-11-01-m1-chrome156-sim.json",
+        "sha256": "57a0b851b0d6f0eca53920cd577353add76000d171f76aae485f4a359faddd82",
+        "assertions": [
+          {
+            "pointer": "/budgets_informational/step_cost_p99_le_830us",
+            "equals": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "mac-study-cesium-frames-observation",
+      "mode": "recorded_run",
+      "revision": "not recorded in raw result; archival observation only",
+      "procedure": "Inspect preserved JSON frame budget flags; do not launch browser or replay study.",
+      "scope": "Recorded cesium synthetic/no-terrain frame-budget observations only; not accepted geography or aircraft behavior.",
+      "limitations": [
+        "Original executable, aircraft/model and evaluator closure is unavailable; source identity and device metadata are recorded claims, not a new execution attestation.",
+        "No real-terrain/imagery readiness, full simulator acceptance or training effectiveness is established. The separately named INVALID Cesium result is not promoted to passing evidence."
+      ],
+      "outcome": "pass",
+      "requirements": [
+        "R-SIM-1",
+        "R-VIEW-1"
+      ],
+      "inputs": [
+        {
+          "role": "source",
+          "path": "studies/e1-browser/results/2026-11-01-m1-chrome156-cesium-sim.json",
+          "sha256": "c355efdc8aa3b7807c3f13180050c49f8d5d6538c42be991ebb29e89093faa9e",
+          "pointer": ""
+        },
+        {
+          "role": "criteria",
+          "path": "studies/e1-browser/results/2026-11-01-m1-chrome156-cesium-sim.json",
+          "sha256": "c355efdc8aa3b7807c3f13180050c49f8d5d6538c42be991ebb29e89093faa9e",
+          "pointer": "/budget"
+        },
+        {
+          "role": "environment",
+          "path": "studies/e1-browser/results/2026-11-01-m1-chrome156-cesium-sim.json",
+          "sha256": "c355efdc8aa3b7807c3f13180050c49f8d5d6538c42be991ebb29e89093faa9e",
+          "pointer": "/user_agent"
+        }
+      ],
+      "unavailableRoles": [
+        {
+          "role": "model",
+          "reason": "Original model closure is not pinned in this historical result."
+        },
+        {
+          "role": "build",
+          "reason": "Original build closure is not pinned in this historical result."
+        },
+        {
+          "role": "fixture",
+          "reason": "Original fixture closure is not pinned in this historical result."
+        },
+        {
+          "role": "evaluator",
+          "reason": "Original evaluator closure is not pinned in this historical result."
+        }
+      ],
+      "notApplicableRoles": [],
+      "dependsOn": [],
+      "result": {
+        "path": "studies/e1-browser/results/2026-11-01-m1-chrome156-cesium-sim.json",
+        "sha256": "c355efdc8aa3b7807c3f13180050c49f8d5d6538c42be991ebb29e89093faa9e",
+        "assertions": [
+          {
+            "pointer": "/budget/median_interval_pass",
+            "equals": true
+          },
+          {
+            "pointer": "/budget/p99_pass",
+            "equals": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "mac-study-three-frames-observation",
+      "mode": "recorded_run",
+      "revision": "not recorded in raw result; archival observation only",
+      "procedure": "Inspect preserved JSON frame budget flags; do not launch browser or replay study.",
+      "scope": "Recorded three synthetic/no-terrain frame-budget observations only; not accepted geography or aircraft behavior.",
+      "limitations": [
+        "Original executable, aircraft/model and evaluator closure is unavailable; source identity and device metadata are recorded claims, not a new execution attestation.",
+        "No real-terrain/imagery readiness, full simulator acceptance or training effectiveness is established. The separately named INVALID Cesium result is not promoted to passing evidence."
+      ],
+      "outcome": "pass",
+      "requirements": [
+        "R-SIM-1",
+        "R-VIEW-1"
+      ],
+      "inputs": [
+        {
+          "role": "source",
+          "path": "studies/e1-browser/results/2026-11-01-m1-chrome156-three-sim.json",
+          "sha256": "f073d26424bcee8066fb1f2c7994421abdc02d507c0d48bce9c35fa5c73e46f1",
+          "pointer": ""
+        },
+        {
+          "role": "criteria",
+          "path": "studies/e1-browser/results/2026-11-01-m1-chrome156-three-sim.json",
+          "sha256": "f073d26424bcee8066fb1f2c7994421abdc02d507c0d48bce9c35fa5c73e46f1",
+          "pointer": "/budget"
+        },
+        {
+          "role": "environment",
+          "path": "studies/e1-browser/results/2026-11-01-m1-chrome156-three-sim.json",
+          "sha256": "f073d26424bcee8066fb1f2c7994421abdc02d507c0d48bce9c35fa5c73e46f1",
+          "pointer": "/user_agent"
+        }
+      ],
+      "unavailableRoles": [
+        {
+          "role": "model",
+          "reason": "Original model closure is not pinned in this historical result."
+        },
+        {
+          "role": "build",
+          "reason": "Original build closure is not pinned in this historical result."
+        },
+        {
+          "role": "fixture",
+          "reason": "Original fixture closure is not pinned in this historical result."
+        },
+        {
+          "role": "evaluator",
+          "reason": "Original evaluator closure is not pinned in this historical result."
+        }
+      ],
+      "notApplicableRoles": [],
+      "dependsOn": [],
+      "result": {
+        "path": "studies/e1-browser/results/2026-11-01-m1-chrome156-three-sim.json",
+        "sha256": "f073d26424bcee8066fb1f2c7994421abdc02d507c0d48bce9c35fa5c73e46f1",
+        "assertions": [
+          {
+            "pointer": "/budget/median_interval_pass",
+            "equals": true
+          },
+          {
+            "pointer": "/budget/p99_pass",
+            "equals": true
+          }
+        ]
+      }
+    }
+  ],
+  "criteria": [
+    {
+      "id": "mvp-r-sim-1",
+      "requirement": "R-SIM-1",
+      "state": "planned",
+      "scope": "Browser launch to controllable flight on the declared platform. Future implementation and acceptance evidence remain required.",
+      "evidenceIds": [],
+      "reviewIds": []
+    },
+    {
+      "id": "mvp-r-sim-2",
+      "requirement": "R-SIM-2",
+      "state": "planned",
+      "scope": "Fixed-step simulation independent of rendering/input collection. Future implementation and acceptance evidence remain required.",
+      "evidenceIds": [],
+      "reviewIds": []
+    },
+    {
+      "id": "mvp-r-sim-3",
+      "requirement": "R-SIM-3",
+      "state": "planned",
+      "scope": "Units, axes and reference-frame boundary behavior. Future implementation and acceptance evidence remain required.",
+      "evidenceIds": [],
+      "reviewIds": []
+    },
+    {
+      "id": "mvp-r-sim-4",
+      "requirement": "R-SIM-4",
+      "state": "planned",
+      "scope": "Deterministic reset/replay with a pinned model and input log. Future implementation and acceptance evidence remain required.",
+      "evidenceIds": [],
+      "reviewIds": []
+    },
+    {
+      "id": "mvp-r-sim-5",
+      "requirement": "R-SIM-5",
+      "state": "planned",
+      "scope": "Source-backed independent aircraft reference cases. Future implementation and acceptance evidence remain required.",
+      "evidenceIds": [],
+      "reviewIds": []
+    },
+    {
+      "id": "mvp-r-sim-6",
+      "requirement": "R-SIM-6",
+      "state": "planned",
+      "scope": "Numerical boundedness in the declared operating envelope. Future implementation and acceptance evidence remain required.",
+      "evidenceIds": [],
+      "reviewIds": []
+    },
+    {
+      "id": "mvp-r-air-1",
+      "requirement": "R-AIR-1",
+      "state": "planned",
+      "scope": "Identified classic-panel 172S configuration and source applicability. Future implementation and acceptance evidence remain required.",
+      "evidenceIds": [],
+      "reviewIds": []
+    },
+    {
+      "id": "mvp-r-air-2",
+      "requirement": "R-AIR-2",
+      "state": "planned",
+      "scope": "Modeled control/avionics state behavior against sources. Future implementation and acceptance evidence remain required.",
+      "evidenceIds": [],
+      "reviewIds": []
+    },
+    {
+      "id": "mvp-r-air-3",
+      "requirement": "R-AIR-3",
+      "state": "planned",
+      "scope": "QNH, QFE and standard-pressure altimeter behavior. Future implementation and acceptance evidence remain required.",
+      "evidenceIds": [],
+      "reviewIds": []
+    },
+    {
+      "id": "mvp-r-train-2",
+      "requirement": "R-TRAIN-2",
+      "state": "planned",
+      "scope": "Exercise objective, briefing and observable debrief. Future implementation and acceptance evidence remain required.",
+      "evidenceIds": [],
+      "reviewIds": []
+    },
+    {
+      "id": "mvp-r-train-5",
+      "requirement": "R-TRAIN-5",
+      "state": "planned",
+      "scope": "First circuit/drill against frozen scoped criteria. Future implementation and acceptance evidence remain required.",
+      "evidenceIds": [],
+      "reviewIds": []
+    },
+    {
+      "id": "mvp-r-input-1",
+      "requirement": "R-INPUT-1",
+      "state": "planned",
+      "scope": "Mac keyboard/touchpad baseline and optional controller behavior. Future implementation and acceptance evidence remain required.",
+      "evidenceIds": [],
+      "reviewIds": []
+    },
+    {
+      "id": "mvp-r-view-1",
+      "requirement": "R-VIEW-1",
+      "state": "planned",
+      "scope": "Declared cockpit and external view behavior. Future implementation and acceptance evidence remain required.",
+      "evidenceIds": [],
+      "reviewIds": []
+    },
+    {
+      "id": "mvp-r-review-1",
+      "requirement": "R-REVIEW-1",
+      "state": "planned",
+      "scope": "Recorded session/replay review behavior. Future implementation and acceptance evidence remain required.",
+      "evidenceIds": [],
+      "reviewIds": []
+    }
+  ],
+  "fixtureGroups": [],
+  "aircraft": [
+    {
+      "manifest": "data/aircraft/c172s-classic/manifest.json",
+      "values": [
+        "data/aircraft/c172s-classic/poh-values.json",
+        "data/aircraft/c172s-classic/performance-values.json"
+      ]
+    }
+  ]
+}

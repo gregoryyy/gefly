@@ -233,3 +233,17 @@ reciprocal coverage excluding each provider's own contributions. Recheck affecte
 criteria after repairs. One live route plus mocked reciprocal tests must not be
 reported as two live provider runs. Packet-only inspection cannot claim commands
 were independently executed or establish simulator fidelity/training credit.
+
+
+## E14. Does bounded assurance reject stale or unsupported acceptance?
+
+Use [AS1–AS8](assure/SPEC.md) and R-ASR-1 through R-ASR-5. Run the offline
+assurance suite, inspect the graph/report/trace and compare the integrated
+revision with its base. Negative fixtures must reject malformed IDs/records,
+wrong heading/body composition, changed evidence inputs, invalid outcomes,
+missing reviews and calibration/holdout overlap. Historical source text and
+planned MVP work remain visibly distinct from accepted claims. Rebuild twice to
+check deterministic substantive output; compare from an unrelated caller directory
+and an isolated committed fixture. Inspect the final merge result, not merely the
+feature-branch report. Record actual local/hosted outcomes and independent review
+in RESULTS; importing existing observations is not a new benchmark run.

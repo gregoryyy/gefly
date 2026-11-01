@@ -8,11 +8,10 @@ R-DATA-2 and R-FID-3 ([SPEC](../../../docs/SPEC.md)) and supports TODO 1.3.
 **This manifest is not a flight model.** It identifies the configuration, records
 type-design limits verified with page citations in the
 [172S/FR172 source survey](../../../docs/research/2026-11-01-c172s-fr172-sources.md), and
-states each source's rights. Exception: the S17 pages for the first serial
-(pp. 7-24, 7-34) come from the 172S controls research note
-(`docs/research/2026-11-01-jsbsim-datum-172s-controls.md`), which is still on branch
-`design/contracts-1-4` (PR #12); those citations are **pending PR #12 research note**
-until it merges. It holds no performance tables, aerodynamic coefficients,
+states each source's rights. The S17 pages for the first serial
+(pp. 7-24, 7-34) are documented in the merged
+[172S controls research note](../../../docs/research/2026-11-01-jsbsim-datum-172s-controls.md).
+The manifest holds no performance tables, aerodynamic coefficients,
 procedures or document copies (`not_included`), and its `fidelity` is fixed to
 `not validated`. Nothing here establishes simulator fidelity or training credit.
 
@@ -55,8 +54,7 @@ Status follows R-DATA-2:
 172SPHUS Rev 5) that the project needs now, as cited facts
 ([research note](../../../docs/research/2026-11-01-c172s-poh-values.md); user decision
 2026-11-01 13:59): normal-static airspeed calibration points covering the Exercise 01
-IAS bands (flaps up 50–110, flaps 10° 50–90, flaps 30° 50–80 KIAS; unblocks its IAS
-criteria), wings-level stall speeds at
+IAS bands (flaps up 50–110, flaps 10° 50–90, flaps 30° 50–80 KIAS), wings-level stall speeds at
 2,550 lb for both CG limits, short-field take-off and landing distances at 2,550 lb for
 sea level and 1,000 ft pressure altitude at 10 and 20 °C (bracketing EDFE and ISA), and
 maximum rate of climb with climb speed at sea level and 2,000 ft. Each value carries its
@@ -74,6 +72,10 @@ Extraction shares per figure and the no-piecemeal-completion limit are in the re
 note; do not add values that would assemble a whole table. These are comparison targets,
 not validation results: the S17 performance data assume the short-field technique and an
 airplane in good condition, and nothing here establishes simulator fidelity.
+The selected ASI points remove the missing-extraction blocker for supported
+Exercise 01 bands; they do not supply a complete pitot-static model, a 20° flap
+calibration or values outside those ranges. Interpolation, transitions and the
+107/109 KCAS VFE conflict remain declared assessment/model limitations.
 
 ## Selected engine and cruise/glide values
 
@@ -109,10 +111,16 @@ increasing by engine speed, then manifold pressure or power. SI units are `W`, `
 ratio); `m^3`, `m^3/s` and `kg/s` are checked relatively, so give them about 5 significant digits. A separate
 file and [schema](../../schema/performance-values.schema.json) were chosen instead of
 extending `poh-values.json` because these values mix an engine-manufacturer chart with
-POH tables, need new units and multi-number points, and leave the POH file of PR #17
-unchanged. Lycoming data describe an uninstalled engine; installation losses and the
+POH tables, need new units and multi-number points, and leave the separate
+[poh-values.json](poh-values.json) schema/content unchanged. Lycoming data describe an uninstalled engine; installation losses and the
 propeller (TCDS static rpm 2300–2400) still have to be modelled. These are calibration
 inputs, not validation results.
+
+These three draft source files are the current data inventory. There is still
+**no project-owned JSBSim 172S model** here: no aerodynamic coefficient set,
+propulsion/gear implementation, frozen E2 case set or validated flight behavior.
+See the [model plan](../../../docs/design/FDM-172S.md) for the remaining source,
+estimation, calibration and independent holdout work.
 
 ## Rights
 

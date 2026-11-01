@@ -2,9 +2,11 @@
 
 Status: implemented and run in the cloud container; quality-reviewed (renewed review
 clean except accepted CDN SRI) and validated as preliminary evidence (2026-11-01); reference M1 worker run recorded.
-Decision context: [GAPS Q17](../../docs/GAPS.md) selected JSBSim;
-rendering, 2D map, language and the worker arrangement remain proposals until this
-check. Prior evidence: [native JSBSim study](../e1-jsbsim/README.md) and the
+Current decision context: [GAPS Q17](../../docs/GAPS.md) selects JSBSim in a module
+Web Worker at a fixed 1/120 s step, TypeScript, CesiumJS (three.js fallback) and
+MapLibre 2D maps. The observations below informed that choice; they do not pass
+the outstanding real-terrain, device-resolution or representative-load checks.
+Prior evidence: [native JSBSim study](../e1-jsbsim/README.md) and the
 [candidate survey](../../docs/research/2026-11-01-e1-engine-stack-candidates.md).
 
 ## Question
@@ -45,8 +47,10 @@ Worker → main:
   at `state_hz` (default 60), latest state only.
 - `{type: "error", message}`
 
-`render/` must accept this `state` stream; until `sim/` is ready it uses a
-synthetic source emitting the same objects (a level circuit around EDFE).
+`render/` accepts this `state` stream from the implemented JSBSim worker or a
+synthetic source emitting the same objects (a level circuit around EDFE). This
+study contract is historical; the product [CONTRACTS](../../docs/design/CONTRACTS.md)
+defines the subsequent shared boundaries.
 
 ## Budgets (declared before running; proposals)
 
@@ -109,10 +113,11 @@ reference M1; **no acceptance claim**. Details: [sim](sim/README.md), [render](r
 Under the stricter missed-step definition the real-time budget **fails** in the
 container (occasional 4–17 ms single steps, cause unknown); latency and replay
 determinism pass; step-cost p99 is unstable in the noisy container (485–905 µs). Earlier "0 missed steps" used a 100 ms threshold. Rendering numbers reflect software GL
-and are not evidence for or against the budget. Next: the same runs on the reference
-M1/Chrome (exact versions, renderer string, refresh rate), then the stack decision
-(TODO 1.2.3). Deferred to that run: worker and main-thread CPU headroom, and the
-R-SIM-2 check that different render rates leave the simulation unchanged.
+and are not evidence for or against the budget. Subsequent reference M1/Chrome
+runs are recorded below and Q17 now selects the stack. Outstanding work includes
+cross-origin-isolated step timing, worker/main-thread CPU headroom, real terrain/
+imagery at device resolution, representative cockpit load and the R-SIM-2 check
+that different render rates leave simulation state unchanged.
 
 ## Results on the reference M1/Chrome (hosted test page)
 

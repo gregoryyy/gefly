@@ -41,6 +41,21 @@ the independent quality, validation and cross-provider reviews. See
 [E0-CI](EVAL.md#e0-ci-are-repository-tool-quality-gates-reproducible-locally-and-in-ci)
 and [the tool inventory](SBOM.md).
 
+## Assurance inputs and outputs
+
+Assurance reads repository text, Git history and declarative catalogs as untrusted
+data. It does not execute imported scenario/model content, fetch cited sources or
+send artifacts to a provider. Repository paths must stay inside the selected
+checkout/revision; reject traversal, absolute paths and symlink escapes. Bound
+reads and child processes, scrub inherited Git/Node redirection, and use argument
+arrays rather than shell evaluation. Generated outputs are ignored and rebuildable.
+
+Evidence outcome, link certainty, aircraft value status and review independence
+are separate fields. A source citation or passing schema check is not source
+truth, permission or fidelity. Accepted claims require current named evidence;
+missing/skipped/stale evidence cannot silently become a pass. The catalog records
+relationships and safeguards, not secrets or copies of restricted manuals.
+
 ## Developer peer review
 
 The peer router sends only the orchestrator's inspected packet to the selected
