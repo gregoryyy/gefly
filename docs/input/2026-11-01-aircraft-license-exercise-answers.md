@@ -15,9 +15,3 @@ Author: user. Recorded: 2026-11-01 07:04 Europe/Berlin by the orchestrator (Clau
 Verbatim, including typing. The orchestrator reads "it fried on" as "it depends
 on" (the available data decides); this reading is recorded in GAPS Q3 and
 can be corrected by the user.
-
-Follow-up, 2026-11-01 07:08, user, answering whether the license is GPL-3.0-or-later,
-whether the "depends on" reading is right and whether a classic 172S comes before the FR172:
-
-> gpl3+, yes, yes
-> pr

@@ -85,7 +85,7 @@ need their own scoped design before activation. Multiplayer or a live human ATC
 network is not required to give the community a flight-school focus.
 
 The free/open-source direction applies to the declared core learning experience
-and project code. Choose the exact source license and cost/hosting model before
+and project code. The source license is GPL-3.0-or-later (GAPS Q5); choose the cost/hosting model before
 release, and review code, aircraft-model and data/asset licenses separately. A
 published experience should remain usable without a paid live LLM or required
 paid imagery feed; optional services must not quietly become prerequisites for
@@ -237,9 +237,9 @@ performance and fidelity budgets, and identify qualified review support. The
 orchestrator keeps answers and assumptions in GAPS rather than silently filling
 them with implementation defaults.
 
-For the extended roadmap, choose the exact open-source license and sustainable
-free hosting/data/AI model, confirm EDDF reference-point and regional source
-editions/rights, select an initial exercise airport within the region, compare
+For the extended roadmap, choose a sustainable free hosting/data/AI model (the
+license is GPL-3.0-or-later), confirm EDDF reference-point and regional source
+editions/rights, source the first exercise airport Frankfurt-Egelsbach (EDFE), compare
 reusable engines/models and define the first reviewed authoring package and
 community workflow. The EDDF region, open-source direction and reuse-first policy
 are user decisions; those implementation choices remain open.

@@ -89,8 +89,8 @@ retaining the identifiers and geometry promised by the scenario. Real and genera
 material each carries provenance and a visible status. The first region is now
 **EDDF/100 NM (185.2 km)**. Its sourced official airport reference point, geodesic
 boundary and data-layer coverage must be verified before accepted geometry is
-built. Training airports/runways within the region, data versions and providers/
-licenses remain decisions. EDDF's role as regional center is separate from the
+built. The first training airport is Frankfurt-Egelsbach (EDFE, GAPS Q10); its runway
+and further airports, data versions and providers/licenses remain decisions. EDDF's role as regional center is separate from the
 choice of a runway for a particular PPL drill.
 
 Do not hardcode a universal glide slope, traffic-pattern height or procedure.
@@ -111,8 +111,8 @@ decisions; EVAL defines how to test them before claiming an improvement.
 
 The requested community is organized around learning: proposed shared exercises,
 practice questions, groups and debriefs with clear authorship/source/review labels.
-Decide contributor/instructor roles, moderation, hosting and the exact open-source
-license before public service release. A public community is not synonymous with
+Decide contributor/instructor roles, moderation and hosting in roadmap phase 3
+(GAPS Q12) before public service release; the license is GPL-3.0-or-later. A public community is not synonymous with
 real-time multiplayer, and generated material must not imply instructor review.
 
 LLM authoring should turn a described territory and pilot experience into a

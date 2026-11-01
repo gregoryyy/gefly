@@ -3,6 +3,30 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 07:24 — Resolve PR #4 quality/validate findings; add EDFE source survey
+
+TODO: 1.7 started. Agent: Claude Code orchestrator; quality, validate and researcher
+subagents (same provider, local).
+
+**Implementation notes**
+
+Local quality (needs changes) and validate (accept after fixes) reviewed `c1da267`.
+Fixed: restored the 07:04 input record and moved the 07:08 follow-up to a new
+record; labelled orchestrator additions to the third-party policy and the Q7/Q12
+readings as interpretations; removed the unsourced FR172/172S engine/propeller
+claims; propagated the 172S-first order; corrected the DCO relicensing statement
+and added the Propeller-holder caveat; added an SBOM license-compatibility check;
+cleared stale license/airport wording in AGENTS, CONCEPT, TRAINING, BOOT and
+GAPS A9; history/strikethrough and TODO order fixes. The researcher's EDFE note
+is integrated: official DFS AIP and operator hosts were unreachable, so only
+OurAirports values (non-authoritative) were obtained.
+
+**Deviations**
+
+The fixes have not had a renewed independent review. Per GAPS Q15 this
+documentation-only PR is outside the cross-provider peer scope. RESULTS.md keeps its
+historical "licensing remains Q5" line unchanged.
+
 ## 2026-11-01 07:22 — Scope the cross-provider peer gate
 
 TODO: 0.18 complete. Agent: Claude Code orchestrator (no subagents).

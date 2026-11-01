@@ -8,7 +8,7 @@ radius**, using real source material. Later experience authoring should use LLMs
 to assemble sourced territory/navigation/chart packages and support AI interaction.
 The architecture favors reusing open physics engines and aircraft models. The
 license is GPL-3.0-or-later; the first exercise is a take-off, circuit and landing
-at Frankfurt-Egelsbach (EDFE) in a Reims FR172 and/or Cessna 172S. Providers,
+at Frankfurt-Egelsbach (EDFE) in a classic-panel Cessna 172S, with the Reims FR172 as a second configuration. Providers,
 engine, hosting and deployment are still decisions.
 
 The aim is to connect each modeled behavior to aircraft documentation and each exercise to an explicit learning objective. Assistance and model limitations should stay visible as realism increases. Aircraft fidelity and learning benefits are goals to evaluate; this repository does not yet contain a runnable simulator or establish eligibility for training credit.
