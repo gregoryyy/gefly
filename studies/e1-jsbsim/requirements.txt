@@ -1,0 +1,12 @@
+# E1 study environment (not a repository dependency). Install in a fresh venv:
+#   python3 -m pip install --require-hashes -r studies/e1-jsbsim/requirements.txt
+# Hashes cover ONLY the CPython 3.13 manylinux_2_27/2_28 x86-64 wheels, verified
+# 2026-11-01 with `pip download --no-deps` and `pip hash`. Other Pythons or
+# platforms (e.g. macOS arm64) need their own wheel hashes added per package;
+# pip refuses to install a wheel whose hash is not listed.
+# numpy is jsbsim's only runtime dependency (Requires-Dist: numpy>=1.20). The
+# historical E1 run left numpy unpinned; its version then was not recorded.
+jsbsim==1.3.3 \
+    --hash=sha256:3a933792b350f2c2e75783ea746daa026dd59a160101682fdd32654faa7a5a6f
+numpy==2.5.4 \
+    --hash=sha256:6ffa07666f8da0eef81d149934a626d0d95fbd6838432a33e66245423a9062c0

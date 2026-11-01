@@ -11,6 +11,7 @@ These records preserve the user's original intent. Do not edit accepted input re
 - [2026-10-31 Q4/Q11 answers](2026-10-31-mac-controls-briefing-answers.md): Mac keyboard/touchpad, optional yoke/joystick and pedals, GeoFS-inspired settings, scenario-first briefing.
 - [2026-10-31 licence-specific roadmap](2026-10-31-license-specific-roadmap.md): additional sailplane and ultralight pilot-training tracks.
 - [2026-10-31 independent peer](2026-10-31-independent-peer-agent.md): opposite-provider quality and specification review, Claude for Codex and vice versa.
+- [2026-11-01 phone control decisions](2026-11-01-phone-control-decisions.md): iPhone 13 mini on latest iOS; Q-P1..Q-P6 proposals accepted.
 - [2026-11-01 datum, runway and POH decisions](2026-11-01-datum-runway-poh-decisions.md): physical-height datum, runway 26, POH value extraction accepted; no instructor reviewer yet.
 - [2026-11-01 contracts decisions](2026-11-01-contracts-decisions.md): all O-1..O-9 recommendations accepted; first exercise starts at the holding point.
 - [2026-11-01 proclens peer logic](2026-11-01-proclens-peer-logic.md): batched peer cadence and packet-egress rule from proclens; proclens has no hooks.
@@ -22,6 +23,7 @@ These records preserve the user's original intent. Do not edit accepted input re
 - [2026-11-01 first 172S configuration](2026-11-01-first-172s-configuration.md): 172S serials 9491–9809, classic panel, accepted.
 - [2026-11-01 confirmations](2026-11-01-confirmations.md): GPL-3.0-or-later, "depends on data" reading and 172S-first order confirmed; PR authorized.
 - [2026-11-01 peer gate scope](2026-11-01-peer-gate-scope.md): cross-provider peer review is not required on every PR.
+- [2026-11-01 Lycoming and OpenVSP](2026-11-01-lycoming-openvsp-decisions.md): selective engine-curve extraction and offline OpenVSP estimation accepted.
 - [2026-11-01 Q3/Q5/Q7/Q10/Q12 answers](2026-11-01-aircraft-license-exercise-answers.md): FR172 and/or 172S engine variants, GPL-3 with permissive-preferred third-party policy, first circuit exercise at Egelsbach, community rules in phase 3.
 
 These inputs are included in the local repository. Recheck privacy before remote publication.

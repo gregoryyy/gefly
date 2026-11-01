@@ -14,6 +14,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import harness  # noqa: E402
@@ -64,6 +65,103 @@ class UnitConversionTests(unittest.TestCase):
     def test_pack_is_bitwise(self):
         self.assertNotEqual(harness.pack([0.0]), harness.pack([-0.0]))
         self.assertEqual(len(harness.pack([1.0, 2.0])), 16)
+
+
+class FakeFdm:
+    """Stand-in FDM: zero state; ``run()`` result and time advance are configurable."""
+
+    def __init__(self, dt_s, run_result=True, advances=True, fail_after=None):
+        self.dt_s, self.run_result, self.advances = dt_s, run_result, advances
+        self.fail_after, self.calls = fail_after, 0
+        self.props = {}
+
+    def __getitem__(self, name):
+        return self.props.get(name, 0.0)
+
+    def __setitem__(self, name, value):
+        self.props[name] = value
+
+    def load_ic(self, *_):
+        return True
+
+    def run_ic(self):
+        return True
+
+    def run(self):
+        self.calls += 1
+        if self.fail_after is not None and self.calls > self.fail_after:
+            return False
+        if self.advances:
+            self.props[harness.SIM_TIME] = self[harness.SIM_TIME] + self.dt_s
+        return self.run_result
+
+
+class FailedStepTests(unittest.TestCase):
+    """A failed or stalled engine step must fail fixtures, not pass them (no jsbsim)."""
+
+    DT_S = 1.0 / 120.0
+
+    def _patched(self, **fake_kwargs):
+        made = []
+
+        def make(dt_s, *_):
+            made.append(FakeFdm(dt_s, **fake_kwargs))
+            return made[-1]
+
+        trim = {"success": True}
+        return (mock.patch.object(harness, "make_fdm", side_effect=make),
+                mock.patch.object(harness, "trim", return_value=trim), made)
+
+    def _assert_fails(self, call, **fake_kwargs):
+        make, trim, made = self._patched(**fake_kwargs)
+        with make, trim, self.assertRaises(RuntimeError) as caught:
+            call()
+        self.assertTrue(made, "fixture did not use the fake FDM")
+        return str(caught.exception)
+
+    def test_healthy_fake_passes_stationary(self):
+        make, trim, _ = self._patched()
+        with make, trim:
+            result = harness.fixture_stationary(settle_s=0.5, observe_s=0.5)
+        self.assertEqual(result["max_speed_mps"], 0.0)
+
+    def test_stationary_rejects_false_run(self):
+        message = self._assert_fails(
+            lambda: harness.fixture_stationary(settle_s=0.5, observe_s=0.5),
+            run_result=False)
+        self.assertIn("settle step 0", message)
+
+    def test_stationary_rejects_false_run_while_observing(self):
+        message = self._assert_fails(
+            lambda: harness.fixture_stationary(settle_s=0.5, observe_s=0.5),
+            fail_after=60)
+        self.assertIn("observe step 0", message)
+
+    def test_stationary_rejects_stalled_time(self):
+        message = self._assert_fails(
+            lambda: harness.fixture_stationary(settle_s=0.5, observe_s=0.5),
+            advances=False)
+        self.assertIn("simulation time advanced", message)
+
+    def test_healthy_fake_passes_cost(self):
+        make, _, _ = self._patched()
+        with make, mock.patch.object(harness, "init_airborne"):
+            result = harness.fixture_cost(steps=10, dt_s=self.DT_S, runs=1)
+        self.assertEqual(result["runs"], 1)
+
+    def test_cost_rejects_false_run(self):
+        with mock.patch.object(harness, "init_airborne"):
+            message = self._assert_fails(
+                lambda: harness.fixture_cost(steps=10, dt_s=self.DT_S, runs=1),
+                run_result=False)
+        self.assertIn("cost run-only step 0", message)
+
+    def test_cost_rejects_stalled_time(self):
+        with mock.patch.object(harness, "init_airborne"):
+            message = self._assert_fails(
+                lambda: harness.fixture_cost(steps=10, dt_s=self.DT_S, runs=1),
+                advances=False)
+        self.assertIn("cost run-only: simulation time advanced", message)
 
 
 @unittest.skipUnless(HAVE_JSBSIM, "jsbsim package not importable")

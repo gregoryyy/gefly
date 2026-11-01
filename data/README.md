@@ -9,3 +9,8 @@ Distinguish sourced, derived, estimated and unknown values. Link authorized
 documents instead of redistributing them without rights. See [SBOM](../docs/SBOM.md)
 and [research](../docs/research/README.md). Independent validation fixtures must
 remain distinct from calibration data. Directory ownership is assigned per task.
+
+Aircraft manifests: [172S classic panel](aircraft/c172s-classic/README.md), schema in
+`schema/aircraft-manifest.schema.json`, validated by `utils/validate_manifest.py`.
+Selected cited POH values sit beside the manifest in `poh-values.json`
+(`schema/poh-values.schema.json`), checked by the same validator.

@@ -46,9 +46,11 @@ models as far as practical before writing replacements. These are user direction
 original project material is licensed **GPL-3.0-or-later**; third-party material
 must carry non-proprietary licenses, preferring permissive ones so the project
 license can be relaxed later. Community publication rules and roles are scoped
-in roadmap phase 3. The hosting/cost model, regional datasets, LLM provider,
-engine/model choice and detailed milestone sequence remain decisions. No region,
-community service, authoring system or selected engine is implemented yet.
+in roadmap phase 3. The dynamics engine is **JSBSim** (GAPS Q17, LGPL-2.1 accepted as a copyleft
+exception); the project-owned 172S model data, engine/model versions for the product,
+rendering, browser integration, hosting/cost model, regional datasets, LLM provider
+and detailed milestone sequence remain decisions. No region, community service,
+authoring system or integrated engine is implemented yet.
 
 Requirements marked **mandate** express this user direction. **Proposed** marks
 implementation and acceptance details that can be refined before the affected
@@ -162,7 +164,7 @@ data rights, complete regional coverage or a validated aircraft model.
 | Make the project free and open source. [R-OPEN-1] | Mandate; GPL-3.0-or-later selected; operating model pending | Release the project source and reproducible build/run instructions under GPL-3.0-or-later (GAPS Q5), permitting use, modification and redistribution, and provide the declared core learning/community baseline without a usage fee. Inventory the separate licenses/rights of dependencies, aircraft models, data and assets; a code license does not grant their reuse rights. Admit only non-proprietary third-party licenses and prefer permissive ones (user decision); recording a justification for each copyleft component, since it constrains later relicensing, is a proposal (GAPS Q5). The free baseline can run published experiences without requiring a paid live LLM or a paid imagery subscription. Select and document sustainable hosting/AI/data costs, capacity limits and any optional services before promising an unlimited public service. |
 | Let an LLM assist in creating realistic, source-backed flight experiences with bounded AI interaction. [R-AUTHOR-1] | Mandate; staged authoring and interaction scope proposed | Given a territory and learning intent, authoring produces a reviewable declarative package identifying extent/datum, aircraft/objective, initial conditions, navigation records, chart/procedure references, interaction roles/allowed actions and source versions/rights. Schema and cross-reference checks reject unresolved real identifiers, unsupported procedure references, inconsistent coordinates/units and executable payloads; source comparison and human review reject unsubstantiated real-world claims. Generated narrative or teaching charts are labeled and derived from accepted source records; an LLM is not a source of real navaids or chart geometry. Review precedes publication. Published versions freeze relevant datasets, prompts/model metadata and accepted interaction events for reproducibility; replay uses recorded events rather than fresh generations. AI acts within the package's scenario context and validated actions, not as authority over physics, aircraft limits or clearances. |
 | Model EDDF and a 100 NM surrounding reference region from applicable real material. [R-REGION-1] | Mandate; coverage sequence proposed | Define the region using EDDF's sourced official airport reference point, a 100 nautical mile radius and declared geodesic/datum conventions. Preserve the reference publication and verify boundary fixtures. Inventory terrain, airports/runways/elevations, navaids/fixes and chart/procedure material with applicable versions/rights, plus a coverage map distinguishing validated, approximate and unavailable areas/features. Test selected real-data navigation and chart/ground alignment fixtures under the agreed tolerances. The complete extent is a regional target, not a claim that every feature is already modeled; learner departure airports and first drills within it remain separate choices. |
-| Prefer reuse of open physics engines and aircraft models before custom replacements. [R-REUSE-1] | Mandate; candidate choice pending | Before engine/model selection, compare existing open candidates for license compatibility, aircraft applicability, browser integration, maintainability, numerical behavior and independent reference-case agreement. Record the selected versions and adaptation boundaries. Reuse a suitable candidate where it meets the agreed criteria; justify each custom dynamics/model replacement by an evidenced gap and bounded scope. Open availability, included C172 data and engine reputation do not substitute for model-data rights or the independent validation required by R-SIM-5. |
+| Prefer reuse of open physics engines and aircraft models before custom replacements. [R-REUSE-1] | Mandate; dynamics engine selected (JSBSim, GAPS Q17); aircraft model and rendering choices pending | Before engine/model selection, compare existing open candidates for license compatibility, aircraft applicability, browser integration, maintainability, numerical behavior and independent reference-case agreement. Record the selected versions and adaptation boundaries. Reuse a suitable candidate where it meets the agreed criteria; justify each custom dynamics/model replacement by an evidenced gap and bounded scope. Open availability, included C172 data and engine reputation do not substitute for model-data rights or the independent validation required by R-SIM-5. |
 
 ## Proposed delivery emphasis
 
@@ -205,8 +207,9 @@ revision reviewed. Any later integration change invalidates affected evidence.
 
 ## Outside the current delivery
 
-This document refinement does not include a runnable simulator, a selected
-rendering/physics engine, licensed aircraft manuals, validated aircraft performance,
+This document refinement does not include a runnable simulator, an integrated
+physics engine (JSBSim is selected, GAPS Q17, but not yet integrated), a selected
+rendering engine, licensed aircraft manuals, validated aircraft performance,
 an implemented EDDF region, community hosting, LLM runtime, instructor endorsement
 or regulatory qualification. Worldwide scenery, a live
 human ATC network, multiplayer, encoded video export, VR, motion platforms and
