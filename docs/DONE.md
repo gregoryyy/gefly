@@ -130,6 +130,48 @@ The user confirmed GPL-3.0-or-later, the "it depends" reading and the
 172S-first order at 07:08. No independent quality/validate or
 peer review was run for this documentation change.
 
+## 2026-10-31 21:51 — Add and independently review repository-tool CI
+
+TODO: 1.1.1 complete; parent 1.1 remains open for simulator-stack gates.
+PR: [#3](https://github.com/gregoryyy/gefly/pull/3).
+Agent: Codex orchestrator; geofs_research and product_refinement before parallel
+code1/peer_runner, code2/peer_registration and housekeeping; independent quality
+and validate, then an actual external Claude peer. Source snapshot:
+`c4adb297d57e3ab77dc37879144ada84d582566c7b2e7dd645a23d903c786506`.
+
+**Implementation notes**
+
+Added `just ci` / `utils/ci.py` as one offline gate for scaffold checks, nonempty
+tool tests and whitespace in all tracked current files, including clean
+checkouts. Added pinned read-only GitHub Actions, Python 3.11/3.15 jobs and weekly
+reviewed action-update proposals. E0-CI, contributor instructions, security and
+source/license inventory describe acceptance and limits.
+
+Quality found two medium inherited-Git-environment defects in fixture writes and
+production file coverage. Both were fixed and independently reproduced as
+resolved using disposable repositories; the suite grew from 18 to 41 tests.
+Clean local checkouts invoked from unrelated directories pass on Python 3.11.12
+and 3.15.2. The repaired-source hosted PR matrix passes all 41 tests on Python
+3.11.17 and 3.15.1. Local validation and Claude CLI 2.1.193, reporting
+claude-haiku-4-5-20251001, accepted the bounded criteria with no remaining findings.
+See [RESULTS](RESULTS.md) and [peer evidence](reviews/2026-10-31-ci-peer.md).
+
+**Deviations**
+
+This completes the existing repository-tool slice, rather than selecting a
+simulator stack. Parent 1.1 retains runtime lint/types/dependency/test work. Hosted
+patches differ from local versions; action pins do not make runner/interpreter
+inputs hermetic. The peer inspected recorded evidence without running commands.
+No simulator, aircraft/training validation, branch protection, fork/main-push
+event or updated PDF is claimed. All original aircraft/license/provider decisions
+remain in their existing scope.
+
+**Insights**
+
+An empty working-tree diff cannot prove tracked content has valid whitespace.
+Git environment variables can override a subprocess working directory, so both
+the gate and its fixtures must neutralize repository/index redirection.
+
 ## 2026-10-31 17:17 — Add and exercise the independent opposite-provider peer
 
 TODO: 0.17 complete. PR: [#2](https://github.com/gregoryyy/gefly/pull/2), following merged #1.

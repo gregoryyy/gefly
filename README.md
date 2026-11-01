@@ -37,8 +37,9 @@ The [bootstrap guide](docs/BOOT.md) is adapted from `../propeller/docs/BOOT.md` 
 ## Local commands
 
 ```sh
+just ci                    # shared offline gate: scaffold, repository-tool tests, tracked whitespace
 just check                 # scaffold, links and agent configuration checks; Python 3.11+
-just test-tools            # offline peer-routing and report/failure tests
+just test-tools            # lower-level offline repository-tool tests
 just peer-preview codex packet.md  # inspect the external Claude route without a call
 just docs                  # A4 PDFs alongside Markdown; pandoc and Google Chrome
 just pdf docs/IDEA.md      # build one document
@@ -46,7 +47,33 @@ just reqs                 # requirement declarations
 just clean                # remove generated document outputs
 ```
 
-Use `just --list` for all recipes. No app build, development server or simulator test suite exists yet. [Foundation milestone 1](docs/TODO.md#1-foundation) chooses the stack and adds those commands. Generated PDFs are ignored by Git. See [utilities](utils/README.md) and [dependencies](docs/SBOM.md) for tool requirements and document build limitations.
+The same gate runs without `just`, from any caller directory:
+
+```sh
+python3 /path/to/checkout/utils/ci.py
+```
+
+It uses Python 3.11+ and Git, resolves the checkout from the runner's location, and
+fails on a missing/empty test suite or a required check failure. Whitespace checks
+inspect every tracked current file, including in a clean checkout; untracked files
+enter that check only after `git add`. The gate installs no project packages and
+does not invoke review providers or document renderers.
+
+The [GitHub Actions workflow](.github/workflows/foundation.yml) uses the same runner for
+pushes and pull requests targeting `main`, on `ubuntu-24.04` with Python 3.11 and
+3.15. It uses pinned actions, a read-only contents token and no persisted checkout
+credentials. These supported minor lines allow newer patch releases; observed
+versions and local versus hosted outcomes belong in [RESULTS](docs/RESULTS.md).
+Workflow configuration or a local pass does not establish a successful hosted run.
+
+Use `just --list` for all recipes. No app build, development server or simulator
+test suite exists yet. The current gate is the bounded TODO 1.1.1 repository-tool
+slice; [foundation TODO 1.1](docs/TODO.md#1-foundation) remains open for future
+stack-specific lint, types, vulnerability/license checks and runtime tests.
+Acceptance of this slice follows [E0-CI](docs/EVAL.md#e0-ci-are-repository-tool-quality-gates-reproducible-locally-and-in-ci)
+and independent reviews. Generated PDFs are ignored by Git. See
+[utilities](utils/README.md) and [dependencies](docs/SBOM.md) for tool requirements,
+action/update policy and document build limitations.
 
 ## Document map
 
