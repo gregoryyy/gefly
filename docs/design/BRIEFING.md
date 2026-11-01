@@ -94,7 +94,7 @@ Proposed first content set:
 | EDDF TAF covering scenario time | historical, or generated if no archived TAF is available | Archive record, or a generator rule | As above (`rights_unknown`), or `generated` |
 | EDFE local report (MET REPORT-like) | generated, derived from the applied environment | Generator id and version; inputs | `generated` (project GPL) |
 | Notices (NOTAM-like) | generated | Scenario author; fictional serial clearly marked | `generated` |
-| Aerodrome data (runway, elevation, frequencies) | reference | EDFE note: E2a operator, E3 OurAirports placeholder, E1 AIP pending | Per EDFE note; `reference-only` items are cited, not shipped |
+| Aerodrome data (runway, elevation, frequencies) | reference | EDFE note: E2a operator, E3 OurAirports placeholder, E1 AIP pending | Per EDFE note; `reference_only` items are cited, not shipped (CONTRACTS §10.5) |
 
 A generated item never reuses a real NOTAM series or number format that a reader
 could mistake for a real notice. The exact series-letter convention to avoid is
@@ -126,7 +126,8 @@ briefing_item {
   valid_from_utc, valid_to_utc | null          # TAF/notice periods; METAR: null
   replaces_item_id | null, cancels_item_id | null   # AMD/COR/CNL, NOTAMR/C analogues
   source { publisher, originator, distributor, url_or_archive_ref,
-           edition_or_cycle, retrieved_utc, licence, attribution, sha256 }
+           edition_or_cycle, retrieved_utc, rights, attribution, sha256 }
+                                               # rights: CONTRACTS §10.5 enum; hashing §10.6
   generator { id, version, inputs_hash } | null
   state: ok | missing | stale | future_issued | malformed | contradictory
          | superseded | rights_unknown
@@ -175,7 +176,7 @@ Rules:
 | `malformed` | Parse error, unknown group, non-finite or out-of-range number, unknown unit | Raw text shown escaped, with "could not be decoded"; no decoded values | Fails if the item is required |
 | `contradictory` | Same station and time with differing content; a notice closes the exercise runway; reported QNH or wind differs from applied env beyond tolerance without a `differences` entry | Both values shown side by side with the reason | Fails until resolved or explained |
 | `superseded` | R3 or a replacement notice | Collapsed under the current item | OK |
-| `rights_unknown` | Licence or attribution field empty | Author view only | Cannot be shipped |
+| `rights_unknown` | `rights` is `rights_unknown` or empty, or a required attribution is empty | Author view only | Cannot be shipped |
 
 A TAF differing from a METAR is **not** a contradiction: forecast and observation
 are different things. Wind and visibility differences between the report and the
@@ -184,8 +185,10 @@ tolerances are TBD and go in EVAL E7 before evaluation (R-EVAL-1).
 
 ### 1.5 Pressure references from briefing to environment (R-AIR-3)
 
-The altimeter state stores `setting_pa`, `setting_ref ∈ {QNH, QFE, STD}` and a
-display unit. These follow the CONTRACTS draft on `design/contracts-1-4`.
+The altimeter state stores `setting_pa` and `setting_ref ∈ {QNH, QFE, STD}`, where
+`setting_ref` is the scenario's expected reference, not a learner input
+([CONTRACTS §10.1](CONTRACTS.md#101-altimeter-reference-without-an-extra-input)).
+The hPa/inHg display unit is a presentation preference, outside instrument state.
 
 1. **QNH.** The scenario declares one QNH value with its source item (for example
    the EDDF METAR's QNH group) or a generated value. Reported QNH is rounded per
