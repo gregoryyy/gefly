@@ -12,3 +12,5 @@ remain distinct from calibration data. Directory ownership is assigned per task.
 
 Aircraft manifests: [172S classic panel](aircraft/c172s-classic/README.md), schema in
 `schema/aircraft-manifest.schema.json`, validated by `utils/validate_manifest.py`.
+Selected cited POH values sit beside the manifest in `poh-values.json`
+(`schema/poh-values.schema.json`), checked by the same validator.

@@ -3,6 +3,26 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 14:07 — Extract cited 172S POH values
+
+TODO: 1.3/1.5 support. Agent: Claude Code orchestrator; researcher/housekeeping
+subagent.
+
+**Implementation notes**
+
+Per the user's decision, extracted only needed POH (172SPHUS Rev 5, S17) values as
+cited facts into `data/aircraft/c172s-classic/poh-values.json` (66 tabulated numbers
+checked against rendered pages): airspeed calibration points for the Exercise 01
+bands (p. 5-9), stall speeds (p. 5-12), short-field take-off/landing distances at
+2,550 lb near EDFE elevation (pp. 5-14, 5-23/24), climb (p. 5-17), and paraphrased
+correction notes. Separate schema, extended validator, 25 POH tests (19 initial, 6 after review) and a
+[research note](research/2026-11-01-c172s-poh-values.md).
+
+**Deviations**
+
+POH gives short-field distances only; VFE 10° KCAS differs between p. 2-4 (107) and
+p. 5-9 (109), recorded as pending; applicability of later POH revisions to
+172S9491–9809 unchecked; not yet reviewed. Peer pending (batched).
 ## 2026-11-01 13:34 — Draft scenario briefing, AFIS radio and checklist scope
 
 TODO: 1.8 in progress. Agent: Claude Code orchestrator; product subagent (with source

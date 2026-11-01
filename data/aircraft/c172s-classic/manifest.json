@@ -2,7 +2,7 @@
   "$comment": "Rights/applicability manifest, not a flight model. Field guide: README.md in this directory. Schema: data/schema/aircraft-manifest.schema.json.",
   "schema_version": "1.0.0",
   "manifest_id": "gefly.aircraft.c172s-classic",
-  "manifest_version": "0.1.0",
+  "manifest_version": "0.1.1",
   "status": "draft",
   "fidelity": "not validated",
   "configuration": {
@@ -531,7 +531,7 @@
   ],
   "pending": [
     "C.G. envelope, datum/MAC, fuel/oil, dimensions and control travels (page-cited in the research note) for a later manifest version.",
-    "Manufacturer performance comparison targets from S17 (stall speeds, climb, ground roll) for acceptance criteria, as cited facts only.",
+    "Further S17 comparison targets beyond those now in poh-values.json (calibration, stall speeds, take-off/landing distances and climb near EDFE), as cited facts only.",
     "Serial-dependent systems inside the range (S17 notes changes at 172S9129 and KAP 140 behaviour from 172S9423) and their relevance to the selected range."
   ],
   "prepared": {

@@ -130,6 +130,8 @@ class ManifestValidationTests(unittest.TestCase):
         self.assertAlmostEqual(vm.CONVERSIONS[("kt", "m/s")] * 3600, 1852)
         self.assertEqual(vm.CONVERSIONS[("lb", "kg")], 0.45359237)
         self.assertEqual(vm.CONVERSIONS[("in", "m")], 0.0254)
+        self.assertEqual(vm.CONVERSIONS[("ft", "m")], 0.3048)
+        self.assertAlmostEqual(vm.CONVERSIONS[("ft/min", "m/s")], 0.00508)
 
     def test_airspeed_requires_reference(self):
         manifest = self.manifest()
@@ -167,6 +169,175 @@ class ManifestValidationTests(unittest.TestCase):
             path.write_text(json.dumps(bad), encoding="utf-8")
             with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
                 self.assertEqual(vm.main([str(MANIFEST)]), 0)
+                self.assertEqual(vm.main([str(path)]), 1)
+
+
+POH_VALUES = MANIFEST.parent / "poh-values.json"
+
+
+class PohValuesValidationTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.schema = vm.load_json(vm.POH_SCHEMA)
+        cls.manifest_schema = vm.load_json(vm.SCHEMA)
+        cls.valid = vm.load_json(POH_VALUES)
+        cls.manifest = vm.load_json(MANIFEST)
+
+    def values(self):
+        return copy.deepcopy(self.valid)
+
+    def assertRejected(self, document, fragment, manifest=None):
+        errors = vm.validate_poh_values(document, self.schema, manifest or self.manifest)
+        self.assertTrue(any(fragment in error for error in errors),
+                        f"expected an error containing {fragment!r}, got {errors}")
+
+    def test_r_data_2_c172s_poh_values_are_valid(self):
+        self.assertEqual(vm.validate_poh_values(self.values(), self.schema, self.manifest), [])
+
+    def test_shared_definitions_match_manifest_schema(self):
+        for name in ("status", "citation", "citations", "status_rules"):
+            self.assertEqual(self.schema["$defs"][name], self.manifest_schema["$defs"][name], name)
+
+    def test_r_data_1_citation_must_resolve_in_named_manifest(self):
+        manifest = copy.deepcopy(self.manifest)
+        manifest["sources"] = [s for s in manifest["sources"] if s["id"] != "S17"]
+        self.assertRejected(self.values(), "'S17' is not in the source register", manifest)
+
+    def test_r_data_1_manifest_id_mismatch_fails_closed(self):
+        manifest = copy.deepcopy(self.manifest)
+        manifest["manifest_id"] = "gefly.aircraft.other"
+        errors = vm.validate_poh_values(self.values(), self.schema, manifest)
+        self.assertTrue(any("does not match the loaded manifest" in e for e in errors), errors)
+        self.assertTrue(any("is not in the source register" in e for e in errors), errors)
+
+    def test_r_data_1_citation_revision_must_match_manifest_register(self):
+        document = self.values()
+        document["takeoff_distance"]["ground_roll_sl_10c"]["citations"][0]["revision"] = "Rev 4"
+        self.assertRejected(document, "differs from register")
+
+    def test_r_data_1_correction_needs_citation(self):
+        document = self.values()
+        document["corrections"][0]["citations"] = []
+        self.assertRejected(document, "corrections[0].citations: needs at least 1 item")
+
+    def test_r_data_2_condition_and_reading_are_required(self):
+        document = self.values()
+        del document["climb"]["rate_sl_0c"]["condition"]
+        del document["stall_speeds"]["flaps_0_rearward_cg_ias"]["reading"]
+        errors = vm.validate_poh_values(document, self.schema, self.manifest)
+        self.assertTrue(any("rate_sl_0c: missing required field 'condition'" in e for e in errors))
+        self.assertTrue(any("flaps_0_rearward_cg_ias: missing required field 'reading'" in e
+                            for e in errors))
+
+    def test_r_data_2_reading_outside_vocabulary_fails(self):
+        document = self.values()
+        document["landing_distance"]["ground_roll_sl_10c"]["reading"] = "estimated"
+        self.assertRejected(document, "ground_roll_sl_10c.reading")
+
+    def test_r_data_2_wrong_distance_conversion_fails(self):
+        document = self.values()
+        document["takeoff_distance"]["ground_roll_sl_10c"]["value"] = 925.0
+        self.assertRejected(document, "ground_roll_sl_10c: value 925.0 m does not match")
+
+    def test_r_data_2_wrong_climb_rate_conversion_fails(self):
+        document = self.values()
+        document["climb"]["rate_sl_0c"]["original_value"] = 710
+        self.assertRejected(document, "rate_sl_0c: value")
+
+    def test_r_data_2_wrong_calibration_conversion_fails(self):
+        document = self.values()
+        document["airspeed_calibration"]["normal_flaps_0"]["points"][0]["cas"]["value"] = 28.0
+        self.assertRejected(document, "points[0].cas: value 28.0 m/s does not match")
+
+    def test_calibration_reference_cannot_be_swapped(self):
+        document = self.values()
+        document["airspeed_calibration"]["normal_flaps_10"]["points"][0]["ias"]["reference"] = "CAS"
+        self.assertRejected(document, "points[0].ias.reference: must equal")
+
+    def test_calibration_points_must_increase_in_ias(self):
+        document = self.values()
+        points = document["airspeed_calibration"]["normal_flaps_30"]["points"]
+        points[1], points[2] = points[2], points[1]
+        self.assertRejected(document, "normal_flaps_30.points[2]: IAS 60 not above previous 70")
+
+    def test_r_data_2_unknown_calibration_needs_todo_and_no_points(self):
+        document = self.values()
+        document["airspeed_calibration"]["normal_flaps_0"]["status"] = "unknown"
+        errors = vm.validate_poh_values(document, self.schema, self.manifest)
+        self.assertTrue(any("normal_flaps_0: missing required field 'todo'" in e for e in errors))
+        self.assertTrue(any("normal_flaps_0.points: must equal []" in e for e in errors), errors)
+
+    def test_r_data_2_climb_rate_needs_reference(self):
+        document = self.values()
+        del document["climb"]["rate_sl_0c"]["reference"]
+        self.assertRejected(document, "rate_sl_0c: missing required field 'reference'")
+
+    def test_r_data_2_sourced_value_needs_conversion(self):
+        document = self.values()
+        del document["stall_speeds"]["flaps_30_forward_cg_cas"]["conversion"]
+        self.assertRejected(document, "flaps_30_forward_cg_cas: missing required field 'conversion'")
+
+    def test_r_fid_3_fidelity_must_stay_not_validated(self):
+        document = self.values()
+        document["fidelity"] = "validated"
+        self.assertRejected(document, "$.fidelity: must equal")
+
+    def test_manifest_path_cannot_leave_directory(self):
+        with tempfile.TemporaryDirectory(prefix="gefly-poh-test-") as directory:
+            document = self.values()
+            document["manifest"]["path"] = "../manifest.json"
+            path = Path(directory) / vm.POH_VALUES_NAME
+            path.write_text(json.dumps(document), encoding="utf-8")
+            errors = vm.load_poh_values(path, self.schema, self.manifest_schema)
+            self.assertTrue(any("invalid manifest file name" in e for e in errors), errors)
+
+    def test_climb_rate_tagged_as_airspeed_fails(self):
+        document = self.values()
+        document["climb"]["rate_sl_0c"]["reference"] = "IAS"
+        self.assertRejected(document, "rate_sl_0c.reference: must equal \"vertical\"")
+
+    def test_climb_speed_tagged_vertical_fails(self):
+        document = self.values()
+        document["climb"]["climb_speed_sl"]["reference"] = "vertical"
+        self.assertRejected(document, "climb_speed_sl.reference: \"vertical\" not in")
+
+    def test_distance_with_reference_fails(self):
+        document = self.values()
+        document["takeoff_distance"]["ground_roll_sl_10c"]["reference"] = "IAS"
+        self.assertRejected(document, "ground_roll_sl_10c.reference: not allowed")
+
+    def test_distance_in_wrong_si_unit_fails(self):
+        document = self.values()
+        document["landing_distance"]["ground_roll_sl_10c"]["unit"] = "m/s"
+        self.assertRejected(document, "ground_roll_sl_10c.unit: must equal \"m\"")
+
+    def test_stall_key_suffix_must_match_reference(self):
+        document = self.values()
+        document["stall_speeds"]["flaps_0_rearward_cg_cas"]["reference"] = "IAS"
+        self.assertRejected(document, "flaps_0_rearward_cg_cas: key suffix '_cas' needs reference 'CAS'")
+
+    def test_poh_values_reject_invalid_sibling_manifest(self):
+        with tempfile.TemporaryDirectory(prefix="gefly-poh-test-") as directory:
+            manifest = copy.deepcopy(self.manifest)
+            manifest["fidelity"] = "validated"
+            (Path(directory) / "manifest.json").write_text(json.dumps(manifest),
+                                                          encoding="utf-8")
+            path = Path(directory) / vm.POH_VALUES_NAME
+            path.write_text(json.dumps(self.values()), encoding="utf-8")
+            errors = vm.load_poh_values(path, self.schema, self.manifest_schema)
+            self.assertTrue(any(e.startswith("manifest manifest.json: $.fidelity") for e in errors),
+                            errors)
+
+    def test_cli_validates_poh_values_with_sibling_manifest(self):
+        with tempfile.TemporaryDirectory(prefix="gefly-poh-test-") as directory:
+            bad = self.values()
+            bad["landing_distance"]["total_50ft_sl_10c"]["original_unit"] = "m"
+            (Path(directory) / "manifest.json").write_text(json.dumps(self.manifest),
+                                                          encoding="utf-8")
+            path = Path(directory) / vm.POH_VALUES_NAME
+            path.write_text(json.dumps(bad), encoding="utf-8")
+            with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                self.assertEqual(vm.main([str(POH_VALUES)]), 0)
                 self.assertEqual(vm.main([str(path)]), 1)
 
 
