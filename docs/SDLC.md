@@ -57,6 +57,8 @@ new gate. [Assurance](assure/ASSR.md) defines the evidence lineage.
 
 Initial scaffolding may be created before the first commit. Thereafter use feature branches, one bounded milestone per PR when a remote exists. Keep dependent PRs based on the prior milestone branch; after merging, rebase and re-run affected checks before claiming the next gate. Do not combine unrelated worker edits into a commit. Follow existing user authorization for commits/pushes; creating a remote or selecting a license is a separate recorded decision. No remote is required for local review.
 
+Before opening a PR, fetch the current target branch and verify that the proposed head merges cleanly with it. Resolve conflicts locally, run the affected checks, and only then push/open the PR. Recheck mergeability after publication and refresh existing open PRs when their target advances. Preserve complete dated DONE records when merging; do not accept conflict fragments independently.
+
 Record TODO IDs and requirement IDs in changes. Commit descriptions include `Refs:` trailers, for example `Refs: TODO 1.4, R-SIM-1` when that requirement exists. PR descriptions state problem, behavior, validation, security/data impact, source applicability and limitations. The [PR template](../.github/pull_request_template.md) supplies the checklist.
 
 ## Definition of done

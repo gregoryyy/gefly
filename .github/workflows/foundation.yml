@@ -39,3 +39,23 @@ jobs:
           package-manager-cache: false
       - name: Run offline foundation gates
         run: python3 utils/ci/run.py --require-node
+
+  browser-application:
+    name: Browser application
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+      - name: Install locked browser dependencies
+        run: npm --prefix app ci
+      - name: Check and bundle browser application
+        run: npm --prefix app run build
+      - name: Test worker session lifecycle
+        run: npm --prefix app test

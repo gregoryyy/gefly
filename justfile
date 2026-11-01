@@ -160,3 +160,11 @@ clean:
     cd "{{justfile_directory()}}"
     find . -type f -name '*.md.pdf' -not -path '*/node_modules/*' -not -path '*/.git/*' -delete
     rm -rf .pdfstamps
+
+# Build the local-only JSBSim research runtime (not a distributable aircraft model)
+build-flight-engine:
+    bash "{{justfile_directory()}}/studies/e1-browser/sim/build.sh" "{{justfile_directory()}}/output/flight/engine-build"
+
+# Fly the experimental browser prototype on localhost:5173
+fly:
+    npm --prefix "{{justfile_directory()}}/app" run dev

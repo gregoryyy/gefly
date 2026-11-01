@@ -12,7 +12,7 @@ at Frankfurt-Egelsbach (EDFE) in a classic-panel Cessna 172S, with the Reims FR1
 is JSBSim, rendered with CesiumJS (three.js fallback) in TypeScript (GAPS Q17);
 providers, hosting and deployment are still decisions.
 
-The aim is to connect each modeled behavior to aircraft documentation and each exercise to an explicit learning objective. Assistance and model limitations should stay visible as realism increases. Runnable native and browser studies exist; the complete learner simulator and project-owned 172S flight model are not implemented. Aircraft fidelity and learning benefits remain goals to evaluate, with no eligibility for training credit established.
+The aim is to connect each modeled behavior to aircraft documentation and each exercise to an explicit learning objective. Assistance and model limitations should stay visible as realism increases. A runnable local browser prototype now connects JSBSim, flight controls, instruments and cockpit/chase views; the complete learner simulator and project-owned 172S flight model are not implemented. Aircraft fidelity and learning benefits remain goals to evaluate, with no eligibility for training credit established.
 
 The refined direction preserves GeoFS-style accessibility and geography while
 focusing on fewer aircraft with fuller working controls: **classic C172 instruments
@@ -28,6 +28,19 @@ The first input baseline is **Mac desktop, keyboard and touchpad**, with optiona
 Briefing starts with versioned scenarios and labeled historical/generated
 weather/NOTAM data; a live-data adapter is optional later work. Mobile orientation remains
 a later supported-device capability.
+
+## Fly the prototype
+
+```sh
+npm --prefix app ci
+just build-flight-engine   # first run: builds the local research runtime
+just fly                  # http://127.0.0.1:5173
+```
+
+Use arrow keys for pitch/roll, A/D for rudder, W/S for throttle, Space to pause,
+R to restart and V to change view. Touchpad controls are available on screen.
+The generic research aircraft and procedural scenery are experimental; see
+[setup, controls and limitations](app/README.md).
 
 ## Status and entry points
 
@@ -132,8 +145,8 @@ utils/              peer review, validators and document build assets
 The first runtime foundation is the bounded assessment-airspeed mapper and
 repository-data adapter in `packages/training/`, with shared types in
 `packages/contracts/`. `just test-training` runs its offline tests. It supplies
-evaluator-derived IAS from the existing calibration points; the browser flight
-application and complete exercise remain future work. Study and repository
+evaluator-derived IAS from the existing calibration points; connecting it to the
+experimental browser application and completing the validated exercise remain future work. Study and repository
 tool implementations live under `studies/` and `utils/`. The initial
 public repository destination is [gregoryyy/gefly](https://github.com/gregoryyy/gefly),
 selected under the user's publication instruction. Gefly is licensed
