@@ -132,8 +132,8 @@ sink-rate limit, a tail-strike pitch angle, a flare height or a touchdown-zone l
 - Use X1 (d) limits as labelled "skill-test guidance" for downwind height, leg heading
   and take-off/approach speed, with persistence allowance for turbulence.
 - Do not compare simulated CAS with KIAS targets: the IAS–CAS gap is about 5 kt at
-  low speed (p. 5-12). Block IAS criteria until Fig. 5-1 is extracted; use the KCAS
-  column of p. 2-4 for limit gates.
+  low speed (p. 5-12). ~~Block IAS criteria until Fig. 5-1 is extracted~~ (superseded
+  2026-11-01, below); use the KCAS column of p. 2-4 for limit gates.
 - Use S17 values as the aircraft-procedure targets and limits for the 172S classic
   configuration (R-FID-3), keeping the 70–80/75–85 discrepancy visible.
 - Anything not covered (crosswind-turn height, touchdown zone, sink rate, centreline
@@ -146,8 +146,26 @@ sink-rate limit, a tail-strike pitch angle, a flare height or a touchdown-zone l
   apply instead of generic proposals.
 - AIP VFR EDFE circuit altitude, thresholds and declared distances.
 - Applicable POH revision for 172S9491–172S9809 and the climb-speed discrepancy.
-- The 172S airspeed-calibration curve (S17 Section 5, Fig. 5-1, not extracted) needed
-  for KIAS assessment from simulated air data.
+- ~~The 172S airspeed-calibration curve (S17 Section 5, Fig. 5-1, not extracted)~~
+  extracted 2026-11-01 (addendum below). Still open: flaps-20° calibration (not in S17)
+  and the VFE flaps-10° 107/109 KCAS conflict.
+
+## Addendum 2026-11-01: extracted POH values
+
+Source: data/aircraft/c172s-classic/poh-values.json (arriving with PR #17,
+values_version 0.1.0, draft) and its research note `2026-11-01-c172s-poh-values.md`
+on the same branch. Used by Exercise 01 as follows (product proposal):
+
+- Fig. 5-1 (p. 5-9), normal static source, flaps 0°/10°/30°, 50–110/50–90/50–80 KIAS:
+  assessment IAS derived from `sim.cas_mps` by linear interpolation between the
+  tabulated points (instructional derivation, label CAL); out-of-table or untabulated
+  flap setting → criterion not evaluated.
+- Stall speeds (p. 5-12, 2,550 lb, power off, wings level): stall-margin warning in
+  KCAS with an IP threshold; not a stall gate.
+- VFE flaps 10°: p. 2-4 gives 107 KCAS, Fig. 5-1 gives 109 KCAS at 110 KIAS; the
+  exercise keeps the conservative 107 KCAS (IP).
+- Take-off/landing distances (pp. 5-14, 5-23/5-24) are short-field technique only:
+  plausibility bounds, not pass/fail.
 
 Handoff: SPEC, EVAL, GAPS, TODO and DONE were not changed. Downloads stay in the
 session scratchpad; nothing copyrighted was added to the repository.
