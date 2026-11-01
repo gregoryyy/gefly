@@ -123,6 +123,27 @@ moderation, contribution workflow and funding/operating model remain pending.
 
 Resolved (deferred): 2026-11-01 07:04, user; carried into ROAD and TODO 1.11.
 
+### Q15. Which changes need the cross-provider peer gate?
+
+Why: the peer gate (R-AGENT-7) needs the other provider's CLI and adds cost and
+latency; applying it to every PR blocks small documentation changes.
+
+Answer: **2026-11-01 07:22, user** (recorded by orchestrator, Claude Code;
+[input](input/2026-11-01-peer-gate-scope.md)): “again, not all prs need the
+adversarial check (different provider)”.
+
+Scope (orchestrator interpretation, correctable by the user): **required** for
+integrated milestone results, changes to simulation/dynamics, aircraft or
+navigation data, avionics, training assessment, security-relevant code or agent/
+peer tooling, and release candidates. **Not required** for documentation-only
+decision recording, research notes, bookkeeping and editorial fixes. The
+orchestrator states in each PR whether the gate applies and why; the user can
+request a peer review on any PR. Local quality/validate remain proportionate to
+the change.
+
+Resolved: 2026-11-01 07:22, user; carried into SDLC, AGENTS, SPEC R-AGENT-7, the
+[agent workflow](agents/README.md), [peer](agents/peer.md) and the PR template.
+
 ## Open questions
 
 ### Q3. Which Cessna 172 variant, year and avionics fit?

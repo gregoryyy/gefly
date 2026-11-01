@@ -25,6 +25,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 - [x] 0.15 Record Q11's accepted scenario-first briefing sequence and propagate Q4/Q11 through the product/design/evaluation records.
 - [x] 0.16 Add and review the requested sailplane/ultralight qualification roadmap, distinct curricula/aircraft gates and source references.
 - [x] 0.17 Add the cross-provider peer role, reciprocal dispatchers/router and tests; record actual Claude review of the Codex-authored addition and its accepted follow-up. Reverse live execution remains unclaimed.
+- [x] 0.18 Scope the cross-provider peer gate per Q15: required for code, data, assessment, security/tooling, milestone and release changes; not for documentation-only decision records.
 
 ## 1. Foundation
 
