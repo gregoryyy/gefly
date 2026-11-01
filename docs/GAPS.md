@@ -177,7 +177,11 @@ needed alongside FAA material. Proposed by orchestrator and confirmed by the use
 first configuration, then FR172 when its data suffice. Still open: exact
 sub-models/years/serial ranges, engine/propeller, avionics fit (the 172S-first order
 holds unless the data research contradicts it). Manufacturer POH/AFM text remains copyrighted; extract facts with source
-references, without copying manuals (R-DATA-1).
+references, without copying manuals (R-DATA-1). Source survey:
+[172S/FR172 sources](research/2026-11-01-c172s-fr172-sources.md): leads point to FAA
+TCDS 3A12 (172S) and A18EU (FR172E–K); FAA/EASA hosts were unreachable, so all
+values remain unverified. JSBSim has no 172S/FR172 model, and its C172 files carry
+mixed LGPL/GPL and "not to be sold" terms needing a Q5 rights decision.
 
 Answer: partial update, **2026-10-31 15:09, user** (recorded by orchestrator):
 “Classic instruments first, glass later”. The exact variant/year and conventional

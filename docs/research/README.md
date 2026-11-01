@@ -9,6 +9,7 @@ Research clarifies gaps and requirements; it does not decide the product or sile
 | [EDDF regional data and open engines, 2026-10-31](2026-10-31-eddf-open-foundation.md) | Official airport-center/100 NM geometry, basemap/elevation/nav/chart rights, reusable dynamics/models/browser adapters and LLM asset grounding | Candidate sources only; official current ARP and exact provider/model choices unresolved; no region data or engines installed |
 | [Pilot-qualification tracks, 2026-10-31](2026-10-31-license-training-tracks.md) | Sailplane SPL/Part-SFCL and national ultralight licensing, category/privilege distinctions and profile identifiers | Reference frameworks only; jurisdiction/category and current amendment/syllabus acceptance remain track-specific gates |
 | [Frankfurt-Egelsbach (EDFE) sources, 2026-11-01](2026-11-01-edfe-aerodrome-sources.md) | First-exercise aerodrome: reference point, elevation, runways, circuit, frequencies, rights and fixture needs | Access-limited: official DFS AIP/operator hosts unreachable; only OurAirports (public domain, non-authoritative) retrieved; circuit unsourced |
+| [Cessna 172S and Reims FR172 sources, 2026-11-01](2026-11-01-c172s-fr172-sources.md) | Type-certificate, engine and propeller sources, classic-panel production range, FR172 sub-models, JSBSim model rights | Access-limited: FAA/EASA hosts unreachable, so TCDS values are unverified search leads; JSBSim repository facts verified; no 172S/FR172 JSBSim model exists |
 
 ## Method and note format
 
