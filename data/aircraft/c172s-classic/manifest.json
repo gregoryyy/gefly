@@ -2,7 +2,7 @@
   "$comment": "Rights/applicability manifest, not a flight model. Field guide: README.md in this directory. Schema: data/schema/aircraft-manifest.schema.json.",
   "schema_version": "1.0.0",
   "manifest_id": "gefly.aircraft.c172s-classic",
-  "manifest_version": "0.2.0",
+  "manifest_version": "0.2.1",
   "status": "draft",
   "fidelity": "not validated",
   "configuration": {
@@ -524,7 +524,7 @@
     },
     {
       "id": "A14",
-      "title": "Operator's Manual O-360, HO-360, IO-360, AIO-360, HIO-360 & TIO-360 Series (ID from the 172 aero-data source note)",
+      "title": "Operator's Manual O-360, HO-360, IO-360, AIO-360, HIO-360 & TIO-360 Series",
       "publisher": "Lycoming Engines; copy hosted by an EAA chapter",
       "document": "Lycoming P/N 60297-12",
       "revision": "60297-12, 8th ed. Oct 2005, revision 60297-12-5 Dec 2009",
@@ -532,8 +532,8 @@
       "accessed": "2026-11-01",
       "access_status": "read_selected_pages",
       "sha256_prefix": "150de015b2d1bce7",
-      "applicability": "Uninstalled IO-360-L2A data: ratings (p. 2-2) and sea-level/altitude performance curve 13516-A (Figure 3-25, p. 3-40), drawn for the 160 hp rating; the 172S uses the 180 hp / 2700 rpm alternate rating. Cited pages carry no revision mark.",
-      "rights": {"holder": "Lycoming (copyright 2005 and 2009, all rights reserved)", "basis": "Copyrighted manual; third-party hosting grants no reuse right; selected chart points only (user decision 2026-11-01 18:43, GAPS Q5)", "redistribution": "facts_only", "copy_in_repository": false}
+      "applicability": "ID A14 from the 172 aero-data source note. Uninstalled IO-360-L2A data: ratings (p. 2-2), part-throttle fuel consumption curve 13518 (Figure 3-9, p. 3-24) and sea-level/altitude performance curve 13516-A (Figure 3-25, p. 3-40), drawn for the 160 hp rating; the 172S uses the 180 hp / 2700 rpm alternate rating. Cited pages carry no revision mark.",
+      "rights": {"holder": "Lycoming (copyright 2005 and 2009, all rights reserved)", "basis": "Copyrighted manual; third-party hosting grants no reuse right; selected chart points only (user decisions 2026-11-01 18:43 and 19:04, GAPS Q5)", "redistribution": "facts_only", "copy_in_repository": false}
     }
   ],
   "not_included": [

@@ -2,14 +2,14 @@
   "$comment": "Selected engine-curve points and POH cruise/glide values as cited facts; not a copy of any chart or table and not a flight model. Field guide: README.md in this directory. Schema: data/schema/performance-values.schema.json.",
   "schema_version": "1.0.0",
   "values_id": "gefly.aircraft.c172s-classic.performance-values",
-  "values_version": "0.1.0",
+  "values_version": "0.2.0",
   "status": "draft",
   "fidelity": "not validated",
   "manifest": {
     "path": "manifest.json",
     "manifest_id": "gefly.aircraft.c172s-classic"
   },
-  "extraction": "User decision 2026-11-01 18:43 (GAPS Q5): extract only the needed points of the Lycoming IO-360-L2A power curve as cited facts, never the whole chart; the no-piecemeal rule of the POH extraction applies. POH cruise and glide values follow the user decision 2026-11-01 13:59. Purpose: calibration of a JSBSim piston engine and airframe in the circuit regime (research note docs/research/2026-11-01-c172s-poh-values.md). Chart points were read on page images rendered at 400 dpi.",
+  "extraction": "User decision 2026-11-01 18:43 (GAPS Q5): extract only the needed points of the Lycoming IO-360-L2A power curve as cited facts, never the whole chart; user decision 2026-11-01 19:04 (GAPS Q5): likewise selected points of the Lycoming fuel-consumption chart (Figure 3-9); the no-piecemeal rule of the POH extraction applies. POH cruise and glide values follow the user decision 2026-11-01 13:59. Purpose: calibration of a JSBSim piston engine and airframe in the circuit regime (research note docs/research/2026-11-01-c172s-poh-values.md). Chart points were read on page images rendered at 400 dpi.",
   "engine_ratings": {
     "rated_power_normal": {
       "value": 119312.0,
@@ -308,6 +308,124 @@
       ]
     }
   },
+  "engine_fuel": {
+    "rpm_2400_best_power": {
+      "mixture": "best_power",
+      "condition": "Uninstalled engine, part-throttle fuel consumption, mixture manually set to best power; 2400 rpm curve; fuel minimum grade 91/96; chart drawn for the 160 hp rating (its percent-rated-power marks 55/65/75 % sit at 88/104/120 hp)",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "A14",
+          "revision": "60297-12, 8th ed. Oct 2005, revision 60297-12-5 Dec 2009",
+          "page": "3-24",
+          "section": "Section 3, Figure 3-9 Part Throttle Fuel Consumption IO-360-L2A, curve no. 13518 (label may be cut at the page edge); no revision mark on page"
+        }
+      ],
+      "reading": "read_from_chart",
+      "selection": "Two points on the 2400 rpm best-power curve: 120 hp (downwind/cruise power region) and the curve end at 160 hp (full-power climb region); together with best_economy they bound BSFC in the circuit regime. 1 of 6 curves for this series.",
+      "conversion": "rpm x 2 pi / 60 (4 decimals); hp x 745.69987158227022 W (0.1 W); lb/h x 0.45359237 kg / 3600 s, rounded to 5 significant digits",
+      "uncertainty": "Read off a scanned chart with pixel interpolation between grid lines (10 hp, 5 lb/h; the scan's horizontal grid spacing varies by up to 10 %): fuel flow +/-1 lb/h; power taken on the hp grid line or at the curve end (+/-1 hp). Uninstalled engine; fuel mass flow as charted, no fuel density needed.",
+      "points": [
+        {
+          "engine_speed": {
+            "value": 251.3274,
+            "unit": "rad/s",
+            "original_value": 2400,
+            "original_unit": "rpm"
+          },
+          "power": {
+            "value": 89484.0,
+            "unit": "W",
+            "original_value": 120,
+            "original_unit": "hp"
+          },
+          "fuel_flow": {
+            "value": 0.0076229,
+            "unit": "kg/s",
+            "original_value": 60.5,
+            "original_unit": "lb/h"
+          }
+        },
+        {
+          "engine_speed": {
+            "value": 251.3274,
+            "unit": "rad/s",
+            "original_value": 2400,
+            "original_unit": "rpm"
+          },
+          "power": {
+            "value": 119312.0,
+            "unit": "W",
+            "original_value": 160,
+            "original_unit": "hp"
+          },
+          "fuel_flow": {
+            "value": 0.0095254,
+            "unit": "kg/s",
+            "original_value": 75.6,
+            "original_unit": "lb/h"
+          }
+        }
+      ]
+    },
+    "rpm_2400_best_economy": {
+      "mixture": "best_economy",
+      "condition": "As rpm_2400_best_power, mixture manually set to best economy",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "A14",
+          "revision": "60297-12, 8th ed. Oct 2005, revision 60297-12-5 Dec 2009",
+          "page": "3-24",
+          "section": "Section 3, Figure 3-9 Part Throttle Fuel Consumption IO-360-L2A, curve no. 13518 (label may be cut at the page edge); no revision mark on page"
+        }
+      ],
+      "reading": "read_from_chart",
+      "selection": "The end of the 2400 rpm best-economy curve at 120 hp (75 % of the 160 hp rating), paired with the best-power point at the same power.",
+      "conversion": "rpm x 2 pi / 60 (4 decimals); hp x 745.69987158227022 W (0.1 W); lb/h x 0.45359237 kg / 3600 s, rounded to 5 significant digits",
+      "uncertainty": "As rpm_2400_best_power: fuel flow +/-1 lb/h.",
+      "points": [
+        {
+          "engine_speed": {
+            "value": 251.3274,
+            "unit": "rad/s",
+            "original_value": 2400,
+            "original_unit": "rpm"
+          },
+          "power": {
+            "value": 89484.0,
+            "unit": "W",
+            "original_value": 120,
+            "original_unit": "hp"
+          },
+          "fuel_flow": {
+            "value": 0.0065393,
+            "unit": "kg/s",
+            "original_value": 51.9,
+            "original_unit": "lb/h"
+          }
+        }
+      ]
+    },
+    "rpm_2700": {
+      "mixture": "best_power",
+      "condition": "As rpm_2400_best_power, at 2700 rpm",
+      "status": "unknown",
+      "citations": [
+        {
+          "source_id": "A14",
+          "revision": "60297-12, 8th ed. Oct 2005, revision 60297-12-5 Dec 2009",
+          "page": "3-24",
+          "section": "Section 3, Figure 3-9 Part Throttle Fuel Consumption IO-360-L2A, curve no. 13518 (label may be cut at the page edge); no revision mark on page"
+        }
+      ],
+      "reading": "read_from_chart",
+      "selection": "Requested for the 172S rating (180 hp at 2700 rpm).",
+      "uncertainty": "Figure 3-9 has curves for 2400 and 2200 rpm (best power) and 2400, 2200, 2000 and 1800 rpm (best economy) only.",
+      "points": [],
+      "todo": "No Lycoming 2700 rpm fuel curve was read; take full-power fuel flow from another cited source or treat extrapolation as a derived modelling choice."
+    }
+  },
   "cruise": {
     "pa_2000ft_standard_temperature": {
       "condition": "2550 lb; recommended lean mixture at all altitudes (POH Section 4, cruise); pressure altitude 2000 ft; standard temperature column. Percent BHP as printed; the power it refers to is not stated on the page.",
@@ -563,8 +681,12 @@
       "reason": "Not needed for the circuit-regime calibration; whole-chart digitisation is excluded by the user decision of 2026-11-01 18:43. Altitude-panel readings appear only as a cross-check in the research note."
     },
     {
-      "item": "Lycoming part-throttle fuel consumption (Figure 3-9) and the operating-conditions table (75 %/65 % cruise for the 160 hp rating)",
-      "reason": "Fuel flow is taken from the POH cruise table of the installed engine; the table is for the 160 hp rating, not the 172S alternate rating."
+      "item": "Lycoming Figure 3-9: the 2200 rpm best-power curve, the 2200/2000/1800 rpm best-economy curves and other points on the 2400 rpm curves",
+      "reason": "Only the points bounding BSFC at 2400 rpm are needed (user decision 2026-11-01 19:04, GAPS Q5); whole-chart digitisation stays excluded."
+    },
+    {
+      "item": "Lycoming operating-conditions table (75 %/65 % cruise for the 160 hp rating)",
+      "reason": "Drawn up for the 160 hp rating, not the 172S alternate rating; installed fuel flow comes from the POH cruise table."
     },
     {
       "item": "POH cruise table: 20 deg C below/above standard columns, other pressure altitudes (Figure 5-8 sheets 1 and 2), range and endurance profiles (Figures 5-9, 5-10)",
@@ -576,6 +698,7 @@
     }
   ],
   "pending": [
+    "Cruise power_fraction is the POH's printed percent BHP; Figure 5-8 (p. 5-19) does not state its reference power. The POH rates the engine 180 BHP at 2700 rpm (S17 pp. 1-4 and 2-5), but that the percentages refer to 180 hp is an unverified inference: treat the basis as unknown and never multiply by the Lycoming 160 hp normal rating.",
     "Select the propeller and installation model before using uninstalled Lycoming power for JSBSim calibration; the TCDS static rpm (2300-2400 at full throttle) is the propeller check.",
     "Check later 172SPHUS revisions applicable to 172S9491-172S9809 for changed cruise and glide values (GAPS Q3 manual revision).",
     "Read FAA engine TCDS 1E10 (S8) to confirm the IO-360-L2A ratings against the state-of-design document."

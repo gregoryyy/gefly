@@ -34,7 +34,7 @@ A **quantity** has `value` in SI (`kg`, `m/s`, `m`, `rad/s`, `W`), `original_val
 `original_unit` as published, `status`, `citations`, `conversion`, `uncertainty` and
 optionally `condition`, `reference`, `conflicts` and `todo`. `reference` (`IAS`, `CAS`,
 `TAS`) is required for every `m/s` quantity. The validator recomputes each SI value from
-`original_value` with a fixed factor table (lb, kt, in, rpm, hp, ft, ft/min; for the value files also nm, inHg, in^3, gal/h, %) and rejects a difference
+`original_value` with a fixed factor table (lb, kt, in, rpm, hp, ft, ft/min; for the value files also nm, inHg, in^3, gal/h, lb/h, %) and rejects a difference
 above 0.5e-4·max(1, |value|) or an unlisted unit pair. A **fact** (identification
 text) has `value`, `status`, `citations` and optional `derivation`, `note`, `todo`. A
 **citation** names `source_id`, the source's `revision`, `page` and optional `section`.
@@ -91,17 +91,22 @@ never the whole chart):
   at 2000, 2400, 2500 and 2700 rpm with the manifold pressure at the curve end; part throttle
   at 2000 rpm / 20 and 24 inHg and 2400 rpm / 26 inHg. 2300 rpm is `unknown`: the chart
   has no such curve. `reading: read_from_chart` with ±2–3 hp.
+- `engine_fuel`: points of Lycoming curve 13518 (Figure 3-9, p. 3-24; user decision
+  2026-11-01 19:04, GAPS Q5), uninstalled engine: 2400 rpm best power at 120 and 160 hp,
+  2400 rpm best economy at 120 hp (fuel mass flow, ±1 lb/h), to bound BSFC. 2700 rpm is
+  `unknown`: the chart has no such curve.
 - `cruise`: POH Figure 5-8 (p. 5-19), 2550 lb, recommended lean, pressure altitude 2000 ft,
   standard temperature: rpm, percent BHP (as a fraction), KTAS and fuel flow for the six
-  rows 2100–2550 rpm.
+  rows 2100–2550 rpm. The page does not state the power the percentage refers to; do not
+  multiply it by the Lycoming 160 hp rating (see `pending`).
 - `glide`: best glide 68 KIAS (p. 3-3), ground distance from 12,000 ft (Figure 3-1,
   p. 3-14) and the glide ratio `derived` from it (about 9.1, zero wind).
 
-Series (`engine_sea_level`, `cruise`) hold points of several numbers, each with SI
+Series (`engine_sea_level`, `engine_fuel`, `cruise`) hold points of several numbers, each with SI
 `value`/`unit` and published `original_value`/`original_unit`; points must be strictly
-increasing by engine speed, then manifold pressure. SI units are `W`, `rad/s`, `Pa`,
-`m^3`, `m^3/s`, `m`, `m/s` (with `IAS`/`CAS`/`TAS`) and `1` (fraction or ratio); `m^3`
-and `m^3/s` are checked relatively, so give them about 5 significant digits. A separate
+increasing by engine speed, then manifold pressure or power. SI units are `W`, `rad/s`,
+`Pa`, `m^3`, `m^3/s`, `kg/s`, `m`, `m/s` (with `IAS`/`CAS`/`TAS`) and `1` (fraction or
+ratio); `m^3`, `m^3/s` and `kg/s` are checked relatively, so give them about 5 significant digits. A separate
 file and [schema](../../schema/performance-values.schema.json) were chosen instead of
 extending `poh-values.json` because these values mix an engine-manufacturer chart with
 POH tables, need new units and multi-number points, and leave the POH file of PR #17

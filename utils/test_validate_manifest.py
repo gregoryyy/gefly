@@ -377,6 +377,7 @@ class PerformanceValuesValidationTests(unittest.TestCase):
         self.assertAlmostEqual(vm.CONVERSIONS[("in^3", "m^3")], 1.6387064e-5, places=15)
         self.assertAlmostEqual(vm.CONVERSIONS[("gal/h", "m^3/s")] * 3600, 3.785411784e-3,
                                places=15)
+        self.assertAlmostEqual(vm.CONVERSIONS[("lb/h", "kg/s")] * 3600, 0.45359237, places=15)
         self.assertEqual(vm.CONVERSIONS[("%", "1")], 0.01)
 
     def test_r_data_1_citation_must_resolve_in_named_manifest(self):
@@ -483,12 +484,57 @@ class PerformanceValuesValidationTests(unittest.TestCase):
         document = self.values()
         points = document["engine_sea_level"]["part_throttle"]["points"]
         points[1] = copy.deepcopy(points[0])
-        self.assertRejected(document, "part_throttle.points[1]: (2000, 20.0) not above")
+        self.assertRejected(document, "part_throttle.points[1]: (2000, 20.0, 77) not above")
+        document = self.values()
+        points = document["engine_fuel"]["rpm_2400_best_power"]["points"]
+        points[0], points[1] = points[1], points[0]
+        self.assertRejected(document, "rpm_2400_best_power.points[1]: (2400, 120) not above")
 
     def test_r_fid_3_fidelity_must_stay_not_validated(self):
         document = self.values()
         document["fidelity"] = "validated"
         self.assertRejected(document, "$.fidelity: must equal")
+
+    def glide_ratio_mismatch(self, document):
+        """Recompute the derived glide ratio from its distance reading and 12,000 ft."""
+        glide = document["glide"]
+        distance = glide["distance_12000ft"]
+        self.assertIn("12,000 ft", distance["condition"])
+        expected = distance["value"] / (12000 * vm.CONVERSIONS[("ft", "m")])
+        ratio = glide["glide_ratio"]
+        return [name for name, value in (("value", ratio["value"]),
+                                         ("original_value", ratio["original_value"]))
+                if abs(value - expected) > vm.CONVERSION_TOLERANCE * max(1.0, expected)]
+
+    def test_r_data_2_derived_glide_ratio_matches_distance_and_height(self):
+        self.assertEqual(self.glide_ratio_mismatch(self.values()), [])
+        document = self.values()
+        document["glide"]["distance_12000ft"]["value"] = 17.0 * 1852
+        document["glide"]["distance_12000ft"]["original_value"] = 17.0
+        self.assertEqual(self.glide_ratio_mismatch(document), ["value", "original_value"])
+        document = self.values()
+        document["glide"]["glide_ratio"]["value"] = 9.5
+        self.assertEqual(self.glide_ratio_mismatch(document), ["value"])
+
+    def test_r_data_2_wrong_fuel_flow_conversion_fails(self):
+        document = self.values()
+        point = document["engine_fuel"]["rpm_2400_best_economy"]["points"][0]
+        point["fuel_flow"]["value"] = point["fuel_flow"]["original_value"] * 0.45359237 / 3600 * 1.01
+        self.assertRejected(document, "rpm_2400_best_economy.points[0].fuel_flow: value")
+
+    def test_fuel_series_needs_mixture_and_matching_units(self):
+        document = self.values()
+        del document["engine_fuel"]["rpm_2400_best_power"]["mixture"]
+        self.assertRejected(document, "rpm_2400_best_power: missing required field 'mixture'")
+        document = self.values()
+        document["engine_fuel"]["rpm_2400_best_power"]["points"][0]["fuel_flow"][
+            "original_unit"] = "gal/h"
+        self.assertRejected(document, "fuel_flow.original_unit: must equal \"lb/h\"")
+
+    def test_unknown_fuel_series_needs_todo(self):
+        document = self.values()
+        del document["engine_fuel"]["rpm_2700"]["todo"]
+        self.assertRejected(document, "rpm_2700: missing required field 'todo'")
 
     def test_cli_validates_performance_values_with_sibling_manifest(self):
         with tempfile.TemporaryDirectory(prefix="gefly-perf-test-") as directory:

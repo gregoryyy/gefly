@@ -11,8 +11,8 @@ and each SI value matches its published value through a fixed conversion-factor 
 A poh-values.json file cites the source register of the sibling manifest it names (which is
 schema-validated too), its airspeed-calibration points must be strictly increasing in IAS,
 and a quantity key ending in _ias, _cas or _tas must carry that airspeed reference.
-A performance-values.json file follows the same sibling-manifest rules; its engine and cruise
-series points must be strictly increasing by engine speed, then manifold pressure.
+A performance-values.json file follows the same sibling-manifest rules; its engine, fuel and
+cruise series points must be strictly increasing by engine speed, then manifold pressure/power.
 """
 
 from __future__ import annotations
@@ -53,13 +53,14 @@ CONVERSIONS = {
     ("inHg", "Pa"): 3386.389,  # conventional inch of mercury (NIST SP 811)
     ("in^3", "m^3"): 0.0254 ** 3,
     ("gal/h", "m^3/s"): 3.785411784e-3 / 3600,  # US gallon, exact
+    ("lb/h", "kg/s"): 0.45359237 / 3600,
     ("%", "1"): 0.01,
     ("1", "1"): 1.0,
 }
 CONVERSION_TOLERANCE = 0.5e-4  # relative to max(floor, |SI value|): manifests round to 4 decimals
 # Units whose SI values are far below 1 are checked purely relatively (floor 0), so they
 # must be stated to about 5 significant digits; all other units use floor 1.
-TOLERANCE_FLOOR = {"m^3": 0.0, "m^3/s": 0.0}
+TOLERANCE_FLOOR = {"m^3": 0.0, "m^3/s": 0.0, "kg/s": 0.0}
 
 
 class SchemaError(Exception):
@@ -298,8 +299,8 @@ def key_references(document, errors, groups=POH_GROUPS):
                                   f"{reference!r}, got {quantity.get('reference')!r}")
 
 
-def series_order(document, errors, groups=("engine_sea_level", "cruise")):
-    """Series points must be strictly increasing by engine speed, then manifold pressure."""
+def series_order(document, errors, groups=("engine_sea_level", "engine_fuel", "cruise")):
+    """Series points must be strictly increasing by engine speed, then manifold pressure/power."""
     for group in groups:
         series = document.get(group)
         if not isinstance(series, dict):
@@ -311,7 +312,7 @@ def series_order(document, errors, groups=("engine_sea_level", "cruise")):
             keys = []
             for point in points:
                 key = []
-                for field in ("engine_speed", "manifold_pressure"):
+                for field in ("engine_speed", "manifold_pressure", "power"):
                     measure = point.get(field) if isinstance(point, dict) else None
                     if isinstance(measure, dict):
                         key.append(measure.get("original_value"))
@@ -324,7 +325,8 @@ def series_order(document, errors, groups=("engine_sea_level", "cruise")):
             for index in range(1, len(keys)):
                 if keys[index] <= keys[index - 1]:
                     errors.append(f"$.{group}.{name}.points[{index}]: {keys[index]} not above "
-                                  f"previous {keys[index - 1]} (engine speed, manifold pressure)")
+                                  f"previous {keys[index - 1]} (engine speed, then manifold "
+                                  f"pressure and power)")
 
 
 def validate_poh_values(document, schema, manifest):

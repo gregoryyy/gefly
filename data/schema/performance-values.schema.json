@@ -6,7 +6,7 @@
   "type": "object",
   "required": [
     "schema_version", "values_id", "values_version", "status", "fidelity", "manifest",
-    "extraction", "engine_ratings", "engine_sea_level", "cruise", "glide",
+    "extraction", "engine_ratings", "engine_sea_level", "engine_fuel", "cruise", "glide",
     "not_extracted", "pending", "prepared"
   ],
   "additionalProperties": false,
@@ -34,6 +34,12 @@
       "type": "object",
       "minProperties": 1,
       "additionalProperties": {"$ref": "#/$defs/engine_series"}
+    },
+    "engine_fuel": {
+      "description": "Selected points of an engine fuel-consumption chart, one series per curve and mixture setting.",
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/fuel_series"}
     },
     "cruise": {
       "description": "Selected cruise-table rows, one series per altitude/temperature column.",
@@ -107,11 +113,11 @@
     },
     "si_unit": {
       "description": "SI storage units; '1' is a dimensionless number (fraction or ratio).",
-      "enum": ["m", "m/s", "W", "rad/s", "Pa", "m^3", "m^3/s", "1"]
+      "enum": ["m", "m/s", "W", "rad/s", "Pa", "m^3", "m^3/s", "kg/s", "1"]
     },
     "original_unit": {
       "description": "Units as published. The validator's factor table decides which pairs with an SI unit are allowed.",
-      "enum": ["ft", "kt", "nm", "hp", "rpm", "inHg", "in^3", "gal/h", "%", "1"]
+      "enum": ["ft", "kt", "nm", "hp", "rpm", "inHg", "in^3", "gal/h", "lb/h", "%", "1"]
     },
     "quantity": {
       "description": "A single cited value with its condition. Airspeeds (m/s) need reference IAS, CAS or TAS; no other unit may carry a reference. In a quantity group, a key ending in _ias, _cas or _tas must carry that reference (validator rule).",
@@ -140,7 +146,7 @@
           "then": {"required": ["reference"]}
         },
         {
-          "if": {"properties": {"unit": {"enum": ["m", "W", "rad/s", "Pa", "m^3", "m^3/s", "1"]}}},
+          "if": {"properties": {"unit": {"enum": ["m", "W", "rad/s", "Pa", "m^3", "m^3/s", "kg/s", "1"]}}},
           "then": {"properties": {"reference": false}}
         },
         {
@@ -185,6 +191,16 @@
         "power": {"allOf": [{"$ref": "#/$defs/measure"}, {"properties": {"unit": {"const": "W"}, "original_unit": {"const": "hp"}, "reference": false}}]}
       }
     },
+    "fuel_point": {
+      "type": "object",
+      "required": ["engine_speed", "power", "fuel_flow"],
+      "additionalProperties": false,
+      "properties": {
+        "engine_speed": {"$ref": "#/$defs/engine_speed"},
+        "power": {"allOf": [{"$ref": "#/$defs/measure"}, {"properties": {"unit": {"const": "W"}, "original_unit": {"const": "hp"}, "reference": false}}]},
+        "fuel_flow": {"allOf": [{"$ref": "#/$defs/measure"}, {"properties": {"unit": {"const": "kg/s"}, "original_unit": {"const": "lb/h"}, "reference": false}}]}
+      }
+    },
     "cruise_point": {
       "type": "object",
       "required": ["engine_speed", "power_fraction", "true_airspeed", "fuel_flow"],
@@ -224,6 +240,25 @@
         "conversion": {"type": "string", "minLength": 1},
         "uncertainty": {"type": "string", "minLength": 1},
         "points": {"type": "array", "items": {"$ref": "#/$defs/engine_point"}},
+        "todo": {"type": "string", "minLength": 1}
+      },
+      "allOf": [{"$ref": "#/$defs/series_rules"}]
+    },
+    "fuel_series": {
+      "description": "Selected points read off one fuel-consumption curve. The validator requires points strictly increasing by engine speed, then power.",
+      "type": "object",
+      "required": ["mixture", "condition", "status", "citations", "reading", "selection", "uncertainty", "points"],
+      "additionalProperties": false,
+      "properties": {
+        "mixture": {"enum": ["best_power", "best_economy"]},
+        "condition": {"type": "string", "minLength": 1},
+        "status": {"enum": ["sourced", "unknown"]},
+        "citations": {"$ref": "#/$defs/citations"},
+        "reading": {"$ref": "#/$defs/reading"},
+        "selection": {"type": "string", "minLength": 1},
+        "conversion": {"type": "string", "minLength": 1},
+        "uncertainty": {"type": "string", "minLength": 1},
+        "points": {"type": "array", "items": {"$ref": "#/$defs/fuel_point"}},
         "todo": {"type": "string", "minLength": 1}
       },
       "allOf": [{"$ref": "#/$defs/series_rules"}]
