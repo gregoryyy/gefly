@@ -63,6 +63,8 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 ## 2. First browser exercise
 
+- [x] 2.0 Deliver a local experimental airborne free-flight prototype: real JSBSim study worker, procedural scene, keyboard/touchpad input, live instruments, cockpit/chase views and pause/reset; independent quality and scoped browser validation passed. See [application](../app/README.md). Uses local generic research data and a visible adjustable study input offset; this does not complete the 172S model, official EDFE scenery, accepted circuit or milestone gates below. Peer pending.
+
 - [ ] 2.1 Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.
 - [ ] 2.3 code2 implements the corresponding browser controls, instruments and exercise feedback against frozen contracts **in parallel with 2.2**.

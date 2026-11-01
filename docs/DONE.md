@@ -3,6 +3,46 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 23:21 — Fly the local browser prototype
+
+TODO: 2.0 complete as an experimental slice; 1.3.2–1.3.4 and the first-exercise gates remain open.
+Agent: Codex orchestrator; flight_engine/code1 and flight_scene/code2 implemented
+independent paths in parallel, with flight_housekeeping maintaining app instructions.
+Independent quality: flight_housekeeping (excluding its own README); independent
+validation: flight_validate.
+
+**Implementation notes**
+
+Added an actual browser application: procedural 3D scenery, cockpit/chase views,
+keyboard and touchpad controls, live TAS/attitude/study-altitude/heading/VSI displays,
+throttle, pause and restart. The existing JSBSim worker owns fixed 1/120 s steps;
+there is no replacement UI physics or scripted-flight fallback. The visible,
+adjustable study roll offset reuses the E1 input fixture, not aircraft coefficients.
+`just build-flight-engine` builds ignored local research assets; `just fly` starts
+localhost:5173. npm versions and integrity hashes are locked. Browser CI checks the
+UI build and lifecycle tests without downloading or distributing model assets.
+
+The strict build, five session tests and ten-check actual-Chrome smoke passed.
+Independent browser validation exercised controls, focus release, reset, view-state
+preservation, missing runtime and WebGL failure. The ten-second assisted baseline
+remained airborne with maximum bank 4.26°. Both review findings were fixed and
+rechecked. See the scoped [quality/validation record](reviews/2026-11-01-browser-prototype.md).
+
+**Deviations**
+
+This local prototype advances the product while the project-owned 172S model and
+official EDFE data remain incomplete. It uses the generic research model locally,
+procedural geography, TAS and the study altitude datum. It does not supply validated
+PPL handling, QNH/QFE, navigation, circuit assessment or a public deployment. The
+production UI bundle excludes the restricted research runtime. Peer pending;
+no simulator milestone or release is accepted.
+
+**Insights**
+
+Connecting the working study to controls and a flight deck supplies a usable place
+to test each next realism increment. Short browser smoke checks expose integration
+failures that isolated helpers cannot reveal.
+
 ## 2026-11-01 22:14 — Reconcile PR 27 with the assurance and CI layout
 
 TODO: 1.3.1 complete; 1.15 retained; 1.3.2–1.3.4 remain open.

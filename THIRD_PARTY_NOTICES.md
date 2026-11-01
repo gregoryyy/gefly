@@ -42,3 +42,7 @@ No aircraft manuals/models, geographic/chart datasets, JSBSim/FlightGear code,
 community add-ons or LLM runtime libraries have been bundled. Research links are
 references, not grants to reuse those materials. Future additions retain their
 own source, applicability and rights review in [SBOM](docs/SBOM.md).
+
+## Browser prototype
+
+The application bundles three.js 0.187.0, Copyright © 2010–2026 three.js authors, under the MIT license. The complete notice is retained in [LICENSES/three-MIT.txt](LICENSES/three-MIT.txt). Vite, TypeScript, type declarations and Playwright are development/test dependencies with their licenses retained in installed packages; see [SBOM](docs/SBOM.md) and the locked dependency inventory. JSBSim and its generic study aircraft data are built locally under the existing study terms and are excluded from tracked/public application artifacts.

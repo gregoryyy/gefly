@@ -28,7 +28,7 @@ Protect source code, build environment, dependency integrity, aircraft/reference
 The foundation workflow runs the committed offline gate on pull requests to
 `main` and pushes to `main`. Its token has only `contents: read`; checkout does
 not persist credentials. It uses immutable action commits, no repository secrets,
-package installation, live provider calls or document rendering. Pull-request
+live provider calls or document rendering. The repository-tools job makes no package installation; the separate browser-application job installs locked npm dependencies and runs the UI build/session tests without model data. Pull-request
 code executes in the normal `pull_request` context, never a privileged
 `pull_request_target` context. The test process is not a sandbox for arbitrary
 local code; inspect contributions before running them on a developer machine.
@@ -95,3 +95,7 @@ data reaches a local or hosted model before integration, including redaction,
 retention and cost/rate controls. Open-source code does not make private community
 records public. Validate uploaded packages as untrusted data and preserve a
 usable simulator path when community or AI services are unavailable.
+
+## Local browser flight prototype
+
+The experimental Vite server binds to 127.0.0.1 and allowlists only the study worker and its three generated runtime files. It does not expose the repository through that middleware. npm installation and the pinned study build download upstream dependencies; the running application uses local assets, no provider calls, permissions, accounts, telemetry or persistence. Generated generic aircraft data stays local and is excluded from the production UI build. Browser checks cover missing runtime, WebGL failure, control release and focus-loss pause. The UI-only production build is not a published simulator deployment.
