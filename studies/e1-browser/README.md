@@ -163,3 +163,18 @@ Observations:
   Smooth motion at 120 Hz needs either `state_hz` 120 or render-side interpolation
   between states; the contract work (TODO 1.4) should decide which.
 - The scene is a light workload (6 draw calls, no terrain or imagery).
+
+### CesiumJS render driven by JSBSim (reference Mac): invalid run
+
+Run by the user on 2026-11-01, Chrome 156, `?source=sim`. Raw JSON:
+[Cesium run, invalid](results/2026-11-01-m1-chrome156-cesium-sim-INVALID.json)
+(re-serialized from the pasted object; values unchanged).
+
+The WebGL drawing buffer was **300×150 px** against a 1512×817 viewport: the hosted
+page's content-security policy blocks Cesium's external `widgets.css`, so the canvas
+kept its default size. The reported 120 fps and 9.4 ms p99 therefore measure a
+thumbnail and are **not evidence** for the budget. Heading self-check, ion-free
+loading and the 60 Hz JSBSim stream did work. Fix: inline canvas-sizing CSS in
+`render/cesium.html` and an invalid-run guard in `render/meter.js`; the hosted page
+was republished, and the Cesium step needs a repeat. Hosting details:
+[hosted test page](hosted/README.md).
