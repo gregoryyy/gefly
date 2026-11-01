@@ -3,6 +3,16 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 18:16 — Record local review of first Claude PRs
+
+Agent: Codex orchestrator; first_pr_docs_review performed independent local
+source inspection. Reviewed Claude PRs #4–#6 at `48b2991`; three medium findings
+remain unresolved. [Report](reviews/2026-11-01-first-claude-prs.md) includes
+reproductions, validation scope and frozen packet hash. The fresh Codex CLI
+failed before reviewer initialization on the read-only filesystem; formal peer
+acceptance remains blocked and TODO 0.19 stays open. No product fixes made.
+Current foundation CI passed 41 tests; study tests passed 7 and skipped 9.
+
 ## 2026-11-01 12:33 — Validate the E1 browser check; publish the M1 test page
 
 TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator; validate subagent.
