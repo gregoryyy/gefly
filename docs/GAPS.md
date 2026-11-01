@@ -76,7 +76,8 @@ webkit browsers esp. chrome latest. optional controls: bind orientation from
 paired iphone”.
 
 Recorded: reference **MacBook Pro (Apple M1)** on the **current macOS release**;
-**Chrome (latest stable) as primary browser**, Safari secondary. Orchestrator note:
+**Chrome (latest stable) as primary browser**; Safari secondary is an orchestrator
+assumption from “webkit browsers”, to be confirmed. Orchestrator note:
 desktop Chrome uses the Blink engine, not WebKit; Safari is the WebKit browser, so
 both are listed. "Latest" is pinned to exact versions whenever a measurement is
 recorded. New optional control: **device orientation from a paired iPhone**

@@ -241,8 +241,10 @@ Access date for all rows: 2026-11-01. "Pinned" = commit/tag actually inspected.
 
 ## Risks
 
-1. WASM determinism and native↔WASM equivalence are untested; implementation-defined
-   RNG and libm make bit equality across native and WASM unlikely.
+1. WASM determinism and native↔WASM equivalence were untested at writing; implementation-defined
+   RNG and libm make bit equality across native and WASM unlikely. *Update 2026-11-01:*
+   the [JSBSim study](../../studies/e1-jsbsim/README.md) found a repeatable WASM build
+   that is not bit-identical to native (≈1e-13 relative).
 2. No upstream JSBSim WASM CI; wrapper is beta and single-maintainer.
 3. No license-clean 172S aircraft definition exists; a new sourced XML is needed
    (E2 evaluation, separate from E1).
