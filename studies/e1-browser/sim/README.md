@@ -1,8 +1,9 @@
 # E1 browser check: JSBSim WASM worker (`sim/`)
 
-Status: implemented and run once in the cloud container (2026-11-01).
+Status: implemented and run in the cloud container (2026-11-01).
 **Preliminary evidence only** (headless Chromium, Intel Xeon container CPU, not the
-reference M1/Chrome). Not reviewed. Implements the worker side of the
+reference M1/Chrome). Quality-reviewed and validated as preliminary evidence; see
+[the study summary](../README.md). Implements the worker side of the
 [shared message contract v0](../README.md#shared-worker-message-contract-v0).
 
 ## Files

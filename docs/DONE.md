@@ -3,6 +3,25 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 12:33 — Validate the E1 browser check; publish the M1 test page
+
+TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator; validate subagent.
+
+**Implementation notes**
+
+Local validate at `15dbd83`: no acceptance claim from the container; status labels
+match results. Documentation fixes applied: render ranges reconciled and labelled
+not evaluable, latency/replay qualified as preliminary, seed and extra `ready.build`
+fields and synthetic-source validation recorded as v0.1, status lines updated, CPU
+headroom and R-SIM-2 deferred to the reference run. Published a private test page
+for the reference M1/Chrome run (artifact, built WASM included) and added a visible
+results panel to the render pages.
+
+**Deviations**
+
+Acceptance blocked until the reference M1/Chrome run. The hosted page is not
+cross-origin isolated and may block CesiumJS run-time loads. Peer pending (batched).
+
 ## 2026-11-01 12:13 — Review and fix the E1 browser check
 
 TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator; quality, code1 and

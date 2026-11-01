@@ -1,6 +1,7 @@
 # E1 browser check: JSBSim WASM worker and 3D rendering
 
-Status: planned; contract frozen by the orchestrator before parallel work
+Status: implemented and run in the cloud container; quality-reviewed (renewed review
+clean except accepted CDN SRI) and validated as preliminary evidence (2026-11-01).
 (2026-11-01). Decision context: [GAPS Q17](../../docs/GAPS.md) selected JSBSim;
 rendering, 2D map, language and the worker arrangement remain proposals until this
 check. Prior evidence: [native JSBSim study](../e1-jsbsim/README.md) and the
@@ -82,7 +83,13 @@ not part of v0:
   `wall_ms` is `performance.timeOrigin + performance.now()` in both page and worker.
 - Benchmark-only messages in `sim/`: `run.until_step`, `stats` request/reply and a
   `burst` mode.
-- The synthetic source adds `ready.build.synthetic`.
+- The synthetic source adds `ready.build.synthetic`; the JSBSim worker adds
+  `ready.build.jsbsim_commit`, `wasm_sha256` and `flags`.
+- The synthetic source does not range-check control fields or `aircraft`; the JSBSim
+  worker rejects out-of-range values.
+- Seed: the study does not set JSBSim's `simulation/randomseed` and enables no
+  turbulence or other stochastic input; same-build replay was identical. Setting and
+  recording the seed explicitly is required for the product contract (TODO 1.4).
 
 ## Results (preliminary, cloud container)
 
@@ -93,15 +100,16 @@ reference M1; **no acceptance claim**. Details: [sim](sim/README.md), [render](r
 | --- | --- | --- |
 | Worker step cost p99, paced (across sessions) | 485–905 µs (two 30 s runs 510–525 µs; reviewer's 10 s rerun 905 µs); unpaced ≈ 24 µs | ≤ 830 µs: **unstable in container** |
 | Missed steps (> 8.3 ms late), worst replay | 2.67–3.33 per 10 s; max lag 5–6 steps / 45 ms, caught up within one tick, none dropped | ≤ 1 per 10 s: **fail in container** |
-| Input-to-state latency p95 (40 inputs) | 16.7–18.6 ms | ≤ 25 ms: pass |
-| Replay digest, same build | identical (`7c8783f3440f387a`) | identical |
-| Cesium median fps / p99 frame (synthetic) | 2.3–2.5 fps / 733–950 ms | ≤ 1.05 × refresh / ≤ 25 ms |
-| three.js median fps / p99 frame (synthetic) | 12–15 fps / 117–133 ms | ≤ 1.05 × refresh / ≤ 25 ms |
-| Render pages with `?source=sim` | Cesium 3.2 fps, three.js 12.0 fps; ≈ 60 Hz state, no errors | functional |
+| Input-to-state latency p95 (40 inputs) | 16.7–19.1 ms | ≤ 25 ms: pass (container, preliminary) |
+| Replay digest, same build | identical (`7c8783f3440f387a`) | identical: pass (container, preliminary) |
+| Cesium median fps / p99 frame (synthetic, across runs) | 2.1–2.9 fps / 717–950 ms | not evaluable (software GL) |
+| three.js median fps / p99 frame (synthetic, across runs) | 12–15 fps / 100–133 ms | not evaluable (software GL) |
+| Render pages with `?source=sim` (across runs) | Cesium 2.7–3.2 fps, three.js 12.0 fps; 60–66 Hz state, no errors | functional |
 
 Under the stricter missed-step definition the real-time budget **fails** in the
 container (occasional 4–17 ms single steps, cause unknown); latency and replay
 determinism pass; step-cost p99 is unstable in the noisy container (485–905 µs). Earlier "0 missed steps" used a 100 ms threshold. Rendering numbers reflect software GL
 and are not evidence for or against the budget. Next: the same runs on the reference
 M1/Chrome (exact versions, renderer string, refresh rate), then the stack decision
-(TODO 1.2.3).
+(TODO 1.2.3). Deferred to that run: worker and main-thread CPU headroom, and the
+R-SIM-2 check that different render rates leave the simulation unchanged.
