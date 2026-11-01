@@ -3,6 +3,26 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 13:31 — Draft Exercise 01 acceptance criteria
+
+TODO: 1.5 in progress. Agent: Claude Code orchestrator; product subagent (with source
+research).
+
+**Implementation notes**
+
+Added [EXERCISE-01](design/EXERCISE-01.md): holding-point start with engine running,
+12 phases with measures, units and state fields, pass/fail/feedback rules, assists,
+replay markers and environment cases; and its
+[source note](research/2026-11-01-exercise-01-sources.md). Tolerances are labelled by
+source: EASA AMC1 FCL.235 skill-test guidance (used as instructional adaptation),
+C172S POH (page-cited), EDFE operator material (cite-only), or instructional proposal
+pending instructor review.
+
+**Deviations**
+
+Draft, not frozen: runway, instructor reviewer, AIP circuit data and the POH climb-
+speed discrepancy are open; not yet reviewed. Peer pending (batched).
+
 ## 2026-11-01 13:29 — Draft the 172S classic-panel aircraft manifest
 
 TODO: 1.3 in progress. Agent: Claude Code orchestrator; housekeeping subagent.
