@@ -65,6 +65,27 @@ ROAD, EVAL and TODO. Exact reference Mac, macOS/browser versions, peripheral
 models, settings details and measured budgets remain foundation implementation
 choices in TODO 1.2.1; they were not selected by this answer.
 
+### Q18. Contracts v1 open questions (O-1..O-9)
+
+Why: TODO 1.4 contracts must be agreed before parallel product coding.
+
+Answer (O-3 datum): **2026-11-01 13:59, user** ([input](input/2026-11-01-datum-runway-poh-decisions.md)):
+“yes to proposals”. JSBSim runs on DHHN2016 physical heights treated as its
+ellipsoid height; ellipsoidal heights are computed outside the dynamics with GCG2016
+in Germany and EGM2008 elsewhere ([CONTRACTS](design/CONTRACTS.md) §1).
+
+Answer: **2026-11-01 13:00, user** (recorded by orchestrator, Claude Code;
+[input](input/2026-11-01-contracts-decisions.md)): “accept all, 8 start at hold
+point”. Decided: display-only interpolation with a 60 Hz state stream (never in
+digests or replay); WMM2025; JSBSim height datum to be established by research
+before choosing the geoid; per-step FNV-1a 64 plus SHA-256 checkpoints every 120
+steps; review seek by re-simulating from step 0; optional recorded trace with the
+input log authoritative; 172S control list from POH Section 7 by research (cited,
+not copied); the paired-iPhone profile stays in TODO 1.13; the first exercise
+starts at the runway holding point (see Q7).
+
+Resolved: 2026-11-01 13:00, user; carried into [CONTRACTS](design/CONTRACTS.md), Q7 and [TODO](TODO.md) 1.4/1.5.
+
 ### Q17. Which dynamics engine and web stack (E1)?
 
 Why: TODO 1.2 needs a reuse-first engine and browser stack decision (R-REUSE-1).
@@ -283,6 +304,12 @@ and product. Glass is a later configuration; A320 is a reference, not an initial
 ### Q7. First useful learning exercise and review partner?
 
 Why: determines whether the first slice is aircraft handling, instrument interpretation or a procedure, and how training claims can be reviewed. ~~Proposed: a bounded straight-and-level control/trim exercise, then coordinated turns;~~ (superseded by the 2026-11-01 answer below) product should refine objectives against the selected EASA syllabus with instructor review. Blocking: milestone 2 exercise acceptance, not generic physics experiments.
+
+Answer: **2026-11-01 13:00, user** (recorded by orchestrator, Claude Code;
+[input](input/2026-11-01-contracts-decisions.md)): “8 start at hold point”. The first
+exercise **starts at the runway holding point with the engine running**; engine
+start and taxi come later. This resolves the earlier orchestrator reading of
+“start” as take-off.
 
 Answer: **2026-11-01 07:04, user** (recorded by orchestrator, Claude Code; [2026-11-01 answers](input/2026-11-01-aircraft-license-exercise-answers.md)):
 “first learning exercise is start fly a pattern and land”. The first exercise is a

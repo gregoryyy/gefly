@@ -3,6 +3,36 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 13:59 — Confirm the height datum; contracts v1 agreed
+
+TODO: 1.4 complete pending merge. Agent: Claude Code orchestrator (no subagents).
+
+**Implementation notes**
+
+The user accepted the physical-height convention (GAPS Q18 O-3); CONTRACTS no longer
+marks it pending. With Q18 resolved and three review rounds closed, contracts v1 is
+the agreed basis for parallel product coding.
+
+**Deviations**
+
+Peer pending (batched); geoid grid full hashes and terrain beyond Hessen remain open.
+
+## 2026-11-01 12:58 — Draft shared contracts v1
+
+TODO: 1.4 in progress. Agent: Claude Code orchestrator; product subagent.
+
+**Implementation notes**
+
+Added [CONTRACTS](design/CONTRACTS.md): SI units and frames with conversion
+boundaries, fixed 1/120 s step and step-index clock, pilot-sense input schema with
+applied-step logging, three-layer state (sim/instruments/teaching), replay metadata
+with seed set before RunIC, 17 sourced fixtures, versioning and a v0.1→v1 message
+table. Proposed SPEC wording for R-SIM-3/R-SIM-4 is not applied.
+
+**Deviations**
+
+Draft only; nine open questions (O-1..O-9) need decisions; not yet independently
+reviewed. Peer pending (batched).
 ## 2026-11-01 13:07 — Draft the flight-experience package and LLM boundary
 
 TODO: 1.10 in progress. Agent: Claude Code orchestrator; product subagent.
