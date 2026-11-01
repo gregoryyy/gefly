@@ -279,6 +279,21 @@ the change.~~
 Resolved: 2026-11-01 11:54, user (supersedes the 07:22 per-PR scope); carried into SDLC, AGENTS, SPEC R-AGENT-7, the
 [agent workflow](agents/README.md), [peer](agents/peer.md) and the PR template.
 
+### Q20. How are model size and reasoning effort chosen for agent work?
+
+Why: tasks differ widely in difficulty and risk; one fixed model/effort either
+wastes cost on mechanical work or under-powers design, security and review work.
+
+Answer: **2026-11-01 18:46, user** (recorded by orchestrator, Claude Code;
+[input](input/2026-11-01-model-effort-selection.md)): “add to BOOT and project that
+the right model size and thinking effort is to be selected appropriately.”
+
+Resolved: 2026-11-01 18:46, user. The orchestrator selects model tier and reasoning effort per
+task by difficulty and risk; reviews use at least the tier of the reviewed work;
+no model identifiers in repository files. Carried into [AGENTS](../AGENTS.md),
+[BOOT](BOOT.md#dispatch-parallel-work-and-integration) and the
+[agent workflow](agents/README.md#runtime-setup).
+
 ## Open questions
 
 ### Q3. Which Cessna 172 variant, year and avionics fit?

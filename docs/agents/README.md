@@ -88,7 +88,9 @@ shared records and requests affected rechecks after repairs.
 
 Canonical role prompts live here. `.codex/agents/*.toml` registers one native Codex
 agent for each role and instructs it to read its matching document plus AGENTS.
-No model, reasoning level, credentials or sandbox overrides are imposed. The
+Native registrations impose no fixed model, reasoning level, credentials or sandbox
+overrides; instead the orchestrator chooses the model tier and reasoning effort per
+dispatch by task difficulty and risk ([BOOT](../BOOT.md#dispatch-parallel-work-and-integration), GAPS Q20). The
 project config enables agents with up to three concurrent worker threads; the
 host's policy and available slots still govern actual execution. The primary
 conversation becomes the orchestrator through AGENTS, not by auto-spawning a

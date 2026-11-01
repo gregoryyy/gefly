@@ -27,6 +27,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 - [x] 0.17 Add the cross-provider peer role, reciprocal dispatchers/router and tests; record actual Claude review of the Codex-authored addition and its accepted follow-up. Reverse live execution remains unclaimed.
 - [x] 0.18 Scope the cross-provider peer gate per Q15; superseded 2026-11-01 11:54 by proclens's batched cadence (every few PRs, *peer pending* in between, coverage required before milestone acceptance/release).
 - [ ] 0.19 Run the first batched Codex peer review of Claude-authored work since `3faf9c8` (PRs #4–#6 and later) on a machine with the Codex CLI.
+- [x] 0.20 Select model size and reasoning effort per task by difficulty and risk (Q20); recorded in AGENTS, BOOT and the agent workflow.
 
 ## 1. Foundation
 
