@@ -3,6 +3,92 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 00:53 — Claude peer review of Codex PRs #27–#30 and fixes (TODO 0.21)
+
+TODO: 0.21 in progress (#28b and #30 packets to renew). Agent: Claude Code orchestrator; peer
+dispatcher subagent (fresh Claude CLI 2.1.316 per packet; model evidence
+`claude-haiku-5-5` and `claude-opus-5-5`), code2 subagent (fixes), quality subagent
+(three rounds, final verdict accept).
+
+**Implementation notes**
+
+Report: [peer review](reviews/2026-11-01-codex-prs-27-30-peer.md) and
+[JSON](reviews/2026-11-01-codex-prs-27-30-peer.json), five packets frozen at main
+`396553c` (#28 split into 28a tooling and 28b docs). Router results: #27 accept;
+#28a changes_required; #28b and #30 review_blocked (material withheld, not defects);
+#29 accept. There were no critical or high findings.
+
+The fixes in this PR:
+- `status.ts` counts a DONE completion only per task ID. Exception or pending wording
+  cancels it; "peer pending" and "pending merge" still count as complete. A ticked
+  parent's record covers its subtasks, and a ticked parent with open subtasks gets
+  the warning `done-parent-open-children`.
+- `evidence.ts` checks that a cited source applies to the aircraft variant, using
+  known 172 model designators (case-insensitive; `S/N` is not read as a variant).
+- The SBOM CesiumJS row now says it is not adopted in the application yet.
+- The missing-engine smoke test serves a runtime copy without `dist/jsbsim.*`.
+- New `app/runtime.ts` and its tests prove that the `build-flight-engine` output is
+  the path `just fly` serves.
+
+Other #28b findings are handled in their own PRs: the CI text in #34, the E14 clash in
+#32, and the BRIEFING IDs match the SPEC edits in #33.
+
+Checks on Node 24: the assure suite passed 83 of 83; `assure check` reported 0 errors;
+the app suite passed 9 of 9; `utils/ci/run.py --require-node` passed with skipped
+checks (e1-jsbsim 9 of 23).
+
+**Deviations**
+
+- The real-engine browser smoke test was not run (no engine build and no Chrome here):
+  not evaluated.
+- Known limitations: the completion check still passes some unlisted negative wording
+  ("failing tests", "needs review"); 172I is not recognised; negated designators
+  ("not the 172S") are still read as naming the variant; "unstated" sources are
+  lenient (L3); `app/runtime.ts` is not type-checked (L6).
+- The fixes are Claude-authored, so they need the Codex peer review (TODO 0.19 batch).
+  The #28b and #30 packets need renewal with the withheld material.
+
+## 2026-11-02 00:25 — Contract fixes and renewed foundation review (TODO 1.6)
+
+TODO: 1.6 in progress. Agent: Claude Code orchestrator; a renewed quality/validate
+subagent re-checked the merged contract and record fixes.
+
+**Implementation notes**
+
+Branch fix/m1-contracts (separate PR) fixes the review blockers B1–B4 in CONTRACTS
+§10 (derived `setting_ref`, `sim_core`/`env_core`, worker-computed `ind`, single
+worker `seq` allocator, one rights enum, JCS/SHA-256 hashing), the VFE detent bands
+and phone-loss `fallback` source across SCENARIO-CONTRACTS, EXERCISE-01 and
+PHONE-CONTROL. The renewed review found B1–B4 fixed and seven low items. They are now
+fixed: §9 is marked as applied, the v1 `seq` text is kept apart from the v1.1
+proposal, `sim_core` naming, phone proposals use `proposal_id`, the EXERCISE-01 flap
+selection points to the AA2 radian bounds, the proposed EVAL section no longer reuses
+E14, C17 is in order, and Q16/TODO/study text says Apple M1 Pro.
+
+**Deviations**
+
+v1.1 contracts remain proposals until accepted (Q23 Q-S7). Peer pending (batched).
+
+## 2026-11-02 00:21 — Apply foundation-review record fixes (TODO 1.6)
+
+TODO: 1.6 in progress; 1.2.1.1 and 0.21 added. Agent: Claude Code orchestrator; the
+TODO 1.6 quality and validate subagents produced the findings.
+
+**Implementation notes**
+
+Applied the proposed SPEC edits (R-SIM-3, R-SIM-4 from CONTRACTS §9 plus the v1.1
+worker rules, R-COMM-1 AFIS information-only, R-BRIEF-1 failure states); removed stale
+stack/prototype text from SPEC and CONCEPT; reconciled GAPS Q16 to the measured M1
+Pro, fixed the stale PR #24 reference; added GAPS Q23, a register of the open design
+questions from SCENARIO-CONTRACTS, FDM-172S, EXERCISE-01, BRIEFING and PHONE-CONTROL;
+added TODO 1.2.1.1 (real-terrain re-test) and 0.21 (Claude review of Codex PRs
+#27–#30).
+
+**Deviations**
+
+Contract and tooling fixes are on separate branches; user scope decisions (Q23) open.
+Peer pending (batched).
+
 ## 2026-11-01 23:27 — Resolve PR 29 against merged browser prototype
 
 TODO: 1.5.2 and 2.0 retained with their distinct scope.

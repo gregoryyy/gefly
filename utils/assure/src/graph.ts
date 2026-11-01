@@ -192,8 +192,14 @@ export function buildGraph(snapshot: Snapshot): Graph {
     for (const error of validate(f)) problem('ledger-invalid', nodeKey(f.subject), error, [f.source]);
   }
   for (const task of nodes.values()) if (task.kind === 'todo' && task.status === 'done' && task.attrs?.aggregate !== 'true') {
-    if (!facts.some((f) => f.relation === 'records' && f.object.kind === 'todo' && f.object.id === task.id))
+    // A completion record of an ancestor task (`1.14 complete`) covers its subtasks,
+    // but only while that ancestor is itself ticked in TODO.
+    const covering = task.id.split('.').map((_, i, parts) => parts.slice(0, i + 1).join('.'))
+      .filter((id) => id.includes('.') && (id === task.id || nodes.get(nodeKey({ kind: 'todo', id }))?.status === 'done'));
+    if (!facts.some((f) => f.relation === 'records' && f.object.kind === 'todo' && covering.includes(f.object.id)))
       problem('done-missing-record', task.id, 'Completed task has no applicable DONE record', [task.source ?? 'docs/TODO.md']);
+    const open = [...nodes.values()].filter((child) => child.kind === 'todo' && child.id.startsWith(`${task.id}.`) && child.status !== 'done');
+    if (open.length) problem('done-parent-open-children', task.id, `Completed task has unticked subtasks: ${open.map((child) => child.id).sort().join(', ')}`, [task.source ?? 'docs/TODO.md'], 'warning');
     for (const blocker of facts.filter((f) => f.relation === 'blocked-by' && f.subject.id === task.id && f.subject.kind === 'todo'))
       if (nodes.get(nodeKey(blocker.object))?.status !== 'resolved') problem('completed-blocked', task.id, `Completed task explicitly blocked by unresolved ${blocker.object.id}`, [blocker.source]);
   }
