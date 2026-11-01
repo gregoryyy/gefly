@@ -8,8 +8,9 @@ is an error, so a schema change cannot silently weaken validation. Then
 applies rules that JSON Schema cannot express: every citation names a registered source
 with the same revision, sourced/derived values cite only sources that were actually read,
 and each SI value matches its published value through a fixed conversion-factor table.
-A poh-values.json file cites the source register of the sibling manifest it names, and its
-airspeed-calibration points must be strictly increasing in IAS.
+A poh-values.json file cites the source register of the sibling manifest it names (which is
+schema-validated too), its airspeed-calibration points must be strictly increasing in IAS,
+and a quantity key ending in _ias, _cas or _tas must carry that airspeed reference.
 """
 
 from __future__ import annotations
@@ -263,6 +264,24 @@ def calibration_order(document, errors):
                               f"{speeds[index]} not above previous {speeds[index - 1]}")
 
 
+POH_GROUPS = ("stall_speeds", "takeoff_distance", "landing_distance", "climb")
+KEY_REFERENCES = {"_ias": "IAS", "_cas": "CAS", "_tas": "TAS"}
+
+
+def key_references(document, errors):
+    """A quantity named ..._ias/_cas/_tas must carry the matching reference."""
+    for group in POH_GROUPS:
+        quantities = document.get(group)
+        if not isinstance(quantities, dict):
+            continue
+        for name, quantity in quantities.items():
+            for suffix, reference in KEY_REFERENCES.items():
+                if name.endswith(suffix) and isinstance(quantity, dict) \
+                        and quantity.get("reference") != reference:
+                    errors.append(f"$.{group}.{name}: key suffix {suffix!r} needs reference "
+                                  f"{reference!r}, got {quantity.get('reference')!r}")
+
+
 def validate_poh_values(document, schema, manifest):
     """Validate a POH value file against its schema and the named manifest's sources.
 
@@ -283,18 +302,26 @@ def validate_poh_values(document, schema, manifest):
     cross_references(document, errors, sources if isinstance(sources, list) else [])
     conversions(document, errors)
     calibration_order(document, errors)
+    if isinstance(document, dict):
+        key_references(document, errors)
     return errors
 
 
-def load_poh_values(path, schema):
-    """Load a POH value file and its sibling manifest, then validate."""
+def load_poh_values(path, schema, manifest_schema):
+    """Load a POH value file and its sibling manifest; validate both.
+
+    The manifest is schema-validated too, so a file checked alone cannot rely on an
+    invalid source register. Manifest errors are reported with a 'manifest' prefix.
+    """
     document = load_json(path)
     reference = document.get("manifest") if isinstance(document, dict) else None
     name = reference.get("path") if isinstance(reference, dict) else None
     # Schema restricts the name; re-check here so a bad file cannot escape the directory.
     if not isinstance(name, str) or not re.fullmatch(r"[a-z0-9][a-z0-9-]*\.json", name):
         return [f"$.manifest.path: invalid manifest file name {name!r}"]
-    return validate_poh_values(document, schema, load_json(Path(path).parent / name))
+    manifest = load_json(Path(path).parent / name)
+    errors = [f"manifest {name}: {error}" for error in validate(manifest, manifest_schema)]
+    return errors + validate_poh_values(document, schema, manifest)
 
 
 def load_json(path):
@@ -327,7 +354,7 @@ def main(argv=None):
     for path in paths:
         try:
             if Path(path).name == POH_VALUES_NAME:
-                errors = load_poh_values(path, schemas["poh"])
+                errors = load_poh_values(path, schemas["poh"], schemas["manifest"])
             else:
                 errors = validate(load_json(path), schemas["manifest"])
         except (OSError, ValueError) as error:

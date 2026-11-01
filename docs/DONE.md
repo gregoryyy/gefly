@@ -15,7 +15,7 @@ cited facts into `data/aircraft/c172s-classic/poh-values.json` (66 tabulated num
 checked against rendered pages): airspeed calibration points for the Exercise 01
 bands (p. 5-9), stall speeds (p. 5-12), short-field take-off/landing distances at
 2,550 lb near EDFE elevation (pp. 5-14, 5-23/24), climb (p. 5-17), and paraphrased
-correction notes. Separate schema, extended validator, 20 tests and a
+correction notes. Separate schema, extended validator, 25 POH tests (19 initial, 6 after review) and a
 [research note](research/2026-11-01-c172s-poh-values.md).
 
 **Deviations**

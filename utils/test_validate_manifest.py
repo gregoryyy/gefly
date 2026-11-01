@@ -288,8 +288,45 @@ class PohValuesValidationTests(unittest.TestCase):
             document["manifest"]["path"] = "../manifest.json"
             path = Path(directory) / vm.POH_VALUES_NAME
             path.write_text(json.dumps(document), encoding="utf-8")
-            errors = vm.load_poh_values(path, self.schema)
+            errors = vm.load_poh_values(path, self.schema, self.manifest_schema)
             self.assertTrue(any("invalid manifest file name" in e for e in errors), errors)
+
+    def test_climb_rate_tagged_as_airspeed_fails(self):
+        document = self.values()
+        document["climb"]["rate_sl_0c"]["reference"] = "IAS"
+        self.assertRejected(document, "rate_sl_0c.reference: must equal \"vertical\"")
+
+    def test_climb_speed_tagged_vertical_fails(self):
+        document = self.values()
+        document["climb"]["climb_speed_sl"]["reference"] = "vertical"
+        self.assertRejected(document, "climb_speed_sl.reference: \"vertical\" not in")
+
+    def test_distance_with_reference_fails(self):
+        document = self.values()
+        document["takeoff_distance"]["ground_roll_sl_10c"]["reference"] = "IAS"
+        self.assertRejected(document, "ground_roll_sl_10c.reference: not allowed")
+
+    def test_distance_in_wrong_si_unit_fails(self):
+        document = self.values()
+        document["landing_distance"]["ground_roll_sl_10c"]["unit"] = "m/s"
+        self.assertRejected(document, "ground_roll_sl_10c.unit: must equal \"m\"")
+
+    def test_stall_key_suffix_must_match_reference(self):
+        document = self.values()
+        document["stall_speeds"]["flaps_0_rearward_cg_cas"]["reference"] = "IAS"
+        self.assertRejected(document, "flaps_0_rearward_cg_cas: key suffix '_cas' needs reference 'CAS'")
+
+    def test_poh_values_reject_invalid_sibling_manifest(self):
+        with tempfile.TemporaryDirectory(prefix="gefly-poh-test-") as directory:
+            manifest = copy.deepcopy(self.manifest)
+            manifest["fidelity"] = "validated"
+            (Path(directory) / "manifest.json").write_text(json.dumps(manifest),
+                                                          encoding="utf-8")
+            path = Path(directory) / vm.POH_VALUES_NAME
+            path.write_text(json.dumps(self.values()), encoding="utf-8")
+            errors = vm.load_poh_values(path, self.schema, self.manifest_schema)
+            self.assertTrue(any(e.startswith("manifest manifest.json: $.fidelity") for e in errors),
+                            errors)
 
     def test_cli_validates_poh_values_with_sibling_manifest(self):
         with tempfile.TemporaryDirectory(prefix="gefly-poh-test-") as directory:

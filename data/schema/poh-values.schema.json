@@ -115,7 +115,7 @@
       "enum": ["tabulated", "read_from_chart"]
     },
     "quantity": {
-      "description": "A single flight-manual value. 'condition' is required because a performance value is meaningless without it. Rate of climb uses reference 'vertical'.",
+      "description": "A single flight-manual value. 'condition' is required because a performance value is meaningless without it. Unit, original unit and reference must agree (rules below). In a quantity group, a key ending in _ias, _cas or _tas must carry that reference (validator rule).",
       "type": "object",
       "required": ["value", "unit", "original_unit", "condition", "status", "citations", "reading", "uncertainty"],
       "additionalProperties": false,
@@ -139,6 +139,21 @@
         {
           "if": {"properties": {"unit": {"const": "m/s"}}},
           "then": {"required": ["reference"]}
+        },
+        {
+          "description": "Vertical speed: published in ft/min, stored in m/s, reference 'vertical' only.",
+          "if": {"properties": {"original_unit": {"const": "ft/min"}}},
+          "then": {"required": ["reference"], "properties": {"unit": {"const": "m/s"}, "reference": {"const": "vertical"}}}
+        },
+        {
+          "description": "Airspeed: published in kt, stored in m/s, reference IAS, CAS or TAS.",
+          "if": {"properties": {"original_unit": {"const": "kt"}}},
+          "then": {"required": ["reference"], "properties": {"unit": {"const": "m/s"}, "reference": {"enum": ["IAS", "CAS", "TAS"]}}}
+        },
+        {
+          "description": "Distance: published in ft, stored in m, no airspeed or vertical reference.",
+          "if": {"properties": {"original_unit": {"const": "ft"}}},
+          "then": {"properties": {"unit": {"const": "m"}, "reference": false}}
         },
         {
           "if": {"properties": {"status": {"enum": ["sourced", "derived", "estimated"]}}},

@@ -65,7 +65,13 @@ uncertainty; the POH correction notes (wind, grass, flaps-up landing) are summar
 our own words under `corrections`. `not_extracted` lists what was deliberately left out.
 The file uses [its own schema](../../schema/poh-values.schema.json) and cites the source
 register of `manifest.json`, which the validator loads and matches by `manifest_id`.
-Calibration points must be strictly increasing in IAS. These are comparison targets,
+The validator also schema-validates that manifest, even when
+`poh-values.json` is checked alone. Units and references must agree: `kt` values are
+`m/s` with reference `IAS`/`CAS`/`TAS`, `ft/min` values are `m/s` with reference
+`vertical`, `ft` values are `m` with no reference, and a key ending in `_ias`, `_cas` or
+`_tas` must carry that reference. Calibration points must be strictly increasing in IAS.
+Extraction shares per figure and the no-piecemeal-completion limit are in the research
+note; do not add values that would assemble a whole table. These are comparison targets,
 not validation results: the S17 performance data assume the short-field technique and an
 airplane in good condition, and nothing here establishes simulator fidelity.
 
