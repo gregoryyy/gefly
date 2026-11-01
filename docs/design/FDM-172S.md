@@ -113,8 +113,8 @@ no public 172S aerodynamic data exists).
 | LIFT: CL(α), flap increments | VSPAERO on the §2 geometry; section data from the verified airfoil (Q-3) | CLmax per flap calibrated to POH stall speeds |
 | LIFT: post-stall shape, hysteresis | `generic` (no source); flagged out-of-envelope beyond the declared α range | — |
 | DRAG: CD0, induced factor, flap/gear increments | estimated (VSPAERO + component build-up) | calibrated to POH glide (if extracted) and cruise |
-| PITCH: Cm0, Cmα, Cmq, Cmδe, Cmα̇, flap/power effects | VSPAERO/DATCOM method | trim elevator within travel; static-margin sign; A1/A2 bands |
-| SIDE/ROLL/YAW: β, p, r, δa, δr derivatives | VSPAERO/DATCOM method | M-c plausibility bands (A1/A2 modes) |
+| PITCH: Cm0, Cmα, Cmq, Cmδe, Cmα̇, flap/power effects | VSPAERO/DATCOM method | trim elevator within travel; static-margin sign; A1/A2 bands reported only (§1.9), never a criterion |
+| SIDE/ROLL/YAW: β, p, r, δa, δr derivatives | VSPAERO/DATCOM method | U-4 signs and sourced criteria; A1/A2 mode bands reported only (§1.9) |
 | Ground effect | estimated (literature method, cited) | take-off/landing holdout |
 | Propwash/slipstream on tail, p-factor, torque | estimated or `generic`, labelled | M-d/M-e handling checks |
 
@@ -194,8 +194,9 @@ From the survey's proposal; frozen (fixture file + hash in DONE/RESULTS) **befor
 Rules: the number of tuned parameters is recorded and kept below the number of
 independent calibration points; every tuning step is logged with inputs and result.
 The frozen fixture hash covers the case list, conditions, accepted P-labels and the
-scripted-pilot technique and gains. Each case declares its mass and CG (POH figures
-state rearward or forward CG; the harness sets the declared station). POH KIAS figures
+scripted-pilot technique and gains. Each case declares its mass and CG. Only the POH stall figures state a CG; for the
+climb and take-off/landing figures the CG is a declared assumption (labelled, not
+sourced), and the harness sets the declared station. POH KIAS figures
 are compared after the harness applies the IAS→CAS mapping from `poh-values.json`;
 the dynamics model never contains that mapping. Holdout cases run only on a frozen
 candidate; a holdout failure is reported, never tuned away. Changing model structure
@@ -224,7 +225,7 @@ conditions, not from the model):
 | P-11 | Calibration glide (M-b) | best-glide speed ±2 kt CAS, glide ratio ±5 % | chart reading resolution; windmilling-prop uncertainty |
 | P-12 | M-a static load split, rest | load split ±1 % of weight; at rest drift and speed within E1 F3 budget | CG arithmetic; E1 study |
 | P-13 | Gear timestep refinement | ground-roll distance at 1/120 vs 1/480 s within 0.1 % | gear stiffness must not need a smaller dt |
-| P-14 | Native vs WASM | per-state relative difference ≤ 1e-9 over 40 s | E1 observed 2e-13; margin, still a proposal |
+| P-14 | Native vs WASM | per-state difference ≤ max(1e-9 × |value|, absolute floor per state: 1e-9 m, 1e-9 m/s, 1e-12 rad) over 40 s | E1 observed 2e-13; margin, still a proposal |
 
 Each result reports the residual, the case conditions (mass, CG, atmosphere, power,
 flaps, speed reference, source page, interpolation) and the declared uncertainty (E2).
@@ -282,7 +283,7 @@ flaps, speed reference, source page, interpolation) and the declared uncertainty
 | --- | --- | --- |
 | M-a mass/inertia + gear ground roll | metrics, mass_balance, tanks, ground_reactions; aero explicitly empty and labelled | P-1 and U-8 pass for POH sample loadings; static nose/main load split and rest state within P-12; S-1, S-2 pass; towed/braked roll finite with P-13 met; friction values fixed; provenance check passes |
 | M-b longitudinal trim/cruise | LIFT/DRAG/PITCH, flaps, elevator, trim bias (`generic`); provisional propulsion and windmilling prop labelled `estimated` | trim converges at all cruise points with elevator inside travel; P-2 stall and P-11 glide residuals met; negative Cmα at the aft CG limit; cruise residuals reported (acceptance in M-d) |
-| M-c lateral-directional | SIDE/ROLL/YAW | U-4 signs; 30° coordinated turn trims inside travel; all modes stable (or spiral divergence bounded and labelled); sourced/holdout criteria only. A1/A2 band comparison reported, never a pass criterion or tuning target |
+| M-c lateral-directional | SIDE/ROLL/YAW | U-4 signs; 30° coordinated turn trims inside travel; all modes stable, or spiral divergence with time to double amplitude ≥ 20 s (proposal P-15, engineering judgement pending Q-11) and labelled; sourced/holdout criteria only. A1/A2 band comparison reported, never a pass criterion or tuning target |
 | M-d engine/prop | Lycoming points, prop tables, fuel flow; joint cruise fit | P-3, P-4, P-5 met (Lycoming points as targets); then single holdout run: P-6, P-7, P-8 |
 | M-e handling checks | take-off/landing, power/flap trim changes, stall behaviour, envelope flags; WASM worker run | P-9, P-10 holdout; R-1, R-6 pass in WASM; P-14 native vs WASM; quality and validate reviews; peer pending per Q15; E2 report with residuals and unsupported regimes |
 
@@ -295,6 +296,6 @@ flaps, speed reference, source page, interpolation) and the declared uncertainty
   geometry (P-857, McCauley, measurement). Q-7 Speed fairings as the default?
 - Q-8 Extract POH cruise, glide, max-speed/ceiling conditions (optionally climb
   time/fuel/distance)? Q-9 Cited stall-speed determination method.
-- Q-10 Aeromatic++ output or Digital DATCOM use and terms? Q-11 Accept P-1..P-14 and
+- Q-10 Aeromatic++ output or Digital DATCOM use and terms? Q-11 Accept P-1..P-15 and
   the forward-CG holdout? Q-12 File locations (`data/aircraft/c172s-classic/jsbsim/`,
   `studies/e2-c172s/`)? Q-13 Extend Q5 to needed Lycoming Fig. 3-9 points?
