@@ -144,6 +144,11 @@ distinct from the CONTRACTS semver `v`:
 
 - `sseq`: per-pairing integer, strictly increasing across all phone messages,
   including resends (a resend is a new message carrying an old sample).
+  Limitation (orchestrator note): with resends, a sensor that silently stops
+  while the page stays visible looks like a phone held still, so the axis is held
+  at its last value without fallback. Proposal: use `devicemotion` events (which
+  fire continuously) as the sensor-liveness signal; until verified on the reference
+  iPhone this remains a labelled limitation.
 - `tx_ms`: phone clock at send time; the basis for staleness. `ev_ms`: the
   event's `timeStamp`, kept for latency metrics only (a still phone legitimately
   has an old `ev_ms`).
