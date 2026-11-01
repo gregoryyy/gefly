@@ -22,6 +22,25 @@ Lycoming fuel-chart points, Q21 FDM tolerance proposals accepted as working prop
 
 Other files were checked for duplicated lines and conflict markers only, not
 re-reviewed line by line. Peer pending (batched).
+## 2026-11-01 18:49 — Plan the project-owned JSBSim 172S model (E2)
+
+TODO: 1.1.2, 1.2.3, 1.4 complete. Agent: Claude Code orchestrator (no subagents).
+
+**Implementation notes**
+
+After the user merged PRs #9–#23 with "accept both" conflict resolutions, DONE.md had
+truncated, mixed and out-of-order entries. Rebuilt it from the complete per-entry
+versions in main's history (44 entries, newest first; Exercise 01 entry no longer
+carries the iPhone and briefing bodies). Checked GAPS (unique headings; Q15 answers
+restored to newest first), README (stale "variant and stack open" sentence), TODO
+(merged/reviewed statuses), AGENTS and ARCH (stack). Recorded the user's answers:
+Q17 web stack (CesiumJS, three.js fallback, MapLibre, TypeScript, JSBSim worker), Q5
+Lycoming fuel-chart points, Q21 FDM tolerance proposals accepted as working proposals.
+
+**Deviations**
+
+Other files were checked for duplicated lines and conflict markers only, not
+re-reviewed line by line. Peer pending (batched).
 
 ## 2026-11-01 19:00 — Extract Lycoming power points and POH cruise/glide values
 
