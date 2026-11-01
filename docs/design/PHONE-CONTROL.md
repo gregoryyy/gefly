@@ -303,3 +303,12 @@ rather than silently relaxed.
 - Unverified platform behaviour (note "Not found"): iOS treatment of private-CA
   HTTPS, mDNS candidates, Chrome LNA gating of WebRTC, real sensor rate, timer
   throttling and data-channel survival when Safari is backgrounded.
+
+## Decisions (GAPS Q19, 2026-11-01 18:13)
+
+The user accepted the recommendations for Q-P1..Q-P6 and named the reference phone:
+**iPhone 13 mini, latest iOS**, Safari. Hosting: the simulator's static host once
+chosen, a local HTTPS dev server meanwhile. Grip: landscape, yoke-like, screen up.
+Axes: roll tilt → aileron, pitch tilt → elevator, rudder on keyboard. Phone loss:
+hold last values 0.5 s, then centre, with a visible warning. Budget: p95 ≤ 110 ms end
+to end and ≤ 40 ms over keyboard, measured on the reference devices.

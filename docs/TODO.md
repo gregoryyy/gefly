@@ -46,7 +46,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 - [ ] 1.10 Specify the declarative flight-experience package and LLM retrieval/validation/review boundary, using the EDDF catalog first; select provider/execution assumptions before integration (Q13). *(decision)*
 - [ ] 1.11 Choose contributor terms that keep a later relaxation of GPL-3.0-or-later possible (a DCO alone does not; options: a CLA with a relicensing grant, copyright assignment, or permissive inbound licensing), plan replacement or upstream consent for the Propeller-derived files, and data distribution rules; community library, roles, sharing/review, moderation and hosting are deferred to roadmap phase 3 (Q5/Q6/Q12). *(decision)*
 - [ ] 1.12 Define the pilot-qualification profile contract for future sailplane/ultralight tracks: jurisdiction, authority, full licence/category, privileges, applicable source revisions and aircraft/objective mappings; retain Q14 choices until each track starts. *(decision)*
-- [ ] 1.13 (Draft: [PHONE-CONTROL](design/PHONE-CONTROL.md) — local WebRTC data channel, QR + confirmation-code pairing; open Q-P1..Q-P6; not yet reviewed.) Specify and prototype the paired-iPhone orientation control (R-INPUT-3): pairing, transport, latency budget, fallback and SEC review; optional, after the input boundary in 1.4.
+- [ ] 1.13 (Draft: [PHONE-CONTROL](design/PHONE-CONTROL.md) — local WebRTC data channel, QR + confirmation-code pairing; Q-P1..Q-P6 decided in Q19; reviewed.) Specify and prototype the paired-iPhone orientation control (R-INPUT-3): pairing, transport, latency budget, fallback and SEC review; optional, after the input boundary in 1.4.
 
 ## 2. First browser exercise
 

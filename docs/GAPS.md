@@ -65,6 +65,22 @@ ROAD, EVAL and TODO. Exact reference Mac, macOS/browser versions, peripheral
 models, settings details and measured budgets remain foundation implementation
 choices in TODO 1.2.1; they were not selected by this answer.
 
+### Q19. Paired-phone control choices (Q-P1..Q-P6)?
+
+Why: [PHONE-CONTROL](design/PHONE-CONTROL.md) (TODO 1.13) needs hosting, device,
+grip, axis, loss and budget choices before implementation.
+
+Answer: **2026-11-01 18:13, user** (recorded by orchestrator, Claude Code;
+[input](input/2026-11-01-phone-control-decisions.md)): “ios latest on iphone 13
+mini, yes to proposals”. Decided: reference phone **iPhone 13 mini, latest iOS**,
+Safari (versions pinned per measurement); HTTPS phone page on the simulator's static
+host once hosting is chosen, a local HTTPS dev server meanwhile; landscape yoke-like
+grip, screen up; roll tilt → aileron, pitch tilt → elevator, rudder on keyboard; on
+phone loss hold the last values 0.5 s, then centre, with a visible warning; latency
+budget p95 ≤ 110 ms end to end and ≤ 40 ms over keyboard, to be measured.
+
+Resolved: 2026-11-01 18:13, user; carried into [PHONE-CONTROL](design/PHONE-CONTROL.md) and [TODO](TODO.md) 1.13.
+
 ### Q18. Contracts v1 open questions (O-1..O-9)
 
 Why: TODO 1.4 contracts must be agreed before parallel product coding.
