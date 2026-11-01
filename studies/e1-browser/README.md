@@ -135,3 +135,31 @@ tracked wall time to 0.99995. Re-measure step cost cross-origin isolated (local
 runner) before treating the p99 as a budget failure. The replay digest equals the
 container's WASM digest for the same build and inputs, so this build replayed
 bit-identically on Intel Xeon/Linux and Apple M1/macOS.
+
+### three.js render driven by JSBSim (reference Mac)
+
+Run by the user on 2026-11-01, same Chrome 156, `?source=sim`. Raw JSON:
+[three.js run](results/2026-11-01-m1-chrome156-three-sim.json) (the user pasted the
+object without its outer braces; they were added, values unchanged).
+
+| Measure | Result | Budget |
+| --- | --- | --- |
+| Display refresh (measured) | 120.5 Hz (8.3 ms period) | recorded |
+| Median frame interval | 8.3 ms (120.5 fps) | ≤ 1.05 × 8.3 = 8.7 ms: pass |
+| p99 / max frame time | 9.4 / 10 ms; 0 missed vsyncs; 0 frames > 25 ms | ≤ 25 ms: pass |
+| State stream | 60.0 Hz, p99 interval 20.9 ms, no errors | functional |
+| JS heap | 9.6 → 10.0 MB over 20 s | recorded |
+
+Observations:
+
+- **The GPU is an Apple M1 Pro** (WebGL renderer string), with a 120 Hz display;
+  GAPS Q16 recorded "M1". The budget scales to the measured refresh, so it still
+  applies; the platform record needs the user's confirmation.
+- Viewport was 1232×817 CSS px at device pixel ratio 2 rendered at CSS resolution,
+  not the declared 1440×900; repeat at 1440×900 and with `?dpr=device` for the
+  full-resolution case.
+- Half the rendered frames (1200 of 2400) showed the same simulation step as the
+  previous frame, because state arrives at 60 Hz while the display runs at 120 Hz.
+  Smooth motion at 120 Hz needs either `state_hz` 120 or render-side interpolation
+  between states; the contract work (TODO 1.4) should decide which.
+- The scene is a light workload (6 draw calls, no terrain or imagery).
