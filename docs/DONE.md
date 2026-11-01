@@ -3,6 +3,10 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 16:47 — Draft the paired-iPhone control specification
+
+TODO: 1.13 in progress. Agent: Claude Code orchestrator; product subagent (with source
+
 ## 2026-11-01 14:07 — Extract cited 172S POH values
 
 TODO: 1.3/1.5 support. Agent: Claude Code orchestrator; researcher/housekeeping
@@ -34,6 +38,18 @@ research).
 
 **Implementation notes**
 
+Added [PHONE-CONTROL](design/PHONE-CONTROL.md) and its
+[source note](research/2026-11-01-phone-control-sources.md). Proposal: direct WebRTC
+data channel on the local network (unordered, no retransmission, no STUN/TURN), a
+short-lived encrypted pairing mailbox, single-use QR code plus a 6-digit code
+confirmed on both devices, mapping into the CONTRACTS input boundary with staleness
+and replay rejection, and keyboard/touchpad fallback.
+
+**Deviations**
+
+Draft; iOS orientation needs an HTTPS page, so hosting (open) blocks it; sensor rate
+and latency unmeasured, budget values are proposals; not yet reviewed. Peer pending
+(batched).
 Added [BRIEFING](design/BRIEFING.md) and its
 [source note](research/2026-11-01-briefing-radio-sources.md): snapshot briefing
 schema validated against scenario time with explicit failure states; QNH/QFE/STD flow
