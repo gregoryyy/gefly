@@ -115,8 +115,9 @@ committed; only `wasm/driver.cpp` is kept.
 Side finding: `c172x.xml` declares a CSV `<output>` that JSBSim tries to open at
 `run_ic()` even after `disable_output()`; by default it lands in the working
 directory. The harness points it at a harness-owned temporary directory removed
-at exit (in this sandbox the open is refused, so JSBSim logs "unable to open
-the file ..." to the redirected stream and writes nothing); `driver.cpp` points
+at exit. JSBSim nevertheless reports "unable to open the file ..." for that
+writable path too (cause not determined; likely JSBSim behaviour rather than the
+environment) to the redirected stream and writes nothing; `driver.cpp` points
 it at `/dev/null`, whose open JSBSim likewise reports as failed. A test checks that
 `harness.py all` leaves its working directory empty and prints parseable JSON.
 

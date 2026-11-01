@@ -3,6 +3,26 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 11:18 — Review and fix the E1 study slice
+
+TODO: 1.2.2 in progress. Agent: Claude Code orchestrator; quality, code1 and
+researcher subagents.
+
+**Implementation notes**
+
+Integrated the [E1 candidate survey](research/2026-11-01-e1-engine-stack-candidates.md).
+Local quality returned 2 medium and 5 low findings on the JSBSim study (non-JSON
+stdout, mixed cost metrics, unpinned reproduction, test gaps, edge cases, doc
+assumptions). code1 and the orchestrator fixed them; renewed quality review at
+`4a28775` reports all seven fixed. Corrected cost: run-only 364–588×, with-I/O
+238–413× real time (one recorded run of 3 repeats).
+
+**Deviations**
+
+Study code only; no product dynamics code, so the cross-provider peer gate does
+not apply (GAPS Q15) until an engine is integrated. No validate pass yet; E1
+decision (1.2.3) awaits the user's Q5 ruling on JSBSim's LGPL-2.1.
+
 ## 2026-11-01 11:11 — Run the JSBSim fixed-step E1 study
 
 TODO: 1.2.2 started. Agent: Claude Code orchestrator; code1 subagent.
