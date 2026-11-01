@@ -74,7 +74,7 @@ run starts.
 | Parameter | Source class | Source / method |
 | --- | --- | --- |
 | Nose and main contact x/y | sourced or derived (POH Section 1 wheelbase/track, Section 6 arms) | S17; TCDS datum |
-| Contact z (static height), structural contacts (tail, wingtips, prop) | estimated (geometry §2, measurement campaign Q-6) | — |
+| Contact z (static height), structural contacts (tail, wingtips, prop) | estimated (geometry §2, public dimensions) | — |
 | Spring and damping coefficients | estimated (`assumption`: static deflection target and damping ratio declared before tests; main-gear type to confirm, A10/A11 spring-steel data does not apply if 172S legs are tubular) | Q-4 |
 | Static/dynamic/rolling friction, brake | estimated (`assumption`, generic paved dry runway), **fixed and recorded before any test**; never tuned on holdout | judged by M-a and holdout distances |
 | Nose-wheel steering range (bungee, differential braking) | sourced | S17 p. 7-12; force law `generic` |
@@ -87,7 +87,7 @@ run starts.
 | FGPiston elements (volumetric efficiency, BSFC, friction, intake/manifold, installed-power factor) | estimated, then calibrated (§3); FGPiston computes power from these, so no XML element is `sourced` from the curve | method record |
 | Calibration targets: BHP vs manifold pressure, rpm, altitude | sourced points (only those needed, Q5 18:43), used as targets, not XML values | A14 Lycoming curve 13516-A |
 | Fuel-flow target | POH cruise fuel flow (S17 Section 5). A14 Fig. 3-9 (fuel chart) is **not** covered by Q5 18:43; use needs a Q5 extension | S17 |
-| Thrust line (engine/thruster location and orient pitch/yaw angles) | estimated (geometry §2); offsets TBD-src | measurement |
+| Thrust line (engine/thruster location and orient pitch/yaw angles) | estimated (geometry §2); offsets TBD-src | estimated |
 | Idle, friction, starter, temperatures | estimated `generic` (engine start is Later in contracts v1) | — |
 | Propeller diameter, blades, fixed pitch, static-rpm band | sourced | S1b/S5 |
 | Ct(J), Cp(J) tables incl. negative-thrust (windmilling) region at high J | estimated: public-domain NACA TR-640 (A15) two-blade Clark Y data scaled in pitch; static-rpm band, POH cruise rpm and (jointly with drag) glide calibrate the scaling | A15 (not yet read) |
@@ -159,16 +159,16 @@ comparison is recorded with that comparison and classified under this rule.
 | Span, wing area, MAC, LE of MAC, overall length, height | S5 §2 C.4/C.14, S1b p. 29 | sourced |
 | Wheelbase, track, prop ground clearance, three-view dimensions | S17 Section 1 (dimension figure, cite values only) | to extract |
 | Datum (firewall lower front face) and stations | S1b/S5; S17 Section 6 | sourced; **waterline (z) datum TBD-src** |
-| Wing planform (inboard constant chord, outboard taper), dihedral, incidence, twist | no public primary source found | measurement campaign or licensed drawing (Q-2) |
+| Wing planform (inboard constant chord, outboard taper), dihedral, incidence, twist | no public primary source found | estimated from public dimensions and rights-cleared drawings (Q-2) |
 | Airfoil section | commonly reported NACA 2412, *unverified* | Q-3; NACA section data is public domain once verified |
-| Strut, fuselage cross-sections, cowl, fairings | measurement/photogrammetry; speed fairings installed per S17 performance note (Q-7) | estimated |
-| Tail planforms, control-surface and flap span/chord, flap type | measurement or licensed drawing | estimated |
+| Strut, fuselage cross-sections, cowl, fairings | estimated from public dimensions; speed fairings installed per S17 performance note (Q-7) | estimated |
+| Tail planforms, control-surface and flap span/chord, flap type | estimated from public dimensions or a rights-cleared drawing | estimated |
 | Propeller position and diameter | S5 (diameter); position estimated | mixed |
 
 Public three-view drawings or kits are used only after their rights are recorded and
-permit derived measurements; otherwise excluded. A measurement campaign on an aircraft
-of the selected serial range (photos and tape measurements owned by the project) is the
-preferred route. The `.vsp3` geometry file is project-owned (GPL-3.0-or-later) and kept
+permit derived measurements; otherwise excluded. No aircraft is available for measurement
+(user, 2026-11-02 00:00): geometry not given by TCDS/POH dimensions is **estimated**, labelled as such,
+with sensitivity runs bounding its effect. The `.vsp3` geometry file is project-owned (GPL-3.0-or-later) and kept
 with the model; VSPAERO runs are reproducible from it, with OpenVSP version, solver
 settings and output hashes recorded. OpenVSP itself is never committed or distributed.
 
@@ -271,7 +271,7 @@ flaps, speed reference, source page, interpolation) and the declared uncertainty
 | Risk | Mitigation |
 | --- | --- |
 | Drag, propeller efficiency and installed power are confounded in cruise data | glide data for drag; static rpm for the prop at J = 0; joint fit with recorded identifiability |
-| Geometry for VSPAERO is unsourced (planform, airfoil, tails) | measurement campaign; sensitivity runs; label estimates |
+| Geometry for VSPAERO is unsourced (planform, airfoil, tails) | estimate from public dimensions; sensitivity runs; label estimates |
 | Empty mass/CG unknown; inertia untraceable | Q-1 decision; component build-up; A1/A2 band |
 | Gear/brake/friction are assumptions, yet drive take-off/landing holdout | declare before testing; P-9 widened band; report technique sensitivity |
 | Overfitting or holdout leakage | frozen, hashed holdout; tuned-parameter count; spent-holdout rule |
@@ -289,11 +289,11 @@ flaps, speed reference, source page, interpolation) and the declared uncertainty
 
 ## 7. Open questions (for the orchestrator)
 
-- Q-1 Representative empty mass/CG (POH sample, a club aircraft's weighing, or assumption)?
-- Q-2 Approve a measurement campaign (aircraft, consent, photo rights)? Q-3 Primary
+- Q-1 Representative empty mass/CG (POH sample loading example or a labelled assumption; no aircraft weighing is available)?
+- ~~Q-2 Approve a measurement campaign?~~ Not possible: no aircraft available; estimates are used. Q-3 Primary
   source for the airfoil section. Q-4 Main-gear construction and tyre size (S17 §7/8).
 - Q-5 Waterline (z) datum and level reference. Q-6 Propeller mass/inertia and blade
-  geometry (P-857, McCauley, measurement). Q-7 Speed fairings as the default?
+  geometry (P-857, McCauley, estimate). Q-7 Speed fairings as the default?
 - Q-8 Extract POH cruise, glide, max-speed/ceiling conditions (optionally climb
   time/fuel/distance)? Q-9 Cited stall-speed determination method.
 - Q-10 Aeromatic++ output or Digital DATCOM use and terms? Q-11 Accept P-1..P-15 and
