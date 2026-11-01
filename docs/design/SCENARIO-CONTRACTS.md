@@ -264,11 +264,11 @@ digest. This does not adopt all scenario v1.1 proposals or implement a recorder.
 | C10 | Snapshot `mode` superset; `applied_conditions.relation` vs `differences[]` | BRIEFING; EXPERIENCES | Superset enum (`mixed`; `live` only from the later adapter); `relation = matches` iff `differences` is empty. EXPERIENCES' example (`generated`, `matches`, no differences) stays valid |
 | C11 | Navigation edition: one v1 field vs `catalog` + `extent` | CONTRACTS §5; EXPERIENCES | Keep the v1 field; add the `catalog`/`nav` blocks in the scenario record |
 | C12 | Phone loss: auto-pause (PHONE-CONTROL §6) vs Q19 hold-then-centre; v1 "no silent hold" | PHONE-CONTROL; Q19 | Q19 governs (§2, CONTRACTS §10.4); keyboard/touchpad override during the hold; auto-pause a Proposal (default off), not in v1.1 |
-| C17 | Rights labels differ: manifest `public_domain_us`/`facts_only`/`reference_only`, EXPERIENCES kebab classes, BRIEFING `rights_unknown` | data/; EXPERIENCES; BRIEFING | One enum with storage semantics (CONTRACTS §10.5); S5/S9 flagged for a Q5 record |
 | C13 | `teach.phase/events/findings` vs assessment markers | EXERCISE-01 | `assess.*` and `teach.annotation` events, all derived |
 | C14 | `x_rwy_m`/`y_rwy_m`, `gs_mps`, `track_true_rad`, `vs_mps` derived, owner unspecified | EXERCISE-01; CONTRACTS §1 | Evaluator (code2) per step from `sim`; no digest; pinned by evaluator hash |
 | C15 | Aircraft identity: `model_id` vs `manifest/manifest_hash` | CONTRACTS; EXPERIENCES | Both: manifest = sources/configuration, model package = dynamics |
 | C16 | EXPERIENCES: accepted interaction events are "replayed, not regenerated"; here radio replies were derived | EXPERIENCES; §2 | Shown reply text is logged and replayed as shown; its state effects (`intent_resolved`, reply fields) are re-derived and checked against the log; a mismatch is a defect |
+| C17 | Rights labels differ: manifest `public_domain_us`/`facts_only`/`reference_only`, EXPERIENCES kebab classes, BRIEFING `rights_unknown` | data/; EXPERIENCES; BRIEFING | One enum with storage semantics (CONTRACTS §10.5); S5/S9 flagged for a Q5 record |
 
 ## 6. Versioning and deferred items
 

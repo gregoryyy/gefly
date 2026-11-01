@@ -16,7 +16,7 @@ may be filled in from memory, another C172 variant or AI output (R-DATA-2).
 
 Reference-Mac evidence: `studies/e1-browser/README.md`, "Results on the reference
 M1/Chrome" (merged, PR #9); one user-run session, preliminary. Hardware attribution
-(user-confirmed M1 vs reported "Apple M1 Pro", 120 Hz) follows GAPS Q16.
+(MacBook Pro 14", reported Apple M1 Pro, 120 Hz) follows GAPS Q16.
 
 ## 1. Units and frames
 
@@ -207,8 +207,8 @@ Input event (one per change, partial fields allowed; unspecified fields hold the
 last value):
 `{v: "1.0.0", seq, step, applied_step, wall_ms, source, controls: {…}, assists?: {…}}`
 
-- `seq` is a strictly increasing integer per run, **assigned by the worker** on
-  acceptance (§10.3); `source` is the profile id (`keyboard`, `pointer`,
+- `seq` is a strictly increasing integer per run (v1); the v1.1 proposal §10.3 has
+  the worker assign it on acceptance; `source` is the profile id (`keyboard`, `pointer`,
   `gamepad:<id>`, `script`, `fallback` (v1.1: automatic device-loss handling at the
   input boundary, §10.4); `iphone` is Later, TODO 1.13).
 - **Application rule (v0.1 adopted):** an event targeting `step: s` applies
@@ -274,7 +274,7 @@ the declared field list and its blocking open item are in SCENARIO-CONTRACTS §4
 not specified bit-exactly across engines, the `ind` digest is comparable only on the
 same browser engine and version.
 
-The worker stream sends a subset (`sim.core`, §10.2) at 60 Hz; full snapshots are
+The worker stream sends a subset (`sim_core`, §10.2) at 60 Hz; full snapshots are
 available on request and at checkpoints. Non-finite state stops the run with an
 `error` naming field and step.
 
@@ -396,7 +396,7 @@ The v0.1 → v1 worker-message mapping is in [Appendix A](#appendix-a-v01--v1-wo
 | O-8 | First exercise start | Starts at the runway holding point, engine running; engine start/taxi Later | §3 |
 | O-9 | Paired iPhone | Stays in TODO 1.13, not v1.0 | §3 |
 
-## 9. Proposed SPEC acceptance edits (not applied)
+## 9. SPEC acceptance edits (applied in SPEC R-SIM-3/R-SIM-4, PR fix/m1-records)
 
 R-SIM-3, replace the acceptance text with:
 
@@ -445,7 +445,7 @@ required within v1.1 does not help, since v1 readers still ignore it, so it woul
 a major change. A learner's declared reference, if wanted, is a later logged session
 event outside the digests (**Later**).
 
-### 10.2 Worker-computed `ind` and `sim.core`
+### 10.2 Worker-computed `ind` and `sim_core`
 
 The worker computes `ind` **every step**, never the main thread. After the
 integration from step `s` to `s+1` it: (1) takes the WASM-produced `sim` bytes for
@@ -570,7 +570,7 @@ orchestrator Q5 record first; until then their values cannot ship under this enu
 | application rule (v0.1 text) | unchanged; worker logs `applied_step`; paused inputs not late | Log carries applied step |
 | `run {until_step?}`, `pause`, `stop` | `run`, `pause`, `reset`, `stop` | `until_step` test-only; `reset` re-seeds |
 | `ready.build {jsbsim_tag, jsbsim_commit, emsdk, wasm_bytes, wasm_sha256, flags}` | same + `contract_version`, bridge revision, `js_bundle_sha256` | Main thread adds browser engine/version |
-| `state {step, t_s, lat_rad, lon_rad, alt_msl_m, roll_rad, pitch_rad, heading_rad, tas_mps, …}` | `state {v, run_id, step, sim.core, env?, ind?}` | Explicit height fields; `heading_true_rad`; `t_s` derived |
+| `state {step, t_s, lat_rad, lon_rad, alt_msl_m, roll_rad, pitch_rad, heading_rad, tas_mps, …}` | `state {v, run_id, step, sim_core, env_core?, ind?}` | Explicit height fields; `heading_true_rad`; `t_s` derived |
 | `stats` (benchmark) | `stats {missed, dropped, max_lag, max_batch, late_inputs, digests, checkpoint}` | Product overload reporting |
 | `burst`, `stats.step_cost_us` array | test harness only | Not product |
 | `error {message}` | `error {v, code, field?, step?, message}` | Machine-readable code |

@@ -118,8 +118,9 @@ preserves the source conditions below. Band decisions in rules 4–5 remain
 proposals; comparing rounded SI results with knot targets needs a separate
 quantization/boundary policy before implementation.
 
-1. **Flap table**: the 0°, 10° or 30° table applies when `sim.flap_rad` is within
-   0.5° of that setting (same detent tolerance as the VFE gate, IP). Flaps 20° and
+1. **Flap table**: the 0°, 10° or 30° table applies when `sim.flap_rad` lies within the
+   radian bounds of ASSESSMENT-AIRSPEED AA2 (detent ± 0.5°, converted to radians; same
+   tolerance as the VFE gate, IP). Flaps 20° and
    flaps in transit have no tabulated calibration in S17: IAS is "not available".
 2. **Inverse interpolation**: within the selected table, KCAS increases with KIAS, so
    `sim.cas_mps` is located between the two bracketing CAS points and IAS is
@@ -287,7 +288,7 @@ operator rules; this exercise does not replace them.
   instructor-reviewed claim records that separate review.
 - R-TRAIN-2: add that assessment re-evaluates identically from the replay record and
   records evaluator and criterion-set versions.
-- New EVAL section (E7 or a dedicated E14) "Does Exercise 01 assess what it claims?":
+- New EVAL section (E7 or a new dedicated section after E15; E14 is the assurance question) "Does Exercise 01 assess what it claims?":
   scripted input fixtures (nominal circuit; flaps 20° take-off; VFE exceedance; long
   touchdown; nose-first touchdown; go-around; 1500 ft exceedance; ENV-1 crosswind)
   with expected gate/feedback outcomes fixed before execution, plus re-evaluation

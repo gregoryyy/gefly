@@ -14,7 +14,7 @@ from sourced facts; **Proposal** = product choice awaiting the orchestrator/user
 
 ## 1. Learner problem and scope
 
-A learner on the reference MacBook Pro M1 with Chrome (Safari second) wants an
+A learner on the reference MacBook Pro (Apple M1 Pro) with Chrome (Safari second) wants an
 analogue, yoke-like pitch/roll input without buying hardware. Tilting a paired
 iPhone moves the controls; keyboard/touchpad remain available and take over
 whenever the phone cannot be trusted. Scope limits:
@@ -176,8 +176,8 @@ The Mac iPhone profile (inside the input module) applies, in order:
    angle (default 30°, adjustable 10°–60°), exponential and inversion as for
    other profiles; the profile saturates its output to [−1, 1] by design
    (labeled device mapping).
-6. **Emit** a CONTRACTS input event `{v, seq, step, wall_ms, source:"iphone",
-   controls:{pitch, roll}}` at most once per simulation step, latest sample
+6. **Emit** a CONTRACTS input proposal `{v, proposal_id, step, wall_ms, source:"iphone",
+   controls:{pitch, roll}}` (the worker assigns `seq`, CONTRACTS §10.3) at most once per simulation step, latest sample
    wins. Yaw, throttle and discrete controls stay on keyboard/touchpad
    (Proposal; §10 Q-P4). Roll→yaw mixing remains the boundary assist.
 
