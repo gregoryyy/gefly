@@ -65,6 +65,43 @@ ROAD, EVAL and TODO. Exact reference Mac, macOS/browser versions, peripheral
 models, settings details and measured budgets remain foundation implementation
 choices in TODO 1.2.1; they were not selected by this answer.
 
+### Q19. Paired-phone control choices (Q-P1..Q-P6)?
+
+Why: [PHONE-CONTROL](design/PHONE-CONTROL.md) (TODO 1.13) needs hosting, device,
+grip, axis, loss and budget choices before implementation.
+
+Answer: **2026-11-01 18:13, user** (recorded by orchestrator, Claude Code;
+[input](input/2026-11-01-phone-control-decisions.md)): “ios latest on iphone 13
+mini, yes to proposals”. Decided: reference phone **iPhone 13 mini, latest iOS**,
+Safari (versions pinned per measurement); HTTPS phone page on the simulator's static
+host once hosting is chosen, a local HTTPS dev server meanwhile; landscape yoke-like
+grip, screen up; roll tilt → aileron, pitch tilt → elevator, rudder on keyboard; on
+phone loss hold the last values 0.5 s, then centre, with a visible warning; latency
+budget p95 ≤ 110 ms end to end and ≤ 40 ms over keyboard, to be measured.
+
+Resolved: 2026-11-01 18:13, user; carried into [PHONE-CONTROL](design/PHONE-CONTROL.md) and [TODO](TODO.md) 1.13.
+
+### Q18. Contracts v1 open questions (O-1..O-9)
+
+Why: TODO 1.4 contracts must be agreed before parallel product coding.
+
+Answer (O-3 datum): **2026-11-01 13:59, user** ([input](input/2026-11-01-datum-runway-poh-decisions.md)):
+“yes to proposals”. JSBSim runs on DHHN2016 physical heights treated as its
+ellipsoid height; ellipsoidal heights are computed outside the dynamics with GCG2016
+in Germany and EGM2008 elsewhere ([CONTRACTS](design/CONTRACTS.md) §1).
+
+Answer: **2026-11-01 13:00, user** (recorded by orchestrator, Claude Code;
+[input](input/2026-11-01-contracts-decisions.md)): “accept all, 8 start at hold
+point”. Decided: display-only interpolation with a 60 Hz state stream (never in
+digests or replay); WMM2025; JSBSim height datum to be established by research
+before choosing the geoid; per-step FNV-1a 64 plus SHA-256 checkpoints every 120
+steps; review seek by re-simulating from step 0; optional recorded trace with the
+input log authoritative; 172S control list from POH Section 7 by research (cited,
+not copied); the paired-iPhone profile stays in TODO 1.13; the first exercise
+starts at the runway holding point (see Q7).
+
+Resolved: 2026-11-01 13:00, user; carried into [CONTRACTS](design/CONTRACTS.md), Q7 and [TODO](TODO.md) 1.4/1.5.
+
 ### Q17. Which dynamics engine and web stack (E1)?
 
 Why: TODO 1.2 needs a reuse-first engine and browser stack decision (R-REUSE-1).
@@ -91,6 +128,28 @@ Resolved (engine): 2026-11-01 11:38, user; carried into [ARCH](ARCH.md), [SBOM](
 
 Why: TODO 1.2.1 needs a measured reference platform for timestep, latency and
 frame budgets, and the optional input profiles.
+
+Update: **2026-11-01 13:28, user** ([input](input/2026-11-01-no-external-monitor.md)): no
+external monitor. The 120 Hz refresh therefore came from the built-in panel, which
+together with the renderer string identifies a 14-inch MacBook Pro with Apple M1 Pro.
+Results stay attributed to the measured hardware (Apple M1 Pro, 120 Hz built-in);
+About This Mac can confirm the chip.
+
+Update: **2026-11-01 13:28, user** ([input](input/2026-11-01-mac-model.md)): “late 2020
+macbook pro 14””. Orchestrator note: Apple's late-2020 MacBook Pro is the 13-inch M1
+(60 Hz); the 14-inch MacBook Pro (late 2021) has an M1 Pro or M1 Max and a 120 Hz
+ProMotion display, which matches the recorded renderer string and refresh. Pending
+the user's check (Apple menu → About This Mac), results are attributed to the
+renderer-reported **Apple M1 Pro, 120 Hz**; the reference-platform name in Q16 stays
+"MacBook Pro (Apple silicon)" until confirmed.
+
+Confirmation: **2026-11-01 13:25, user** (recorded by orchestrator, Claude Code;
+[input](input/2026-11-01-chip-confirmation.md)): “M1 not pro”. The reference Mac is
+an Apple M1. Observation to reconcile: Chrome's WebGL renderer string on the
+recorded runs reported "Apple M1 Pro", and the display measured 120 Hz, which the
+13-inch M1 MacBook Pro's built-in panel does not provide (an external 120 Hz display
+would explain it). Results keep the reported strings; budgets scale to the measured
+refresh.
 
 Answer: **2026-11-01 11:00, user** (recorded by orchestrator, Claude Code;
 [input](input/2026-11-01-reference-platform.md)): “macbook pro m1, latest macos,
@@ -128,6 +187,14 @@ coverage, rights and live rollout remain future implementation selections.
 ### Q5. Source license and third-party data policy?
 
 Why: affects code reuse, distribution, aircraft manuals, avionics depictions, maps and navigation data. The user's direction is now free/open source; select a compatible open-source license and review separately licensed assets/data. Blocking: license-dependent distribution and restricted asset ingestion.
+
+Answer (aircraft-model sources): **2026-11-01 18:43, user** (recorded by orchestrator, Claude Code;
+[input](input/2026-11-01-lycoming-openvsp-decisions.md)): “yes to both”. (a) Only
+the needed points of the copyrighted Lycoming IO-360-L2A power curve may be extracted
+as cited facts, never the whole chart, under the same no-piecemeal rule as the POH
+values. (b) OpenVSP (NASA Open Source Agreement) may be used offline as an estimation
+tool; it is not distributed, and only its results ship, labelled `estimated` with
+inputs and version recorded.
 
 Confirmation: **2026-11-01 07:08, user** (recorded by orchestrator, Claude Code;
 [confirmations](input/2026-11-01-confirmations.md)): “gpl3+” — GPL-3.0-or-later,
@@ -212,6 +279,21 @@ the change.~~
 Resolved: 2026-11-01 11:54, user (supersedes the 07:22 per-PR scope); carried into SDLC, AGENTS, SPEC R-AGENT-7, the
 [agent workflow](agents/README.md), [peer](agents/peer.md) and the PR template.
 
+### Q20. How are model size and reasoning effort chosen for agent work?
+
+Why: tasks differ widely in difficulty and risk; one fixed model/effort either
+wastes cost on mechanical work or under-powers design, security and review work.
+
+Answer: **2026-11-01 18:46, user** (recorded by orchestrator, Claude Code;
+[input](input/2026-11-01-model-effort-selection.md)): “add to BOOT and project that
+the right model size and thinking effort is to be selected appropriately.”
+
+Resolved: 2026-11-01 18:46, user. The orchestrator selects model tier and reasoning effort per
+task by difficulty and risk; reviews use at least the tier of the reviewed work;
+no model identifiers in repository files. Carried into [AGENTS](../AGENTS.md),
+[BOOT](BOOT.md#dispatch-parallel-work-and-integration) and the
+[agent workflow](agents/README.md#runtime-setup).
+
 ## Open questions
 
 ### Q3. Which Cessna 172 variant, year and avionics fit?
@@ -262,6 +344,21 @@ and product. Glass is a later configuration; A320 is a reference, not an initial
 
 Why: determines whether the first slice is aircraft handling, instrument interpretation or a procedure, and how training claims can be reviewed. ~~Proposed: a bounded straight-and-level control/trim exercise, then coordinated turns;~~ (superseded by the 2026-11-01 answer below) product should refine objectives against the selected EASA syllabus with instructor review. Blocking: milestone 2 exercise acceptance, not generic physics experiments.
 
+Answer: **2026-11-01 13:59, user** (recorded by orchestrator, Claude Code; input record
+`docs/input/2026-11-01-datum-runway-poh-decisions.md` on branch design/contracts-1-4):
+“yes to proposals, no instructor reviewer yet, go with what we learn from research”.
+Exercise 01 uses **runway 26** (proposed default) with the standard north circuit
+(right-hand for 26, per operator material); **no instructor reviewer** for now, so
+criteria stay labelled source-based or instructional proposals and are refined from
+research; POH values (ASI calibration, performance) may be extracted as cited facts
+without copying tables.
+
+Answer: **2026-11-01 13:00, user** (recorded by orchestrator, Claude Code;
+[input](input/2026-11-01-contracts-decisions.md)): “8 start at hold point”. The first
+exercise **starts at the runway holding point with the engine running**; engine
+start and taxi come later. This resolves the earlier orchestrator reading of
+“start” as take-off.
+
 Answer: **2026-11-01 07:04, user** (recorded by orchestrator, Claude Code; [2026-11-01 answers](input/2026-11-01-aircraft-license-exercise-answers.md)):
 “first learning exercise is start fly a pattern and land”. The first exercise is a
 complete **circuit: take-off, traffic pattern and landing** at the first airport
@@ -270,6 +367,8 @@ user may include engine start/taxi), replacing the earlier straight-and-level pr
 pattern direction from sourced aerodrome data, assessment criteria/tolerances
 (TODO 1.5) and the instructor review partner. Owner: product proposes criteria;
 orchestrator resolves with user.
+
+TODO: needs resolution.
 
 ~~Answer: pending.~~
 

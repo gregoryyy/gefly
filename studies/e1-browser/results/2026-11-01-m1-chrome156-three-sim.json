@@ -1,0 +1,93 @@
+{
+  "page": "three",
+  "measured_s": 20.003899999999998,
+  "warmup_s": 3,
+  "frames": 2400,
+  "fps_median": 120.48192771084074,
+  "fps_mean": 119.97660456211038,
+  "frame_ms": {
+    "p50": 8.300000000000182,
+    "p95": 9.299999999999272,
+    "p99": 9.399999999999636,
+    "max": 10
+  },
+  "long_frames_gt_25ms": 0,
+  "refresh": {
+    "period_ms": 8.299999999999955,
+    "hz": 120.48192771084403,
+    "source": "idle rAF median before scene start",
+    "idle_samples": 120,
+    "idle_median_ms": 8.299999999999955,
+    "idle_p10_ms": 7.5,
+    "idle_p90_ms": 9.200000000000045
+  },
+  "missed_vsyncs": 0,
+  "frames_late_gt_1_5_periods": 0,
+  "budget": {
+    "median_interval_limit_ms": 8.714999999999952,
+    "median_interval_pass": true,
+    "p99_limit_ms": 25,
+    "p99_pass": true,
+    "note": "preliminary unless run on the reference M1/Chrome"
+  },
+  "js_heap_start": {
+    "used_bytes": 9635167,
+    "total_bytes": 13111395
+  },
+  "js_heap_end": {
+    "used_bytes": 10003932,
+    "total_bytes": 12324972
+  },
+  "viewport_css_px": [
+    1232,
+    817
+  ],
+  "device_pixel_ratio": 2,
+  "cross_origin_isolated": false,
+  "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+  "engine": {
+    "name": "three.js",
+    "version": "187",
+    "license": "MIT"
+  },
+  "imagery": "none (procedural ground plane and grid)",
+  "terrain": "flat ENU plane at WGS-84 h = 0 m",
+  "webgl": {
+    "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "vendor": "Google Inc. (Apple)",
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+    "drawing_buffer": [
+      1232,
+      817
+    ]
+  },
+  "resolution_scale": "css",
+  "frames_with_state": 2400,
+  "frames_same_step_as_previous": 1200,
+  "draw_calls_last_frame": 6,
+  "stream": {
+    "source": "sim",
+    "url": "../sim/worker.js",
+    "ready": {
+      "jsbsim_tag": "v1.3.3",
+      "emsdk": "6.0.13",
+      "wasm_bytes": 1728736,
+      "jsbsim_commit": "66f7fafc07fe13e7ede9db20873030fed2881713",
+      "wasm_sha256": "ec4a73ec6af496b1a4cf91a40cc136e3ea249b790078bb6413f96cedd6cb78a4",
+      "flags": "-O2 -fwasm-exceptions"
+    },
+    "errors": [],
+    "window": "measurement window only",
+    "states_received_total": 1349,
+    "states_received": 1200,
+    "state_rate_hz": 60.00010008371296,
+    "state_interval_ms": {
+      "p50": 16.600000143051147,
+      "p95": 18.40000009536743,
+      "p99": 20.90000009536743,
+      "max": 23.700000047683716
+    },
+    "last_step": 2694,
+    "last_t_s": 22.449999999999367
+  }
+}

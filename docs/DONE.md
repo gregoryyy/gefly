@@ -3,6 +3,26 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 19:06 — Repair post-merge records; record stack, fuel-chart and tolerance answers
+
+TODO: 1.1.2, 1.2.3, 1.4 complete. Agent: Claude Code orchestrator (no subagents).
+
+**Implementation notes**
+
+After the user merged PRs #9–#23 with "accept both" conflict resolutions, DONE.md had
+truncated, mixed and out-of-order entries. Rebuilt it from the complete per-entry
+versions in main's history (44 entries, newest first; Exercise 01 entry no longer
+carries the iPhone and briefing bodies). Checked GAPS (unique headings; Q15 answers
+restored to newest first), README (stale "variant and stack open" sentence), TODO
+(merged/reviewed statuses), AGENTS and ARCH (stack). Recorded the user's answers:
+Q17 web stack (CesiumJS, three.js fallback, MapLibre, TypeScript, JSBSim worker), Q5
+Lycoming fuel-chart points, Q21 FDM tolerance proposals accepted as working proposals.
+
+**Deviations**
+
+Other files were checked for duplicated lines and conflict markers only, not
+re-reviewed line by line. Peer pending (batched).
+
 ## 2026-11-01 19:00 — Extract Lycoming power points and POH cruise/glide values
 
 TODO: E2 data. Agent: Claude Code orchestrator; researcher/housekeeping subagent.
@@ -21,6 +41,129 @@ as a facts-only source (manifest 0.2.0); validator extended, 21 tests (112 total
 uninstalled engine; the glide figure is a single line, so one reading carries its
 whole content — flagged for the user against the no-piecemeal rule. Not yet reviewed.
 Peer pending (batched).
+
+## 2026-11-01 18:46 — Select model size and reasoning effort per task
+
+TODO: 0.20 complete. Agent: Claude Code orchestrator (no subagents).
+
+**Implementation notes**
+
+Per the user (GAPS Q20), AGENTS, BOOT (dispatch section) and the agent workflow now
+require the orchestrator to choose model tier and reasoning effort per task by
+difficulty and risk, with reviews at least at the tier of the reviewed work and no
+model identifiers in repository files. This is a recorded change to the agent rules.
+
+**Deviations**
+
+No runtime configuration changed; native Codex registrations still set no model.
+
+## 2026-11-01 18:45 — Record the valid CesiumJS run on the reference Mac
+
+TODO: 1.2.3 in progress. Agent: Claude Code orchestrator (no subagents); run by the
+user on the reference Mac (Apple M1 Pro GPU, 120 Hz), Chrome 156.
+
+**Implementation notes**
+
+CesiumJS 1.146.0 with the JSBSim stream after the canvas fix: median 8.3 ms, p99
+9.4 ms, 2 missed vsyncs, heading check pass; both render budgets pass. With the
+earlier three.js result, both candidates meet the budgets.
+
+**Deviations**
+
+Smaller window (739×817) than the three.js run, CSS resolution only, no real terrain
+or imagery tiles. Renderer choice awaits the user. Peer pending (batched).
+
+## 2026-11-01 18:26 — Fix Codex review findings on PRs #4–#6
+
+TODO: 0.19 in progress. Agent: Claude Code orchestrator; code1 subagent. Findings
+from the Codex local review (report `docs/reviews/2026-11-01-first-claude-prs.md` on
+branch docs/first-claude-pr-review-evidence).
+
+**Implementation notes**
+
+1. The JSBSim study's stationary and cost fixtures now fail on any `run()` returning
+   False or not advancing sim time by dt; 7 fake-FDM tests (no jsbsim needed).
+2. `studies/e1-jsbsim/requirements.txt` pins jsbsim 1.3.3 and numpy 2.5.4 with
+   hashes (CPython 3.13 manylinux x86-64 only); README uses
+   `pip install --require-hashes -r …`. Fresh-venv install verified; recorded F1
+   digests unchanged.
+3. SPEC, README and CONCEPT now state JSBSim is selected (Q17), separate from the
+   open model, rendering and hosting choices.
+
+**Deviations**
+
+Formal peer acceptance stays blocked: the Codex CLI failed to initialise on a
+read-only filesystem; a re-run with an updated packet is needed. Hashes cover one
+platform only; the original run's numpy version was not recorded.
+
+## 2026-11-01 18:21 — Survey open Cessna 172 aerodynamic data for the E2 model
+
+TODO: E2 preparation. Agent: Claude Code orchestrator; researcher subagent.
+
+**Implementation notes**
+
+Added [C172 aero data sources](research/2026-11-01-c172-aero-data-sources.md): no
+open 172S-specific aero, propeller, inertia or gear data found. Usable earlier-model
+sources: NASA TM-80163 flight-test derivatives (public domain, aircraft identity
+inferred), KU-M-407-7 1974 172M identification (cite-only), consistent inertia sets,
+NASA CR-2605 DATCOM estimates, NASA SP-468 drag/L-D; Lycoming IO-360-L2A curve is
+copyrighted; no public McCauley 1A170E data. Proposed calibration vs holdout split.
+
+**Deviations**
+
+No coefficients added. Needs Q5 decisions (digitising the Lycoming curve, OpenVSP
+licence) before a model can be built. Not yet reviewed. Peer pending (batched).
+
+## 2026-11-01 18:18 — Draft scenario and review contract extension v1.1
+
+TODO: 1.9 in progress. Agent: Claude Code orchestrator; product subagent.
+
+**Implementation notes**
+
+Added [SCENARIO-CONTRACTS](design/SCENARIO-CONTRACTS.md) as a minor extension of
+CONTRACTS v1: one-directional scenario record (package, briefing, catalog snapshot,
+aircraft manifest, environment), shared event envelope with logged/derived and digest
+group per event type, review record with re-simulated seek, a code1/code2 field
+ownership table for milestone 2, and 15 reconciled naming conflicts across the
+CONTRACTS, BRIEFING, EXERCISE-01, EXPERIENCES and PHONE-CONTROL drafts.
+
+**Deviations**
+
+Orchestrator accepts C3 (`magvar_east_rad` JS-computed, `ind` group, consistent with
+the WASM-only `sim` digest rule) and C5 (altimeter state holds the set pressure; the
+reference is scenario-expected plus a derived match, since the knob only sets a
+pressure) as technical consistency fixes within Q18; the user can revise them. Not
+yet reviewed. Peer pending (batched).
+
+## 2026-11-01 18:16 — Record local review of first Claude PRs
+
+Agent: Codex orchestrator; first_pr_docs_review performed independent local
+source inspection. Reviewed Claude PRs #4–#6 at `48b2991`; three medium findings
+remain unresolved. [Report](reviews/2026-11-01-first-claude-prs.md) includes
+reproductions, validation scope and frozen packet hash. The fresh Codex CLI
+failed before reviewer initialization on the read-only filesystem; formal peer
+acceptance remains blocked and TODO 0.19 stays open. No product fixes made.
+Current foundation CI passed 41 tests; study tests passed 7 and skipped 9.
+
+## 2026-11-01 16:47 — Draft the paired-iPhone control specification
+
+TODO: 1.13 in progress. Agent: Claude Code orchestrator; product subagent (with source
+research).
+
+**Implementation notes**
+
+Added [PHONE-CONTROL](design/PHONE-CONTROL.md) and its
+[source note](research/2026-11-01-phone-control-sources.md). Proposal: direct WebRTC
+data channel on the local network (unordered, no retransmission, no STUN/TURN), a
+short-lived encrypted pairing mailbox, single-use QR code plus a 6-digit code
+confirmed on both devices, mapping into the CONTRACTS input boundary with staleness
+and replay rejection, and keyboard/touchpad fallback.
+
+**Deviations**
+
+Draft; iOS orientation needs an HTTPS page, so hosting (open) blocks it; sensor rate
+and latency unmeasured, budget values are proposals; not yet reviewed. Peer pending
+(batched).
 
 ## 2026-11-01 14:07 — Extract cited 172S POH values
 
@@ -43,6 +186,60 @@ POH gives short-field distances only; VFE 10° KCAS differs between p. 2-4 (107)
 p. 5-9 (109), recorded as pending; applicability of later POH revisions to
 172S9491–9809 unchecked; not yet reviewed. Peer pending (batched).
 
+## 2026-11-01 13:59 — Confirm the height datum; contracts v1 agreed
+
+TODO: 1.4 complete pending merge. Agent: Claude Code orchestrator (no subagents).
+
+**Implementation notes**
+
+The user accepted the physical-height convention (GAPS Q18 O-3); CONTRACTS no longer
+marks it pending. With Q18 resolved and three review rounds closed, contracts v1 is
+the agreed basis for parallel product coding.
+
+**Deviations**
+
+Peer pending (batched); geoid grid full hashes and terrain beyond Hessen remain open.
+
+## 2026-11-01 13:34 — Draft scenario briefing, AFIS radio and checklist scope
+
+TODO: 1.8 in progress. Agent: Claude Code orchestrator; product subagent (with source
+research).
+
+**Implementation notes**
+
+Added [BRIEFING](design/BRIEFING.md) and its
+[source note](research/2026-11-01-briefing-radio-sources.md): snapshot briefing
+schema validated against scenario time with explicit failure states; QNH/QFE/STD flow
+into the environment; a later live adapter frozen into replay; AFIS (information, not
+clearances) text-radio scope with AI text limited to proposing intents; POH checklist
+items classified by modeled state. EDFE has no METAR in the checked feed, so briefings
+pair EDDF METAR/TAF with a generated EDFE report.
+
+**Deviations**
+
+Draft; WMO-No. 306, ICAO Annex 3/Doc 4444/9432 and DFS AIP not read; not yet
+reviewed. Peer pending (batched).
+
+## 2026-11-01 13:31 — Draft Exercise 01 acceptance criteria
+
+TODO: 1.5 in progress. Agent: Claude Code orchestrator; product subagent (with source
+research).
+
+**Implementation notes**
+
+Added [EXERCISE-01](design/EXERCISE-01.md): holding-point start with engine running,
+12 phases with measures, units and state fields, pass/fail/feedback rules, assists,
+replay markers and environment cases; and its
+[source note](research/2026-11-01-exercise-01-sources.md). Tolerances are labelled by
+source: EASA AMC1 FCL.235 skill-test guidance (used as instructional adaptation),
+C172S POH (page-cited), EDFE operator material (cite-only), or instructional proposal
+pending instructor review.
+
+**Deviations**
+
+Draft, not frozen: runway, instructor reviewer, AIP circuit data and the POH climb-
+speed discrepancy are open; not yet reviewed. Peer pending (batched).
+
 ## 2026-11-01 13:29 — Draft the 172S classic-panel aircraft manifest
 
 TODO: 1.3 in progress. Agent: Claude Code orchestrator; housekeeping subagent.
@@ -60,6 +257,110 @@ mass) are recorded as unknown with both readings. JSON Schema, stdlib validator 
 
 Draft; FAA 3A12 Rev 88 and engine TCDS 1E10 not read; avionics fit TBD; not yet
 reviewed. Aircraft data: peer pending (batched), required before milestone acceptance.
+
+## 2026-11-01 13:07 — Draft the flight-experience package and LLM boundary
+
+TODO: 1.10 in progress. Agent: Claude Code orchestrator; product subagent.
+
+**Implementation notes**
+
+Added [EXPERIENCES](design/EXPERIENCES.md): declarative versioned package (no code,
+unit- and reference-bearing values, per-value provenance status), stable-ID source
+catalog starting with `eddf-100nm`/EDFE, LLM boundary (draft and catalog lookup
+only), nine validation stages with failure codes, review states with author ≠
+reviewer, security rules, and an EDFE circuit example with every real value TBD.
+
+**Deviations**
+
+Draft; cites the holding-point start from branch `design/contracts-1-4` (not yet on
+main); runway in the example is illustrative; Q13 provider open; not yet reviewed.
+Peer pending (batched).
+
+## 2026-11-01 13:06 — Add study checks to the shared CI gate
+
+TODO: 1.1.2 in progress. Agent: Claude Code orchestrator; code1 subagent.
+
+**Implementation notes**
+
+`utils/ci.py` now runs the `studies/e1-jsbsim` tests in a separate interpreter
+(fails on missing/empty/failing/import errors, reports skips) and
+`check-synthetic.mjs` with node; a missing node is reported as a skip and the final
+line says "passed with skipped check". Hosted CI uses `--require-node` with the
+runner's preinstalled Node.js. 8 new negative/positive tests (49 tool tests total).
+
+**Deviations**
+
+Local only: hosted run and independent review pending. Peer pending (batched).
+
+## 2026-11-01 13:06 — Draft the pilot-qualification profile contract
+
+TODO: 1.12 in progress. Agent: Claude Code orchestrator; product subagent.
+
+**Implementation notes**
+
+Added [QUALIFICATIONS](design/QUALIFICATIONS.md): sourced-value model with per-field
+status and source register, profile schema (jurisdiction, authority, full
+qualification, privileges, objectives→exercises, aircraft-manifest references,
+mandatory no-training-credit flag), 12 invalidity rules, versioning, a draft EASA
+PPL(A)/C172S example and placeholder SPL/ultralight shapes bound to Q14.
+
+**Deviations**
+
+Draft; most PPL values unverified until Part-FCL sections are read; Q14 choices not
+made; proposed SPEC edits not applied; not yet reviewed. Peer pending (batched).
+
+## 2026-11-01 12:58 — Draft shared contracts v1
+
+TODO: 1.4 in progress. Agent: Claude Code orchestrator; product subagent.
+
+**Implementation notes**
+
+Added [CONTRACTS](design/CONTRACTS.md): SI units and frames with conversion
+boundaries, fixed 1/120 s step and step-index clock, pilot-sense input schema with
+applied-step logging, three-layer state (sim/instruments/teaching), replay metadata
+with seed set before RunIC, 17 sourced fixtures, versioning and a v0.1→v1 message
+table. Proposed SPEC wording for R-SIM-3/R-SIM-4 is not applied.
+
+**Deviations**
+
+Draft only; nine open questions (O-1..O-9) need decisions; not yet independently
+reviewed. Peer pending (batched).
+
+## 2026-11-01 12:56 — Record M1 render runs; fix the hosted Cesium page
+
+TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator (no subagents); runs
+by the user on the reference Mac (WebGL: Apple M1 Pro, 120 Hz), Chrome 156.
+
+**Implementation notes**
+
+three.js with the JSBSim stream: median 8.3 ms, p99 9.4 ms at 120 Hz: both render
+budgets pass (1232×817 viewport, CSS resolution). CesiumJS run invalid: 300×150 px
+drawing buffer because the host CSP blocks `widgets.css`; added inline canvas CSS
+and an invalid-run guard, republished the page (version 2). Recorded the hosted
+launcher and its file map under `studies/e1-browser/hosted/` for later repeats.
+
+**Deviations**
+
+Cesium repeat pending. GAPS Q16 says M1; the GPU string says M1 Pro (to confirm).
+Peer pending (batched).
+
+## 2026-11-01 12:53 — Record the reference M1 worker benchmark
+
+TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator (no subagents); run
+performed by the user on the reference MacBook Pro M1, Chrome 156.
+
+**Implementation notes**
+
+Stored the user's JSON under `studies/e1-browser/results/`. Missed steps 0.33 per
+10 s, latency p95 16.9 ms and same-build replay pass; paced step-cost p99 800–1000 µs
+exceeds 830 µs as measured but is limited by 100 µs timer coarsening (page not
+cross-origin isolated); unpaced compute ≈ 15 µs per step. Replay digest equals the
+container's for the same WASM build.
+
+**Deviations**
+
+Render runs on the M1 pending; step cost to be re-measured cross-origin isolated.
+Peer pending (batched).
 
 ## 2026-11-01 12:33 — Validate the E1 browser check; publish the M1 test page
 
@@ -118,6 +419,7 @@ at ≈ 60 Hz. Contract deviations recorded as v0.1 proposals.
 
 Software GL in the container makes render numbers meaningless for the budget;
 reference M1 run outstanding. Peer pending (batched; see GAPS Q15).
+
 ## 2026-11-01 11:54 — Adopt proclens's batched peer-review cadence
 
 TODO: 0.18 updated; 0.19 added. Agent: Claude Code orchestrator (no subagents).
@@ -332,8 +634,8 @@ CONCEPT, README, THIRD_PARTY_NOTICES and TODO.
 **Deviations**
 
 Records decisions only; no aircraft data, aerodrome data or simulator code.
-The user confirmed GPL-3.0-or-later, the "it depends" reading and the
-172S-first order at 07:08. No independent quality/validate or
+The GPL-3.0-*or-later* variant and the "it fried on" reading are orchestrator
+interpretations awaiting user confirmation. No independent quality/validate or
 peer review was run for this documentation change.
 
 ## 2026-10-31 21:51 — Add and independently review repository-tool CI

@@ -1,0 +1,264 @@
+{
+  "evidence": "preliminary: headless or local browser run; not the reference M1/Chrome platform",
+  "started": "2026-11-01T11:37:56.931Z",
+  "env": {
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+    "hardwareConcurrency": 8,
+    "crossOriginIsolated": false
+  },
+  "params": {
+    "seconds": 30,
+    "live_seconds": 10,
+    "state_hz": 60,
+    "dt_s": 0.008333333333333333,
+    "ic": {
+      "lat_rad": 0.8719909289058949,
+      "lon_rad": 0.1508453165913659,
+      "alt_msl_m": 1000,
+      "heading_rad": 0,
+      "tas_mps": 46
+    }
+  },
+  "runs": [
+    {
+      "label": "A",
+      "mode": "scheduled",
+      "seconds": 30,
+      "ready_ms": 1244.7000000476837,
+      "build": {
+        "jsbsim_tag": "v1.3.3",
+        "emsdk": "6.0.13",
+        "wasm_bytes": 1728736,
+        "jsbsim_commit": "66f7fafc07fe13e7ede9db20873030fed2881713",
+        "wasm_sha256": "ec4a73ec6af496b1a4cf91a40cc136e3ea249b790078bb6413f96cedd6cb78a4",
+        "flags": "-O2 -fwasm-exceptions"
+      },
+      "trim": {
+        "status": 1,
+        "throttle": 0.6929926635782687,
+        "pitch_trim": 0.167934782710137
+      },
+      "steps": 3600,
+      "t_s": 29.999999999998938,
+      "run_wall_ms": 30001.299999952316,
+      "sim_to_wall": 0.999956668545917,
+      "missed_steps": 1,
+      "dropped_steps": 0,
+      "max_lag_steps": 2,
+      "max_lag_ms": 13.166666666664241,
+      "late_inputs": 0,
+      "applied_inputs": 120,
+      "pending_inputs": 0,
+      "max_catchup_batch": 2,
+      "ticks": 3763,
+      "worker_cross_origin_isolated": false,
+      "step_cost_us": {
+        "n": 3600,
+        "p50": 200.0000457763672,
+        "p99": 1000,
+        "max": 5200,
+        "mean": 231.44444666756524
+      },
+      "state_msgs": 1802,
+      "state_interval_ms": {
+        "p50": 16.699951171875,
+        "p95": 19.300048828125,
+        "max": 22.10009765625
+      },
+      "latency_ms": null,
+      "digest": "7c8783f3440f387a",
+      "final_state": [
+        29.999999999998938,
+        0.8722051608257252,
+        0.15082528546431975,
+        1008.2598774432779,
+        -0.10332014134013662,
+        0.027881484451055264,
+        5.98299358026236,
+        46.305120331010244,
+        46.28255382590364,
+        0.11798327166946057,
+        1.4406457473207408,
+        0.009674034837563898,
+        0.005243729330698766,
+        -0.012863456032216163
+      ],
+      "errors": []
+    },
+    {
+      "label": "B",
+      "mode": "scheduled",
+      "seconds": 30,
+      "ready_ms": 88.90000009536743,
+      "build": {
+        "jsbsim_tag": "v1.3.3",
+        "emsdk": "6.0.13",
+        "wasm_bytes": 1728736,
+        "jsbsim_commit": "66f7fafc07fe13e7ede9db20873030fed2881713",
+        "wasm_sha256": "ec4a73ec6af496b1a4cf91a40cc136e3ea249b790078bb6413f96cedd6cb78a4",
+        "flags": "-O2 -fwasm-exceptions"
+      },
+      "trim": {
+        "status": 1,
+        "throttle": 0.6929926635782687,
+        "pitch_trim": 0.167934782710137
+      },
+      "steps": 3600,
+      "t_s": 29.999999999998938,
+      "run_wall_ms": 30001.900000095367,
+      "sim_to_wall": 0.9999366706743098,
+      "missed_steps": 1,
+      "dropped_steps": 0,
+      "max_lag_steps": 2,
+      "max_lag_ms": 9.533333381015836,
+      "late_inputs": 0,
+      "applied_inputs": 120,
+      "pending_inputs": 0,
+      "max_catchup_batch": 2,
+      "ticks": 3849,
+      "worker_cross_origin_isolated": false,
+      "step_cost_us": {
+        "n": 3600,
+        "p50": 200.0000457763672,
+        "p99": 900.0001220703125,
+        "max": 5300,
+        "mean": 236.74999390920004
+      },
+      "state_msgs": 1802,
+      "state_interval_ms": {
+        "p50": 16.699951171875,
+        "p95": 19.699951171875,
+        "max": 23.800048828125
+      },
+      "latency_ms": null,
+      "digest": "7c8783f3440f387a",
+      "final_state": [
+        29.999999999998938,
+        0.8722051608257252,
+        0.15082528546431975,
+        1008.2598774432779,
+        -0.10332014134013662,
+        0.027881484451055264,
+        5.98299358026236,
+        46.305120331010244,
+        46.28255382590364,
+        0.11798327166946057,
+        1.4406457473207408,
+        0.009674034837563898,
+        0.005243729330698766,
+        -0.012863456032216163
+      ],
+      "errors": []
+    },
+    {
+      "label": "L",
+      "mode": "live",
+      "seconds": 10,
+      "ready_ms": 80.89999985694885,
+      "build": {
+        "jsbsim_tag": "v1.3.3",
+        "emsdk": "6.0.13",
+        "wasm_bytes": 1728736,
+        "jsbsim_commit": "66f7fafc07fe13e7ede9db20873030fed2881713",
+        "wasm_sha256": "ec4a73ec6af496b1a4cf91a40cc136e3ea249b790078bb6413f96cedd6cb78a4",
+        "flags": "-O2 -fwasm-exceptions"
+      },
+      "trim": {
+        "status": 1,
+        "throttle": 0.6929926635782687,
+        "pitch_trim": 0.167934782710137
+      },
+      "steps": 1199,
+      "t_s": 9.99166666666674,
+      "run_wall_ms": 10000.600000143051,
+      "sim_to_wall": 0.9991067202491668,
+      "missed_steps": 1,
+      "dropped_steps": 0,
+      "max_lag_steps": 2,
+      "max_lag_ms": 8.566666762033492,
+      "late_inputs": 17,
+      "applied_inputs": 40,
+      "pending_inputs": 0,
+      "max_catchup_batch": 2,
+      "ticks": 1250,
+      "worker_cross_origin_isolated": false,
+      "step_cost_us": {
+        "n": 1199,
+        "p50": 100.0001449584961,
+        "p99": 799.9999389648438,
+        "max": 2800,
+        "mean": 181.73477840980357
+      },
+      "state_msgs": 601,
+      "state_interval_ms": {
+        "p50": 16.60009765625,
+        "p95": 19.800048828125,
+        "max": 23.900146484375
+      },
+      "latency_ms": {
+        "n": 40,
+        "of": 40,
+        "p50": 8.7001953125,
+        "p95": 16.89990234375,
+        "max": 19.89990234375
+      },
+      "digest": "8aa15c72187a86b1",
+      "final_state": [
+        9.99166666666674,
+        0.8720630957675206,
+        0.15084773034353716,
+        1000.1916228399843,
+        -0.001816365824308901,
+        0.04367731940604855,
+        0.016691961993211445,
+        46.39298398116136,
+        46.369617834836966,
+        0.294815917341815,
+        1.4424243835790553,
+        0.007746187504382118,
+        0.005183776471970012,
+        0.008251013780849685
+      ],
+      "errors": []
+    }
+  ],
+  "burst": {
+    "steps_per_block": 2400,
+    "us_per_step": [
+      18.916666607062023,
+      15.958333313465118,
+      15.208333333333334,
+      14.875000019868216,
+      14.75000003973643
+    ]
+  },
+  "summary": {
+    "step_cost_us_p50": 200.0000457763672,
+    "step_cost_us_p99": 1000,
+    "step_cost_us_p99_b": 900.0001220703125,
+    "burst_us_per_step_last_block": 14.75000003973643,
+    "missed_steps_a": 1,
+    "missed_steps_b": 1,
+    "missed_per_10s_a": 0.33331888951531746,
+    "missed_per_10s_b": 0.3333122235581151,
+    "missed_steps_live": 1,
+    "max_lag_ms": 13.166666666664241,
+    "max_lag_steps": 2,
+    "max_catchup_batch": 2,
+    "late_inputs_live": "17/40",
+    "latency_ms_p50": 8.7001953125,
+    "latency_ms_p95": 16.89990234375,
+    "digest_a": "7c8783f3440f387a",
+    "digest_b": "7c8783f3440f387a",
+    "final_state_identical": true,
+    "deterministic": true,
+    "note": "missed = step started > 1 step period (dt) after its due time; digest = FNV-1a 64 over the 14 post-step state doubles (final_state) at every step; A and B both stop at the same step (run.until_step)"
+  },
+  "budgets_informational": {
+    "step_cost_p99_le_830us": false,
+    "missed_le_1_per_10s": true,
+    "latency_p95_le_25ms": true,
+    "deterministic_replay": true
+  },
+  "finished": "2026-11-01T11:39:08.638Z"
+}
