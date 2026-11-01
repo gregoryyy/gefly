@@ -3,6 +3,63 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 12:33 — Validate the E1 browser check; publish the M1 test page
+
+TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator; validate subagent.
+
+**Implementation notes**
+
+Local validate at `15dbd83`: no acceptance claim from the container; status labels
+match results. Documentation fixes applied: render ranges reconciled and labelled
+not evaluable, latency/replay qualified as preliminary, seed and extra `ready.build`
+fields and synthetic-source validation recorded as v0.1, status lines updated, CPU
+headroom and R-SIM-2 deferred to the reference run. Published a private test page
+for the reference M1/Chrome run (artifact, built WASM included) and added a visible
+results panel to the render pages.
+
+**Deviations**
+
+Acceptance blocked until the reference M1/Chrome run. The hosted page is not
+cross-origin isolated and may block CesiumJS run-time loads. Peer pending (batched).
+
+## 2026-11-01 12:13 — Review and fix the E1 browser check
+
+TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator; quality, code1 and
+code2 subagents.
+
+**Implementation notes**
+
+Local quality: 2 medium and 10 low findings; contract tightened by the
+orchestrator (true heading, 8.3 ms missed-step definition with lag reporting,
+refresh-relative frame budget, input echo at s+1), code fixes by code1/code2;
+renewed review at `b4581b6`: all fixed except CDN SRI (accepted for the study).
+Container results: latency and replay pass; missed-step budget fails (2.7–3.3 per
+10 s, 45 ms max lag, none dropped); step-cost p99 unstable (485–905 µs).
+
+**Deviations**
+
+Container results are preliminary; reference M1/Chrome run outstanding. Validate not
+run. Peer pending (batched).
+
+## 2026-11-01 12:02 — Build the E1 browser check (worker + render)
+
+TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator; code1 (sim) and
+code2 (render) in parallel on disjoint paths against a frozen contract; quality
+review running.
+
+**Implementation notes**
+
+code1: JSBSim v1.3.3 WASM (emsdk 6.0.13) in a module Web Worker at fixed 1/120 s;
+container run: p99 paced step 485–505 µs, 0 missed steps, input-to-state p95
+18.8–20.1 ms, identical replay digest. code2: CesiumJS 1.146.0 (no ion) and
+three.js 0.187.0 pages with a shared frame meter and synthetic circuit at EDFE.
+Orchestrator integration: module-worker fix; both pages run on the JSBSim stream
+at ≈ 60 Hz. Contract deviations recorded as v0.1 proposals.
+
+**Deviations**
+
+Software GL in the container makes render numbers meaningless for the budget;
+reference M1 run outstanding. Peer pending (batched; see GAPS Q15).
 ## 2026-11-01 11:54 — Adopt proclens's batched peer-review cadence
 
 TODO: 0.18 updated; 0.19 added. Agent: Claude Code orchestrator (no subagents).
