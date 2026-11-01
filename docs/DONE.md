@@ -6,7 +6,7 @@ above previous entries. This log records implementation, not simulator validity.
 ## 2026-11-01 18:26 — Fix Codex review findings on PRs #4–#6
 
 TODO: 0.19 in progress. Agent: Claude Code orchestrator; code1 subagent. Findings
-from the Codex local review ([report](reviews/2026-11-01-first-claude-prs.md) on
+from the Codex local review (report `docs/reviews/2026-11-01-first-claude-prs.md` on
 branch docs/first-claude-pr-review-evidence).
 
 **Implementation notes**
