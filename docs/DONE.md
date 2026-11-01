@@ -3,6 +3,25 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 18:49 — Plan the project-owned JSBSim 172S model (E2)
+
+TODO: E2 preparation. Agent: Claude Code orchestrator; product subagent.
+
+**Implementation notes**
+
+Added [FDM-172S](design/FDM-172S.md): JSBSim block structure with a source class
+(sourced, derived, estimated, plausibility) for every parameter group and a
+per-parameter provenance file with a CI check; OpenVSP geometry inputs; calibration
+vs frozen holdout sets (glide added for drag, forward-CG stall to holdout); proposed
+tolerances P-1..P-10; a `studies/e2-c172s/` harness reusing E1 and the WASM worker;
+licensing; milestones M-a..M-e with exit criteria. No coefficient values.
+
+**Deviations**
+
+Plan only; blockers: empty mass/CG (Q-1), geometry gaps (planform, airfoil, tail),
+tolerance acceptance (Q-11). Cruise/glide extraction is already authorised and
+running. Not yet reviewed. Peer pending (batched).
+
 ## 2026-11-01 18:21 — Survey open Cessna 172 aerodynamic data for the E2 model
 
 TODO: E2 preparation. Agent: Claude Code orchestrator; researcher subagent.
