@@ -6,8 +6,7 @@ above previous entries. This log records implementation, not simulator validity.
 ## 2026-11-01 18:26 — Fix Codex review findings on PRs #4–#6
 
 TODO: 0.19 in progress. Agent: Claude Code orchestrator; code1 subagent. Findings
-from the Codex local review (report `docs/reviews/2026-11-01-first-claude-prs.md` on
-branch docs/first-claude-pr-review-evidence).
+from the Codex local review ([report](reviews/2026-11-01-first-claude-prs.md)).
 
 **Implementation notes**
 
@@ -25,6 +24,16 @@ branch docs/first-claude-pr-review-evidence).
 Formal peer acceptance stays blocked: the Codex CLI failed to initialise on a
 read-only filesystem; a re-run with an updated packet is needed. Hashes cover one
 platform only; the original run's numpy version was not recorded.
+
+## 2026-11-01 18:16 — Record local review of first Claude PRs
+
+Agent: Codex orchestrator; first_pr_docs_review performed independent local
+source inspection. Reviewed Claude PRs #4–#6 at `48b2991`; three medium findings
+remain unresolved. [Report](reviews/2026-11-01-first-claude-prs.md) includes
+reproductions, validation scope and frozen packet hash. The fresh Codex CLI
+failed before reviewer initialization on the read-only filesystem; formal peer
+acceptance remains blocked and TODO 0.19 stays open. No product fixes made.
+Current foundation CI passed 41 tests; study tests passed 7 and skipped 9.
 
 ## 2026-11-01 13:07 — Draft the flight-experience package and LLM boundary
 
