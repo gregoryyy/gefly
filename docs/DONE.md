@@ -3,6 +3,20 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 00:03 — Remove the aircraft measurement campaign from the 172S plan
+
+TODO: E2. Agent: Claude Code orchestrator (no subagents).
+
+**Implementation notes**
+
+The user has no aircraft and asked to stay in scope. FDM-172S no longer proposes a
+measurement campaign: geometry beyond TCDS/POH dimensions and the empty mass/CG are
+estimated, labelled and bounded by sensitivity runs; Q-2 is closed.
+
+**Deviations**
+
+This change reached PR #24's branch after it merged, so it lands here instead.
+
 ## 2026-11-01 23:27 — Resolve PR 29 against merged browser prototype
 
 TODO: 1.5.2 and 2.0 retained with their distinct scope.
