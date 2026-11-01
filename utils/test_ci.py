@@ -219,18 +219,118 @@ class CiEntrypointTests(GitFixture):
                                    "        self.assertEqual(Path.cwd(), "
                                    "Path(__file__).resolve().parent.parent)\n"
                                    "        print('fixture tool test executed')\n")
+        self.study_path = self.write("studies/e1-jsbsim/test_study.py", "import unittest\n"
+                                    "class StudyTest(unittest.TestCase):\n"
+                                    "    def test_offline(self):\n"
+                                    "        print('fixture study test executed')\n"
+                                    "    @unittest.skip('fixture optional engine absent')\n"
+                                    "    def test_engine(self):\n"
+                                    "        self.fail('skipped test must not run')\n")
+        self.write("studies/e1-browser/render/check-synthetic.mjs",
+                   "console.log('fixture render check');\n")
         self.commit()
+        # Controlled PATH: Git only, plus a fake node when a test installs one.
+        self.bin = self.outside.parent / "bin"
+        self.bin.mkdir()
+        os.symlink(self.git_executable, self.bin / "git")
+
+    def install_fake_node(self, exit_code):
+        node = self.bin / "node"
+        node.write_text(f"#!{sys.executable}\n"
+                        "import sys\n"
+                        "if sys.argv[1:] == ['--version']:\n"
+                        "    print('v0.0.0-fixture'); raise SystemExit(0)\n"
+                        "print('fake node ran', sys.argv[1])\n"
+                        f"raise SystemExit({exit_code})\n", encoding="utf-8")
+        node.chmod(0o755)
 
     def run_gate(self, *arguments):
+        environment = dict(os.environ, PATH=str(self.bin))
         return subprocess.run([sys.executable, str(self.runner), *arguments],
                               cwd=self.outside, capture_output=True, text=True,
-                              timeout=30)
+                              timeout=60, env=environment)
 
     def test_absolute_entrypoint_runs_all_gates_from_unrelated_directory(self):
+        self.install_fake_node(0)
         result = self.run_gate()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("fixture scaffold executed", result.stdout)
         self.assertIn("fixture tool test executed", result.stdout)
+        self.assertIn("fixture study test executed", result.stdout + result.stderr)
+        self.assertIn("fake node ran", result.stdout)
+        self.assertIn("check-synthetic.mjs", result.stdout)
+        self.assertIn("Synthetic render check: passed.", result.stdout)
+        self.assertIn("Foundation CI: passed.", result.stdout)
+
+    def test_study_skip_is_counted_and_not_executed(self):
+        self.install_fake_node(0)
+        result = self.run_gate()
+        output = result.stdout + result.stderr
+        self.assertEqual(result.returncode, 0, output)
+        self.assertIn("1 executed, 1 skipped", output)
+        self.assertIn("fixture optional engine absent", output)
+        self.assertNotIn("skipped test must not run", output)
+
+    def test_failing_study_test_is_not_success(self):
+        self.install_fake_node(0)
+        self.write("studies/e1-jsbsim/test_study.py", "import unittest\n"
+                   "class StudyTest(unittest.TestCase):\n"
+                   "    def test_failure(self):\n"
+                   "        self.fail('fixture study failure')\n")
+        self.commit()
+        result = self.run_gate()
+        output = result.stdout + result.stderr
+        self.assertNotEqual(result.returncode, 0, output)
+        self.assertIn("fixture study failure", output)
+        self.assertIn("Foundation CI: FAILED.", output)
+
+    def test_study_import_error_is_not_success(self):
+        self.install_fake_node(0)
+        self.write("studies/e1-jsbsim/test_study.py", "import fixture_missing_module\n")
+        self.commit()
+        result = self.run_gate()
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("fixture_missing_module", result.stdout + result.stderr)
+
+    def test_missing_or_empty_study_suite_is_not_success(self):
+        self.install_fake_node(0)
+        self.study_path.unlink()
+        self.commit()
+        result = self.run_gate()
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("study tests", (result.stdout + result.stderr).lower())
+        shutil.rmtree(self.root / "studies/e1-jsbsim")
+        result = self.run_gate()
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("missing", result.stdout + result.stderr)
+
+    def test_missing_node_is_reported_skip_not_pass(self):
+        result = self.run_gate()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("Synthetic render check: skipped: node not found", result.stdout)
+        self.assertNotIn("Synthetic render check: passed", result.stdout)
+        self.assertNotIn("Foundation CI: passed.", result.stdout)
+        self.assertIn("Foundation CI: passed with skipped check", result.stdout)
+
+    def test_missing_node_fails_when_required(self):
+        result = self.run_gate("--require-node")
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("node not found", result.stderr)
+        self.assertIn("Foundation CI: FAILED.", result.stdout)
+
+    def test_failing_render_check_is_not_success(self):
+        self.install_fake_node(1)
+        result = self.run_gate()
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("Synthetic render check failed (exit 1)", result.stderr)
+        self.assertIn("Foundation CI: FAILED.", result.stdout)
+
+    def test_missing_render_script_is_not_success(self):
+        self.install_fake_node(0)
+        (self.root / "studies/e1-browser/render/check-synthetic.mjs").unlink()
+        result = self.run_gate()
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("synthetic render check is missing", result.stderr)
 
     def test_scaffold_child_failure_is_not_success(self):
         self.write("utils/check.py", "raise SystemExit('fixture scaffold rejected')\n")

@@ -12,14 +12,23 @@ python3 /path/to/checkout/utils/ci.py
 
 The runner finds the checkout from its own location, independently of the caller's
 working directory. Its required phases check the scaffold, discover and run the
-offline standard-library repository-tool tests, and inspect whitespace in the
-current contents of all tracked files. A missing/empty test suite or a required
-phase failure returns nonzero. Whitespace is checked even in an otherwise clean
+offline standard-library repository-tool tests, run the offline study tests
+(`studies/e1-jsbsim`, standard-library unittest discovery in a separate
+interpreter), run `node studies/e1-browser/render/check-synthetic.mjs` when `node`
+is on `PATH`, and inspect whitespace in the current contents of all tracked files.
+A missing/empty test suite, a missing study directory or render script, or a
+required phase failure returns nonzero. Study tests that need an absent optional
+package (such as `jsbsim`) are skipped; the runner prints executed and skipped
+counts with each skip reason, and skipped tests are never counted as passes.
+Without `node` the render check prints `skipped: node not found` and the final
+line reads `passed with skipped check` instead of `passed`; `--require-node`
+(used by the hosted workflow) makes a missing `node` a failure. Whitespace is checked even in an otherwise clean
 checkout; this is broader than checking a working-tree diff. Untracked files are
 excluded until added to Git, so add intended new files before the final gate.
 
-After checkout and interpreter setup, the hosted gate uses only Git and the
-Python standard library. It performs no project-package installation, live peer
+After checkout and interpreter setup, the hosted gate uses only Git, the
+Python standard library and the runner image's preinstalled Node.js (no setup
+action; its version is printed and can change with the image). It performs no project-package installation, live peer
 review, provider authentication, PDF/browser/TeX build or simulator/data ingestion.
 Peer-router tests use mocked provider processes; they do not establish live access
 or acceptance. `just check` and `just test-tools` remain lower-level commands for

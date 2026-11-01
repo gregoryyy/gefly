@@ -3,6 +3,22 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 13:06 — Add study checks to the shared CI gate
+
+TODO: 1.1.2 in progress. Agent: Claude Code orchestrator; code1 subagent.
+
+**Implementation notes**
+
+`utils/ci.py` now runs the `studies/e1-jsbsim` tests in a separate interpreter
+(fails on missing/empty/failing/import errors, reports skips) and
+`check-synthetic.mjs` with node; a missing node is reported as a skip and the final
+line says "passed with skipped check". Hosted CI uses `--require-node` with the
+runner's preinstalled Node.js. 8 new negative/positive tests (49 tool tests total).
+
+**Deviations**
+
+Local only: hosted run and independent review pending. Peer pending (batched).
+
 ## 2026-11-01 12:33 — Validate the E1 browser check; publish the M1 test page
 
 TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator; validate subagent.
