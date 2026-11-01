@@ -64,8 +64,13 @@ See [ARCH](../docs/ARCH.md), [SPEC](../docs/SPEC.md) and
 
 ```sh
 npm --prefix app run build     # strict TypeScript and UI bundle; excludes research runtime
-npm --prefix app test          # worker/session lifecycle and input validation
+npm --prefix app test          # worker/session lifecycle, input validation, served engine path
 npm --prefix app run test:browser  # real JSBSim; local engine and installed Chrome required
 ```
 
-Node.js 24.2+ is required. The browser check starts its own temporary server on 127.0.0.1:5174 and writes ignored screenshots to `output/flight/`. Set `CHROME` to an executable path if Chrome is not installed in its usual location. `just fly` uses 127.0.0.1:5173. Without `just`, invoke the study build with `bash studies/e1-browser/sim/build.sh output/flight/engine-build`, then `npm --prefix app run dev`.
+The browser smoke also serves a temporary runtime copy without
+`dist/jsbsim.{mjs,wasm}` (through `GEFLY_FLIGHT_RUNTIME`) and checks the build hint.
+Only the failed `dist/jsbsim.mjs` import is exercised; a missing `jsbsim.wasm`
+alone is not separately covered.
+
+Node.js 24.2+ is required. The browser check starts its own temporary servers on 127.0.0.1:5174 and 5175 and writes ignored screenshots to `output/flight/`. Set `CHROME` to an executable path if Chrome is not installed in its usual location. `just fly` uses 127.0.0.1:5173. Without `just`, invoke the study build with `bash studies/e1-browser/sim/build.sh output/flight/engine-build`, then `npm --prefix app run dev`.

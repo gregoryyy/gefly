@@ -3,6 +3,51 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 00:53 — Claude peer review of Codex PRs #27–#30 and fixes (TODO 0.21)
+
+TODO: 0.21 complete, peer pending for the fixes. Agent: Claude Code orchestrator; peer
+dispatcher subagent (fresh Claude CLI 2.1.316 per packet; model evidence
+`claude-haiku-5-5` and `claude-opus-5-5`), code2 subagent (fixes), quality subagent
+(three rounds, final verdict accept).
+
+**Implementation notes**
+
+Report: [peer review](reviews/2026-11-01-codex-prs-27-30-peer.md) and
+[JSON](reviews/2026-11-01-codex-prs-27-30-peer.json), five packets frozen at main
+`396553c` (#28 split into 28a tooling and 28b docs). Router results: #27 accept;
+#28a changes_required; #28b and #30 review_blocked (material withheld, not defects);
+#29 accept. There were no critical or high findings.
+
+The fixes in this PR:
+- `status.ts` counts a DONE completion only per task ID. Exception or pending wording
+  cancels it; "peer pending" and "pending merge" still count as complete. A ticked
+  parent's record covers its subtasks, and a ticked parent with open subtasks gets
+  the warning `done-parent-open-children`.
+- `evidence.ts` checks that a cited source applies to the aircraft variant, using
+  known 172 model designators (case-insensitive; `S/N` is not read as a variant).
+- The SBOM CesiumJS row now says it is not adopted in the application yet.
+- The missing-engine smoke test serves a runtime copy without `dist/jsbsim.*`.
+- New `app/runtime.ts` and its tests prove that the `build-flight-engine` output is
+  the path `just fly` serves.
+
+Other #28b findings are handled in their own PRs: the CI text in #34, the E14 clash in
+#32, and the BRIEFING IDs match the SPEC edits in #33.
+
+Checks on Node 24: the assure suite passed 83 of 83; `assure check` reported 0 errors;
+the app suite passed 9 of 9; `utils/ci/run.py --require-node` passed with skipped
+checks (e1-jsbsim 9 of 23).
+
+**Deviations**
+
+- The real-engine browser smoke test was not run (no engine build and no Chrome here):
+  not evaluated.
+- Known limitations: the completion check still passes some unlisted negative wording
+  ("failing tests", "needs review"); 172I is not recognised; negated designators
+  ("not the 172S") are still read as naming the variant; "unstated" sources are
+  lenient (L3); `app/runtime.ts` is not type-checked (L6).
+- The fixes are Claude-authored, so they need the Codex peer review (TODO 0.19 batch).
+  The #28b and #30 packets need renewal with the withheld material.
+
 ## 2026-11-01 23:27 — Resolve PR 29 against merged browser prototype
 
 TODO: 1.5.2 and 2.0 retained with their distinct scope.

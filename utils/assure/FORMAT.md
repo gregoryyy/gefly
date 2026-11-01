@@ -138,7 +138,23 @@ context, retains JSON pointer, source/page/revision, original/current units,
 reference, reading class and source rights/applicability. It links parameter
 objects to actual local source-record objects with `refs`, preserving draft,
 estimated, unknown and unvalidated status. Missing source/page/revision,
-mismatched source revisions or manifest identities are errors. It never fetches
+mismatched source revisions or manifest identities are errors. The identified
+variant is the designator (such as `172S`) in the manifest `configuration.model`.
+A source whose `applicability` names only other designators (such as `172P`)
+cannot back a `sourced` value for that variant: an error when every citation is
+such a source, a warning when another citation applies. A source naming no
+designator (an engine TCDS) is marked `appliesToAircraft: unstated` for review,
+not accepted or rejected by text alone. Designators are normalized: `C172S`,
+`c172s`, `172s`, `172 S` and `172SP` (Skyhawk SP) read as `172S`; `F`, `R` and `FR`
+prefixes are kept. Only known model suffixes are read (A–S without O, J, RG, SP).
+The spaced form takes one upper-case letter other than A or I that is not followed
+by a letter, digit, `/`, `.` or `-`, so `Model 172 S/N 17270050` and `172 PA` are
+not designators (nor is a sentence-final `172 S.`). The bare family name `172`
+and serials such as `172S8001` are not designators. Known limitations: the match is textual, so a negation
+(`172P manual; not the 172S`) still reads as naming the 172S, and a designator
+cannot separate serial or avionics ranges (a G1000 172S from 172S9810 and a
+classic-panel 172S share the designator `172S`). Those distinctions stay with
+review of the source record. It never fetches
 a cited URL or asserts a new right to redistribute a manual. The existing Python
 aircraft validators remain responsible for deep schema, quantity conversions and
 numerical consistency; this adapter does not replace them.
