@@ -106,6 +106,13 @@ Resolved: 2026-11-01 13:00, user; carried into [CONTRACTS](design/CONTRACTS.md),
 
 Why: TODO 1.2 needs a reuse-first engine and browser stack decision (R-REUSE-1).
 
+Answer (stack): **2026-11-01 19:04, user** ([input](input/2026-11-01-renderer-fuel-tolerances.md)):
+“yes to all”. Decided: **CesiumJS** renderer (Apache-2.0, Cesium ion and hosted
+services disabled) with **three.js** as fallback, **MapLibre** for 2D maps,
+**TypeScript**, and JSBSim in a module **Web Worker** at a fixed 1/120 s step, per the
+E1 browser check (both renderers met the budgets on the reference Mac). A re-test
+with real terrain and imagery tiles at device resolution precedes milestone 2.
+
 Answer: **2026-11-01 11:38, user** (recorded by orchestrator, Claude Code;
 [input](input/2026-11-01-e1-decisions.md)): “yes accept lgpl, skip contacting, pr,
 jsbsim, check yes, pr”.
@@ -188,6 +195,11 @@ coverage, rights and live rollout remain future implementation selections.
 
 Why: affects code reuse, distribution, aircraft manuals, avionics depictions, maps and navigation data. The user's direction is now free/open source; select a compatible open-source license and review separately licensed assets/data. Blocking: license-dependent distribution and restricted asset ingestion.
 
+Answer (fuel chart): **2026-11-01 19:04, user** ([input](input/2026-11-01-renderer-fuel-tolerances.md)):
+“yes to all”. The facts-only, selective extraction allowance extends to the needed
+points of the Lycoming fuel-consumption chart (Fig. 3-9), under the same
+no-piecemeal rule.
+
 Answer (aircraft-model sources): **2026-11-01 18:43, user** (recorded by orchestrator, Claude Code;
 [input](input/2026-11-01-lycoming-openvsp-decisions.md)): “yes to both”. (a) Only
 the needed points of the copyrighted Lycoming IO-360-L2A power curve may be extracted
@@ -253,10 +265,6 @@ Resolved (deferred): 2026-11-01 07:04, user; carried into [ROAD](ROAD.md), [SPEC
 Why: the peer gate (R-AGENT-7) needs the other provider's CLI and adds cost and
 latency; applying it to every PR blocks small documentation changes.
 
-Answer: **2026-11-01 07:22, user** (recorded by orchestrator, Claude Code;
-[input](input/2026-11-01-peer-gate-scope.md)): “again, not all prs need the
-adversarial check (different provider)”.
-
 Answer: **2026-11-01 11:54, user** (recorded by orchestrator, Claude Code;
 [input](input/2026-11-01-proclens-peer-logic.md)): “get the peer review and hooks
 logic from proclens”. Adopted proclens's review-gate logic: the peer review runs
@@ -266,6 +274,10 @@ revision; merged work in between is marked **peer pending**, not blocked. Packet
 egress rule added. proclens has no hooks, so none were adopted. The scope below is
 kept only as the list of changes a batched review must have covered before a
 milestone is accepted or a release is made.
+
+Answer: **2026-11-01 07:22, user** (recorded by orchestrator, Claude Code;
+[input](input/2026-11-01-peer-gate-scope.md)): “again, not all prs need the
+adversarial check (different provider)”.
 
 ~~Scope (orchestrator interpretation, correctable by the user): **required** for
 integrated milestone results, changes to simulation/dynamics, aircraft or
@@ -278,6 +290,18 @@ the change.~~
 
 Resolved: 2026-11-01 11:54, user (supersedes the 07:22 per-PR scope); carried into SDLC, AGENTS, SPEC R-AGENT-7, the
 [agent workflow](agents/README.md), [peer](agents/peer.md) and the PR template.
+
+### Q21. Are the FDM-172S tolerance proposals accepted?
+
+Why: the 172S model plan (FDM-172S, PR #24) needs agreed tolerances before
+calibration and holdout cases are frozen.
+
+Answer: **2026-11-01 19:04, user** ([input](input/2026-11-01-renderer-fuel-tolerances.md)): “yes
+to all”. Tolerance proposals P-1..P-15 are accepted **as working proposals** (engineering
+judgement, each with its stated basis) for freezing the E2 fixtures; they remain
+revisable with evidence, and any change after a holdout comparison is recorded.
+
+Resolved: 2026-11-01 19:04, user; applies to FDM-172S Q-11 when PR #24 merges.
 
 ### Q20. How are model size and reasoning effort chosen for agent work?
 

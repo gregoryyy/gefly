@@ -1,6 +1,6 @@
 # Target architecture
 
-Status: proposed component boundaries; **web application**, **Cessna 172**, **EASA PPL first**, **classic instruments before glass** and **QNH/QFE/standard-pressure coverage** are user decisions. Aircraft: a classic-panel 172S first, then the Reims FR172, as distinct engine configurations (Q3); the first exercise is a circuit at Frankfurt-Egelsbach (EDFE). The dynamics engine is **JSBSim** (Q17), used as a replaceable LGPL library; exact radio fit, language, renderer and geographic data provider are open. This describes the target before code exists. Expanded scope and proposed delivery slices are in [the training design](design/TRAINING.md).
+Status: proposed component boundaries; **web application**, **Cessna 172**, **EASA PPL first**, **classic instruments before glass** and **QNH/QFE/standard-pressure coverage** are user decisions. Aircraft: a classic-panel 172S first, then the Reims FR172, as distinct engine configurations (Q3); the first exercise is a circuit at Frankfurt-Egelsbach (EDFE). The dynamics engine is **JSBSim** (Q17), used as a replaceable LGPL library; the web stack is TypeScript with a CesiumJS renderer (three.js fallback), MapLibre 2D maps and JSBSim in a module Web Worker (Q17); exact radio fit and geographic data provider are open. This describes the target before code exists. Expanded scope and proposed delivery slices are in [the training design](design/TRAINING.md).
 
 Additional user decisions: a **free/open-source flight-school community site**,
 **LLM-assisted flight-experience authoring and AI interaction**, an initial
@@ -50,7 +50,7 @@ These are source boundaries, not chosen package-manager workspaces. Reconsider p
 
 ## Model and flows
 
-Inputs become timestamped, normalized control events. The simulation advances by an explicit fixed time step independent of display frames; the renderer reads snapshots and may interpolate. If the machine cannot keep up, report overload or deliberate simulation slow-down rather than silently changing physics. A browser worker/WASM boundary is an option to test, not an engine decision.
+Inputs become timestamped, normalized control events. The simulation advances by an explicit fixed time step independent of display frames; the renderer reads snapshots and may interpolate. If the machine cannot keep up, report overload or deliberate simulation slow-down rather than silently changing physics. JSBSim runs as WASM in a module Web Worker (E1 browser check, Q17).
 
 The versioned state includes simulation time, aircraft identity/configuration, position/orientation in declared frames, velocities/rates, mass/configuration, environmental conditions, systems/sensors and control positions. SI is the internal default. Cockpit presentation converts explicitly to aircraft-appropriate units. State labels distinguish IAS/TAS/groundspeed, altitude references and magnetic/true headings. A real instrument model derives readings from simulated sensors rather than reusing a visual attitude or speed guess.
 
