@@ -16,6 +16,12 @@ evidence remain authoritative; the generated graph and reports are disposable.
 There is no database, persistent service, automatic hook, external posting or
 additional agent role in this adoption.
 
+Gefly's runtime implementation and tests live in
+[`utils/assure/`](../../utils/assure/README.md), with generated output under
+ignored `utils/assure/out/`. This `docs/assure/` directory retains the product
+contract and catalog. The shared CI runner/checker live in `utils/ci/`; the
+`just` command surface is unchanged by the tool-directory layout.
+
 [Root SPEC](../SPEC.md) owns R-ASR-1 through R-ASR-5. The bounded acceptance
 contract is [assurance SPEC](SPEC.md), criteria AS1 through AS8. TODO items,
 source notes, code/test names and review reports continue to reference stable

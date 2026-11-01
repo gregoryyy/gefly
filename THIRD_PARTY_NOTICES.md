@@ -22,12 +22,13 @@ tooling comments also identify earlier Kibitz/OrgFab provenance.
 
 ## Propeller assurance core
 
-`assure/upstream/` contains the selected pure TypeScript lineage model, store,
+`utils/assure/upstream/` contains the selected pure TypeScript lineage model, store,
 ledger, Markdown/ID readers and extractors/tests from Propeller commit
 `99dc60050cd904f7b25cd929b5a6b1e1420f9fc6`, under GPL-3.0-or-later. Original
-comments are retained; [the source inventory](assure/UPSTREAM.json) records
+comments are retained; [the source inventory](utils/assure/UPSTREAM.json) records
 upstream paths and SHA-256 values. Gefly adapters and the CLI are separate under
-`assure/src/`. The tracker is developer tooling; it is not a scientific assurance
+`utils/assure/src/`. The inventory retains Propeller's original upstream paths.
+The tracker is developer tooling; it is not a scientific assurance
 or training-certification system. The full GPL text remains in `LICENSES/`.
 
 ## Project-wide license status

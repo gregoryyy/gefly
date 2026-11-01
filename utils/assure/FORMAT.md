@@ -4,7 +4,7 @@
 acceptance. `inspectEvidence(readFile, paths)` inspects it without filesystem,
 process or network access. The caller supplies a contained UTF-8 reader and the
 available repository paths. The adapter returns nodes, facts, diagnostics and
-numeric counts. [The assurance contract](../docs/assure/SPEC.md) owns AS1–AS8;
+numeric counts. [The assurance contract](../../docs/assure/SPEC.md) owns AS1–AS8;
 requirements remain declared in root SPEC.
 
 The top-level object has exactly `schemaVersion: 1`, `guards`, `evidence`,

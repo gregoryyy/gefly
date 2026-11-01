@@ -21,6 +21,10 @@ records are inputs. Generated graph/report files are rebuildable outputs, never
 the place to change requirements, decisions or acceptance. Existing aircraft
 schema/conversion validators and peer evidence rules are reused, not weakened.
 
+Runtime implementation and tests are under `utils/assure/`; this `docs/assure/`
+directory remains the product contract/catalog location. Shared CI tooling is
+under `utils/ci/`. These locations do not change AS1–AS8 or the `just` commands.
+
 ## Acceptance criteria
 
 ### AS1. Rebuildable lineage with honest coverage

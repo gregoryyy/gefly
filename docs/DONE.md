@@ -3,6 +3,46 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 21:42 — Organize assurance and CI tooling under utils
+
+TODO: 1.15 complete. Agent: Codex orchestrator; code1/peer_runner,
+code2/peer_registration and housekeeping on disjoint paths. Independent quality,
+validation and scoped external peer dispositions are recorded separately below.
+
+**Implementation notes**
+
+Moved the assurance runtime, tests and pinned upstream core to `utils/assure/`.
+Grouped the CI runner, structural checker, Node reporter and CI tests under
+`utils/ci/`; its Python package preserves recursive discovery from `utils`.
+The `just` commands retain their names. Updated root detection, workflow paths,
+inventory destinations, output guards, current documentation and source links.
+Canonical assurance documents/catalog stay in `docs/assure/`; all 13 reused
+Propeller files retain their original bytes and original source identities.
+Committed pre-relocation snapshots remain readable without worktree fallback.
+
+The shared local gate passed: 137 Python tooling tests, 72 assurance tests,
+synthetic rendering and 14 executed study tests. Nine optional JSBSim checks
+were skipped because the engine package is unavailable. Tracked-content
+whitespace passed on 208 paths. The relocated checker and CLI were exercised
+from an unrelated directory. Five historical review navigation links are pinned
+to their recorded source revisions; their commands, findings and outcomes remain
+unchanged. Request: [input](input/2026-11-01-tool-layout.md).
+
+**Deviations**
+
+This is a tooling layout change. Simulator requirements, aircraft values and the
+14 planned/zero accepted MVP criteria retain their existing scope. Independent
+[quality](reviews/2026-11-01-tool-layout-quality.md),
+[validation](reviews/2026-11-01-tool-layout-validation.md) and
+[peer](reviews/2026-11-01-tool-layout-peer.md) records carry their own outcomes;
+prior peer acceptance is historical evidence for its earlier revision.
+
+**Insights**
+
+Moving Python tests into a directory also requires a discoverable package.
+Historical revision inspection needs an explicit old-layout reader, while
+current checks must not silently accept a missing new-layout inventory.
+
 ## 2026-11-01 21:05 — Complete bounded assurance adoption and status reconciliation
 
 TODO: 1.14 complete. Agent: Codex orchestrator; product, code1/peer_runner,

@@ -16,7 +16,7 @@ import time
 import unittest
 
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 GIT_TIMEOUT_S = 60.0
 DEFAULT_PHASE_TIMEOUT_S = 600.0
 STUDY_RESULT_MARKER = "GEFLY-STUDY-RESULT"
@@ -265,10 +265,10 @@ def run_assurance(timeout_s: float, tests_only: bool = False) -> bool:
     if node is None:
         print("ERROR: Assurance requires Node 24.2 or newer; node not found.", file=sys.stderr)
         return False
-    entry = ROOT / "assure/src/cli.ts"
-    reporter = ROOT / "utils/assurance-reporter.mjs"
-    tests = sorted([*(ROOT / "assure/src").glob("*.test.ts"),
-                    *(ROOT / "assure/upstream/src").rglob("*.test.ts")])
+    entry = ROOT / "utils/assure/src/cli.ts"
+    reporter = ROOT / "utils/ci/assurance-reporter.mjs"
+    tests = sorted([*(ROOT / "utils/assure/src").glob("*.test.ts"),
+                    *(ROOT / "utils/assure/upstream/src").rglob("*.test.ts")])
     if not entry.is_file() or not reporter.is_file() or not tests:
         print("ERROR: Assurance entry point or test suite is missing.", file=sys.stderr)
         return False
@@ -406,7 +406,7 @@ def main(argv=None) -> int:
     skips: list[str] = []
     runner = str(Path(__file__).resolve())
     for name, command in (
-        ("Scaffold", [sys.executable, str(ROOT / "utils" / "check.py")]),
+        ("Scaffold", [sys.executable, str(ROOT / "utils/ci/check.py")]),
         ("Offline tool tests", [sys.executable, runner, "--test-tools"]),
     ):
         ok, _ = run_phase(name, command, args.timeout)

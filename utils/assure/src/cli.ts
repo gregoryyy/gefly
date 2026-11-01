@@ -6,21 +6,21 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { buildGraph, diffGraphs, impact, markdownReport, trace, type Graph } from './graph.ts';
 import { git, InputError, loadSnapshot, safePath } from './snapshot.ts';
 
-export const ROOT = fileURLToPath(new URL('../../', import.meta.url));
-const usage = 'Usage: node assure/src/cli.ts check|report|trace ID|diff REV|impact PATH|lineage [--json] [--revision REV] [--root PATH]';
+export const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
+const usage = 'Usage: node utils/assure/src/cli.ts check|report|trace ID|diff REV|impact PATH|lineage [--json] [--revision REV] [--root PATH]';
 
 function writeLineage(root: string, graph: Graph): string {
   // Refuse a redirected output directory/file and refuse outputs that are not ignored.
   const base = realpathSync(root);
-  const output = resolve(base, 'assure/out');
+  const output = resolve(base, 'utils/assure/out');
   const contained = (path: string) => {
     const value = relative(base, realpathSync(path));
     if (value === '..' || value.startsWith(`..${sep}`) || isAbsolute(value)) throw new InputError('output path escapes repository');
   };
-  contained(resolve(base, 'assure'));
+  contained(resolve(base, 'utils/assure'));
   if (existsSync(output)) contained(output);
-  const ignored = git(base, ['check-ignore', '--no-index', '--', 'assure/out/graph.json', 'assure/out/report.md']).toString('utf8').trim().split('\n');
-  if (!['assure/out/graph.json', 'assure/out/report.md'].every((path) => ignored.includes(path))) throw new InputError('generated outputs must both be ignored');
+  const ignored = git(base, ['check-ignore', '--no-index', '--', 'utils/assure/out/graph.json', 'utils/assure/out/report.md']).toString('utf8').trim().split('\n');
+  if (!['utils/assure/out/graph.json', 'utils/assure/out/report.md'].every((path) => ignored.includes(path))) throw new InputError('generated outputs must both be ignored');
   mkdirSync(output, { recursive: true }); contained(output);
   for (const [file, text] of [['graph.json', JSON.stringify(graph, null, 2) + '\n'], ['report.md', markdownReport(graph)]]) {
     const path = resolve(output, file);
@@ -29,7 +29,7 @@ function writeLineage(root: string, graph: Graph): string {
     } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
     writeFileSync(path, text, 'utf8');
   }
-  return 'assure/out/graph.json and assure/out/report.md';
+  return 'utils/assure/out/graph.json and utils/assure/out/report.md';
 }
 
 export function main(argv = process.argv.slice(2)): number {

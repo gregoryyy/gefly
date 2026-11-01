@@ -25,7 +25,8 @@ export interface Graph {
 }
 const BY = 'gefly/graph@0.1';
 const CODE = /\.(py|[cm]?js|ts|cpp|cc|cxx|h|hpp)$/;
-const excluded = (path: string) => /^(docs\/(input|reviews)\/|assure\/upstream\/|assure\/out\/|node_modules\/)/.test(path);
+// Retain the previous layout exclusion when reading immutable older snapshots.
+const excluded = (path: string) => /^(docs\/(input|reviews)\/|(?:utils\/)?assure\/upstream\/|(?:utils\/)?assure\/out\/|node_modules\/)/.test(path);
 const canonical = (value: unknown): string => {
   if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
   if (value !== null && typeof value === 'object') return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical((value as Record<string, unknown>)[key])}`).join(',')}}`;
@@ -144,17 +145,25 @@ export function buildGraph(snapshot: Snapshot): Graph {
   evidence.nodes.forEach(merge);
   pending.push(...evidence.facts.map((f) => ({ ...f, at: snapshot.revision })));
   problems.push(...evidence.problems);
-  const inventoryText = read('assure/UPSTREAM.json');
+  const currentLayout = snapshot.paths.some((path) => path.startsWith('utils/assure/'));
+  const oldLayout = snapshot.revision !== 'worktree' && !currentLayout
+    && snapshot.paths.includes('assure/UPSTREAM.json');
+  const inventoryPath = oldLayout ? 'assure/UPSTREAM.json' : 'utils/assure/UPSTREAM.json';
+  const inventoryPrefix = oldLayout ? 'assure/upstream/' : 'utils/assure/upstream/';
+  const inventoryText = read(inventoryPath);
+  if (inventoryText === undefined && snapshot.paths.some((path) => path.startsWith('utils/assure/')
+      || (snapshot.revision === 'worktree' && path.startsWith('assure/'))))
+    problem('upstream-inventory', 'upstream', 'Missing current-layout upstream inventory; legacy fallback requires an old-only committed snapshot', [inventoryPath]);
   if (inventoryText !== undefined) {
     try {
       const inventory = JSON.parse(inventoryText);
       if (inventory.commit !== '99dc60050cd904f7b25cd929b5a6b1e1420f9fc6' || !Array.isArray(inventory.files)) throw new Error('invalid upstream inventory');
       for (const entry of inventory.files) {
-        if (typeof entry.destination !== 'string' || !entry.destination.startsWith('assure/upstream/')) throw new Error('invalid vendor path');
+        if (typeof entry.destination !== 'string' || !entry.destination.startsWith(inventoryPrefix)) throw new Error('invalid vendor path');
         const source = read(entry.destination);
-        if (source === undefined || sha256(source) !== entry.sha256) problem('upstream-integrity', entry.destination, 'Vendored bytes differ from pinned inventory', ['assure/UPSTREAM.json', entry.destination]);
+        if (source === undefined || sha256(source) !== entry.sha256) problem('upstream-integrity', entry.destination, 'Vendored bytes differ from pinned inventory', [inventoryPath, entry.destination]);
       }
-    } catch (error) { problem('upstream-inventory', 'upstream', (error as Error).message, ['assure/UPSTREAM.json']); }
+    } catch (error) { problem('upstream-inventory', 'upstream', (error as Error).message, [inventoryPath]); }
   }
   if (nodes.size > 60000 || pending.length > 200000) throw new Error('graph exceeds node/fact limit');
   const store = new MemoryStore();

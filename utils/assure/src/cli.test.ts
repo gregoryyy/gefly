@@ -12,20 +12,21 @@ function checkout(t: { after: (fn: () => void) => void }) {
   const root = mkdtempSync(join(tmpdir(), 'gefly-assure-cli-'));
   const caller = mkdtempSync(join(tmpdir(), 'gefly-assure-caller-'));
   t.after(() => { rmSync(root, { recursive: true, force: true }); rmSync(caller, { recursive: true, force: true }); });
-  mkdirSync(join(root, 'assure'), { recursive: true });
-  cpSync(join(assureSource, 'src'), join(root, 'assure/src'), { recursive: true });
-  cpSync(join(assureSource, 'upstream'), join(root, 'assure/upstream'), { recursive: true });
-  cpSync(join(assureSource, 'package.json'), join(root, 'assure/package.json'));
+  mkdirSync(join(root, 'utils/assure'), { recursive: true });
+  cpSync(join(assureSource, 'src'), join(root, 'utils/assure/src'), { recursive: true });
+  cpSync(join(assureSource, 'upstream'), join(root, 'utils/assure/upstream'), { recursive: true });
+  cpSync(join(assureSource, 'package.json'), join(root, 'utils/assure/package.json'));
+  cpSync(join(assureSource, 'UPSTREAM.json'), join(root, 'utils/assure/UPSTREAM.json'));
   mkdirSync(join(root, 'docs/assure'), { recursive: true });
   writeFileSync(join(root, 'docs/SPEC.md'), 'Deliver a thing. [R-DEMO-1]\n');
   writeFileSync(join(root, 'docs/TODO.md'), '## 1. Work\n- [ ] 1.1 Future thing.\n');
   writeFileSync(join(root, 'docs/GAPS.md'), '## Open questions\n### Q1. Pending choice\n');
   writeFileSync(join(root, 'docs/DONE.md'), '# Progress\n');
   writeFileSync(join(root, 'docs/assure/catalog.json'), JSON.stringify({ schemaVersion: 1, guards: [], evidence: [], criteria: [], fixtureGroups: [], aircraft: [] }));
-  writeFileSync(join(root, '.gitignore'), 'assure/out/\n');
+  writeFileSync(join(root, '.gitignore'), 'utils/assure/out/\n');
   const git = (...args: string[]) => execFileSync('git', args, { cwd: root, env: env(), stdio: ['ignore', 'pipe', 'pipe'] });
   git('init', '-q'); git('config', 'user.name', 'Fixture'); git('config', 'user.email', 'fixture@example.invalid'); git('add', '.'); git('commit', '-qm', 'Fixture');
-  const run = (...args: string[]) => spawnSync(process.execPath, [join(root, 'assure/src/cli.ts'), ...args], { cwd: caller, encoding: 'utf8', timeout: 15000 });
+  const run = (...args: string[]) => spawnSync(process.execPath, [join(root, 'utils/assure/src/cli.ts'), ...args], { cwd: caller, encoding: 'utf8', timeout: 15000 });
   return { root, caller, run };
 }
 
@@ -56,10 +57,10 @@ test('AS7 lineage writes only ignored generated outputs and refuses escaping out
   const { root, caller, run } = checkout(t);
   const generated = run('lineage');
   assert.equal(generated.status, 0, generated.stderr + generated.stdout);
-  assert(existsSync(join(root, 'assure/out/graph.json')));
-  assert.match(readFileSync(join(root, 'assure/out/report.md'), 'utf8'), /no physics or training validation/);
-  rmSync(join(root, 'assure/out'), { recursive: true });
-  symlinkSync(caller, join(root, 'assure/out'));
+  assert(existsSync(join(root, 'utils/assure/out/graph.json')));
+  assert.match(readFileSync(join(root, 'utils/assure/out/report.md'), 'utf8'), /no physics or training validation/);
+  rmSync(join(root, 'utils/assure/out'), { recursive: true });
+  symlinkSync(caller, join(root, 'utils/assure/out'));
   assert.equal(run('lineage').status, 2);
   assert(!existsSync(join(caller, 'graph.json')));
 });

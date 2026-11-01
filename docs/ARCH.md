@@ -223,8 +223,10 @@ the authoritative documents, Git records, code/data objects and versioned eviden
 It reuses Propeller's pinned core; no database, persistent service or new agent is
 introduced. The shared offline CI gate includes assurance integrity checks, while
 `just assure report`, `trace`, `diff` and `impact` support review. `just lineage`
-writes disposable JSON and Markdown under ignored `assure/out/`, without opening
-a browser or posting externally.
+writes disposable JSON and Markdown under ignored `utils/assure/out/`, without opening
+a browser or posting externally. Runtime code and its tests live in
+`utils/assure/`; the product contract and catalog remain in `docs/assure/`. The
+shared CI entry point and structural checker live in `utils/ci/`.
 
 Planned requirements, declared links, observed outcomes and accepted claims are
 separate states. Missing, skipped or stale evidence cannot establish acceptance;

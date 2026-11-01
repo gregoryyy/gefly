@@ -2,12 +2,12 @@
 
 ## Shared local and hosted gate
 
-`just ci` delegates to [ci.py](ci.py), the same entry point invoked by
+`just ci` delegates to [ci/run.py](ci/run.py), the same entry point invoked by
 [GitHub Actions](../.github/workflows/foundation.yml). The direct command needs Python
 3.11+, Git and **Node.js 24.2+**, without `just` or third-party Python packages:
 
 ```bash
-python3 /path/to/checkout/utils/ci.py
+python3 /path/to/checkout/utils/ci/run.py
 ```
 
 The runner finds the checkout from its own location, independently of the caller's
@@ -63,7 +63,7 @@ local quality, specification-validation and live peer gates remain separate.
 
 ## Lower-level scaffold check
 
-`just check` runs [check.py](check.py) with Python 3.11 or newer and only the standard
+`just check` runs [ci/check.py](ci/check.py) with Python 3.11 or newer and only the standard
 library. It checks required scaffold files, local Markdown link targets, the Claude
 entrypoint, the nine native Codex agent definitions, the native Claude peer dispatcher
 and their role-document references.
@@ -149,7 +149,9 @@ instruction is not a tool-disable guarantee. Provider CLI configuration may
 still exist outside the packet, and returned model names are not backend
 attestation. Preserve these limits with the review evidence.
 
-`just test-tools` runs standard-library `unittest` discovery over `utils/test_*.py`.
+`just test-tools` runs standard-library `unittest` discovery recursively from
+`utils/`, matching `test_*.py`. The `ci/` package keeps its relocated checker/runner
+tests in that discovery alongside the existing peer and validator tests.
 These tool tests are separate from live provider runs and do not establish live
 authentication, model identity, review quality or simulator correctness. `just check`
 stays offline and never invokes this peer helper or a provider. See
@@ -160,7 +162,9 @@ stays offline and never invokes this peer helper or a provider. See
 The bounded [assurance contract](../docs/assure/SPEC.md) adopts generated lineage
 and checks from Propeller's pinned GPL-3.0-or-later core. Canonical inputs remain
 the source documents, Git records, aircraft/source values and versioned evidence;
-generated graph/report files are disposable. The CLI uses Node.js 24.2+ to run
+generated graph/report files are disposable. The runtime and its tests live in
+[assure/](assure/README.md), under `utils/`; the product contract and catalog stay
+in `docs/assure/`. The CLI uses Node.js 24.2+ to run
 the checked-in TypeScript, with no package installation, network retrieval,
 provider call or browser launch during checking.
 
@@ -180,7 +184,7 @@ implementation claims, evidence outcomes, link certainty and accepted claims.
 `trace` follows a stable ID, `diff` compares lineage against a Git revision, and
 `impact` identifies downstream effects through declared dependencies. Missing
 edges are a coverage limit, not proof of no impact. `assure-test` exercises the
-tool; `lineage` writes generated JSON and Markdown under ignored `assure/out/`,
+tool; `lineage` writes generated JSON and Markdown under ignored `utils/assure/out/`,
 without automatically opening a browser or publishing anything.
 
 The shared local/hosted gate runs the offline assurance checks alongside existing

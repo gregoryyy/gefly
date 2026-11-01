@@ -25,7 +25,7 @@ hash identifies the repairs accepted by this local quality recheck.
 
 ### QCI1 — Medium: inherited Git environment redirects fixture writes
 
-Location: [test_ci.py](../../utils/test_ci.py), `GitFixture.setUp` environment
+Location: [test_ci.py](https://github.com/gregoryyy/gefly/blob/91d0aede4859dd456a4c3c337bcaddca2ada279a/utils/test_ci.py), `GitFixture.setUp` environment
 setup and its `git`/`commit` helpers (initial reviewed lines 27–39, 47–53).
 
 The fixture adds three `GIT_CONFIG_*`/prompt overrides but preserves inherited
@@ -54,7 +54,7 @@ own repository receives its commit.
 
 ### QCI2 — Medium: inherited Git environment can omit tracked whitespace defects
 
-Location: [ci.py](../../utils/ci.py), `check_whitespace` Git subprocess environment.
+Location: [ci.py](https://github.com/gregoryyy/gefly/blob/91d0aede4859dd456a4c3c337bcaddca2ada279a/utils/ci.py), `check_whitespace` Git subprocess environment.
 
 The production runner also relies on `cwd=root` without neutralizing inherited
 Git repository redirection. Its `git ls-files` can enumerate another index and
@@ -116,3 +116,7 @@ separate evidence. This review did not invoke a provider or change implementatio
 Git state or shared status. Local quality accepts the repairs at the current
 snapshot; post-repair hosted matrix, specification-validation and live peer
 results remain separate required evidence before overall acceptance.
+
+Navigation note (2026-11-01): source links above are pinned to the recorded
+implementation/review revisions after tooling moved under `utils/ci/`. Historical
+commands, findings and reported outcomes are unchanged.

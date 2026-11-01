@@ -120,6 +120,9 @@ Review the PRs as they come in. A deviation recorded in DONE.md is the agent's w
 ## Options
 
 Three parts of Propeller's setup are worth taking into other projects. They're optional: adopt them when the project benefits.
+The paths and commands in these upstream examples retain Propeller's original
+layout. Gefly's current tool locations are `utils/assure/` for the assurance
+runtime and `utils/ci/` for CI tooling; product contracts stay in `docs/assure/`.
 
 ### `assure/`: assurance and lineage
 
@@ -216,10 +219,12 @@ Copy the document section of the `justfile` and `utils/pdf/`.
 │   ├── DONE.md          progress log, newest first
 │   ├── BOOT.md          this file
 │   ├── design/          concept and approaches (upper case: central)
-│   ├── assure/          assurance option: ASSR.md, generated lineage
+│   ├── assure/          product assurance contract and catalog
 │   ├── research/        research notes clarifying gaps (README.md: index, format)
 │   └── input/           raw input, not edited (lower case)
 ├── utils/
+│   ├── assure/          Gefly assurance runtime, tests and ignored out/ outputs
+│   ├── ci/              run.py, check.py and recursively discovered tool tests
 │   └── pdf/             style.css, mermaid.html
 ├── <subproject>/        optional subproject (here assure/, semgit/)
 │   ├── README.md        scope, inherited conventions and local document map
@@ -341,6 +346,14 @@ Official references, consulted 2026-10-31: [Codex custom agents](https://learn.c
 capabilities; do not assume every client/version supports the same flags.
 
 ### Apply the guide to Gefly
+
+Current tool layout: the assurance runtime is in
+[`utils/assure/`](../utils/assure/README.md), and the CI runner/checker are in
+`utils/ci/`. Invoke `python3 utils/ci/run.py` for the shared gate or
+`python3 utils/ci/check.py` for the lower-level structural check; all `just`
+commands are unchanged. `docs/assure/` retains the product contract/catalog,
+and generated lineage goes to ignored `utils/assure/out/`. Historical run
+commands and original Propeller source paths above retain their recorded layout.
 
 The user selected a **Cessna 172**, **EASA PPL first** and a **web application
 similar to GeoFS**; CPL follows later. Record the exact variant/year/avionics,

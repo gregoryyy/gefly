@@ -13,7 +13,7 @@ plan rather than assuming a single engine license covers all these materials.
 | Tool or asset | Use and provenance | Version / rights status |
 | --- | --- | --- |
 | Python | Standard-library scaffold checks, tool tests and shared CI runner, including `tomllib` | 3.11+ required; CI supports minor lines 3.11 and 3.15; exact observed patches recorded in RESULTS |
-| just | Local command entry point; `just ci` delegates to `utils/ci.py` | Version recorded in RESULTS; not bundled or required by hosted CI |
+| just | Local command entry point; `just ci` delegates to `utils/ci/run.py` | Version recorded in RESULTS; not bundled or required by hosted CI |
 | pandoc | Trusted Markdown to embedded HTML | Version recorded in RESULTS; not bundled |
 | Google Chrome | Headless A4 PDF print | Locally installed; `CHROME` can override executable |
 | `utils/pdf/style.css`, `mermaid.html`, `latex.lua` | Copied from `../propeller/utils/pdf/` by the requested bootstrap procedure | Propeller declares GPL-3.0-or-later; original comments retained, notices and full GPL text included for publication |
@@ -31,7 +31,7 @@ are recorded for derived BOOT/build/PDF material in
 
 ## Repository-tool CI inventory
 
-The [shared runner](../utils/ci.py) checks scaffold structure, offline standard-
+The [shared runner](../utils/ci/run.py) checks scaffold structure, offline standard-
 library tool tests and whitespace in all tracked current files. Empty/missing
 tests or required-phase failures return nonzero. Untracked files are outside the
 whitespace gate until added to Git. This is TODO 1.1.1's bounded tool slice, not a
@@ -92,7 +92,7 @@ remain TODO 1.1 work as package/workspace tooling and product implementation are
 The bounded assurance tool uses Node 24.2+ built-in TypeScript stripping and only
 Node standard libraries; it installs no runtime packages. Type stripping is not
 TypeScript type checking. The selected pure Propeller core is GPL-3.0-or-later,
-pinned to `99dc60050cd904f7b25cd929b5a6b1e1420f9fc6`; [UPSTREAM](../assure/UPSTREAM.json)
+pinned to `99dc60050cd904f7b25cd929b5a6b1e1420f9fc6`; [UPSTREAM](../utils/assure/UPSTREAM.json)
 records each copied file's original path/hash, and [notices](../THIRD_PARTY_NOTICES.md)
 preserve attribution. Gefly adapters are tested separately from the reused tests.
 
@@ -104,8 +104,9 @@ are recorded here. Automatic package-manager caching is disabled. Interpreter
 patches can move within that line; actual versions belong in RESULTS. Existing
 weekly GitHub Actions update proposals also cover this immutable action pin.
 
-Assurance reads catalog/evidence files offline and creates ignored reports under
-`assure/out/`. It does not fetch source documents, install an SDK, run a simulator
+The runtime lives in `utils/assure/`; the product contract/catalog remain in
+`docs/assure/`. Assurance reads catalog/evidence files offline and creates ignored reports under
+`utils/assure/out/`. It does not fetch source documents, install an SDK, run a simulator
 or invoke a provider. It complements existing source/schema/conversion validators;
 review still establishes source applicability and scientific meaning.
 

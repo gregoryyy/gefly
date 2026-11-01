@@ -57,14 +57,14 @@ just assure trace R-AIR-1  # trace a stable identifier
 just assure diff main     # lineage changes against a Git revision
 just assure impact docs/design/FDM-172S.md  # declared downstream effects
 just assure-test          # assurance tool tests
-just lineage              # JSON + Markdown under ignored assure/out/; no browser
+just lineage              # JSON + Markdown under ignored utils/assure/out/; no browser
 just clean                # remove generated document outputs
 ```
 
 The shared gate runs without `just`, from any caller directory:
 
 ```sh
-python3 /path/to/checkout/utils/ci.py
+python3 /path/to/checkout/utils/ci/run.py
 ```
 
 It requires **Python 3.11+, Git and Node.js 24.2+**, resolves the checkout from the runner's location and combines scaffold,
@@ -94,7 +94,7 @@ and independent reviews. [Assurance criteria AS1–AS8](docs/assure/SPEC.md) gov
 the generated lineage/evidence checks: planned work is distinct from acceptance,
 and skipped/stale evidence cannot support an accepted claim. Semantic/source and
 numerical review remains manual. `just lineage` produces disposable JSON and
-Markdown under ignored `assure/out/`; it does not open a browser. Generated PDFs
+Markdown under ignored `utils/assure/out/`; it does not open a browser. Generated PDFs
 are also ignored by Git. See
 [utilities](utils/README.md) and [dependencies](docs/SBOM.md) for tool requirements,
 action/update policy and document build limitations.
@@ -123,12 +123,13 @@ packages/           contracts, simulation, aircraft, avionics and training bound
 data/               aircraft/source manifests; no unlicensed manuals or scenery
 tests/              future reference fixtures, physics and acceptance checks
 studies/            bounded technical and learning experiments
-assure/             generated lineage/evidence checks; disposable out/ outputs
-utils/              repository checks and document build assets
+utils/ci/           shared CI runner, scaffold checker and their tests
+utils/assure/       generated lineage/evidence checks; disposable out/ outputs
+utils/              peer review, validators and document build assets
 ```
 
 The product runtime boundaries still contain scope notes; study and repository
-tool implementations live under `studies/`, `utils/` and `assure/`. The initial
+tool implementations live under `studies/` and `utils/`. The initial
 public repository destination is [gregoryyy/gefly](https://github.com/gregoryyy/gefly),
 selected under the user's publication instruction. Gefly is licensed
 **GPL-3.0-or-later** ([LICENSE](LICENSE), GAPS Q5). Third-party material keeps its

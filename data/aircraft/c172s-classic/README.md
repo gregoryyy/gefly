@@ -144,7 +144,7 @@ always `false`; see [SBOM](../../../docs/SBOM.md#aircraft-avionics-and-geographi
 
 ```bash
 python3 utils/validate_manifest.py
-python3 utils/ci.py
+python3 utils/ci/run.py
 ```
 
 The validator first audits the whole schema and refuses any keyword or `$ref` it does not

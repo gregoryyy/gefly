@@ -268,7 +268,7 @@ test('accepted fixture groups reject stale or nonpassing upstream evidence after
 test('known aircraft values retain source/page/class/units/reference lineage without model XML', () => {
   const f = files(), c = catalog();
   const base = 'data/aircraft/c172s-classic/';
-  for (const name of ['manifest.json', 'poh-values.json', 'performance-values.json']) f[base + name] = readFileSync(new URL('../../' + base + name, import.meta.url), 'utf8');
+  for (const name of ['manifest.json', 'poh-values.json', 'performance-values.json']) f[base + name] = readFileSync(new URL('../../../' + base + name, import.meta.url), 'utf8');
   c.aircraft = [{ manifest: base + 'manifest.json', values: [base + 'poh-values.json', base + 'performance-values.json'] }];
   const result = run(f, c);
   assert.deepEqual(errors(result), []);

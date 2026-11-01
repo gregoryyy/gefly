@@ -38,4 +38,4 @@ jobs:
           node-version: '26'
           package-manager-cache: false
       - name: Run offline foundation gates
-        run: python3 utils/ci.py --require-node
+        run: python3 utils/ci/run.py --require-node

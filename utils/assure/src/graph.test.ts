@@ -147,10 +147,28 @@ test('AS6 Markdown exposes failed observations, planned scope and freshness with
 });
 
 test('AS8 runtime inventory rejects changed pinned vendor bytes and accepts the original bytes', () => {
-  const path = 'assure/upstream/src/model/facts.ts', original = '// Original pinned fixture bytes\n';
+  const path = 'utils/assure/upstream/src/model/facts.ts', original = '// Original pinned fixture bytes\n';
   const inventory = JSON.stringify({ commit: '99dc60050cd904f7b25cd929b5a6b1e1420f9fc6', files: [{ destination: path, sha256: sha256(original) }] });
-  const changed = buildGraph(fixture({ 'assure/UPSTREAM.json': inventory, [path]: '// Tampered vendor bytes\n' }));
+  const changed = buildGraph(fixture({ 'utils/assure/UPSTREAM.json': inventory, [path]: '// Tampered vendor bytes\n' }));
   assert(changed.problems.some((p) => p.check === 'upstream-integrity' && p.severity === 'error'));
-  const pinned = buildGraph(fixture({ 'assure/UPSTREAM.json': inventory, [path]: original }));
+  const pinned = buildGraph(fixture({ 'utils/assure/UPSTREAM.json': inventory, [path]: original }));
   assert.equal(pinned.summary.errors, 0);
+  const legacyPath = path.replace(/^utils\//, '');
+  const legacyInventoryPath = 'assure/UPSTREAM.json';
+  const legacyInventory = JSON.stringify({ commit: '99dc60050cd904f7b25cd929b5a6b1e1420f9fc6', files: [{ destination: legacyPath, sha256: sha256(original) }] });
+  const legacy = fixture({ [legacyInventoryPath]: legacyInventory, [legacyPath]: original });
+  legacy.revision = 'a'.repeat(40);
+  assert.equal(buildGraph(legacy).summary.errors, 0, 'immutable pre-relocation snapshots remain readable');
+  legacy.revision = 'worktree';
+  assert(buildGraph(legacy).problems.some((p) => p.check === 'upstream-inventory' && p.severity === 'error'), 'worktree cannot fall back to an obsolete inventory');
+  const currentFiles = { 'utils/assure/src/cli.ts': '// Current layout fixture\n', [path]: '// Tampered current vendor bytes\n' };
+  const mixed = fixture({ [legacyInventoryPath]: legacyInventory, [legacyPath]: original, ...currentFiles });
+  mixed.revision = 'a'.repeat(40);
+  assert(buildGraph(mixed).problems.some((p) => p.check === 'upstream-inventory' && p.sources.includes('utils/assure/UPSTREAM.json') && p.severity === 'error'), 'committed mixed layout requires its current inventory');
+  const currentOnly = fixture(currentFiles);
+  currentOnly.revision = 'a'.repeat(40);
+  assert(buildGraph(currentOnly).problems.some((p) => p.check === 'upstream-inventory' && p.severity === 'error'), 'committed current-only layout requires its inventory');
+  const mixedPinned = fixture({ [legacyInventoryPath]: legacyInventory, [legacyPath]: original, ...currentFiles, 'utils/assure/UPSTREAM.json': inventory });
+  mixedPinned.revision = 'a'.repeat(40);
+  assert(buildGraph(mixedPinned).problems.some((p) => p.check === 'upstream-integrity' && p.id === path && p.severity === 'error'), 'current inventory checks current vendor bytes even with valid legacy copies');
 });

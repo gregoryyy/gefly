@@ -3,7 +3,7 @@
 The source documents, Git history, aircraft data and recorded observations remain
 authoritative. This tool builds disposable lineage and checks bounded structural
 contracts; it does not establish physics fidelity, data rights, test adequacy,
-provider identity or approved training credit. See the [adopted contract](../docs/assure/SPEC.md)
+provider identity or approved training credit. See the [adopted contract](../../docs/assure/SPEC.md)
 and [evidence format](FORMAT.md).
 
 Node **24.2 or newer** and Git are required. Node executes the local TypeScript
@@ -11,22 +11,25 @@ adapters with built-in type stripping. There are no npm packages to install, no
 runtime dependencies and no lockfile. The simulator runtime is separate.
 
 ```sh
-node assure/src/cli.ts check
-node assure/src/cli.ts check --json
-node assure/src/cli.ts report
-node assure/src/cli.ts report --json
-node assure/src/cli.ts trace R-ASR-1
-node assure/src/cli.ts trace todo:1.14
-node assure/src/cli.ts diff HEAD~1
-node assure/src/cli.ts impact data/aircraft/c172s-classic/poh-values.json
-node assure/src/cli.ts lineage
-node --test 'assure/src/*.test.ts' 'assure/upstream/src/**/*.test.ts'
+node utils/assure/src/cli.ts check
+node utils/assure/src/cli.ts check --json
+node utils/assure/src/cli.ts report
+node utils/assure/src/cli.ts report --json
+node utils/assure/src/cli.ts trace R-ASR-1
+node utils/assure/src/cli.ts trace todo:1.14
+node utils/assure/src/cli.ts diff HEAD~1
+node utils/assure/src/cli.ts impact data/aircraft/c172s-classic/poh-values.json
+node utils/assure/src/cli.ts lineage
+node --test 'utils/assure/src/*.test.ts' 'utils/assure/upstream/src/**/*.test.ts'
 ```
 
 The default root comes from the CLI file location, so an absolute invocation works
 from any caller directory. `--root PATH` selects another local checkout for an
 explicit inspection; `--revision REV` reads a committed snapshot instead of the
 working tree. `diff REV` compares that revision to the selected current snapshot.
+Committed snapshots from before the move retain bounded reads of their old
+`assure/` inventory and vendor paths. The working tree requires the current
+`utils/assure/` inventory and cannot fall back to the old layout.
 Trace accepts either a bare ID or `kind:id`. Impact accepts a file or an RFC 6901
 field identity such as `data/value.json#/field`; unknown dependencies are reported,
 never treated as an all-clear. Query output is JSON. Report output is Markdown by
@@ -41,8 +44,8 @@ are advisory. Undefined current IDs, duplicate declarations, completed tasks wit
 explicit unresolved blockers, malformed status/evidence records and invalid
 accepted evidence are errors. Historical commit trailer defects are warnings.
 
-`lineage` is the only writing command. It writes `assure/out/graph.json` and
-`assure/out/report.md`, requires those outputs to be ignored, and refuses escaping
+`lineage` is the only writing command. It writes `utils/assure/out/graph.json` and
+`utils/assure/out/report.md`, requires those outputs to be ignored, and refuses escaping
 or symbolic output files. It never opens a browser or posts a report. Checking
 does not change source files, Git or the ledger.
 

@@ -59,6 +59,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
   - [x] 1.14.2 Reuse the pinned Propeller core, adapt Gefly lineage/status extraction and provide check/report/trace/diff/impact commands.
   - [x] 1.14.3 Add aircraft provenance, versioned evidence/decision guards, acceptance freshness and calibration/holdout checks with negative fixtures.
   - [x] 1.14.4 Reconcile known status drift, integrate offline local/CI checks and record independent quality/validation plus scoped peer disposition.
+- [x] 1.15 Organize assurance under `utils/assure/` and CI tooling under `utils/ci/`; retain the `just` commands, complete test discovery, older-revision inspection, upstream byte pins and ignored-output boundaries (R-ASR-4, R-BOOT-3). See the tool-layout review records for independent review and peer disposition.
 
 ## 2. First browser exercise
 
