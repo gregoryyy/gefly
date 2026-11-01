@@ -70,7 +70,7 @@ sections; failure in any item fails the section (pass-mark rules (c)(1)–(4)).
   flight **±10°**; speed, take-off and approach **+15/–5 kt**; all other flight regimes
   **±15 kt** (engine-failure values apply to multi-engine aeroplanes only).
 - Section 1 includes pre-take-off procedures, take-off and after-take-off checks and
-  aerodrome departure procedures; Section 2 defines medium turns as 30° bank;
+  aerodrome departure procedures; Section 2 defines medium turns as 30° bank (p. 249);
   Section 4 includes aerodrome arrival, crosswind landing "if suitable conditions
   available", touch and go and go-around from low height (pp. 249–250).
 
@@ -91,10 +91,12 @@ adaptation and does not make the exercise a skill test or give credit.
 | Best rate of climb (sea level) / best angle (sea level) | 74 KIAS / 62 KIAS | 4-5 |
 | Normal approach, flaps up / flaps 30° | 65–75 KIAS / 60–70 KIAS | 4-5, 4-17 |
 | Flap extension in descent/approach | 0°–10° below 110 KIAS; 10°–30° below 85 KIAS | 4-16, 4-17 |
-| VFE (KIAS) | 110 (10°), 85 (10°–30°) | 2-4 |
-| VNO / VNE (KIAS) | 129 / 163 | 2-4 |
+| VFE | 107 KCAS / 110 KIAS (10°); 85 KCAS / 85 KIAS (10°–30°) | 2-4 |
+| VNO / VNE | 126 / 160 KCAS; 129 / 163 KIAS | 2-4 |
 | Maximum engine speed | 2700 RPM; full-throttle static 2300–2400 RPM | 2-5 |
-| Before take-off items relevant to a running-engine start | mixture rich, fuel selector BOTH, trim and flaps set for take-off, brakes release | 4-15 |
+| Before starting engine | fuel selector BOTH; fuel shutoff ON (pushed in) | 4-11 |
+| Starting engine (battery) | master ON; auxiliary fuel pump ON for priming then OFF; ignition START, released when the engine starts; avionics master ON after start | 4-12 |
+| Before take-off | mixture rich, fuel selector BOTH, trim and flaps set for take-off, brakes release | 4-15 |
 | Before landing | fuel selector BOTH, mixture rich, landing/taxi lights on | 4-16 |
 | Normal landing | touchdown main wheels first; lower nose wheel gently; minimum braking | 4-17 |
 | Touchdown technique | power off, main wheels first; avoid steep slips with flaps > 20° | 4-32 |
@@ -129,6 +131,9 @@ sink-rate limit, a tail-strike pitch angle, a flare height or a touchdown-zone l
 
 - Use X1 (d) limits as labelled "skill-test guidance" for downwind height, leg heading
   and take-off/approach speed, with persistence allowance for turbulence.
+- Do not compare simulated CAS with KIAS targets: the IAS–CAS gap is about 5 kt at
+  low speed (p. 5-12). Block IAS criteria until Fig. 5-1 is extracted; use the KCAS
+  column of p. 2-4 for limit gates.
 - Use S17 values as the aircraft-procedure targets and limits for the 172S classic
   configuration (R-FID-3), keeping the 70–80/75–85 discrepancy visible.
 - Anything not covered (crosswind-turn height, touchdown zone, sink rate, centreline
