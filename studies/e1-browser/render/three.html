@@ -27,6 +27,8 @@ import * as THREE from "three";
 const hud = document.getElementById("hud");
 const q = new URLSearchParams(location.search);
 const deviceDpr = q.get("dpr") === "device";
+hud.textContent = "calibrating display refresh (idle)";
+await E1Meter.calibrateRefresh();       // before any scene work (top-level await)
 
 // Frames and units.
 //   ENU: local tangent plane at the approximate EDFE reference point on the
@@ -113,8 +115,10 @@ let rendered = 0, lastStep = -1, staleFrames = 0;
 function frame() {
   const s = stream.latest;
   if (s) {
-    rendered += 1;
-    if (s.step === lastStep) staleFrames += 1;
+    if (E1Meter.measuring()) {             // measurement window only
+      rendered += 1;
+      if (s.step === lastStep) staleFrames += 1;
+    }
     lastStep = s.step;
     const [e, n, u] = enu.geodeticToEnu(s.lat_rad, s.lon_rad, s.alt_msl_m);
     enuToThree(e, n, u, aircraft.position);
@@ -134,7 +138,7 @@ requestAnimationFrame(frame);
 
 E1Meter.startMeter({
   page: "three", overlay: hud,
-  collectExtra: () => ({
+  collectExtra: (win) => ({
     engine: { name: "three.js", version: THREE.REVISION, license: "MIT" },
     imagery: "none (procedural ground plane and grid)",
     terrain: "flat ENU plane at WGS-84 h = 0 m",
@@ -142,7 +146,7 @@ E1Meter.startMeter({
     resolution_scale: deviceDpr ? "device" : "css",
     frames_with_state: rendered, frames_same_step_as_previous: staleFrames,
     draw_calls_last_frame: renderer.info.render.calls,
-    stream: E1Stream.streamSummary(stream),
+    stream: E1Stream.streamSummary(stream, win),
   }),
 });
 </script>

@@ -28,10 +28,12 @@
 <div id="credits"></div>
 <script>
 "use strict";
-(function () {
+(async function () {
   const hud = document.getElementById("hud");
   const q = new URLSearchParams(location.search);
   const deviceDpr = q.get("dpr") === "device";
+  hud.textContent = "calibrating display refresh (idle)";
+  await E1Meter.calibrateRefresh();
 
   // Never contact Cesium ion: clear the built-in default token before any use.
   Cesium.Ion.defaultAccessToken = "";
@@ -81,8 +83,9 @@
     pixelSize: 10, color: C.Color.YELLOW,
   });
 
-  // Self-check of the heading convention: at heading 0 the body +x axis must
-  // point local north, otherwise apply an offset. Recorded in the results.
+  // Heading convention: in Cesium's HeadingPitchRoll the body +x axis points
+  // local EAST at heading 0, so contract true heading h maps to h - pi/2. The
+  // mapping is checked independently at 0 (north), pi/2 (east) and pi (south).
   const probe = C.Cartesian3.fromRadians(E.lon_rad, E.lat_rad, 0);
   function bodyXInEnu(heading_rad) {
     const m = C.Transforms.headingPitchRollToFixedFrame(probe, new C.HeadingPitchRoll(heading_rad, 0, 0));
@@ -91,13 +94,18 @@
     const x = C.Matrix4.multiplyByPointAsVector(m, C.Cartesian3.UNIT_X, new C.Cartesian3());
     return C.Matrix4.multiplyByPointAsVector(inv, x, new C.Cartesian3());
   }
-  const h0 = bodyXInEnu(0);
-  const HEADING_OFFSET_RAD = Math.atan2(h0.x, h0.y);  // 0 when +x already points north
-  const h90 = bodyXInEnu(Math.PI / 2 - HEADING_OFFSET_RAD);
+  const HEADING_OFFSET_RAD = Math.PI / 2;
+  const toEnu = (h) => { const v = bodyXInEnu(h - HEADING_OFFSET_RAD); return [v.x, v.y, v.z]; };
+  const n0 = toEnu(0), e90 = toEnu(Math.PI / 2), s180 = toEnu(Math.PI);
   const headingCheck = {
-    body_x_enu_at_0: [h0.x, h0.y, h0.z], offset_rad: HEADING_OFFSET_RAD,
-    heading_90_points_east: h90.x > 0.999,
+    offset_rad: HEADING_OFFSET_RAD,
+    heading_0_points_north: n0[1] > 0.999,
+    heading_90_points_east: e90[0] > 0.999,
+    heading_180_points_south: s180[1] < -0.999,
+    body_x_enu: { h0: n0, h90: e90, h180: s180 },
   };
+  headingCheck.pass = headingCheck.heading_0_points_north &&
+    headingCheck.heading_90_points_east && headingCheck.heading_180_points_south;
 
   const stream = E1Stream.startStream();
   const hpr = new C.HeadingPitchRoll();
@@ -107,8 +115,10 @@
   scene.preUpdate.addEventListener(() => {
     const s = stream.latest;
     if (!s) return;
-    rendered += 1;
-    if (s.step === lastStep) staleFrames += 1;
+    if (E1Meter.measuring()) {               // measurement window only
+      rendered += 1;
+      if (s.step === lastStep) staleFrames += 1;
+    }
     lastStep = s.step;
     C.Cartesian3.fromRadians(s.lon_rad, s.lat_rad, s.alt_msl_m, C.Ellipsoid.WGS84, pos);
     // Contract roll: right wing down positive. Cesium roll is about +x with +y
@@ -123,7 +133,7 @@
 
   E1Meter.startMeter({
     page: "cesium", overlay: hud,
-    collectExtra: () => ({
+    collectExtra: (win) => ({
       engine: { name: "CesiumJS", version: C.VERSION, license: "Apache-2.0" },
       ion_token_empty: C.Ion.defaultAccessToken === "",
       imagery: "GridImageryProvider (procedural, local); no remote imagery",
@@ -132,7 +142,7 @@
       resolution_scale: deviceDpr ? "device" : "css",
       heading_check: headingCheck,
       frames_with_state: rendered, frames_same_step_as_previous: staleFrames,
-      stream: E1Stream.streamSummary(stream),
+      stream: E1Stream.streamSummary(stream, win),
     }),
   });
 })();

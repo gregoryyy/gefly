@@ -89,8 +89,8 @@ for (const circuit of ["left", "right"]) {
     circuit === "left" ? minLateral < -1500 && maxLateral < 1 : maxLateral > 1500 && minLateral > -1,
     `lateral ${minLateral.toFixed(0)}..${maxLateral.toFixed(0)} m`);
   ctx.onmessage({ data: { type: "input", step: 10, wall_ms: 1234.5, elevator: 0, aileron: 0, rudder: 0, throttle: 0.5 } });
-  check(`${circuit}: input echoed from its step`, ctx.stateAt(9).last_input_wall_ms === null &&
-    ctx.stateAt(10).last_input_wall_ms === 1234.5);
+  check(`${circuit}: input for step s first echoed in state s+1`,
+    ctx.stateAt(10).last_input_wall_ms === null && ctx.stateAt(11).last_input_wall_ms === 1234.5);
   posted.length = 0;
   ctx.onmessage({ data: { type: "init", dt_s: 1 / 120, ic: { ...IC, tas_mps: NaN } } });
   check(`${circuit}: non-finite init rejected`, posted.some((m) => m.type === "error"));

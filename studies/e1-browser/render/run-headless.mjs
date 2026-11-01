@@ -5,7 +5,12 @@
 //
 // Usage: node studies/e1-browser/render/run-headless.mjs
 //          [--pages cesium,three] [--duration 20] [--warmup 3] [--query "circuit=right"]
-//          [--shots <dir>] [--headed]
+//          [--shots <dir>] [--headed] [--no-isolate]
+// By default the server sends COOP: same-origin and COEP: require-corp so pages are
+// cross-origin isolated (finer performance.now resolution, SharedArrayBuffer), as
+// the sim worker's step_cost_us needs; jsDelivr answers with
+// Cross-Origin-Resource-Policy: cross-origin, so the CDN builds still load.
+// --no-isolate drops both headers; step_cost_us is then not comparable.
 // Needs Playwright with a Chromium build (`require("playwright")`, global install is
 // accepted) and network access to cdn.jsdelivr.net for the pinned engine builds.
 import { createServer } from "node:http";
@@ -26,7 +31,8 @@ function loadPlaywright() {
 }
 
 function parseArgs(argv) {
-  const a = { pages: ["cesium", "three"], duration: 20, warmup: 3, query: "", shots: null, headed: false };
+  const a = { pages: ["cesium", "three"], duration: 20, warmup: 3, query: "", shots: null,
+    headed: false, isolate: true };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i], v = argv[i + 1];
     if (k === "--pages") { a.pages = v.split(","); i++; }
@@ -35,6 +41,7 @@ function parseArgs(argv) {
     else if (k === "--query") { a.query = v; i++; }
     else if (k === "--shots") { a.shots = path.resolve(v); i++; }
     else if (k === "--headed") { a.headed = true; }
+    else if (k === "--no-isolate") { a.isolate = false; }
     else throw new Error(`unknown argument ${k}`);
   }
   if (!(a.duration > 0) || !(a.warmup >= 0)) throw new Error("duration/warmup must be positive");
@@ -44,15 +51,25 @@ function parseArgs(argv) {
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript",
   ".json": "application/json", ".wasm": "application/wasm", ".css": "text/css" };
 
-function serve(root) {
+function serve(root, isolate) {
+  const isolation = isolate
+    ? { "cross-origin-opener-policy": "same-origin", "cross-origin-embedder-policy": "require-corp" }
+    : {};
   const server = createServer(async (req, res) => {
+    let pathname;
     try {
-      const url = new URL(req.url, "http://localhost");
-      const file = path.resolve(root, "." + decodeURIComponent(url.pathname));
-      if (!file.startsWith(root + path.sep)) { res.writeHead(403).end(); return; }
+      pathname = decodeURIComponent(new URL(req.url, "http://localhost").pathname);
+    } catch {
+      res.writeHead(400).end();          // malformed URL or percent-encoding
+      return;
+    }
+    if (pathname.includes("\0")) { res.writeHead(400).end(); return; }
+    const file = path.resolve(root, "." + pathname);
+    if (!file.startsWith(root + path.sep)) { res.writeHead(403).end(); return; }
+    try {
       const body = await readFile(file);
       res.writeHead(200, { "content-type": TYPES[path.extname(file)] || "application/octet-stream",
-        "cache-control": "no-store" });
+        "cache-control": "no-store", ...isolation });
       res.end(body);
     } catch {
       res.writeHead(404).end();
@@ -97,13 +114,14 @@ async function runPage(browser, base, name, args) {
 
 const args = parseArgs(process.argv.slice(2));
 const { chromium } = loadPlaywright();
-const server = await serve(ROOT);
+const server = await serve(ROOT, args.isolate);
 const base = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ headless: !args.headed });
 const out = {
   evidence_class: "preliminary (headless Chromium; see render/README.md)",
   started_utc: new Date().toISOString(),
   browser: { name: "chromium", version: browser.version() },
+  cross_origin_isolation_headers: args.isolate,
   host: { platform: process.platform, arch: process.arch, node: process.version },
   runs: [],
 };
@@ -114,4 +132,8 @@ try {
   server.close();
 }
 process.stdout.write(JSON.stringify(out, null, 2) + "\n");
-process.exitCode = out.runs.every((r) => r.results && !r.error && r.forbidden_hosts.length === 0) ? 0 : 1;
+// Exit 1 on a functional failure only; budget pass/fail is reported, not enforced,
+// because container runs are preliminary.
+process.exitCode = out.runs.every((r) => r.results && !r.error && r.forbidden_hosts.length === 0 &&
+  r.results.stream.errors.length === 0 && r.results.heading_check?.pass !== false &&
+  r.results.cross_origin_isolated === args.isolate) ? 0 : 1;

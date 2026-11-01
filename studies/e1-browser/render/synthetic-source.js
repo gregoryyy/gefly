@@ -11,7 +11,8 @@
 //   - constant `ic.tas_mps`, no wind (ground speed == TAS, track == heading);
 //   - turns at a generic 3 deg/s "standard rate"; bank from the coordinated-turn
 //     relation tan(roll) = V * omega / g, applied as a step at leg boundaries;
-//   - pitch held at 0 rad; control inputs are recorded but do not change the path.
+//   - pitch held at 0 rad; control inputs are recorded but do not change the path;
+//     an input for step s is echoed (last_input_wall_ms) from the state for step s+1.
 // None of these values is aircraft data; they only produce a plausible-looking
 // motion for frame-pacing measurement.
 //
@@ -92,7 +93,9 @@ function stateAt(stepIndex) {
   const t_s = stepIndex * cfg.dt_s;
   const p = pathAt(cfg.ic.tas_mps * t_s);
   const [lat_rad, lon_rad] = cfg.frame.enuToGeodetic(p.e, p.n, 0);
-  while (pendingInputs.length && pendingInputs[0].step <= stepIndex) {
+  // Contract v0.1: an input for step s is applied before the step s -> s+1 and
+  // first appears in the state for step s+1 (same rule as ../sim/worker.js).
+  while (pendingInputs.length && pendingInputs[0].step < stepIndex) {
     lastInputWallMs = pendingInputs.shift().wall_ms;
   }
   const roll_rad = p.turn * cfg.bank_rad;   // right wing down positive

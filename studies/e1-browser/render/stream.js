@@ -27,8 +27,7 @@
                                  : `synthetic-source.js?circuit=${circuit}`;
     const s = {
       source, url, latest: null, ready: null, errors: [],
-      count: 0, firstArrivalMs: null, lastArrivalMs: null, intervalsMs: [],
-      worker: null,
+      count: 0, arrivalsMs: [], worker: null,
     };
     let w;
     try {
@@ -42,12 +41,9 @@
       const m = ev.data;
       if (!m || typeof m !== "object") return;
       if (m.type === "state") {
-        const now = performance.now();
-        if (s.lastArrivalMs !== null && s.intervalsMs.length < 100000) {
-          s.intervalsMs.push(now - s.lastArrivalMs);
-        }
-        if (s.firstArrivalMs === null) s.firstArrivalMs = now;
-        s.lastArrivalMs = now;
+        // Arrival times (performance.now, ms) are kept so the summary can be
+        // restricted to the meter's measurement window (warm-up excluded).
+        if (s.arrivalsMs.length < 200000) s.arrivalsMs.push(performance.now());
         s.count += 1;
         s.latest = m;
         if (opts && opts.onState) opts.onState(m);
@@ -70,14 +66,20 @@
     return s;
   }
 
-  function streamSummary(s) {
-    const iv = s.intervalsMs.slice().sort((a, b) => a - b);
+  // win: {t0_ms, t1_ms} measurement window from the meter (performance.now).
+  function streamSummary(s, win) {
+    const t = win ? s.arrivalsMs.filter((a) => a >= win.t0_ms && a <= win.t1_ms) : s.arrivalsMs;
+    const iv = [];
+    for (let i = 1; i < t.length; i++) iv.push(t[i] - t[i - 1]);
+    iv.sort((a, b) => a - b);
     const pct = (p) => (iv.length ? iv[Math.min(iv.length - 1, Math.floor(p * iv.length))] : null);
-    const span = s.count > 1 ? (s.lastArrivalMs - s.firstArrivalMs) / 1000 : null;
+    const span = t.length > 1 ? (t[t.length - 1] - t[0]) / 1000 : null;
     return {
       source: s.source, url: s.url, ready: s.ready, errors: s.errors,
-      states_received: s.count,
-      state_rate_hz: span ? (s.count - 1) / span : null,
+      window: win ? "measurement window only" : "whole run",
+      states_received_total: s.count,
+      states_received: t.length,
+      state_rate_hz: span ? (t.length - 1) / span : null,
       state_interval_ms: { p50: pct(0.5), p95: pct(0.95), p99: pct(0.99), max: iv.length ? iv[iv.length - 1] : null },
       last_step: s.latest ? s.latest.step : null,
       last_t_s: s.latest ? s.latest.t_s : null,
