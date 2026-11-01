@@ -65,6 +65,36 @@ the reference M1/Chrome with exact versions recorded. Imagery/terrain: no Cesium
 token or paid hosted service; use the ellipsoid or a permitted open source with
 attribution, recorded per [SBOM](../../docs/SBOM.md) policy.
 
-## Results
+## Contract deviations accepted for the study (v0.1)
 
-Pending.
+Recorded by the orchestrator 2026-11-01 12:02; proposals for the product contract (TODO 1.4),
+not part of v0:
+
+- `init` also runs JSBSim's longitudinal trim so the study starts near level flight;
+  the worker reports it in `ready.trim`.
+- Input step rule: an input with `step: s` is applied before the step from `s` to
+  `s+1`; inputs arriving after `s` apply at the next step and are counted late.
+  `wall_ms` is `performance.timeOrigin + performance.now()` in both page and worker.
+- Benchmark-only messages in `sim/`: `run.until_step`, `stats` request/reply and a
+  `burst` mode.
+- The synthetic source adds `ready.build.synthetic`.
+
+## Results (preliminary, cloud container)
+
+Headless Chromium 153 on a 4-vCPU Intel Xeon with software GL (SwiftShader). Not the
+reference M1; **no acceptance claim**. Details: [sim](sim/README.md), [render](render/README.md).
+
+| Measure | Result | Budget |
+| --- | --- | --- |
+| Worker step cost p99, paced (2 × 30 s) | 485–505 µs (unpaced ≈ 24 µs; gap attributed to thread wake-up) | ≤ 830 µs |
+| Missed steps | 0 | ≤ 1 per 10 s |
+| Input-to-state latency p95 (40 inputs) | 18.8–20.1 ms | ≤ 25 ms |
+| Replay digest, same build | identical (`7c8783f3440f387a`) | identical |
+| Cesium median fps / p99 frame (synthetic) | 2.3–2.5 fps / 733–950 ms | ≥ 60 / ≤ 25 ms |
+| three.js median fps / p99 frame (synthetic) | 12–15 fps / 117–133 ms | ≥ 60 / ≤ 25 ms |
+| Render pages with `?source=sim` | Cesium 3.2 fps, three.js 12.0 fps; ≈ 60 Hz state, no errors | functional |
+
+The worker budgets pass on the container CPU. Rendering numbers reflect software GL
+and are not evidence for or against the budget. Next: the same runs on the reference
+M1/Chrome (exact versions, renderer string, refresh rate), then the stack decision
+(TODO 1.2.3).

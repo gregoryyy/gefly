@@ -3,6 +3,26 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 12:02 — Build the E1 browser check (worker + render)
+
+TODO: 1.2.1/1.2.3 in progress. Agent: Claude Code orchestrator; code1 (sim) and
+code2 (render) in parallel on disjoint paths against a frozen contract; quality
+review running.
+
+**Implementation notes**
+
+code1: JSBSim v1.3.3 WASM (emsdk 6.0.13) in a module Web Worker at fixed 1/120 s;
+container run: p99 paced step 485–505 µs, 0 missed steps, input-to-state p95
+18.8–20.1 ms, identical replay digest. code2: CesiumJS 1.146.0 (no ion) and
+three.js 0.187.0 pages with a shared frame meter and synthetic circuit at EDFE.
+Orchestrator integration: module-worker fix; both pages run on the JSBSim stream
+at ≈ 60 Hz. Contract deviations recorded as v0.1 proposals.
+
+**Deviations**
+
+Software GL in the container makes render numbers meaningless for the budget;
+reference M1 run outstanding. Peer pending (batched; see GAPS Q15).
+
 ## 2026-11-01 11:38 — Select JSBSim as the dynamics engine
 
 TODO: 1.2.3 partly decided. Agent: Claude Code orchestrator (no subagents).
