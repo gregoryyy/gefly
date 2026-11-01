@@ -52,6 +52,11 @@ Model version and package hash feed the replay `aircraft` record (CONTRACTS §5)
 
 ### 1.3 `mass_balance`
 
+Calculation groundwork is available in the [E2 mass-properties study](../../studies/e2-c172s/README.md):
+synthetic fixtures verify component mass/CG and parallel-axis tensor arithmetic.
+Its body-axis calculation input is not a structural-station or JSBSim XML adapter;
+it supplies no aircraft values and does not complete M-a below.
+
 | Parameter | Source class | Source / method |
 | --- | --- | --- |
 | Empty mass and empty CG | **unknown** (manifest); candidate: a representative weighing record or POH sample loading, decision Q-1 | S17 Section 6 |

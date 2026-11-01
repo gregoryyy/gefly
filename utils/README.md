@@ -13,7 +13,7 @@ python3 /path/to/checkout/utils/ci.py
 The runner finds the checkout from its own location, independently of the caller's
 working directory. Its required phases check the scaffold, discover and run the
 offline standard-library repository-tool tests, run the offline study tests
-(`studies/e1-jsbsim`, standard-library unittest discovery in a separate
+(`studies/e1-jsbsim` and `studies/e2-c172s`, standard-library unittest discovery in a separate
 interpreter), run `node studies/e1-browser/render/check-synthetic.mjs` when `node`
 is on `PATH`, and inspect whitespace in the current contents of all tracked files.
 A missing/empty test suite, a missing study directory or render script, or a
