@@ -92,6 +92,28 @@ Resolved (engine): 2026-11-01 11:38, user; carried into [ARCH](ARCH.md), [SBOM](
 Why: TODO 1.2.1 needs a measured reference platform for timestep, latency and
 frame budgets, and the optional input profiles.
 
+Update: **2026-11-01 13:28, user** ([input](input/2026-11-01-no-external-monitor.md)): no
+external monitor. The 120 Hz refresh therefore came from the built-in panel, which
+together with the renderer string identifies a 14-inch MacBook Pro with Apple M1 Pro.
+Results stay attributed to the measured hardware (Apple M1 Pro, 120 Hz built-in);
+About This Mac can confirm the chip.
+
+Update: **2026-11-01 13:28, user** ([input](input/2026-11-01-mac-model.md)): “late 2020
+macbook pro 14””. Orchestrator note: Apple's late-2020 MacBook Pro is the 13-inch M1
+(60 Hz); the 14-inch MacBook Pro (late 2021) has an M1 Pro or M1 Max and a 120 Hz
+ProMotion display, which matches the recorded renderer string and refresh. Pending
+the user's check (Apple menu → About This Mac), results are attributed to the
+renderer-reported **Apple M1 Pro, 120 Hz**; the reference-platform name in Q16 stays
+"MacBook Pro (Apple silicon)" until confirmed.
+
+Confirmation: **2026-11-01 13:25, user** (recorded by orchestrator, Claude Code;
+[input](input/2026-11-01-chip-confirmation.md)): “M1 not pro”. The reference Mac is
+an Apple M1. Observation to reconcile: Chrome's WebGL renderer string on the
+recorded runs reported "Apple M1 Pro", and the display measured 120 Hz, which the
+13-inch M1 MacBook Pro's built-in panel does not provide (an external 120 Hz display
+would explain it). Results keep the reported strings; budgets scale to the measured
+refresh.
+
 Answer: **2026-11-01 11:00, user** (recorded by orchestrator, Claude Code;
 [input](input/2026-11-01-reference-platform.md)): “macbook pro m1, latest macos,
 webkit browsers esp. chrome latest. optional controls: bind orientation from
