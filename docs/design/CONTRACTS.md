@@ -1,7 +1,8 @@
 # Shared simulation contracts v1
 
-Status: **product proposal for TODO 1.4, revised 2026-11-01 after review; design
-choices decided by the user (GAPS Q18, 2026-11-01 13:00; §8).** Shared contracts
+Status: **agreed v1 (+ v1.1 proposals).** v1 design choices decided by the user
+(GAPS Q18, 2026-11-01 13:00; §8); §10 holds the v1.1 additive proposals revised
+after the TODO 1.6 review (2026-11-01), not yet agreed. Shared contracts
 for parallel coding (R-SIM-2..6, R-INPUT-1..3, R-REVIEW-1, R-BRIEF-1, R-REUSE-1).
 [SPEC](../SPEC.md) owns requirement text; the study contract v0/v0.1 in
 [E1 browser](../../studies/e1-browser/README.md) is evidence, not authority. Engine:
@@ -14,9 +15,8 @@ may be filled in from memory, another C172 variant or AI output (R-DATA-2).
 **Proposal** = product choice not yet decided. **Later** = outside contract v1.0.
 
 Reference-Mac evidence: `studies/e1-browser/README.md`, "Results on the reference
-M1/Chrome", branch `study/e1-m1-results` (**PR #9, pending merge**); one user-run
-session, preliminary. Open for the user: GAPS Q16 says **M1**, the WebGL string
-reported **Apple M1 Pro**.
+M1/Chrome" (merged, PR #9); one user-run session, preliminary. Hardware attribution
+(MacBook Pro 14", reported Apple M1 Pro, 120 Hz) follows GAPS Q16.
 
 ## 1. Units and frames
 
@@ -68,8 +68,8 @@ heights elsewhere).
   serves DGM1 (Hessen) heights **unchanged** (already DHHN2016), so terrain, field
   elevations and atmosphere share one datum. The callback is a pure function of
   location with tiles loaded before stepping (no asynchronous fetch in a step).
-- `h_ell_m = h_msl_m + ζ(lat, lon)`, computed **outside the dynamics** (in JS,
-  once per published state; `ind` digest group, §4) and never fed back: **GCG2016**
+- `h_ell_m = h_msl_m + ζ(lat, lon)`, computed **outside the dynamics** (in the
+  worker's JS, every step; `ind` digest group, §4, §10.2) and never fed back: **GCG2016**
   quasigeoid inside Germany (BKG, CC BY 4.0 per PROJ-data, attribution required),
   **EGM2008** elsewhere and outside GCG2016 coverage (NGA, public domain). Model
   ids and grid hashes are recorded in `env`. Renderers (CesiumJS) receive `h_ell_m`.
@@ -98,13 +98,23 @@ as a separate cited field. Compass/DG errors are instrument behavior (TBD-src).
 
 Speeds are never a bare `speed`: `cas_mps` and `tas_mps` (dynamics air data),
 `eas_mps` (derived), `gs_mps` (horizontal NED ground velocity), `vs_mps` (−vd,
-positive up). **IAS is an instrument indication** (`ind.asi_ias_mps`) from the
-pitot-static model and the POH airspeed calibration (**TBD-src**, S17 Section 5).
+positive up). **IAS is an instrument indication** (`ind.asi_ias_mps`) from a
+pitot-static instrument model (**TBD-src**, S17 Section 7). The POH airspeed
+calibration points (S17 Fig. 5-1, p. 5-9) are sourced in
+[poh-values.json](../../data/aircraft/c172s-classic/poh-values.json); the
+evaluator-only assessment mapping `cal_ias_mps`/`cal_ias_valid` derived from them is
+frozen in [Assessment airspeed](ASSESSMENT-AIRSPEED.md) and implemented in
+`packages/training/assessment-airspeed.ts` (adapter `airspeed-calibration.ts`,
+types `packages/contracts/assessment-airspeed.ts`; PR #29). It is not an instrument
+model and is outside `ind` (SCENARIO-CONTRACTS C4).
 Wind is an NED vector of air-mass velocity (blows *toward*); "from" directions
 exist only at the briefing/display boundary.
 
-Pressure references (R-SIM-3, R-AIR-3): altimeter state stores `setting_pa`,
-`setting_ref ∈ {QNH, QFE, STD}` and `setting_unit_display ∈ {hPa, inHg}`. STD
+Pressure references (R-SIM-3, R-AIR-3): altimeter state stores `setting_pa` and
+`setting_ref ∈ {QNH, QFE, STD}`; `setting_ref` is derived, not an input (§10.1).
+The display unit (hPa/inHg) is a presentation preference in `app/`, recorded in run
+metadata, never instrument state or digest content; the installed instrument's
+subscale unit is an aircraft configuration fact (GAPS Q3). STD
 means `setting_pa = 101325`. QFE requires the scenario's declared QFE datum
 (aerodrome or threshold elevation, **TBD-src**, EDFE AIP). The 172S altimeter scale
 units and setting range are **TBD-src** (not stated in S17 p. 7-43; depends on
@@ -133,7 +143,7 @@ recorded label; the knob only sets a pressure (no invented mode switch).
   snapshot/restore is considered only if measured seek time is too slow; it would
   then need its own equality fixture against re-simulation.
 
-**State stream and display (decided, GAPS Q18).** On the reference Mac (PR #9
+**State stream and display (decided, GAPS Q18).** On the reference Mac (E1
 evidence, 120 Hz display) three.js rendered at 120 fps while the worker streamed
 state at 60 Hz, so every second frame repeated a step. Decision: the worker streams
 at **`state_hz` = 60**; the renderer **interpolates between the two latest states
@@ -197,8 +207,10 @@ Input event (one per change, partial fields allowed; unspecified fields hold the
 last value):
 `{v: "1.0.0", seq, step, applied_step, wall_ms, source, controls: {…}, assists?: {…}}`
 
-- `seq` is a strictly increasing integer per run; `source` is the profile id
-  (`keyboard`, `pointer`, `gamepad:<id>`, `script`; `iphone` is Later, TODO 1.13).
+- `seq` is a strictly increasing integer per run (v1); the v1.1 proposal §10.3 has
+  the worker assign it on acceptance; `source` is the profile id (`keyboard`, `pointer`,
+  `gamepad:<id>`, `script`, `fallback` (v1.1: automatic device-loss handling at the
+  input boundary, §10.4); `iphone` is Later, TODO 1.13).
 - **Application rule (v0.1 adopted):** an event targeting `step: s` applies
   immediately before the integration from `s` to `s+1` and first appears in state
   `s+1`. If the worker has already passed `s` while running, it applies before the
@@ -214,7 +226,8 @@ zone, sensitivity/exponential, inversion and key repeat. The paired-iPhone profi
 logged as the resulting controls, and their settings are recorded in the run
 metadata (R-FID-2). Raw device samples are not logged ([SEC](../SEC.md)). Device
 loss produces an explicit `source_lost` event and the fallback profile's next
-value; no silent hold of a stale axis.
+value; no silent hold of a stale axis (v1.1 clarification for a bounded, visible,
+logged hold: §10.4).
 
 ## 4. State schema
 
@@ -225,12 +238,13 @@ Four layers, separately owned (AGENTS design rules):
 | --- | --- | --- | --- |
 | `sim` | `packages/simulation/` (code1) | Authoritative dynamics state, **computed inside WASM** | `sim` |
 | `env` | `packages/simulation/` env module (code1) | Environment at the aircraft; WASM-computed fields authoritative | `sim` (WASM fields); `ind` (JS fields) |
-| `ind` | `packages/avionics/` (code2) | Derived from `sim`/`env` + instrument state at the same step | `ind` |
+| `ind` | `packages/avionics/` (code2), **run inside the worker every step** (§10.2) | Derived from `sim`/`env` + instrument state at the same step | `ind` |
+| `teach` | `packages/training/` (code2) | Annotations only; never read by `sim`, `env` or `ind` | none |
 
 **Digest rule:** only values produced inside WASM enter the `sim` digest group.
-Every value computed in JavaScript — `magvar_east_rad`, `zeta_m`, `h_ell_m` and all
-of `ind` — enters the `ind` group.
-| `teach` | `packages/training/` (code2) | Annotations only; never read by `sim`, `env` or `ind` | none |
+Every value computed in JavaScript — `magvar_east_rad`, `zeta_m`, `h_ell_m` and the
+JS-computed `ind` fields — enters the `ind` group; WASM-computed instrument values
+may also be declared in `ind` (§10.2).
 
 `sim` fields (SI, frames per §1): `lat_rad`, `lon_rad` (geodetic), `h_msl_m`
 (JSBSim-native physical height), `h_agl_m` (terrain callback); `phi_rad`, `theta_rad`, `heading_true_rad`; NED velocity `vn_mps, ve_mps,
@@ -240,25 +254,27 @@ r_radps`; body accelerations and specific force; `alpha_rad`, `beta_rad`,
 §1), fuel per tank `kg`; engine `prop_radps` plus the engine values the instrument
 set needs (TBD-src); control positions as **applied commands** (normalized) and
 **surface positions** (`elevator_rad`, `aileron_l/r_rad`, `rudder_rad`,
-`flap_rad`, `trim_tab_rad`); weight-on-wheels per gear; `flags` (out-of-envelope,
+`flap_rad`, `trim_tab_rad`); weight-on-wheels `wow_nose`, `wow_main_l`,
+`wow_main_r` (SCENARIO-CONTRACTS C2); `flags` (out-of-envelope,
 trim failure, non-finite guard; R-SIM-6).
 
 `env` fields: static pressure `p_static_pa`, temperature `t_static_k`, density
 `rho_kgpm3`, sea-level reference pressure/temperature of the atmosphere model,
-wind NED vector, turbulence model/intensity setting, `magvar_east_rad` with
-model id and decimal date, terrain elevation below the aircraft (DGM1 tile id and
-hash); JS-computed (`ind` group): `magvar_east_rad`, `zeta_m`, `h_ell_m` with
+wind NED vector, turbulence model/intensity setting, terrain elevation below the
+aircraft (DGM1 tile id and hash); JS-computed (`ind` group): `magvar_east_rad`
+(WMM2025, with model id and decimal date), `zeta_m`, `h_ell_m` with
 geoid/quasigeoid model id (GCG2016 or EGM2008) and grid hash.
 
 `ind` (instrument indications): ASI IAS, altimeter indication with setting and
 reference, VSI, attitude indicator, heading indicator/compass, tachometer,
-engine/fuel gauges. The 172S classic instrument set is TBD-src (S17 Section 7).
+engine/fuel gauges. The 172S classic instrument set is TBD-src (S17 Section 7);
+the declared field list and its blocking open item are in SCENARIO-CONTRACTS §4.
 `ind` gets its **own digest** so instrument divergence is detectable during review
 (R-REVIEW-1). Because `ind` is computed in JavaScript, whose `Math` functions are
 not specified bit-exactly across engines, the `ind` digest is comparable only on the
 same browser engine and version.
 
-The worker stream sends a subset (`sim.core`) at 60 Hz; full snapshots are
+The worker stream sends a subset (`sim_core`, §10.2) at 60 Hz; full snapshots are
 available on request and at checkpoints. Non-finite state stops the run with an
 `error` naming field and step.
 
@@ -316,7 +332,7 @@ group bytes are **produced inside WASM**; JavaScript only relays them, because J
 Cross-build policy: re-simulation comparison **requires** identical
 `wasm_sha256`, `js_bundle_sha256`, aircraft package hash, scenario hash, seeds, dt
 and input log; the `ind` group additionally requires the same browser engine and
-version. One reference-Mac session (PR #9, pending merge) reproduced the cloud
+version. One reference-Mac session (E1 study) reproduced the cloud
 container's WASM replay digest for the same build and inputs; this is an
 observation, **not a guarantee**, and fixture R-7 rechecks each released build.
 Native and WASM digests differ (E1 JSBSim study). A mismatching build opens the
@@ -380,7 +396,7 @@ The v0.1 → v1 worker-message mapping is in [Appendix A](#appendix-a-v01--v1-wo
 | O-8 | First exercise start | Starts at the runway holding point, engine running; engine start/taxi Later | §3 |
 | O-9 | Paired iPhone | Stays in TODO 1.13, not v1.0 | §3 |
 
-## 9. Proposed SPEC acceptance edits (not applied)
+## 9. SPEC acceptance edits (applied in SPEC R-SIM-3/R-SIM-4, PR fix/m1-records)
 
 R-SIM-3, replace the acceptance text with:
 
@@ -406,6 +422,144 @@ R-SIM-4, replace the acceptance text with:
 > documented tolerance and is not called bitwise deterministic. Render rate and
 > presentation interpolation do not affect digests.
 
+## 10. v1.1 additive contracts (Proposal, after TODO 1.6 review)
+
+Minor version `1.1.0`, with [SCENARIO-CONTRACTS](SCENARIO-CONTRACTS.md) (events,
+scenario and review records). These rules fill v1 placeholders or fix ownership;
+they change no v1 field meaning, unit or encoding. They are valid only while no
+`digest_layout` 1 code exists (true on 2026-11-01: the `app/` prototype implements
+no contract digest); later changes of this kind need `digest_layout` 2 (§7).
+
+### 10.1 Altimeter reference without an extra input
+
+`setting_ref` is **derived**: the worker copies the scenario record's
+`environment.pressure.expected_setting_ref` at `init`; it is constant for the run
+and no input changes it. Whether the learner's `setting_pa` matches the briefed
+QNH, QFE or STD value is the evaluator-derived `altimeter.changed.matches`
+(tolerance GAPS/Q-S2), outside the digests. `setting_unit_display` is presentation
+(§1) and is not in `ind`. Why this option: a v1 reader and a v1.1 reader encode the
+same `ind` bytes from the same scenario record and input log. An optional v1.1
+`altimeter_setting_ref` input would break that, because a v1 reader ignores unknown
+optional fields (§7) and would encode a different `setting_ref`; declaring the input
+required within v1.1 does not help, since v1 readers still ignore it, so it would be
+a major change. A learner's declared reference, if wanted, is a later logged session
+event outside the digests (**Later**).
+
+### 10.2 Worker-computed `ind` and `sim_core`
+
+The worker computes `ind` **every step**, never the main thread. After the
+integration from step `s` to `s+1` it: (1) takes the WASM-produced `sim` bytes for
+`s+1`; (2) computes the JS `env` fields (`magvar_east_rad`, `zeta_m`, `h_ell_m`)
+from `sim[s+1]`; (3) calls each instrument model from `packages/avionics/` as a pure
+step function `(ind_state[s], sim[s+1], env[s+1], controls applied at s, scenario
+constants) → (ind_state[s+1], ind[s+1])`; (4) encodes the `ind` group and updates
+its digests (§5). Instrument state (lags, gyro drift, needle dynamics) is per-step
+worker state, so `ind` is per-step digestible and stateful; reset re-initialises
+it from `init`. Instrument modules use no DOM, wall clock, timers, I/O, async or
+`Math.random`, and read only their arguments. A value computed inside WASM may
+belong to the `ind` group (e.g. engine/fuel indications, SCENARIO-CONTRACTS Q-S8);
+the worker still encodes it there. The main thread only renders streamed `ind`;
+display-only needle interpolation follows §2. Ownership: code1 owns the worker step
+loop and encoding; code2 owns the instrument modules behind the declared list
+(SCENARIO-CONTRACTS §4).
+
+`state` message at `state_hz` 60: `{v, run_id, step, sim_core, env_core, ind}`,
+carrying the latest completed step; `ind` is the full declared list. `sim_core`
+serves rendering and UI only; digests always use the full per-step state inside the
+worker.
+
+| `sim_core` field | Unit / frame |
+| --- | --- |
+| `lat_rad`, `lon_rad` | rad; WGS-84 geodetic, east positive (§1) |
+| `h_msl_m`, `h_agl_m` | m; physical height (§1); height above terrain callback |
+| `phi_rad`, `theta_rad`, `heading_true_rad` | rad; Euler Z-Y-X, NED → body |
+| `vn_mps`, `ve_mps`, `vd_mps` | m/s; local NED |
+| `p_radps`, `q_radps`, `r_radps` | rad/s; body |
+| `elevator_rad`, `aileron_l_rad`, `aileron_r_rad`, `rudder_rad`, `flap_rad`, `trim_tab_rad` | rad; surface positions, signs as fixed by U-4 |
+| `prop_radps` | rad/s |
+| `wow_nose`, `wow_main_l`, `wow_main_r` | 0/1 |
+| `flags` | uint32 bitmask (§4) |
+
+`env_core`: `h_ell_m` (m, WGS-84 ellipsoidal, for renderers) and `magvar_east_rad`
+(rad, east positive, for magnetic display).
+
+### 10.3 Single `seq` allocator (owner: code1)
+
+The worker owns the run's only `seq` counter. The main thread **proposes** inputs
+and logged events (SCENARIO-CONTRACTS §2) as `{v, proposal_id, step?, …}` without
+`seq`; `proposal_id` is a main-thread correlation counter, never replay content. On
+acceptance the worker stamps `step` (§3; E1 for events), `applied_step` and the
+next `seq`, appends the entry to the input or session log, and replies
+`accepted {proposal_id, seq, applied_step}`; a rejected proposal gets
+`error {proposal_id, code}` and consumes no `seq`. `run.started` takes the first
+`seq`. Acceptance order is the order proposals arrive on the worker's message port;
+ties at one step resolve by `seq` (§3). The worker allocates consecutively; readers
+still accept gaps (v1 rule). Derived events carry `seq: null`. Appendix A's
+`input {v, seq, …}` becomes `input {v, proposal_id, step, …}` at transport level;
+the logged input keeps the v1 fields.
+
+### 10.4 Device-loss fallback (GAPS Q19)
+
+On loss of an input device (first case: the paired phone) the input boundary
+logs `input.source_lost` and shows a visible warning. Keyboard/touchpad are active
+**immediately** and may override any axis **during the hold**; their inputs are
+ordinary events with their own `source`. Mapped axes that were not overridden
+hold their last value for 0.5 s (no event needed: unspecified fields hold, §3),
+then one input with `source: "fallback"` centres them. The 0.5 s is measured at
+the input boundary; replay uses the logged `applied_step`. This bounded, visible,
+logged hold clarifies v1 §3's "no silent hold". Auto-pause on loss is a
+**Proposal** (optional setting, default off), not decided by Q19 and not part of
+v1.1.
+
+### 10.5 Rights classes (one enum)
+
+Aircraft manifests (`rights.redistribution`), the source catalog, briefing items,
+experience packages and scenario `nav_entry.rights_class` use this enum:
+
+| Class | May be stored and shipped | Never stored or shipped |
+| --- | --- | --- |
+| `public_domain` | Values, text, figures; jurisdiction recorded in the basis | — |
+| `open_licence` | As the licence allows: `{spdx, attribution, share_alike}`; attribution shown | Use beyond the licence |
+| `permission` | As the written grant on record states (scope, date) | Use beyond the grant |
+| `facts_only` | Individual values as cited facts: value, unit, page citation | Text, tables, figures, layout; whole or piecemeal charts (Q5 no-piecemeal rule) |
+| `reference_only` | Catalog id, kind, edition hash, source-document hash and citation | Any value, text or derived chart, in records, logs, caches, traces or exports |
+| `rights_unknown` | Author/local view only | Blocks shipping and export |
+
+Mapping of existing labels: manifest `public_domain_us` → `public_domain` (basis
+keeps "US; other jurisdictions not analysed"), `facts_only` and `reference_only`
+unchanged; EXPERIENCES `public-domain` → `public_domain`, `open-attribution` →
+`open_licence`, `odbl` → `open_licence {spdx: ODbL-1.0, share_alike: true}`
+(separate attributed database), `project` → `open_licence {spdx:
+GPL-3.0-or-later}`, `permission` and `reference-only` → same class; BRIEFING's
+`rights_unknown` item state is this class. **Flag for the data owner (not changed
+here):** manifest sources S5 (EASA TCDS IM.A.051) and S9 (EASA.IM.E.032) are
+`reference_only` yet supply cited values; `data/aircraft/c172s-classic/README.md`
+already treats EASA TCDS as "reference and cite facts only", i.e. `facts_only`. The
+dated Q5 answers cover POH and Lycoming facts only, so reclassifying S5/S9 needs an
+orchestrator Q5 record first; until then their values cannot ship under this enum.
+
+### 10.6 Canonical hashing
+
+- **JSON objects** — catalog `entry_sha256`, aircraft `manifest_hash`, package
+  `content_hash`, scenario-record, briefing-snapshot, session-log and evaluator-pin
+  hashes: SHA-256 over the UTF-8 bytes of the RFC 8785 (JCS) serialization,
+  lowercase hex (64 characters). The object's own hash field is omitted before
+  hashing; referenced objects enter through their hash fields. Input must be I-JSON
+  (RFC 7493): no duplicate keys or non-finite numbers, integers beyond ±2⁵³ as
+  strings.
+- **Aircraft model package** `package_sha256`: the JCS hash of
+  `{files: [{path, bytes, sha256}]}` sorted by `path` in code-point order, each file
+  `sha256` over its raw bytes (XML is not canonicalised).
+- **Raw-byte SHA-256** stays for pinned files: `wasm_sha256`, `js_bundle_sha256`,
+  grids, tiles, source documents and the poh-values source-byte pin of
+  [Assessment airspeed](ASSESSMENT-AIRSPEED.md).
+- **No per-value hashes of `reference_only` content.** A hash over a short value
+  (frequency, elevation, bearing) can be brute-forced and would disclose it.
+  Records hold catalog id, kind, edition and the edition hash only; a user-supplied
+  local copy is verified by its source-document hash. A run that uses locally
+  resolved `reference_only` values produces a **local-only** record (its state and
+  trace derive from those values): export and sharing are refused.
+
 ## Appendix A. v0.1 → v1 worker messages
 
 | v0.1 (study) | v1 (product) | Change |
@@ -416,7 +570,7 @@ R-SIM-4, replace the acceptance text with:
 | application rule (v0.1 text) | unchanged; worker logs `applied_step`; paused inputs not late | Log carries applied step |
 | `run {until_step?}`, `pause`, `stop` | `run`, `pause`, `reset`, `stop` | `until_step` test-only; `reset` re-seeds |
 | `ready.build {jsbsim_tag, jsbsim_commit, emsdk, wasm_bytes, wasm_sha256, flags}` | same + `contract_version`, bridge revision, `js_bundle_sha256` | Main thread adds browser engine/version |
-| `state {step, t_s, lat_rad, lon_rad, alt_msl_m, roll_rad, pitch_rad, heading_rad, tas_mps, …}` | `state {v, run_id, step, sim.core, env?, ind?}` | Explicit height fields; `heading_true_rad`; `t_s` derived |
+| `state {step, t_s, lat_rad, lon_rad, alt_msl_m, roll_rad, pitch_rad, heading_rad, tas_mps, …}` | `state {v, run_id, step, sim_core, env_core?, ind?}` | Explicit height fields; `heading_true_rad`; `t_s` derived |
 | `stats` (benchmark) | `stats {missed, dropped, max_lag, max_batch, late_inputs, digests, checkpoint}` | Product overload reporting |
 | `burst`, `stats.step_cost_us` array | test harness only | Not product |
 | `error {message}` | `error {v, code, field?, step?, message}` | Machine-readable code |

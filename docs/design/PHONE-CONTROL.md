@@ -14,7 +14,7 @@ from sourced facts; **Proposal** = product choice awaiting the orchestrator/user
 
 ## 1. Learner problem and scope
 
-A learner on the reference MacBook Pro M1 with Chrome (Safari second) wants an
+A learner on the reference MacBook Pro (Apple M1 Pro) with Chrome (Safari second) wants an
 analogue, yoke-like pitch/roll input without buying hardware. Tilting a paired
 iPhone moves the controls; keyboard/touchpad remain available and take over
 whenever the phone cannot be trusted. Scope limits:
@@ -176,8 +176,8 @@ The Mac iPhone profile (inside the input module) applies, in order:
    angle (default 30°, adjustable 10°–60°), exponential and inversion as for
    other profiles; the profile saturates its output to [−1, 1] by design
    (labeled device mapping).
-6. **Emit** a CONTRACTS input event `{v, seq, step, wall_ms, source:"iphone",
-   controls:{pitch, roll}}` at most once per simulation step, latest sample
+6. **Emit** a CONTRACTS input proposal `{v, proposal_id, step, wall_ms, source:"iphone",
+   controls:{pitch, roll}}` (the worker assigns `seq`, CONTRACTS §10.3) at most once per simulation step, latest sample
    wins. Yaw, throttle and discrete controls stay on keyboard/touchpad
    (Proposal; §10 Q-P4). Roll→yaw mixing remains the boundary assist.
 
@@ -192,12 +192,14 @@ their `step` and `seq`**, so replay reproduces the timeline without phone data.
 
 Whenever the iPhone profile stops being the trusted source it emits
 `source_lost` with a reason; the Mac shows a banner and text cue;
-keyboard/touchpad become active immediately and override; the phone-driven axes
-hold their last values for 0.5 s and then centre, with a visible warning (GAPS Q19),
-so control is never lost silently mid-flight. Pausing on phone loss is an optional
-setting (default off, per Q19); when enabled, the sim never resumes by itself and
-the learner resumes on the Mac, on keyboard/touchpad or, where the table allows,
-back on the phone.
+keyboard/touchpad become active immediately and may override any axis during the
+hold; phone-driven axes not overridden hold their last values for 0.5 s and then
+centre through one input with `source: "fallback"`, with a visible warning (GAPS
+Q19; [CONTRACTS §10.4](CONTRACTS.md#104-device-loss-fallback-gaps-q19)), so control
+is never lost silently mid-flight. Pausing on phone loss is a **Proposal** (optional
+setting, default off), not decided by Q19 and not part of contract v1.1; if adopted
+and enabled, the sim never resumes by itself and the learner resumes on the Mac, on
+keyboard/touchpad or, where the table allows, back on the phone.
 
 | Trigger | Detection | Reason | Return to phone control |
 | --- | --- | --- | --- |
@@ -299,8 +301,11 @@ rather than silently relaxed.
   or Chrome too).
 - **Q-P3** Grip: landscape "wheel" (proposed) or portrait "stick"?
 - **Q-P4** Axes: pitch/roll only (proposed), or also yaw/throttle?
-- **Q-P5** Default on phone loss: auto-pause (proposed) or continue on keyboard?
-  Resume window 60 s and mandatory re-recenter acceptable?
+- **Q-P5** ~~Default on phone loss: auto-pause (proposed) or continue on keyboard?~~
+  Q19 as recorded: hold 0.5 s, then centre, keyboard/touchpad active at once.
+  Not decided by Q19: optional auto-pause (Proposal, default off). Whether Q19's
+  "yes to proposals" covers the 60 s resume window and mandatory re-recenter is
+  for the orchestrator to confirm in GAPS.
 - **Q-P6** Accept the §7 budget numbers and the 60 Hz resend rate?
 - Unverified platform behaviour (note "Not found"): iOS treatment of private-CA
   HTTPS, mDNS candidates, Chrome LNA gating of WebRTC, real sensor rate, timer
