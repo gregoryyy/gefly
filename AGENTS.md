@@ -14,8 +14,8 @@ Run **code1 and code2 in parallel** on separate specification slices and disjoin
 
 **Quality** independently checks correctness, security, maintainability, test quality, units and numerical risks. **Validate** independently checks the delivered behavior against each in-scope specification criterion. Neither approves its own implementation. Failed checks return to a coder; changed artifacts require renewed affected reviews. Missing evidence is blocked or not evaluated, never a pass. Full dispatch and return contracts are in [the workflow](docs/agents/README.md).
 
-**Peer** adds actual cross-provider quality and specification validation where
-[its scope](docs/SDLC.md#cross-provider-peer-gate) applies (not every PR; GAPS Q15): Claude
+**Peer** adds actual cross-provider quality and specification validation, batched
+**every few PRs** with in-between work marked *peer pending* ([cadence](docs/SDLC.md#cross-provider-peer-gate), GAPS Q15): Claude
 reviews Codex-authored work; Codex reviews Claude-authored work. Use a fresh
 external provider process and the frozen packet via [the peer contract](docs/agents/peer.md).
 A local dispatcher, same-provider subagent or model alias does not satisfy this
