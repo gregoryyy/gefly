@@ -1,0 +1,545 @@
+{
+  "$comment": "Rights/applicability manifest, not a flight model. Field guide: README.md in this directory. Schema: data/schema/aircraft-manifest.schema.json.",
+  "schema_version": "1.0.0",
+  "manifest_id": "gefly.aircraft.c172s-classic",
+  "manifest_version": "0.1.0",
+  "status": "draft",
+  "fidelity": "not validated",
+  "configuration": {
+    "label": "Cessna 172S, conventional (classic) panel, s/n 172S9491-172S9809",
+    "manufacturer": {
+      "value": "Cessna Aircraft Company (type certificate now held by Textron Aviation)",
+      "status": "sourced",
+      "citations": [
+        {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "22", "section": "Section 2 F"},
+        {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "30", "section": "XII"}
+      ]
+    },
+    "model": {
+      "value": "172S (Skyhawk SP)",
+      "status": "sourced",
+      "citations": [
+        {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "28", "section": "XII"},
+        {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "14", "section": "Section 2 A"}
+      ]
+    },
+    "type_certificate": {
+      "value": "FAA TCDS 3A12; EASA validation TCDS IM.A.051",
+      "status": "sourced",
+      "citations": [
+        {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "28", "section": "XII"},
+        {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "14", "section": "Section 2"}
+      ],
+      "todo": "Read current FAA 3A12 Rev 88 directly (S1); S5 only states alignment with it."
+    },
+    "category": {
+      "value": "Normal (4 seats); utility category (2 seats) also certified but not selected",
+      "status": "sourced",
+      "citations": [
+        {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "28", "section": "XII"},
+        {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "14", "section": "Section 2 A.2"}
+      ],
+      "note": "Normal category selected for this configuration (research recommendation accepted with GAPS Q3, 2026-11-01 10:27)."
+    },
+    "serial_range": {
+      "first": {
+        "value": "172S9491",
+        "status": "sourced",
+        "citations": [
+          {"source_id": "S17", "revision": "172SPHUS Rev 5, 19 Jul 2004", "page": "7-24", "section": "Section 7 fuel system, Figure 7-6 sheet 2"}
+        ],
+        "note": "First serial with the fuel return system; also after the split avionics master change at 172S8704 (S17 p. 7-34). Page citations pending PR #12 research note (docs/research/2026-11-01-jsbsim-datum-172s-controls.md, branch design/contracts-1-4); the merged source survey records the 172S9491 change without a page."
+      },
+      "last": {
+        "value": "172S9809",
+        "status": "derived",
+        "derivation": "NAV III (G1000) option manual applies to serials 172S9810 and on, so the last conventional-panel factory serial before the option is 172S9809. TCDS states no G1000 serial cut-in.",
+        "citations": [
+          {"source_id": "S18", "revision": "172SPHAUS-04 Rev 3/4, 12 Oct 2006", "page": "title page"}
+        ],
+        "note": "Conventional-panel aircraft after 172S9810 may exist (NAV III is an option); they are outside this configuration."
+      },
+      "basis": "User decision GAPS Q3, 2026-11-01 10:27 (docs/GAPS.md#q3-which-cessna-172-variant-year-and-avionics-fit)."
+    },
+    "panel": {
+      "value": "conventional (classic) analogue instrument panel",
+      "status": "derived",
+      "derivation": "S17 covers the conventional 172S from 172S8001; G1000 begins with the NAV III option at 172S9810 (S18), so the selected range precedes it.",
+      "citations": [
+        {"source_id": "S17", "revision": "172SPHUS Rev 5, 19 Jul 2004", "page": "title page"},
+        {"source_id": "S18", "revision": "172SPHAUS-04 Rev 3/4, 12 Oct 2006", "page": "title page"}
+      ]
+    },
+    "flight_manual": {
+      "value": "Cessna POH/AFM 172SPHUS (TCDS: 172SPHUS-00 applies to the 172S); revision used for research: Rev 5, 19 Jul 2004",
+      "status": "sourced",
+      "citations": [
+        {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "31", "section": "Note 2"},
+        {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "21", "section": "Section 2 D"},
+        {"source_id": "S17", "revision": "172SPHUS Rev 5, 19 Jul 2004", "page": "title page"}
+      ],
+      "todo": "Flight-manual revision to model is still open (GAPS Q3); Rev 5 is the copy read, not a decision."
+    },
+    "engine": {
+      "model": {
+        "value": "Lycoming IO-360-L2A",
+        "status": "sourced",
+        "citations": [
+          {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "28", "section": "XII"},
+          {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "18", "section": "Section 2 C.5"}
+        ]
+      },
+      "ratings": {
+        "max_rpm_all_operations": {
+          "value": 282.7433,
+          "unit": "rad/s",
+          "original_value": 2700,
+          "original_unit": "rpm",
+          "condition": "For all operations, 180 hp",
+          "status": "sourced",
+          "citations": [
+            {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "28", "section": "XII"},
+            {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "18", "section": "Section 2 C.5.1"}
+          ],
+          "conversion": "rpm x 2 pi / 60, rounded to 4 decimals",
+          "uncertainty": "Certified limit as published; no tolerance stated."
+        },
+        "rated_power": {
+          "value": 134226.0,
+          "unit": "W",
+          "original_value": 180,
+          "original_unit": "hp",
+          "condition": "At 2700 rpm (aircraft TCDS); engine TCDS calls this the alternate rating, 134 kW (180 HP) at 2700 rpm",
+          "status": "sourced",
+          "citations": [
+            {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "28", "section": "XII"},
+            {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "18", "section": "Section 2 C.5"},
+            {"source_id": "S9", "revision": "Issue 03, 24 Aug 2022", "page": "11", "section": "6"}
+          ],
+          "conversion": "hp x 745.69987158227022 W (mechanical horsepower), rounded to 1 W",
+          "uncertainty": "Rating as published; installed engine power not stated. S9 gives 134 kW (180 HP), consistent with mechanical horsepower. Engine TCDS 1E10 (S8) not read."
+        },
+        "engine_dry_mass": {
+          "value": 121.5628,
+          "unit": "kg",
+          "original_value": 268,
+          "original_unit": "lb",
+          "status": "sourced",
+          "citations": [
+            {"source_id": "S9", "revision": "Issue 03, 24 Aug 2022", "page": "9", "section": "5"}
+          ],
+          "conversion": "lb x 0.45359237 kg, rounded to 4 decimals; S9 itself states 122 kg",
+          "uncertainty": "Engine TCDS dry weight; installed equipment not included."
+        }
+      }
+    },
+    "propeller": {
+      "model": {
+        "value": "McCauley 1A170E/JHA7660 fixed pitch, spinner drawing 0550236 (FAA propeller TC P-857)",
+        "status": "sourced",
+        "citations": [
+          {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "28", "section": "XII"},
+          {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "18", "section": "Section 2 C.6"}
+        ]
+      },
+      "limits": {
+        "static_rpm_full_throttle_max": {
+          "value": 251.3274,
+          "unit": "rad/s",
+          "original_value": 2400,
+          "original_unit": "rpm",
+          "condition": "Static rpm at full throttle, not over",
+          "status": "sourced",
+          "citations": [
+            {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "28", "section": "XII"},
+            {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "18", "section": "Section 2 C.6"}
+          ],
+          "conversion": "rpm x 2 pi / 60, rounded to 4 decimals",
+          "uncertainty": "Certified limit as published; atmospheric conditions for the static check not recorded in the research note."
+        },
+        "static_rpm_full_throttle_min": {
+          "value": 240.8554,
+          "unit": "rad/s",
+          "original_value": 2300,
+          "original_unit": "rpm",
+          "condition": "Static rpm at full throttle, not under",
+          "status": "sourced",
+          "citations": [
+            {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "28", "section": "XII"},
+            {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "18", "section": "Section 2 C.6"}
+          ],
+          "conversion": "rpm x 2 pi / 60, rounded to 4 decimals",
+          "uncertainty": "Certified limit as published; atmospheric conditions for the static check not recorded in the research note."
+        },
+        "diameter_max": {
+          "value": 1.9304,
+          "unit": "m",
+          "original_value": 76,
+          "original_unit": "in",
+          "status": "sourced",
+          "citations": [
+            {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "28", "section": "XII"},
+            {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "18", "section": "Section 2 C.6"}
+          ],
+          "conversion": "in x 0.0254 m, exact",
+          "uncertainty": "Certified limit; installed diameter lies between 75 and 76 in and is not identified further."
+        },
+        "diameter_min": {
+          "value": 1.905,
+          "unit": "m",
+          "original_value": 75,
+          "original_unit": "in",
+          "status": "sourced",
+          "citations": [
+            {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "28", "section": "XII"},
+            {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "18", "section": "Section 2 C.6"}
+          ],
+          "conversion": "in x 0.0254 m, exact",
+          "uncertainty": "Certified limit; installed diameter lies between 75 and 76 in and is not identified further."
+        }
+      }
+    }
+  },
+  "mass_limits": {
+    "max_ramp_normal": {
+      "value": 1160.2893,
+      "unit": "kg",
+      "original_value": 2558,
+      "original_unit": "lb",
+      "condition": "Normal category",
+      "status": "sourced",
+      "citations": [
+        {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "29", "section": "XII"},
+        {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "19", "section": "Section 2 C.12"}
+      ],
+      "conversion": "lb x 0.45359237 kg, rounded to 4 decimals",
+      "uncertainty": "Certified limit as published; no tolerance stated."
+    },
+    "max_takeoff_normal": {
+      "value": 1156.6605,
+      "unit": "kg",
+      "original_value": 2550,
+      "original_unit": "lb",
+      "condition": "Normal category",
+      "status": "sourced",
+      "citations": [
+        {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "29", "section": "XII"},
+        {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "19", "section": "Section 2 C.12"}
+      ],
+      "conversion": "lb x 0.45359237 kg, rounded to 4 decimals; S5 states 1156.66 kg",
+      "uncertainty": "Certified limit as published; no tolerance stated."
+    },
+    "max_landing_normal": {
+      "value": 1156.6605,
+      "unit": "kg",
+      "original_value": 2550,
+      "original_unit": "lb",
+      "condition": "Normal category",
+      "status": "sourced",
+      "citations": [
+        {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "29", "section": "XII"},
+        {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "19", "section": "Section 2 C.12"}
+      ],
+      "conversion": "lb x 0.45359237 kg, rounded to 4 decimals",
+      "uncertainty": "Certified limit as published; no tolerance stated."
+    },
+    "max_takeoff_utility": {
+      "value": 997.9032,
+      "unit": "kg",
+      "original_value": 2200,
+      "original_unit": "lb",
+      "condition": "Utility category (take-off and landing); not the selected category",
+      "status": "sourced",
+      "citations": [
+        {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "29", "section": "XII"},
+        {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "19", "section": "Section 2 C.12"}
+      ],
+      "conversion": "lb x 0.45359237 kg, rounded to 4 decimals",
+      "uncertainty": "Certified limit as published; no tolerance stated."
+    },
+    "max_ramp_utility": {
+      "value": null,
+      "unit": "kg",
+      "original_value": null,
+      "original_unit": "lb",
+      "condition": "Utility category; not the selected category",
+      "status": "unknown",
+      "citations": [],
+      "uncertainty": "Read sources disagree; see conflicts.",
+      "conflicts": [
+        {"original_value": 2208, "original_unit": "lb", "note": "Superseded FAA revision.", "citation": {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "29", "section": "XII"}},
+        {"original_value": 2107, "original_unit": "lb", "note": "Apparent transcription error per research note.", "citation": {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "19", "section": "Section 2 C.12"}}
+      ],
+      "todo": "Resolve against FAA 3A12 Rev 88 (S1)."
+    },
+    "empty_mass": {
+      "value": null,
+      "unit": "kg",
+      "original_value": null,
+      "original_unit": "lb",
+      "status": "unknown",
+      "citations": [],
+      "uncertainty": "Aircraft-specific (weight and balance record); not a type-design value.",
+      "todo": "Choose a documented basic empty mass and centre of gravity for the modelled aircraft, with source, before any mass-assumption claim (R-AIR-1)."
+    }
+  },
+  "speed_limits": {
+    "va_ias": {
+      "value": 54.0167, "unit": "m/s", "original_value": 105, "original_unit": "kt", "reference": "IAS",
+      "condition": "Maneuvering speed",
+      "status": "sourced",
+      "citations": [
+        {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "28", "section": "XII"},
+        {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "19", "section": "Section 2 C.9"}
+      ],
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "Certified limit; the mass at which it applies is not recorded in the research note.",
+      "todo": "Record the mass condition for VA from the TCDS or POH."
+    },
+    "va_cas": {
+      "value": 52.4733, "unit": "m/s", "original_value": 102, "original_unit": "kt", "reference": "CAS",
+      "condition": "Maneuvering speed",
+      "status": "sourced",
+      "citations": [
+        {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "28", "section": "XII"},
+        {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "19", "section": "Section 2 C.9"}
+      ],
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "Certified limit; the mass at which it applies is not recorded in the research note.",
+      "todo": "Record the mass condition for VA from the TCDS or POH."
+    },
+    "vno_ias": {
+      "value": 66.3633, "unit": "m/s", "original_value": 129, "original_unit": "kt", "reference": "IAS",
+      "condition": "Maximum structural cruising speed",
+      "status": "sourced",
+      "citations": [
+        {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "28", "section": "XII"},
+        {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "19", "section": "Section 2 C.9"}
+      ],
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "Certified limit as published; no tolerance stated."
+    },
+    "vno_cas": {
+      "value": 64.82, "unit": "m/s", "original_value": 126, "original_unit": "kt", "reference": "CAS",
+      "condition": "Maximum structural cruising speed",
+      "status": "sourced",
+      "citations": [
+        {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "28", "section": "XII"},
+        {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "19", "section": "Section 2 C.9"}
+      ],
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "Certified limit as published; no tolerance stated."
+    },
+    "vne_ias": {
+      "value": 83.8544, "unit": "m/s", "original_value": 163, "original_unit": "kt", "reference": "IAS",
+      "condition": "Never exceed speed",
+      "status": "sourced",
+      "citations": [
+        {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "28", "section": "XII"},
+        {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "19", "section": "Section 2 C.9"}
+      ],
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "Certified limit as published; no tolerance stated."
+    },
+    "vne_cas": {
+      "value": 82.3111, "unit": "m/s", "original_value": 160, "original_unit": "kt", "reference": "CAS",
+      "condition": "Never exceed speed",
+      "status": "sourced",
+      "citations": [
+        {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "28", "section": "XII"},
+        {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "19", "section": "Section 2 C.9"}
+      ],
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "Certified limit as published; no tolerance stated."
+    },
+    "vfe_ias": {
+      "value": 43.7278, "unit": "m/s", "original_value": 85, "original_unit": "kt", "reference": "IAS",
+      "condition": "Flaps extended speed",
+      "status": "sourced",
+      "citations": [
+        {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "28", "section": "XII"},
+        {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "19", "section": "Section 2 C.9"}
+      ],
+      "conversion": "kt x 1852/3600 m/s, rounded to 4 decimals",
+      "uncertainty": "Certified limit as published; whether it applies to all flap settings is not recorded in the research note."
+    },
+    "vfe_cas": {
+      "value": null, "unit": "m/s", "original_value": null, "original_unit": "kt", "reference": "CAS",
+      "condition": "Flaps extended speed",
+      "status": "unknown",
+      "citations": [],
+      "uncertainty": "Read sources disagree; see conflicts.",
+      "conflicts": [
+        {"original_value": 85, "original_unit": "kt", "note": "Superseded FAA revision.", "citation": {"source_id": "S1b", "revision": "Rev 80, 26 May 2010", "page": "28", "section": "XII"}},
+        {"original_value": 84, "original_unit": "kt", "note": "Current EASA issue stated as aligned with FAA Rev 88.", "citation": {"source_id": "S5", "revision": "Issue 11, 17 Nov 2025", "page": "19", "section": "Section 2 C.9"}}
+      ],
+      "todo": "Resolve against FAA 3A12 Rev 88 (S1)."
+    }
+  },
+  "avionics": {
+    "fit_status": "tbd",
+    "note": "Standard and optional equipment as listed in the read POH revision. The fit to model (radios, indicator choice, options) is still open in GAPS Q3; nothing below is a modelling decision.",
+    "items": [
+      {
+        "function": "nav/com",
+        "equipment": {"value": "Bendix/King KX 155A", "status": "sourced", "citations": [{"source_id": "S17", "revision": "172SPHUS Rev 5, 19 Jul 2004", "page": "7-46", "section": "Section 7"}], "todo": "Number of nav/com units in the modelled fit not established."},
+        "role": "standard",
+        "modeled": "tbd"
+      },
+      {
+        "function": "VOR/LOC indicator",
+        "equipment": {"value": null, "status": "unknown", "citations": [{"source_id": "S17", "revision": "172SPHUS Rev 5, 19 Jul 2004", "page": "7-46", "section": "Section 7"}], "note": "S17 lists KI 208 or KI 209A.", "todo": "Select KI 208 or KI 209A for the modelled fit."},
+        "role": "standard",
+        "modeled": "tbd"
+      },
+      {
+        "function": "transponder",
+        "equipment": {"value": "Bendix/King KT 76C", "status": "sourced", "citations": [{"source_id": "S17", "revision": "172SPHUS Rev 5, 19 Jul 2004", "page": "7-46", "section": "Section 7"}]},
+        "role": "standard",
+        "modeled": "tbd"
+      },
+      {
+        "function": "audio panel",
+        "equipment": {"value": "Bendix/King KMA 26", "status": "sourced", "citations": [{"source_id": "S17", "revision": "172SPHUS Rev 5, 19 Jul 2004", "page": "7-46", "section": "Section 7"}]},
+        "role": "standard",
+        "modeled": "tbd"
+      },
+      {
+        "function": "ELT",
+        "equipment": {"value": "Pointer 3000-11", "status": "sourced", "citations": [{"source_id": "S17", "revision": "172SPHUS Rev 5, 19 Jul 2004", "page": "7-46", "section": "Section 7"}]},
+        "role": "standard",
+        "modeled": "tbd"
+      },
+      {
+        "function": "GPS",
+        "equipment": {"value": null, "status": "unknown", "citations": [], "note": "S17 Section 9 supplement log lists KLN 89/89B as optional; page not recorded.", "todo": "Decide whether a GPS option is part of the fit; record the supplement page."},
+        "role": "optional",
+        "modeled": "no"
+      },
+      {
+        "function": "ADF",
+        "equipment": {"value": null, "status": "unknown", "citations": [], "note": "S17 Section 9 supplement log lists KR 87 as optional; page not recorded.", "todo": "Decide whether an ADF is part of the fit; record the supplement page."},
+        "role": "optional",
+        "modeled": "no"
+      },
+      {
+        "function": "autopilot",
+        "equipment": {"value": null, "status": "unknown", "citations": [], "note": "S17 Section 9 supplement log lists Bendix/King KAP 140 as optional; page not recorded.", "todo": "Decide whether an autopilot is part of the fit; record the supplement page."},
+        "role": "optional",
+        "modeled": "no"
+      }
+    ]
+  },
+  "sources": [
+    {
+      "id": "S1",
+      "title": "Type Certificate Data Sheet 3A12, Models 172 ... 172S",
+      "publisher": "FAA (holder Textron Aviation)",
+      "document": "TCDS 3A12",
+      "revision": "Rev 88",
+      "url": "https://drs.faa.gov/browse/excelExternalWindow/DRSDOCID153801600120250627164731.0001",
+      "accessed": "2026-11-01",
+      "access_status": "not_read",
+      "applicability": "Current primary 172S type design; date of Rev 88 unknown.",
+      "rights": {"holder": "US federal government work", "basis": "Not subject to US copyright, 17 U.S.C. 105; other jurisdictions not analysed", "redistribution": "public_domain_us", "copy_in_repository": false},
+      "todo": "Obtain Rev 88 (DRS API key or manual download) and re-check every value cited to S1b and S5."
+    },
+    {
+      "id": "S1b",
+      "title": "Type Certificate Data Sheet 3A12 (NTSB public docket exhibit)",
+      "publisher": "FAA, copy in NTSB public docket",
+      "document": "TCDS 3A12",
+      "revision": "Rev 80, 26 May 2010",
+      "url": "https://data.ntsb.gov/Docket/Document/docBLOB?ID=40338401&FileExtension=.PDF&FileName=FAA+Type+Certificate+Data+Sheet+No.+3A12-Master.PDF",
+      "accessed": "2026-11-01",
+      "access_status": "read",
+      "sha256_prefix": "22ac73a3922dcede",
+      "applicability": "Superseded FAA revision; 172S section XII pp. 28-31.",
+      "rights": {"holder": "US federal government work", "basis": "Not subject to US copyright, 17 U.S.C. 105; other jurisdictions not analysed", "redistribution": "public_domain_us", "copy_in_repository": false}
+    },
+    {
+      "id": "S5",
+      "title": "TCDS IM.A.051, Textron Aviation Model 172 (172R, 172S)",
+      "publisher": "EASA",
+      "document": "TCDS IM.A.051",
+      "revision": "Issue 11, 17 Nov 2025",
+      "url": "https://www.easa.europa.eu/en/downloads/7423/en",
+      "accessed": "2026-11-01",
+      "access_status": "read",
+      "sha256_prefix": "659b33b955eb7e86",
+      "applicability": "EU validation of the 172S, Section 2 pp. 14-22; states alignment with FAA 3A12 Rev 88.",
+      "rights": {"holder": "European Union Aviation Safety Agency", "basis": "Page footer: all rights reserved, proprietary document; EASA website reuse terms not read", "redistribution": "reference_only", "copy_in_repository": false}
+    },
+    {
+      "id": "S8",
+      "title": "Engine Type Certificate Data Sheet 1E10, Lycoming O-/IO-360",
+      "publisher": "FAA",
+      "document": "TCDS 1E10",
+      "revision": "Rev 29 (RGL index entry, not read)",
+      "url": null,
+      "accessed": "2026-11-01",
+      "access_status": "not_read",
+      "applicability": "State-of-design engine TCDS for the IO-360-L2A.",
+      "rights": {"holder": "US federal government work", "basis": "Not subject to US copyright, 17 U.S.C. 105; other jurisdictions not analysed", "redistribution": "public_domain_us", "copy_in_repository": false},
+      "todo": "Locate an FAA URL, read 1E10 and compare with S9 engine values."
+    },
+    {
+      "id": "S9",
+      "title": "TCDS EASA.IM.E.032, Lycoming IO-360 series",
+      "publisher": "EASA",
+      "document": "TCDS EASA.IM.E.032",
+      "revision": "Issue 03, 24 Aug 2022",
+      "url": "https://www.easa.europa.eu/en/downloads/7741/en",
+      "accessed": "2026-11-01",
+      "access_status": "read",
+      "sha256_prefix": "eea885263b57ec4b",
+      "applicability": "IO-360-L2A ratings and mass; FAA basis stated as TCDS 1E10.",
+      "rights": {"holder": "European Union Aviation Safety Agency", "basis": "Page footer: all rights reserved, proprietary document; EASA website reuse terms not read", "redistribution": "reference_only", "copy_in_repository": false}
+    },
+    {
+      "id": "S17",
+      "title": "Cessna Model 172S Information Manual (reprint of POH/AFM 172SPHUS)",
+      "publisher": "Cessna Aircraft Company; copy hosted by a flying club",
+      "document": "POH/AFM 172SPHUS",
+      "revision": "172SPHUS Rev 5, 19 Jul 2004",
+      "url": "https://www.befa.org/wp-content/uploads/2019/12/POH-Cessna-172S.pdf",
+      "accessed": "2026-11-01",
+      "access_status": "read_selected_pages",
+      "sha256_prefix": "420dbdaf5517a7a0",
+      "applicability": "Conventional-panel 172S from 172S8001; information manual, not kept current.",
+      "rights": {"holder": "Cessna Aircraft Company (copyright 1998)", "basis": "Copyrighted manual; third-party hosting grants no reuse right", "redistribution": "facts_only", "copy_in_repository": false}
+    },
+    {
+      "id": "S18",
+      "title": "Cessna Model 172S NAV III Information Manual (POH/AFM 172SPHAUS-04)",
+      "publisher": "Cessna Aircraft Company; copy hosted by a flight school",
+      "document": "POH/AFM 172SPHAUS-04",
+      "revision": "172SPHAUS-04 Rev 3/4, 12 Oct 2006",
+      "url": "https://aceshighaviation.com/wp-content/uploads/2017/03/172S-G1000-POH.pdf",
+      "accessed": "2026-11-01",
+      "access_status": "read_selected_pages",
+      "sha256_prefix": "2ee729856d72359d",
+      "applicability": "G1000 (NAV III) 172S, serials 172S9810 and on; used only for the serial boundary.",
+      "rights": {"holder": "Cessna Aircraft Company (copyright 2005)", "basis": "Copyrighted manual; third-party hosting grants no reuse right", "redistribution": "facts_only", "copy_in_repository": false}
+    }
+  ],
+  "not_included": [
+    {"item": "performance tables (take-off, landing, climb, cruise, fuel flow)", "reason": "Copyrighted POH content; cite individual values by page only (R-DATA-1)."},
+    {"item": "aerodynamic coefficients, inertias, engine power curves, propeller maps", "reason": "Not provided by TCDS; must come from a separately reviewed model with independent validation."},
+    {"item": "procedures and checklists", "reason": "Copyrighted POH content; not reproduced."},
+    {"item": "copies of any source document", "reason": "Linked and cited only; see each source's rights."}
+  ],
+  "pending": [
+    "C.G. envelope, datum/MAC, fuel/oil, dimensions and control travels (page-cited in the research note) for a later manifest version.",
+    "Manufacturer performance comparison targets from S17 (stall speeds, climb, ground roll) for acceptance criteria, as cited facts only.",
+    "Serial-dependent systems inside the range (S17 notes changes at 172S9129 and KAP 140 behaviour from 172S9423) and their relevance to the selected range."
+  ],
+  "prepared": {
+    "date": "2026-11-01",
+    "by": "Claude Code subagent housekeeping, dispatched by the orchestrator",
+    "from": [
+      "docs/research/2026-11-01-c172s-fr172-sources.md",
+      "docs/research/2026-11-01-jsbsim-datum-172s-controls.md (branch design/contracts-1-4, PR #12, not merged)"
+    ]
+  }
+}

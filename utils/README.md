@@ -172,3 +172,7 @@ TeX Live (`latex` and `dvisvgm`). Plain Markdown and MathML need neither depende
 Only render trusted repository documents: pandoc can embed remote resources, and
 the LaTeX filter invokes local TeX tools. Generated HTML and the temporary Chrome
 profile are deleted after each build. Recipe command failures propagate as failures.
+
+`validate_manifest.py` checks aircraft manifests under `data/aircraft/` against
+`data/schema/aircraft-manifest.schema.json` plus source/revision cross-checks;
+`test_validate_manifest.py` covers its failure cases.

@@ -3,6 +3,24 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 13:29 — Draft the 172S classic-panel aircraft manifest
+
+TODO: 1.3 in progress. Agent: Claude Code orchestrator; housekeeping subagent.
+
+**Implementation notes**
+
+Added `data/aircraft/c172s-classic/manifest.json` (v0.1.0, fidelity not validated):
+serials 172S9491–172S9809, IO-360-L2A, McCauley propeller, masses and speed limits
+only where page-cited, with SI and original units, R-DATA-2 status, uncertainty and
+a source register with rights and hashes. Conflicting sources (VFE CAS, utility ramp
+mass) are recorded as unknown with both readings. JSON Schema, stdlib validator and
+15 tests added to the shared gate.
+
+**Deviations**
+
+Draft; FAA 3A12 Rev 88 and engine TCDS 1E10 not read; avionics fit TBD; not yet
+reviewed. Aircraft data: peer pending (batched), required before milestone acceptance.
+
 ## 2026-11-01 13:06 — Add study checks to the shared CI gate
 
 TODO: 1.1.2 in progress. Agent: Claude Code orchestrator; code1 subagent.
