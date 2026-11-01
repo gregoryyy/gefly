@@ -227,3 +227,91 @@ or an unexecuted review passed. TODO 0.19 and other compound simulator tasks
 remain open. A later actual hosted/peer result must retain its own exact revision
 and evidence; neither is fabricated by this local acceptance. No flight-model,
 MVP, scientific, data-rights, learning or training-credit acceptance is added.
+
+## Publication packaging correction — 2026-11-01 21:15 Europe/Berlin
+
+Execution-clock time. The reviewed source was committed as
+`7887c4a8eeebad58bb1b6c4464b1b04812d2b75f`, but its linked quality,
+validation and pending-peer records were still untracked. Inspected the supplied
+job excerpts in `output/assurance/hosted-records-missing.json`:
+[run 41345406860](https://github.com/gregoryyy/gefly/actions/runs/41345406860)
+**failed**, with six missing-review-link errors in each hosted job. The recorded
+test/assurance phases succeeded, with the nine optional JSBSim skips retained;
+this does not make the failed publication gate a pass.
+
+Inspected commit `d038ec087a31cec45c4a7ca0d760aae5945a167b`: it adds only
+those three review files. Independently verified all three are now tracked and
+reran `just check`: **passed**, 115 Markdown files, nine native Codex roles and
+the Claude dispatcher. Recomputed all 189 source paths: unchanged SHA-256
+`dfbfbc3c9ac45c5ed0c6b7c58e2a3790e79aa1469fcbce8a6d81eada2b34f31d`.
+The bounded AS1–AS8 source acceptance stands; the new hosted run and actual peer
+result remain pending at this note. No source implementation or shared status
+was changed by this validator.
+
+## Hosted packaging closure — 2026-11-01 21:16 Europe/Berlin
+
+Execution-clock time. Inspected the actual hosted result and job excerpts in
+`output/assurance/hosted-final.json` for
+[run 41345842002](https://github.com/gregoryyy/gefly/actions/runs/41345842002):
+**completed, success**, both Python jobs. Run head is
+`d038ec087a31cec45c4a7ca0d760aae5945a167b`; both logs identify the checked-out
+synthetic merge `26ed883…`, merging that head into `65faaea…`. No full merge SHA
+or identical-tree assertion is inferred from the abbreviated excerpt.
+
+Observed interpreters are CPython **3.11.17 / 3.15.1**, Node **26.13.0** and Git
+**2.56.0**. Each job passed the scaffold with **115 Markdown files**, nine native
+Codex definitions and the Claude dispatcher, then 137 tool tests, 72 assurance
+tests and assurance integrity. The final gate line explicitly retains nine
+optional JSBSim skips out of 23 study tests: 14 executed, not 23 passes.
+
+Recomputed the same 189-file source hash at this head: unchanged
+`dfbfbc3c9ac45c5ed0c6b7c58e2a3790e79aa1469fcbce8a6d81eada2b34f31d`.
+The packaging issue is closed for the observed hosted run; prior pending and
+failed-run notes remain historical checkpoints. AS1–AS8 acceptance stands with
+these exact revision/environment limits. Actual external peer completion remains
+pending and separate; no provider result is claimed here.
+
+Current-history diagnostic, **2026-11-01 21:17 Europe/Berlin** (execution clock):
+independently reran `check --json` at `d038ec0`; exit **0**, **zero errors,
+97 warnings, 82 notes**. The extra warning identifies that commit's actual
+`Refs:` trailer, whose semicolon before `TODO 1.14` is outside the documented
+comma grammar. Earlier 96-warning counts describe their earlier histories. The
+diagnostic remains visible; no history rewrite or parser relaxation was applied.
+The 189-file source scope and bounded acceptance are unchanged.
+
+## Scoped peer-evidence check — 2026-11-01 21:26 Europe/Berlin
+
+Execution-clock time. Independently compared the completed router result
+`output/assurance/peer-result.json` with the published
+[JSON](2026-11-01-assurance-peer.json) and
+[peer report](2026-11-01-assurance-peer.md). Status, accepted flag, providers,
+packet identity, model evidence and the complete quality/validation/limitations
+payload are preserved exactly. The CLI executable's absolute local path is
+sanitized to basename `claude`; version **2.1.193** is retained. The original
+envelope limitations remain, with an additional explicit model-attribution limit.
+
+Rehashed the actual packet: exact SHA-256
+`28a91cc8e8f21f9b25b63ab02be6cd90c6233dd102606ea5fec64c8b8db01ce3`;
+its revision is `d038ec087a31cec45c4a7ca0d760aae5945a167b`. The 189-file
+source hash remains
+`dfbfbc3c9ac45c5ed0c6b7c58e2a3790e79aa1469fcbce8a6d81eada2b34f31d`.
+The returned disposition is **completed / accepted**, with **AS1–AS8 and the
+additional evidence-semantics row all pass**, two low findings and no medium,
+high or critical findings. The two recorded dispositions are supported: duplicate
+undefined-reference errors retain fail-closed rejection; ledger HEAD comparison
+is explicitly bounded to worktree checks rather than historical parent checks.
+Neither requires a source repair or changes this validator's scope.
+
+The record distinguishes requested **Opus/high** from returned evidence naming
+both `claude-opus-4-8` and `claude-haiku-4-5-20251001`. It does not attribute
+subtasks or attest backend effort. Packet-only review did not execute tests or
+fetch logs; omitted aircraft/archive bytes and earlier reviewer conclusions are
+explicit limits. New Codex-authored assurance work is covered; unchanged pinned
+upstream is reviewed at its integration boundary, while earlier Claude-authored
+Gefly work remains excluded and TODO 0.19 stays open.
+
+The scoped external disposition is now available; earlier pending notes are
+historical checkpoints. This consistency check does not convert the local
+validation into an external review or independently attest provider internals.
+AS1–AS8 bounded acceptance stands, with no new aircraft/model, MVP, rights,
+learning or training-credit claim.
