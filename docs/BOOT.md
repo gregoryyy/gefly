@@ -270,6 +270,20 @@ research/product and review in other waves. Split tasks to respect lower limits.
 Never let workers race on shared status files, contracts, manifests or lockfiles.
 The orchestrator assigns one integration owner for them; workers return proposals.
 
+**Model size and reasoning effort.** The orchestrator selects the model tier and
+reasoning effort for each dispatched task according to its difficulty and risk,
+using the runtime's available options rather than one default for everything:
+a smaller, faster model and low effort for mechanical, well-specified work (file
+moves, formatting, index rows, recording supplied results, re-running checks); a
+mid-tier model and medium effort for bounded implementation, extraction and
+routine research; the most capable model and high effort for design and contract
+decisions, security and numerical review, aircraft-data and fidelity judgements,
+and anything whose error would be costly or hard to detect. Independent reviews
+(quality, validate, peer) use at least the tier and effort of the work they
+review. Escalate when a task proves harder than expected; do not lower the tier
+of a gate to save cost. Record the tier/effort chosen in the dispatch when the
+runtime exposes it; do not hard-code model identifiers in repository files.
+
 After integration, quality reviews code and validate checks the specification at
 the same stable artifact revision. Return failures to coders and repeat affected
 checks after repairs or integration. An author cannot approve their own change by

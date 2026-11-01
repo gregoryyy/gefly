@@ -3,6 +3,21 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-01 18:46 — Select model size and reasoning effort per task
+
+TODO: 0.20 complete. Agent: Claude Code orchestrator (no subagents).
+
+**Implementation notes**
+
+Per the user (GAPS Q20), AGENTS, BOOT (dispatch section) and the agent workflow now
+require the orchestrator to choose model tier and reasoning effort per task by
+difficulty and risk, with reviews at least at the tier of the reviewed work and no
+model identifiers in repository files. This is a recorded change to the agent rules.
+
+**Deviations**
+
+No runtime configuration changed; native Codex registrations still set no model.
+
 ## 2026-11-01 13:59 — Confirm the height datum; contracts v1 agreed
 
 TODO: 1.4 complete pending merge. Agent: Claude Code orchestrator (no subagents).
