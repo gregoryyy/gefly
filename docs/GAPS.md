@@ -159,14 +159,15 @@ About This Mac can confirm the chip.
 Update: **2026-11-01 13:28, user** ([input](input/2026-11-01-mac-model.md)): “late 2020
 macbook pro 14””. Orchestrator note: Apple's late-2020 MacBook Pro is the 13-inch M1
 (60 Hz); the 14-inch MacBook Pro (late 2021) has an M1 Pro or M1 Max and a 120 Hz
-ProMotion display, which matches the recorded renderer string and refresh. Pending
-the user's check (Apple menu → About This Mac), results are attributed to the
-renderer-reported **Apple M1 Pro, 120 Hz**; the reference-platform name in Q16 stays
-"MacBook Pro (Apple silicon)" until confirmed.
+ProMotion display, which matches the recorded renderer string and refresh. Results
+and the reference-platform name are attributed to the renderer-reported **Apple M1
+Pro, 120 Hz** (consistent with the no-external-monitor answer); About This Mac can
+confirm it but is not required.
 
 Confirmation: **2026-11-01 13:25, user** (recorded by orchestrator, Claude Code;
-[input](input/2026-11-01-chip-confirmation.md)): “M1 not pro”. The reference Mac is
-an Apple M1. Observation to reconcile: Chrome's WebGL renderer string on the
+[input](input/2026-11-01-chip-confirmation.md)): “M1 not pro”. ~~The reference Mac is
+an Apple M1.~~ (Superseded by the 13:28 updates: built-in 120 Hz display and a 14-inch
+model identify an Apple M1 Pro.) Observation to reconcile: Chrome's WebGL renderer string on the
 recorded runs reported "Apple M1 Pro", and the display measured 120 Hz, which the
 13-inch M1 MacBook Pro's built-in panel does not provide (an external 120 Hz display
 would explain it). Results keep the reported strings; budgets scale to the measured
@@ -177,7 +178,8 @@ Answer: **2026-11-01 11:00, user** (recorded by orchestrator, Claude Code;
 webkit browsers esp. chrome latest. optional controls: bind orientation from
 paired iphone”.
 
-Recorded: reference **MacBook Pro (Apple M1)** on the **current macOS release**;
+Recorded: reference ~~**MacBook Pro (Apple M1)**~~ **14-inch MacBook Pro, Apple M1 Pro
+(120 Hz built-in)** per the 13:28 updates below, on the **current macOS release**;
 **Chrome (latest stable) as primary browser**; Safari secondary is an orchestrator
 assumption from “webkit browsers”, to be confirmed. Orchestrator note:
 desktop Chrome uses the Blink engine, not WebKit; Safari is the WebKit browser, so
@@ -208,6 +210,16 @@ coverage, rights and live rollout remain future implementation selections.
 ### Q5. Source license and third-party data policy?
 
 Why: affects code reuse, distribution, aircraft manuals, avionics depictions, maps and navigation data. The user's direction is now free/open source; select a compatible open-source license and review separately licensed assets/data. Blocking: license-dependent distribution and restricted asset ingestion.
+
+Answer (S17 whole lists): **2026-11-02 07:36, user** ([input](input/2026-11-02-s17-lists-electrical-tach.md)):
+"Accept both". The complete S17 Fig. 2-3 instrument-marking list (p. 2-6) and the
+Fig. 6-3 loading-station arms (p. 6-9) may be extracted as cited facts. This is an
+exception to the needed-points rule for these two lists only; no text or figure is
+copied.
+
+Answer (EASA TCDS): **2026-11-02 07:16, user** ([input](input/2026-11-02-q23-proposals.md),
+Q23): the EASA TCDS values (manifest S5 IM.A.051, S9 EASA.IM.E.032) are used as
+cited facts (`facts_only`), like the POH: values with page citations, no copied text.
 
 Answer (fuel chart): **2026-11-01 19:04, user** ([input](input/2026-11-01-renderer-fuel-tolerances.md)):
 “yes to all”. The facts-only, selective extraction allowance extends to the needed
@@ -315,7 +327,7 @@ to all”. Tolerance proposals P-1..P-15 are accepted **as working proposals** (
 judgement, each with its stated basis) for freezing the E2 fixtures; they remain
 revisable with evidence, and any change after a holdout comparison is recorded.
 
-Resolved: 2026-11-01 19:04, user; applies to FDM-172S Q-11 when PR #24 merges.
+Resolved: 2026-11-01 19:04, user; applies to FDM-172S Q-11 (merged with PR #24).
 
 ### Q20. How are model size and reasoning effort chosen for agent work?
 
@@ -333,6 +345,73 @@ no model identifiers in repository files. Carried into [AGENTS](../AGENTS.md),
 [agent workflow](agents/README.md#runtime-setup).
 
 ## Open questions
+
+### Q23. Design open questions carried from the drafts (register)
+
+Why: SDLC keeps open decisions in GAPS; the foundation review (TODO 1.6, 2026-11-02 00:21) found
+them only in the design documents. This register points to their detail; the design
+documents keep the technical discussion. Status as of 2026-11-02 07:16: the user accepted the recommendations (answer below).
+
+Answer: **2026-11-02 07:16, user** (recorded by orchestrator, Claude Code;
+[input](input/2026-11-02-q23-proposals.md)): “yes to proposals. go on”. All
+recommendations in the table below are accepted as decisions:
+- **Q-S3:** milestone 2 covers the circuit flight, the checklist items the simulator
+  can sense and a static scenario briefing. The text radio state machine stays in
+  roadmap phase 3.
+- **Q-S8:** the 172S classic-panel engine and fuel indications are part of the
+  worker-computed `ind` state and digest.
+- **S5/S9:** the EASA TCDS values are `facts_only` (see Q5).
+- **FDM Q-1:** empty mass and CG come from the POH sample loading example, labelled as
+  a sample, not a weighed aircraft.
+- **Q-S7:** CONTRACTS §10 v1.1 and SCENARIO-CONTRACTS C1–C17 are agreed.
+- **Q-S1, Q-S5, Q-S6 and Q19:** as recommended.
+- **Q-S2, Q-S4 and the EXERCISE-01/BRIEFING items:** follow the recommended direction.
+  Their values still come from the AIP (TODO 1.7) or are labelled instructional
+  proposals (IP).
+- **FDM Q-3..Q-12:** labelled estimates.
+
+Carried into [CONTRACTS](design/CONTRACTS.md), [SCENARIO-CONTRACTS](design/SCENARIO-CONTRACTS.md),
+[FDM-172S](design/FDM-172S.md), the [aircraft manifest](../data/aircraft/c172s-classic/manifest.json)
+and [TODO](TODO.md) 2.1.
+
+Update: **2026-11-02 08:01, user** ([input](input/2026-11-02-flightgear-gaps-codex-deferred.md)):
+"use the solutions used in flightgear". The S17 gaps follow the FlightGear Cessna 172
+model: gauge dial ranges, EGT scale, hour-meter counting, low-fuel threshold basis and
+the annunciator switch-label serial. Orchestrator conditions:
+- These values are labelled `estimated` with source FlightGear and are never
+  `sourced` 172S facts.
+- That model represents a 172P, so the assurance applicability check treats it as
+  another variant.
+- Its licence and redistribution terms are recorded before any value or asset is
+  reused (Q5).
+
+Update: **2026-11-02 07:36, user** ([input](input/2026-11-02-s17-lists-electrical-tach.md)):
+- **Q-S8 list:** the ammeter and the low-voltage annunciator join the engine and fuel
+  indications in `ind` ("Include now").
+- **Tachometer green arc:** the S17 Section 2 Fig. 2-3 altitude-dependent arcs govern
+  ("Section 2 limits"). The Section 7 p. 7-20 value (1900–2400 rpm) is a recorded
+  source conflict.
+- **Extraction:** research note `docs/research/2026-11-02-172s-engine-fuel-ind-and-sample-loading.md`
+  branch data/s17-ind-wb.
+
+| Item | Source | Status | Blocks M2? | Recommendation |
+| --- | --- | --- | --- | --- |
+| Q-S3 radio/briefing/checklists in milestone 2 | [SCENARIO-CONTRACTS](design/SCENARIO-CONTRACTS.md) §7 | decided 2026-11-02 | yes (2.1) | M2 = circuit flight + sensed checklist items + static scenario briefing; text radio state machine stays in roadmap phase 3 |
+| Q-S8 engine/fuel gauges in the `ind` digest | SCENARIO-CONTRACTS §4 | decided 2026-11-02 | yes (2.2/2.3) | include the 172S classic-panel engine/fuel indications, computed in the worker |
+| Q-S5 experimental (draft) packages runnable | SCENARIO-CONTRACTS §7 | decided 2026-11-02 | no | yes, labelled experimental, never accepted |
+| Q-S1, Q-S6, Q-S7 | SCENARIO-CONTRACTS §7 | decided 2026-11-02 | no | session-log hash suffices; store parsed intents, keep free text local; accept C1–C17 |
+| Q-S2 altimeter match tolerance | SCENARIO-CONTRACTS §7, EXERCISE-01 | direction decided; values pending | before 2.5 | instructional proposal labelled IP |
+| Q-S4 QFE datum and AIP vertical reference | SCENARIO-CONTRACTS §7 | direction decided; values pending | before 2.5 | source from the AIP (TODO 1.7) |
+| S5/S9 EASA TCDS values classed `reference_only` but used as facts | CONTRACTS §10.5, data manifest | decided 2026-11-02 (Q5) | yes (2.2 builder) | class them `facts_only` like the POH (cited values, no text) |
+| Q19 scope: 60 s phone resume window and recentring | [PHONE-CONTROL](design/PHONE-CONTROL.md) | decided 2026-11-02 | no (1.13 is Later) | treat as covered by "yes to proposals" |
+| FDM Q-1 empty mass/CG | [FDM-172S](design/FDM-172S.md) §7 | decided 2026-11-02 | yes (1.3.2) | POH sample loading example, labelled; no aircraft available |
+| FDM Q-3..Q-7, Q-9, Q-10, Q-12 | FDM-172S §7 | decided 2026-11-02 | 1.3.x only | estimates, labelled; detail in FDM-172S |
+| EXERCISE-01 open questions 1, 3–6 | [EXERCISE-01](design/EXERCISE-01.md) | direction decided; values pending | before 2.5 freeze | AIP circuit data (1.7); instructional proposals labelled IP |
+| BRIEFING open questions 1–8 | [BRIEFING](design/BRIEFING.md) §6 | direction decided; values pending | if Q-S3 includes briefing | generated reports first; English first |
+
+Resolved items already recorded elsewhere: FDM Q-11 (Q21), Q-13 (Q5, 19:04), Q-2 (no
+aircraft available, 2026-11-01). Answers are recorded here or in the referenced
+question as they arrive.
 
 ### Q3. Which Cessna 172 variant, year and avionics fit?
 

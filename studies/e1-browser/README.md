@@ -1,7 +1,7 @@
 # E1 browser check: JSBSim WASM worker and 3D rendering
 
 Status: implemented and run in the cloud container; quality-reviewed (renewed review
-clean except accepted CDN SRI) and validated as preliminary evidence (2026-11-01); reference M1 worker run recorded.
+clean except accepted CDN SRI) and validated as preliminary evidence (2026-11-01); reference M1 Pro worker run recorded.
 Current decision context: [GAPS Q17](../../docs/GAPS.md) selects JSBSim in a module
 Web Worker at a fixed 1/120 s step, TypeScript, CesiumJS (three.js fallback) and
 MapLibre 2D maps. The observations below informed that choice; they do not pass
@@ -11,7 +11,7 @@ Prior evidence: [native JSBSim study](../e1-jsbsim/README.md) and the
 
 ## Question
 
-On the reference platform (MacBook Pro M1, current macOS, Chrome latest; GAPS Q16),
+On the reference platform (MacBook Pro 14", Apple M1 Pro, current macOS, Chrome latest; GAPS Q16),
 can JSBSim compiled to WASM run in a Web Worker at a fixed 1/120 s step while the
 main thread renders the aircraft at EDFE with CesiumJS or three.js, within budgets
 for step cost, input-to-state latency and frame pacing?
@@ -70,7 +70,7 @@ Stop if a budget fails by more than 2× on the reference Mac with no identified 
 
 Headless Chromium in the cloud container (software GL, Intel Xeon) gives only
 **preliminary** functional evidence and rough timings. Acceptance needs a run on
-the reference M1/Chrome with exact versions recorded. Imagery/terrain: no Cesium ion
+the reference M1 Pro/Chrome with exact versions recorded. Imagery/terrain: no Cesium ion
 token or paid hosted service; use the ellipsoid or a permitted open source with
 attribution, recorded per [SBOM](../../docs/SBOM.md) policy.
 
@@ -98,7 +98,7 @@ not part of v0:
 ## Results (preliminary, cloud container)
 
 Headless Chromium 153 on a 4-vCPU Intel Xeon with software GL (SwiftShader). Not the
-reference M1; **no acceptance claim**. Details: [sim](sim/README.md), [render](render/README.md).
+reference M1 Pro; **no acceptance claim**. Details: [sim](sim/README.md), [render](render/README.md).
 
 | Measure | Result | Budget |
 | --- | --- | --- |
@@ -113,15 +113,15 @@ reference M1; **no acceptance claim**. Details: [sim](sim/README.md), [render](r
 Under the stricter missed-step definition the real-time budget **fails** in the
 container (occasional 4–17 ms single steps, cause unknown); latency and replay
 determinism pass; step-cost p99 is unstable in the noisy container (485–905 µs). Earlier "0 missed steps" used a 100 ms threshold. Rendering numbers reflect software GL
-and are not evidence for or against the budget. Subsequent reference M1/Chrome
+and are not evidence for or against the budget. Subsequent reference M1 Pro/Chrome
 runs are recorded below and Q17 now selects the stack. Outstanding work includes
 cross-origin-isolated step timing, worker/main-thread CPU headroom, real terrain/
 imagery at device resolution, representative cockpit load and the R-SIM-2 check
 that different render rates leave simulation state unchanged.
 
-## Results on the reference M1/Chrome (hosted test page)
+## Results on the reference M1 Pro/Chrome (hosted test page)
 
-Run by the user on 2026-11-01 (11:37–11:39 UTC) on the MacBook Pro M1, Chrome 156
+Run by the user on 2026-11-01 (11:37–11:39 UTC) on the MacBook Pro 14" (Apple M1 Pro), Chrome 156
 (user agent; `hardwareConcurrency` 8), through the private hosted test page.
 **Not cross-origin isolated**: `performance.now()` is coarsened to 100 µs, which
 quantizes per-step cost. Raw JSON: [worker benchmark](results/2026-11-01-m1-chrome156-sim.json).
@@ -139,7 +139,7 @@ the burst run shows ≈ 15 µs of actual WASM compute per step, and simulation t
 tracked wall time to 0.99995. Re-measure step cost cross-origin isolated (local
 runner) before treating the p99 as a budget failure. The replay digest equals the
 container's WASM digest for the same build and inputs, so this build replayed
-bit-identically on Intel Xeon/Linux and Apple M1/macOS.
+bit-identically on Intel Xeon/Linux and Apple M1 Pro/macOS.
 
 ### three.js render driven by JSBSim (reference Mac)
 
@@ -158,9 +158,9 @@ object without its outer braces; they were added, values unchanged).
 Observations:
 
 - **Chip:** the WebGL renderer string reports "Apple M1 Pro" and the display ran at
-  120 Hz; the user confirmed the machine is an **M1** (GAPS Q16, 2026-11-01). The
-  120 Hz refresh suggests an external display; record the display on the next run.
-  The budget scales to the measured refresh, so it still applies.
+  120 Hz on the built-in panel (no external monitor; 14-inch MacBook Pro), so results
+  are attributed to an **Apple M1 Pro** (GAPS Q16, 13:28 updates). The budget scales
+  to the measured refresh.
 - Viewport was 1232×817 CSS px at device pixel ratio 2 rendered at CSS resolution,
   not the declared 1440×900; repeat at 1440×900 and with `?dpr=device` for the
   full-resolution case.

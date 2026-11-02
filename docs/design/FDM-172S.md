@@ -63,7 +63,7 @@ it supplies no aircraft values and does not complete M-a below.
 
 | Parameter | Source class | Source / method |
 | --- | --- | --- |
-| Empty mass and empty CG | **unknown** (manifest); candidate: a representative weighing record or POH sample loading, decision Q-1 | S17 Section 6 |
+| Empty mass and empty CG | **unknown** (manifest); Q-1 decided (GAPS Q23, user 2026-11-02 07:16): the POH sample loading example, labelled as a sample, not a weighed aircraft | S17 Section 6 |
 | Occupant, baggage, fuel stations | sourced | S17 Section 6 loading arrangement, S1b/S5 |
 | Unusable fuel and its station; oil | sourced | S5 §2 C.7–8, S1b p. 31 |
 | Engine dry mass | sourced | S9 (IO-360-L2A) |
@@ -304,7 +304,7 @@ flaps, speed reference, source page, interpolation) and the declared uncertainty
 
 ## 7. Open questions (for the orchestrator)
 
-- Q-1 Representative empty mass/CG (POH sample loading example or a labelled assumption; no aircraft weighing is available)?
+- Q-1 Representative empty mass/CG: decided, POH sample loading example, labelled (GAPS Q23, user 2026-11-02 07:16).
 - ~~Q-2 Approve a measurement campaign?~~ Not possible: no aircraft available; estimates are used. Q-3 Primary
   source for the airfoil section. Q-4 Main-gear construction and tyre size (S17 §7/8).
 - Q-5 Waterline (z) datum and level reference. Q-6 Propeller mass/inertia and blade
