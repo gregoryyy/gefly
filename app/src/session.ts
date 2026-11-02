@@ -1,4 +1,4 @@
-import { COLLISION_FIELDS, validCollisionState, STALL_FIELDS, validStallState, CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, ENGINE_SWITCH_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
+import { TERRAIN_FIELDS, validTerrainState, COLLISION_FIELDS, validCollisionState, STALL_FIELDS, validStallState, CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, ENGINE_SWITCH_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
 import type { Controls, FlightSession, FlightState, LandingPreset } from './types';
 
 interface SessionCallbacks {
@@ -21,7 +21,7 @@ function validState(value: Record<string, unknown>): value is Record<string, unk
     && Number.isInteger(value.step) && (value.step as number) >= 0
     && (value.t_s as number) >= 0 && (value.tas_mps as number) >= 0
     && Math.abs(value.lat_rad as number) <= Math.PI / 2
-    && Math.abs(value.lon_rad as number) <= Math.PI && validAltimeterState(value) && validCockpitState(value) && validEngineState(value) && validPitchTrimState(value) && validGroundState(value) && validControlState(value) && validStallState(value) && validCollisionState(value);
+    && Math.abs(value.lon_rad as number) <= Math.PI && validAltimeterState(value) && validCockpitState(value) && validEngineState(value) && validPitchTrimState(value) && validGroundState(value) && validControlState(value) && validStallState(value) && validCollisionState(value) && validTerrainState(value);
 }
 
 function validControls(value: Controls): boolean {
@@ -50,6 +50,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
   let controlsChanged = false;
   let userControls = false;
   let landingPreset: LandingPreset | undefined;
+  let airborneSite: 'edfe' | 'taunus' = 'edfe';
   let inputTimer: ReturnType<typeof setInterval> | undefined;
   let loadTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -142,7 +143,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
         else callbacks.onStatus('Paused');
       } else if (m.type === 'state') {
         if (!validState(m)) { fail('The flight model returned an invalid state. Flight stopped; reset to restart.'); return; }
-        const fields = [...STATE_FIELDS, ...[...COLLISION_FIELDS, ...STALL_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...ENGINE_SWITCH_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS].filter((key) => m[key] !== undefined)];
+        const fields = [...STATE_FIELDS, ...[...TERRAIN_FIELDS, ...COLLISION_FIELDS, ...STALL_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...ENGINE_SWITCH_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS].filter((key) => m[key] !== undefined)];
         const state = Object.fromEntries(fields.map(key => [key, m[key]])) as unknown as FlightState;
         if (collisionState && Object.keys({ ...collisionState, ...state })
           .some(key => state[key as keyof FlightState] !== collisionState![key as keyof FlightState])) {
@@ -161,10 +162,10 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       }
     };
     current.postMessage({
-      type: 'init', ...(landingPreset ? { landing_preset: landingPreset } : {}), ground_collision: true, dt_s: 1 / 120, aircraft: 'c172x', state_hz: 60,
+      type: 'init', terrain: landingPreset === undefined, ...(landingPreset ? { landing_preset: landingPreset } : {}), ground_collision: true, dt_s: 1 / 120, aircraft: 'c172x', state_hz: 60,
       ic: {
-        lat_rad: 49.96 * DEG_RAD, lon_rad: 8.643 * DEG_RAD,
-        alt_msl_m: 1300 * 0.3048, heading_rad: 82 * DEG_RAD,
+        lat_rad: (airborneSite === 'taunus' ? 50.20 : 49.96) * DEG_RAD, lon_rad: (airborneSite === 'taunus' ? 8.52 : 8.643) * DEG_RAD,
+        alt_msl_m: airborneSite === 'taunus' ? 1100 : 1300 * 0.3048, heading_rad: (airborneSite === 'taunus' ? 300 : 82) * DEG_RAD,
         tas_mps: 90 * 1852 / 3600,
       },
     });
@@ -186,9 +187,11 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       if (ready && worker) worker.postMessage({ type: 'pause' });
       callbacks.onStatus(collided ? 'Ground collision' : 'Paused');
     },
-    reset(preset) {
+    reset(preset, site) {
       if (disposed) return;
       if (preset !== undefined && !['normal', 'hard', 'side', 'banked'].includes(preset)) return;
+      if (site !== undefined && !['edfe', 'taunus'].includes(site)) return;
+      airborneSite = site ?? airborneSite;
       landingPreset = preset;
       controls = { elevator: 0, aileron: 0, rudder: 0, throttle: 0.7 };
       userControls = false;

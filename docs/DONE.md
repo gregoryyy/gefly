@@ -3,6 +3,55 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 00:29 — Fly real public terrain around Egelsbach and the Taunus
+
+TODO: 2.0.32, 2.0.34 and 2.0.35 complete as bounded R-WORLD-2/R-DATA-1/
+R-SIM-3/R-INPUT-1/R-AUDIO-1/R-ENG-1 increments, with affected Review/shadow checks.
+Agent: Codex orchestrator/integration; fov_input/code1 on native terrain and
+pointer midpoint; engine_sound_ui/code2 on rendered terrain and audible spool;
+fov_housekeeping on parallel source/input research. Independent quality and
+validate: fov_housekeeping on non-authored implementation; code2 independently
+reviews root/code1 integration, with own renderer/audio excluded. Root/code2
+check primary-source facts separately from housekeeping-authored research.
+Cross-provider peer pending; this is an increment, not milestone acceptance.
+
+**Implementation notes**
+
+Bundle hash-pinned public Hessen elevation and BKG quasigeoid data for the
+Egelsbach/Frankfurt/Taunus patch. Native wheels/structural supports sample the
+physical height/slope surface; Cesium uses the same triangle interpolation with
+explicit height conversion. Corruption and coverage exits stop safely without
+flat fallback. Flight → Taunus ridge flight demonstrates relief; Review and
+chase shadow retain the correct receiver. A 3000×1800 airport photograph improves
+local detail to about 0.75 m/pixel. Hold-look release preserves the yoke midpoint.
+Actual RPM now drives an audible rotation layer during native start/coast-down.
+
+Independent checks include full-grid source reproduction, 41 geoid holdouts,
+actual native callbacks, four public-terrain, three renderer and three pointer
+browser groups, plus eleven actual audio groups. Shared CI, production build,
+foundation and assurance pass with explicit optional study skips. Existing
+collision/shadow and interactive smoke regressions pass. Frozen source/data
+hashes, reviewer scopes and evidence are in [the review](reviews/2026-11-03-public-terrain.md).
+
+**Deviations**
+
+This is roughly 32×55 km with overview terrain, not full 100 NM or survey-grade
+airport elevations. Finest loaded near-ground rendered mesh differs by less than
+the predeclared 0.25 m implementation budget; this is not DEM accuracy. A local
+triangle-plane/discrete-step body proxy does not establish full mesh collision
+or damage limits. Photo coverage remains local; regional tiling, procedural
+materials and structures remain open TODO 2.0.33/2.0.36/2.0.37. Audio is original
+uncalibrated synthesis; airborne windmilling follows real model RPM. Nine optional
+Python JSBSim study cases and one live-provider tool test are skipped, not passed.
+
+**Insights**
+
+Keep physical vertical datum separate from rendered ellipsoid height, and bind
+collision/rendering to the same interpolation. Verify the loaded GPU texture and
+mesh, since provider metadata alone cannot establish actual detail. A camera
+gesture must not redefine a flight-input anchor. Audible rotational harmonics
+can expose actual native coast-down without inventing a physics ramp.
+
 ## 2026-11-02 23:18 — Compact classic cockpit, landing cues and synchronized sound
 
 TODO: 2.0.17, 2.0.28–2.0.31 complete as bounded R-PANEL-1/R-SIM-8/

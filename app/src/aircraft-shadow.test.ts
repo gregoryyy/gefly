@@ -19,3 +19,11 @@ test('near-ground native shadow fades and unavailable/older states cannot leave 
   assert(!aircraftShadowPresentation({ ...fixture(3), ground_height_ellipsoid_m: undefined }, 'chase').enabled);
   assert(!aircraftShadowPresentation({ ...fixture(3), ground_agl_m: NaN }, 'chase').enabled);
 });
+
+test('public terrain shadow matches its converted receiver rather than treating physical height as ellipsoid height', () => {
+  const active = { ...fixture(3, 163.05), terrain_profile: 1, terrain_height_msl_m: 115.25,
+    terrain_geoid_m: 47.8, terrain_height_ellipsoid_m: 163.05 };
+  assert(aircraftShadowPresentation(active, 'chase').enabled);
+  assert(!aircraftShadowPresentation({ ...active, terrain_height_ellipsoid_m: 115.25 }, 'chase').enabled);
+  assert(!aircraftShadowPresentation({ ...active, terrain_height_ellipsoid_m: undefined }, 'chase').enabled);
+});

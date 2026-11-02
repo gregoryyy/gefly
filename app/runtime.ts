@@ -8,7 +8,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 
 export const MOUNT = '/studies/e1-browser/sim';
 export const ENGINE_FILES = ['dist/jsbsim.mjs', 'dist/jsbsim.wasm', 'dist/build-info.json'] as const;
-export const RUNTIME_FILES = ['worker.js', 'collision.js', 'altimeter.js', 'cockpit.js', 'engine.js', ...ENGINE_FILES] as const;
+export const RUNTIME_FILES = ['worker.js', 'terrain.js', 'collision.js', 'altimeter.js', 'cockpit.js', 'engine.js', ...ENGINE_FILES] as const;
 export const defaultRuntimeRoot = resolve(import.meta.dirname, '..', 'studies', 'e1-browser', 'sim');
 
 /**

@@ -67,3 +67,13 @@ test('malformed or overflowing pre-step motion cannot become invented zero colli
     assert.equal(collisionRecord(mask, step, time, { ground_down_mps: 1, ground_forward_mps: 1, ground_side_mps: 0 }), null);
   }
 });
+
+test('local terrain grade moves proxy contact with actual heading without changing legacy flat clearance', () => {
+  const flat = groundCollisionContact(1.2, 0, 0, 0);
+  assert.equal(flat.mask, 0);
+  assert(groundCollisionContact(1.2, 0, 0, 0, { north_slope: .2, east_slope: 0, heading_rad: 0 }).mask & 16);
+  assert.equal(groundCollisionContact(1.2, 0, 0, 0, { north_slope: .2, east_slope: 0, heading_rad: Math.PI }).mask, 0);
+  assert(groundCollisionContact(1.2, 0, 0, 0, { north_slope: 0, east_slope: .2, heading_rad: Math.PI / 2 }).mask & 16);
+  const level = groundCollisionContact(1.2, 0, 0, 0, { north_slope: 0, east_slope: 0, heading_rad: .7 });
+  assert.equal(level.clearance_m, flat.clearance_m);
+});

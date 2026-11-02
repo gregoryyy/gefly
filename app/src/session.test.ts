@@ -316,3 +316,12 @@ test('engine switch command waits for resume and actual running telemetry is ato
   worker.emit({ ...state, engine_running: 0 });
   assert.match(errors.at(-1)!, /invalid state/);
 });
+
+test('public terrain is explicit at init and complete physical/ellipsoid fields survive the session boundary', t => {
+  const { session, states, errors } = fixture(t); session.reset();
+  const worker = MockWorker.instances[0]; assert.equal(worker.messages[0].terrain, true); worker.emit(ready);
+  const terrain = { terrain_profile: 1, terrain_height_msl_m: 115.25, terrain_geoid_m: 47.8, terrain_height_ellipsoid_m: 163.05 };
+  worker.emit({ ...state, ...terrain }); assert.equal(states.at(-1).terrain_geoid_m, 47.8);
+  worker.emit({ ...state, ...terrain, terrain_height_ellipsoid_m: 115.25 }); assert.match(errors.at(-1)!, /invalid state/);
+  session.reset('normal'); assert.equal(MockWorker.instances.at(-1)!.messages[0].terrain, false);
+});

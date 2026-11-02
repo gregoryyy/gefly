@@ -64,3 +64,9 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-02 sound key and gauge follow-up](2026-11-02-sound-key-and-gauge-followup.md): S toggles sound, initially off; follow up on additional gauges and panel vertical layout.
 - [Engine toggle and wind noise](2026-11-02-engine-toggle-wind.md) — E for engine on/off; independent airflow sound.
 - [Panel and airflow refinement](2026-11-02-panel-followup.md) — compact panel follow-up and broader high-speed whistle.
+- [Public terrain request](2026-11-02-public-terrain.md) — public elevation data and real ground.
+- [Texture resolution question](2026-11-02-terrain-texture-question.md) — derive sharper source imagery.
+- [Look-drag midpoint correction](2026-11-03-look-drag-midpoint.md) — preserve yoke anchor on look release.
+- [Engine spool sound](2026-11-03-engine-spool-sound.md) — audible native RPM coast-down and spin-up.
+- [Later procedural landscape](2026-11-03-procedural-landscape-roadmap.md) — land-use textures, then buildings/structures.
+- [Imagery alternatives](2026-11-03-imagery-alternatives.md) — additional photography and land-cover/vector sources.

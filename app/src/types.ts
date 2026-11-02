@@ -68,6 +68,17 @@ export function validPitchTrimState(input: object): boolean {
   return PITCH_TRIM_FIELDS.every(key => typeof value[key] === 'number' && Number.isFinite(value[key]))
     && Math.abs(value.pitch_trim_norm!) <= 1 && Math.abs(value.pitch_trim_initial_norm!) <= 1;
 }
+/** Present together only for the pinned public DGM/GCG terrain profile. */
+export const TERRAIN_FIELDS = ['terrain_profile', 'terrain_height_msl_m', 'terrain_geoid_m', 'terrain_height_ellipsoid_m'] as const;
+export type TerrainState = Partial<Record<typeof TERRAIN_FIELDS[number], number>>;
+export function validTerrainState(input: object): boolean {
+  const value = input as TerrainState;
+  if (!TERRAIN_FIELDS.some(key => value[key] !== undefined)) return true;
+  return TERRAIN_FIELDS.every(key => typeof value[key] === 'number' && Number.isFinite(value[key]))
+    && value.terrain_profile === 1 && value.terrain_height_msl_m! > -1000 && value.terrain_height_msl_m! < 10000
+    && Math.abs(value.terrain_geoid_m!) < 200
+    && Math.abs(value.terrain_height_ellipsoid_m! - value.terrain_height_msl_m! - value.terrain_geoid_m!) < 1e-6;
+}
 export const GROUND_FIELDS = ['ground_agl_m', 'ground_height_ellipsoid_m', 'ground_forward_mps', 'ground_side_mps', 'ground_down_mps', 'structure_contact_mask',
   'gear_nose_wow', 'gear_nose_compression_m', 'gear_nose_load_n', 'gear_nose_slip_rad',
   'gear_left_wow', 'gear_left_compression_m', 'gear_left_load_n', 'gear_left_slip_rad',
@@ -124,7 +135,7 @@ export function validCollisionState(input: object): boolean {
     && (value.step === undefined || value.collision_step! <= value.step)
     && (value.t_s === undefined || value.collision_t_s! <= value.t_s);
 }
-export interface FlightState extends AltimeterState, CockpitState, EngineState, PitchTrimState, GroundState, ControlState, StallState, CollisionState, Partial<RadioNavSnapshot> {
+export interface FlightState extends TerrainState, AltimeterState, CockpitState, EngineState, PitchTrimState, GroundState, ControlState, StallState, CollisionState, Partial<RadioNavSnapshot> {
   step: number; t_s: number; lat_rad: number; lon_rad: number;
   alt_msl_m: number; roll_rad: number; pitch_rad: number; heading_rad: number; tas_mps: number;
 }
@@ -133,6 +144,7 @@ export interface FlightScene {
   update(state: FlightState, view: 'cockpit' | 'chase', look?: { yaw_rad: number; pitch_rad: number; fov_rad?: number }): void;
   dispose(): void;
 }
+export type AirborneSite = 'edfe' | 'taunus';
 export interface FlightSession {
-  start(): void; pause(): void; reset(landingPreset?: LandingPreset): void; input(controls: Controls): void; setAltimeter(setting_pa: number): void; setAutopilot(mode: 0|1|2, target_heading_rad?: number): void; dispose(): void;
+  start(): void; pause(): void; reset(landingPreset?: LandingPreset, site?: AirborneSite): void; input(controls: Controls): void; setAltimeter(setting_pa: number): void; setAutopilot(mode: 0|1|2, target_heading_rad?: number): void; dispose(): void;
 }

@@ -262,7 +262,7 @@ try {
     'observed broad whistle band rises in frequency and strength with actual TAS while engine RPM stays zero');
   for (const render of [whistle55, whistle80]) assert(render.whistle.occupied_bins > 10 && render.whistle.maximum_bin_fraction < .2,
     `${render.name} energy occupies a broad noise band instead of a single tone`);
-  assert.equal(wind40.parameters.exhaust_gain + wind40.parameters.mechanical_gain + wind40.parameters.propeller_gain, 0);
+  assert.equal(wind40.parameters.exhaust_gain + wind40.parameters.mechanical_gain + wind40.parameters.propeller_gain + wind40.parameters.rotation_whirr_gain, 0);
   assert.equal(renders.find(r => r.name === 'stopped-fuel-flow').parameters.exhaust_gain, 0, 'actual stopped engine cannot fire from lingering fuel flow');
   assert(renders.find(r => r.name === 'engine-cruise').rms > renders.find(r => r.name === 'engine-idle').rms * 3,
     'engine-only cruise is measurably stronger than idle at matched manifold pressure/fuel, with no wind');
@@ -270,6 +270,92 @@ try {
     'rolling grows with actual ground motion while TAS and engine RPM remain zero');
   observations.renders = renders.map(({ samples, ...render }) => render);
   checks.push('shared native offline graph renders engine harmonics and wind; broad whistle band centroid/strength rise with TAS, low-speed whistle and zero-TAS/zero-RPM are silent');
+
+  // Start and stop the actual native engine while brakes hold the aircraft at
+  // rest. Offline playback uses those measured frames, never a generated RPM
+  // envelope. A second render isolates the production rotational voice so its
+  // observed pitch can be measured without combustion/noise obscuring it.
+  const rotation = await page.evaluate(async () => {
+    const { default: createModule } = await import('/studies/e1-browser/sim/dist/jsbsim.mjs');
+    const { engineFields, engineSwitchFields } = await import('/studies/e1-browser/sim/engine.js');
+    const { groundFields } = await import('/studies/e1-browser/sim/cockpit.js');
+    const { createEngineAudioGraph } = await import('/src/engine-audio.ts');
+    const { engineAudioParameters } = await import('/src/engine-audio-parameters.ts');
+    const M = await createModule(), d = Math.PI / 180;
+    const check = rc => { if (rc !== 0) throw new Error(`Native engine fixture rejected: ${rc}`); };
+    check(M._gf_init_landing(1 / 120, 49.96 * d, 8.643 * d, 82 * d, 1));
+    check(M._gf_set_inputs(0, -.109375, 0, 0)); check(M._gf_set_secondary_inputs(0, 1)); check(M._gf_set_engine_running(0));
+    for (let i = 0; i < 1200; i++) check(M._gf_step());
+    const read = phase => {
+      const s = Array.from(M.HEAPF64.subarray(M._gf_state() / 8, M._gf_state() / 8 + 8));
+      const copy = (method, count) => Array.from(M.HEAPF64.subarray(M[method]() / 8, M[method]() / 8 + count));
+      const state = { step: M._gf_step_index(), t_s: s[0], lat_rad: s[1], lon_rad: s[2], alt_msl_m: s[3],
+        roll_rad: s[4], pitch_rad: s[5], heading_rad: s[6], tas_mps: s[7],
+        ...engineFields(copy('_gf_engine_state', 13)), ...engineSwitchFields(copy('_gf_engine_switch_state', 2)),
+        ...groundFields(copy('_gf_ground_state', 18)) };
+      return { phase, state, parameters: engineAudioParameters(state) };
+    };
+    const frames = [read('rest')], start = frames[0].state.t_s;
+    check(M._gf_set_inputs(0, -.109375, 0, .2)); check(M._gf_set_engine_running(1));
+    for (let i = 1; i <= 600; i++) { check(M._gf_step()); if (i % 12 === 0) frames.push(read('on')); }
+    check(M._gf_set_engine_running(0));
+    for (let i = 1; i <= 720; i++) { check(M._gf_step()); if (i === 1 || i % 12 === 0) frames.push(read('off')); }
+    for (const frame of frames) frame.audio_time_s = frame.state.t_s - start;
+    const duration = frames.at(-1).audio_time_s + .5, rate = 48000;
+    async function render(isolate, active = true) {
+      const context = new OfflineAudioContext(1, Math.ceil(duration * rate), rate), graph = createEngineAudioGraph(context);
+      const parameters = frame => isolate ? { ...frame.parameters, exhaust_gain: 0, mechanical_gain: 0, propeller_gain: 0,
+        wind_gain: 0, wind_whistle_gain: 0, rolling_gain: 0, ground_available: false } : frame.parameters;
+      graph.update(parameters(frames[0]), .6, active);
+      const waits = frames.slice(1).map(frame => context.suspend(frame.audio_time_s));
+      const rendering = context.startRendering();
+      for (let i = 1; i < frames.length; i++) { await waits[i - 1]; graph.update(parameters(frames[i]), .6, active); await context.resume(); }
+      const buffer = await rendering, values = buffer.getChannelData(0);
+      const rms = (from, to) => {
+        const part = values.subarray(Math.ceil(from * rate), Math.floor(to * rate));
+        return Math.sqrt(part.reduce((sum, value) => sum + value * value, 0) / part.length);
+      };
+      const measurements = isolate && active ? frames.filter(frame => frame.parameters.rotation_whirr_hz >= 45).map(frame => {
+        const from = Math.ceil((frame.audio_time_s + .055) * rate), to = Math.floor((frame.audio_time_s + .095) * rate), crossings = [];
+        for (let i = from + 1; i < to; i++) if (values[i - 1] < 0 && values[i] >= 0)
+          crossings.push(i - 1 - values[i - 1] / (values[i] - values[i - 1]));
+        return { phase: frame.phase, t_s: frame.audio_time_s, rpm: frame.parameters.rpm, expected_hz: frame.parameters.rotation_whirr_hz,
+          observed_hz: crossings.length > 1 ? (crossings.length - 1) * rate / (crossings.at(-1) - crossings[0]) : null,
+          rms: rms(frame.audio_time_s + .04, frame.audio_time_s + .095) };
+      }) : [];
+      const result = { peak: values.reduce((maximum, value) => Math.max(maximum, Math.abs(value)), 0),
+        rms: rms(.5, duration - .5), final_rms: rms(duration - .3, duration), measurements,
+        samples: active ? Array.from(values) : null };
+      graph.dispose(); return result;
+    }
+    return { frames, mixed: await render(false), isolated: await render(true), paused: await render(true, false), sample_rate: rate };
+  });
+  assert.equal(rotation.frames[0].parameters.rpm, 0, 'actual native engine rests before starting');
+  assert(rotation.frames.every(frame => frame.state.structure_contact_mask === 0 && Math.hypot(frame.state.ground_forward_mps, frame.state.ground_side_mps) < .02),
+    'actual crank/coast reference remains on undamaged wheels at rest');
+  const cranking = rotation.frames.filter(frame => frame.phase === 'on' && frame.state.engine_running === 0 && frame.parameters.rpm > 100);
+  assert(cranking.length > 3 && cranking.every(frame => frame.parameters.exhaust_gain === 0 && frame.parameters.rotation_whirr_gain > 0),
+    'actual starter rotation is audible before native combustion begins');
+  const coast = rotation.frames.filter(frame => frame.phase === 'off');
+  assert(coast.every(frame => frame.state.engine_running === 0 && frame.parameters.exhaust_gain === 0), 'native ignition off never fabricates continued firing');
+  assert(coast[0].parameters.rpm > 900 && coast[10].parameters.rpm < coast[0].parameters.rpm * .7 && coast.at(-1).parameters.rpm === 0,
+    'native unassisted ground propeller actually coasts down to rest');
+  for (const measurement of rotation.isolated.measurements) {
+    assert(measurement.observed_hz !== null && Math.abs(measurement.observed_hz - measurement.expected_hz) < Math.max(4, measurement.expected_hz * .08),
+      `rendered rotational pitch tracks actual native RPM during ${measurement.phase}: ${JSON.stringify(measurement)}`);
+    assert(measurement.rms > .0001, 'actual rotating starter/coast produces measurable audible-band content');
+  }
+  const offPitch = rotation.isolated.measurements.filter(frame => frame.phase === 'off');
+  assert(offPitch.length > 10 && offPitch[0].observed_hz > offPitch.at(-1).observed_hz * 2,
+    'measured waveform pitch descends with actual coast RPM');
+  const onPitch = rotation.isolated.measurements.filter(frame => frame.phase === 'on');
+  assert(onPitch.at(-1).observed_hz > onPitch[0].observed_hz * 2, 'measured waveform pitch rises with actual starter/run-up RPM');
+  assert(rotation.mixed.peak < .98 && rotation.isolated.final_rms < 1e-5 && rotation.paused.rms === 0,
+    'new rotation voice remains bounded, stops at actual zero RPM and obeys pause');
+  await writeFile(`${output}/engine-audio-native-start-stop.wav`, wav(rotation.mixed.samples, rotation.sample_rate));
+  await writeFile(`${output}/engine-audio-native-rotation.wav`, wav(rotation.isolated.samples, rotation.sample_rate));
+  observations.nativeRotation = { ...rotation, mixed: { ...rotation.mixed, samples: undefined }, isolated: { ...rotation.isolated, samples: undefined } };
+  checks.push('actual native ground-rest starter and free coast drive measured rising/falling rotational audio pitch; stopped combustion stays silent and zero RPM/pause clear the new voice');
 
   const contacts = await page.evaluate(async () => {
     const { createEngineAudioGraph } = await import('/src/engine-audio.ts');
@@ -425,7 +511,7 @@ try {
           const parameters=engineAudioParameters(data);
           // Isolate ground voices from actual native telemetry; no physics or
           // wheel/contact values are changed, and no artificial state is sent.
-          last={...parameters,exhaust_gain:0,mechanical_gain:0,propeller_gain:0,wind_gain:0,wind_whistle_gain:0};
+          last={...parameters,exhaust_gain:0,mechanical_gain:0,rotation_whirr_gain:0,propeller_gain:0,wind_gain:0,wind_whistle_gain:0};
           groundGraph.update(last,1,!groundPaused);groundFrames.push({state:data,parameters:last});
           const next=parameters.wheel_contact_mask;
           if(next===0&&groundClunks.length===0)groundAirSamples.push(groundRms());

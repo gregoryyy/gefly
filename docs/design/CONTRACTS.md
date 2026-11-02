@@ -81,6 +81,13 @@ heights elsewhere).
   run time** (it shifts geodetic latitude).
 - `h_pressure_m` is pressure altitude from static pressure (standard atmosphere).
 
+Current bounded browser increment uses the official `he_dgm1_32` overview of
+DGM1, reprojected to approximately 32–54 m geographic nodes. Native and renderer
+use the same SW–NE triangles; physical heights retain DHHN2016 and the sampled
+GCG2016/2023 correction is rendering-only. This is explicit resampling, not
+native 1 m terrain or an airport/runway acceptance. Full-resolution DGM1 remains
+a later fidelity stage.
+
 Coverage: DGM1 covers **Hessen only**; terrain for the rest of the 100 NM region
 (Rhineland-Palatinate, Bavaria, Baden-Württemberg etc.) is **TBD-src**. Switching
 from GCG2016 to EGM2008 at the German border makes `h_ell_m` step by up to

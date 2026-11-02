@@ -38,10 +38,13 @@ just fly                  # http://127.0.0.1:5173
 ```
 
 Select **Start flight**, then use the visible on-screen controls or a draggable stick.
-Arrow keys control pitch/roll, A/D rudder, W/S throttle, Space pause,
-R to restart and V to change view. Touchpad controls are available on screen.
+Arrow keys control pitch/roll, Q/W rudder, 0 throttle idle and 1–9 throttle.
+Space pauses, R opens Review, V changes view, E toggles the engine and S toggles
+sound (initially off). Restart is in Flight. Click toggles touchpad yoke control;
+hold-drag looks around while retaining the yoke midpoint, and two-finger vertical
+scroll changes field of view.
 A bundled official Hessen photograph shows a small starter area around Egelsbach
-on an ellipsoid surface; real terrain and airport elevations remain incomplete. The generic
+over public Hessen terrain around Egelsbach, Frankfurt and the Taunus. A Flight-menu Taunus demonstration shows the hills; full regional coverage and accepted airport/runway elevations remain incomplete. The generic
 research aircraft remains experimental; see
 [setup, controls and limitations](app/README.md).
 

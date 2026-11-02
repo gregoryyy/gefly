@@ -130,6 +130,18 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.31 Add a stable chase-view ground shadow so height and wheel contact are easier to judge, synchronized with live/Review state on the existing flat-ground scene. R-VIEW-1; no terrain/physics changes.
 
+- [x] 2.0.32 Deliver real public Hessen terrain around Egelsbach/Frankfurt/Taunus with shared native/render height data, explicit DHHN2016/GCG2016 conversion, slope-aware wheel/proxy contact, coverage guards, recorded/shadow alignment, source/rights metadata and a visible Taunus flight. Add a sharper public airport photograph with honest effective resolution. R-WORLD-2/R-DATA-1/R-SIM-3/R-VIEW-1; independent quality/actual-browser validation passed, see [review](reviews/2026-11-03-public-terrain.md). Peer pending.
+
+- [ ] 2.0.33 Extend high-resolution texture coverage using a multiresolution tile pyramid/cache from public orthophotos; prioritize airport/circuit detail, pin source dates/rights and stream or prefetch only needed tiles. Full EDDF/100 NM and native 20 cm detail remain scoped separately. R-WORLD-1/R-REGION-1/R-DATA-1.
+
+- [x] 2.0.34 Preserve the original yoke midpoint when a hold-drag camera look ends; leave release neutral until actual movement, retain outside-release/reentry authority and keep short-click recenter/toggle behavior. R-INPUT-1; independent quality/actual-browser validation passed, peer pending.
+
+- [x] 2.0.35 Make native engine coast-down/spin-up audible from actual recorded/live propeller speed, including ignition-off rotation and starter cranking; keep exhaust tied to actual combustion and preserve all mute/pause/Review/collision guards. R-AUDIO-1/R-ENG-1; independent quality/actual-browser validation passed, peer pending.
+
+- [ ] 2.0.36 Later: derive procedural terrain materials from traceable land-use masks, distinguishing cities, vegetation/green areas, streets and water bodies. Keep appearance separate from authoritative elevations, collision and navigational data. R-WORLD-3/R-DATA-1.
+
+- [ ] 2.0.37 Later: model buildings and other structures from reusable public geometry/data, with source dates/rights, coverage and explicit visual/obstacle/collision fidelity. R-WORLD-3/R-DATA-1.
+
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.
 - [ ] 2.3 code2 implements the corresponding browser controls, instruments and exercise feedback against frozen contracts **in parallel with 2.2**.

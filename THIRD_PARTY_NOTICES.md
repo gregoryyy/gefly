@@ -38,8 +38,9 @@ Original Gefly material is licensed GPL-3.0-or-later (user decision,
 above remains applicable to the identified derived files. Separately licensed
 dependencies, data and assets keep their own terms.
 
-No aircraft manuals/models, geographic/chart datasets, JSBSim/FlightGear code,
-community add-ons or LLM runtime libraries have been bundled. Research links are
+No aircraft manuals/models, navigation/chart databases, JSBSim/FlightGear code,
+community add-ons or LLM runtime libraries have been bundled. Public terrain and
+orthophotography are the separately licensed geographic data described below. Research links are
 references, not grants to reuse those materials. Future additions retain their
 own source, applicability and rights review in [SBOM](docs/SBOM.md).
 
@@ -50,3 +51,23 @@ The application bundles three.js 0.187.0, Copyright © 2010–2026 three.js auth
 CesiumJS 1.146.0, Copyright 2011–2026 CesiumJS Contributors, is used under Apache-2.0; see [the full notice](LICENSES/Cesium-Apache-2.0.txt). UI builds retain its package-provided license and third-party inventories beside the copied static assets. The unmodified Hessen HVBG starter photograph is bundled under DL-DE Zero 2.0, with source bounds, license, request and byte hash in [its provenance record](app/public/imagery/SOURCE.json), plus visible attribution and ellipsoid-surface limitations. See [SBOM](docs/SBOM.md).
 
 MapLibre GL JS 6.16.0, Copyright (c) 2023 MapLibre contributors, is used under BSD-3-Clause. The [complete license](LICENSES/MapLibre-BSD-3-Clause.txt) is retained; UI builds copy the package notice to MapLibre-LICENSE.txt. MapLibre uses the already inventoried local HVBG photographs without a remote basemap.
+
+## Public regional terrain and sharper airport imagery
+
+The derived regional package in [app/public/terrain](app/public/terrain/README.md)
+combines Hessen HVBG `he_dgm1_32` physical elevations (DHHN2016), provided under
+[DL-DE Zero 2.0](https://www.govdata.de/dl-de/zero-2-0), with GCG2016/2023
+quasigeoid node offsets: **© Bundesamt für Kartographie und Geodäsie**, source
+retrieved 2026, provided under [CC BY 4.0](LICENSES/CC-BY-4.0.txt). The public
+[BKG product](https://gdz.bkg.bund.de/index.php/default/quasigeoid-der-bundesrepublik-deutschland-quasigeoid.html)
+and [regional source ZIP](https://daten.gdz.bkg.bund.de/produkte/sonstige/quasigeoid/aktuell/quasigeoid.geo89.w.zip)
+are linked in the versioned manifest with exact hashes. The original [BKG data-sources notice](app/public/terrain/BKG-SOURCES.pdf) and [attribution notice](app/public/terrain/BKG-CC-BY-NOTICE.pdf) are retained. Changes: bounded regional
+extraction, geographic DEM resampling, regional bilinear geoid sampling and
+interleaved float32 conversion. The combined derived data retains the BKG
+attribution/license; original Gefly code remains GPL-3.0-or-later. No endorsement
+or surveyed aerodrome accuracy is implied.
+
+The additional 3000×1800 Hessen DOP20 airport JPEG is an unmodified public WMS
+GetMap response, under DL-DE Zero 2.0. Its [separate source record](app/public/imagery/DETAIL-SOURCE.json)
+retains bounds, request, byte hash and approximately 0.74–0.76 m output pixels.
+The original 20 cm source resolution is not a claim of 20 cm output detail.

@@ -30,7 +30,7 @@ just fly
 Open the local URL printed by the development server, then select **Start flight**.
 The application loads paused so the aircraft cannot fly away while you inspect
 the controls. Starting or resetting uses the same airborne initial state near
-approximate EDFE coordinates: 1,300 ft of study altitude and 90 kt true airspeed.
+approximate EDFE coordinates: 1,300 ft MSL (DHHN2016 physical height) and 90 kt true airspeed. Choose **Flight → Taunus ridge flight** to see the hills immediately from a separate airborne demonstration.
 
 The engine build reuses the [existing browser study recipe](../studies/e1-browser/sim/README.md).
 Its generated WASM and bundled research-model data stay in ignored local build
@@ -325,8 +325,7 @@ Controls and Resume stay locked, engine audio stops, and the final state remains
 available for **R → Review** and hold-drag camera inspection. Use **Flight → Restart
 flight** to start again. In Review, the banner follows the selected recorded frame.
 
-Collision coverage is the existing flat ellipsoid surface and declared visual
-proxies, not terrain/buildings or calibrated aircraft damage geometry. Contact is
+Normal flights use the bounded public terrain surface. Native gear/structure contacts sample it at each contact point; visual body/propeller/fin proxies use the local DEM triangle plane. Flat landing studies remain explicit. Neither profile supplies building collision, calibrated damage geometry or continuous collision detection. Contact is
 sampled after each fixed step; up to one step of penetration can remain, rather
 than a continuous collision solve or a repositioned aircraft. Missing older-engine
 contact data is explicitly unavailable. No hard-landing damage threshold is invented.
@@ -431,7 +430,7 @@ separate deliberate update rather than a runtime dependency.
 - The local study model is JSBSim's generic `c172x` (172P research configuration),
   **not the selected project-owned 172S**. Its model/data rights and applicability
   remain as documented in the study; it is not redistributed here.
-- Aerial imagery is draped on the WGS-84 ellipsoid. There is no actual elevation
+- Normal flights use public DGM/GCG terrain; explicit landing studies retain the flat ellipsoid. There is no accepted surveyed runway-elevation
   model or accepted EDFE airport-height alignment. Imagery does not establish
   authoritative runway geometry, navigation data or chart material.
 - Airspeed is ideal **CAS**, not a validated installed IAS indication; an older
@@ -513,7 +512,30 @@ wheel impact. Engine-only idle is quieter than higher-RPM operation at matched
 load; all layers remain behind the same S mute and lifecycle controls.
 
 Chase view now uses the aircraft mesh to cast a soft native Cesium sun shadow on
-the existing flat ellipsoid near the ground. It follows the selected live/Review
+the active terrain receiver near the ground (or the flat receiver in explicit contact studies). It follows the selected live/Review
 state, fades with height and is hidden at or above 120 m AGL or when compatible
-ground data is missing. The scene uses a fixed sun/date and has no surveyed
-terrain; the shadow is a viewing cue, not another source of contact physics.
+ground data is missing. The scene uses a fixed sun/date; the shadow is a viewing cue, not another source of contact physics.
+
+## Public terrain and sharper imagery
+
+Normal flights use the local public Hessen package spanning 8.45–8.90°E and
+49.85–50.35°N. It contains real Rhine–Main/Taunus elevations from the official
+32 m overview of DGM1, resampled to approximately 32–54m point spacing. Native
+wheel/structure contacts sample this surface with slope normals at fixed steps.
+DHHN2016 physical heights drive the atmosphere and dynamics; GCG2016/2023
+quasigeoid offsets are added only for rendering. Review retains the actual
+height fields. Missing/corrupt data and coverage exits stop flight, without an
+invisible flat-ground fallback. Rebuild the local engine after updating.
+
+Try **Flight → Taunus ridge flight**, then Start and Chase, for an immediate
+terrain demonstration. It is not a published route or procedure. The four
+**Flat-ground landing study** presets retain their previous isolated fixtures.
+
+The sharper airport overlay has approximately 0.75 m output pixels, sampled from
+public 20 cm orthophotography, over the wider starter photograph. Derived relief
+shading covers the DEM outside photographic coverage. A tile pyramid/cache can
+extend higher-resolution coverage later, loading detail by view rather than
+stretching a regional JPEG. Current imagery has no established capture date and
+is not airport/runway reference data. See the [terrain package](public/terrain/README.md),
+[imagery provenance](public/imagery/DETAIL-SOURCE.json) and
+[third-party notices](../THIRD_PARTY_NOTICES.md).

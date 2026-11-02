@@ -308,3 +308,13 @@ test('decimal range serialization selects the stored interior frame while real e
   assert.equal(trace.atTime(Number(exact.toPrecision(15)))!.state.step, 2);
   assert.equal(trace.atTime(exact - 1e-9)!.state.step, 1);
 });
+
+test('review retains the terrain height convention and rejects partial groups or same-clock ground rewrites', () => {
+  const trace = new FlightTrace();
+  const terrain = { terrain_profile: 1, terrain_height_msl_m: 115.25, terrain_geoid_m: 47.8, terrain_height_ellipsoid_m: 163.05 };
+  assert(trace.record({ ...state(1), ...terrain }, 0));
+  assert(trace.record({ ...state(2), ...terrain, terrain_height_msl_m: 120, terrain_height_ellipsoid_m: 167.8 }, 1));
+  assert.equal(trace.atTime(1)!.state.terrain_height_msl_m, 115.25);
+  assert.equal(trace.record({ ...state(3), terrain_profile: 1 }, 0), false);
+  assert.equal(trace.record({ ...state(2), ...terrain }, 0), false);
+});

@@ -8,6 +8,8 @@ import { createForwardMarker } from './forward-marker';
 import { projectForwardDirection } from './forward-marker-projection';
 import { createAircraftVisual } from './aircraft-visual';
 import { createAircraftShadow } from './aircraft-shadow';
+import { createPublicTerrainProvider } from './terrain-provider';
+import { loadTerrainPackage, sampleTerrain, type TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
 import { aircraftBasisENU, boundedCameraLook, cockpitCameraENU, chaseCameraENU, type CameraLook } from './aircraft-orientation';
 import { DEFAULT_FOV_RAD, MIN_FOV_RAD, MAX_FOV_RAD } from './field-of-view.ts';
 import type { FlightScene, FlightState } from './types';
@@ -16,6 +18,7 @@ const DEG_RAD = Math.PI / 180;
 // Bundled, source-backed starter photograph: fixed coverage and no runtime
 // dependency on a live WMS. Provenance/license/hash: public/imagery/SOURCE.json.
 const DETAIL = Rectangle.fromDegrees(8.62, 49.95, 8.66, 49.975);
+const AIRPORT_DETAIL = Rectangle.fromDegrees(8.628, 49.954, 8.660, 49.966);
 const OVERVIEW = Rectangle.fromDegrees(8.4, 49.8, 8.9, 50.1);
 function inside(rectangle: Rectangle, state: FlightState): boolean {
   return state.lon_rad >= rectangle.west && state.lon_rad <= rectangle.east
@@ -27,11 +30,53 @@ const INITIAL_STATE: FlightState = {
   heading_rad: 82 * DEG_RAD, tas_mps: 90 * 1852 / 3600,
 };
 
-/** Geographic imagery is rendered on WGS-84 h=0, not a surveyed terrain surface.
- * The existing study height is used unchanged; this does not resolve its datum.
+/** Original visual relief from the actual elevation field, not a photograph or
+ * a real-time lighting/weather claim. Official photographs are drawn above it.
+ */
+function elevationRelief(grid: TerrainGrid): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.min(513, grid.width); canvas.height = Math.min(513, grid.height);
+  const context = canvas.getContext('2d')!, image = context.createImageData(canvas.width, canvas.height);
+  const height = (x: number, y: number) => grid.physical_m[y * grid.width + x] + grid.geoid_m[y * grid.width + x];
+  const radius = Ellipsoid.WGS84.maximumRadius;
+  const dx = (grid.east_rad - grid.west_rad) / (grid.width - 1);
+  const dy = (grid.north_rad - grid.south_rad) / (grid.height - 1);
+  for (let row = 0; row < canvas.height; row++) {
+    const y = Math.round((1 - row / (canvas.height - 1)) * (grid.height - 1));
+    const south = Math.max(0, y - 1), north = Math.min(grid.height - 1, y + 1);
+    const latitude = grid.south_rad + y * dy;
+    for (let column = 0; column < canvas.width; column++) {
+      const x = Math.round(column / (canvas.width - 1) * (grid.width - 1));
+      const west = Math.max(0, x - 1), east = Math.min(grid.width - 1, x + 1);
+      const eastSlope = (height(east, y) - height(west, y)) / ((east - west) * dx * radius * Math.cos(latitude));
+      const northSlope = (height(x, north) - height(x, south)) / ((north - south) * dy * radius);
+      const light = (.5 * eastSlope - .5 * northSlope + Math.SQRT1_2) / Math.hypot(eastSlope, northSlope, 1);
+      const brightness = Math.max(.3, Math.min(1.2, .55 + .65 * light)), index = (row * canvas.width + column) * 4;
+      image.data[index] = Math.round(58 * brightness); image.data[index + 1] = Math.round(86 * brightness);
+      image.data[index + 2] = Math.round(69 * brightness); image.data[index + 3] = 255;
+    }
+  }
+  context.putImageData(image, 0, 0); return canvas;
+}
+
+/** Bundled public terrain and photographs share the worker's elevation package.
+ * Physical H and GCG2016 ζ are converted outside dynamics to render h = H + ζ.
+ * Explicit flat-ground/legacy studies retain their ellipsoid receiver.
  * Renderer state never feeds the flight model.
  */
 export async function createScene(container: HTMLElement): Promise<FlightScene> {
+  const terrainGrid = await loadTerrainPackage();
+  const publicTerrain = createPublicTerrainProvider(terrainGrid);
+  const flatTerrain = new EllipsoidTerrainProvider();
+  const initialGround = sampleTerrain(terrainGrid, INITIAL_STATE.lat_rad, INITIAL_STATE.lon_rad);
+  if (!initialGround) throw new Error('Initial visual position is outside the public terrain package');
+  // A placeholder view only, replaced by the first authoritative worker frame.
+  const initialVisual: FlightState = { ...INITIAL_STATE, terrain_profile: 1,
+    terrain_height_msl_m: initialGround.physical_m, terrain_geoid_m: initialGround.geoid_m,
+    terrain_height_ellipsoid_m: initialGround.ellipsoid_m,
+    ground_height_ellipsoid_m: INITIAL_STATE.alt_msl_m + initialGround.geoid_m,
+    ground_agl_m: INITIAL_STATE.alt_msl_m - initialGround.physical_m };
+  let terrainEnabled = true;
   Ion.defaultAccessToken = '';
   const credits = document.createElement('div');
   credits.style.cssText = 'position:absolute;left:10px;right:10px;bottom:5px;z-index:1;font:10px/1.3 system-ui;color:white;text-shadow:0 1px 3px #000;';
@@ -40,7 +85,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   try { widget = new CesiumWidget(container, {
     creditContainer: credits,
     baseLayer: false,
-    terrainProvider: new EllipsoidTerrainProvider(),
+    terrainProvider: publicTerrain,
     useDefaultRenderLoop: false,
     useBrowserRecommendedResolution: true,
     showRenderLoopErrors: false,
@@ -50,7 +95,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     contextOptions: { webgl: { alpha: false, antialias: true, powerPreference: 'high-performance' } },
   }); } catch (error) { credits.remove(); throw error; }
   widget.resolutionScale = Math.min(window.devicePixelRatio || 1, 1.5);
-  widget.canvas.setAttribute('aria-label', 'Hessen aerial imagery flight scene');
+  widget.canvas.setAttribute('aria-label', 'Hessen aerial imagery and public terrain flight scene');
   widget.canvas.setAttribute('tabindex', '-1');
   const scene = widget.scene;
   const aircraftShadow = createAircraftShadow(scene, container);
@@ -62,9 +107,9 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   scene.globe.maximumScreenSpaceError = 3;
   scene.globe.tileCacheSize = 256;
   scene.globe.preloadSiblings = false;
-  scene.globe.depthTestAgainstTerrain = false;
+  scene.globe.depthTestAgainstTerrain = true;
   scene.fog.enabled = true;
-  scene.fog.density = 0.00012;
+  scene.fog.density = 0.00004; // Fixed visual haze, not a weather observation.
   scene.fog.minimumBrightness = 0.65;
   scene.backgroundColor = Color.fromCssColorString('#80b7d8');
   scene.highDynamicRange = true;
@@ -87,9 +132,14 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   let disposed = false;
   let imagerySettled = false;
   let detailLoaded = false;
+  let airportLoaded = false;
   let overviewLoaded = false;
   let loadSlow = false;
-  const sourceCredit = new Credit('Hessen HVBG · DL-DE Zero 2.0 · ellipsoid surface (no terrain)', true);
+  const creditObserver = new ResizeObserver(() => {
+    if (!disposed && credit) status.style.bottom = `${Math.max(38, credit.getBoundingClientRect().height + 12)}px`;
+  });
+  if (credit) creditObserver.observe(credit);
+  const sourceCredit = new Credit('Hessen HVBG aerial imagery · DL-DE Zero 2.0', true);
   // A constant-color local base prevents Cesium from stretching photographic
   // edge pixels across the globe outside their actual geographic coverage.
   const baseCanvas = document.createElement('canvas');
@@ -100,6 +150,13 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     url: baseCanvas.toDataURL(), tileWidth: 1, tileHeight: 1,
     rectangle: Rectangle.MAX_VALUE,
   })));
+  const relief = elevationRelief(terrainGrid);
+  const reliefLayer = new ImageryLayer(new SingleTileImageryProvider({
+    url: relief.toDataURL('image/png'), tileWidth: relief.width, tileHeight: relief.height,
+    rectangle: new Rectangle(terrainGrid.west_rad, terrainGrid.south_rad, terrainGrid.east_rad, terrainGrid.north_rad),
+    credit: new Credit('Height-derived relief: Hessen HVBG DGM1 · GCG2016 (BKG)', true),
+  }));
+  scene.imageryLayers.add(reliefLayer);
   const loadTimeout = setTimeout(() => {
     if (!disposed && !imagerySettled) { loadSlow = true; imageryStatus(lastState); }
   }, 25000);
@@ -109,14 +166,18 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     if (!imagerySettled) {
       outcome = 'loading';
       text = loadSlow ? 'Aerial imagery is taking longer to load. Controls remain available.' : 'Loading the local Egelsbach aerial photograph…';
-    } else if (!detailLoaded && !overviewLoaded) {
+    } else if (!detailLoaded && !overviewLoaded && !airportLoaded) {
       outcome = 'error'; text = 'Starter photographs unavailable. Reload to retry; flight controls still work.';
-    } else if (!(detailLoaded && inside(DETAIL, state)) && !(overviewLoaded && inside(OVERVIEW, state))) {
+    } else if (!(airportLoaded && inside(AIRPORT_DETAIL, state)) && !(detailLoaded && inside(DETAIL, state)) && !(overviewLoaded && inside(OVERVIEW, state))) {
       outcome = 'outside-coverage'; text = 'Outside this starter imagery area. No photographic ground coverage here.';
+    } else if (airportLoaded && inside(AIRPORT_DETAIL, state)) {
+      text = '';
     } else if (!detailLoaded) {
       outcome = 'degraded'; text = 'Starter detail unavailable; coarse overview only.';
     } else if (!inside(DETAIL, state)) {
       text = 'Regional overview · outside detailed starter area';
+    } else if (!airportLoaded && inside(AIRPORT_DETAIL, state)) {
+      outcome = 'degraded'; text = 'Airport detail unavailable; starter photograph only.';
     } else if (!overviewLoaded) {
       outcome = 'degraded'; text = 'Starter detail loaded; surrounding overview unavailable.';
     }
@@ -141,18 +202,20 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   void Promise.allSettled([
     loadPhotograph('/imagery/edfe-overview.jpg', OVERVIEW),
     loadPhotograph('/imagery/edfe-starter.jpg', DETAIL),
+    loadPhotograph('/imagery/edfe-detail.jpg', AIRPORT_DETAIL),
   ]).then(results => {
     if (disposed) return;
     results.forEach((result, index) => {
       if (result.status === 'fulfilled') {
         scene.imageryLayers.add(new ImageryLayer(result.value));
-        if (index === 0) overviewLoaded = true; else detailLoaded = true;
+        if (index === 0) overviewLoaded = true; else if (index === 1) detailLoaded = true; else airportLoaded = true;
       }
     });
     imagerySettled = true; clearTimeout(loadTimeout);
-    container.dataset.imageryTiles = String(Number(detailLoaded) + Number(overviewLoaded));
+    container.dataset.imageryTiles = String(Number(detailLoaded) + Number(overviewLoaded) + Number(airportLoaded));
     container.dataset.imageryDetail = detailLoaded ? 'ready' : 'unavailable';
-    container.dataset.imageryCoverage = 'detail:8.62,49.95,8.66,49.975;overview:8.4,49.8,8.9,50.1';
+    container.dataset.imageryAirportDetail = airportLoaded ? 'ready' : 'unavailable';
+    container.dataset.imageryCoverage = 'airport:8.628,49.954,8.66,49.966;detail:8.62,49.95,8.66,49.975;overview:8.4,49.8,8.9,50.1';
     imageryStatus(lastState); scene.requestRender();
   });
 
@@ -171,7 +234,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   const localDirection = new Cartesian3();
   const localUp = new Cartesian3();
   let lastView: 'cockpit' | 'chase' = 'cockpit';
-  let lastState = INITIAL_STATE;
+  let lastState = initialVisual;
   let lastLook: CameraLook = { yaw_rad: 0, pitch_rad: 0 };
   let lastFov_rad = DEFAULT_FOV_RAD;
 
@@ -206,6 +269,12 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     if (![state.lat_rad, state.lon_rad, state.alt_msl_m, state.pitch_rad, state.roll_rad, state.heading_rad].every(Number.isFinite)) {
       throw new RangeError('Cannot render a non-finite aircraft state');
     }
+    const useTerrain = state.terrain_profile === 1;
+    const terrainSample = useTerrain ? sampleTerrain(terrainGrid, state.lat_rad, state.lon_rad) : null;
+    if (useTerrain && (!terrainSample || !Number.isFinite(state.ground_height_ellipsoid_m))) {
+      container.dataset.terrain = terrainSample ? 'height-unavailable' : 'outside-coverage';
+      throw new RangeError('Public terrain needs covered coordinates and an explicit converted aircraft height');
+    }
     lastState = state; lastView = view; lastLook = boundedCameraLook(look);
     // Keep zoom independent of look gestures and updates that omit camera input.
     if (look?.fov_rad !== undefined) {
@@ -213,8 +282,20 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
         ? Math.max(MIN_FOV_RAD, Math.min(MAX_FOV_RAD, look.fov_rad)) : DEFAULT_FOV_RAD;
     }
     const { lat_rad, lon_rad, alt_msl_m, pitch_rad, roll_rad, heading_rad } = state;
+    if (useTerrain !== terrainEnabled) {
+      scene.globe.terrainProvider = useTerrain ? publicTerrain : flatTerrain;
+      scene.globe.depthTestAgainstTerrain = useTerrain;
+      reliefLayer.show = useTerrain;
+      terrainEnabled = useTerrain;
+    }
+    container.dataset.terrain = useTerrain ? terrainSample ? 'public-grid' : 'outside-coverage' : 'flat-study';
+    container.dataset.terrainId = useTerrain ? terrainGrid.id : '';
+    container.dataset.terrainHeightEllipsoidM = terrainSample ? String(terrainSample.ellipsoid_m) : '';
+    container.dataset.terrainRelief = useTerrain ? 'dem-derived' : 'off-flat-study';
     imageryStatus(state);
-    Cartesian3.fromRadians(lon_rad, lat_rad, state.ground_height_ellipsoid_m ?? alt_msl_m, Ellipsoid.WGS84, position);
+    const renderHeight = state.ground_height_ellipsoid_m ?? alt_msl_m;
+    container.dataset.aircraftHeightEllipsoidM = String(renderHeight);
+    Cartesian3.fromRadians(lon_rad, lat_rad, renderHeight, Ellipsoid.WGS84, position);
     Transforms.eastNorthUpToFixedFrame(position, Ellipsoid.WGS84, frame);
     const basis = aircraftBasisENU(heading_rad, pitch_rad, roll_rad);
     Cartesian3.fromElements(...basis.forward, localDirection);
@@ -278,7 +359,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     if (!disposed) { widget.resize(); update(lastState, lastView, lastLook); }
   });
   observer.observe(container);
-  update(INITIAL_STATE, 'cockpit');
+  update(initialVisual, 'cockpit');
   return {
     update,
     dispose() {
@@ -286,6 +367,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       disposed = true;
       photographAbort.abort();
       observer.disconnect();
+      creditObserver.disconnect();
       clearTimeout(loadTimeout);
       forwardMarker.dispose();
       aircraftShadow.dispose();

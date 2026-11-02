@@ -26,6 +26,7 @@
 // runs steps back to back while paused (no pacing) and replies with the mean
 // cost per step for each block, separating compute cost from post-idle wake cost.
 import createJSBSim from './dist/jsbsim.mjs';
+import { loadTerrainPackage, sampleTerrain, sampleTerrainGradient, terrainContainsInterior } from './terrain.js';
 import { indicatedAltitude_m, validSetting } from './altimeter.js';
 import { stallFields, controlFields, cockpitFields, pitchTrimFields, groundFields } from './cockpit.js';
 import { autopilotCommand, engineFields, engineSwitchFields } from './engine.js';
@@ -75,6 +76,8 @@ let costCount = 0;
 let runWallStartMs = 0;
 let runWallMs = 0;
 let untilStep = Infinity;
+let terrainGrid = null;
+let terrainFault = false;
 let groundCollisionEnabled = false;
 let collision = EMPTY_COLLISION;
 // Ideal pressure instrument only. Its setting never changes the atmosphere,
@@ -168,7 +171,13 @@ function readPitchTrimFields() {
 function readGroundFields() {
   if (typeof M._gf_ground_state !== 'function') return {};
   const pointer = M._gf_ground_state() >> 3;
-  return groundFields(M.HEAPF64.subarray(pointer, pointer + 18));
+  const fields = groundFields(M.HEAPF64.subarray(pointer, pointer + 18));
+  if (terrainGrid && Number.isFinite(fields.ground_height_ellipsoid_m)) {
+    const state = readState(), sample = sampleTerrain(terrainGrid, state[1], state[2]);
+    if (!sample) throw new Error('Terrain coverage unavailable; restart inside the published terrain region.');
+    fields.ground_height_ellipsoid_m += sample.geoid_m;
+  }
+  return fields;
 }
 
 function readEngineFields() {
@@ -198,6 +207,14 @@ function onAutopilot(msg) {
   postState();
 }
 
+function terrainFields() {
+  if (!terrainGrid) return {};
+  const state = readState(), sample = sampleTerrain(terrainGrid, state[1], state[2]);
+  if (!sample) throw new Error('Public terrain coverage is unavailable.');
+  return { terrain_profile: 1, terrain_height_msl_m: sample.physical_m,
+    terrain_geoid_m: sample.geoid_m, terrain_height_ellipsoid_m: sample.ellipsoid_m };
+}
+
 function stateMessage() {
   const flapCommand = typeof M._gf_flap_command_norm === 'function' ? M._gf_flap_command_norm() : NaN;
   const s = readState();
@@ -206,7 +223,7 @@ function stateMessage() {
     type: 'state', step: stepIndex, t_s: s[0], lat_rad: s[1], lon_rad: s[2],
     alt_msl_m: s[3], roll_rad: s[4], pitch_rad: s[5], heading_rad: s[6], tas_mps: s[7],
     last_input_wall_ms: lastInputWallMs, step_cost_us: lastStepCostUs, ...altimeterFields,
-    ...readStallFields(), ...readControlFields(), ...readCockpitFields(), ...readPitchTrimFields(), ...readGroundFields(), ...readEngineFields(), ...readEngineSwitchFields(), ...collision,
+    ...readStallFields(), ...readControlFields(), ...readCockpitFields(), ...readPitchTrimFields(), ...readGroundFields(), ...readEngineFields(), ...readEngineSwitchFields(), ...terrainFields(), ...collision,
   };
 }
 
@@ -257,18 +274,24 @@ function stepOnce() {
     if (lagMs > dtMs) missedSteps += 1;
     if (lagMs > maxLagMs) maxLagMs = lagMs;
   }
+  if (terrainGrid) {
+    const state = readState();
+    if (!terrainContainsInterior(terrainGrid, state[1], state[2]) || M._gf_terrain_available() !== 1) {
+      terrainFault = true; fail('Terrain coverage boundary reached. Restart inside the Egelsbach–Frankfurt–Taunus region.'); return false;
+    }
+  }
   if (!applyDueInputs()) return false;
   const previousGround = groundCollisionEnabled ? readGroundFields() : null;
   const rc = M._gf_step();
   const b = performance.now();
-  if (rc !== 0) { fail(`step rc=${rc} at step ${stepIndex}`); return false; }
+  if (rc !== 0) { if (rc === -7) terrainFault = true; fail(rc === -7 ? 'Terrain/contact coverage unavailable; flight stopped. Restart inside the terrain region.' : `step rc=${rc} at step ${stepIndex}`); return false; }
   stepIndex += 1;
   updateAltimeter();
   lastStepCostUs = (b - a) * 1000;
   if (costCount < costs.length) costs[costCount++] = lastStepCostUs;
   if (groundCollisionEnabled) {
     const ground = readGroundFields(), state = readState();
-    const contact = groundCollisionContact(ground.ground_agl_m, state[4], state[5], ground.structure_contact_mask);
+    const contact = groundCollisionContact(ground.ground_agl_m, state[4], state[5], ground.structure_contact_mask, terrainGrid ? { ...sampleTerrainGradient(terrainGrid, state[1], state[2]), heading_rad: state[6] } : undefined);
     const record = contact.mask ? collisionRecord(contact.mask, stepIndex, state[0], previousGround) : null;
     if (record) {
       collision = record;
@@ -333,6 +356,7 @@ function stats() {
 }
 
 async function onInit(msg) {
+  initialized = false; terrainFault = false;
   await modulePromise;
   const ic = msg.ic || {};
   const dt = msg.dt_s;
@@ -340,10 +364,29 @@ async function onInit(msg) {
   if (!finiteIn(dt, 1e-4, 0.1) || !finiteIn(hz, 1, 1000)) { fail('init: bad dt_s or state_hz'); return; }
   if (msg.aircraft !== 'c172x') { fail(`init: unsupported aircraft ${msg.aircraft}`); return; }
   if (msg.ground_collision !== undefined && typeof msg.ground_collision !== 'boolean') { fail('init: ground_collision must be boolean'); return; }
+  if (msg.terrain !== undefined && typeof msg.terrain !== 'boolean') { fail('init: terrain must be boolean'); return; }
   const presets = { normal: 1, hard: 2, side: 3, banked: 4 };
   const preset = msg.landing_preset;
   if (preset !== undefined && (typeof preset !== 'string' || !Object.hasOwn(presets, preset)
     || typeof M._gf_init_landing !== 'function')) { fail('init: landing preset unavailable or invalid'); return; }
+  terrainGrid = null;
+  if (typeof M._gf_clear_terrain_grid === 'function') M._gf_clear_terrain_grid();
+  if (msg.terrain === true) {
+    if (['_gf_configure_terrain_grid', '_gf_terrain_available', '_malloc', '_free'].some(name => typeof M[name] !== 'function')) {
+      fail('Public terrain requires the updated local engine. Run just build-flight-engine and restart.'); return;
+    }
+    terrainGrid = await loadTerrainPackage();
+    if (!terrainContainsInterior(terrainGrid, ic.lat_rad, ic.lon_rad)) { fail('Initial position is outside public terrain coverage.'); return; }
+    const pointer = M._malloc(terrainGrid.physical_m.byteLength);
+    if (!pointer) { fail('Cannot allocate the public terrain grid.'); return; }
+    let configured;
+    try {
+      M.HEAPF64.set(terrainGrid.physical_m, pointer / 8);
+      configured = M._gf_configure_terrain_grid(terrainGrid.west_rad, terrainGrid.south_rad, terrainGrid.east_rad,
+        terrainGrid.north_rad, terrainGrid.width, terrainGrid.height, pointer, terrainGrid.physical_m.length);
+    } finally { M._free(pointer); }
+    if (configured !== 0) { fail(`Terrain grid rejected: ${configured}`); return; }
+  }
   const rc = preset === undefined
     ? M._gf_init(dt, ic.lat_rad, ic.lon_rad, ic.alt_msl_m, ic.heading_rad, ic.tas_mps)
     : M._gf_init_landing(dt, ic.lat_rad, ic.lon_rad, ic.heading_rad, presets[preset]);
@@ -357,7 +400,7 @@ async function onInit(msg) {
   initialized = true;
   postMessage({
     type: 'ready',
-    build: { jsbsim_tag: build.jsbsim_tag, emsdk: build.emsdk, wasm_bytes: build.wasm_bytes,
+    build: { ...(terrainGrid ? { terrain: { id: terrainGrid.id, sha256: terrainGrid.sha256, physical_datum: terrainGrid.physical_datum, geoid_model: terrainGrid.geoid_model } } : {}), jsbsim_tag: build.jsbsim_tag, emsdk: build.emsdk, wasm_bytes: build.wasm_bytes,
              jsbsim_commit: build.jsbsim_commit, wasm_sha256: build.wasm_sha256, flags: build.flags,
              aircraft_adapter: build.aircraft_adapter },
     trim: { status: M._gf_trim_status(), throttle: M._gf_trim_throttle(), pitch_trim: M._gf_trim_pitch() },
@@ -427,6 +470,9 @@ self.onmessage = (ev) => {
     try {
       if (msg.type === 'init') { onHalt(); await onInit(msg); return; }
       if (!initialized) { postMessage({ type: 'error', message: `${msg.type} before init` }); return; }
+      if (terrainFault && ['input', 'altimeter', 'autopilot', 'run', 'burst'].includes(msg.type)) {
+        postMessage({ type: 'terrain-rejected', command: msg.type, message: 'Terrain coverage unavailable; restart inside the region.' }); return;
+      }
       if (collision.collision_mask && ['input', 'altimeter', 'autopilot', 'run', 'burst'].includes(msg.type)) {
         postMessage({ type: 'collision-rejected', command: msg.type, message: 'Ground contact latched; restart flight to continue.' });
         return;

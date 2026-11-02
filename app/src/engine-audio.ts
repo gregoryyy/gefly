@@ -21,7 +21,7 @@ export function createEngineAudioGraph(context: BaseAudioContext): EngineAudioGr
   const remember = <T extends AudioNode>(node: T): T => { nodes.push(node); return node; };
   const gain = () => remember(context.createGain());
   const oscillator = () => remember(context.createOscillator());
-  const exhaust = oscillator(), mechanical = oscillator(), bladePulse = oscillator();
+  const exhaust = oscillator(), mechanical = oscillator(), bladePulse = oscillator(), rotationWhirr = oscillator();
   const exhaustGain = gain(), mechanicalGain = gain(), propellerGain = gain(), windGain = gain(), whistleGain = gain(), modulation = gain(), master = gain();
   const exhaustFilter = remember(context.createBiquadFilter());
   const propFilter = remember(context.createBiquadFilter());
@@ -29,6 +29,7 @@ export function createEngineAudioGraph(context: BaseAudioContext): EngineAudioGr
   const windWhistle = remember(context.createBiquadFilter());
   const rollingFilter = remember(context.createBiquadFilter()), contactFilter = remember(context.createBiquadFilter());
   const rollingGain = gain(), contactGain = gain();
+  const rotationWhirrGain = gain();
   const compressor = remember(context.createDynamicsCompressor());
   const noise = remember(context.createBufferSource()), windNoise = remember(context.createBufferSource());
   const exhaustWave = new Float32Array(33), exhaustPhase = new Float32Array(33);
@@ -37,7 +38,7 @@ export function createEngineAudioGraph(context: BaseAudioContext): EngineAudioGr
     exhaustPhase[harmonic] = .15 * Math.sin(harmonic * 1.7) / harmonic;
   }
   exhaust.setPeriodicWave(context.createPeriodicWave(exhaustPhase, exhaustWave));
-  mechanical.type = 'triangle'; bladePulse.type = 'sine';
+  mechanical.type = 'triangle'; bladePulse.type = 'sine'; rotationWhirr.type = 'sine';
   windWhistle.type = 'bandpass'; windWhistle.Q.value = 2.5;
   exhaustFilter.type = 'lowpass'; exhaustFilter.Q.value = .65;
   propFilter.type = 'lowpass'; propFilter.Q.value = .65;
@@ -64,6 +65,7 @@ export function createEngineAudioGraph(context: BaseAudioContext): EngineAudioGr
   noise.connect(propFilter); propFilter.connect(propEnvelope); propEnvelope.connect(propellerGain);
   exhaust.connect(exhaustFilter); exhaustFilter.connect(exhaustGain);
   mechanical.connect(mechanicalGain);
+  rotationWhirr.connect(rotationWhirrGain); rotationWhirrGain.connect(compressor);
   // Airflow is independent of engine rotation/fuel and propeller modulation.
   windNoise.connect(windHighpass); windHighpass.connect(windFilter); windFilter.connect(windGain);
   windNoise.connect(windWhistle); windWhistle.connect(whistleGain); whistleGain.connect(compressor);
@@ -74,9 +76,9 @@ export function createEngineAudioGraph(context: BaseAudioContext): EngineAudioGr
   compressor.threshold.value = -18; compressor.knee.value = 14; compressor.ratio.value = 3;
   compressor.attack.value = .003; compressor.release.value = .15;
   compressor.connect(master); master.connect(context.destination);
-  exhaustGain.gain.value = mechanicalGain.gain.value = propellerGain.gain.value = windGain.gain.value = whistleGain.gain.value = rollingGain.gain.value = contactGain.gain.value = master.gain.value = 0;
-  exhaust.frequency.value = mechanical.frequency.value = bladePulse.frequency.value = windWhistle.frequency.value = 0;
-  exhaust.start(); mechanical.start(); bladePulse.start(); noise.start(); windNoise.start();
+  exhaustGain.gain.value = mechanicalGain.gain.value = rotationWhirrGain.gain.value = propellerGain.gain.value = windGain.gain.value = whistleGain.gain.value = rollingGain.gain.value = contactGain.gain.value = master.gain.value = 0;
+  exhaust.frequency.value = mechanical.frequency.value = rotationWhirr.frequency.value = bladePulse.frequency.value = windWhistle.frequency.value = 0;
+  exhaust.start(); mechanical.start(); rotationWhirr.start(); bladePulse.start(); noise.start(); windNoise.start();
   const targets = new Map<AudioParam, number>();
   let disposed = false;
   let previousGround: { step: number; time_s: number; mask: number } | null = null;
@@ -125,9 +127,11 @@ export function createEngineAudioGraph(context: BaseAudioContext): EngineAudioGr
       if (!parameters.valid || !finite) return;
       smooth(exhaust.frequency, Math.min(400, Math.max(0, parameters.firing_hz)));
       smooth(mechanical.frequency, Math.min(200, Math.max(0, parameters.rotation_hz)));
+      smooth(rotationWhirr.frequency, Math.min(2400, Math.max(0, parameters.rotation_whirr_hz)));
       smooth(bladePulse.frequency, Math.min(400, Math.max(0, parameters.blade_pass_hz)));
       smooth(exhaustGain.gain, Math.min(.36, Math.max(0, parameters.exhaust_gain)));
       smooth(mechanicalGain.gain, Math.min(.045, Math.max(0, parameters.mechanical_gain)));
+      smooth(rotationWhirrGain.gain, Math.min(.035, Math.max(0, parameters.rotation_whirr_gain)));
       smooth(propellerGain.gain, Math.min(.1, Math.max(0, parameters.propeller_gain)));
       smooth(windGain.gain, Math.min(.14, Math.max(0, parameters.wind_gain)));
       smooth(windWhistle.frequency, Math.min(2200, Math.max(0, parameters.wind_whistle_hz)));
@@ -143,7 +147,7 @@ export function createEngineAudioGraph(context: BaseAudioContext): EngineAudioGr
       if (disposed) return;
       disposed = true;
       master.gain.cancelScheduledValues(context.currentTime); master.gain.setValueAtTime(0, context.currentTime);
-      for (const source of [exhaust, mechanical, bladePulse, noise, windNoise]) source.stop();
+      for (const source of [exhaust, mechanical, rotationWhirr, bladePulse, noise, windNoise]) source.stop();
       for (const node of nodes) node.disconnect();
     },
   };
