@@ -2,7 +2,7 @@
   "$comment": "Rights/applicability manifest, not a flight model. Field guide: README.md in this directory. Schema: data/schema/aircraft-manifest.schema.json.",
   "schema_version": "1.0.0",
   "manifest_id": "gefly.aircraft.c172s-classic",
-  "manifest_version": "0.2.2",
+  "manifest_version": "0.3.0",
   "status": "draft",
   "fidelity": "not validated",
   "configuration": {
@@ -534,6 +534,19 @@
       "sha256_prefix": "150de015b2d1bce7",
       "applicability": "ID A14 from the 172 aero-data source note. Uninstalled IO-360-L2A data: ratings (p. 2-2), part-throttle fuel consumption curve 13518 (Figure 3-9, p. 3-24) and sea-level/altitude performance curve 13516-A (Figure 3-25, p. 3-40), drawn for the 160 hp rating; the 172S uses the 180 hp / 2700 rpm alternate rating. Cited pages carry no revision mark.",
       "rights": {"holder": "Lycoming (copyright 2005 and 2009, all rights reserved)", "basis": "Copyrighted manual; third-party hosting grants no reuse right; selected chart points only (user decisions 2026-11-01 18:43 and 19:04, GAPS Q5)", "redistribution": "facts_only", "copy_in_repository": false}
+    },
+    {
+      "id": "S14",
+      "title": "FlightGear Cessna 172P aircraft package (c172p), instrument, system and Nasal files",
+      "publisher": "c172p-team (FlightGear aircraft developers)",
+      "document": "c172p repository, files listed in the research note",
+      "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+      "url": "https://github.com/c172p-team/c172p/tree/63ba85273b7f44637eb4683dcdc8f97af7821653",
+      "accessed": "2026-11-02",
+      "access_status": "read_selected_pages",
+      "sha256_prefix": "b294b9c8a5c14917",
+      "applicability": "ID S14 from the 172S/FR172 source survey. A simulator model of a different variant, the Cessna 172P (classic panel, 160/180 hp engine options), not the 172S and not a manufacturer document. Used only for estimated values (GAPS Q23 update 2026-11-02 08:01): dial ranges, display/counting behaviour and the low-fuel basis where S17 is silent. Citation 'page' is a repository file path at this commit; 'section' names the element and lines. sha256_prefix is the SHA-256 of the sha256sum listing of the 20 files read (listing in docs/research/2026-11-02-172s-engine-fuel-ind-and-sample-loading.md).",
+      "rights": {"holder": "c172p-team contributors; copyright per file (for example EGT.xml: Torsten Dreyer 2009)", "basis": "GPL-2.0-or-later: LICENSE holds the GPL v2 text, CONTRIBUTING.md states 'GPL version 2 or later', and file headers that carry a notice say 'version 2 ... or (at your option) any later version'; Nasal/annunciator_panel.nas is marked public domain; some sounds are CC-BY/CC0 (Thanks). Compatible with the project's GPL-3.0-or-later, but only numeric values and behaviour descriptions in our own words are taken, with file and commit references; no code, XML, textures or other assets are copied (GAPS Q5/Q23).", "redistribution": "facts_only", "copy_in_repository": false}
     }
   ],
   "not_included": [
@@ -553,7 +566,8 @@
     "from": [
       "docs/research/2026-11-01-c172s-fr172-sources.md",
       "docs/research/2026-11-01-jsbsim-datum-172s-controls.md (branch design/contracts-1-4, PR #12, not merged)",
-      "docs/research/2026-11-01-c172s-poh-values.md (source A14 added with the engine and cruise extraction)"
+      "docs/research/2026-11-01-c172s-poh-values.md (source A14 added with the engine and cruise extraction)",
+      "docs/research/2026-11-02-172s-engine-fuel-ind-and-sample-loading.md (source S14, FlightGear c172p, added 2026-11-02 for estimated indication values)"
     ]
   }
 }

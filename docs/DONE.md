@@ -3,6 +3,32 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 08:20 — Estimate S17 indication gaps from FlightGear c172p
+
+TODO: 2.1 inputs. Agent: Claude Code orchestrator; researcher subagent; quality
+subagent review in progress.
+
+**Implementation notes**
+
+Follows the GAPS Q23 update of 08:01. Manifest 0.3.0 adds S14, FlightGear c172p
+`63ba8527` (GPL-2.0-or-later per LICENSE, CONTRIBUTING.md and file headers;
+`facts_only`, numbers only, nothing copied). The value files are re-pinned.
+indication-loading-values 0.2.0 holds these estimates, all 172P-applicable:
+- dial ranges for the tachometer, oil pressure, oil temperature, fuel quantity, vacuum
+  and ammeter;
+- the EGT scale (°F, 25 °F per division);
+- the Hobbs display and time base;
+- the low-fuel basis (total content).
+
+S17 values still govern where they exist. Checks: validate_manifest exit 0; 180 unit
+tests OK (1 skipped); `assure check` 0 errors.
+
+**Deviations**
+
+Still TBD-src (FlightGear has no answer): the fuel-flow range, tach-time counting,
+sender-fault detection and the annunciator switch-label serial. The quality review of
+this change is pending. Peer pending (batched).
+
 ## 2026-11-02 08:01 — Record FlightGear for S17 gaps; Codex review deferred
 
 TODO: 0.19 deferred. Agent: Claude Code orchestrator.

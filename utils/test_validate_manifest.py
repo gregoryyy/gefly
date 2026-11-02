@@ -685,8 +685,34 @@ class IndicationLoadingValuesTests(unittest.TestCase):
 
     def test_unknown_scale_needs_todo(self):
         document = self.values()
-        del document["indications"]["oil_temp_k"]["scale"]["todo"]
+        del document["indications"]["fuel_flow_m3ps"]["scale"]["todo"]
         self.assertRejected(document, "scale: missing required field 'todo'")
+
+    def test_estimated_scale_needs_applicability_and_citation(self):
+        # GAPS Q23 update 2026-11-02 08:01: FlightGear (another variant) values stay estimated.
+        document = self.values()
+        scale = document["indications"]["oil_temp_k"]["scale"]
+        self.assertEqual(scale["status"], "estimated")
+        del scale["applicability"]
+        self.assertRejected(document, "scale: missing required field 'applicability'")
+        document = self.values()
+        document["indications"]["oil_temp_k"]["scale"]["citations"] = []
+        self.assertRejected(document, "oil_temp_k.scale.citations")
+
+    def test_estimate_status_cannot_be_sourced(self):
+        document = self.values()
+        document["indications"]["hobbs_time_s"]["counting"]["status"] = "sourced"
+        self.assertRejected(document, "counting.status")
+        document = self.values()
+        del document["annunciators"]["ann_low_fuel_left"]["triggers"][0]["basis"]["applicability"]
+        self.assertRejected(document, "basis: missing required field 'applicability'")
+
+    def test_estimate_cites_registered_flightgear_revision(self):
+        document = self.values()
+        citation = document["indications"]["hobbs_time_s"]["counting"]["citations"][0]
+        self.assertEqual(citation["source_id"], "S14")
+        citation["revision"] = "master 0000000"
+        self.assertRejected(document, "differs from register")
 
     def test_derived_arm_needs_derivation(self):
         document = self.values()

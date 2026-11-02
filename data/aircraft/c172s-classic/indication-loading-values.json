@@ -2,16 +2,16 @@
   "$comment": "Engine/fuel indications and the sample loading example as cited facts; not a copy of any POH table or figure, not an instrument model and not a weighed aircraft. Field guide: README.md in this directory. Schema: data/schema/indication-loading-values.schema.json.",
   "schema_version": "1.0.0",
   "values_id": "gefly.aircraft.c172s-classic.indication-loading-values",
-  "values_version": "0.1.0",
+  "values_version": "0.2.0",
   "status": "draft",
   "fidelity": "not validated",
   "manifest": {
     "path": "manifest.json",
     "manifest_id": "gefly.aircraft.c172s-classic",
-    "manifest_version": "0.2.2",
-    "manifest_sha256": "04f86a9ba6cab89680acaa732e9df87266d8557928a3990ee678fa719b1515e5"
+    "manifest_version": "0.3.0",
+    "manifest_sha256": "fe5b216b26d1ae4927a11960a0819fa498fa36a924e3444ee78fa377d3feb4a5"
   },
-  "extraction": "User decision GAPS Q23, 2026-11-02: (a) every engine and fuel indication of the classic-panel 172S joins the worker-computed ind state; (b) empty mass/CG come from the POH sample loading example, labelled as a sample. Each value was read on a rendered page image of S17 (SHA-256 prefix 420dbdaf5517a7a0); no Cessna text, table or figure is copied. Keys are proposed ind field names; the ind order is frozen in SCENARIO-CONTRACTS, not here.",
+  "extraction": "User decision GAPS Q23, 2026-11-02: (a) every engine and fuel indication of the classic-panel 172S joins the worker-computed ind state; (b) empty mass/CG come from the POH sample loading example, labelled as a sample. Each value was read on a rendered page image of S17 (SHA-256 prefix 420dbdaf5517a7a0); no Cessna text, table or figure is copied. Keys are proposed ind field names; the ind order is frozen in SCENARIO-CONTRACTS, not here. Estimated values (GAPS Q23 update 2026-11-02 08:01, input docs/input/2026-11-02-flightgear-gaps-codex-deferred.md) fill gaps S17 leaves open: dial ranges, the EGT scale, Hobbs counting and the low-fuel basis come from the FlightGear c172p model (S14, a 172P, another variant), as numbers and behaviour descriptions in our own words with file and commit; no FlightGear code, XML or asset is copied.",
   "indications": {
     "tach_prop_radps": {
       "instrument": "Tachometer (engine-driven, mechanical)",
@@ -21,9 +21,41 @@
       "unit": "rad/s",
       "original_unit": "rpm",
       "scale": {
-        "status": "unknown",
-        "citations": [],
-        "todo": "Dial range not stated in S17 Sections 2 or 7; needs an instrument source or a photograph-free documented reading (TBD-src). S17 states 100 rpm graduations only."
+        "lower": {
+          "value": 0.0,
+          "unit": "rad/s",
+          "original_value": 0,
+          "original_unit": "rpm"
+        },
+        "upper": {
+          "value": 366.5191,
+          "unit": "rad/s",
+          "original_value": 3500,
+          "original_unit": "rpm"
+        },
+        "status": "estimated",
+        "citations": [
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/Instruments/RPM/RPM.xml",
+            "section": "rotate animation interpolation table, lines 62-99"
+          },
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/Instruments/RPM/RPM.png",
+            "section": "dial face texture (viewed, not copied)"
+          },
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/c172p-panel/c172p.xml",
+            "section": "instrument model includes, lines 760-873 (classic 3D panel uses these gauges)"
+          }
+        ],
+        "applicability": "FlightGear c172p model of the Cessna 172P, another variant (classic panel), not the 172S; estimated per GAPS Q23 update 2026-11-02 08:01, not a sourced 172S fact.",
+        "note": "Needle table runs 0-3500 rpm (0 rpm rests 2 deg below the 300 rpm position; 500-3500 rpm linear at 38 deg per 500 rpm). The face is numbered 3 to 35 (x100 rpm). The FlightGear face shows its own 172P green arc and red line; those are not used: the S17 Figure 2-3 markings govern."
       },
       "markings": [
         {
@@ -173,7 +205,7 @@
       "scale": {
         "status": "unknown",
         "citations": [],
-        "todo": "Counter digits/rollover not stated (TBD-src)."
+        "todo": "Counter digits/rollover not stated (TBD-src). FlightGear c172p (S14, master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)) was checked: its classic 3D tachometer has no hour-meter window and no tach-time counter, so it offers no estimate."
       },
       "markings": [],
       "status": "sourced",
@@ -186,7 +218,7 @@
         }
       ],
       "scope": "engine",
-      "note": "S17 does not state how engine time is accumulated (for example rpm-weighted); the counting rule is TBD-src."
+      "note": "S17 does not state how engine time is accumulated (for example rpm-weighted); the counting rule is TBD-src. FlightGear c172p models only a Hobbs-type meter (see hobbs_time_s.counting) and no tach time."
     },
     "hobbs_time_s": {
       "instrument": "Hour (Hobbs) meter",
@@ -196,9 +228,41 @@
       "unit": "s",
       "original_unit": "h",
       "scale": {
-        "status": "unknown",
-        "citations": [],
-        "todo": "Counter digits/rollover not stated (TBD-src)."
+        "lower": {
+          "value": 0.0,
+          "unit": "s",
+          "original_value": 0,
+          "original_unit": "h"
+        },
+        "upper": {
+          "value": 35999640.0,
+          "unit": "s",
+          "original_value": 9999.9,
+          "original_unit": "h"
+        },
+        "status": "estimated",
+        "citations": [
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/Instruments/hobbs/hobbs.xml",
+            "section": "five drum textranslate animations, digits0-digits4"
+          },
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Nasal/engine.nas",
+            "section": "update_hobbs_meter, lines 33-58"
+          },
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/c172p-panel/c172p.xml",
+            "section": "instrument model includes, lines 760-873 (classic 3D panel uses these gauges)"
+          }
+        ],
+        "applicability": "FlightGear c172p model of the Cessna 172P, another variant (classic panel), not the 172S; estimated per GAPS Q23 update 2026-11-02 08:01, not a sourced 172S fact.",
+        "note": "Five drums: thousands, hundreds, tens, units and tenths of an hour (0000.0-9999.9 h); each drum is the hour value modulo 10, so the display rolls over to 0000.0 after 9999.9 h. Tenths are truncated, not rounded."
       },
       "markings": [],
       "status": "sourced",
@@ -217,7 +281,21 @@
         }
       ],
       "scope": "engine",
-      "note": "The low oil pressure switch completes the hour meter circuit above 20 psi (p. 7-20); see ann_oil_press trigger."
+      "note": "The low oil pressure switch completes the hour meter circuit above 20 psi (p. 7-20); see ann_oil_press trigger.",
+      "counting": {
+        "value": "One hour meter per engine option, accumulated in simulation time (FGData aircraft.timer on /sim/time/elapsed-sec, so pauses do not count and time acceleration does) from the moment the engine 'running' flag sets until it clears, updated every 60 s while running and on stop; the display shows the meter of the active engine option. Not rpm-weighted and not tied to oil pressure.",
+        "status": "estimated",
+        "citations": [
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Nasal/engine.nas",
+            "section": "Hobbs meter section, lines 12-62: aircraft.timer.new(..., 60, 1) per engine, started/stopped by a listener on engines/engine[n]/running"
+          }
+        ],
+        "applicability": "FlightGear c172p model of the Cessna 172P, another variant (classic panel), not the 172S; estimated per GAPS Q23 update 2026-11-02 08:01, not a sourced 172S fact.",
+        "note": "S17 (sourced, p. 7-20) closes the Hobbs circuit through the low oil pressure switch above 20 psi; that sourced start/stop condition governs over the FlightGear 'running' flag. The estimate supplies only the time base (simulation seconds, no rpm weighting). The timer behaviour is in FGData Nasal/aircraft.nas (next bf48a45b, 2026-10-29), read for context and not a registered source."
+      }
     },
     "oil_press_pa": {
       "instrument": "Oil temperature and oil pressure indicator (pressure side; electrical, transducer)",
@@ -227,9 +305,41 @@
       "unit": "Pa",
       "original_unit": "psi",
       "scale": {
-        "status": "unknown",
-        "citations": [],
-        "todo": "Dial range not stated in S17 Sections 2 or 7; needs an instrument source or a photograph-free documented reading (TBD-src)."
+        "lower": {
+          "value": 0.0,
+          "unit": "Pa",
+          "original_value": 0,
+          "original_unit": "psi"
+        },
+        "upper": {
+          "value": 792897.09,
+          "unit": "Pa",
+          "original_value": 115,
+          "original_unit": "psi"
+        },
+        "status": "estimated",
+        "citations": [
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/Instruments/FuelOilAmps/c172oil.xml",
+            "section": "OilPressNeedle rotate interpolation, lines 95-112"
+          },
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/Instruments/FuelOilAmps/fuel-oil.png",
+            "section": "OIL PRESS PSI face texture (viewed, not copied)"
+          },
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/c172p-panel/c172p.xml",
+            "section": "instrument model includes, lines 760-873 (classic 3D panel uses these gauges)"
+          }
+        ],
+        "applicability": "FlightGear c172p model of the Cessna 172P, another variant (classic panel), not the 172S; estimated per GAPS Q23 update 2026-11-02 08:01, not a sourced 172S fact.",
+        "note": "Needle table 0, 50, 90, 115 psi (non-linear); face numbered 0, 50 and 115. The upper end equals the S17 red line."
       },
       "markings": [
         {
@@ -343,9 +453,41 @@
       "unit": "K",
       "original_unit": "degF",
       "scale": {
-        "status": "unknown",
-        "citations": [],
-        "todo": "Dial range not stated in S17 Sections 2 or 7; needs an instrument source or a photograph-free documented reading (TBD-src)."
+        "lower": {
+          "value": 255.3722,
+          "unit": "K",
+          "original_value": 0,
+          "original_unit": "degF"
+        },
+        "upper": {
+          "value": 391.4833,
+          "unit": "K",
+          "original_value": 245,
+          "original_unit": "degF"
+        },
+        "status": "estimated",
+        "citations": [
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/Instruments/FuelOilAmps/c172oil.xml",
+            "section": "OilTempNeedle rotate interpolation, lines 65-78"
+          },
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/Instruments/FuelOilAmps/fuel-oil.png",
+            "section": "OIL TEMP F face texture (viewed, not copied)"
+          },
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/c172p-panel/c172p.xml",
+            "section": "instrument model includes, lines 760-873 (classic 3D panel uses these gauges)"
+          }
+        ],
+        "applicability": "FlightGear c172p model of the Cessna 172P, another variant (classic panel), not the 172S; estimated per GAPS Q23 update 2026-11-02 08:01, not a sourced 172S fact.",
+        "note": "Needle table 0, 100, 245 degF; 0-100 degF is compressed into 7 deg of needle travel, so the readable range starts near 100 degF. Face numbered 245 only. The upper end equals the S17 red line."
       },
       "markings": [
         {
@@ -430,9 +572,47 @@
       "kind": "gauge",
       "unit": "K",
       "scale": {
-        "status": "unknown",
-        "citations": [],
-        "todo": "Dial range not stated in S17 Sections 2 or 7; needs an instrument source or a photograph-free documented reading (TBD-src). Scale unit (degF or unlabelled divisions) not stated."
+        "lower": {
+          "value": 922.0389,
+          "unit": "K",
+          "original_value": 1200,
+          "original_unit": "degF"
+        },
+        "upper": {
+          "value": 1199.8167,
+          "unit": "K",
+          "original_value": 1700,
+          "original_unit": "degF"
+        },
+        "status": "estimated",
+        "citations": [
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Systems/instruments.xml",
+            "section": "filters 'EGT 160 HP lowpass' and 'EGT 180 HP lowpass', lines 41-73: egt-norm = 0.002 x EGT degF - 2.4, clamped 0..1, 4 s exponential lag"
+          },
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/Instruments/EGT/EGT.xml",
+            "section": "Needle rotate, factor -90 deg per unit egt-norm, line 28"
+          },
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/Instruments/EGT/EGT.png",
+            "section": "face texture (viewed, not copied): unnumbered divisions, legend 25 degF per division"
+          },
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/c172p-panel/c172p.xml",
+            "section": "instrument model includes, lines 760-873 (classic 3D panel uses these gauges)"
+          }
+        ],
+        "applicability": "FlightGear c172p model of the Cessna 172P, another variant (classic panel), not the 172S; estimated per GAPS Q23 update 2026-11-02 08:01, not a sourced 172S fact.",
+        "note": "Unit degF; the face has no numbers, only divisions of 25 degF (13.8889 K) each, so 1200-1700 degF spans 20 divisions over 90 deg of needle travel. The needle is lagged (4 s first-order filter) and pinned outside the range. The pilot-set peak index pointer is a separate bug on the same 0..1 scale."
       },
       "markings": [],
       "status": "sourced",
@@ -458,7 +638,7 @@
       ],
       "scope": "engine",
       "note": "No markings in Figure 2-3. A manually set index pointer marks the peak (p. 7-20); it is pilot-set instrument state, not a computed indication. S17 states no EGT unit or number; original_unit is omitted.",
-      "todo": "Confirm the EGT scale and unit from an instrument source."
+      "todo": "Confirm the EGT scale and unit from a 172S instrument source; the FlightGear 172P range and 25 degF/division are estimated."
     },
     "fuel_flow_m3ps": {
       "instrument": "EGT/fuel flow indicator (fuel flow side)",
@@ -470,7 +650,7 @@
       "scale": {
         "status": "unknown",
         "citations": [],
-        "todo": "Dial range not stated in S17 Sections 2 or 7; needs an instrument source or a photograph-free documented reading (TBD-src)."
+        "todo": "Dial range not stated in S17 Sections 2 or 7 (TBD-src). FlightGear c172p (S14, master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)) was checked: its classic 172P panel has no fuel-flow gauge (c172p-panel/c172p.xml), so it offers no estimate."
       },
       "markings": [
         {
@@ -528,9 +708,41 @@
       "unit": "m^3",
       "original_unit": "gal",
       "scale": {
-        "status": "unknown",
-        "citations": [],
-        "todo": "Dial range not stated in S17 Sections 2 or 7; needs an instrument source or a photograph-free documented reading (TBD-src). Full-scale mark not stated; Figure 7-5 gives 28.0 gal per full tank (tank content, not the dial)."
+        "lower": {
+          "value": 0.0,
+          "unit": "m^3",
+          "original_value": 0,
+          "original_unit": "gal"
+        },
+        "upper": {
+          "value": 0.128704,
+          "unit": "m^3",
+          "original_value": 34,
+          "original_unit": "gal"
+        },
+        "status": "estimated",
+        "citations": [
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/Instruments/FuelOilAmps/c172fuel.xml",
+            "section": "LeftFuelNeedle rotate interpolation, lines 43-72"
+          },
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/Instruments/FuelOilAmps/fuel-oil.png",
+            "section": "FUEL QTY face texture (viewed, not copied)"
+          },
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/c172p-panel/c172p.xml",
+            "section": "instrument model includes, lines 760-873 (classic 3D panel uses these gauges)"
+          }
+        ],
+        "applicability": "FlightGear c172p model of the Cessna 172P, another variant (classic panel), not the 172S; estimated per GAPS Q23 update 2026-11-02 08:01, not a sourced 172S fact.",
+        "note": "Needle table 0-34 US gal (non-linear: 0, 5, 10, 16, 21, 26, 34 gal); face marked E, 8, 16, 24, 32 gal and F, with a second lb scale. The 172P long-range tanks hold 34 gal (204 lb) in the model; S17 gives 28.0 gal per full 172S tank (Figure 7-5), so the 172S full-scale mark may differ. No OFF position below 0 is modelled."
       },
       "markings": [
         {
@@ -588,9 +800,41 @@
       "unit": "m^3",
       "original_unit": "gal",
       "scale": {
-        "status": "unknown",
-        "citations": [],
-        "todo": "Dial range not stated in S17 Sections 2 or 7; needs an instrument source or a photograph-free documented reading (TBD-src). Full-scale mark not stated; Figure 7-5 gives 28.0 gal per full tank (tank content, not the dial)."
+        "lower": {
+          "value": 0.0,
+          "unit": "m^3",
+          "original_value": 0,
+          "original_unit": "gal"
+        },
+        "upper": {
+          "value": 0.128704,
+          "unit": "m^3",
+          "original_value": 34,
+          "original_unit": "gal"
+        },
+        "status": "estimated",
+        "citations": [
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/Instruments/FuelOilAmps/c172fuel.xml",
+            "section": "RightFuelNeedle rotate interpolation, lines 89-118"
+          },
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/Instruments/FuelOilAmps/fuel-oil.png",
+            "section": "FUEL QTY face texture (viewed, not copied)"
+          },
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/c172p-panel/c172p.xml",
+            "section": "instrument model includes, lines 760-873 (classic 3D panel uses these gauges)"
+          }
+        ],
+        "applicability": "FlightGear c172p model of the Cessna 172P, another variant (classic panel), not the 172S; estimated per GAPS Q23 update 2026-11-02 08:01, not a sourced 172S fact.",
+        "note": "Needle table 0-34 US gal (non-linear: 0, 5, 10, 16, 21, 26, 34 gal); face marked E, 8, 16, 24, 32 gal and F, with a second lb scale. The 172P long-range tanks hold 34 gal (204 lb) in the model; S17 gives 28.0 gal per full 172S tank (Figure 7-5), so the 172S full-scale mark may differ. No OFF position below 0 is modelled."
       },
       "markings": [
         {
@@ -648,9 +892,41 @@
       "unit": "Pa",
       "original_unit": "inHg",
       "scale": {
-        "status": "unknown",
-        "citations": [],
-        "todo": "Dial range not stated in S17 Sections 2 or 7; needs an instrument source or a photograph-free documented reading (TBD-src)."
+        "lower": {
+          "value": 0.0,
+          "unit": "Pa",
+          "original_value": 0,
+          "original_unit": "inHg"
+        },
+        "upper": {
+          "value": 30477.501,
+          "unit": "Pa",
+          "original_value": 9,
+          "original_unit": "inHg"
+        },
+        "status": "estimated",
+        "citations": [
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/Instruments/vac/vac.xml",
+            "section": "VacNeedle rotate interpolation, lines 41-86"
+          },
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/Instruments/vac/vac.png",
+            "section": "SUCTION IN HG face texture (viewed, not copied)"
+          },
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/c172p-panel/c172p.xml",
+            "section": "instrument model includes, lines 760-873 (classic 3D panel uses these gauges)"
+          }
+        ],
+        "applicability": "FlightGear c172p model of the Cessna 172P, another variant (classic panel), not the 172S; estimated per GAPS Q23 update 2026-11-02 08:01, not a sourced 172S fact.",
+        "note": "Needle table linear at 33 deg per inHg from 0 to 9 inHg; an eleventh entry (8.0 inHg at 165 deg) is out of order and probably meant 10 inHg, so 9 inHg is the last unambiguous point. The face is numbered 4, 5 and 6 only. In the 172P model the vacuum gauge is a separate instrument; on the 172S it shares a case with the ammeter."
       },
       "markings": [
         {
@@ -714,9 +990,41 @@
       "unit": "A",
       "original_unit": "A",
       "scale": {
-        "status": "unknown",
-        "citations": [],
-        "todo": "Dial range not stated in S17 Sections 2 or 7; needs an instrument source or a photograph-free documented reading (TBD-src)."
+        "lower": {
+          "value": -60.0,
+          "unit": "A",
+          "original_value": -60,
+          "original_unit": "A"
+        },
+        "upper": {
+          "value": 60.0,
+          "unit": "A",
+          "original_value": 60,
+          "original_unit": "A"
+        },
+        "status": "estimated",
+        "citations": [
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/Instruments/BatteryGauge/BatteryGauge.xml",
+            "section": "Ptr rotate interpolation, lines 44-57 (property systems/electrical/amps)"
+          },
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/Instruments/BatteryGauge/BatteryGauge.png",
+            "section": "AMPERES face texture (viewed, not copied)"
+          },
+          {
+            "source_id": "S14",
+            "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+            "page": "Models/Interior/Panel/c172p-panel/c172p.xml",
+            "section": "instrument model includes, lines 760-873 (classic 3D panel uses these gauges)"
+          }
+        ],
+        "applicability": "FlightGear c172p model of the Cessna 172P, another variant (classic panel), not the 172S; estimated per GAPS Q23 update 2026-11-02 08:01, not a sourced 172S fact.",
+        "note": "Centre-zero ammeter, linear -60 to +60 A (33 deg each side); face numbered 60 (minus), 0, 60 (plus). In the 172P model it is a separate gauge."
       },
       "markings": [],
       "status": "sourced",
@@ -848,7 +1156,33 @@
           ],
           "uncertainty": "Threshold approximately 5 gal (as published); must remain below for more than 60 s.",
           "conversion": "US gal x 3.785411784e-3 m^3 (exact); seconds unchanged",
-          "note": "Whether 5 gal is total or usable tank content is not stated."
+          "note": "S17 does not state whether 5 gal is total or usable content; the basis is estimated from FlightGear (see basis).",
+          "basis": {
+            "value": "Total tank content, unusable fuel included: the comparison uses the indicated level, which follows the tank's total content in US gal through a 3 s first-order lag, and reads 0 when the instrument bus is at or below 12 V or the tank is not selected. The model keeps unusable fuel (1.5 gal per tank) as a separate figure that only gates fuel feed.",
+            "status": "estimated",
+            "citations": [
+              {
+                "source_id": "S14",
+                "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+                "page": "Nasal/annunciator_panel.nas",
+                "section": "fuel-low-l AnnunciatorMin on consumables/fuel/tank[0]/indicated-level-gal_us, line 185"
+              },
+              {
+                "source_id": "S14",
+                "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+                "page": "Systems/instruments.xml",
+                "section": "filter 'Tank 0 Indicated Level', lines 75-109"
+              },
+              {
+                "source_id": "S14",
+                "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+                "page": "c172p-main.xml",
+                "section": "consumables/fuel tank[0] unusable-vol-gal 1.5, lines 771-788"
+              }
+            ],
+            "applicability": "FlightGear c172p model of the Cessna 172P, another variant (classic panel), not the 172S; estimated per GAPS Q23 update 2026-11-02 08:01, not a sourced 172S fact.",
+            "note": "The S17 threshold (about 5 gal, more than 60 s) stays sourced and governs; only the total-content basis is taken. The FlightGear threshold differs (8 gal) and has no 60 s persistence (a TODO in that file); its annunciator logic is adapted from a C182S and is not shown on the classic 172P panel. Nasal/annunciator_panel.nas is marked public domain."
+          }
         },
         {
           "quantity": "left tank transmitter fault (short, open or resistance increasing over time)",
@@ -863,7 +1197,8 @@
             }
           ],
           "uncertainty": "Detection criteria not published.",
-          "note": "Needle also goes to the OFF position below 0."
+          "note": "Needle also goes to the OFF position below 0.",
+          "todo": "Detection criteria TBD-src. FlightGear c172p (S14, master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)) was checked: it models no transmitter fault and no OFF needle position, so it offers no estimate."
         }
       ],
       "flash": {
@@ -935,7 +1270,33 @@
           ],
           "uncertainty": "Threshold approximately 5 gal (as published); must remain below for more than 60 s.",
           "conversion": "US gal x 3.785411784e-3 m^3 (exact); seconds unchanged",
-          "note": "Whether 5 gal is total or usable tank content is not stated."
+          "note": "S17 does not state whether 5 gal is total or usable content; the basis is estimated from FlightGear (see basis).",
+          "basis": {
+            "value": "Total tank content, unusable fuel included: the comparison uses the indicated level, which follows the tank's total content in US gal through a 3 s first-order lag, and reads 0 when the instrument bus is at or below 12 V or the tank is not selected. The model keeps unusable fuel (1.5 gal per tank) as a separate figure that only gates fuel feed.",
+            "status": "estimated",
+            "citations": [
+              {
+                "source_id": "S14",
+                "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+                "page": "Nasal/annunciator_panel.nas",
+                "section": "fuel-low-r AnnunciatorMin on consumables/fuel/tank[1]/indicated-level-gal_us, line 184"
+              },
+              {
+                "source_id": "S14",
+                "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+                "page": "Systems/instruments.xml",
+                "section": "filter 'Tank 1 Indicated Level', lines 111-145"
+              },
+              {
+                "source_id": "S14",
+                "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+                "page": "c172p-main.xml",
+                "section": "consumables/fuel tank[1] unusable-vol-gal 1.5, lines 771-788"
+              }
+            ],
+            "applicability": "FlightGear c172p model of the Cessna 172P, another variant (classic panel), not the 172S; estimated per GAPS Q23 update 2026-11-02 08:01, not a sourced 172S fact.",
+            "note": "The S17 threshold (about 5 gal, more than 60 s) stays sourced and governs; only the total-content basis is taken. The FlightGear threshold differs (8 gal) and has no 60 s persistence (a TODO in that file); its annunciator logic is adapted from a C182S and is not shown on the classic 172P panel. Nasal/annunciator_panel.nas is marked public domain."
+          }
         },
         {
           "quantity": "right tank transmitter fault (short, open or resistance increasing over time)",
@@ -950,7 +1311,8 @@
             }
           ],
           "uncertainty": "Detection criteria not published.",
-          "note": "Needle also goes to the OFF position below 0."
+          "note": "Needle also goes to the OFF position below 0.",
+          "todo": "Detection criteria TBD-src. FlightGear c172p (S14, master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)) was checked: it models no transmitter fault and no OFF needle position, so it offers no estimate."
         }
       ],
       "flash": {
@@ -1572,7 +1934,7 @@
     },
     {
       "item": "Annunciator panel test and dimming switch (DIM/BRT or DAY/NIGHT, TST or TEST by serial)",
-      "reason": "Pilot input state, not an indication; S17 says 'earlier/later serial number airplanes' without a serial break (TBD-src)."
+      "reason": "Pilot input state, not an indication; S17 says 'earlier/later serial number airplanes' without a serial break (TBD-src). FlightGear c172p (S14, master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)) was checked: the classic 172P panel has no annunciator panel or test/dimming switch (only a low-voltage light), so it offers no estimate."
     },
     {
       "item": "EGT index pointer position",
@@ -1581,13 +1943,13 @@
   ],
   "pending": [
     "Rights: taking every number of Figure 2-3 and every station number of Figure 6-3 exceeds the no-whole-table limit of the facts_only extraction rule. User decision 2026-11-02 07:36 (GAPS Q5/Q23; input record docs/input/2026-11-02-s17-lists-electrical-tach.md) accepted both lists as cited facts as an exception for those two lists only; it does not extend to other tables or figures.",
-    "Dial ranges (scale) of every gauge are TBD-src; S17 states markings only.",
+    "Dial ranges: tachometer, oil pressure/temperature, EGT, fuel quantity, vacuum and ammeter are estimated from FlightGear c172p (S14, 172P); the fuel-flow range, tach-time counter and the fuel-transmitter fault criteria remain TBD-src; a 172S instrument source would replace the estimates.",
     "Check later 172SPHUS revisions applicable to 172S9491-172S9809 for changed Section 2/6/7 values (GAPS Q3 manual revision).",
     "Manifest mass_limits.empty_mass stays unknown; a later manifest version may point it to sample_loading here, labelled as a sample (needs a manifest bump and re-pin)."
   ],
   "prepared": {
     "date": "2026-11-02",
-    "by": "Claude Code subagent researcher, dispatched by the orchestrator",
+    "by": "Claude Code subagent researcher, dispatched by the orchestrator (S17 extraction; FlightGear estimates added 2026-11-02)",
     "from": [
       "docs/research/2026-11-02-172s-engine-fuel-ind-and-sample-loading.md"
     ]

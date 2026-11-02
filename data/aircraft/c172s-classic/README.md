@@ -44,7 +44,11 @@ Status follows R-DATA-2:
   with `access_status` `read`/`read_selected_pages`.
 - `derived`: computed or inferred from cited facts; `derivation` explains how. An exact
   unit conversion of a sourced value stays `sourced` and is described in `conversion`.
-- `estimated`: an engineering estimate; none are present.
+- `estimated`: an engineering estimate. The only estimates are in
+  `indication-loading-values.json`: dial ranges and behaviour taken from the FlightGear
+  c172p model (S14, a 172P, another variant; GAPS Q23 update 2026-11-02 08:01). They
+  carry `applicability` and S14 citations, whose `page` is a repository file path at the
+  pinned commit, and never become sourced 172S facts.
 - `unknown`: `value` is `null` and `todo` says what is needed. Disagreeing sources are
   listed in `conflicts` (for example VFE CAS and the utility ramp mass) without choosing.
 
@@ -126,10 +130,13 @@ user decision 2026-11-02, GAPS entry pending):
   proposed `ind` field name (`tach_prop_radps`, `oil_press_pa`, `oil_temp_k`, `egt_k`,
   `fuel_flow_m3ps`, `fuel_qty_left_m3`, `fuel_qty_right_m3`, `vac_suction_pa`, the hour meters
   `tach_time_s`/`hobbs_time_s`, and the electrical `ammeter_a`), with the Figure 2-3 markings (green arcs, red lines;
-  Figure 2-3 has no yellow arcs) and `scale` (dial range), which S17 does not state and
-  so stays `unknown`.
+  Figure 2-3 has no yellow arcs) and `scale` (dial range), which S17 does not state. Where
+  the FlightGear c172p model (S14, 172P) has a gauge, `scale` is `estimated` from it with
+  `applicability`; otherwise (fuel flow, tach-time counter) it stays `unknown`.
+  `hobbs_time_s.counting` estimates the Hobbs time base from the same model.
 - `annunciators`: OIL PRESS, L/R LOW FUEL, L/R VAC and VOLTS with colour, trigger
-  threshold, persistence and flash time.
+  threshold, persistence and flash time. The LOW FUEL threshold trigger has an estimated
+  `basis` (total tank content, from S14); the sourced S17 threshold governs.
 - `sample_loading`: the basic empty weight and moment of the **sample airplane** of
   Figure 6-5 (`nature` is fixed to say so; not a weighed aircraft), the derived empty
   arm, the datum, and the station arms of Figure 6-3.

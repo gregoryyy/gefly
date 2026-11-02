@@ -180,7 +180,7 @@
       ]
     },
     "scale": {
-      "description": "Dial or display range of the instrument. Unknown until a source states it.",
+      "description": "Dial or display range of the instrument. Unknown until a source states it. An estimated range taken from another variant's model (GAPS Q23 update 2026-11-02 08:01) cites that model and states its applicability.",
       "type": "object",
       "required": ["status", "citations"],
       "additionalProperties": false,
@@ -189,6 +189,7 @@
         "upper": {"$ref": "#/$defs/measure"},
         "status": {"$ref": "#/$defs/status"},
         "citations": {"$ref": "#/$defs/citations"},
+        "applicability": {"type": "string", "minLength": 1},
         "note": {"type": "string", "minLength": 1},
         "derivation": {"type": "string", "minLength": 1},
         "todo": {"type": "string", "minLength": 1}
@@ -198,8 +199,25 @@
         {
           "if": {"properties": {"status": {"enum": ["sourced", "derived", "estimated"]}}},
           "then": {"required": ["lower", "upper"]}
+        },
+        {
+          "if": {"properties": {"status": {"const": "estimated"}}},
+          "then": {"required": ["applicability"], "properties": {"citations": {"minItems": 1}}}
         }
       ]
+    },
+    "estimate": {
+      "description": "A behaviour or basis the cited source does not state, taken from another variant's model (GAPS Q23 update 2026-11-02 08:01). Always estimated, never a sourced fact of this aircraft; 'value' describes the behaviour in our own words, 'citations' name the model's file (page) at a pinned revision, 'applicability' states the variant it was taken from.",
+      "type": "object",
+      "required": ["value", "status", "citations", "applicability"],
+      "additionalProperties": false,
+      "properties": {
+        "value": {"type": "string", "minLength": 1},
+        "status": {"const": "estimated"},
+        "citations": {"$ref": "#/$defs/citations", "minItems": 1},
+        "applicability": {"type": "string", "minLength": 1},
+        "note": {"type": "string", "minLength": 1}
+      }
     },
     "indication": {
       "description": "A gauge or counter on the panel. 'unit' is the SI unit of the proposed ind field; 'original_unit' is the unit the instrument is calibrated or marked in, omitted when the source does not state it.",
@@ -214,6 +232,7 @@
         "unit": {"$ref": "#/$defs/si_unit"},
         "original_unit": {"$ref": "#/$defs/original_unit"},
         "scale": {"$ref": "#/$defs/scale"},
+        "counting": {"$ref": "#/$defs/estimate"},
         "markings": {"type": "array", "items": {"$ref": "#/$defs/marking"}},
         "status": {"$ref": "#/$defs/status"},
         "citations": {"$ref": "#/$defs/citations"},
@@ -242,6 +261,7 @@
         "comparison": {"enum": ["below", "above", "fault"]},
         "threshold": {"$ref": "#/$defs/measure"},
         "persistence": {"$ref": "#/$defs/measure"},
+        "basis": {"$ref": "#/$defs/estimate"},
         "status": {"$ref": "#/$defs/status"},
         "citations": {"$ref": "#/$defs/citations"},
         "uncertainty": {"type": "string", "minLength": 1},
