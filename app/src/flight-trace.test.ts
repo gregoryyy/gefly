@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { DEFAULT_RADIO_NAV } from './radio-nav.ts';
 import { FlightTrace } from './flight-trace.ts';
 import type { FlightState } from './types';
 
@@ -181,4 +182,48 @@ test('paused AP mode changes preserve physical/engine state and prior immutable 
   assert.equal(prior.state.ap_mode,2);
   assert.equal(trace.record({...first,ap_mode:1,prop_radps:150},1),false);
   assert.equal(trace.record({...first,ap_mode:0},1),false,'servo-only changes without a setting/mode event cannot rewrite paused history');
+});
+
+test('review freezes actual trim and elevator, rejecting partial or paused trim rewrites', () => {
+  const trace = new FlightTrace();
+  const first = { ...state(1), pitch_trim_norm: .168, pitch_trim_initial_norm: .168, elevator_rad: .06 };
+  assert.equal(trace.record(first, 0), true);
+  const initial = trace.atTime(1)!;
+  first.pitch_trim_norm = -.3;
+  assert.equal(initial.state.pitch_trim_norm, .168);
+  assert.equal(trace.record({ ...first, step: 2, t_s: 2, elevator_rad: -.1 }, 1), true);
+  assert.equal(trace.atTime(2)!.state.pitch_trim_norm, -.3);
+  assert.equal(trace.atTime(2)!.state.elevator_rad, -.1);
+  assert.equal(trace.record({ ...first, step: 3, t_s: 3, elevator_rad: NaN }, 0), false);
+  assert.equal(trace.record({ ...first, step: 2, t_s: 2, altimeter_setting_pa: 90_000 }, 0), false);
+  assert(Object.isFrozen(initial.state));
+});
+
+test('radio configuration is captured atomically rather than read from live tuning', () => {
+  const trace = new FlightTrace();
+  const radio = { ...DEFAULT_RADIO_NAV };
+  assert.equal(trace.record({ ...state(1), ...radio }, 0), true);
+  radio.radio_obs_deg = 180; radio.radio_demo_enabled = 1;
+  assert.equal(trace.record({ ...state(2), ...radio }, 0), true);
+  assert.equal(trace.atTime(1)!.state.radio_obs_deg, 0);
+  assert.equal(trace.atTime(1)!.state.radio_demo_enabled, 0);
+  assert.equal(trace.atTime(2)!.state.radio_obs_deg, 180);
+  assert.equal(trace.record({ ...state(3), radio_obs_deg: 0 }, 0), false);
+  assert.equal(trace.record({ ...state(3), ...radio, radio_com_active_khz: 118001 }, 0), false);
+});
+
+test('paused radio edits replace only last avionics snapshot without changing physics or prior frames', () => {
+  const trace = new FlightTrace();
+  const first = { ...state(1), ...DEFAULT_RADIO_NAV };
+  assert(trace.record(first, 2));
+  const prior = trace.atTime(1)!;
+  assert(trace.record({ ...first, radio_obs_deg: 90, radio_obs2_deg: 180, radio_demo_enabled: 1 }, 99));
+  assert.equal(trace.bounds()!.count, 1);
+  assert.equal(trace.atTime(1)!.state.radio_obs_deg, 90);
+  assert.equal(trace.atTime(1)!.state.radio_obs2_deg, 180);
+  assert.equal(trace.atTime(1)!.vertical_speed_mps, 2);
+  assert.equal(prior.state.radio_obs_deg, 0);
+  assert(Object.isFrozen(prior.state));
+  assert.equal(trace.record({ ...first, radio_obs_deg: 95, tas_mps: first.tas_mps + 1 }, 2), false);
+  assert.equal(trace.record({ ...first, radio_nav2_active_khz: 114001 }, 2), false);
 });

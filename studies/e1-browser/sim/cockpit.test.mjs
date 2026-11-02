@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { cockpitFields } from './cockpit.js';
+import { cockpitFields, pitchTrimFields, groundFields } from './cockpit.js';
 const level = [45, 0, 0, -1, 0, 0, 0, 0];
 test('read-only cockpit fields retain engine units and symmetric wheel brakes', () => {
   const data = [45, Math.PI / 60, 0, -1, Math.PI / 9, 1, 1, 1];
@@ -21,5 +21,57 @@ test('missing, nonfinite or out-of-range model values do not invent indications'
   for (let i=0;i<8;i++) {const bad=[...level];bad[i]=NaN;assert.deepEqual(cockpitFields(bad),{});}
   for (const [i,v] of [[0,-1],[4,1],[5,2],[6,-1],[7,.5]]) {
     const bad=[...level];bad[i]=v;assert.deepEqual(cockpitFields(bad),{});
+  }
+});
+
+test('pitch trim telemetry retains actual command sign, initial baseline and elevator radians', () => {
+  const initial = 0.168;
+  const data = [-0.4, initial, -0.13];
+  assert.deepEqual(pitchTrimFields(data), {
+    pitch_trim_norm: -0.4, pitch_trim_initial_norm: initial, elevator_rad: -0.13,
+  });
+  assert.deepEqual(data, [-0.4, initial, -0.13]);
+  assert.equal(pitchTrimFields([1, -1, 0.34]).pitch_trim_norm, 1);
+  assert.equal(pitchTrimFields([-1, 1, -0.34]).pitch_trim_norm, -1);
+});
+
+test('pitch trim is an optional atomic group and rejects invalid model values', () => {
+  for (const values of [[], [0, 0], [0, 0, 0, 0], [1.001, 0, 0], [0, -1.001, 0]]) {
+    assert.deepEqual(pitchTrimFields(values), {});
+  }
+  for (let i = 0; i < 3; i++) {
+    for (const value of [NaN, Infinity, -Infinity]) {
+      const data = [0, 0.168, 0]; data[i] = value;
+      assert.deepEqual(pitchTrimFields(data), {});
+    }
+  }
+});
+
+const contact = [1.2, 1.2, 28, -4, 1.5, 5, 1, .1, 1500, -.2, 1, .2, 2000, -.3, 0, 0, 0, 0];
+test('ground telemetry retains SI values, signed motion and individual contact identities', () => {
+  const fields = groundFields(contact);
+  assert.equal(fields.ground_down_mps, 1.5);
+  assert.equal(fields.ground_side_mps, -4);
+  assert.equal(fields.structure_contact_mask, 5);
+  assert.equal(fields.gear_nose_wow, 1);
+  assert.equal(fields.gear_nose_load_n, 1500);
+  assert.equal(fields.gear_left_compression_m, .2);
+  assert.equal(fields.gear_left_slip_rad, -.3);
+  assert.equal(fields.gear_right_wow, 0);
+  assert.equal(fields.gear_right_load_n, 0);
+  assert.equal(contact[5], 5);
+  assert.equal(Object.keys(fields).length, 18);
+});
+
+test('ground telemetry is atomic across malformed lengths, contact flags, loads and finite values', () => {
+  for (const data of [[], contact.slice(1), [...contact, 0]]) assert.deepEqual(groundFields(data), {});
+  for (let i = 0; i < contact.length; i++) {
+    const data = [...contact]; data[i] = NaN;
+    assert.deepEqual(groundFields(data), {});
+  }
+  for (const [i, value] of [[5,-1], [5,8], [5,.5], [6,.5], [10,2], [14,-1],
+    [7,-.01], [11,-.01], [15,-.01], [8,-1], [12,-1], [16,-1], [4,Infinity]]) {
+    const data = [...contact]; data[i] = value;
+    assert.deepEqual(groundFields(data), {});
   }
 });

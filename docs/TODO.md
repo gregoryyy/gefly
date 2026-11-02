@@ -82,9 +82,27 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.7 Clarify roll correction; add numeric throttle, actual piston/fuel indications, manual/automatic mixture and reused wings-level/true-heading AP with raw pilot override. See [review evidence](reviews/2026-11-02-classic-flight-controls.md). Partial R-AIR-1/R-INPUT-1/R-REVIEW-1; altitude/NAV AP modes and installed C172S fidelity remain unsupported. Peer pending.
 
-- [ ] 2.0.8 Complete the next source-scoped cockpit controls: manual elevator trim, engine start/electrical controls and applicable fuel selector/carb-heat behavior. Identify the exact aircraft installation and retain unimplemented labels; this does not replace the model, navigation, briefing and exercise gates below.
+- [ ] 2.0.8 Complete the next source-scoped cockpit controls: engine start/electrical controls and applicable fuel selector/carb-heat behavior. Manual elevator trim is delivered separately in 2.0.10. Identify the exact aircraft installation and retain unimplemented labels; this does not replace the model, navigation, briefing and exercise gates below.
 
 - [x] 2.0.9 Add scene two-finger vertical-scroll FOV control (20–100°, default 60°), separate from flight/yoke/look, with camera/view/reset persistence, modifier/UI isolation and actual-browser physics-invariance checks. See [review evidence](reviews/2026-11-02-field-of-view.md). Partial R-INPUT-1/R-VIEW-1; peer pending.
+
+- [x] 2.0.10 Add source-backed generic elevator trim with apostrophe/backslash hold, slider and startup restore; retain it through pause/release, record actual trim/elevator, and restore fresh initial trim on restart. Move Restart/Options to the top menu and make flight controls a View option. See [review evidence](reviews/2026-11-02-elevator-trim.md). Partial R-INPUT-1/R-VIEW-1/R-REVIEW-1; C172S trim-wheel calibration and full aircraft acceptance remain open. Peer pending.
+
+- [x] 2.0.11 Adopt the requested bracket flap, apostrophe/backslash trim and Q/W rudder mappings; keep 0 idle and Space pause. Put restart in Flight, preserve yoke mode/anchor across pointer exit/reentry, and retain/accumulate Review look through release and seeking. Partial R-INPUT-1/R-VIEW-1/R-REVIEW-1; configurable key bindings remain later. Peer pending.
+
+- [x] 2.0.12 Demonstrate generic landing reactions with four explicit flat-ground presets, actual per-wheel contact/compression/load/slip and structure-contact indication; route nosewheel steering consistently with rudder and use actual ellipsoid height for rendering. Unchanged upstream spring/damper/friction drives aircraft motion; no component damage or accepted C172S landing envelope. Partial R-SIM-1/R-SIM-5/R-REVIEW-1; peer pending.
+
+- [x] 2.0.13 Add a separate radio/NAV box with active/standby COM1/NAV1 tuning/swap, OBS and opt-in fictional LAB CDI/TO-FROM/geometric DME, synchronized with recorded configuration. Move roll/heading autopilot into its own classic-style unit; unsupported ALT/NAV/APR/REV stay explicitly INOP. Partial R-NAV-1/R-INPUT-1/R-REVIEW-1; real station data, 8.33 kHz channels and coupled guidance remain open. Peer pending.
+
+- [ ] 2.0.14 Deepen the classical autopilot with source-scoped altitude, navigation and approach controls/modes after the applicable barometric/navigation models and reference cases exist. Do not accept disabled panel buttons as functional completion. Requested next, after the current PR checkpoint; then add the requested fullscreen modern instrument overlay including ILS markers; key-binding customization also remains later (see ROAD).
+
+- [x] 2.0.15 Refine the cockpit toward the supplied visual reference: two round NAV indicators with independent OBS/CDI/TO-FROM/flags, dual COM1/NAV1 and COM2/NAV2 tuning/swap, and recorded 11-field configuration. Original vector faces; poster not redistributed and no exact installation inferred. Real ILS/station-data fidelity remains open. Partial R-NAV-1/R-VIEW-1/R-REVIEW-1; peer pending.
+
+- [x] 2.0.16 Arrange desktop round instruments in a 2×4 grid with the six-pack on an extra rounded panel; align panel-column heights, put autopilot above engine, make trim/flaps vertical and move explanatory copy to Options. Preserve responsive live/recorded operation and visible labels/units/flags. Partial R-INPUT-1/R-VIEW-1; peer pending.
+
+- [ ] 2.0.17 After the requested PR checkpoint, add the third navigation/bearing display below NAV2 and compact round RPM plus left/right fuel indications below turn/heading. Confirm sourced equipment/reference behavior; a provisional fictional true-reference ADF-style teaching display must not claim real NDB/RMI fidelity. Resolve the extra-row size/scene-height tradeoff without hiding controls.
+
+- [x] 2.0.18 Compact the current cockpit: paired four-detent flap/continuous trim sliders and keycaps, Slash restoring initial trim, vertical throttle/mixture in the engine panel, AP above flap/trim, controls available while paused with physics frozen and pending commands applied on Resume. Add OBS hold acceleration/drag and keyboard adjustment; preserve full-turn/event-partition invariance, read-only Review, harmonized panel colors and original screw hardware. Partial R-INPUT-1/R-NAV-1/R-VIEW-1/R-REVIEW-1; peer pending.
 
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.

@@ -37,4 +37,14 @@ These records preserve the user's original intent. Do not edit accepted input re
 - [2026-11-01 assurance adoption](2026-11-01-assurance-adoption.md): adopt bounded assurance following the Propeller comparison.
 - [2026-11-01 tool layout](2026-11-01-tool-layout.md): move the assurance tool under utils/ and structure the CI tools under utils/ci/.
 
+- [2026-11-02 elevator trim and menu layout](2026-11-02-elevator-trim-and-menu.md): add trim; move Restart and Options to the top menu, with flight-control visibility under View.
+
+- [2026-11-02 landing, radio and control refinements](2026-11-02-landing-radio-and-control-refinements.md): landing-gear instability, revised keys and pointer re-entry, persistent review look, separate radio/navigation and autopilot controls, and later modern ILS overlay.
+
+- [2026-11-02 cockpit visual reference](2026-11-02-cockpit-reference.md): user-provided C172 poster guides closer NAV-gauge and radio-control arrangement without confirming an installation or copying the bitmap.
+
 These inputs are included in the local repository. Recheck privacy before remote publication.
+
+- [2026-11-02-panel-layout-refinements.md](2026-11-02-panel-layout-refinements.md) — Panel order, equal heights, vertical controls and 2×4 instruments.
+
+- [2026-11-02-paused-controls-and-pr-checkpoint.md](2026-11-02-paused-controls-and-pr-checkpoint.md) — Compact levers, paused editing, OBS gestures and PR-first scope.

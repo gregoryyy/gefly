@@ -12,3 +12,29 @@ export function cockpitFields(values) {
   if (-nz > 1e-6) fields.slip_ball_rad = Math.atan2(-ny, -nz) || 0;
   return fields;
 }
+
+// Generic c172x additive pitch-trim command, not physical trim-tab position.
+// Positive command is nose-down; elevator position remains in model radians.
+export function pitchTrimFields(values) {
+  if (values.length !== 3 || !Array.from(values).every(Number.isFinite)) return {};
+  const [pitch_trim_norm, pitch_trim_initial_norm, elevator_rad] = values;
+  if (Math.abs(pitch_trim_norm) > 1 || Math.abs(pitch_trim_initial_norm) > 1) return {};
+  return { pitch_trim_norm, pitch_trim_initial_norm, elevator_rad };
+}
+
+// Whole optional contact group: old engines and invalid groups stay unavailable.
+export function groundFields(values) {
+  if (values.length !== 18 || !Array.from(values).every(Number.isFinite)) return {};
+  const [ground_agl_m, ground_height_ellipsoid_m, ground_forward_mps, ground_side_mps,
+    ground_down_mps, structure_contact_mask] = values;
+  if (!Number.isInteger(structure_contact_mask) || structure_contact_mask < 0 || structure_contact_mask > 7) return {};
+  const fields = { ground_agl_m, ground_height_ellipsoid_m, ground_forward_mps, ground_side_mps,
+    ground_down_mps, structure_contact_mask };
+  for (const [i, name] of ['nose', 'left', 'right'].entries()) {
+    const [wow, compression_m, load_n, slip_rad] = values.slice(6 + i * 4, 10 + i * 4);
+    if (![0, 1].includes(wow) || compression_m < 0 || load_n < 0) return {};
+    Object.assign(fields, { [`gear_${name}_wow`]: wow, [`gear_${name}_compression_m`]: compression_m,
+      [`gear_${name}_load_n`]: load_n, [`gear_${name}_slip_rad`]: slip_rad });
+  }
+  return fields;
+}

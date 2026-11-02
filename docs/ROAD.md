@@ -80,3 +80,20 @@ live briefing feed rollout, voice radio, a live instructor console, expanded har
 VR, real-time multiplayer, additional aircraft and any approved-device pathway. Weather/
 NOTAM briefing and text radio are now requested product capabilities above, while
 provider, coverage, timing and actual implementation remain undecided.
+
+
+## Requested cockpit refinements
+
+The [2026-11-02 input](input/2026-11-02-landing-radio-and-control-refinements.md)
+adds a separate radio/radio-navigation box and classical autopilot unit beside
+the flight controls. The current prototype's experimental roll/heading modes and
+fictional LAB geometry do not complete classical coupled autopilot or real-radio
+navigation acceptance. Altitude, NAV/APR/REV coupling requires source-scoped
+barometric/nav receiver behavior and independent reference cases first.
+
+Later work explicitly includes adjustable key bindings and a fullscreen modern
+instrument overlay with ILS markers. Glass presentation must consume the same
+accepted flight/navigation state as classic instruments; decorative markers must
+not imply a modeled localizer/glideslope. The landing contact demonstrations
+reuse real model forces; structural damage, calibrated suspension visuals and
+accepted airport terrain/landing envelopes remain separately gated work.

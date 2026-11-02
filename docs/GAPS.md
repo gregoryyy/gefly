@@ -64,6 +64,37 @@ this selection was recorded.
 
 Why: fixes the first required platform/input experience and optional peripherals.
 
+Refinement: **2026-11-02 19:56, user** (recording time): confirmed Slash restores
+initial trim; requested compact matching flap/trim and throttle/mixture levers,
+paused control availability with frozen physics, faster/dragged OBS, shared
+panel colors and screw details. Asked for the current PR before a third bearing
+display, auxiliary round RPM/fuel gauges and further ALT/NAV/APR/REV guidance.
+See [verbatim checkpoint record](input/2026-11-02-paused-controls-and-pr-checkpoint.md).
+Those subsequent systems remain unchecked; unavailable modes are not accepted
+merely because their buttons are drawn.
+
+Refinement: **2026-11-02 19:25, user** (recording time): supplied a classic C172
+cockpit visual reference, then requested two rows of four round instruments,
+a separate rounded six-pack panel, equal column heights, autopilot above engine,
+vertical trim/flaps and explanatory copy moved off the panel. See
+[reference record](input/2026-11-02-cockpit-reference.md) and
+[layout requests](input/2026-11-02-panel-layout-refinements.md). This is a visual
+reference, not confirmation of an exact aircraft/avionics installation.
+
+Refinement: **2026-11-02 18:54, user** (recording time): specified bracket
+flaps, apostrophe/backslash trim, Q/W rudder, 0 idle and Space pause; restart in a
+menu, retained yoke mode on pointer reentry and persistent Review look. Requested
+landing instability from gear reactions and separate radio/NAV/autopilot boxes;
+modern fullscreen instruments/ILS markers and configurable keys are later.
+See [verbatim input](input/2026-11-02-landing-radio-and-control-refinements.md).
+The prototype uses generic contact forces and opt-in fictional LAB signals;
+full classical coupled AP behavior remains open.
+
+Refinement: **2026-11-02 18:46, user** (recording time): requested elevator
+trim, top-menu Restart/Options, and Flight controls under View; see [verbatim
+input](input/2026-11-02-elevator-trim-and-menu.md). Implemented using existing
+generic-model elevator trim, with startup trim retained rather than zeroed.
+
 Refinement: **2026-11-02 18:32, user** (recording time): requested two-finger
 vertical scrolling for camera FOV; [verbatim input](input/2026-11-02-touchpad-fov.md).
 Implemented as a viewing preference, separate from pilot control input.

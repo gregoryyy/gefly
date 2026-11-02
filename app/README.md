@@ -32,16 +32,17 @@ A missing or failed engine build is an error, not a switch to scripted flight.
 | --- | --- |
 | Arrow up/down | Push nose down / pull nose up |
 | Arrow left/right | Ailerons |
-| A / D | Rudder |
-| W / S | Increase / decrease throttle finely |
+| Q / W | Left / right rudder |
 | 1–9 | Set throttle to 10–90% |
 | 0 | Set throttle to idle |
 | P | Capture true heading / disconnect heading hold |
 | Space | Start / pause / resume |
 | R | Reset flight |
 | V | Switch cockpit / chase view |
-| F / Shift+F | Extend / retract flaps one 10° detent |
+| / | Restore initial trim |
+| [ / ] | Retract / extend flaps one 10° detent |
 | B (hold) | Apply both wheel brakes; release to let go |
+| ' / \\ (hold) | Elevator trim nose up / nose down |
 | Two-finger vertical scroll over the scene | Up: zoom in; down: zoom out |
 | Escape | Release scene yoke/look control |
 
@@ -56,8 +57,12 @@ For touchpad yoke control, start flight and **short-click the unobstructed
 scene**. That click sets a neutral pointer anchor and toggles yoke control on;
 moving the pointer relative to the anchor controls pitch and roll. Short-click
 again to disengage. To look around, hold the click for about a quarter-second,
-then drag. Releasing returns to the prior yoke mode. Escape, leaving the scene,
-window focus loss, a modal or entering Review releases the transient controls.
+then drag. During live flight, releasing returns to the prior yoke mode and
+centers the temporary look. Leaving the scene or window neutralizes the yoke
+axes while preserving its mode and original anchor. Re-entering immediately
+uses the pointer position relative to that anchor as the authoritative input;
+no new click is needed. An actual window focus loss still pauses flight and
+clears transient controls, as do Escape, a modal or entering Review.
 Header buttons, instrument controls and the joystick do not toggle scene yoke.
 
 Use **two fingers to scroll vertically over the flight scene** to adjust the
@@ -69,23 +74,31 @@ Review. The chosen FOV survives a view switch and is independent of yoke mode
 and hold-drag look. Scrolling over dialogs or the practice map keeps those
 interfaces' normal behavior; Ctrl/pinch events bypass this FOV control.
 
-Use the **0° / 10° / 20° / 30°** flap buttons, F or Shift+F while flying. The
+Use the **0° / 10° / 20° / 30°** flap buttons, **[** to retract or **]** to extend
+while flying. The
 selector sets the generic model's target; the displayed actual flap angle takes
 time to move. Hold the **wheel brake** button or B to apply both main-wheel
 brakes; release, pause or focus loss clears the held command. Brakes act through
 wheel contact, not as an airbrake, so they do not directly slow the initial
-airborne flight. Flap and brake adjustment is disabled while paused or reviewing.
+airborne flight. Ready flight controls remain available while paused; commands are staged until
+Resume without advancing physics. Recorded Review remains read-only.
 These controls use the research aircraft's existing model, not accepted 172S
 performance data. See [control sources](../docs/research/2026-11-02-classic-controls.md).
 
-Open **Controls** in the header to adjust pitch, roll and rudder sensitivity from
+Use **View → Flight controls** in the top menu to show or hide the on-screen
+flight-control panel. Hiding it releases transient held inputs while retaining
+throttle, trim and the other selected settings. Use **Flight → Restart flight**
+to restart; the R shortcut also remains available. **Options** is a top-menu
+action. Keyboard remapping is later work.
+
+Open **Options** in the header to adjust pitch, roll and rudder sensitivity from
 25% to 150%. **Default** uses 100% on all three axes; **Gentle** uses 50% pitch,
 50% roll and 70% rudder. Opening the dialog pauses flight. Changing settings,
 selecting **Done**, or pressing Escape does not resume it; use **Start flight**
 or **Resume flight** when ready. Closing the dialog returns keyboard focus to
 the flight scene.
 
-To compare the response, start a flight, open **Controls**, select **Gentle**,
+To compare the response, start a flight, open **Options**, select **Gentle**,
 then **Done** and **Resume flight**. Try a small stick movement or a brief held
 button input. Repeat with **Default** to compare. Sensitivity settings last for
 the current page session; restarting the flight with R preserves them. They
@@ -97,6 +110,23 @@ generic study model; it is not the yoke position, a trim tab or an aircraft trim
 specification. Select **Off · 0%** to compare unassisted behavior, or **Study default** to restore the correction. Sensitivity changes
 do not scale it. It is suspended while the autopilot controls roll, then its
 configured value returns after disconnect.
+
+## Elevator trim
+
+Hold the **'** key for nose-up elevator trim or **\\** for nose-down trim while flying,
+or adjust the vertical trim slider. The flap detents are vertical beside it. The command stays set when the key is released and
+across pause/resume and Review. Adjustment is available while paused, with
+physics unchanged until Resume; recorded Review remains read-only. The **/**
+key or middle keycap restores the command computed when this flight
+started. Restarting the flight computes its initial trim again.
+
+This uses the generic c172x model's normalized pitch-trim command, added to the
+pilot's elevator command. Negative trim commands nose up; positive commands nose
+down. The [pinned JSBSim v1.3.3 c172x control definition](https://github.com/JSBSim-Team/jsbsim/blob/v1.3.3/aircraft/c172x/c172x.xml)
+defines that pitch-control sum; [FGFCS documents the control path](https://github.com/JSBSim-Team/jsbsim/blob/v1.3.3/src/models/FGFCS.h).
+The indicated command is not a physical trim-tab angle, calibrated trim-wheel
+position or validated selected-172S behavior. The existing roll-only autopilot
+does not control elevator trim; trimming leaves its roll mode unchanged.
 
 ## Six-pack instruments
 
@@ -114,6 +144,17 @@ errors. Heading remains true rather than magnetic. Vertical speed is the existin
 filtered geometric-height derivative, not a calibrated pitot-static VSI. Review
 shows the captured instrument values while the live engine remains paused.
 
+## Classic panel layout
+
+The desktop panel arranges eight round instruments in **two rows of four**:
+airspeed, attitude, altimeter and NAV1 above turn/slip, heading, vertical speed
+and NAV2. The six-pack occupies its own rounded panel. Desktop panel columns
+share their top and bottom edges; autopilot sits above the compact flap/trim pair. Throttle and mixture form a
+matching vertical pair in the engine panel.
+Explanations and model/system limits are in **Options → Model & systems
+information**, leaving labels, units, controls and flags on the panel. Mobile
+NAV instruments are available through **View → NAV instruments**.
+
 ## Engine and autopilot controls
 
 The engine panel shows actual model RPM, manifold absolute pressure, oil pressure
@@ -121,13 +162,15 @@ and temperature, fuel quantity/flow and exhaust temperature. Read the displayed
 units: these are research-engine readouts, not an accepted recreation of the
 selected 172S's installed gauges. The research aircraft has a fixed-pitch propeller.
 
-Use **Mixture** to change the actual fuel-mixture command. Automatic mixture is
+Use the vertical **Throttle / Mixture** pair in the engine panel. Paused edits
+retain their requested lever positions and apply when physics resumes; displayed
+engine indications remain actual values. Use **Mixture** to change its command. Automatic mixture is
 retained initially; entering a manual setting disables the generic model's
 automatic-mixture channel. The panel distinguishes automatic/manual operation and
 the applied value. Throttle shortcuts 1–9 select 10–90%, while 0 selects idle;
-W/S and the throttle slider provide finer adjustment.
+the throttle slider provides finer adjustment.
 
-The first autopilot offers **wings level** and **true-heading hold**, using the
+The separate autopilot box sits above the flap/trim controls. It offers **wings level** and **true-heading hold**, using the
 model's existing roll controller. Capture the current heading with P, or use the
 heading-hold control; P also disconnects heading hold. Use the displayed mode and
 target to see what is engaged. Manual pitch/roll/rudder control disconnects the AP rather
@@ -135,6 +178,59 @@ than adding a hidden command against it. The roll correction is suspended while
 AP owns roll. This is a roll-only research controller: altitude, throttle and
 mixture remain the pilot's responsibility. It is not a validated installed
 C172S autopilot or a coupled approach system.
+
+The classical **ALT / NAV / APR / REV** controls are explicitly **INOP**;
+their presence does not engage altitude, navigation or approach guidance.
+Full classical autopilot behavior and a later fullscreen modern instrument
+overlay with ILS markers remain roadmap work.
+
+## Landing practice
+
+The **Flight** menu provides landing-practice presets **Baseline touchdown**, **Fast descent**, **Sideways touchdown**
+and **Banked touchdown**, starting at 3 m CG height, 28 m/s forward speed and
+4° nose-up attitude. Baseline descent is 1.5 m/s; Fast descent uses 4 m/s,
+Sideways adds 4 m/s sideways velocity, and Banked adds 8° right bank.
+These numbers define repeatable fixtures, not landing operating limits. These repeatable contact studies use a flat **0 m ellipsoid
+surface**, not EDFE's real elevation or a surveyed airport runway. Starting a
+preset resets the flight; inspect its initial condition, start flight, and compare
+the resulting contact, bounce and lateral motion.
+
+The local model reuses JSBSim's existing landing-gear forces and moments, including
+spring/damper reactions and wheel friction. Contact/load and slip indications
+describe the simulation's response. The [pinned FGLGear documentation](https://github.com/JSBSim-Team/jsbsim/blob/v1.3.3/src/models/FGLGear.h)
+and [implementation](https://github.com/JSBSim-Team/jsbsim/blob/v1.3.3/src/models/FGLGear.cpp)
+explain those reactions; the [c172x definition](https://github.com/JSBSim-Team/jsbsim/blob/v1.3.3/aircraft/c172x/c172x.xml)
+supplies the generic model's contact geometry and coefficients. This does not
+simulate component damage or establish safe landing loads, aircraft-specific
+limits, selected-172S fidelity or a validated landing exercise.
+
+## Radio and navigation controls
+
+The gray instrument panel places two round **NAV1 / NAV2** gauges beside the
+six-pack, with a separate vertical radio stack to the right. Each NAV gauge has
+an independent OBS course, CDI needle, TO/FROM indication and NAV flag.
+Glideslope is explicitly **INOP**. The radio stack provides **COM1 / NAV1** and
+**COM2 / NAV2** amber active/standby displays, tuning and swap controls. COM uses an
+explicitly labeled **25 kHz subset**; it does not implement the full European
+8.33 kHz channel set. COM tuning does not provide ATC or voice communication.
+
+Opt in to the fictional **LAB** navigation demonstration to explore the NAV
+controls. Its demonstration frequency is **113.8 MHz**, at **49.96° N, 8.643° E**.
+These are synthetic exercise settings, not a real published station, frequency
+assignment or accepted navaid database. The demonstration does not implement
+an ILS receiver or establish usable real-world navigation coverage.
+
+To try it, start flight, enable **LAB**, tune NAV1 standby to **113.80**, then swap
+it active. Adjust NAV1's OBS and watch its matching gauge. Give NAV2 a different
+OBS course or active frequency to compare the two receivers independently. LAB
+off, an unmatched active channel or unavailable geometry leaves the NAV flag
+visible and the needle unavailable. Review uses captured tuning and position;
+its radio and OBS controls are read-only.
+
+The user's C172 cockpit poster guides the arrangement and interaction; the
+gauges and controls are project-authored. No poster bitmap or branded instrument
+assets are redistributed. This resemblance does not confirm an exact aircraft
+variant, installed avionics fit or validated receiver/ILS behavior.
 
 ## Pressure setting
 
@@ -170,6 +266,12 @@ select **Play** to inspect the recorded scene and instruments, including the
 vertical-speed value captured with each sample. Space plays or pauses review;
 V switches cockpit/chase views.
 
+In Review, **click-and-hold, then drag** to change the inspection camera. Releasing
+keeps the new view; later drags accumulate from it, and timeline scrubbing leaves
+that orientation intact. A short click does not enable yoke control. Escape
+centers the view. Camera inspection never changes the recorded or live aircraft
+state.
+
 Select **Back to live** to return to the latest actual flight state. The engine
 stays paused until you explicitly resume. Seeking through the recording never
 restores the engine to an earlier state. Flight controls, sensitivity settings
@@ -185,7 +287,7 @@ input replay remains future work under the [replay contract](../docs/design/CONT
 
 ## Practice map
 
-Select **Map** in the header to show or hide a north-up practice map. It loads
+Select **View → Map** in the header to show or hide a north-up practice map. It loads
 MapLibre on demand and uses the same local overview/detail photographs as the
 flight scene. The aircraft marker shows true heading; the plotted route uses up
 to 600 points from the current flight's retained state trace. **Trace start**
@@ -241,7 +343,7 @@ separate deliberate update rather than a runtime dependency.
   The study geometric height remains distinct from that indication.
 - Aircraft handling, cockpit instrumentation and approach/landing behavior have
   not been validated for flight training. Installed-instrument fidelity, airport
-  pressure references, navigation, checklists, radio and a scored circuit remain
+  pressure references, real-data navigation, checklists, ATC communication and a scored circuit remain
   future increments.
 
 See [ARCH](../docs/ARCH.md), [SPEC](../docs/SPEC.md) and
@@ -265,7 +367,7 @@ and the three declared engine/build-record files; these research runtime files a
 production UI bundle.
 
 Node.js 24.2+ and Python 3 are required for the development checks. The browser check starts temporary servers on
-127.0.0.1:5174, 5175, 5177 and 5178 and writes ignored screenshots to `output/flight/`.
+127.0.0.1:5174, 5175, 5177, 5178, 5180, 5181, 5183 and 5184 and writes ignored screenshots to `output/flight/`.
 Set `CHROME` to an executable path if Chrome is not installed in its usual
 location. `just fly` uses 127.0.0.1:5173. Without `just`, invoke the study build
 with `bash studies/e1-browser/sim/build.sh output/flight/engine-build`, then

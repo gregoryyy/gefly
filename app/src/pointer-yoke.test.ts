@@ -22,16 +22,17 @@ class Surface extends EventTarget {
 function fixture() {
   const surface = new Surface();
   const yokes: number[][] = [], looks: number[][] = [], modes: PointerYokeMode[] = [];
-  let enabled = true;
+  let enabled = true, lookOnly = false;
   const controller = createPointerYoke({ element: surface as unknown as HTMLElement,
-    enabled: () => enabled, onYoke: (x,y) => yokes.push([x,y]),
+    enabled: () => enabled, lookOnly: () => lookOnly, onYoke: (x,y) => yokes.push([x,y]),
     onLook: (yaw,pitch) => looks.push([yaw,pitch]), onMode: mode => modes.push(mode) });
   const click = (x = 200, y = 200) => { surface.dispatchEvent(pointer('pointerdown',x,y)); surface.dispatchEvent(pointer('pointerup',x,y)); };
-  return { surface, controller, yokes, looks, modes, click, disable: () => { enabled = false; } };
+  return { surface, controller, yokes, looks, modes, click,
+    disable: () => { enabled = false; }, review: () => { lookOnly = true; } };
 }
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-test('short clicks toggle relative yoke; input clamps and leaving neutralizes once', () => {
+test('short clicks toggle relative yoke; input clamps and leaving neutralizes without switching off', () => {
   const f = fixture();
   f.surface.dispatchEvent(pointer('pointerdown',200,200,2));
   assert.deepEqual(f.modes, []);
@@ -43,9 +44,52 @@ test('short clicks toggle relative yoke; input clamps and leaving neutralizes on
   f.click(); f.surface.dispatchEvent(pointer('pointermove',275,275));
   assert.deepEqual(f.yokes.at(-1),[.5,-.5]);
   f.surface.dispatchEvent(new Event('pointerleave'));
-  assert.equal(f.modes.at(-1),'off'); assert.deepEqual(f.yokes.at(-1),[0,0]);
+  assert.equal(f.modes.at(-1),'yoke'); assert.deepEqual(f.yokes.at(-1),[0,0]);
   const counts = [f.yokes.length,f.looks.length,f.modes.length];
-  f.controller.cancel(); assert.deepEqual([f.yokes.length,f.looks.length,f.modes.length],counts);
+  f.surface.dispatchEvent(new Event('pointerleave'));
+  assert.deepEqual([f.yokes.length,f.looks.length,f.modes.length],counts);
+  f.controller.cancel(); assert.equal(f.modes.at(-1),'off');
+  f.controller.dispose();
+});
+
+test('re-entering restores authoritative yoke input from the original anchor until clicked off', () => {
+  const f = fixture(); f.click(200,200);
+  f.surface.dispatchEvent(pointer('pointermove',275,125));
+  assert.deepEqual(f.yokes.at(-1),[.5,.5]);
+  f.surface.dispatchEvent(new Event('pointerleave'));
+  assert.deepEqual(f.yokes.at(-1),[0,0]);
+  // Re-entry itself applies the position; no new click or recentering is needed.
+  f.surface.dispatchEvent(pointer('pointerenter',125,275));
+  assert.deepEqual(f.yokes.at(-1),[-.5,-.5]);
+  f.surface.dispatchEvent(pointer('pointermove',200,200));
+  assert.deepEqual(f.yokes.at(-1),[0,0]);
+  f.click(350,300); assert.equal(f.modes.at(-1),'off');
+  const count = f.yokes.length;
+  f.surface.dispatchEvent(pointer('pointerenter',125,275));
+  assert.equal(f.yokes.length,count);
+  f.controller.dispose();
+});
+
+test('leaving during a pending hold cancels only that gesture and retains the prior yoke anchor', async () => {
+  const f = fixture(); f.click(200,200);
+  f.surface.dispatchEvent(pointer('pointermove',275,275));
+  f.surface.dispatchEvent(pointer('pointerdown',275,275));
+  f.surface.dispatchEvent(pointer('pointermove',850,275));
+  assert.equal(f.surface.captures.size,0);
+  assert.deepEqual(f.yokes.at(-1),[0,0]);
+  await sleep(280);
+  assert.equal(f.modes.at(-1),'yoke');
+  assert.deepEqual(f.looks,[]);
+  f.surface.dispatchEvent(pointer('pointerup',850,275));
+  f.surface.dispatchEvent(pointer('pointerenter',125,275));
+  assert.deepEqual(f.yokes.at(-1),[-.5,-.5]);
+  f.click(); assert.equal(f.modes.at(-1),'off');
+  f.surface.dispatchEvent(pointer('pointerdown',250,250));
+  f.surface.dispatchEvent(new Event('pointerleave'));
+  await sleep(280);
+  assert.equal(f.modes.at(-1),'off');
+  f.surface.dispatchEvent(pointer('pointerenter',300,300));
+  assert.deepEqual(f.yokes.at(-1),[0,0]);
   f.controller.dispose();
 });
 
@@ -88,4 +132,31 @@ test('hold while off does not enable yoke; interruption and disabled flight canc
   f.controller.dispose(); f.click();
   await sleep(280);
   assert.deepEqual([f.yokes.length,f.looks.length,f.modes.length],counts);
+});
+
+test('review hold-drag retains camera orientation and accumulates later drags without enabling yoke', async () => {
+  const f = fixture(); f.review();
+  f.click(); assert.notEqual(f.modes.at(-1),'yoke');
+  f.surface.dispatchEvent(pointer('pointermove',350,50));
+  assert.deepEqual(f.yokes,[]);
+  f.surface.dispatchEvent(pointer('pointerdown',200,200));
+  await sleep(280);
+  f.surface.dispatchEvent(pointer('pointermove',250,150));
+  assert.deepEqual(f.looks.at(-1),[.2,.2]);
+  f.surface.dispatchEvent(pointer('pointerup',250,150));
+  assert.equal(f.modes.at(-1),'off');
+  assert.deepEqual(f.looks.at(-1),[.2,.2]);
+  f.click(250,150);
+  assert.deepEqual(f.looks.at(-1),[.2,.2]);
+  f.surface.dispatchEvent(pointer('pointerdown',250,150));
+  await sleep(280);
+  f.surface.dispatchEvent(new Event('pointerleave'));
+  f.surface.dispatchEvent(pointer('pointermove',300,200));
+  assert.deepEqual(f.looks.at(-1),[.4,0]);
+  f.surface.dispatchEvent(pointer('pointerup',300,200));
+  assert.deepEqual(f.looks.at(-1),[.4,0]);
+  assert.deepEqual(f.yokes,[]);
+  f.surface.dispatchEvent(Object.assign(new Event('keydown',{cancelable:true}),{code:'Escape'}));
+  assert.deepEqual(f.looks.at(-1),[0,0]);
+  f.controller.dispose();
 });

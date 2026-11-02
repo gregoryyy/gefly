@@ -5,6 +5,7 @@
 // Exports (C ABI, called from worker.js through the Emscripten module):
 //   int     gf_init(dt_s, lat_rad, lon_rad, alt_msl_m, heading_rad, tas_mps)
 //   int     gf_set_inputs(elevator, aileron, rudder, throttle)
+//   int     gf_set_pitch_trim(norm), double* gf_pitch_trim_state()
 //   int     gf_step()                 advance exactly one fixed step
 //   double* gf_state()                pointer to kStateLen doubles (see below)
 //   double  gf_step_index()           completed steps since init
@@ -14,6 +15,7 @@
 #include <FGFDMExec.h>
 #include <FGJSBBase.h>
 #include <input_output/FGPropertyManager.h>
+#include <models/FGGroundReactions.h>
 #include <simgear/misc/sg_path.hxx>
 #include <emscripten/emscripten.h>
 
@@ -34,6 +36,7 @@ constexpr double kPi = 3.141592653589793;
 constexpr double kPsfToPa = 47.88025898033584;
 constexpr double kPsiToPa = 6894.757293168;
 constexpr double kUsGalToM3 = 0.003785411784;
+constexpr double kLbfToN = 4.4482216152605;
 
 constexpr int kErrNotInit = -1;
 constexpr int kErrNonFinite = -2;
@@ -114,15 +117,7 @@ void hash_state() {
   }
 }
 
-}  // namespace
-
-extern "C" {
-
-EMSCRIPTEN_KEEPALIVE int gf_init(double dt_s, double lat_rad, double lon_rad,
-                                 double alt_msl_m, double heading_rad, double tas_mps) {
-  if (!finite_all({dt_s, lat_rad, lon_rad, alt_msl_m, heading_rad, tas_mps})) return kErrNonFinite;
-  if (!(dt_s > 0.0 && dt_s <= 0.1) || std::fabs(lat_rad) > kPi / 2 || std::fabs(lon_rad) > kPi ||
-      tas_mps < 0.0) return kErrRange;
+int load_model(double dt_s, double lat_rad, double lon_rad, double heading_rad) {
   JSBSim::FGJSBBase::debug_lvl = 0;
   g_fdm = std::make_unique<JSBSim::FGFDMExec>();
   JSBSim::FGFDMExec& f = *g_fdm;
@@ -142,6 +137,27 @@ EMSCRIPTEN_KEEPALIVE int gf_init(double dt_s, double lat_rad, double lon_rad,
   f.Setdt(dt_s);
   f.SetPropertyValue("ic/lat-geod-rad", lat_rad);
   f.SetPropertyValue("ic/long-gc-rad", lon_rad);
+  return 0;
+}
+
+void reset_study_state() {
+  g_hash = 1469598103934665603ULL;
+  g_steps = 0.0;
+  read_state();
+}
+
+}  // namespace
+
+extern "C" {
+
+EMSCRIPTEN_KEEPALIVE int gf_init(double dt_s, double lat_rad, double lon_rad,
+                                 double alt_msl_m, double heading_rad, double tas_mps) {
+  if (!finite_all({dt_s, lat_rad, lon_rad, alt_msl_m, heading_rad, tas_mps})) return kErrNonFinite;
+  if (!(dt_s > 0.0 && dt_s <= 0.1) || std::fabs(lat_rad) > kPi / 2 || std::fabs(lon_rad) > kPi ||
+      tas_mps < 0.0) return kErrRange;
+  const int rc = load_model(dt_s, lat_rad, lon_rad, heading_rad);
+  if (rc != 0) return rc;
+  auto& f = *g_fdm;
   f.SetPropertyValue("ic/h-sl-ft", alt_msl_m / kFtToM);
   f.SetPropertyValue("ic/vt-kts", tas_mps / kKtToMps);
   f.SetPropertyValue("ic/psi-true-rad", heading_rad);
@@ -164,9 +180,42 @@ EMSCRIPTEN_KEEPALIVE int gf_init(double dt_s, double lat_rad, double lon_rad,
   }
   g_trim_throttle = f.GetPropertyValue("fcs/throttle-cmd-norm");
   g_trim_pitch = f.GetPropertyValue("fcs/pitch-trim-cmd-norm");
-  g_hash = 1469598103934665603ULL;
-  g_steps = 0.0;
-  read_state();
+  reset_study_state();
+  return 0;
+}
+
+// Flat ellipsoid landing demonstrations, not aircraft procedures or limits.
+// 1 baseline, 2 faster descent, 3 sideways, 4 right bank. All share CG AGL 3 m,
+// 28 m/s horizontal forward speed and 4 deg nose-up attitude. NED velocity
+// setters preserve the specified ground motion independently of attitude;
+// airborne longitudinal trim is deliberately NOT run over these fixtures.
+EMSCRIPTEN_KEEPALIVE int gf_init_landing(double dt_s, double lat_rad, double lon_rad,
+                                         double heading_rad, double preset) {
+  if (!finite_all({dt_s, lat_rad, lon_rad, heading_rad, preset})) return kErrNonFinite;
+  if (!(dt_s > 0.0 && dt_s <= 0.1) || std::fabs(lat_rad) > kPi / 2 || std::fabs(lon_rad) > kPi ||
+      (preset != 1 && preset != 2 && preset != 3 && preset != 4)) return kErrRange;
+  const int rc = load_model(dt_s, lat_rad, lon_rad, heading_rad);
+  if (rc != 0) return rc;
+  auto& f = *g_fdm;
+  f.SetPropertyValue("ic/terrain-elevation-ft", 0.0);
+  f.SetPropertyValue("ic/h-agl-ft", 3.0 / kFtToM);
+  f.SetPropertyValue("ic/psi-true-rad", heading_rad);
+  f.SetPropertyValue("ic/theta-rad", 4.0 * kPi / 180.0);
+  f.SetPropertyValue("ic/phi-rad", preset == 4 ? 8.0 * kPi / 180.0 : 0.0);
+  const double side = preset == 3 ? 4.0 : 0.0;
+  f.SetPropertyValue("ic/vn-fps", (28.0 * std::cos(heading_rad) - side * std::sin(heading_rad)) / kFtToM);
+  f.SetPropertyValue("ic/ve-fps", (28.0 * std::sin(heading_rad) + side * std::cos(heading_rad)) / kFtToM);
+  f.SetPropertyValue("ic/vd-fps", (preset == 2 ? 4.0 : 1.5) / kFtToM);
+  f.SetPropertyValue("fcs/mixture-cmd-norm", 1.0);
+  f.SetPropertyValue("fcs/throttle-cmd-norm", 0.0);
+  f.SetPropertyValue("fcs/pitch-trim-cmd-norm", 0.0);
+  f.SetPropertyValue("propulsion/magneto_cmd", 3);
+  if (!f.RunIC()) { g_fdm.reset(); return kErrRunIc; }
+  f.SetPropertyValue("propulsion/set-running", -1);
+  g_trim_ok = 0;  // deliberately not attempted
+  g_trim_throttle = f.GetPropertyValue("fcs/throttle-cmd-norm");
+  g_trim_pitch = f.GetPropertyValue("fcs/pitch-trim-cmd-norm");
+  reset_study_state();
   return 0;
 }
 
@@ -182,6 +231,9 @@ EMSCRIPTEN_KEEPALIVE int gf_set_inputs(double elevator, double aileron, double r
   f.SetPropertyValue("fcs/elevator-cmd-norm", elevator);
   f.SetPropertyValue("fcs/aileron-cmd-norm", aileron);
   f.SetPropertyValue("fcs/rudder-cmd-norm", rudder);
+  // In this pinned model positive rudder produces left yaw, while positive
+  // steering angle points the nosewheel right. Couple their turning directions.
+  f.SetPropertyValue("fcs/steer-cmd-norm", -rudder);
   f.SetPropertyValue("fcs/throttle-cmd-norm", throttle);
   return 0;
 }
@@ -195,6 +247,17 @@ EMSCRIPTEN_KEEPALIVE int gf_set_secondary_inputs(double flap_norm, double brake_
   g_fdm->SetPropertyValue("fcs/flap-cmd-norm", flap_norm);
   g_fdm->SetPropertyValue("fcs/left-brake-cmd-norm", brake_norm);
   g_fdm->SetPropertyValue("fcs/right-brake-cmd-norm", brake_norm);
+  return 0;
+}
+
+// The pinned generic c172x sums normalized pitch trim with elevator input.
+// Positive is nose-down, negative nose-up; this is not a trim-tab angle.
+// No input/reset path changes the longitudinal trim captured by gf_init.
+EMSCRIPTEN_KEEPALIVE int gf_set_pitch_trim(double norm) {
+  if (!g_fdm) return kErrNotInit;
+  if (!finite_all({norm})) return kErrNonFinite;
+  if (norm < -1 || norm > 1) return kErrRange;
+  g_fdm->SetPropertyValue("fcs/pitch-trim-cmd-norm", norm);
   return 0;
 }
 
@@ -239,6 +302,10 @@ EMSCRIPTEN_KEEPALIVE int gf_state_len() { return kStateLen; }
 EMSCRIPTEN_KEEPALIVE double gf_step_index() { return g_steps; }
 // Read-only atmosphere accessors. Kept outside the original 14-double study
 // state/digest: adding an instrument must not alter the dynamics benchmark.
+EMSCRIPTEN_KEEPALIVE double gf_flap_command_norm() {
+  return g_fdm ? g_fdm->GetPropertyValue("fcs/flap-cmd-norm")
+               : std::numeric_limits<double>::quiet_NaN();
+}
 EMSCRIPTEN_KEEPALIVE double gf_static_pressure_pa() {
   return g_fdm ? g_fdm->GetPropertyValue("atmosphere/P-psf") * kPsfToPa
                : std::numeric_limits<double>::quiet_NaN();
@@ -266,6 +333,52 @@ EMSCRIPTEN_KEEPALIVE double* gf_cockpit_state() {
   values[5] = f.GetPropertyValue("fcs/left-brake-cmd-norm");
   values[6] = f.GetPropertyValue("fcs/right-brake-cmd-norm");
   values[7] = f.GetPropertyValue("gear/wow") > 0 ? 1.0 : 0.0;
+  return values;
+}
+
+// Actual applied normalized trim command, initial longitudinal-trim command,
+// and actual elevator radians. Separate from the original dynamics digest.
+EMSCRIPTEN_KEEPALIVE double* gf_pitch_trim_state() {
+  static double values[3];
+  if (!g_fdm) {
+    for (double& value : values) value = std::numeric_limits<double>::quiet_NaN();
+    return values;
+  }
+  values[0] = g_fdm->GetPropertyValue("fcs/pitch-trim-cmd-norm");
+  values[1] = g_trim_pitch;
+  values[2] = g_fdm->GetPropertyValue("fcs/elevator-pos-rad");
+  return values;
+}
+
+// CG AGL/geodetic ellipsoid height (m), horizontal heading-aligned forward and
+// rightward velocities, NED down velocity (m/s), structure mask (tail/left/right
+// bits 1/2/4); then nose/left/right WOW, compression m, strut load N, slip rad.
+// Actual upstream contact quantities: no damage thresholds or added forces.
+EMSCRIPTEN_KEEPALIVE double* gf_ground_state() {
+  static double values[18];
+  if (!g_fdm || g_fdm->GetGroundReactions()->GetNumGearUnits() != 6) {
+    for (double& value : values) value = std::numeric_limits<double>::quiet_NaN();
+    return values;
+  }
+  auto& f = *g_fdm;
+  auto gear = f.GetGroundReactions();
+  const double heading = f.GetPropertyValue("attitude/heading-true-rad");
+  const double north = f.GetPropertyValue("velocities/v-north-fps") * kFtToM;
+  const double east = f.GetPropertyValue("velocities/v-east-fps") * kFtToM;
+  values[0] = f.GetPropertyValue("position/h-agl-ft") * kFtToM;
+  values[1] = f.GetPropertyValue("position/geod-alt-ft") * kFtToM;
+  values[2] = north * std::cos(heading) + east * std::sin(heading);
+  values[3] = -north * std::sin(heading) + east * std::cos(heading);
+  values[4] = f.GetPropertyValue("velocities/v-down-fps") * kFtToM;
+  values[5] = 0;
+  for (int i = 0; i < 3; ++i) {
+    if (gear->GetGearUnit(i + 3)->GetWOW()) values[5] += 1 << i;
+    const auto unit = gear->GetGearUnit(i);
+    values[6 + i * 4] = unit->GetWOW() ? 1.0 : 0.0;
+    values[7 + i * 4] = unit->GetCompLen() * kFtToM;
+    values[8 + i * 4] = -unit->GetCompForce() * kLbfToN;
+    values[9 + i * 4] = unit->GetWheelSlipAngle() * kPi / 180.0;
+  }
   return values;
 }
 

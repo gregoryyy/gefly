@@ -207,7 +207,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     }
     const { lat_rad, lon_rad, alt_msl_m, pitch_rad, roll_rad, heading_rad } = state;
     imageryStatus(state);
-    Cartesian3.fromRadians(lon_rad, lat_rad, alt_msl_m, Ellipsoid.WGS84, position);
+    Cartesian3.fromRadians(lon_rad, lat_rad, state.ground_height_ellipsoid_m ?? alt_msl_m, Ellipsoid.WGS84, position);
     Transforms.eastNorthUpToFixedFrame(position, Ellipsoid.WGS84, frame);
     const basis = aircraftBasisENU(heading_rad, pitch_rad, roll_rad);
     // Cesium's corrected model axes are forward/left/up. Build those columns

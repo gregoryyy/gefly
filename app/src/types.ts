@@ -1,3 +1,4 @@
+import type { RadioNavSnapshot } from './radio-nav';
 /** SI/radians at the existing E1 worker boundary; altitude datum remains experimental. */
 export const ALTIMETER_FIELDS = [
   'p_static_pa', 'altimeter_setting_pa', 'altimeter_indicated_m',
@@ -16,10 +17,10 @@ export function validAltimeterState(input: object): boolean {
     && value.altimeter_setting_pa! >= 80_000 && value.altimeter_setting_pa! <= 110_000;
 }
 export const COCKPIT_FIELDS = ['cas_mps', 'turn_rate_radps', 'slip_ball_rad', 'flap_rad',
-  'brake_left_norm', 'brake_right_norm', 'on_ground'] as const;
+  'brake_left_norm', 'brake_right_norm', 'on_ground', 'flap_command_norm'] as const;
 export interface CockpitState {
   cas_mps?: number; turn_rate_radps?: number; slip_ball_rad?: number; flap_rad?: number;
-  brake_left_norm?: number; brake_right_norm?: number; on_ground?: number;
+  brake_left_norm?: number; brake_right_norm?: number; on_ground?: number; flap_command_norm?: number;
 }
 export function validCockpitState(input: object): boolean {
   const value = input as CockpitState;
@@ -27,7 +28,8 @@ export function validCockpitState(input: object): boolean {
   const required = ['cas_mps','turn_rate_radps','flap_rad','brake_left_norm','brake_right_norm','on_ground'] as const;
   if (!required.every(key => typeof value[key] === 'number' && Number.isFinite(value[key]))) return false;
   if (!COCKPIT_FIELDS.every(key => value[key] === undefined || (typeof value[key] === 'number' && Number.isFinite(value[key])))) return false;
-  return (value.cas_mps === undefined || value.cas_mps >= 0)
+  return (value.flap_command_norm === undefined || (value.flap_command_norm >= 0 && value.flap_command_norm <= 1))
+    && (value.cas_mps === undefined || value.cas_mps >= 0)
     && (value.flap_rad === undefined || (value.flap_rad >= -1e-6 && value.flap_rad <= Math.PI / 6 + 1e-6))
     && [value.brake_left_norm, value.brake_right_norm].every(x => x === undefined || (x >= 0 && x <= 1))
     && (value.on_ground === undefined || value.on_ground === 0 || value.on_ground === 1);
@@ -51,15 +53,40 @@ export function validEngineState(input: object): boolean {
     && value.fuel_flow_m3ps! >= 0 && value.fuel_left_m3! >= 0 && value.fuel_right_m3! >= 0
     && [0,1,2].includes(value.ap_mode!) && value.ap_heading_target_rad! >= 0 && value.ap_heading_target_rad! < 2*Math.PI;
 }
-export interface FlightState extends AltimeterState, CockpitState, EngineState {
+export const PITCH_TRIM_FIELDS = ['pitch_trim_norm', 'pitch_trim_initial_norm', 'elevator_rad'] as const;
+export interface PitchTrimState {
+  pitch_trim_norm?: number; pitch_trim_initial_norm?: number; elevator_rad?: number;
+}
+export function validPitchTrimState(input: object): boolean {
+  const value = input as PitchTrimState;
+  if (!PITCH_TRIM_FIELDS.some(key => value[key] !== undefined)) return true;
+  return PITCH_TRIM_FIELDS.every(key => typeof value[key] === 'number' && Number.isFinite(value[key]))
+    && Math.abs(value.pitch_trim_norm!) <= 1 && Math.abs(value.pitch_trim_initial_norm!) <= 1;
+}
+export const GROUND_FIELDS = ['ground_agl_m', 'ground_height_ellipsoid_m', 'ground_forward_mps', 'ground_side_mps', 'ground_down_mps', 'structure_contact_mask',
+  'gear_nose_wow', 'gear_nose_compression_m', 'gear_nose_load_n', 'gear_nose_slip_rad',
+  'gear_left_wow', 'gear_left_compression_m', 'gear_left_load_n', 'gear_left_slip_rad',
+  'gear_right_wow', 'gear_right_compression_m', 'gear_right_load_n', 'gear_right_slip_rad'] as const;
+export type GroundState = Partial<Record<typeof GROUND_FIELDS[number], number>>;
+export function validGroundState(input: object): boolean {
+  const value = input as GroundState;
+  if (!GROUND_FIELDS.some(key => value[key] !== undefined)) return true;
+  return GROUND_FIELDS.every(key => typeof value[key] === 'number' && Number.isFinite(value[key]))
+    && Number.isInteger(value.structure_contact_mask) && value.structure_contact_mask! >= 0 && value.structure_contact_mask! <= 7
+    && [value.gear_nose_wow, value.gear_left_wow, value.gear_right_wow].every(x => x === 0 || x === 1)
+    && [value.gear_nose_compression_m, value.gear_left_compression_m, value.gear_right_compression_m,
+      value.gear_nose_load_n, value.gear_left_load_n, value.gear_right_load_n].every(x => x! >= 0);
+}
+export type LandingPreset = 'normal' | 'hard' | 'side' | 'banked';
+export interface FlightState extends AltimeterState, CockpitState, EngineState, PitchTrimState, GroundState, Partial<RadioNavSnapshot> {
   step: number; t_s: number; lat_rad: number; lon_rad: number;
   alt_msl_m: number; roll_rad: number; pitch_rad: number; heading_rad: number; tas_mps: number;
 }
-export interface Controls { elevator: number; aileron: number; rudder: number; throttle: number; flap_norm?: number; brake_norm?: number; mixture_norm?: number; mixture_auto?: boolean }
+export interface Controls { elevator: number; aileron: number; rudder: number; throttle: number; flap_norm?: number; brake_norm?: number; mixture_norm?: number; mixture_auto?: boolean; pitch_trim_norm?: number }
 export interface FlightScene {
   update(state: FlightState, view: 'cockpit' | 'chase', look?: { yaw_rad: number; pitch_rad: number; fov_rad?: number }): void;
   dispose(): void;
 }
 export interface FlightSession {
-  start(): void; pause(): void; reset(): void; input(controls: Controls): void; setAltimeter(setting_pa: number): void; setAutopilot(mode: 0|1|2, target_heading_rad?: number): void; dispose(): void;
+  start(): void; pause(): void; reset(landingPreset?: LandingPreset): void; input(controls: Controls): void; setAltimeter(setting_pa: number): void; setAutopilot(mode: 0|1|2, target_heading_rad?: number): void; dispose(): void;
 }

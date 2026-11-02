@@ -6,6 +6,7 @@ interface PointerYokeOptions {
   onLook: (yaw_rad: number, pitch_rad: number) => void;
   onMode: (mode: PointerYokeMode) => void;
   enabled: () => boolean;
+  lookOnly?: () => boolean;
 }
 
 const HOLD_MS = 250;
@@ -27,6 +28,7 @@ export function createPointerYoke(options: PointerYokeOptions): {
   let looking = false;
   let activePointer: number | null = null;
   let previousYokeActive = false;
+  let pressLookOnly = false, pressLookYaw = 0, pressLookPitch = 0;
   let anchorX = 0, anchorY = 0;
   let pressX = 0, pressY = 0, lastX = 0, lastY = 0;
   let mode: PointerYokeMode = 'off';
@@ -60,13 +62,30 @@ export function createPointerYoke(options: PointerYokeOptions): {
     setYoke(0, 0); setLook(0, 0); setMode('off');
   }
   function lookAtPointer(): void {
-    setLook(clamp((lastX - pressX) * LOOK_RAD_PER_PX, Math.PI),
-      clamp((pressY - lastY) * LOOK_RAD_PER_PX, MAX_LOOK_PITCH_RAD));
+    setLook(clamp(pressLookYaw + (lastX - pressX) * LOOK_RAD_PER_PX, Math.PI),
+      clamp(pressLookPitch + (pressY - lastY) * LOOK_RAD_PER_PX, MAX_LOOK_PITCH_RAD));
+  }
+  function suspendOutside(): void {
+    // Leaving the scene is not a request to switch off click-toggled yoke.
+    // Abort an unfinished click/hold without toggling or moving its anchor.
+    if (activePointer !== null) {
+      clearPress(); yokeActive = previousYokeActive;
+    }
+    setYoke(0, 0); setMode(yokeActive ? 'yoke' : 'off');
+  }
+  function inside(event: PointerEvent): boolean {
+    const rect = element.getBoundingClientRect();
+    return event.clientX >= rect.left && event.clientX <= rect.right
+      && event.clientY >= rect.top && event.clientY <= rect.bottom;
   }
   function down(event: PointerEvent): void {
     if (disposed || !options.enabled() || event.button !== 0 || event.isPrimary === false || activePointer !== null) return;
     event.preventDefault(); element.focus({ preventScroll: true });
-    previousYokeActive = yokeActive;
+    pressLookOnly = options.lookOnly?.() === true;
+    previousYokeActive = !pressLookOnly && yokeActive;
+    pressLookYaw = pressLookOnly ? lookYaw : 0;
+    pressLookPitch = pressLookOnly ? lookPitch : 0;
+    if (pressLookOnly) { yokeActive = false; setMode('off'); }
     pressX = lastX = event.clientX; pressY = lastY = event.clientY;
     activePointer = event.pointerId; looking = false;
     setYoke(0, 0);
@@ -85,13 +104,11 @@ export function createPointerYoke(options: PointerYokeOptions): {
       if (event.pointerId !== activePointer) return;
       lastX = event.clientX; lastY = event.clientY;
       if (looking) { event.preventDefault(); lookAtPointer(); }
-      else {
-        const rect = element.getBoundingClientRect();
-        if (lastX < rect.left || lastX > rect.right || lastY < rect.top || lastY > rect.bottom) cancel();
-      }
+      else if (!inside(event)) suspendOutside();
       return;
     }
-    if (!yokeActive || event.isPrimary === false) return;
+    if (options.lookOnly?.() || !yokeActive || event.isPrimary === false) return;
+    if (!inside(event)) { suspendOutside(); return; }
     setYoke(clamp((event.clientX - anchorX) / YOKE_TRAVEL_PX, 1),
       clamp((anchorY - event.clientY) / YOKE_TRAVEL_PX, 1));
   }
@@ -101,15 +118,19 @@ export function createPointerYoke(options: PointerYokeOptions): {
     if (!options.enabled()) { cancel(); return; }
     const wasLooking = looking;
     clearPress(); looking = false;
-    yokeActive = wasLooking ? previousYokeActive : !previousYokeActive;
+    yokeActive = !pressLookOnly && (wasLooking ? previousYokeActive : !previousYokeActive);
     anchorX = event.clientX; anchorY = event.clientY;
-    setYoke(0, 0); setLook(0, 0); setMode(yokeActive ? 'yoke' : 'off');
+    setYoke(0, 0);
+    // Review look is an inspection camera: keep its last orientation between drags.
+    if (!pressLookOnly) setLook(0, 0);
+    setMode(yokeActive ? 'yoke' : 'off');
   }
   function interrupted(event: PointerEvent): void {
     if (event.pointerId === activePointer) cancel();
   }
   function leave(): void {
-    if (!looking) cancel();
+    if (!options.enabled()) { cancel(); return; }
+    if (!looking) suspendOutside();
   }
   function key(event: KeyboardEvent): void {
     if (event.code === 'Escape') { event.preventDefault(); cancel(); }
@@ -118,6 +139,7 @@ export function createPointerYoke(options: PointerYokeOptions): {
 
   element.addEventListener('pointerdown', down);
   element.addEventListener('pointermove', move);
+  element.addEventListener('pointerenter', move);
   element.addEventListener('pointerup', up);
   element.addEventListener('pointercancel', interrupted);
   element.addEventListener('lostpointercapture', interrupted);
@@ -133,6 +155,7 @@ export function createPointerYoke(options: PointerYokeOptions): {
       cancel(); disposed = true;
       element.removeEventListener('pointerdown', down);
       element.removeEventListener('pointermove', move);
+      element.removeEventListener('pointerenter', move);
       element.removeEventListener('pointerup', up);
       element.removeEventListener('pointercancel', interrupted);
       element.removeEventListener('lostpointercapture', interrupted);

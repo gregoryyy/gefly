@@ -27,7 +27,7 @@
 // cost per step for each block, separating compute cost from post-idle wake cost.
 import createJSBSim from './dist/jsbsim.mjs';
 import { indicatedAltitude_m, validSetting } from './altimeter.js';
-import { cockpitFields } from './cockpit.js';
+import { cockpitFields, pitchTrimFields, groundFields } from './cockpit.js';
 import { autopilotCommand, engineFields } from './engine.js';
 
 const MAX_CATCHUP = 12;          // steps per tick (100 ms at 1/120 s)
@@ -144,6 +144,18 @@ function readCockpitFields() {
   return cockpitFields(M.HEAPF64.subarray(pointer, pointer + 8));
 }
 
+function readPitchTrimFields() {
+  if (typeof M._gf_pitch_trim_state !== 'function') return {};
+  const pointer = M._gf_pitch_trim_state() >> 3;
+  return pitchTrimFields(M.HEAPF64.subarray(pointer, pointer + 3));
+}
+
+function readGroundFields() {
+  if (typeof M._gf_ground_state !== 'function') return {};
+  const pointer = M._gf_ground_state() >> 3;
+  return groundFields(M.HEAPF64.subarray(pointer, pointer + 18));
+}
+
 function readEngineFields() {
   if (typeof M._gf_engine_state !== 'function') return {};
   const pointer = M._gf_engine_state() >> 3;
@@ -166,12 +178,14 @@ function onAutopilot(msg) {
 }
 
 function stateMessage() {
+  const flapCommand = typeof M._gf_flap_command_norm === 'function' ? M._gf_flap_command_norm() : NaN;
   const s = readState();
   return {
+    ...(Number.isFinite(flapCommand) && flapCommand >= 0 && flapCommand <= 1 ? { flap_command_norm: flapCommand } : {}),
     type: 'state', step: stepIndex, t_s: s[0], lat_rad: s[1], lon_rad: s[2],
     alt_msl_m: s[3], roll_rad: s[4], pitch_rad: s[5], heading_rad: s[6], tas_mps: s[7],
     last_input_wall_ms: lastInputWallMs, step_cost_us: lastStepCostUs, ...altimeterFields,
-    ...readCockpitFields(), ...readEngineFields(),
+    ...readCockpitFields(), ...readPitchTrimFields(), ...readGroundFields(), ...readEngineFields(),
   };
 }
 
@@ -192,6 +206,12 @@ function applyDueInputs() {
     if (typeof M._gf_set_secondary_inputs === 'function') {
       const secondary = M._gf_set_secondary_inputs(inp.flap_norm, inp.brake_norm);
       if (secondary !== 0) { fail(`secondary inputs rc=${secondary}`); return false; }
+    }
+    // Omitted trim preserves the initialization result and legacy study input.
+    // Apply an explicit command at the same fixed-step boundary as pilot axes.
+    if (inp.pitch_trim_norm !== undefined && typeof M._gf_set_pitch_trim === 'function') {
+      const trim = M._gf_set_pitch_trim(inp.pitch_trim_norm);
+      if (trim !== 0) { fail(`pitch trim rc=${trim}`); return false; }
     }
     if (typeof M._gf_set_engine_controls === 'function') {
       const engine = M._gf_set_engine_controls(inp.mixture_norm, inp.mixture_auto ? 1 : 0);
@@ -278,7 +298,13 @@ async function onInit(msg) {
   const hz = msg.state_hz === undefined ? 60 : msg.state_hz;
   if (!finiteIn(dt, 1e-4, 0.1) || !finiteIn(hz, 1, 1000)) { fail('init: bad dt_s or state_hz'); return; }
   if (msg.aircraft !== 'c172x') { fail(`init: unsupported aircraft ${msg.aircraft}`); return; }
-  const rc = M._gf_init(dt, ic.lat_rad, ic.lon_rad, ic.alt_msl_m, ic.heading_rad, ic.tas_mps);
+  const presets = { normal: 1, hard: 2, side: 3, banked: 4 };
+  const preset = msg.landing_preset;
+  if (preset !== undefined && (typeof preset !== 'string' || !Object.hasOwn(presets, preset)
+    || typeof M._gf_init_landing !== 'function')) { fail('init: landing preset unavailable or invalid'); return; }
+  const rc = preset === undefined
+    ? M._gf_init(dt, ic.lat_rad, ic.lon_rad, ic.alt_msl_m, ic.heading_rad, ic.tas_mps)
+    : M._gf_init_landing(dt, ic.lat_rad, ic.lon_rad, ic.heading_rad, presets[preset]);
   if (rc !== 0) { fail(`init rc=${rc}`); return; }
   dtS = dt; dtMs = dt * 1000; statePeriodMs = 1000 / hz;
   stepIndex = 0; pending = []; lastInputWallMs = null; lastStepCostUs = 0;
@@ -303,11 +329,13 @@ function onInput(msg) {
     && finiteIn(msg.elevator, -1, 1) && finiteIn(msg.aileron, -1, 1)
     && finiteIn(msg.rudder, -1, 1) && finiteIn(msg.throttle, 0, 1)
     && finiteIn(msg.flap_norm ?? 0, 0, 1) && finiteIn(msg.brake_norm ?? 0, 0, 1)
-    && finiteIn(mixture_norm, 0, 1) && typeof mixture_auto === 'boolean';
+    && finiteIn(mixture_norm, 0, 1) && typeof mixture_auto === 'boolean'
+    && (msg.pitch_trim_norm === undefined || finiteIn(msg.pitch_trim_norm, -1, 1));
   if (!ok) { postMessage({ type: 'error', message: 'input rejected: non-finite, out of range or bad step' }); return; }
   const inp = { step: msg.step, wall_ms: msg.wall_ms, elevator: msg.elevator, aileron: msg.aileron,
                 rudder: msg.rudder, throttle: msg.throttle, flap_norm: msg.flap_norm ?? 0, brake_norm: msg.brake_norm ?? 0,
                 mixture_norm, mixture_auto };
+  if (msg.pitch_trim_norm !== undefined) inp.pitch_trim_norm = msg.pitch_trim_norm;
   let i = pending.length;
   while (i > 0 && pending[i - 1].step > inp.step) i -= 1;   // stable insert
   pending.splice(i, 0, inp);

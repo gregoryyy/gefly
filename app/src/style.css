@@ -171,10 +171,10 @@ footer { display: flex; justify-content: space-between; border-top: 1px solid #8
   .topbar { display: grid; grid-template-columns: auto 1fr auto auto; gap: 6px 8px; }
   .topbar .brand { grid-column: 1; grid-row: 1; }
   .topbar .session-status { grid-column: 2; grid-row: 1; margin: 0; font-size: 9px; }
-  .topbar .view-controls { grid-column: 3 / 5; grid-row: 1; justify-self: end; }
+  #view-menu { grid-column: 3 / 5; grid-row: 1; justify-self: end; }
   #review-button-slot { grid-column: 1; grid-row: 2; }
   #review-button-slot button { width: 100%; padding: 8px; font-size: 10px; }
-  #toggle-map { grid-column: 2; grid-row: 2; }
+  #flight-menu { grid-column: 2; grid-row: 2; }
   #controls-settings { grid-column: 3; grid-row: 2; }
   #pause { grid-column: 4; grid-row: 2; }
   .topbar .settings-trigger, #pause { padding: 8px; font-size: 10px; }
@@ -215,3 +215,307 @@ footer { display: flex; justify-content: space-between; border-top: 1px solid #8
   .flight-gate .primary { padding: 10px; }
   .flight-gate .gate-hint { display: none; }
 }
+
+/* Session actions stay in the top menu; the stick overlay is a view preference. */
+.topbar { gap: 14px; z-index: 8; }
+.top-menu { position: relative; }
+.top-menu > summary { cursor: pointer; border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; font-size: 11px; }
+.top-menu .menu-content { position: absolute; top: calc(100% + 8px); right: 0; min-width: 185px; display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 7px; background: #142633; box-shadow: 0 9px 25px #0007; }
+.top-menu .menu-content button { text-align: left; padding: 10px 12px; font-size: 12px; }
+.top-menu button[aria-pressed=true]::after { content: ' ✓'; color: var(--accent); }
+.top-menu button.selected[aria-pressed=true]::after { color: #172631; }
+#reset { white-space: nowrap; font-size: 11px; }
+.control-settings .control-options { margin-bottom: 15px; }
+.control-settings #limits { margin-bottom: 12px; width: 100%; font-size: 11px; }
+.control-settings #limitations { position: static; inset: auto; width: auto; max-width: 100%; font-size: 11px; line-height: 1.7; margin: 0 0 15px; color: #b5c8d1; }
+.engine-controls { gap: 18px; }
+.pitch-trim-heading { display: flex; justify-content: space-between; gap: 6px; font-size: 9px; color: #afc2cd; }
+.pitch-trim-heading output { color: #f0cc95; font-variant-numeric: tabular-nums; font-size: 9px; }
+.pitch-trim input { width: 100%; accent-color: var(--accent); margin: 7px 0; }
+.pitch-trim-buttons { display: flex; gap: 4px; }
+.pitch-trim-buttons button { flex: 1; padding: 7px 3px; font-size: 9px; white-space: nowrap; }
+.pitch-trim-buttons kbd { margin-left: 2px; font-size: 8px; padding: 1px; }
+.pitch-trim-buttons button.held { color: #172631; background: var(--accent); }
+.pitch-trim small { display: block; margin-top: 6px; font-size: 8px; line-height: 1.5; color: #91aab9; }
+@media (max-width: 1100px) and (min-width: 621px) {
+  .topbar { gap: 8px; }
+  .location span, .brand span { display: none; }
+  .pitch-trim-heading { flex-direction: column; gap: 2px; }
+  .pitch-trim-buttons { flex-wrap: wrap; }
+  .pitch-trim-buttons button:last-child { flex-basis: 100%; }
+}
+@media (max-width: 620px) {
+  .topbar { gap: 6px 8px; }
+  .top-menu > summary { padding: 7px 10px; font-size: 10px; }
+  #reset { padding: 8px 5px; font-size: 9px; }
+  #reset kbd { display: none; }
+  #pitch-trim { grid-column: 1 / -1; }
+  .engine-controls { gap: 8px 17px; }
+  :root { --deck-height: 606px; }
+}
+@media (max-width: 620px) {
+  .top-menu { position: static; }
+  .flight-gate { top: 104px; padding: 12px 18px; }
+  .flight-gate h1 { font-size: 20px; margin: 6px 0 10px; }
+  .flight-gate p, .flight-gate .gate-hint { display: none; }
+  .flight-gate .primary { padding: 10px; }
+}
+
+@media (max-width: 620px) { #flight-menu > summary { text-align: center; } }
+
+.menu-label { font-size: 8px; color: #91aab9; padding: 8px 10px 2px; }
+.landing-feedback { position: absolute; top: 100px; right: 18px; width: 260px; padding: 12px; color: #c3d5dd; background: #11212fe8; border: 1px solid var(--border); border-radius: 8px; z-index: 3; font-size: 10px; }
+.landing-feedback strong { display: flex; justify-content: space-between; gap: 8px; font-size: 10px; color: #ecd2aa; }
+.landing-feedback strong span { color: #96acb7; font-size: 8px; }
+.landing-feedback p { font-size: 9px; line-height: 1.5; margin: 8px 0; }
+.gear-loads { display: grid; grid-template-columns: 1fr auto auto auto; gap: 5px 12px; font-size: 9px; }
+.gear-loads > span { font-size: 7px; color: #96acb7; }
+.gear-loads b { color: #96acb7; font-weight: 500; }
+.gear-loads b.contact { color: #83d8ad; }
+.landing-feedback small { font-size: 8px; color: #96acb7; }
+.landing-feedback .structure-contact { color: #ffb096; }
+@media (max-width: 620px) {
+  .landing-feedback { top: 104px; right: 10px; width: 177px; padding: 8px; }
+  .landing-feedback strong, .landing-feedback p { font-size: 8px; }
+  .landing-feedback small { display: none; }
+  .gear-loads { gap: 3px 6px; font-size: 8px; }
+}
+
+/* Separate engine/AP units and radio/NAV stay fully visible beside the controls. */
+:root { --deck-height: 520px; }
+.instruments { max-width: 1400px; gap: 18px; }
+.avionics-units { flex: 0 0 470px; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 12px; padding-top: 5px; min-width: 0; }
+.avionics-units > #radio-nav-systems { align-self: start; }
+.avionics-stack .engine-content { padding: 8px 9px; }
+.avionics-stack .engine-readouts b { font-size: 20px; }
+.avionics-stack .autopilot-content { padding: 8px; }
+.avionics-stack { display: flex; flex-direction: column; gap: 9px; min-width: 0; }
+.avionics-units .engine-panel, .avionics-units .autopilot-panel, .avionics-units .radio-nav-panel { width: 100%; }
+.avionics-stack #engine-systems { padding: 0; flex: 0 0 auto; }
+.avionics-stack .autopilot-heading { margin-bottom: 6px; }
+.avionics-stack #ap-status { min-height: 25px; padding: 5px 7px; }
+.avionics-stack .autopilot-modes { margin-top: 6px; }
+.avionics-stack .autopilot-modes button { padding: 6px 3px; }
+.avionics-stack .autopilot-target, .avionics-stack .autopilot-inop { margin-top: 6px; }
+.avionics-stack .autopilot-inop button { padding: 4px 2px; }
+.avionics-stack .autopilot-content p { margin-top: 5px; }
+@media (max-width: 1300px) and (min-width: 881px) {
+  .six-pack { max-width: 400px; }
+  .engine-controls { flex-basis: 165px; }
+  .avionics-units { flex-basis: 422px; grid-template-columns: 190px minmax(0, 1fr); }
+  .instruments { gap: 12px; }
+}
+@media (max-width: 880px) and (min-width: 621px) {
+  .six-pack { max-width: 300px; }
+  .engine-controls { flex-basis: 120px; }
+  .avionics-units { flex: 0 1 350px; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 8px; }
+  .instruments { gap: 8px; }
+}
+@media (min-width: 621px) and (max-height: 850px) {
+  .control-panel { transform: scale(.72); transform-origin: bottom left; }
+}
+@media (max-width: 620px) {
+  :root { --deck-height: 644px; }
+  .flight-app { min-height: 844px; }
+  .avionics-units { flex: 0 0 auto; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; width: 100%; max-width: 360px; padding: 0; }
+  .avionics-stack { display: contents; }
+  .avionics-units button.engine-open, .avionics-units button.autopilot-open, .avionics-units button.radio-nav-open { padding: 8px 3px; font-size: 9px; }
+}
+
+@media (min-width: 621px) and (max-width: 880px) {
+  :root { --deck-height: 550px; }
+}
+@media (min-width: 621px) and (max-width: 880px) and (max-height: 850px) {
+  .control-panel { transform: scale(.6); }
+}
+
+/* Classic panel reference: six primary instruments, two NAV indicators, radio stack. */
+.flight-deck { background: linear-gradient(110deg, #566267, #354249 65%, #475257); border-top: 3px solid #7e898b; box-shadow: 0 -6px 0 #172127, 0 -12px 32px #07152155; }
+.primary-instruments { display: flex; flex: 0 1 610px; gap: 12px; min-width: 0; padding: 8px; border: 1px solid #a4acae55; border-radius: 14px; background: #84909118; box-shadow: inset 0 1px 4px #111a2033; }
+.primary-instruments #six-pack { flex: 1; min-width: 0; }
+.primary-instruments .six-pack { width: 100%; max-width: none; }
+.primary-instruments .navigation-gauges { flex: 0 0 140px; padding-top: 2px; }
+.engine-controls { flex-basis: 180px; }
+@media (max-width: 1300px) and (min-width: 881px) {
+  .primary-instruments { flex-basis: 480px; gap: 8px; padding: 6px; }
+  .primary-instruments .navigation-gauges { --nav-gauge-size: 124px; flex-basis: 124px; }
+  .engine-controls { flex-basis: 145px; }
+  .avionics-units { flex-basis: 410px; grid-template-columns: 180px minmax(0, 1fr); }
+}
+@media (max-width: 880px) and (min-width: 621px) {
+  .primary-instruments { flex: 1 1 280px; flex-direction: column; gap: 8px; padding: 5px; }
+  .primary-instruments .navigation-gauges { --nav-gauge-size: 104px; width: 100%; flex-basis: auto; }
+  .navigation-gauges-content { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
+  .primary-instruments { display: contents; }
+  .primary-instruments #navigation-gauges { display: none; }
+  .engine-controls { flex-basis: auto; }
+}
+
+/* Instrument faces retain labels/flags; explanatory copy is available in Options. */
+.throttle-control p, .flap-controls > small, .brake-controls > small,
+#pitch-trim-note, .autopilot-content > p, .radio-limitations, .nav-signal-note,
+.navigation-gauge-note, .flight-deck > footer,
+.engine-flight-note, .autopilot-dialog-note, .radio-dialog-note, .navigation-dialog-note,
+.landing-feedback > small { display: none; }
+@media (min-width: 621px) {
+  .instruments { height: calc(var(--deck-height) - 54px); align-items: stretch; }
+  .primary-instruments, .engine-controls, .avionics-units { height: 100%; }
+  .primary-instruments .six-pack { height: 100%; align-content: space-between; }
+  .primary-instruments .navigation-gauges { height: 100%; }
+  .navigation-gauges-content { height: 100%; align-content: space-between; }
+  .engine-controls { justify-content: space-between; padding: 12px 9px; border: 1px solid #a4acae44; border-radius: 8px; background: #1a2b3333; }
+  .avionics-units { padding-top: 0; }
+  .avionics-stack { height: 100%; gap: 8px; }
+  .avionics-stack #autopilot-systems { flex: 0 0 42%; min-height: 0; }
+  .avionics-stack #engine-systems { flex: 1; min-height: 0; }
+  .avionics-stack .autopilot-content, .avionics-stack .engine-content { height: 100%; }
+  .avionics-units > #radio-nav-systems { height: 100%; align-self: stretch; }
+  #radio-nav-systems .radio-nav-content { height: 100%; display: flex; flex-direction: column; }
+  #radio-nav-systems .radio-receiver { flex: 1; }
+  #radio-nav-systems .nav-demo { margin-top: auto; padding-top: 8px; }
+}
+@media (min-width: 621px) and (max-width: 880px) {
+  .primary-instruments { justify-content: space-between; }
+  .primary-instruments .six-pack, .primary-instruments .navigation-gauges,
+  .primary-instruments .navigation-gauges-content { height: auto; }
+}
+
+/* The control column uses vertical trim travel and flap detents. */
+.vertical-config-controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; align-items: start; }
+.vertical-config-controls .config-heading, .vertical-config-controls .pitch-trim-heading { flex-direction: column; align-items: center; gap: 5px; min-height: 37px; text-align: center; }
+.vertical-config-controls .flap-detents { grid-template-columns: 1fr; gap: 8px; margin-top: 12px; }
+.vertical-config-controls .flap-detents button { min-height: 38px; }
+.vertical-config-controls .pitch-trim { text-align: center; }
+#pitch-trim-control { writing-mode: vertical-lr; direction: rtl; width: 25px; height: 172px; margin: 10px auto; display: block; }
+.vertical-config-controls .pitch-trim-buttons { display: grid; grid-template-columns: 1fr; gap: 4px; }
+.vertical-config-controls .pitch-trim-buttons button { padding: 5px 2px; }
+@media (max-width: 620px) {
+  .vertical-config-controls { grid-column: 2; grid-row: 1 / 3; gap: 8px; }
+  .vertical-config-controls #pitch-trim { grid-column: auto; }
+  #pitch-trim-control { height: 96px; }
+  .vertical-config-controls .flap-detents { gap: 5px; margin-top: 9px; }
+  .vertical-config-controls .flap-detents button { min-height: 26px; padding: 5px 2px; }
+  .vertical-config-controls .pitch-trim-buttons button { font-size: 8px; padding: 4px 1px; }
+}
+@media (min-width: 621px) {
+  .primary-instruments { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 10px 8px; position: relative; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+  .primary-instruments::before { content: ''; position: absolute; inset: 0 auto 0 0; width: calc(75% - 2px); border: 1px solid #a4acae66; border-radius: 18px; background: #9aa3a51c; box-shadow: inset 0 1px 4px #111a2033; pointer-events: none; }
+  .primary-instruments #six-pack, .primary-instruments .six-pack,
+  .primary-instruments #navigation-gauges, .primary-instruments .navigation-gauges-content { display: contents; }
+  .primary-instruments .six-pack-gauge, .primary-instruments .navigation-gauge { position: relative; min-width: 0; padding: 8px 3px 0; }
+  .primary-instruments [data-instrument=airspeed] { grid-column: 1; grid-row: 1; }
+  .primary-instruments [data-instrument=attitude] { grid-column: 2; grid-row: 1; }
+  .primary-instruments [data-instrument=altimeter] { grid-column: 3; grid-row: 1; }
+  .primary-instruments [data-instrument=turn] { grid-column: 1; grid-row: 2; }
+  .primary-instruments [data-instrument=heading] { grid-column: 2; grid-row: 2; }
+  .primary-instruments [data-instrument=vertical-speed] { grid-column: 3; grid-row: 2; }
+  .primary-instruments #nav1-gauge { grid-column: 4; grid-row: 1; }
+  .primary-instruments #nav2-gauge { grid-column: 4; grid-row: 2; }
+}
+@media (min-width: 621px) {
+  .primary-instruments { flex: 1 1 760px; }
+  .primary-instruments .six-pack .gauge canvas { width: 100%; max-width: none; }
+}
+@media (min-width: 881px) and (max-width: 1300px) {
+  .primary-instruments { flex: 1 1 600px; }
+}
+.radio-frequency-row input { appearance: textfield; }
+.radio-frequency-row input::-webkit-inner-spin-button,
+.radio-frequency-row input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+@media (min-width: 621px) and (max-width: 880px) {
+  .primary-instruments { flex: 1 1 310px; }
+  .engine-controls { flex-basis: 110px; }
+  .avionics-units { flex-basis: 330px; }
+  .primary-instruments .navigation-obs-controls { grid-template-columns: 18px minmax(0, 1fr) 18px; gap: 2px; }
+  .primary-instruments .navigation-obs-controls button { width: 18px; height: 23px; min-height: 23px; padding: 0; }
+  .primary-instruments .navigation-obs-knob output { font-size: 11px; white-space: nowrap; }
+  .radio-frequency-row input, .radio-frequency-row output { font-size: 12px; }
+}
+@media (min-width: 621px) and (max-width: 880px) {
+  .primary-instruments .navigation-obs-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px; }
+  .primary-instruments .navigation-obs-knob { grid-column: 1 / -1; grid-row: 1; }
+  .primary-instruments .navigation-obs-controls button { grid-row: 2; width: 100%; height: 25px; min-height: 25px; }
+  .primary-instruments .navigation-obs-knob output { font-size: 12px; }
+}
+
+/* Power with engine instruments; AP above the compact vertical flap/trim pair. */
+@media (min-width: 621px) {
+  .engine-controls { flex-basis: 210px; gap: 8px; }
+  .engine-controls #autopilot-systems { width: 100%; flex: 0 0 auto; }
+  .engine-controls .autopilot-content { padding: 6px; }
+  .engine-controls .autopilot-heading { margin-bottom: 4px; }
+  .engine-controls #ap-status { min-height: 22px; padding: 4px 6px; font-size: 12px; }
+  .engine-controls .autopilot-modes { margin-top: 5px; }
+  .engine-controls .autopilot-modes button { padding: 4px 3px; }
+  .engine-controls .autopilot-target, .engine-controls .autopilot-inop { margin-top: 5px; }
+  .engine-controls .autopilot-inop button { padding: 3px 2px; }
+  #pitch-trim-control { height: 100px; margin: 6px auto; }
+  .avionics-stack #engine-systems { flex: 1; }
+  .avionics-stack .engine-content { display: flex; flex-direction: column; }
+  .avionics-stack .engine-mixture { margin-top: 18px; }
+  .avionics-stack .throttle-control { width: 100%; min-width: 0; max-width: none; margin: auto 0 0; padding-top: 15px; }
+}
+@media (min-width: 881px) and (max-width: 1300px) { .engine-controls { flex-basis: 185px; } }
+@media (min-width: 621px) and (max-width: 880px) {
+  .engine-controls { flex-basis: 150px; }
+  .engine-controls .autopilot-target { grid-template-columns: 22px minmax(0, 1fr) 22px; }
+  .engine-controls .autopilot-target label { grid-column: 1 / -1; }
+  .avionics-units .radio-frequency-row { grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr) 18px; gap: 3px; }
+  .avionics-units .radio-frequency-row input, .avionics-units .radio-frequency-row output { font-size: 11px; }
+}
+@media (max-width: 620px) {
+  .engine-controls #autopilot-systems { grid-column: 1; grid-row: 1; width: 100%; }
+  .engine-controls .brake-controls { grid-column: 1; grid-row: 2; align-self: start; }
+  .avionics-units { grid-template-columns: 1fr 1fr; }
+  .engine-controls .autopilot-open { font-size: 9px; padding: 8px 3px; }
+  #engine-systems .throttle-control { width: 100%; max-width: none; min-width: 0; margin: 14px 0; }
+}
+/* Matching lever travel: flaps snap to four positions, trim stays continuous. */
+.flap-slider { height: 120px; position: relative; width: 52px; margin: 6px auto; display: flex; gap: 3px; }
+#flap-control { appearance: auto; writing-mode: vertical-lr; direction: ltr; height: 120px; width: 25px; margin: 0; accent-color: var(--accent); }
+.flap-stop-labels { display: flex; flex-direction: column; justify-content: space-between; font-size: 8px; color: #c7d5dc; line-height: 1; padding: 3px 0; }
+#pitch-trim-control { height: 120px; margin: 6px auto; }
+.flap-keycaps, .vertical-config-controls .pitch-trim-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px; }
+.vertical-config-controls .pitch-trim-buttons { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.flap-keycaps button, .vertical-config-controls .pitch-trim-buttons button { min-height: 24px; padding: 3px 1px; font-size: 11px; }
+#pitch-trim-initial { grid-column: auto; }
+@media (max-width: 620px) {
+  .flap-slider, #flap-control, #pitch-trim-control { height: 100px; }
+}
+/* Compact aligned power levers; selected settings remain visible while paused. */
+.engine-power-controls .engine-control-heading, .engine-power-controls .throttle-control label { height: 56px; min-height: 56px; }
+.avionics-stack .engine-power-controls { margin-top: auto; }
+.avionics-stack .engine-power-controls .throttle-control,
+.avionics-stack .engine-power-controls .engine-mixture { margin: 0; padding: 0; border: 0; }
+@media (min-width: 881px) { :root { --deck-height: 500px; } }
+@media (min-width: 621px) and (max-width: 880px) { :root { --deck-height: 530px; } }
+/* Shared metal and housing finishes, with original CSS hardware details. */
+:root { --panel-metal: #536168; --panel-metal-dark: #38474f; --instrument-housing: #172831; --instrument-edge: #74858b; }
+.flight-deck { background: linear-gradient(110deg, var(--panel-metal), var(--panel-metal-dark)); }
+.primary-instruments::before { background: #7c898b22; border-color: #93a0a466; }
+.engine-controls { background: #263b4533; border-color: #93a0a466; }
+.engine-content, .autopilot-content, .radio-nav-content { position: relative; background: var(--instrument-housing); border-color: var(--instrument-edge); box-shadow: inset 0 0 0 2px #0d1c23; }
+.nav-bezel-square { fill: var(--instrument-housing); stroke: #101c23; }
+.navigation-gauge { position: relative; }
+.primary-instruments .six-pack-gauge::after, .navigation-gauge::after,
+.engine-content::after, .autopilot-content::after, .radio-nav-content::after {
+  content: ''; position: absolute; inset: 5px; z-index: 2; pointer-events: none;
+  background:
+    linear-gradient(135deg, transparent 43%, #28363d 44% 57%, transparent 58%) left top / 7px 7px no-repeat,
+    linear-gradient(45deg, transparent 43%, #28363d 44% 57%, transparent 58%) right top / 7px 7px no-repeat,
+    linear-gradient(45deg, transparent 43%, #28363d 44% 57%, transparent 58%) left bottom / 7px 7px no-repeat,
+    linear-gradient(135deg, transparent 43%, #28363d 44% 57%, transparent 58%) right bottom / 7px 7px no-repeat,
+    radial-gradient(circle, #9ca8aa 0 43%, #5b6d74 48% 61%, #0c1a21 65% 72%, transparent 76%) left top / 7px 7px no-repeat,
+    radial-gradient(circle, #9ca8aa 0 43%, #5b6d74 48% 61%, #0c1a21 65% 72%, transparent 76%) right top / 7px 7px no-repeat,
+    radial-gradient(circle, #9ca8aa 0 43%, #5b6d74 48% 61%, #0c1a21 65% 72%, transparent 76%) left bottom / 7px 7px no-repeat,
+    radial-gradient(circle, #9ca8aa 0 43%, #5b6d74 48% 61%, #0c1a21 65% 72%, transparent 76%) right bottom / 7px 7px no-repeat;
+}
+.primary-instruments .six-pack-gauge::after, .navigation-gauge::after { top: 8px; bottom: auto; aspect-ratio: 1; }
+.practice-map-panel { z-index: 6; }
+.primary-instruments .six-pack-gauge { position: relative; }
+.flight-app .practice-map-panel { z-index: 6; }
+.flight-app .engine-content, .flight-app .autopilot-content, .flight-app .radio-nav-content { background: var(--instrument-housing); border-color: var(--instrument-edge); }
+.navigation-gauges-content .nav-bezel-square { fill: var(--instrument-housing); }
+body .engine-dialog, body .autopilot-dialog, body .radio-nav-dialog, body .navigation-dialog { background: var(--instrument-housing); }
