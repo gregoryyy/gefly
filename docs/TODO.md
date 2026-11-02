@@ -75,6 +75,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.3 Add bounded in-session flight-state review: scrub/play recorded states through both views, keep live JSBSim paused, and return to the true paused live state. Partial R-REVIEW-1; input/event replay, persistence and video export remain future work. Peer pending.
 
+- [x] 2.0.4 Add a local practice map with true heading, a bounded retained flight path, Fit/Follow controls and a marker synchronized with recorded-state review. Independent quality and actual-browser validation passed; see [review evidence](reviews/2026-11-02-practice-map.md). Partial R-WORLD-1/R-REVIEW-1; navigation charts, airport elevation and regional acceptance remain separate. Peer pending.
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.
 - [ ] 2.3 code2 implements the corresponding browser controls, instruments and exercise feedback against frozen contracts **in parallel with 2.2**.

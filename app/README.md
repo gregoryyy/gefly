@@ -85,6 +85,27 @@ samples. Flight reset or page reload clears it. There is no export, persistence,
 video recording, or input/event log. Full synchronized configuration, event and
 input replay remains future work under the [replay contract](../docs/design/CONTRACTS.md).
 
+## Practice map
+
+Select **Map** in the header to show or hide a north-up practice map. It loads
+MapLibre on demand and uses the same local overview/detail photographs as the
+flight scene. The aircraft marker shows true heading; the plotted route uses up
+to 600 points from the current flight's retained state trace. **Trace start**
+marks the first retained sample, not an airport reference point. Flight reset
+clears the route.
+
+To try it, fly a gentle turn, open **Map**, then enter **Review** and drag the
+timeline. The aircraft marker follows the selected recorded state. The route
+shows the whole retained trace, including any part flown after the selected
+review time; it is not a historical-only path. Use the map's zoom or **Fit**
+controls to inspect it. These controls return keyboard focus to the flight
+scene and do not change aircraft state or physics.
+
+The map makes no external tile or map-service requests: its imagery and metadata
+are local. It is geographic practice context, not a navigation chart. It does
+not supply authoritative airport positions, fixes, radio information or
+elevations, and it does not implement the complete EDDF region.
+
 ## Imagery and network access
 
 CesiumJS 1.146.0 displays a bundled, openly licensed starter photograph from the

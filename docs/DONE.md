@@ -3,6 +3,39 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 14:47 — See the aircraft and retained flight path on a practice map
+
+TODO: 2.0.4 complete as a bounded map increment; R-WORLD-1/R-REVIEW-1 remain partial.
+Agent: Codex orchestrator; practice_map_core/code1 and practice_map_ui/code2 in
+parallel, with flight_housekeeping on application instructions. Independent
+quality: flight_housekeeping, excluding its own README; validation: flight_validate.
+
+**Implementation notes**
+
+Added a lazy MapLibre panel using the existing bundled Hessen photographs,
+true-heading aircraft marker, whole retained route, zoom and Fit/Follow controls.
+Review seeking moves the marker to the selected historical state while live
+physics stays paused. Bounded immutable sampling plots at most 600 points at
+four updates per second; reset clears the path. Map failures leave flight usable.
+MapLibre is pinned with its complete license retained in source and build output.
+
+Strict TypeScript/build, 26 native tests and 22 real-browser check groups passed.
+Independent actual-browser validation confirmed visible imagery/path, heading,
+review isolation, focus, compact layout, reset and failure isolation. Fixed the
+Vite worker URL initialization failure and the ambiguous route legend; affected
+quality review passed. See [review evidence](reviews/2026-11-02-practice-map.md).
+
+**Deviations**
+
+Peer pending. This is a limited visual practice aid, not a navigation chart,
+accepted airport/runway data, real terrain or the EDDF/100 NM region. It changes
+no aircraft physics and does not complete the first circuit or training gates.
+
+**Insights**
+
+A selected-time marker and an explicitly labeled whole retained route let a
+learner compare a turn with its path without rewinding the live engine.
+
 ## 2026-11-02 10:05 — Prepare the handover to Codex
 
 TODO: 0.19 handed over (deferred, due before milestone 1 acceptance). Agent: Claude Code

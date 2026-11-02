@@ -1,0 +1,20 @@
+.practice-map-panel { position: absolute; top: 87px; right: 18px; width: 360px; max-width: calc(100% - 36px); z-index: 4; border: 1px solid #bdced04d; border-radius: 9px; background: #101c27f5; box-shadow: 0 8px 35px #06132266; overflow: hidden; }
+.practice-map-heading { display: flex; align-items: center; gap: 10px; padding: 8px 10px; }
+.practice-map-heading strong { font-size: 9px; letter-spacing: 1px; }
+.practice-map-mode { margin-left: auto; color: #f2ce94; font-size: 10px; }
+.practice-map-heading > button { padding: 0 6px; border: 0; background: transparent; font-size: 21px; line-height: 24px; }
+.practice-map-viewport { height: 170px; width: 100%; background: #162530; }
+.practice-map-panel .maplibregl-canvas { outline: none; }
+.practice-map-status { margin: 0; padding: 8px 10px; font-size: 11px; line-height: 1.5; background: #30291f; color: #ffe0b1; }
+.practice-map-toolbar { display: flex; gap: 6px; padding: 8px 10px 3px; }
+.practice-map-toolbar button { font-size: 10px; padding: 5px 9px; }
+.practice-map-toolbar button:nth-child(-n+2) { font-size: 15px; min-width: 30px; padding: 2px 8px; }
+.practice-map-toolbar button[aria-pressed=true] { color: #15232e; border-color: #e4bb79; background: #e4bb79; }
+.practice-map-readout { margin: 5px 10px; font-size: 10px; font-variant-numeric: tabular-nums; color: #e7eff3; }
+.practice-map-legend { margin: 4px 10px; font-size: 9px; line-height: 1.5; color: #edcb91; }
+.practice-map-credit { margin: 5px 10px 3px; font-size: 8px; color: #92aab9; }
+.practice-map-caption { margin: 0; padding: 7px 10px; font-size: 9px; color: #c1d0da; background: #07162280; }
+.practice-map-aircraft { color: white; font-size: 25px; line-height: 27px; width: 27px; height: 27px; text-align: center; text-shadow: 0 1px 2px #000, 0 0 5px #000; pointer-events: none; }
+.practice-map-start { color: #fff0ca; background: #14242dea; padding: 3px 5px; border-radius: 3px; font-size: 9px; border-left: 3px solid #f3c676; white-space: nowrap; pointer-events: none; }
+@media (max-width: 880px) { .practice-map-panel { right: 10px; width: 310px; max-width: calc(100% - 20px); top: 78px; } .practice-map-viewport { height: 170px; } }
+@media (max-width: 620px) { .practice-map-panel { width: 280px; top: 76px; } .practice-map-viewport { height: 150px; } .practice-map-legend { font-size: 8px; } }
