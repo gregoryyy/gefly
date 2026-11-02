@@ -211,6 +211,10 @@ coverage, rights and live rollout remain future implementation selections.
 
 Why: affects code reuse, distribution, aircraft manuals, avionics depictions, maps and navigation data. The user's direction is now free/open source; select a compatible open-source license and review separately licensed assets/data. Blocking: license-dependent distribution and restricted asset ingestion.
 
+Answer (EASA TCDS): **2026-11-02 07:16, user** ([input](input/2026-11-02-q23-proposals.md),
+Q23): the EASA TCDS values (manifest S5 IM.A.051, S9 EASA.IM.E.032) are used as
+cited facts (`facts_only`), like the POH: values with page citations, no copied text.
+
 Answer (fuel chart): **2026-11-01 19:04, user** ([input](input/2026-11-01-renderer-fuel-tolerances.md)):
 “yes to all”. The facts-only, selective extraction allowance extends to the needed
 points of the Lycoming fuel-consumption chart (Fig. 3-9), under the same
@@ -340,23 +344,44 @@ no model identifiers in repository files. Carried into [AGENTS](../AGENTS.md),
 
 Why: SDLC keeps open decisions in GAPS; the foundation review (TODO 1.6, 2026-11-02 00:21) found
 them only in the design documents. This register points to their detail; the design
-documents keep the technical discussion. Status as of 2026-11-02 00:21; recommendations are
-orchestrator proposals, not decisions.
+documents keep the technical discussion. Status as of 2026-11-02 07:16: the user accepted the recommendations (answer below).
+
+Answer: **2026-11-02 07:16, user** (recorded by orchestrator, Claude Code;
+[input](input/2026-11-02-q23-proposals.md)): “yes to proposals. go on”. All
+recommendations in the table below are accepted as decisions:
+- **Q-S3:** milestone 2 covers the circuit flight, the checklist items the simulator
+  can sense and a static scenario briefing. The text radio state machine stays in
+  roadmap phase 3.
+- **Q-S8:** the 172S classic-panel engine and fuel indications are part of the
+  worker-computed `ind` state and digest.
+- **S5/S9:** the EASA TCDS values are `facts_only` (see Q5).
+- **FDM Q-1:** empty mass and CG come from the POH sample loading example, labelled as
+  a sample, not a weighed aircraft.
+- **Q-S7:** CONTRACTS §10 v1.1 and SCENARIO-CONTRACTS C1–C17 are agreed.
+- **Q-S1, Q-S5, Q-S6 and Q19:** as recommended.
+- **Q-S2, Q-S4 and the EXERCISE-01/BRIEFING items:** follow the recommended direction.
+  Their values still come from the AIP (TODO 1.7) or are labelled instructional
+  proposals (IP).
+- **FDM Q-3..Q-12:** labelled estimates.
+
+Carried into [CONTRACTS](design/CONTRACTS.md), [SCENARIO-CONTRACTS](design/SCENARIO-CONTRACTS.md),
+[FDM-172S](design/FDM-172S.md), the [aircraft manifest](../data/aircraft/c172s-classic/manifest.json)
+and [TODO](TODO.md) 2.1.
 
 | Item | Source | Status | Blocks M2? | Recommendation |
 | --- | --- | --- | --- | --- |
-| Q-S3 radio/briefing/checklists in milestone 2 | [SCENARIO-CONTRACTS](design/SCENARIO-CONTRACTS.md) §7 | open, **user** | yes (2.1) | M2 = circuit flight + sensed checklist items + static scenario briefing; text radio state machine stays in roadmap phase 3 |
-| Q-S8 engine/fuel gauges in the `ind` digest | SCENARIO-CONTRACTS §4 | open, **user** | yes (2.2/2.3) | include the 172S classic-panel engine/fuel indications, computed in the worker |
-| Q-S5 experimental (draft) packages runnable | SCENARIO-CONTRACTS §7 | open | no | yes, labelled experimental, never accepted |
-| Q-S1, Q-S6, Q-S7 | SCENARIO-CONTRACTS §7 | open | no | session-log hash suffices; store parsed intents, keep free text local; accept C1–C17 |
-| Q-S2 altimeter match tolerance | SCENARIO-CONTRACTS §7, EXERCISE-01 | open | before 2.5 | instructional proposal labelled IP |
-| Q-S4 QFE datum and AIP vertical reference | SCENARIO-CONTRACTS §7 | open | before 2.5 | source from the AIP (TODO 1.7) |
-| S5/S9 EASA TCDS values classed `reference_only` but used as facts | CONTRACTS §10.5, data manifest | open, **user** (Q5) | yes (2.2 builder) | class them `facts_only` like the POH (cited values, no text) |
-| Q19 scope: 60 s phone resume window and recentring | [PHONE-CONTROL](design/PHONE-CONTROL.md) | open | no (1.13 is Later) | treat as covered by "yes to proposals" |
-| FDM Q-1 empty mass/CG | [FDM-172S](design/FDM-172S.md) §7 | open | yes (1.3.2) | POH sample loading example, labelled; no aircraft available |
-| FDM Q-3..Q-7, Q-9, Q-10, Q-12 | FDM-172S §7 | open | 1.3.x only | estimates, labelled; detail in FDM-172S |
-| EXERCISE-01 open questions 1, 3–6 | [EXERCISE-01](design/EXERCISE-01.md) | open | before 2.5 freeze | AIP circuit data (1.7); instructional proposals labelled IP |
-| BRIEFING open questions 1–8 | [BRIEFING](design/BRIEFING.md) §6 | open | if Q-S3 includes briefing | generated reports first; English first |
+| Q-S3 radio/briefing/checklists in milestone 2 | [SCENARIO-CONTRACTS](design/SCENARIO-CONTRACTS.md) §7 | decided 2026-11-02 | yes (2.1) | M2 = circuit flight + sensed checklist items + static scenario briefing; text radio state machine stays in roadmap phase 3 |
+| Q-S8 engine/fuel gauges in the `ind` digest | SCENARIO-CONTRACTS §4 | decided 2026-11-02 | yes (2.2/2.3) | include the 172S classic-panel engine/fuel indications, computed in the worker |
+| Q-S5 experimental (draft) packages runnable | SCENARIO-CONTRACTS §7 | decided 2026-11-02 | no | yes, labelled experimental, never accepted |
+| Q-S1, Q-S6, Q-S7 | SCENARIO-CONTRACTS §7 | decided 2026-11-02 | no | session-log hash suffices; store parsed intents, keep free text local; accept C1–C17 |
+| Q-S2 altimeter match tolerance | SCENARIO-CONTRACTS §7, EXERCISE-01 | direction decided; values pending | before 2.5 | instructional proposal labelled IP |
+| Q-S4 QFE datum and AIP vertical reference | SCENARIO-CONTRACTS §7 | direction decided; values pending | before 2.5 | source from the AIP (TODO 1.7) |
+| S5/S9 EASA TCDS values classed `reference_only` but used as facts | CONTRACTS §10.5, data manifest | decided 2026-11-02 (Q5) | yes (2.2 builder) | class them `facts_only` like the POH (cited values, no text) |
+| Q19 scope: 60 s phone resume window and recentring | [PHONE-CONTROL](design/PHONE-CONTROL.md) | decided 2026-11-02 | no (1.13 is Later) | treat as covered by "yes to proposals" |
+| FDM Q-1 empty mass/CG | [FDM-172S](design/FDM-172S.md) §7 | decided 2026-11-02 | yes (1.3.2) | POH sample loading example, labelled; no aircraft available |
+| FDM Q-3..Q-7, Q-9, Q-10, Q-12 | FDM-172S §7 | decided 2026-11-02 | 1.3.x only | estimates, labelled; detail in FDM-172S |
+| EXERCISE-01 open questions 1, 3–6 | [EXERCISE-01](design/EXERCISE-01.md) | direction decided; values pending | before 2.5 freeze | AIP circuit data (1.7); instructional proposals labelled IP |
+| BRIEFING open questions 1–8 | [BRIEFING](design/BRIEFING.md) §6 | direction decided; values pending | if Q-S3 includes briefing | generated reports first; English first |
 
 Resolved items already recorded elsewhere: FDM Q-11 (Q21), Q-13 (Q5, 19:04), Q-2 (no
 aircraft available, 2026-11-01). Answers are recorded here or in the referenced
