@@ -91,6 +91,20 @@ export class FlightTrace {
     return this.sample(low);
   }
 
+  /** Bounded plotting samples, including retained endpoints; never used for replay or physics. */
+  sampledStates(maxPoints = 600): readonly Readonly<FlightState>[] {
+    if (!Number.isInteger(maxPoints) || maxPoints < 2 || maxPoints > 1000) {
+      throw new RangeError('maxPoints must be an integer from 2 to 1000');
+    }
+    const length = Math.min(this.count, maxPoints);
+    const states: Readonly<FlightState>[] = [];
+    for (let index = 0; index < length; index++) {
+      const sampleIndex = length === 1 ? 0 : Math.floor(index * (this.count - 1) / (length - 1));
+      states.push(this.sample(sampleIndex).state);
+    }
+    return Object.freeze(states);
+  }
+
   private sample(index: number): TraceSample {
     return this.samples[(this.head + index) % this.samples.length]!;
   }

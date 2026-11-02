@@ -56,6 +56,7 @@ export default defineConfig({
       await Promise.all(cesiumDirectories.map(dir => cp(resolve(cesiumRoot, dir), resolve(output, dir), { recursive: true })));
       const packageRoot = resolve(import.meta.dirname, 'node_modules/cesium');
       await Promise.all(['LICENSE.md', 'ThirdParty.json', 'ThirdParty.extra.json'].map(file => cp(resolve(packageRoot, file), resolve(output, file))));
+      await cp(resolve(import.meta.dirname, 'node_modules/maplibre-gl/LICENSE.txt'), resolve(output, '../MapLibre-LICENSE.txt'));
     },
   }],
 });

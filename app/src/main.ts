@@ -1,4 +1,5 @@
 import './style.css';
+import './practice-map.css';
 import { createScene } from './scene';
 import { createSession } from './session';
 import { FlightTrace } from './flight-trace';
@@ -6,6 +7,7 @@ import { createFlightReviewControls } from './flight-review-controls';
 import { applyControlSettings, DEFAULT_CONTROL_SETTINGS, type ControlSettings } from './control-settings';
 import { createControlSettingsPanel } from './control-settings-panel';
 import type { Controls, FlightState, FlightScene } from './types';
+import type { PracticeMap } from './practice-map';
 
 const root = document.querySelector<HTMLDivElement>('#app')!;
 root.innerHTML = `
@@ -17,6 +19,7 @@ root.innerHTML = `
     <div class="session-status"><i id="status-dot"></i><span id="status" role="status">Loading flight…</span><span id="clock">00:00</span></div>
     <nav class="view-controls" aria-label="Flight views"><button id="cockpit" class="selected" aria-pressed="true">Cockpit</button><button id="chase" aria-pressed="false">Chase <kbd>V</kbd></button></nav>
     <span id="review-button-slot"></span>
+    <button id="toggle-map" class="settings-trigger" aria-pressed="false" aria-controls="practice-map-panel">Map</button>
     <button id="controls-settings" class="settings-trigger" aria-haspopup="dialog">Controls</button>
     <button id="pause" disabled>Pause <kbd>SPACE</kbd></button>
   </header>
@@ -42,6 +45,7 @@ root.innerHTML = `
     <details class="control-options"><summary>Keyboard & assistance</summary><p>↑ Push nose down · ↓ Pull nose up<br>← / → Bank · A / D Rudder<br>W / S Throttle · Space Pause · R Restart</p><label for="roll-offset">Study roll offset <output id="offset-value">−0.109</output></label><input id="roll-offset" type="range" min="-0.25" max="0.25" step="0.001" value="-0.109375" aria-label="Experimental roll input offset"><small>Experimental input assist. Set to zero for unassisted roll input.</small></details>
   </aside>
   <div class="scenery-label">Egelsbach starter photograph · ellipsoid surface (no terrain)</div>
+  <aside id="practice-map-panel" class="practice-map-panel" aria-label="Practice map" hidden></aside>
   <section class="flight-deck" aria-label="Flight instruments">
     <div class="deck-heading"><span class="eyebrow">CLASSIC INSTRUMENTS <b>EXPERIMENTAL</b></span><span id="view-label">COCKPIT VIEW</span></div>
     <div class="instruments">
@@ -70,6 +74,9 @@ let verticalSpeedFpm = 0, throttle = 0.69, stickX = 0, stickY = 0;
 const flightTrace = new FlightTrace();
 let reviewing = false, reviewPlaying = false, reviewTime_s = 0;
 let liveStatus = 'Loading flight…';
+let practiceMap: PracticeMap | null = null;
+let mapVisible = false, mapLoading = false, mapDisposed = false;
+let lastMapUpdate_ms = -Infinity;
 // Existing E1 fixture's empirical input offset, not an aircraft coefficient.
 let rollOffset = -0.109375;
 let controlSettings: ControlSettings = { ...DEFAULT_CONTROL_SETTINGS };
@@ -152,6 +159,35 @@ const controlSettingsPanel = createControlSettingsPanel({
 });
 el('controls-settings').onclick = () => controlSettingsPanel.open();
 
+el('toggle-map').onclick = () => { void setMapVisible(!mapVisible); focusFlight(); };
+function mapUnavailable() {
+  practiceMap?.dispose(); practiceMap = null;
+  el('practice-map-panel').textContent = 'Practice map unavailable. Close and reopen to retry; flight controls still work.';
+}
+async function setMapVisible(visible: boolean) {
+  mapVisible = visible;
+  const panel = el('practice-map-panel');
+  panel.hidden = !visible;
+  el('toggle-map').setAttribute('aria-pressed', String(visible));
+  if (practiceMap) { practiceMap.setVisible(visible); lastMapUpdate_ms = -Infinity; return; }
+  if (!visible || mapLoading || mapDisposed) return;
+  mapLoading = true; panel.textContent = 'Loading practice map…';
+  try {
+    const { createPracticeMap } = await import('./practice-map');
+    if (mapDisposed) return;
+    const created = await createPracticeMap({
+      container: panel,
+      onClose: () => { void setMapVisible(false); focusFlight(); },
+      onInteraction: focusFlight,
+    });
+    if (mapDisposed) { created.dispose(); return; }
+    practiceMap = created; created.setVisible(mapVisible); lastMapUpdate_ms = -Infinity;
+  } catch {
+    if (!mapDisposed) panel.textContent = 'Practice map unavailable. Close and reopen to retry; flight controls still work.';
+  } finally { mapLoading = false; }
+}
+
+
 const reviewControls = createFlightReviewControls({
   buttonContainer: el('review-button-slot'),
   barContainer: document.querySelector<HTMLElement>('.flight-app')!,
@@ -161,6 +197,7 @@ const reviewControls = createFlightReviewControls({
     const bounds = flightTrace.bounds();
     if (!reviewing || !bounds || !Number.isFinite(time_s)) return;
     reviewPlaying = false; reviewTime_s = clamp(time_s, bounds.start_s, bounds.end_s);
+    lastMapUpdate_ms = -Infinity;
     updateReviewControls();
   },
   onTogglePlay: toggleReviewPlayback,
@@ -177,12 +214,12 @@ function updateReviewControls() {
 function enterReview() {
   const bounds = flightTrace.bounds();
   if (reviewing || !bounds || bounds.count < 2 || !ready || failed || sceneFailed) return;
-  reviewing = true; reviewTime_s = bounds.start_s;
+  reviewing = true; reviewTime_s = bounds.start_s; lastMapUpdate_ms = -Infinity;
   pauseFlight(); el('status').textContent = 'Review'; focusFlight();
 }
 function exitReview() {
   if (!reviewing) return;
-  reviewing = reviewPlaying = false;
+  reviewing = reviewPlaying = false; lastMapUpdate_ms = -Infinity;
   el('status').textContent = liveStatus;
   neutralize(); updateSessionUI(); focusFlight();
 }
@@ -231,6 +268,8 @@ function reset() {
   if (reviewing) return;
   if (sceneFailed) { notice('The 3D scene is unavailable. Reload with WebGL enabled.'); return; }
   flightTrace.clear();
+  if (practiceMap && latest) { try { practiceMap.update(latest, [], 'live'); } catch { mapUnavailable(); } }
+  lastMapUpdate_ms = -Infinity;
   startWhenReady = running; running = false; ready = false; failed = false;
   neutralize(); session.pause(); latest = previous = null; verticalSpeedFpm = 0;
   notice(''); session.reset(); updateSessionUI(); focusFlight();
@@ -380,6 +419,15 @@ function animate(now: number) {
   if (latest) {
     const state = reviewSample?.state ?? latest;
     const shownVsiFpm = reviewSample ? reviewSample.vertical_speed_mps / 0.3048 * 60 : verticalSpeedFpm;
+    if (practiceMap && mapVisible && now - lastMapUpdate_ms >= 250) {
+      try {
+        practiceMap.update(state, flightTrace.sampledStates(600), reviewing ? 'review' : 'live');
+        lastMapUpdate_ms = now;
+      } catch {
+        mapUnavailable();
+      }
+    }
+
     if (scene && !sceneFailed) {
       try { scene.update(state, view); } catch {
         sceneFailed = true; pauseFlight(); notice('The 3D scene stopped rendering. Reload to restart.'); updateSessionUI();
@@ -402,5 +450,5 @@ dial('airspeed', 0, 180, 'TRUE AIRSPEED', 'KNOTS · NOT IAS', 20);
 dial('altitude', 0, 1000, 'ALTITUDE', 'STUDY DATUM', 100);
 attitude({ roll_rad: 0, pitch_rad: 0 } as FlightState);
 publishInput(); updateSessionUI(); requestAnimationFrame(animate);
-addEventListener('pagehide', () => { session.dispose(); controlSettingsPanel.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
+addEventListener('pagehide', () => { mapDisposed = true; practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
 void sceneReady;

@@ -45,6 +45,10 @@ on an ellipsoid surface; real terrain and airport elevations remain incomplete. 
 research aircraft remains experimental; see
 [setup, controls and limitations](app/README.md).
 
+**Map** shows a north-up practice view with the aircraft and whole retained flight
+path over local imagery. During **Review**, its marker follows the selected
+historical state. It is a practice aid with limited coverage, not a navigation chart.
+
 ## Status and entry points
 
 Technical foundation is underway, with [native](studies/e1-jsbsim/README.md) and
