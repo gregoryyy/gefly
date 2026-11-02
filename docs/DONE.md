@@ -13,7 +13,7 @@ fov_housekeeping on parallel source/input research. Independent quality and
 validate: fov_housekeeping on non-authored implementation; code2 independently
 reviews root/code1 integration, with own renderer/audio excluded. Root/code2
 check primary-source facts separately from housekeeping-authored research.
-Cross-provider peer pending; this is an increment, not milestone acceptance.
+Cross-provider peer pending: actual Claude CLI packet review timed out at 180 seconds with no report/model identity. This is an increment, not milestone acceptance.
 
 **Implementation notes**
 

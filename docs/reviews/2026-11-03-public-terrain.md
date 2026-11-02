@@ -97,6 +97,29 @@ the existing large vendor chunk warning; no device-performance acceptance is
 inferred. The existing interactive smoke test also passes all 26 listed checks
 on actual Chrome/native dynamics with only local runtime traffic.
 
-A fresh target fetch and clean local merge-tree result are required before PR
-publication; GitHub mergeability is checked afterward. The new PR is based on
-PR #46 while it remains open, preserving the independently checked base.
+[PR #47](https://github.com/gregoryyy/gefly/pull/47) is published from `0577dc4`,
+based on PR #46 while that dependency remains open. A fresh target fetch and
+local merge-tree check pass; GitHub reports MERGEABLE/CLEAN. Hosted CI is not
+triggered for this feature-branch target; the shared CI/build results above are
+local, not hosted check results.
+
+The final R-SIM-8/R-VIEW-1 clauses now describe supported terrain and the active
+public or explicit flat-study receiver. fov_housekeeping independently renews
+these documentation criteria against the unchanged contact/Review/shadow tests.
+
+## Actual external peer attempt
+
+The Codex → Claude route was invoked through `utils/peer_review.py` with existing
+CLI 2.1.193 and a fresh tool-disabled project-only packet. Packet SHA-256:
+`490501446bdcd2af222e668817da9271c4bfdfa331486dc7bfa1165f824be4b4`;
+source revision is the frozen implementation hash above. The process timed out
+at 180 seconds (`reviewer_timeout`, exit 2), with no review or verifiable model
+identity returned. Quality and specification peer outcomes are **blocked**, not
+passes; peer remains pending. No authentication/configuration change or fallback
+provider was used. Raw normalized result remains local under
+output/peer/2026-11-03-terrain-peer-result.json.
+
+The packet excludes earlier pending PR changes and uses the SPEC snapshot before
+the two final receiver-wording clarifications. It cannot establish a completed
+batched peer gate or acceptance of a milestone/release. Same-provider independent
+quality/validation and executed checks retain their separately declared scope.
