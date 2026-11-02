@@ -72,7 +72,7 @@ excluded from independent acceptance. Exact scoped outcomes and unchanged-source
 binding are in output/flight/independent-ground-braking/review-outcomes.json.
 
 `just ci` exits 0: 238 repository-tool tests (one live-provider case skipped),
-162 app Node tests plus five Python adapter tests, 84 assurance tests and eleven
+161 app Node tests plus five Python adapter tests, 84 assurance tests and eleven
 training tests pass. Nine of 23 optional Python JSBSim study cases remain skipped
 because that package is unavailable. Native/browser fixtures execute separately;
 these skips are not physics passes. Indexed-content whitespace passes.
