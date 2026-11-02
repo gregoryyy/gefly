@@ -37,9 +37,12 @@ just build-flight-engine   # first run: builds the local research runtime
 just fly                  # http://127.0.0.1:5173
 ```
 
-Use arrow keys for pitch/roll, A/D for rudder, W/S for throttle, Space to pause,
+Select **Start flight**, then use the visible on-screen controls or a draggable stick.
+Arrow keys control pitch/roll, A/D rudder, W/S throttle, Space pause,
 R to restart and V to change view. Touchpad controls are available on screen.
-The generic research aircraft and procedural scenery are experimental; see
+A bundled official Hessen photograph shows a small starter area around Egelsbach
+on an ellipsoid surface; real terrain and airport elevations remain incomplete. The generic
+research aircraft remains experimental; see
 [setup, controls and limitations](app/README.md).
 
 ## Status and entry points

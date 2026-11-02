@@ -30,6 +30,168 @@ sender-fault detection and the annunciator switch-label serial. Quality fixes (0
 both validators enforce estimate-only use and the variant named in `applicability`;
 `hash_basis` added; manifest 0.3.1, value files re-pinned. Peer pending (batched).
 
+## 2026-11-02 14:56 — Integrate PR 35 with the current flight interface
+
+TODO: 0.21 / 1.6 integration only. Agent: Codex orchestrator; pr35_vite/code1 and
+pr35_smoke/code2 resolved disjoint application conflicts in parallel, with
+pr35_housekeeping on application instructions and record preservation.
+Independent quality and validation: pr32_merge_review.
+
+**Implementation notes**
+
+Retained the extracted research-runtime middleware and real missing-engine smoke
+case alongside main's Cesium asset serving/build copying, control settings and
+recorded-state review tests. The native test command includes both branches'
+tests. Preserved complete DONE records and TODO status; corrected SBOM's obsolete
+statement that Cesium integration was still future work.
+
+Strict TypeScript/UI build and all 22 native tests passed. The real-engine Chrome
+smoke passed all 20 check groups, including the actual missing-module 404 case.
+The first run exposed queued state messages racing the settings pause baseline;
+the test now allows the existing pause-settling interval before checking a frozen
+worker step. Product behavior was unchanged; affected independent review passed.
+
+**Deviations**
+
+This is merge integration, not renewed acceptance of the historical peer packets
+or the foundation milestone. Existing peer-pending and blocked outcomes remain.
+
+**Insights**
+
+A clean conflict resolution must preserve both the newer flight interface and
+the negative runtime test; choosing either whole side would lose coverage.
+
+## 2026-11-02 14:50 — Reconcile PR 32 with current main
+
+TODO: 1.6 integration only. Agent: Codex orchestrator; pr32_merge_review performs
+independent quality and validation of the merge resolution.
+
+**Implementation notes**
+
+Merged current main into fix/m1-contracts. Preserved both branches' complete DONE
+records in descending date order, and retained TODO 2.0.1–2.0.3 alongside the
+expanded milestone 2 scope in 2.1. Contract changes and user decisions are retained.
+Independent quality and validation passed: every parent record is intact, task
+status is preserved, and the original contract/input files are unchanged.
+
+**Deviations**
+
+This resolves integration conflicts; it does not accept the pending foundation,
+model or training milestones. Existing peer-pending dispositions remain.
+
+**Insights**
+
+Merging complete dated records avoids attaching one branch's body to the other
+branch's heading or deviations.
+
+## 2026-11-02 12:36 — Review the recorded flight without rewinding physics
+
+TODO: 2.0.3 complete as a bounded state-review increment; R-REVIEW-1 remains partial.
+Agent: Codex orchestrator; flight_trace_core/code1 and flight_review_ui/code2 in
+parallel, with flight_housekeeping on app instructions. Independent quality:
+flight_housekeeping, excluding its own README; independent validation: flight_validate.
+
+**Implementation notes**
+
+Added Review, a timeline, playback and Back to live. Copied state samples and
+captured vertical speed feed both views/instruments while the real worker stays
+paused. Returning live restores its actual state and requires explicit Resume.
+A bounded immutable ring retains up to ten simulation minutes/36,000 samples;
+restart/reload clears it. No unrecorded control positions are shown in review.
+
+Strict TypeScript/build, eighteen native tests and twenty actual-browser checks
+passed. Quality found timeline hotkey suppression and a live throttle leak;
+both were fixed and affected quality review passed. See the scoped
+[review evidence](reviews/2026-11-02-flight-state-review.md).
+
+**Deviations**
+
+Peer pending. This is recorded state viewing, not input-driven re-simulation,
+configuration/event replay, persistent recordings or video export. The aircraft
+model, geography and training-fidelity limits are unchanged.
+
+**Insights**
+
+Keeping a paused live worker separate from the review cursor makes rewind useful
+without silently changing the flight the learner will resume.
+
+## 2026-11-02 12:08 — Adjust control sensitivity in the running simulator
+
+TODO: 2.0.2 complete as a demonstrable input increment; R-INPUT-1 remains partial.
+Agent: Codex orchestrator; code1/control_settings_core and code2/control_settings_ui
+implemented disjoint paths in parallel, with flight_housekeeping updating app
+instructions. Independent quality: flight_housekeeping, excluding its own README;
+independent validation: flight_validate.
+
+**Implementation notes**
+
+Added a Controls dialog with pitch, roll and rudder sensitivity sliders, Gentle
+and Default presets. Opening it pauses real JSBSim time; Done/Escape returns
+flight focus without resuming. Settings survive flight reset and remain local to
+the current page. Pure bounded gain mapping preserves the former defaults,
+throttle and the separate study roll offset. No aircraft dynamics were changed.
+
+Strict TypeScript/build and eleven native tests passed. Seventeen real-browser
+checks passed, including actual paused engine time, preset/custom gains, defaults,
+reset preservation, keyboard range adjustment and native close-event focus.
+The browser check waits for the asynchronous native close event before checking
+focus, rather than treating the intermediate restored opener as the final state.
+The project rules now retain the user's priority for demonstrable increments.
+See [settings review](reviews/2026-11-02-control-sensitivity.md) for scoped evidence.
+
+**Deviations**
+
+Peer pending. This is an input preference, not aircraft rig calibration, improved
+model fidelity, optional flight hardware support or acceptance of the full input
+requirement. It adds no stored preferences, replay or training-credit claim.
+
+**Insights**
+
+A small settings panel provides a direct in-flight comparison while keeping the
+physics model and source assumptions unchanged.
+
+## 2026-11-02 10:02 — Make flight controls visible and stabilize the scene
+
+TODO: 2.0.1 complete as an experimental usability/visual increment.
+Agent: Codex orchestrator; code1/flight_ui_v2 and code2/flight_scene_v2 in parallel,
+with flight_housekeeping maintaining application instructions and scene_sources
+researching official imagery. Independent quality: flight_housekeeping (excluding
+its own README); independent validation: flight_validate.
+
+**Implementation notes**
+
+Replaced the marketing overlay with a compact flight deck, explicit Start/Resume,
+visible hold buttons and a draggable stick with pointer capture/release. Initial
+flight stays paused until started; focus loss clearly exposes Resume. Keyboard
+and slider interaction remain available, with actual control-position feedback.
+
+Replaced procedural scenery with Cesium and bundled, openly licensed official
+Hessen starter/overview photographs. Source bounds, requests, unknown acquisition
+dates, image hashes and DL-DE Zero terms accompany the assets. Camera/aircraft
+visuals consume JSBSim state without modifying dynamics. Fixed the misapplied
+credit styling that shrank the canvas, removed resizing from the render loop,
+and removed adaptive imagery swaps/live-service dependence.
+
+Strict TypeScript/build, five session tests and fourteen real-Chrome integration
+checks passed. Independent affected validation observed both images ready in
+652 ms, full canvas coverage, actual button/stick flight response, localhost-only
+requests and no differences in two paused pixel comparisons. Source-image failures
+are visible and nonfatal. See the scoped [quality/validation report](reviews/2026-11-02-flight-controls-imagery.md).
+
+**Deviations**
+
+The live WMS's adaptive queue, oversized-image XML errors and request timeouts
+failed the attempted live-loading approach; those runs are not passes. The final
+scene uses a small detailed photograph plus a coarse overview, not the planned
+EDDF/100 NM region, real terrain, accepted airport elevation or validated 172S
+model. Research aircraft data is not redistributed. Peer pending; no simulator
+milestone, training credit or public deployment is accepted.
+
+**Insights**
+
+An obvious flight-control affordance and a stable source snapshot make the
+prototype usable; passing worker tests alone cannot establish that experience.
+
 ## 2026-11-02 08:01 — Record FlightGear for S17 gaps; Codex review deferred
 
 TODO: 0.19 deferred. Agent: Claude Code orchestrator.
