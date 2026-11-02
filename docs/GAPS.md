@@ -374,6 +374,17 @@ Carried into [CONTRACTS](design/CONTRACTS.md), [SCENARIO-CONTRACTS](design/SCENA
 [FDM-172S](design/FDM-172S.md), the [aircraft manifest](../data/aircraft/c172s-classic/manifest.json)
 and [TODO](TODO.md) 2.1.
 
+Update: **2026-11-02 08:01, user** ([input](input/2026-11-02-flightgear-gaps-codex-deferred.md)):
+"use the solutions used in flightgear". The S17 gaps follow the FlightGear Cessna 172
+model: gauge dial ranges, EGT scale, hour-meter counting, low-fuel threshold basis and
+the annunciator switch-label serial. Orchestrator conditions:
+- These values are labelled `estimated` with source FlightGear and are never
+  `sourced` 172S facts.
+- That model represents a 172P, so the assurance applicability check treats it as
+  another variant.
+- Its licence and redistribution terms are recorded before any value or asset is
+  reused (Q5).
+
 Update: **2026-11-02 07:36, user** ([input](input/2026-11-02-s17-lists-electrical-tach.md)):
 - **Q-S8 list:** the ammeter and the low-voltage annunciator join the engine and fuel
   indications in `ind` ("Include now").

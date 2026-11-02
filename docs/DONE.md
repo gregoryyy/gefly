@@ -3,6 +3,21 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 08:01 — Record FlightGear for S17 gaps; Codex review deferred
+
+TODO: 0.19 deferred. Agent: Claude Code orchestrator.
+
+**Implementation notes**
+
+The user's answer is recorded ([input](input/2026-11-02-flightgear-gaps-codex-deferred.md)).
+GAPS Q23 now says the S17 gaps follow the FlightGear Cessna 172 model, labelled
+`estimated`, with that model treated as another variant and its licence recorded
+first. TODO 0.19 is marked deferred.
+
+**Deviations**
+
+Peer pending (batched) for the Claude-authored batch #32–#36.
+
 ## 2026-11-02 07:36 — Record the S17 list, electrical and tachometer decisions
 
 TODO: 2.1 scope refined. Agent: Claude Code orchestrator; researcher subagent
