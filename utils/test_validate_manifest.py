@@ -5,6 +5,7 @@ import copy
 import io
 import json
 from pathlib import Path
+import shutil
 import tempfile
 import unittest
 
@@ -379,13 +380,17 @@ class PohValuesValidationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="gefly-poh-test-") as directory:
             bad = self.values()
             bad["landing_distance"]["total_50ft_sl_10c"]["original_unit"] = "m"
-            (Path(directory) / "manifest.json").write_text(json.dumps(self.manifest),
-                                                          encoding="utf-8")
+            # Exact manifest bytes keep the SHA-256 pin valid, so only the injected error fails.
+            shutil.copyfile(MANIFEST, Path(directory) / "manifest.json")
             path = Path(directory) / vm.POH_VALUES_NAME
             path.write_text(json.dumps(bad), encoding="utf-8")
             with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
                 self.assertEqual(vm.main([str(POH_VALUES)]), 0)
+            stderr = io.StringIO()
+            with redirect_stdout(io.StringIO()), redirect_stderr(stderr):
                 self.assertEqual(vm.main([str(path)]), 1)
+            self.assertIn("total_50ft_sl_10c.original_unit", stderr.getvalue())
+            self.assertNotIn("manifest_sha256", stderr.getvalue())
 
 
 PERFORMANCE_VALUES = MANIFEST.parent / "performance-values.json"
@@ -588,13 +593,16 @@ class PerformanceValuesValidationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="gefly-perf-test-") as directory:
             bad = self.values()
             bad["glide"]["best_glide_ias"]["unit"] = "m"
-            (Path(directory) / "manifest.json").write_text(json.dumps(self.manifest),
-                                                          encoding="utf-8")
+            shutil.copyfile(MANIFEST, Path(directory) / "manifest.json")
             path = Path(directory) / vm.PERFORMANCE_VALUES_NAME
             path.write_text(json.dumps(bad), encoding="utf-8")
             with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
                 self.assertEqual(vm.main([str(PERFORMANCE_VALUES)]), 0)
+            stderr = io.StringIO()
+            with redirect_stdout(io.StringIO()), redirect_stderr(stderr):
                 self.assertEqual(vm.main([str(path)]), 1)
+            self.assertIn("best_glide_ias", stderr.getvalue())
+            self.assertNotIn("manifest_sha256", stderr.getvalue())
 
     def test_performance_values_reject_invalid_sibling_manifest(self):
         with tempfile.TemporaryDirectory(prefix="gefly-perf-test-") as directory:
@@ -609,6 +617,191 @@ class PerformanceValuesValidationTests(unittest.TestCase):
             self.assertTrue(any(e.startswith("manifest manifest.json: $.fidelity") for e in errors),
                             errors)
 
+
+INDICATION_VALUES = MANIFEST.parent / "indication-loading-values.json"
+
+
+class IndicationLoadingValuesTests(unittest.TestCase):
+    """Engine/fuel indications and sample loading (user decision 2026-11-02; R-DATA-1, R-DATA-2, R-AIR-1)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.schema = vm.load_json(vm.INDICATION_SCHEMA)
+        cls.manifest_schema = vm.load_json(vm.SCHEMA)
+        cls.poh_schema = vm.load_json(vm.POH_SCHEMA)
+        cls.valid = vm.load_json(INDICATION_VALUES)
+        cls.manifest = vm.load_json(MANIFEST)
+
+    def values(self):
+        return copy.deepcopy(self.valid)
+
+    def assertRejected(self, document, fragment):
+        errors = vm.validate_indication_values(document, self.schema, self.manifest, PINNED)
+        self.assertTrue(any(fragment in error for error in errors),
+                        f"expected an error containing {fragment!r}, got {errors}")
+
+    def test_r_data_2_c172s_indication_loading_values_are_valid(self):
+        self.assertEqual(vm.validate_indication_values(self.values(), self.schema,
+                                                       self.manifest, PINNED), [])
+
+    def test_shared_definitions_match_other_schemas(self):
+        for name in ("status", "citation", "citations", "status_rules"):
+            self.assertEqual(self.schema["$defs"][name], self.manifest_schema["$defs"][name], name)
+        self.assertEqual(self.schema["$defs"]["reading"], self.poh_schema["$defs"]["reading"])
+
+    def test_new_conversion_factors_match_exact_definitions(self):
+        self.assertAlmostEqual(vm.CONVERSIONS[("psi", "Pa")], 6894.757293168361, places=9)
+        self.assertEqual(vm.CONVERSIONS[("gal", "m^3")], 3.785411784e-3)
+        self.assertEqual(vm.CONVERSIONS[("h", "s")], 3600.0)
+        self.assertAlmostEqual(vm.CONVERSIONS[("lb-in/1000", "kg*m")], 11.521246198, places=9)
+        scale, offset = vm.AFFINE_CONVERSIONS[("degF", "K")]
+        self.assertAlmostEqual((32 + offset) * scale, 273.15, places=12)
+        self.assertAlmostEqual((212 + offset) * scale, 373.15, places=12)
+
+    def test_affine_temperature_conversion_is_checked(self):
+        document = self.values()
+        document["indications"]["oil_temp_k"]["markings"][1]["at"]["value"] = 245.0
+        self.assertRejected(document, "does not match 245 degF")
+
+    def test_sample_loading_must_be_labelled_as_sample(self):
+        document = self.values()
+        document["sample_loading"]["nature"] = "weighed aircraft"
+        self.assertRejected(document, "sample_loading.nature")
+
+    def test_arc_needs_lower_and_upper(self):
+        document = self.values()
+        del document["indications"]["oil_press_pa"]["markings"][1]["upper"]
+        self.assertRejected(document, "missing required field 'upper'")
+
+    def test_red_line_needs_at(self):
+        document = self.values()
+        del document["indications"]["oil_press_pa"]["markings"][0]["at"]
+        self.assertRejected(document, "missing required field 'at'")
+
+    def test_red_annunciator_is_a_warning(self):
+        document = self.values()
+        document["annunciators"]["ann_oil_press"]["kind"] = "caution"
+        self.assertRejected(document, "ann_oil_press.kind")
+
+    def test_unknown_scale_needs_todo(self):
+        document = self.values()
+        del document["indications"]["oil_temp_k"]["scale"]["todo"]
+        self.assertRejected(document, "scale: missing required field 'todo'")
+
+    def test_derived_arm_needs_derivation(self):
+        document = self.values()
+        del document["sample_loading"]["values"]["basic_empty_arm"]["derivation"]
+        self.assertRejected(document, "basic_empty_arm: missing required field 'derivation'")
+
+    def test_marking_unit_must_match_indication(self):
+        document = self.values()
+        document["indications"]["oil_press_pa"]["markings"][1]["lower"]["unit"] = "K"
+        self.assertRejected(document, "markings[1].lower.unit: 'K' differs from indication unit 'Pa'")
+
+    def test_marking_original_unit_must_match_indication(self):
+        document = self.values()
+        marking = document["indications"]["vac_suction_pa"]["markings"][0]
+        marking["upper"].update(original_unit="psi", original_value=5.5 * 3386.389 / vm.CONVERSIONS[("psi", "Pa")])
+        self.assertRejected(document, "markings[0].upper.original_unit: 'psi' differs")
+
+    def test_arc_lower_must_be_below_upper(self):
+        document = self.values()
+        arc = document["indications"]["oil_press_pa"]["markings"][1]
+        arc["lower"], arc["upper"] = arc["upper"], arc["lower"]
+        self.assertRejected(document, "markings[1]: lower 620528.16 is not below upper 344737.86")
+
+    def test_derived_arm_is_recomputed_from_moment_and_mass(self):
+        document = self.values()
+        arm = document["sample_loading"]["values"]["basic_empty_arm"]
+        arm["original_value"] = 38.3
+        arm["value"] = round(38.3 * 0.0254, 5)
+        self.assertRejected(document, "differs from moment/mass 0.96836 m")
+
+    def test_derived_arm_within_uncertainty_passes(self):
+        document = self.values()
+        arm = document["sample_loading"]["values"]["basic_empty_arm"]
+        arm["original_value"] = 38.14
+        arm["value"] = round(38.14 * 0.0254, 5)  # 0.0004 m off, below 0.001 m
+        self.assertEqual(vm.validate_indication_values(document, self.schema, self.manifest,
+                                                       PINNED), [])
+
+    def test_derived_quantity_needs_derived_reading(self):
+        document = self.values()
+        document["sample_loading"]["values"]["basic_empty_arm"]["reading"] = "tabulated"
+        self.assertRejected(document, "basic_empty_arm.reading: must equal \"derived\"")
+
+    def test_conflict_without_citations_is_rejected(self):
+        document = self.values()
+        document["conflicts"][0]["citations"] = []
+        self.assertRejected(document, "conflicts[0].citations")
+
+    def test_unregistered_unit_pair_errors(self):
+        document = self.values()
+        document["sample_loading"]["values"]["fuel_arm"]["original_unit"] = "lb"
+        self.assertRejected(document, "no conversion factor for 'lb' -> 'm'")
+
+    def test_affine_and_multiplicative_conversions_differ(self):
+        errors = []
+        node = {"value": 310.9278, "unit": "K", "original_value": 100, "original_unit": "degF"}
+        vm.conversions(node, errors)
+        self.assertEqual(errors, [])
+        node["value"] = 100 * 5 / 9  # multiplicative only: misses the 459.67 offset
+        vm.conversions(node, errors)
+        self.assertTrue(any("does not match 100 degF" in e for e in errors), errors)
+        errors = []
+        vm.conversions({"value": 137895.15, "unit": "Pa", "original_value": 20,
+                        "original_unit": "psi"}, errors)
+        self.assertEqual(errors, [])
+
+    def test_arm_uncertainty_must_be_positive(self):
+        document = self.values()
+        document["sample_loading"]["values"]["basic_empty_arm"]["uncertainty_si"] = 0
+        self.assertRejected(document, "uncertainty_si: 0 must be positive")
+
+    def test_arm_uncertainty_is_capped_at_half_a_percent(self):
+        document = self.values()
+        arm = document["sample_loading"]["values"]["basic_empty_arm"]
+        arm["original_value"] = 60
+        arm["value"] = round(60 * 0.0254, 5)
+        arm["uncertainty_si"] = 10
+        self.assertRejected(document, "uncertainty_si: 10 exceeds 0.5% of the arm")
+
+    def test_governs_needs_a_matching_conflict(self):
+        document = self.values()
+        del document["conflicts"][0]["fields"]
+        self.assertRejected(document, "governs is true but no conflicts entry lists 'tach_prop_radps'")
+        document = self.values()
+        document["conflicts"][0]["fields"] = ["oil_temp_k"]
+        self.assertRejected(document, "tach_prop_radps.markings[0]: governs is true")
+
+    def test_electrical_scope_requires_inclusion(self):
+        document = self.values()
+        del document["indications"]["ammeter_a"]["inclusion"]
+        self.assertRejected(document, "ammeter_a: missing required field 'inclusion'")
+        document = self.values()
+        del document["annunciators"]["ann_volts"]["inclusion"]
+        self.assertRejected(document, "ann_volts: missing required field 'inclusion'")
+
+    def test_red_line_min_must_be_below_red_line_max(self):
+        document = self.values()
+        markings = document["indications"]["oil_press_pa"]["markings"]
+        markings[0]["at"], markings[2]["at"] = markings[2]["at"], markings[0]["at"]
+        self.assertRejected(document, "red_line_min 792897.09 is not below red_line_max 137895.15")
+
+    def test_cli_validates_indication_values_with_sibling_manifest(self):
+        with tempfile.TemporaryDirectory(prefix="gefly-ind-test-") as directory:
+            bad = self.values()
+            bad["sample_loading"]["values"]["fuel_arm"]["value"] = 48.0
+            shutil.copyfile(MANIFEST, Path(directory) / "manifest.json")
+            path = Path(directory) / vm.INDICATION_VALUES_NAME
+            path.write_text(json.dumps(bad), encoding="utf-8")
+            with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                self.assertEqual(vm.main([str(INDICATION_VALUES)]), 0)
+            stderr = io.StringIO()
+            with redirect_stdout(io.StringIO()), redirect_stderr(stderr):
+                self.assertEqual(vm.main([str(path)]), 1)
+            self.assertIn("fuel_arm: value 48.0 m does not match 48.0 in", stderr.getvalue())
+            self.assertNotIn("manifest_sha256", stderr.getvalue())
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,7 +2,8 @@
 """Validate Gefly aircraft manifests and selected-value files without third-party packages (R-AIR-1, R-DATA-1, R-DATA-2).
 
 Implements the JSON Schema 2020-12 keywords used by data/schema/aircraft-manifest.schema.json,
-data/schema/poh-values.schema.json and data/schema/performance-values.schema.json.
+data/schema/poh-values.schema.json, data/schema/performance-values.schema.json and
+data/schema/indication-loading-values.schema.json.
 The whole schema is audited before validation and any other keyword or unresolvable $ref
 is an error, so a schema change cannot silently weaken validation. Then
 applies rules that JSON Schema cannot express: every citation names a registered source
@@ -13,6 +14,9 @@ schema-validated too), its airspeed-calibration points must be strictly increasi
 and a quantity key ending in _ias, _cas or _tas must carry that airspeed reference.
 A performance-values.json file follows the same sibling-manifest rules; its engine, fuel and
 cruise series points must be strictly increasing by engine speed, then manifold pressure/power.
+An indication-loading-values.json file (engine/fuel indications and the sample loading
+example) follows the same sibling-manifest, citation and conversion rules; degF converts
+to K affinely.
 """
 
 from __future__ import annotations
@@ -35,6 +39,9 @@ POH_VALUES_NAME = "poh-values.json"
 PERFORMANCE_SCHEMA = ROOT / "data" / "schema" / "performance-values.schema.json"
 DEFAULT_PERFORMANCE_VALUES = "data/aircraft/*/performance-values.json"
 PERFORMANCE_VALUES_NAME = "performance-values.json"
+INDICATION_SCHEMA = ROOT / "data" / "schema" / "indication-loading-values.schema.json"
+DEFAULT_INDICATION_VALUES = "data/aircraft/*/indication-loading-values.json"
+INDICATION_VALUES_NAME = "indication-loading-values.json"
 ANNOTATIONS = {"$schema", "$id", "$comment", "$defs", "title", "description"}
 KEYWORDS = {
     "$ref", "type", "enum", "const", "required", "properties", "additionalProperties",
@@ -57,6 +64,18 @@ CONVERSIONS = {
     ("lb/h", "kg/s"): 0.45359237 / 3600,
     ("%", "1"): 0.01,
     ("1", "1"): 1.0,
+    ("psi", "Pa"): 0.45359237 * 9.80665 / 0.0254 ** 2,  # lbf/in^2, exact
+    ("gal", "m^3"): 3.785411784e-3,  # US gallon, exact
+    ("h", "s"): 3600.0,
+    ("s", "s"): 1.0,
+    ("V", "V"): 1.0,
+    ("A", "A"): 1.0,
+    ("lb-in/1000", "kg*m"): 1000 * 0.45359237 * 0.0254,  # published moment/1000
+    ("lb/gal", "kg/m^3"): 0.45359237 / 3.785411784e-3,
+}
+# Affine conversions: SI = (original + offset) * factor.
+AFFINE_CONVERSIONS = {
+    ("degF", "K"): (5 / 9, 459.67),  # exact: K = (degF + 459.67) * 5/9
 }
 CONVERSION_TOLERANCE = 0.5e-4  # relative to max(floor, |SI value|): manifests round to 4 decimals
 # Units whose SI values are far below 1 are checked purely relatively (floor 0), so they
@@ -240,12 +259,17 @@ def conversions(manifest, errors):
             continue
         if not all(type_matches(item, "number") for item in (value, original)):
             continue
-        factor = CONVERSIONS.get((node["original_unit"], node["unit"]))
-        if factor is None:
+        pair = (node["original_unit"], node["unit"])
+        factor = CONVERSIONS.get(pair)
+        if pair in AFFINE_CONVERSIONS:
+            scale, offset = AFFINE_CONVERSIONS[pair]
+            expected = (original + offset) * scale
+        elif factor is None:
             errors.append(f"{path}: no conversion factor for {node['original_unit']!r} "
                           f"-> {node['unit']!r}")
             continue
-        expected = original * factor
+        else:
+            expected = original * factor
         floor = TOLERANCE_FLOOR.get(node["unit"], 1.0)
         if abs(value - expected) > CONVERSION_TOLERANCE * max(floor, abs(expected)):
             errors.append(f"{path}: value {value} {node['unit']} does not match "
@@ -354,6 +378,121 @@ def validate_performance_values(document, schema, manifest, manifest_sha256=None
     return errors
 
 
+def validate_indication_values(document, schema, manifest, manifest_sha256=None):
+    """Validate an indication/sample-loading value file against its schema and manifest sources.
+
+    Returns a list of error strings; empty means valid. Raises SchemaError first.
+    """
+    errors = sibling_checks(document, schema, manifest, manifest_sha256)
+    if isinstance(document, dict):
+        marking_units(document, errors)
+        governing_conflicts(document, errors)
+        derived_arm(document, errors)
+    return errors
+
+
+def marking_units(document, errors):
+    """Markings and scale use the indication's unit pair; arcs and scales need lower < upper."""
+    indications = document.get("indications")
+    if not isinstance(indications, dict):
+        return
+    for name, item in indications.items():
+        if not isinstance(item, dict):
+            continue
+        parts = [(f"$.indications.{name}.scale", item.get("scale"))]
+        markings = item.get("markings")
+        if isinstance(markings, list):
+            parts += [(f"$.indications.{name}.markings[{i}]", m) for i, m in enumerate(markings)]
+        for path, part in parts:
+            if not isinstance(part, dict):
+                continue
+            for field in ("lower", "upper", "at"):
+                measure = part.get(field)
+                if not isinstance(measure, dict):
+                    continue
+                if measure.get("unit") != item.get("unit"):
+                    errors.append(f"{path}.{field}.unit: {measure.get('unit')!r} differs from "
+                                  f"indication unit {item.get('unit')!r}")
+                if "original_unit" in item and measure.get("original_unit") != item["original_unit"]:
+                    errors.append(f"{path}.{field}.original_unit: {measure.get('original_unit')!r} "
+                                  f"differs from indication original_unit {item['original_unit']!r}")
+            lower, upper = part.get("lower"), part.get("upper")
+            if isinstance(lower, dict) and isinstance(upper, dict):
+                low, high = lower.get("value"), upper.get("value")
+                if type_matches(low, "number") and type_matches(high, "number") and not low < high:
+                    errors.append(f"{path}: lower {low} is not below upper {high}")
+        red = {}
+        for marking in markings if isinstance(markings, list) else []:
+            if isinstance(marking, dict) and marking.get("kind") in ("red_line_min", "red_line_max") \
+                    and isinstance(marking.get("at"), dict) \
+                    and type_matches(marking["at"].get("value"), "number"):
+                red.setdefault(marking["kind"], []).append(marking["at"]["value"])
+        for low in red.get("red_line_min", []):
+            for high in red.get("red_line_max", []):
+                if not low < high:
+                    errors.append(f"$.indications.{name}.markings: red_line_min {low} is not "
+                                  f"below red_line_max {high}")
+
+
+def governing_conflicts(document, errors):
+    """A marking with governs: true must belong to an indication listed in a conflict's fields."""
+    conflicts = document.get("conflicts")
+    listed = set()
+    for conflict in conflicts if isinstance(conflicts, list) else []:
+        fields = conflict.get("fields") if isinstance(conflict, dict) else None
+        if isinstance(fields, list):
+            listed.update(field for field in fields if isinstance(field, str))
+    indications = document.get("indications")
+    for name, item in indications.items() if isinstance(indications, dict) else []:
+        markings = item.get("markings") if isinstance(item, dict) else None
+        for index, marking in enumerate(markings if isinstance(markings, list) else []):
+            if isinstance(marking, dict) and marking.get("governs") is True and name not in listed:
+                errors.append(f"$.indications.{name}.markings[{index}]: governs is true but no "
+                              f"conflicts entry lists {name!r} in fields")
+
+
+ARM_UNCERTAINTY_CAP = 0.005  # uncertainty_si may not exceed 0.5 % of the derived arm
+
+
+def derived_arm(document, errors):
+    """The derived basic empty arm must equal moment / mass within its stated uncertainty_si."""
+    sample = document.get("sample_loading")
+    values = sample.get("values") if isinstance(sample, dict) else None
+    if not isinstance(values, dict):
+        return
+    arm, moment, mass = (values.get(key) for key in
+                         ("basic_empty_arm", "basic_empty_moment", "basic_empty_mass"))
+    if not all(isinstance(item, dict) for item in (arm, moment, mass)):
+        if isinstance(arm, dict):
+            errors.append("$.sample_loading.values.basic_empty_arm: needs basic_empty_moment "
+                          "and basic_empty_mass to recompute it")
+        return
+    units = (arm.get("unit"), moment.get("unit"), mass.get("unit"))
+    if units != ("m", "kg*m", "kg"):
+        errors.append(f"$.sample_loading.values: arm/moment/mass units {units} are not "
+                      f"('m', 'kg*m', 'kg')")
+        return
+    numbers = (arm.get("value"), moment.get("value"), mass.get("value"), arm.get("uncertainty_si"))
+    if not all(type_matches(item, "number") for item in numbers) or not mass["value"] > 0:
+        errors.append("$.sample_loading.values.basic_empty_arm: arm, moment, mass and "
+                      "uncertainty_si must be numbers with a positive mass")
+        return
+    if not arm["uncertainty_si"] > 0:
+        errors.append(f"$.sample_loading.values.basic_empty_arm.uncertainty_si: "
+                      f"{arm['uncertainty_si']} must be positive")
+        return
+    if arm["uncertainty_si"] > ARM_UNCERTAINTY_CAP * abs(arm["value"]):
+        errors.append(f"$.sample_loading.values.basic_empty_arm.uncertainty_si: "
+                      f"{arm['uncertainty_si']} exceeds {ARM_UNCERTAINTY_CAP:.1%} of the arm "
+                      f"{arm['value']}")
+        return
+    expected = moment["value"] / mass["value"]
+    if abs(arm["value"] - expected) > arm["uncertainty_si"]:
+        errors.append(f"$.sample_loading.values.basic_empty_arm: {arm['value']} m differs from "
+                      f"moment/mass {expected:.5f} m by more than uncertainty_si "
+                      f"{arm['uncertainty_si']}")
+
+
 def sibling_checks(document, schema, manifest, manifest_sha256=None):
     """Schema, manifest-pin, citation and conversion checks shared by value files.
 
@@ -432,22 +571,26 @@ def load_json(path):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("manifests", nargs="*", type=Path,
-                        help=f"manifest files, or {POH_VALUES_NAME} / {PERFORMANCE_VALUES_NAME} "
-                             f"files (default: {DEFAULT_MANIFESTS}, {DEFAULT_POH_VALUES} "
-                             f"and {DEFAULT_PERFORMANCE_VALUES})")
+                        help=f"manifest files, or {POH_VALUES_NAME} / {PERFORMANCE_VALUES_NAME} / "
+                             f"{INDICATION_VALUES_NAME} files (default: {DEFAULT_MANIFESTS}, "
+                             f"{DEFAULT_POH_VALUES}, {DEFAULT_PERFORMANCE_VALUES} and "
+                             f"{DEFAULT_INDICATION_VALUES})")
     parser.add_argument("--schema", type=Path, default=SCHEMA)
     parser.add_argument("--poh-schema", type=Path, default=POH_SCHEMA)
     parser.add_argument("--performance-schema", type=Path, default=PERFORMANCE_SCHEMA)
+    parser.add_argument("--indication-schema", type=Path, default=INDICATION_SCHEMA)
     args = parser.parse_args(argv)
     paths = args.manifests or (sorted(ROOT.glob(DEFAULT_MANIFESTS))
                                + sorted(ROOT.glob(DEFAULT_POH_VALUES))
-                               + sorted(ROOT.glob(DEFAULT_PERFORMANCE_VALUES)))
+                               + sorted(ROOT.glob(DEFAULT_PERFORMANCE_VALUES))
+                               + sorted(ROOT.glob(DEFAULT_INDICATION_VALUES)))
     if not paths:
         print("ERROR: no manifests found.", file=sys.stderr)
         return 1
     schemas = {}
     for key, schema_path in (("manifest", args.schema), ("poh", args.poh_schema),
-                             ("performance", args.performance_schema)):
+                             ("performance", args.performance_schema),
+                             ("indication", args.indication_schema)):
         try:
             schemas[key] = load_json(schema_path)
         except (OSError, ValueError) as error:
@@ -461,6 +604,9 @@ def main(argv=None):
             elif Path(path).name == PERFORMANCE_VALUES_NAME:
                 errors = load_poh_values(path, schemas["performance"], schemas["manifest"],
                                          validate_performance_values)
+            elif Path(path).name == INDICATION_VALUES_NAME:
+                errors = load_poh_values(path, schemas["indication"], schemas["manifest"],
+                                         validate_indication_values)
             else:
                 errors = validate(load_json(path), schemas["manifest"])
         except (OSError, ValueError) as error:

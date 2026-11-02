@@ -116,7 +116,39 @@ POH tables, need new units and multi-number points, and leave the separate
 propeller (TCDS static rpm 2300–2400) still have to be modelled. These are calibration
 inputs, not validation results.
 
-These three draft source files are the current data inventory. There is still
+## Engine/fuel indications and sample loading
+
+[indication-loading-values.json](indication-loading-values.json) holds, as cited facts
+from S17 ([research note](../../../docs/research/2026-11-02-172s-engine-fuel-ind-and-sample-loading.md);
+user decision 2026-11-02, GAPS entry pending):
+
+- `indications`: every engine and fuel gauge or counter of the classic panel, keyed by its
+  proposed `ind` field name (`tach_prop_radps`, `oil_press_pa`, `oil_temp_k`, `egt_k`,
+  `fuel_flow_m3ps`, `fuel_qty_left_m3`, `fuel_qty_right_m3`, `vac_suction_pa`, the hour meters
+  `tach_time_s`/`hobbs_time_s`, and the electrical `ammeter_a`), with the Figure 2-3 markings (green arcs, red lines;
+  Figure 2-3 has no yellow arcs) and `scale` (dial range), which S17 does not state and
+  so stays `unknown`.
+- `annunciators`: OIL PRESS, L/R LOW FUEL, L/R VAC and VOLTS with colour, trigger
+  threshold, persistence and flash time.
+- `sample_loading`: the basic empty weight and moment of the **sample airplane** of
+  Figure 6-5 (`nature` is fixed to say so; not a weighed aircraft), the derived empty
+  arm, the datum, and the station arms of Figure 6-3.
+- `conflicts`: the tachometer green arc (the Figure 2-3 arcs govern by user decision
+  2026-11-02 07:36 and carry `governs: true`; p. 7-20 stays recorded) and the sample's
+  baggage moment (not used). The whole Figure 2-3 and Figure 6-3 lists exceed the
+  no-whole-table limit and are accepted as an exception for those two lists only (GAPS Q5).
+- The validator also checks that markings use the indication's units, that arcs have
+  lower < upper and red line minimum < maximum, that every `governs: true` marking's field
+  is listed in a conflict's `fields`, and that the derived empty arm equals moment/mass
+  within `uncertainty_si` (positive, at most 0.5 % of the arm). Electrical-scope entries
+  must state their `inclusion` decision.
+
+Units: `K` (from `degF`, affine), `Pa` (from `psi` or `inHg`, gauge pressure or suction),
+`rad/s`, `m^3`, `m^3/s`, `s` (from `h` or `s`), `V`, `A`, `m`, `kg`, `kg*m` (from the
+published `lb-in/1000`) and `kg/m^3`. The `ind` field order itself is frozen in
+SCENARIO-CONTRACTS, not here.
+
+These four draft source files are the current data inventory. There is still
 **no project-owned JSBSim 172S model** here: no aerodynamic coefficient set,
 propulsion/gear implementation, frozen E2 case set or validated flight behavior.
 See the [model plan](../../../docs/design/FDM-172S.md) for the remaining source,

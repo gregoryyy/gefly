@@ -1,0 +1,1595 @@
+{
+  "$comment": "Engine/fuel indications and the sample loading example as cited facts; not a copy of any POH table or figure, not an instrument model and not a weighed aircraft. Field guide: README.md in this directory. Schema: data/schema/indication-loading-values.schema.json.",
+  "schema_version": "1.0.0",
+  "values_id": "gefly.aircraft.c172s-classic.indication-loading-values",
+  "values_version": "0.1.0",
+  "status": "draft",
+  "fidelity": "not validated",
+  "manifest": {
+    "path": "manifest.json",
+    "manifest_id": "gefly.aircraft.c172s-classic",
+    "manifest_version": "0.2.2",
+    "manifest_sha256": "04f86a9ba6cab89680acaa732e9df87266d8557928a3990ee678fa719b1515e5"
+  },
+  "extraction": "User decision GAPS Q23, 2026-11-02: (a) every engine and fuel indication of the classic-panel 172S joins the worker-computed ind state; (b) empty mass/CG come from the POH sample loading example, labelled as a sample. Each value was read on a rendered page image of S17 (SHA-256 prefix 420dbdaf5517a7a0); no Cessna text, table or figure is copied. Keys are proposed ind field names; the ind order is frozen in SCENARIO-CONTRACTS, not here.",
+  "indications": {
+    "tach_prop_radps": {
+      "instrument": "Tachometer (engine-driven, mechanical)",
+      "panel_item": "Figure 7-2 item 10",
+      "quantity": "engine and propeller speed (direct drive)",
+      "kind": "gauge",
+      "unit": "rad/s",
+      "original_unit": "rpm",
+      "scale": {
+        "status": "unknown",
+        "citations": [],
+        "todo": "Dial range not stated in S17 Sections 2 or 7; needs an instrument source or a photograph-free documented reading (TBD-src). S17 states 100 rpm graduations only."
+      },
+      "markings": [
+        {
+          "kind": "green_arc",
+          "lower": {
+            "value": 219.9115,
+            "unit": "rad/s",
+            "original_value": 2100,
+            "original_unit": "rpm"
+          },
+          "upper": {
+            "value": 261.7994,
+            "unit": "rad/s",
+            "original_value": 2500,
+            "original_unit": "rpm"
+          },
+          "condition": "normal operating range, sea level",
+          "status": "sourced",
+          "citations": [
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "2-6",
+              "section": "Section 2 Limitations, Figure 2-3 Powerplant Instrument Markings; page mark Revision 4"
+            }
+          ],
+          "reading": "tabulated",
+          "uncertainty": "As published.",
+          "conversion": "rpm x 2 pi / 60, rounded to 4 decimals",
+          "note": "User decision 2026-11-02 07:36 (GAPS Q5/Q23; input record docs/input/2026-11-02-s17-lists-electrical-tach.md): Figure 2-3 arcs govern; p. 7-20 is a recorded conflict.",
+          "governs": true
+        },
+        {
+          "kind": "green_arc",
+          "lower": {
+            "value": 219.9115,
+            "unit": "rad/s",
+            "original_value": 2100,
+            "original_unit": "rpm"
+          },
+          "upper": {
+            "value": 272.2714,
+            "unit": "rad/s",
+            "original_value": 2600,
+            "original_unit": "rpm"
+          },
+          "condition": "normal operating range, 5000 ft",
+          "status": "sourced",
+          "citations": [
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "2-6",
+              "section": "Section 2 Limitations, Figure 2-3 Powerplant Instrument Markings; page mark Revision 4"
+            }
+          ],
+          "reading": "tabulated",
+          "uncertainty": "As published.",
+          "conversion": "rpm x 2 pi / 60, rounded to 4 decimals",
+          "note": "User decision 2026-11-02 07:36 (GAPS Q5/Q23; input record docs/input/2026-11-02-s17-lists-electrical-tach.md): Figure 2-3 arcs govern; p. 7-20 is a recorded conflict.",
+          "governs": true
+        },
+        {
+          "kind": "green_arc",
+          "lower": {
+            "value": 219.9115,
+            "unit": "rad/s",
+            "original_value": 2100,
+            "original_unit": "rpm"
+          },
+          "upper": {
+            "value": 282.7433,
+            "unit": "rad/s",
+            "original_value": 2700,
+            "original_unit": "rpm"
+          },
+          "condition": "normal operating range, 10,000 ft",
+          "status": "sourced",
+          "citations": [
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "2-6",
+              "section": "Section 2 Limitations, Figure 2-3 Powerplant Instrument Markings; page mark Revision 4"
+            }
+          ],
+          "reading": "tabulated",
+          "uncertainty": "As published.",
+          "conversion": "rpm x 2 pi / 60, rounded to 4 decimals",
+          "note": "User decision 2026-11-02 07:36 (GAPS Q5/Q23; input record docs/input/2026-11-02-s17-lists-electrical-tach.md): Figure 2-3 arcs govern; p. 7-20 is a recorded conflict.",
+          "governs": true
+        },
+        {
+          "kind": "red_line_max",
+          "at": {
+            "value": 282.7433,
+            "unit": "rad/s",
+            "original_value": 2700,
+            "original_unit": "rpm"
+          },
+          "condition": "maximum engine speed",
+          "status": "sourced",
+          "citations": [
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "2-6",
+              "section": "Section 2 Limitations, Figure 2-3 Powerplant Instrument Markings; page mark Revision 4"
+            },
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "2-5",
+              "section": "Section 2 Limitations, powerplant limitations; page mark Revision 4"
+            }
+          ],
+          "reading": "tabulated",
+          "uncertainty": "As published.",
+          "conversion": "rpm x 2 pi / 60, rounded to 4 decimals"
+        }
+      ],
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-11",
+          "section": "Section 7, Figure 7-2 Instrument Panel sheet 2 (item list); page mark Revision 4"
+        },
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-20",
+          "section": "Section 7 engine instruments (oil pressure, oil temperature, tachometer, EGT); page mark Revision 4"
+        }
+      ],
+      "scope": "engine",
+      "note": "Calibrated in 100 rpm increments (p. 7-20). Figure 2-3 lists no yellow arc and no minimum red line. p. 7-20 states a different green arc (1900-2400 rpm), recorded under conflicts; the Figure 2-3 arcs govern by user decision 2026-11-02 07:36. Already in the proposed digest_layout 1 list."
+    },
+    "tach_time_s": {
+      "instrument": "Hour meter in the tachometer dial",
+      "panel_item": "Figure 7-2 item 10 (lower section of the dial)",
+      "quantity": "elapsed engine time (hours and tenths)",
+      "kind": "counter",
+      "unit": "s",
+      "original_unit": "h",
+      "scale": {
+        "status": "unknown",
+        "citations": [],
+        "todo": "Counter digits/rollover not stated (TBD-src)."
+      },
+      "markings": [],
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-20",
+          "section": "Section 7 engine instruments (oil pressure, oil temperature, tachometer, EGT); page mark Revision 4"
+        }
+      ],
+      "scope": "engine",
+      "note": "S17 does not state how engine time is accumulated (for example rpm-weighted); the counting rule is TBD-src."
+    },
+    "hobbs_time_s": {
+      "instrument": "Hour (Hobbs) meter",
+      "panel_item": "Figure 7-2 item 23",
+      "quantity": "elapsed time while oil pressure exceeds the low-oil-pressure switch point",
+      "kind": "counter",
+      "unit": "s",
+      "original_unit": "h",
+      "scale": {
+        "status": "unknown",
+        "citations": [],
+        "todo": "Counter digits/rollover not stated (TBD-src)."
+      },
+      "markings": [],
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-11",
+          "section": "Section 7, Figure 7-2 Instrument Panel sheet 2 (item list); page mark Revision 4"
+        },
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-20",
+          "section": "Section 7 engine instruments (oil pressure, oil temperature, tachometer, EGT); page mark Revision 4"
+        }
+      ],
+      "scope": "engine",
+      "note": "The low oil pressure switch completes the hour meter circuit above 20 psi (p. 7-20); see ann_oil_press trigger."
+    },
+    "oil_press_pa": {
+      "instrument": "Oil temperature and oil pressure indicator (pressure side; electrical, transducer)",
+      "panel_item": "Figure 7-2 item 1",
+      "quantity": "engine oil pressure (gauge pressure)",
+      "kind": "gauge",
+      "unit": "Pa",
+      "original_unit": "psi",
+      "scale": {
+        "status": "unknown",
+        "citations": [],
+        "todo": "Dial range not stated in S17 Sections 2 or 7; needs an instrument source or a photograph-free documented reading (TBD-src)."
+      },
+      "markings": [
+        {
+          "kind": "red_line_min",
+          "at": {
+            "value": 137895.15,
+            "unit": "Pa",
+            "original_value": 20,
+            "original_unit": "psi"
+          },
+          "condition": "minimum oil pressure",
+          "status": "sourced",
+          "citations": [
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "2-6",
+              "section": "Section 2 Limitations, Figure 2-3 Powerplant Instrument Markings; page mark Revision 4"
+            },
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "2-5",
+              "section": "Section 2 Limitations, powerplant limitations; page mark Revision 4"
+            }
+          ],
+          "reading": "tabulated",
+          "uncertainty": "As published.",
+          "conversion": "psi x 6894.757293168361 Pa (lbf/in^2, exact), rounded to 0.01 Pa"
+        },
+        {
+          "kind": "green_arc",
+          "lower": {
+            "value": 344737.86,
+            "unit": "Pa",
+            "original_value": 50,
+            "original_unit": "psi"
+          },
+          "upper": {
+            "value": 620528.16,
+            "unit": "Pa",
+            "original_value": 90,
+            "original_unit": "psi"
+          },
+          "condition": "normal operating range",
+          "status": "sourced",
+          "citations": [
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "2-6",
+              "section": "Section 2 Limitations, Figure 2-3 Powerplant Instrument Markings; page mark Revision 4"
+            }
+          ],
+          "reading": "tabulated",
+          "uncertainty": "As published.",
+          "conversion": "psi x 6894.757293168361 Pa (lbf/in^2, exact), rounded to 0.01 Pa"
+        },
+        {
+          "kind": "red_line_max",
+          "at": {
+            "value": 792897.09,
+            "unit": "Pa",
+            "original_value": 115,
+            "original_unit": "psi"
+          },
+          "condition": "maximum oil pressure",
+          "status": "sourced",
+          "citations": [
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "2-6",
+              "section": "Section 2 Limitations, Figure 2-3 Powerplant Instrument Markings; page mark Revision 4"
+            },
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "2-5",
+              "section": "Section 2 Limitations, powerplant limitations; page mark Revision 4"
+            }
+          ],
+          "reading": "tabulated",
+          "uncertainty": "As published.",
+          "conversion": "psi x 6894.757293168361 Pa (lbf/in^2, exact), rounded to 0.01 Pa"
+        }
+      ],
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-11",
+          "section": "Section 7, Figure 7-2 Instrument Panel sheet 2 (item list); page mark Revision 4"
+        },
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-20",
+          "section": "Section 7 engine instruments (oil pressure, oil temperature, tachometer, EGT); page mark Revision 4"
+        }
+      ],
+      "scope": "engine",
+      "note": "Indication from an oil pressure line/transducer to the gauge on the LH panel (p. 7-20). Pressure stored as gauge (relative) pressure in Pa."
+    },
+    "oil_temp_k": {
+      "instrument": "Oil temperature and oil pressure indicator (temperature side; resistance probe)",
+      "panel_item": "Figure 7-2 item 1",
+      "quantity": "engine oil temperature",
+      "kind": "gauge",
+      "unit": "K",
+      "original_unit": "degF",
+      "scale": {
+        "status": "unknown",
+        "citations": [],
+        "todo": "Dial range not stated in S17 Sections 2 or 7; needs an instrument source or a photograph-free documented reading (TBD-src)."
+      },
+      "markings": [
+        {
+          "kind": "green_arc",
+          "lower": {
+            "value": 310.9278,
+            "unit": "K",
+            "original_value": 100,
+            "original_unit": "degF"
+          },
+          "upper": {
+            "value": 391.4833,
+            "unit": "K",
+            "original_value": 245,
+            "original_unit": "degF"
+          },
+          "condition": "normal operating range",
+          "status": "sourced",
+          "citations": [
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "2-6",
+              "section": "Section 2 Limitations, Figure 2-3 Powerplant Instrument Markings; page mark Revision 4"
+            }
+          ],
+          "reading": "tabulated",
+          "uncertainty": "As published.",
+          "conversion": "K = (degF + 459.67) x 5/9 (exact), rounded to 4 decimals"
+        },
+        {
+          "kind": "red_line_max",
+          "at": {
+            "value": 391.4833,
+            "unit": "K",
+            "original_value": 245,
+            "original_unit": "degF"
+          },
+          "condition": "maximum oil temperature",
+          "status": "sourced",
+          "citations": [
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "2-6",
+              "section": "Section 2 Limitations, Figure 2-3 Powerplant Instrument Markings; page mark Revision 4"
+            },
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "2-5",
+              "section": "Section 2 Limitations, powerplant limitations; page mark Revision 4"
+            }
+          ],
+          "reading": "tabulated",
+          "uncertainty": "As published.",
+          "conversion": "K = (degF + 459.67) x 5/9 (exact), rounded to 4 decimals",
+          "note": "p. 2-5 also gives 118 degC."
+        }
+      ],
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-11",
+          "section": "Section 7, Figure 7-2 Instrument Panel sheet 2 (item list); page mark Revision 4"
+        },
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-20",
+          "section": "Section 7 engine instruments (oil pressure, oil temperature, tachometer, EGT); page mark Revision 4"
+        }
+      ],
+      "scope": "engine"
+    },
+    "egt_k": {
+      "instrument": "EGT/fuel flow indicator (EGT side; thermocouple in the exhaust tailpipe)",
+      "panel_item": "Figure 7-2 item 4",
+      "quantity": "exhaust gas temperature",
+      "kind": "gauge",
+      "unit": "K",
+      "scale": {
+        "status": "unknown",
+        "citations": [],
+        "todo": "Dial range not stated in S17 Sections 2 or 7; needs an instrument source or a photograph-free documented reading (TBD-src). Scale unit (degF or unlabelled divisions) not stated."
+      },
+      "markings": [],
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-11",
+          "section": "Section 7, Figure 7-2 Instrument Panel sheet 2 (item list); page mark Revision 4"
+        },
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-20",
+          "section": "Section 7 engine instruments (oil pressure, oil temperature, tachometer, EGT); page mark Revision 4"
+        },
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-21",
+          "section": "Section 7 engine instruments (EGT thermocouple); page mark Revision 4"
+        }
+      ],
+      "scope": "engine",
+      "note": "No markings in Figure 2-3. A manually set index pointer marks the peak (p. 7-20); it is pilot-set instrument state, not a computed indication. S17 states no EGT unit or number; original_unit is omitted.",
+      "todo": "Confirm the EGT scale and unit from an instrument source."
+    },
+    "fuel_flow_m3ps": {
+      "instrument": "EGT/fuel flow indicator (fuel flow side)",
+      "panel_item": "Figure 7-2 item 4",
+      "quantity": "fuel flow, volumetric, as indicated in gallons per hour",
+      "kind": "gauge",
+      "unit": "m^3/s",
+      "original_unit": "gal/h",
+      "scale": {
+        "status": "unknown",
+        "citations": [],
+        "todo": "Dial range not stated in S17 Sections 2 or 7; needs an instrument source or a photograph-free documented reading (TBD-src)."
+      },
+      "markings": [
+        {
+          "kind": "green_arc",
+          "lower": {
+            "value": 0.0,
+            "unit": "m^3/s",
+            "original_value": 0,
+            "original_unit": "gal/h"
+          },
+          "upper": {
+            "value": 1.2618e-05,
+            "unit": "m^3/s",
+            "original_value": 12,
+            "original_unit": "gal/h"
+          },
+          "condition": "normal operating range",
+          "status": "sourced",
+          "citations": [
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "2-6",
+              "section": "Section 2 Limitations, Figure 2-3 Powerplant Instrument Markings; page mark Revision 4"
+            }
+          ],
+          "reading": "tabulated",
+          "uncertainty": "As published.",
+          "conversion": "US gal/h x 3.785411784e-3 / 3600 m^3/s (exact), 5 significant digits"
+        }
+      ],
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-11",
+          "section": "Section 7, Figure 7-2 Instrument Panel sheet 2 (item list); page mark Revision 4"
+        },
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-25",
+          "section": "Section 7 fuel indicating; page mark Revision 4"
+        }
+      ],
+      "scope": "fuel",
+      "note": "S17 states that fuel pressure is measured by a transducer near the fuel manifold and translated for the indicator in gallons per hour (p. 7-25). Inference (not stated in S17): the display is a pressure-derived flow rather than a direct flow measurement. Figure 2-3 lists no red lines for fuel flow."
+    },
+    "fuel_qty_left_m3": {
+      "instrument": "Fuel quantity indicator (electrical, float-type transmitter per tank)",
+      "panel_item": "Figure 7-2 item 3",
+      "quantity": "left tank fuel quantity, marked in US gallons",
+      "kind": "gauge",
+      "unit": "m^3",
+      "original_unit": "gal",
+      "scale": {
+        "status": "unknown",
+        "citations": [],
+        "todo": "Dial range not stated in S17 Sections 2 or 7; needs an instrument source or a photograph-free documented reading (TBD-src). Full-scale mark not stated; Figure 7-5 gives 28.0 gal per full tank (tank content, not the dial)."
+      },
+      "markings": [
+        {
+          "kind": "red_line_min",
+          "at": {
+            "value": 0.0,
+            "unit": "m^3",
+            "original_value": 0,
+            "original_unit": "gal"
+          },
+          "condition": "empty tank: red line at the 0 mark; about 1.5 gal unusable remains in each tank when it reads empty",
+          "status": "sourced",
+          "citations": [
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "2-6",
+              "section": "Section 2 Limitations, Figure 2-3 Powerplant Instrument Markings; page mark Revision 4"
+            },
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "7-25",
+              "section": "Section 7 fuel indicating; page mark Revision 4"
+            }
+          ],
+          "reading": "tabulated",
+          "uncertainty": "As published; the 1.5 gal unusable is approximate (p. 7-25).",
+          "conversion": "US gal x 3.785411784e-3 m^3 (exact)"
+        }
+      ],
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-11",
+          "section": "Section 7, Figure 7-2 Instrument Panel sheet 2 (item list); page mark Revision 4"
+        },
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-25",
+          "section": "Section 7 fuel indicating; page mark Revision 4"
+        }
+      ],
+      "scope": "fuel",
+      "note": "S17: not reliable in skids, slips or unusual attitudes. On a detected transmitter fault the needle goes to an OFF position below the 0 mark and the LOW FUEL annunciator lights (p. 7-25); proposed companion ind flag fuel_qty_left_off."
+    },
+    "fuel_qty_right_m3": {
+      "instrument": "Fuel quantity indicator (electrical, float-type transmitter per tank)",
+      "panel_item": "Figure 7-2 item 3",
+      "quantity": "right tank fuel quantity, marked in US gallons",
+      "kind": "gauge",
+      "unit": "m^3",
+      "original_unit": "gal",
+      "scale": {
+        "status": "unknown",
+        "citations": [],
+        "todo": "Dial range not stated in S17 Sections 2 or 7; needs an instrument source or a photograph-free documented reading (TBD-src). Full-scale mark not stated; Figure 7-5 gives 28.0 gal per full tank (tank content, not the dial)."
+      },
+      "markings": [
+        {
+          "kind": "red_line_min",
+          "at": {
+            "value": 0.0,
+            "unit": "m^3",
+            "original_value": 0,
+            "original_unit": "gal"
+          },
+          "condition": "empty tank: red line at the 0 mark; about 1.5 gal unusable remains in each tank when it reads empty",
+          "status": "sourced",
+          "citations": [
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "2-6",
+              "section": "Section 2 Limitations, Figure 2-3 Powerplant Instrument Markings; page mark Revision 4"
+            },
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "7-25",
+              "section": "Section 7 fuel indicating; page mark Revision 4"
+            }
+          ],
+          "reading": "tabulated",
+          "uncertainty": "As published; the 1.5 gal unusable is approximate (p. 7-25).",
+          "conversion": "US gal x 3.785411784e-3 m^3 (exact)"
+        }
+      ],
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-11",
+          "section": "Section 7, Figure 7-2 Instrument Panel sheet 2 (item list); page mark Revision 4"
+        },
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-25",
+          "section": "Section 7 fuel indicating; page mark Revision 4"
+        }
+      ],
+      "scope": "fuel",
+      "note": "S17: not reliable in skids, slips or unusual attitudes. On a detected transmitter fault the needle goes to an OFF position below the 0 mark and the LOW FUEL annunciator lights (p. 7-25); proposed companion ind flag fuel_qty_right_off."
+    },
+    "vac_suction_pa": {
+      "instrument": "Vacuum gage (part of the vacuum gage/ammeter)",
+      "panel_item": "Figure 7-2 item 2",
+      "quantity": "vacuum (suction) available to the gyro instruments, in inches of mercury",
+      "kind": "gauge",
+      "unit": "Pa",
+      "original_unit": "inHg",
+      "scale": {
+        "status": "unknown",
+        "citations": [],
+        "todo": "Dial range not stated in S17 Sections 2 or 7; needs an instrument source or a photograph-free documented reading (TBD-src)."
+      },
+      "markings": [
+        {
+          "kind": "green_arc",
+          "lower": {
+            "value": 15238.75,
+            "unit": "Pa",
+            "original_value": 4.5,
+            "original_unit": "inHg"
+          },
+          "upper": {
+            "value": 18625.14,
+            "unit": "Pa",
+            "original_value": 5.5,
+            "original_unit": "inHg"
+          },
+          "condition": "normal operating (desired suction) range",
+          "status": "sourced",
+          "citations": [
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "2-6",
+              "section": "Section 2 Limitations, Figure 2-3 Powerplant Instrument Markings; page mark Revision 4"
+            },
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "7-45",
+              "section": "Section 7 vacuum gage and low vacuum annunciation; page mark Revision 4"
+            }
+          ],
+          "reading": "tabulated",
+          "uncertainty": "As published.",
+          "conversion": "inHg x 3386.389 Pa (conventional, NIST SP 811), rounded to 0.01 Pa"
+        }
+      ],
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-11",
+          "section": "Section 7, Figure 7-2 Instrument Panel sheet 2 (item list); page mark Revision 4"
+        },
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-45",
+          "section": "Section 7 vacuum gage and low vacuum annunciation; page mark Revision 4"
+        }
+      ],
+      "scope": "engine_driven_system",
+      "note": "Fed by two engine-driven vacuum pumps. S17 notes the gage may read as low as 4.0 inHg at 20,000 ft and still be adequate (p. 7-45). Stored as a positive pressure difference in Pa."
+    },
+    "ammeter_a": {
+      "instrument": "Ammeter (part of the vacuum gage/ammeter)",
+      "panel_item": "Figure 7-2 item 2",
+      "quantity": "battery charge (+) or discharge (-) current",
+      "kind": "gauge",
+      "unit": "A",
+      "original_unit": "A",
+      "scale": {
+        "status": "unknown",
+        "citations": [],
+        "todo": "Dial range not stated in S17 Sections 2 or 7; needs an instrument source or a photograph-free documented reading (TBD-src)."
+      },
+      "markings": [],
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-11",
+          "section": "Section 7, Figure 7-2 Instrument Panel sheet 2 (item list); page mark Revision 4"
+        },
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-34",
+          "section": "Section 7 ammeter; page mark Revision 4"
+        }
+      ],
+      "scope": "electrical",
+      "inclusion": "User decision 2026-11-02 07:36 (GAPS Q5/Q23; input record docs/input/2026-11-02-s17-lists-electrical-tach.md): included in ind.",
+      "note": "Electrical; shares the gauge with the vacuum gage and reflects the engine-driven alternator. No markings in Figure 2-3."
+    }
+  },
+  "annunciators": {
+    "ann_oil_press": {
+      "message": "OIL PRESS",
+      "colour": "red",
+      "kind": "warning",
+      "triggers": [
+        {
+          "quantity": "oil pressure at the low oil pressure switch",
+          "comparison": "below",
+          "threshold": {
+            "value": 137895.15,
+            "unit": "Pa",
+            "original_value": 20,
+            "original_unit": "psi"
+          },
+          "status": "sourced",
+          "citations": [
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "7-19",
+              "section": "Section 7 engine instruments; page mark Revision 4"
+            },
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "7-20",
+              "section": "Section 7 engine instruments (oil pressure, oil temperature, tachometer, EGT); page mark Revision 4"
+            }
+          ],
+          "uncertainty": "As published (switch point).",
+          "conversion": "psi x 6894.757293168361 Pa (lbf/in^2, exact), rounded to 0.01 Pa"
+        }
+      ],
+      "flash": {
+        "duration": {
+          "value": 10.0,
+          "unit": "s",
+          "original_value": 10,
+          "original_unit": "s"
+        },
+        "status": "sourced",
+        "citations": [
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "7-32",
+            "section": "Section 7 annunciator panel; page mark Revision 4"
+          }
+        ],
+        "uncertainty": "Approximately 10 s (as published).",
+        "conversion": "none (seconds)",
+        "note": "Then steady on; the pilot cannot turn the message off."
+      },
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-19",
+          "section": "Section 7 engine instruments; page mark Revision 4"
+        },
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-20",
+          "section": "Section 7 engine instruments (oil pressure, oil temperature, tachometer, EGT); page mark Revision 4"
+        },
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-32",
+          "section": "Section 7 annunciator panel; page mark Revision 4"
+        }
+      ],
+      "scope": "engine",
+      "note": "The same switch drives the hour (Hobbs) meter."
+    },
+    "ann_low_fuel_left": {
+      "message": "L LOW FUEL",
+      "colour": "amber",
+      "kind": "caution",
+      "triggers": [
+        {
+          "quantity": "left tank fuel quantity",
+          "comparison": "below",
+          "threshold": {
+            "value": 0.018927,
+            "unit": "m^3",
+            "original_value": 5,
+            "original_unit": "gal"
+          },
+          "persistence": {
+            "value": 60.0,
+            "unit": "s",
+            "original_value": 60,
+            "original_unit": "s"
+          },
+          "status": "sourced",
+          "citations": [
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "7-25",
+              "section": "Section 7 fuel indicating; page mark Revision 4"
+            }
+          ],
+          "uncertainty": "Threshold approximately 5 gal (as published); must remain below for more than 60 s.",
+          "conversion": "US gal x 3.785411784e-3 m^3 (exact); seconds unchanged",
+          "note": "Whether 5 gal is total or usable tank content is not stated."
+        },
+        {
+          "quantity": "left tank transmitter fault (short, open or resistance increasing over time)",
+          "comparison": "fault",
+          "status": "sourced",
+          "citations": [
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "7-25",
+              "section": "Section 7 fuel indicating; page mark Revision 4"
+            }
+          ],
+          "uncertainty": "Detection criteria not published.",
+          "note": "Needle also goes to the OFF position below 0."
+        }
+      ],
+      "flash": {
+        "duration": {
+          "value": 10.0,
+          "unit": "s",
+          "original_value": 10,
+          "original_unit": "s"
+        },
+        "status": "sourced",
+        "citations": [
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "7-25",
+            "section": "Section 7 fuel indicating; page mark Revision 4"
+          },
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "7-32",
+            "section": "Section 7 annunciator panel; page mark Revision 4"
+          }
+        ],
+        "uncertainty": "Approximately 10 s (as published).",
+        "conversion": "none (seconds)",
+        "note": "Then steady on; the pilot cannot turn the message off."
+      },
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-25",
+          "section": "Section 7 fuel indicating; page mark Revision 4"
+        }
+      ],
+      "scope": "fuel",
+      "note": "Both sides low or failed: the panel shows L LOW FUEL R (one combined message; two ind fields both on)."
+    },
+    "ann_low_fuel_right": {
+      "message": "LOW FUEL R",
+      "colour": "amber",
+      "kind": "caution",
+      "triggers": [
+        {
+          "quantity": "right tank fuel quantity",
+          "comparison": "below",
+          "threshold": {
+            "value": 0.018927,
+            "unit": "m^3",
+            "original_value": 5,
+            "original_unit": "gal"
+          },
+          "persistence": {
+            "value": 60.0,
+            "unit": "s",
+            "original_value": 60,
+            "original_unit": "s"
+          },
+          "status": "sourced",
+          "citations": [
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "7-25",
+              "section": "Section 7 fuel indicating; page mark Revision 4"
+            }
+          ],
+          "uncertainty": "Threshold approximately 5 gal (as published); must remain below for more than 60 s.",
+          "conversion": "US gal x 3.785411784e-3 m^3 (exact); seconds unchanged",
+          "note": "Whether 5 gal is total or usable tank content is not stated."
+        },
+        {
+          "quantity": "right tank transmitter fault (short, open or resistance increasing over time)",
+          "comparison": "fault",
+          "status": "sourced",
+          "citations": [
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "7-25",
+              "section": "Section 7 fuel indicating; page mark Revision 4"
+            }
+          ],
+          "uncertainty": "Detection criteria not published.",
+          "note": "Needle also goes to the OFF position below 0."
+        }
+      ],
+      "flash": {
+        "duration": {
+          "value": 10.0,
+          "unit": "s",
+          "original_value": 10,
+          "original_unit": "s"
+        },
+        "status": "sourced",
+        "citations": [
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "7-25",
+            "section": "Section 7 fuel indicating; page mark Revision 4"
+          },
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "7-32",
+            "section": "Section 7 annunciator panel; page mark Revision 4"
+          }
+        ],
+        "uncertainty": "Approximately 10 s (as published).",
+        "conversion": "none (seconds)",
+        "note": "Then steady on; the pilot cannot turn the message off."
+      },
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-25",
+          "section": "Section 7 fuel indicating; page mark Revision 4"
+        }
+      ],
+      "scope": "fuel",
+      "note": "Both sides low or failed: the panel shows L LOW FUEL R (one combined message; two ind fields both on)."
+    },
+    "ann_vac_left": {
+      "message": "L VAC",
+      "colour": "amber",
+      "kind": "caution",
+      "triggers": [
+        {
+          "quantity": "left vacuum pump output at its transducer",
+          "comparison": "below",
+          "threshold": {
+            "value": 10159.17,
+            "unit": "Pa",
+            "original_value": 3.0,
+            "original_unit": "inHg"
+          },
+          "status": "sourced",
+          "citations": [
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "7-45",
+              "section": "Section 7 vacuum gage and low vacuum annunciation; page mark Revision 4"
+            }
+          ],
+          "uncertainty": "As published.",
+          "conversion": "inHg x 3386.389 Pa (conventional, NIST SP 811), rounded to 0.01 Pa"
+        }
+      ],
+      "flash": {
+        "duration": {
+          "value": 10.0,
+          "unit": "s",
+          "original_value": 10,
+          "original_unit": "s"
+        },
+        "status": "sourced",
+        "citations": [
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "7-45",
+            "section": "Section 7 vacuum gage and low vacuum annunciation; page mark Revision 4"
+          }
+        ],
+        "uncertainty": "Approximately 10 s (as published).",
+        "conversion": "none (seconds)",
+        "note": "Then steady on; the pilot cannot turn the message off."
+      },
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-45",
+          "section": "Section 7 vacuum gage and low vacuum annunciation; page mark Revision 4"
+        }
+      ],
+      "scope": "engine_driven_system",
+      "note": "Both pumps low: the panel shows L VAC R."
+    },
+    "ann_vac_right": {
+      "message": "VAC R",
+      "colour": "amber",
+      "kind": "caution",
+      "triggers": [
+        {
+          "quantity": "right vacuum pump output at its transducer",
+          "comparison": "below",
+          "threshold": {
+            "value": 10159.17,
+            "unit": "Pa",
+            "original_value": 3.0,
+            "original_unit": "inHg"
+          },
+          "status": "sourced",
+          "citations": [
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "7-45",
+              "section": "Section 7 vacuum gage and low vacuum annunciation; page mark Revision 4"
+            }
+          ],
+          "uncertainty": "As published.",
+          "conversion": "inHg x 3386.389 Pa (conventional, NIST SP 811), rounded to 0.01 Pa"
+        }
+      ],
+      "flash": {
+        "duration": {
+          "value": 10.0,
+          "unit": "s",
+          "original_value": 10,
+          "original_unit": "s"
+        },
+        "status": "sourced",
+        "citations": [
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "7-45",
+            "section": "Section 7 vacuum gage and low vacuum annunciation; page mark Revision 4"
+          }
+        ],
+        "uncertainty": "Approximately 10 s (as published).",
+        "conversion": "none (seconds)",
+        "note": "Then steady on; the pilot cannot turn the message off."
+      },
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-45",
+          "section": "Section 7 vacuum gage and low vacuum annunciation; page mark Revision 4"
+        }
+      ],
+      "scope": "engine_driven_system",
+      "note": "Both pumps low: the panel shows L VAC R."
+    },
+    "ann_volts": {
+      "message": "VOLTS",
+      "colour": "red",
+      "kind": "warning",
+      "triggers": [
+        {
+          "quantity": "electrical system voltage",
+          "comparison": "below",
+          "threshold": {
+            "value": 24.5,
+            "unit": "V",
+            "original_value": 24.5,
+            "original_unit": "V"
+          },
+          "status": "sourced",
+          "citations": [
+            {
+              "source_id": "S17",
+              "revision": "172SPHUS Rev 5, 19 Jul 2004",
+              "page": "7-35",
+              "section": "Section 7 low voltage annunciation; page mark Revision 4"
+            }
+          ],
+          "uncertainty": "As published.",
+          "conversion": "none (volts)"
+        }
+      ],
+      "flash": {
+        "duration": {
+          "value": 10.0,
+          "unit": "s",
+          "original_value": 10,
+          "original_unit": "s"
+        },
+        "status": "sourced",
+        "citations": [
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "7-35",
+            "section": "Section 7 low voltage annunciation; page mark Revision 4"
+          }
+        ],
+        "uncertainty": "Approximately 10 s (as published).",
+        "conversion": "none (seconds)",
+        "note": "Then steady on; the pilot cannot turn the message off."
+      },
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-35",
+          "section": "Section 7 low voltage annunciation; page mark Revision 4"
+        }
+      ],
+      "scope": "electrical",
+      "inclusion": "User decision 2026-11-02 07:36 (GAPS Q5/Q23; input record docs/input/2026-11-02-s17-lists-electrical-tach.md): included in ind.",
+      "note": "Electrical; may light at low rpm with electrical load (p. 7-35)."
+    }
+  },
+  "sample_loading": {
+    "nature": "sample: flight-manual example airplane, not a weighed aircraft",
+    "datum": {
+      "value": "Fuselage station 0.0 at the front face of the firewall (lower portion)",
+      "status": "sourced",
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "6-4",
+          "section": "Section 6, Figure 6-1 Airplane Weighing Form sheet 1 (reference datum); page mark July 8/98"
+        }
+      ]
+    },
+    "values": {
+      "basic_empty_mass": {
+        "value": 744.7987,
+        "unit": "kg",
+        "original_value": 1642,
+        "original_unit": "lb",
+        "condition": "Sample airplane of Figure 6-5, not a weighed or delivered aircraft; includes unusable fuel and full oil",
+        "status": "sourced",
+        "citations": [
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "6-12",
+            "section": "Section 6, Figure 6-5 Sample Loading Problem sheet 1, sample airplane column; page mark May 30/00"
+          }
+        ],
+        "reading": "tabulated",
+        "conversion": "lb x 0.45359237 kg (exact), rounded to 4 decimals",
+        "uncertainty": "Printed to 1 lb; a real 172S differs (actual figures are in each aircraft's weight and balance record, p. 6-3)."
+      },
+      "basic_empty_moment": {
+        "value": 721.23,
+        "unit": "kg*m",
+        "original_value": 62.6,
+        "original_unit": "lb-in/1000",
+        "condition": "Sample airplane of Figure 6-5, not a weighed or delivered aircraft; moment about the reference datum",
+        "status": "sourced",
+        "citations": [
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "6-12",
+            "section": "Section 6, Figure 6-5 Sample Loading Problem sheet 1, sample airplane column; page mark May 30/00"
+          }
+        ],
+        "reading": "tabulated",
+        "conversion": "published moment/1000 x 11.521246198 kg m (1000 x 0.45359237 x 0.0254, exact), rounded to 3 decimals",
+        "uncertainty": "Printed to 0.1 x 1000 lb-in (±50 lb-in)."
+      },
+      "basic_empty_arm": {
+        "value": 0.96836,
+        "unit": "m",
+        "original_value": 38.124,
+        "original_unit": "in",
+        "condition": "Sample airplane of Figure 6-5, not a weighed or delivered aircraft; centre of gravity station of the basic empty weight",
+        "status": "derived",
+        "citations": [
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "6-12",
+            "section": "Section 6, Figure 6-5 Sample Loading Problem sheet 1, sample airplane column; page mark May 30/00"
+          }
+        ],
+        "reading": "derived",
+        "conversion": "in x 0.0254 m (exact)",
+        "derivation": "Arm = moment / mass = 62,600 lb-in / 1642 lb = 38.124 in; SI value = basic_empty_moment / basic_empty_mass (0.96836 m). Not printed in S17. The validator recomputes it within uncertainty_si.",
+        "uncertainty": "About ±0.04 in (±0.001 m) from the rounding of both published numbers: moment ±0.05 x 1000 lb-in (±0.08 %) and weight ±0.5 lb (±0.03 %).",
+        "uncertainty_si": 0.001
+      },
+      "fuel_arm": {
+        "value": 1.2192,
+        "unit": "m",
+        "original_value": 48.0,
+        "original_unit": "in",
+        "condition": "usable fuel C.G. arm, integral tanks",
+        "status": "sourced",
+        "citations": [
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "6-9",
+            "section": "Section 6, Figure 6-3 Loading Arrangements; page mark July 8/98"
+          }
+        ],
+        "reading": "tabulated",
+        "conversion": "in x 0.0254 m (exact)",
+        "uncertainty": "As published."
+      },
+      "fuel_density_sample": {
+        "value": 718.9586,
+        "unit": "kg/m^3",
+        "original_value": 6,
+        "original_unit": "lb/gal",
+        "condition": "fuel weight per US gallon used in the sample loading problem",
+        "status": "sourced",
+        "citations": [
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "6-12",
+            "section": "Section 6, Figure 6-5 Sample Loading Problem sheet 1, sample airplane column; page mark May 30/00"
+          }
+        ],
+        "reading": "tabulated",
+        "conversion": "lb/US gal x 119.826427317 kg/m^3 (exact), rounded to 4 decimals",
+        "uncertainty": "Planning value of the example, not a measured fuel density."
+      },
+      "front_seats_arm": {
+        "value": 0.9398,
+        "unit": "m",
+        "original_value": 37,
+        "original_unit": "in",
+        "condition": "pilot/front passenger C.G. with seats positioned for an average occupant",
+        "status": "sourced",
+        "citations": [
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "6-9",
+            "section": "Section 6, Figure 6-3 Loading Arrangements; page mark July 8/98"
+          }
+        ],
+        "reading": "tabulated",
+        "conversion": "in x 0.0254 m (exact)",
+        "uncertainty": "As published; occupant C.G. range below."
+      },
+      "front_seats_arm_fwd": {
+        "value": 0.8636,
+        "unit": "m",
+        "original_value": 34,
+        "original_unit": "in",
+        "condition": "forward limit of the front occupant C.G. range",
+        "status": "sourced",
+        "citations": [
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "6-9",
+            "section": "Section 6, Figure 6-3 Loading Arrangements; page mark July 8/98"
+          },
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "6-12",
+            "section": "Section 6, Figure 6-5 Sample Loading Problem sheet 1, sample airplane column; page mark May 30/00"
+          }
+        ],
+        "reading": "tabulated",
+        "conversion": "in x 0.0254 m (exact)",
+        "uncertainty": "As published."
+      },
+      "front_seats_arm_aft": {
+        "value": 1.1684,
+        "unit": "m",
+        "original_value": 46,
+        "original_unit": "in",
+        "condition": "aft limit of the front occupant C.G. range",
+        "status": "sourced",
+        "citations": [
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "6-9",
+            "section": "Section 6, Figure 6-3 Loading Arrangements; page mark July 8/98"
+          },
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "6-12",
+            "section": "Section 6, Figure 6-5 Sample Loading Problem sheet 1, sample airplane column; page mark May 30/00"
+          }
+        ],
+        "reading": "tabulated",
+        "conversion": "in x 0.0254 m (exact)",
+        "uncertainty": "As published."
+      },
+      "rear_seats_arm": {
+        "value": 1.8542,
+        "unit": "m",
+        "original_value": 73,
+        "original_unit": "in",
+        "condition": "rear passengers C.G., average occupant",
+        "status": "sourced",
+        "citations": [
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "6-9",
+            "section": "Section 6, Figure 6-3 Loading Arrangements; page mark July 8/98"
+          }
+        ],
+        "reading": "tabulated",
+        "conversion": "in x 0.0254 m (exact)",
+        "uncertainty": "As published; no range given."
+      },
+      "baggage_1_arm": {
+        "value": 2.413,
+        "unit": "m",
+        "original_value": 95,
+        "original_unit": "in",
+        "condition": "baggage area 1, arm to the centre of the area",
+        "status": "sourced",
+        "citations": [
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "6-9",
+            "section": "Section 6, Figure 6-3 Loading Arrangements; page mark July 8/98"
+          }
+        ],
+        "reading": "tabulated",
+        "conversion": "in x 0.0254 m (exact)",
+        "uncertainty": "As published."
+      },
+      "baggage_1_fwd": {
+        "value": 2.0828,
+        "unit": "m",
+        "original_value": 82,
+        "original_unit": "in",
+        "condition": "baggage area 1 forward station",
+        "status": "sourced",
+        "citations": [
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "6-12",
+            "section": "Section 6, Figure 6-5 Sample Loading Problem sheet 1, sample airplane column; page mark May 30/00"
+          }
+        ],
+        "reading": "tabulated",
+        "conversion": "in x 0.0254 m (exact)",
+        "uncertainty": "As published."
+      },
+      "baggage_1_aft": {
+        "value": 2.7432,
+        "unit": "m",
+        "original_value": 108,
+        "original_unit": "in",
+        "condition": "baggage area 1 aft station (approximate rear cabin wall)",
+        "status": "sourced",
+        "citations": [
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "6-9",
+            "section": "Section 6, Figure 6-3 Loading Arrangements; page mark July 8/98"
+          },
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "6-12",
+            "section": "Section 6, Figure 6-5 Sample Loading Problem sheet 1, sample airplane column; page mark May 30/00"
+          }
+        ],
+        "reading": "tabulated",
+        "conversion": "in x 0.0254 m (exact)",
+        "uncertainty": "As published; the rear cabin wall station is approximate."
+      },
+      "baggage_2_arm": {
+        "value": 3.1242,
+        "unit": "m",
+        "original_value": 123,
+        "original_unit": "in",
+        "condition": "baggage area 2, arm to the centre of the area",
+        "status": "sourced",
+        "citations": [
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "6-9",
+            "section": "Section 6, Figure 6-3 Loading Arrangements; page mark July 8/98"
+          }
+        ],
+        "reading": "tabulated",
+        "conversion": "in x 0.0254 m (exact)",
+        "uncertainty": "As published."
+      },
+      "baggage_2_fwd": {
+        "value": 2.7432,
+        "unit": "m",
+        "original_value": 108,
+        "original_unit": "in",
+        "condition": "baggage area 2 forward station",
+        "status": "sourced",
+        "citations": [
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "6-9",
+            "section": "Section 6, Figure 6-3 Loading Arrangements; page mark July 8/98"
+          },
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "6-12",
+            "section": "Section 6, Figure 6-5 Sample Loading Problem sheet 1, sample airplane column; page mark May 30/00"
+          }
+        ],
+        "reading": "tabulated",
+        "conversion": "in x 0.0254 m (exact)",
+        "uncertainty": "As published."
+      },
+      "baggage_2_aft": {
+        "value": 3.6068,
+        "unit": "m",
+        "original_value": 142,
+        "original_unit": "in",
+        "condition": "baggage area 2 aft station (approximate aft baggage wall)",
+        "status": "sourced",
+        "citations": [
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "6-9",
+            "section": "Section 6, Figure 6-3 Loading Arrangements; page mark July 8/98"
+          },
+          {
+            "source_id": "S17",
+            "revision": "172SPHUS Rev 5, 19 Jul 2004",
+            "page": "6-12",
+            "section": "Section 6, Figure 6-5 Sample Loading Problem sheet 1, sample airplane column; page mark May 30/00"
+          }
+        ],
+        "reading": "tabulated",
+        "conversion": "in x 0.0254 m (exact)",
+        "uncertainty": "As published; approximate."
+      }
+    }
+  },
+  "conflicts": [
+    {
+      "item": "Tachometer green arc",
+      "fields": [
+        "tach_prop_radps"
+      ],
+      "statements": [
+        "Figure 2-3 (p. 2-6): 2100-2500 rpm at sea level, 2100-2600 rpm at 5000 ft, 2100-2700 rpm at 10,000 ft",
+        "Engine instruments text (p. 7-20): green arc 1900-2400 rpm"
+      ],
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "2-6",
+          "section": "Section 2 Limitations, Figure 2-3 Powerplant Instrument Markings; page mark Revision 4"
+        },
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "7-20",
+          "section": "Section 7 engine instruments (oil pressure, oil temperature, tachometer, EGT); page mark Revision 4"
+        }
+      ],
+      "resolution": "User decision 2026-11-02 07:36 (GAPS Q5/Q23; input record docs/input/2026-11-02-s17-lists-electrical-tach.md): the Section 2 Figure 2-3 arcs govern (marked governs: true); p. 7-20 stays a recorded source conflict. Both pages carry the Revision 4 mark. Later 172SPHUS revisions were not checked."
+    },
+    {
+      "item": "Sample loading baggage area 1 moment",
+      "statements": [
+        "Figure 6-5 lists 56 lb in baggage area 1 with moment 4.6 (x 1000 lb-in), implying an arm of about 82 in",
+        "Figure 6-3 gives the baggage area 1 arm as 95 in (56 lb would give 5.3)"
+      ],
+      "citations": [
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "6-9",
+          "section": "Section 6, Figure 6-3 Loading Arrangements; page mark July 8/98"
+        },
+        {
+          "source_id": "S17",
+          "revision": "172SPHUS Rev 5, 19 Jul 2004",
+          "page": "6-12",
+          "section": "Section 6, Figure 6-5 Sample Loading Problem sheet 1, sample airplane column; page mark May 30/00"
+        }
+      ],
+      "resolution": "Not used: only the sample's basic empty weight and moment are taken; station arms come from Figure 6-3. The sample's ramp/take-off totals depend on the 4.6 entry."
+    }
+  ],
+  "not_extracted": [
+    {
+      "item": "Rest of Figure 6-5 (fuel, occupant, baggage rows, ramp and take-off totals), the loading graph (Figure 6-6), the C.G. moment envelope (Figure 6-7) and C.G. limits (Figure 6-8)",
+      "reason": "Not needed for the empty mass/CG decision; C.G. limits belong in the manifest (pending item) and are type-design limits, not sample values."
+    },
+    {
+      "item": "Baggage area weight limits (120 lb area 1, 50 lb area 2, 120 lb combined) and usable fuel 53 gal",
+      "reason": "Operating limits outside the indication/sample-loading scope; record in the manifest if needed."
+    },
+    {
+      "item": "Airspeed indicator markings (p. 2-5, Figure 2-2)",
+      "reason": "Not an engine or fuel indication; separate extraction if the ASI model needs it."
+    },
+    {
+      "item": "Digital clock / O.A.T. / voltmeter (Figure 7-2 item 5; Section 9 Davtron supplement)",
+      "reason": "Not an engine or fuel indication; the supplement was not read. Volts are also covered by ann_volts."
+    },
+    {
+      "item": "Annunciator panel test and dimming switch (DIM/BRT or DAY/NIGHT, TST or TEST by serial)",
+      "reason": "Pilot input state, not an indication; S17 says 'earlier/later serial number airplanes' without a serial break (TBD-src)."
+    },
+    {
+      "item": "EGT index pointer position",
+      "reason": "Pilot-set instrument state; would need an input control, not a computed indication."
+    }
+  ],
+  "pending": [
+    "Rights: taking every number of Figure 2-3 and every station number of Figure 6-3 exceeds the no-whole-table limit of the facts_only extraction rule. User decision 2026-11-02 07:36 (GAPS Q5/Q23; input record docs/input/2026-11-02-s17-lists-electrical-tach.md) accepted both lists as cited facts as an exception for those two lists only; it does not extend to other tables or figures.",
+    "Dial ranges (scale) of every gauge are TBD-src; S17 states markings only.",
+    "Check later 172SPHUS revisions applicable to 172S9491-172S9809 for changed Section 2/6/7 values (GAPS Q3 manual revision).",
+    "Manifest mass_limits.empty_mass stays unknown; a later manifest version may point it to sample_loading here, labelled as a sample (needs a manifest bump and re-pin)."
+  ],
+  "prepared": {
+    "date": "2026-11-02",
+    "by": "Claude Code subagent researcher, dispatched by the orchestrator",
+    "from": [
+      "docs/research/2026-11-02-172s-engine-fuel-ind-and-sample-loading.md"
+    ]
+  }
+}
