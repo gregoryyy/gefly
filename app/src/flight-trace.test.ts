@@ -4,6 +4,23 @@ import { DEFAULT_RADIO_NAV } from './radio-nav.ts';
 import { FlightTrace } from './flight-trace.ts';
 import type { FlightState } from './types';
 
+test('Review retains immutable applied controls, rejects partial groups and paused rewrites', () => {
+  const trace = new FlightTrace();
+  const controls = { throttle_norm: .7, aileron_cmd_norm: -.45, elevator_cmd_norm: .35,
+    rudder_cmd_norm: -.35, aileron_rad: -.12, right_aileron_rad: .08, rudder_rad: -.14 };
+  const source = { ...state(1), ...controls };
+  assert(trace.record(source, 0));
+  source.throttle_norm = .1;
+  assert.equal(trace.atTime(1)!.state.throttle_norm, .7);
+  assert.equal(trace.atTime(1)!.state.right_aileron_rad, .08);
+  assert.equal(trace.record({ ...state(1), ...controls, throttle_norm: .2 }, 0), false);
+  assert.equal(trace.record({ ...state(2), throttle_norm: .2 }, 0), false);
+  assert.equal(trace.record({ ...state(2), ...controls, rudder_cmd_norm: 1.01 }, 0), false);
+  assert(trace.record({ ...state(2), ...controls, throttle_norm: .2 }, 0));
+  assert.equal(trace.atTime(2)!.state.throttle_norm, .2);
+  assert.equal(trace.atTime(1)!.state.throttle_norm, .7);
+});
+
 function state(step: number, t_s = step): FlightState {
   return {
     step, t_s, lat_rad: 0.87, lon_rad: 0.15, alt_msl_m: 396.24,

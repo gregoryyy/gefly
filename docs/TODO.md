@@ -106,6 +106,12 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.19 Replace the fixed scene crosshair with actual camera-projected aircraft-forward direction; add bounded edge guidance and hide behind-camera directions. Recompute through look/FOV/view/resize and recorded Review without changing physical state or input. See [review evidence](reviews/2026-11-02-forward-marker.md). Partial R-VIEW-1/R-INPUT-1/R-REVIEW-1; peer pending.
 
+- [x] 2.0.20 Show source-applicable critical-speed markings on the research C172P CAS gauge, preserving source/configuration labels and suppressing incompatible TAS overlays. Partial R-AIR-2/R-DATA-1; installed IAS and dynamic stall-envelope acceptance remain separate. Independent actual-browser validation passed; peer pending.
+
+- [x] 2.0.21 Show recorded throttle, applied commands and actuator positions during read-only Review; bind R to Review and keep restart in Flight. Preserve staged live controls on exit and frozen physical state. Partial R-REVIEW-1/R-INPUT-1; independent actual-browser validation passed, peer pending.
+
+- [x] 2.0.22 Fit cockpit height to content and scale all inline instruments/controls together; retain main instruments and AP/flap/trim before collapsing engine/radio on narrow views. Partial R-VIEW-1; see [review evidence](reviews/2026-11-02-review-panel.md), peer pending.
+
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.
 - [ ] 2.3 code2 implements the corresponding browser controls, instruments and exercise feedback against frozen contracts **in parallel with 2.2**.

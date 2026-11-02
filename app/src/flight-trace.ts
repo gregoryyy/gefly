@@ -1,5 +1,5 @@
 import { RADIO_NAV_FIELDS, validRadioNavSnapshot } from './radio-nav.ts';
-import { ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
+import { CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
 import type { FlightState } from './types';
 
 export interface TraceSample {
@@ -39,14 +39,14 @@ export class FlightTrace {
   }
 
   record(state: FlightState, vertical_speed_mps: number): boolean {
-    if (!state || typeof state !== 'object' || !Number.isFinite(vertical_speed_mps) || !validAltimeterState(state) || !validCockpitState(state) || !validEngineState(state) || !validPitchTrimState(state) || !validGroundState(state)
+    if (!state || typeof state !== 'object' || !Number.isFinite(vertical_speed_mps) || !validAltimeterState(state) || !validCockpitState(state) || !validEngineState(state) || !validPitchTrimState(state) || !validGroundState(state) || !validControlState(state)
       || (RADIO_NAV_FIELDS.some(key => state[key] !== undefined) && !validRadioNavSnapshot(state))) return false;
     const snapshot: FlightState = {
       step: state.step, t_s: state.t_s, lat_rad: state.lat_rad, lon_rad: state.lon_rad,
       alt_msl_m: state.alt_msl_m, roll_rad: state.roll_rad, pitch_rad: state.pitch_rad,
       heading_rad: state.heading_rad, tas_mps: state.tas_mps,
     };
-    for (const key of [...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS, ...RADIO_NAV_FIELDS]) if (state[key] !== undefined) snapshot[key] = state[key];
+    for (const key of [...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS, ...RADIO_NAV_FIELDS]) if (state[key] !== undefined) snapshot[key] = state[key];
     if (!Object.values(snapshot).every((value) => typeof value === 'number' && Number.isFinite(value))
       || !Number.isInteger(snapshot.step) || snapshot.step < 0 || snapshot.t_s < 0
       || snapshot.tas_mps < 0 || Math.abs(snapshot.lat_rad) > Math.PI / 2

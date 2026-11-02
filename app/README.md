@@ -6,6 +6,17 @@ aerial imagery in a bounded practice area around an approximate EDFE starting po
 slice toward the [first browser exercise](../docs/TODO.md), not a completed or
 validated PPL exercise.
 
+The airspeed face includes white/green/yellow CAS-reference arcs and critical
+speeds for the active research 1982 C172P. These are fixed manufacturer references,
+with stall endpoints at 2,400 lb, most forward CG, power off and zero bank; they
+are not installed IAS markings or current-weight stall predictions. See the
+[source/applicability note](../docs/research/2026-11-02-c172p-airspeed-markings.md).
+Legacy TAS-only engines suppress these CAS markings.
+
+The panel fits its contents and scales inline controls together. On narrow
+views, Engine and Radio open separately while primary instruments and
+autopilot/flap/trim controls remain inline.
+
 ## Run locally
 
 From the repository root:
@@ -28,6 +39,12 @@ A missing or failed engine build is an error, not a switch to scripted flight.
 
 ## Controls
 
+Restart flight is in the top **Flight** menu. Review keeps the live flight paused
+and displays the selected recorded throttle, commands and available actuator
+positions as read-only values. Missing values from older engine builds remain
+unavailable. Returning to live restores pending control settings.
+
+
 | Input | Action |
 | --- | --- |
 | Arrow up/down | Push nose down / pull nose up |
@@ -37,7 +54,7 @@ A missing or failed engine build is an error, not a switch to scripted flight.
 | 0 | Set throttle to idle |
 | P | Capture true heading / disconnect heading hold |
 | Space | Start / pause / resume |
-| R | Reset flight |
+| R | Enter / leave recorded Review |
 | V | Switch cockpit / chase view |
 | / | Restore initial trim |
 | [ / ] | Retract / extend flaps one 10° detent |
@@ -269,7 +286,7 @@ run `just build-flight-engine` to rebuild it. See the
 
 ## Review a flight
 
-Fly a gentle turn for about ten seconds, then select **Review** in the header.
+Fly a gentle turn for about ten seconds, then press **R** or select **Review** in the header.
 Review becomes available after at least two flight-state samples. Entering review
 releases held controls and pauses the actual flight engine. Drag the timeline or
 select **Play** to inspect the recorded scene and instruments, including the
@@ -282,12 +299,14 @@ that orientation intact. A short click does not enable yoke control. Escape
 centers the view. Camera inspection never changes the recorded or live aircraft
 state.
 
-Select **Back to live** to return to the latest actual flight state. The engine
+Press **R** or select **Back to live** to return to the latest actual flight state. The engine
 stays paused until you explicitly resume. Seeking through the recording never
-restores the engine to an earlier state. Flight controls, sensitivity settings
-and flight reset are unavailable during review. Throttle and pilot-axis positions
-are not recorded and stay hidden or unset; recorded actual flap and brake values
-are read-only.
+restores the engine to an earlier state. Control changes, sensitivity settings
+and flight reset are unavailable during review. The throttle, pilot-axis commands,
+actual left/right ailerons, elevator/rudder angles, flap lever/position, brakes,
+trim, mixture and avionics show the selected recorded sample as read-only. Older
+engines without the new control telemetry show those fields as unavailable.
+Pending live throttle/mixture/flap/trim selections return when leaving Review.
 
 This is a **recorded trace, not resimulated replay**. The current flight's recent
 state history stays in page memory, bounded to 600 simulation seconds and 36,000

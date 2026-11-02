@@ -45,7 +45,7 @@ export function createAutopilotPanel(options: AutopilotOptions): {
   const off = element<HTMLButtonElement>('ap-off'), level = element<HTMLButtonElement>('ap-level'), heading = element<HTMLButtonElement>('ap-heading');
   const target = element<HTMLInputElement>('ap-heading-target');
   const decrease = element<HTMLButtonElement>('ap-heading-decrease'), increase = element<HTMLButtonElement>('ap-heading-increase');
-  const media = window.matchMedia('(max-width: 620px)');
+  const media = window.matchMedia('(max-width: 0px)');
   let latest: AutopilotState | null = null;
   let reviewing = false, running = false, disposed = false;
   container.replaceChildren(opener, content); document.body.append(dialog);

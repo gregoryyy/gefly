@@ -50,7 +50,7 @@ export function createRadioNavPanel(options: RadioNavOptions): {
   dialog.innerHTML = '<h2 id="radio-nav-title">Dual radio / NAV</h2><p class="radio-dialog-note">Flight continues while this panel is open.</p><div class="radio-dialog-slot"></div><button type="button" id="radio-nav-close" class="primary">Done</button>';
   const slot = dialog.querySelector<HTMLElement>('.radio-dialog-slot')!;
   const done = dialog.querySelector<HTMLButtonElement>('#radio-nav-close')!;
-  const media = window.matchMedia('(max-width: 620px)');
+  const media = window.matchMedia('(max-width: 900px)');
   container.replaceChildren(opener, content); document.body.append(dialog);
   const element = <T extends HTMLElement = HTMLElement>(id: string) => content.querySelector<T>(`#${id}`)!;
   const demo = element<HTMLInputElement>('nav-demo');

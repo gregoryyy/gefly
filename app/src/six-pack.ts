@@ -1,4 +1,5 @@
 import type { FlightState } from './types';
+import { airspeedMarkings } from './airspeed-markings';
 import './six-pack.css';
 
 interface InstrumentState extends Readonly<FlightState> {
@@ -70,8 +71,16 @@ export function createSixPack(container: HTMLElement): {
   }
 
   function airspeed(knots: number | null, kind: 'CAS' | 'TAS'): void {
+    const markings = airspeedMarkings(kind);
+    const canvas = element<HTMLCanvasElement>('airspeed');
+    canvas.title = markings?.legend ?? 'True airspeed fallback: CAS-reference critical speeds and arcs unavailable.';
     paint('airspeed', `${knots?.toFixed(1)}:${kind}`, ctx => {
       const start = -Math.PI * 1.25, span = Math.PI * 1.5;
+      const angleAt = (speed_kcas: number) => start + speed_kcas / 180 * span;
+      for (const arc of markings?.arcs ?? []) {
+        ctx.beginPath(); ctx.arc(0, 0, arc.radius_px, angleAt(arc.from_kcas), angleAt(arc.to_kcas));
+        ctx.strokeStyle = arc.color; ctx.lineWidth = 5; ctx.stroke();
+      }
       for (let speed = 0; speed <= 180; speed += 5) {
         const angle = start + speed / 180 * span;
         const major = speed % 20 === 0;
@@ -81,8 +90,19 @@ export function createSixPack(container: HTMLElement): {
         if (major) text(ctx, String(speed), Math.cos(angle) * 82, Math.sin(angle) * 82, 18, '#e6ece9');
       }
       text(ctx, 'AIRSPEED', 0, -35, 14);
-      text(ctx, kind === 'CAS' ? 'CALIBRATED' : 'TRUE', 0, -15, 10);
+      text(ctx, kind === 'CAS' ? '172P · CAS REF' : 'TRUE', 0, -15, 10);
       text(ctx, 'KNOTS', 0, 49, 12);
+      if (markings) {
+        const { vs0_kcas, vs1_kcas, vfe_kcas, vfe10_kcas, vno_kcas, vne_kcas } = markings.speeds;
+        ctx.save(); ctx.rotate(angleAt(vfe10_kcas)); ctx.beginPath(); ctx.moveTo(108, 0); ctx.lineTo(123, 0);
+        ctx.strokeStyle = '#f2f2e8'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+        ctx.save(); ctx.rotate(angleAt(vne_kcas)); ctx.beginPath(); ctx.moveTo(108, 0); ctx.lineTo(133, 0);
+        ctx.strokeStyle = '#f0796e'; ctx.lineWidth = 3; ctx.stroke(); ctx.restore();
+        text(ctx, `VS0 ${vs0_kcas}  VS1 ${vs1_kcas}`, 0, 77, 12, '#dce7dc');
+        text(ctx, `VFE ${vfe_kcas}  V10 ${vfe10_kcas}`, 0, 94, 12, '#dce7dc');
+        text(ctx, `VNO ${vno_kcas}`, -38, 111, 12, '#efcc66');
+        text(ctx, `VNE ${vne_kcas}`, 38, 111, 12, '#f0796e');
+      }
       if (knots === null) text(ctx, 'UNAVAILABLE', 0, 13, 12, '#f0cd94');
       else pointer(ctx, start + clamp(knots, 0, 180) / 180 * span);
     });
@@ -210,7 +230,7 @@ export function createSixPack(container: HTMLElement): {
       element('vsi').textContent = vsi_fpm === null ? '—' : `${vsi_fpm >= 0 ? '+' : ''}${Math.round(vsi_fpm / 10) * 10}`;
       element('vsi-kind').textContent = vsi_fpm !== null && Math.abs(vsi_fpm) > 2000 ? 'FT/MIN · OFF SCALE' : 'FT/MIN · DERIVED';
       element('turn-rate').textContent = turn_radps === null ? '—' : `${turn_radps < 0 ? 'L' : turn_radps > 0 ? 'R' : '—'} ${Math.abs(turn_radps / DEG).toFixed(1)}°/s`;
-      element<HTMLCanvasElement>('airspeed').setAttribute('aria-label', `${prefix}${kind === 'CAS' ? 'Ideal calibrated' : 'True'} airspeed ${Math.round(knots)} knots${hasCas ? ', not an installation-calibrated IAS instrument' : ', not IAS'}`);
+      element<HTMLCanvasElement>('airspeed').setAttribute('aria-label', `${prefix}${kind === 'CAS' ? 'Ideal calibrated' : 'True'} airspeed ${Math.round(knots)} knots${hasCas ? ', not an installation-calibrated IAS instrument' : ', not IAS'}. ${airspeedMarkings(kind)?.legend ?? 'CAS-reference critical speeds and arcs unavailable for TAS.'}`);
       element<HTMLCanvasElement>('attitude').setAttribute('aria-label', `${prefix}Attitude: bank ${(state.roll_rad / DEG).toFixed(1)} degrees, pitch ${(state.pitch_rad / DEG).toFixed(1)} degrees`);
       element<HTMLCanvasElement>('heading-indicator').setAttribute('aria-label', `${prefix}True heading ${heading_text}`);
       element<HTMLCanvasElement>('vertical-speed').setAttribute('aria-label', vsi_fpm === null ? 'Vertical speed unavailable' : `${prefix}Vertical speed ${Math.round(vsi_fpm)} feet per minute${Math.abs(vsi_fpm) > 2000 ? ', needle off scale' : ''}`);

@@ -160,3 +160,21 @@ data from the shipped simulator. The [project-owned 172S model plan](../../../do
 remains unimplemented; this study does not satisfy its source, fixture-freeze or
 independent validation gates. Real terrain/imagery, device resolution, optional
 controllers and representative cockpit/load measurements remain separate work.
+
+## Recorded control telemetry
+
+`gf_control_state()` reads seven values outside the original 14-double dynamics
+state/digest: throttle command (0–1), aileron/elevator/rudder pilot commands
+(−1–1), then actual left aileron, right aileron and rudder angles (radians).
+Bindings are the pinned FGFCS `fcs/throttle-cmd-norm`, axis `*-cmd-norm`,
+`left-aileron-pos-rad`, `right-aileron-pos-rad` and `rudder-pos-rad` properties;
+actual elevator radians already come from `gf_pitch_trim_state()`. Differential
+aileron angles need not be equal. Commands are not physical surface positions;
+the roll autopilot also has its separately recorded output.
+
+The worker samples this optional atomic group with each state. Session/trace
+validation rejects partial or non-finite groups; engines without the getter
+leave the group unavailable. Review does not reconstruct commands from current
+UI input. This read-only getter does not change coefficients, stepping or the
+original dynamics digest. Other existing groups retain flap command/position,
+left/right brake commands, actual mixture/mode, trim and avionics settings.

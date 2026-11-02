@@ -215,8 +215,8 @@ try {
   await page.waitForFunction(step => window.__engineStates.at(-1).step>step+10,liveBeforeDialog.step);
   assert.equal(await page.locator('#mixture-control').count(),1); assert.equal(await page.locator('#ap-heading-target').count(),1);
   await page.locator('#engine-close').click();
-  await page.locator('#autopilot-open').click();
-  await page.waitForFunction(() => document.querySelector('#autopilot-dialog').open);
+  assert(await page.locator('#autopilot-open').isHidden(), 'primary autopilot remains inline');
+  assert(await page.locator('#ap-heading-target').isVisible());
   const throttleBefore = await page.locator('#throttle').inputValue(); const modeBefore = (await state()).ap_mode;
   await page.locator('#ap-heading-target').fill('');
   await page.keyboard.press('5'); await page.keyboard.press('Control+1'); await page.keyboard.press('Space'); await page.keyboard.press('p');
@@ -224,12 +224,12 @@ try {
   assert.equal(await page.locator('#throttle').inputValue(),throttleBefore);
   assert.equal((await state()).ap_mode,modeBefore);
   assert.equal(await page.locator('#status').textContent(),'Flying');
-  const compact = await page.evaluate(() => { const r=document.querySelector('#autopilot-dialog').getBoundingClientRect();return { left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:document.documentElement.scrollWidth,viewport:innerWidth,height:innerHeight }; });
+  const compact = await page.evaluate(() => { const r=document.querySelector('#autopilot-systems').getBoundingClientRect();return { left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:document.documentElement.scrollWidth,viewport:innerWidth,height:innerHeight }; });
   assert.equal(compact.width,compact.viewport); assert(compact.left>=0 && compact.right<=390 && compact.top>=0 && compact.bottom<=568);
   await page.screenshot({ path:`${output}/engine-mobile.png` });
-  await page.locator('#autopilot-close').click();
-  await page.waitForFunction(() => !document.querySelector('#autopilot-dialog').open && document.activeElement.id==='scene');
-  checks.push('compact live dialog, single controls, shortcut isolation and focus');
+  await page.locator('#scene').focus();
+  assert.equal(await page.locator('dialog[open]').count(), 0);
+  checks.push('compact engine dialog, inline autopilot, single controls, shortcut isolation and focus');
   observations.compact=compact;
   assert.deepEqual(errors,[]); assert.deepEqual([...hosts],['127.0.0.1']);
   console.log(JSON.stringify({ result:'pass',browser:browser.version(),checks,observations,screenshots:'output/flight/engine-mobile.png' },null,2));

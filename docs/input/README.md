@@ -52,3 +52,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-02-next-navigation-layout.md](2026-11-02-next-navigation-layout.md) — Queued NAV/RPM block and engine/AP-column swap after the PR.
 
 - [2026-11-02 aircraft-forward orientation marker](2026-11-02-aircraft-forward-marker.md): project the nose direction into the view so it moves when looking sideways.
+
+- [2026-11-02 Review data and panel scaling](2026-11-02-review-panel-scaling.md): critical airspeed markings, recorded throttle/control data, R for Review, less empty panel height and uniform scaling with main-panel visibility priority.

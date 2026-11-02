@@ -78,7 +78,18 @@ export function validGroundState(input: object): boolean {
       value.gear_nose_load_n, value.gear_left_load_n, value.gear_right_load_n].every(x => x! >= 0);
 }
 export type LandingPreset = 'normal' | 'hard' | 'side' | 'banked';
-export interface FlightState extends AltimeterState, CockpitState, EngineState, PitchTrimState, GroundState, Partial<RadioNavSnapshot> {
+/** Applied model commands and actual surfaces, sampled at the worker state boundary. */
+export const CONTROL_FIELDS = ['throttle_norm', 'aileron_cmd_norm', 'elevator_cmd_norm', 'rudder_cmd_norm',
+  'aileron_rad', 'right_aileron_rad', 'rudder_rad'] as const;
+export type ControlState = Partial<Record<typeof CONTROL_FIELDS[number], number>>;
+export function validControlState(input: object): boolean {
+  const value = input as ControlState;
+  if (!CONTROL_FIELDS.some(key => value[key] !== undefined)) return true;
+  return CONTROL_FIELDS.every(key => typeof value[key] === 'number' && Number.isFinite(value[key]))
+    && value.throttle_norm! >= 0 && value.throttle_norm! <= 1
+    && [value.aileron_cmd_norm, value.elevator_cmd_norm, value.rudder_cmd_norm].every(x => Math.abs(x!) <= 1);
+}
+export interface FlightState extends AltimeterState, CockpitState, EngineState, PitchTrimState, GroundState, ControlState, Partial<RadioNavSnapshot> {
   step: number; t_s: number; lat_rad: number; lon_rad: number;
   alt_msl_m: number; roll_rad: number; pitch_rad: number; heading_rad: number; tas_mps: number;
 }

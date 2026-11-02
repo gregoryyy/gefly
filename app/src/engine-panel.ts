@@ -79,7 +79,7 @@ export function createEnginePanel(options: EnginePanelOptions): {
   const element = <T extends HTMLElement = HTMLElement>(id: string) => content.querySelector<T>(`#${id}`)!;
   const mixture = element<HTMLInputElement>('mixture-control');
   const automatic = element<HTMLButtonElement>('mixture-auto');
-  const media = window.matchMedia('(max-width: 620px)');
+  const media = window.matchMedia('(max-width: 900px)');
   let latest: EngineState | null = null;
   let reviewing = false, controllable = false, disposed = false;
   let requested: RequestedMixture | null = null;

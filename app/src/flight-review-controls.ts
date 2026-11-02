@@ -37,7 +37,8 @@ export function createFlightReviewControls(options: FlightReviewControlsOptions)
   button.id = 'review-flight';
   button.type = 'button';
   button.className = 'review-trigger';
-  button.textContent = 'Review';
+  button.innerHTML = 'Review <kbd>R</kbd>';
+  button.setAttribute('aria-keyshortcuts', 'R');
   button.disabled = true;
   button.setAttribute('aria-pressed', 'false');
   button.setAttribute('aria-controls', 'flight-review');
@@ -60,7 +61,7 @@ export function createFlightReviewControls(options: FlightReviewControlsOptions)
       <output id="review-progress" for="review-time">00:00 / 00:00</output>
       <button type="button" id="review-exit">Back to live</button>
     </div>
-    <p id="review-note">Controls/events not recorded</p>
+    <p id="review-note">Recorded commands and actuator state · no input-event replay</p>
   `;
   options.barContainer.append(bar);
   const play = bar.querySelector<HTMLButtonElement>('#review-play')!;

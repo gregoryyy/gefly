@@ -109,6 +109,7 @@ try {
   await page.waitForFunction(() => window.__flightStates.at(-1).altimeter_setting_pa===window.__flightStates.at(-1).altimeter_qnh_pa);
   const viewBeforePressureKeys=await page.locator('#chase').getAttribute('aria-pressed');
   await page.keyboard.press('r'); await page.keyboard.press('v'); await page.keyboard.press('Space');
+  assert.equal(await page.locator('#status').textContent(), 'Paused', 'modal R cannot enter Review');
   await page.waitForTimeout(200);
   assert.equal((await physics()).digest,pausedPhysics.digest,'pressure controls and modal shortcuts do not change the dynamics digest');
   assert.equal(await page.locator('#chase').getAttribute('aria-pressed'),viewBeforePressureKeys,'modal shortcuts cannot switch view');
@@ -158,8 +159,8 @@ try {
   assert.equal(await page.locator('#altimeter-open').isDisabled(),true,'pressure adjustment unavailable in review');
   await page.waitForFunction(()=>document.querySelector('.practice-map-readout').textContent.includes('082° true'));
   assert((await page.locator('.practice-map-readout').textContent()).includes('49.9600° N'),'map follows selected historical location');
-  assert.equal(await page.locator('.throttle-control').isVisible(),false,'unrecorded throttle position is hidden');
-  assert.equal(await page.locator('#power').textContent(),'—','timeline focus cannot expose live throttle');
+  assert.equal(await page.locator('.throttle-control').isVisible(),true,'recorded throttle remains visible');
+  assert.match(await page.locator('#power').textContent(), /^\d+%$/, 'timeline focus keeps the recorded throttle indication');
   await page.keyboard.press('Space');await page.waitForTimeout(250);
   assert(Number(await page.locator('#review-time').inputValue())>0,'review playback advances selected time');
   assert.equal((await state()).step,reviewPaused.step,'review playback does not run JSBSim');

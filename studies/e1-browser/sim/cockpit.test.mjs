@@ -1,6 +1,18 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { cockpitFields, pitchTrimFields, groundFields } from './cockpit.js';
+import { controlFields, cockpitFields, pitchTrimFields, groundFields } from './cockpit.js';
+test('review telemetry separates applied commands from actual differential surfaces', () => {
+  const data = [.7, -.45, .35, -.35, -.12, .08, -.14];
+  assert.deepEqual(controlFields(data), { throttle_norm: .7, aileron_cmd_norm: -.45,
+    elevator_cmd_norm: .35, rudder_cmd_norm: -.35, aileron_rad: -.12,
+    right_aileron_rad: .08, rudder_rad: -.14 });
+  for (const invalid of [data.slice(1), [...data, 0], [1.01, ...data.slice(1)],
+    [-.01, ...data.slice(1)], [.7, 1.01, ...data.slice(2)]]) assert.deepEqual(controlFields(invalid), {});
+  for (let i = 0; i < data.length; i++) {
+    const invalid = [...data]; invalid[i] = NaN;
+    assert.deepEqual(controlFields(invalid), {});
+  }
+});
 const level = [45, 0, 0, -1, 0, 0, 0, 0];
 test('read-only cockpit fields retain engine units and symmetric wheel brakes', () => {
   const data = [45, Math.PI / 60, 0, -1, Math.PI / 9, 1, 1, 1];

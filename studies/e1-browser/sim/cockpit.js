@@ -13,6 +13,17 @@ export function cockpitFields(values) {
   return fields;
 }
 
+// Commands and actual surface positions are distinct, read-only model values.
+export function controlFields(values) {
+  if (values.length !== 7 || !Array.from(values).every(Number.isFinite)) return {};
+  const [throttle_norm, aileron_cmd_norm, elevator_cmd_norm, rudder_cmd_norm,
+    aileron_rad, right_aileron_rad, rudder_rad] = values;
+  if (throttle_norm < 0 || throttle_norm > 1
+    || [aileron_cmd_norm, elevator_cmd_norm, rudder_cmd_norm].some(x => Math.abs(x) > 1)) return {};
+  return { throttle_norm, aileron_cmd_norm, elevator_cmd_norm, rudder_cmd_norm,
+    aileron_rad, right_aileron_rad, rudder_rad };
+}
+
 // Generic c172x additive pitch-trim command, not physical trim-tab position.
 // Positive command is nose-down; elevator position remains in model radians.
 export function pitchTrimFields(values) {

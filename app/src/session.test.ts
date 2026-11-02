@@ -37,6 +37,20 @@ const state = {
 };
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+test('session forwards only complete finite control telemetry and rejects partial groups', t => {
+  const { session, states, errors } = fixture(t);
+  session.start();
+  const worker = MockWorker.instances[0]; worker.emit(ready);
+  const controls = { throttle_norm: .7, aileron_cmd_norm: -.45, elevator_cmd_norm: .35,
+    rudder_cmd_norm: -.35, aileron_rad: -.12, right_aileron_rad: .08, rudder_rad: -.14 };
+  worker.emit({ ...state, ...controls, injected_extra: 5 });
+  assert.equal((states[0] as Record<string, number>).throttle_norm, .7);
+  assert.equal((states[0] as Record<string, number>).right_aileron_rad, .08);
+  assert.equal(Object.hasOwn(states[0] as object, 'injected_extra'), false);
+  worker.emit({ ...state, throttle_norm: .7 });
+  assert.equal(states.length, 1); assert.equal(errors.length, 1);
+});
+
 test('starts a real module worker, waits for ready and sends trimmed input before run', (t) => {
   const { session, errors, states } = fixture(t);
   session.start(); session.start();

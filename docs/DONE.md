@@ -3,6 +3,56 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 20:50 — Show recorded controls and critical speeds in a fitted cockpit
+
+TODO: 2.0.20–2.0.22 complete as bounded R-AIR-2/R-DATA-1/R-INPUT-1/
+R-VIEW-1/R-REVIEW-1 increments. Agent: Codex orchestrator; fov_input/code1 on
+Review, panel_scaling/code2 on layout, with fov_housekeeping alongside on inputs
+and sourced airspeed references. Independent quality: fov_housekeeping on root
+telemetry; panel_scaling on main/Review; fov_input on airspeed/layout, excluding
+each reviewer's own code. Independent validation: trim_validate.
+
+**Implementation notes**
+
+Airspeed shows explicit 1982 C172P CAS-reference arcs, VS0/VS1/VFE/VFE10/VNO/VNE
+values and source/configuration details; TAS fallback suppresses CAS markings.
+Read-only model telemetry records throttle, normalized pilot commands and actual
+left/right aileron/rudder angles, alongside existing elevator/trim/flap/brakes/
+mixture/avionics. Review shows selected captured values, including narrow-screen
+power readouts. R toggles Review with editing/menu/dialog/repeat guards; restart
+stays in Flight. Exit restores staged live settings without restarting or stepping.
+
+A shared measured zoom scales inline faces/fonts/levers together and fits panel
+height to content: 449 px at 1440×900, previously 500. Engine/Radio collapse at
+900 px, NAV at 620; primary instruments and AP/flap/trim retain priority. Fixed
+heading heights align flap/trim travel within one pixel. Review reserves scene
+space for recorded controls and transport without overlapping the header.
+
+Full Chrome suite passed: 82 functional checks across nine suites, plus nine
+layout viewport cases/fresh-mobile/portal transitions and eight landing-physics
+checks. Independent actual Chrome/WASM validation passed seven criteria groups,
+including unavailable legacy data, selected-frame values and frozen full physical
+state/step/digest. Repeated telemetry reads preserve actual WASM results. Shared
+CI passed 104 native tests, five adapter tests, TypeScript/UI build, 84 assurance
+and 11 assessment tests plus repository/study/render gates. Optional JSBSim
+9-of-23 and Linux-only checks remain explicit skips. See
+[review evidence](reviews/2026-11-02-review-panel.md) for exact source hash,
+authorship exclusions and evidence. Peer pending under the batched cadence.
+
+**Deviations**
+
+Critical speeds are fixed manufacturer KCAS references, with declared reference
+weight/CG/configuration, rather than installed IAS arcs or dynamic stall/model
+acceptance. Review remains a sampled trace, not input-event replay. No manual
+images, runtime dependencies or generated aircraft assets are redistributed.
+
+**Insights**
+
+Preserving live staged controls separately from recorded values prevents Review
+from silently changing Resume behavior. One canonical layout scale protects main
+instrument size when secondary panels collapse; content fitting removes stale
+fixed-height space. Conventional IAS arcs must not be copied onto a CAS gauge.
+
 ## 2026-11-02 20:28 — Keep the nose-direction cue aligned while looking around
 
 TODO: 2.0.19 complete as a bounded R-VIEW-1/R-INPUT-1/R-REVIEW-1 increment.

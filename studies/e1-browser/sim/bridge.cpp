@@ -336,6 +336,25 @@ EMSCRIPTEN_KEEPALIVE double* gf_cockpit_state() {
   return values;
 }
 
+// Applied pilot commands and actual differential surfaces. Read-only; the
+// original 14-double dynamics/digest buffer remains unchanged.
+EMSCRIPTEN_KEEPALIVE double* gf_control_state() {
+  static double values[7];
+  if (!g_fdm) {
+    for (double& value : values) value = std::numeric_limits<double>::quiet_NaN();
+    return values;
+  }
+  auto& f = *g_fdm;
+  values[0] = f.GetPropertyValue("fcs/throttle-cmd-norm");
+  values[1] = f.GetPropertyValue("fcs/aileron-cmd-norm");
+  values[2] = f.GetPropertyValue("fcs/elevator-cmd-norm");
+  values[3] = f.GetPropertyValue("fcs/rudder-cmd-norm");
+  values[4] = f.GetPropertyValue("fcs/left-aileron-pos-rad");
+  values[5] = f.GetPropertyValue("fcs/right-aileron-pos-rad");
+  values[6] = f.GetPropertyValue("fcs/rudder-pos-rad");
+  return values;
+}
+
 // Actual applied normalized trim command, initial longitudinal-trim command,
 // and actual elevator radians. Separate from the original dynamics digest.
 EMSCRIPTEN_KEEPALIVE double* gf_pitch_trim_state() {

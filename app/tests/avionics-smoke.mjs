@@ -270,7 +270,7 @@ try {
   await page.locator('#ap-level').click(); await page.waitForFunction(() => window.__avionicsStates.at(-1).ap_mode === 1);
   await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(150);
   observations.layouts.push(await measure()); console.log(`AVIONICS_LAYOUT ${JSON.stringify(observations.layouts.at(-1))}`);
-  for (const name of ['engine', 'autopilot', 'radio-nav', 'navigation']) {
+  for (const name of ['engine', 'radio-nav', 'navigation']) {
     const before = await state();
     const command = await page.evaluate(() => ({ throttle: window.__avionicsInputs.at(-1).throttle, flap: window.__avionicsInputs.at(-1).flap_norm,
       trim: window.__avionicsInputs.at(-1).pitch_trim_norm }));
@@ -290,7 +290,8 @@ try {
     await page.locator(`#${name}-close`).click();
     await page.waitForFunction(() => document.activeElement.id === 'scene');
   }
-  checks.push('four separate compact dialogs keep flight running, isolate shortcuts and restore scene focus');
+  assert(await page.locator('#ap-heading-target').isVisible(), 'main autopilot stays inline');
+  checks.push('three compact dialogs keep flight running, isolate shortcuts and restore scene focus; autopilot stays inline');
 
   await page.locator('#review-flight').click();
   await page.waitForFunction(() => document.querySelector('#status').textContent === 'Review');
@@ -363,12 +364,12 @@ try {
     if (layout.viewport.width > 620) {
       const box = selector => layout.boxes.find(box => box.selector === selector);
       const reference = box('.primary-instruments');
-      for (const selector of ['.engine-controls', '.avionics-units']) {
+      for (const selector of layout.viewport.width > 900 ? ['.engine-controls', '.avionics-units'] : ['.engine-controls']) {
         assert(Math.abs(box(selector).top - reference.top) < 1, `${selector} aligns with the instrument column top`);
         assert(Math.abs(box(selector).bottom - reference.bottom) < 1, `${selector} aligns with the instrument column bottom`);
       }
       assert(box('#autopilot-systems').bottom <= box('.vertical-config-controls').top + 1, 'autopilot is above the flap/trim pair');
-      assert(Math.abs(box('#radio-nav-systems').height - box('.avionics-stack').height) < 1,
+      if (layout.viewport.width > 900) assert(Math.abs(box('#radio-nav-systems').height - box('.avionics-stack').height) < 1,
         'radio and engine columns have equal height');
       for (let column = 0; column < 4; column++) {
         assert(Math.abs(layout.cells[column].center_x - layout.cells[column + 4].center_x) < 1,
@@ -383,7 +384,7 @@ try {
     assert(trim.height > trim.width * 2 && flap.height > flap.width * 2, 'flap and trim travel are vertical');
     assert(Math.abs(trim.height - flap.height) < 1, 'parallel flap and trim sliders have equal length');
     assert(Math.abs(trim.center_y - flap.center_y) <= 1, 'parallel sliders align vertically within one CSS pixel');
-    if (layout.viewport.width > 620) {
+    if (layout.viewport.width > 900) {
       const throttle = layout.vertical_controls.throttle, mixture = layout.vertical_controls['mixture-control'];
       assert.equal(throttle.orientation, 'vertical'); assert.equal(mixture.orientation, 'vertical');
       assert(throttle.height > throttle.width * 2 && mixture.height > mixture.width * 2);
