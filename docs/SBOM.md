@@ -73,11 +73,15 @@ The runtime requirements are recorded in the pinned
 and [setup-python source](https://github.com/actions/setup-python/blob/6d4fd22b20465ccc0f7354476588e8df7c9ca0e0/README.md).
 These are CI action runtimes, not application dependencies. Action/interpreter
 setup can download tools; the shared gate then uses Git, Node standard libraries
-and the Python standard library. It installs no project packages and invokes no live peer
+and the Python standard library. Its only package install is the app's npm dependencies
+from the lockfile via `npm ci --ignore-scripts` (no lifecycle scripts), in the
+browser-application job and in the runner's app phase. It invokes no live peer
 provider, PDF/browser/TeX process or simulator runtime. Tests mock provider calls.
+Value files pin the aircraft manifest by id, version and SHA-256 of the file bytes;
+the validator rejects duplicate JSON keys.
 
 [Dependabot configuration](../.github/dependabot.yml) monitors the
-`github-actions` ecosystem at `/` weekly, proposing update PRs under
+`github-actions` ecosystem at `/` and the `npm` ecosystem at `/app` weekly, proposing update PRs under
 [GitHub's documented action-update mechanism](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/auto-update-actions).
 For each proposed replacement, verify the release/tag-to-commit mapping against
 the official action repository, inspect the pinned source and runner/runtime

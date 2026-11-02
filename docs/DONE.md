@@ -3,6 +3,42 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 08:01 — Record FlightGear for S17 gaps; Codex review deferred
+
+TODO: 0.19 deferred. Agent: Claude Code orchestrator.
+
+**Implementation notes**
+
+The user's answer is recorded ([input](input/2026-11-02-flightgear-gaps-codex-deferred.md)).
+GAPS Q23 now says the S17 gaps follow the FlightGear Cessna 172 model, labelled
+`estimated`, with that model treated as another variant and its licence recorded
+first. TODO 0.19 is marked deferred.
+
+**Deviations**
+
+Peer pending (batched) for the Claude-authored batch #32–#36.
+
+## 2026-11-02 07:36 — Record the S17 list, electrical and tachometer decisions
+
+TODO: 2.1 scope refined. Agent: Claude Code orchestrator; researcher subagent
+(extraction), quality subagent (13 of 13 spot checks against S17 matched; changes
+requested).
+
+**Implementation notes**
+
+The user accepted three recommendations ([input](input/2026-11-02-s17-lists-electrical-tach.md)):
+- the whole S17 Fig. 2-3 and Fig. 6-3 lists as cited facts (a Q5 exception);
+- the ammeter and the low-voltage annunciator in `ind`;
+- the Section 2 tachometer arcs as governing.
+
+GAPS Q5 and Q23 record them. fix/m1-contracts (#32) declares the decided `ind` set in
+SCENARIO-CONTRACTS §4 and adds the CONTRACTS §1 unit suffixes.
+
+**Deviations**
+
+The extraction branch (data/s17-ind-wb) is in rework after the quality review. Peer
+pending (batched).
+
 ## 2026-11-02 07:16 — Record the accepted Q23 proposals
 
 TODO: 2.1 scope set; 1.3.2 empty mass/CG source decided. Agent: Claude Code orchestrator.
@@ -69,6 +105,26 @@ checks (e1-jsbsim 9 of 23).
 - The fixes are Claude-authored, so they need the Codex peer review (TODO 0.19 batch).
   The #28b and #30 packets need renewal with the withheld material.
 
+## 2026-11-02 00:30 — Apply foundation-review tooling fixes (TODO 1.6)
+
+TODO: 1.6 in progress. Agent: Claude Code orchestrator; code1 subagent implemented.
+
+**Implementation notes**
+
+The manifest validator rejects duplicate JSON keys. Value files pin the manifest by id,
+`manifest_version` and `manifest_sha256` (SHA-256 of the file bytes), and the schemas
+require these fields. The CI runner has an app npm phase (`npm ci --ignore-scripts`);
+an install failure counts as a skip only when the output shows a network or certificate
+error, and `--require-node` makes it a failure. test_run skips Node-dependent cases on
+Node older than 24.2 instead of failing. Dependabot watches `/app` npm weekly. EVAL
+CI2/CI5, SBOM and SEC text match. Checks on Node 24: 152 unit tests OK;
+`utils/ci/run.py --require-node` passed with skipped checks (e1-jsbsim 9 of 23).
+
+**Deviations**
+
+In this sandbox, `npm ci` needs `npm_config_cafile` because of the proxy certificate.
+Peer pending (batched).
+
 ## 2026-11-02 00:25 — Contract fixes and renewed foundation review (TODO 1.6)
 
 TODO: 1.6 in progress. Agent: Claude Code orchestrator; a renewed quality/validate
@@ -109,6 +165,20 @@ added TODO 1.2.1.1 (real-terrain re-test) and 0.21 (Claude review of Codex PRs
 
 Contract and tooling fixes are on separate branches; user scope decisions (Q23) open.
 Peer pending (batched).
+
+## 2026-11-02 00:03 — Remove the aircraft measurement campaign from the 172S plan
+
+TODO: E2. Agent: Claude Code orchestrator (no subagents).
+
+**Implementation notes**
+
+The user has no aircraft and asked to stay in scope. FDM-172S no longer proposes a
+measurement campaign: geometry beyond TCDS/POH dimensions and the empty mass/CG are
+estimated, labelled and bounded by sensitivity runs; Q-2 is closed.
+
+**Deviations**
+
+This change reached PR #24's branch after it merged, so it lands here instead.
 
 ## 2026-11-01 23:27 — Resolve PR 29 against merged browser prototype
 

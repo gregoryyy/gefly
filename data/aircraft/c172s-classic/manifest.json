@@ -2,7 +2,7 @@
   "$comment": "Rights/applicability manifest, not a flight model. Field guide: README.md in this directory. Schema: data/schema/aircraft-manifest.schema.json.",
   "schema_version": "1.0.0",
   "manifest_id": "gefly.aircraft.c172s-classic",
-  "manifest_version": "0.2.1",
+  "manifest_version": "0.2.2",
   "status": "draft",
   "fidelity": "not validated",
   "configuration": {
@@ -468,7 +468,7 @@
       "access_status": "read",
       "sha256_prefix": "659b33b955eb7e86",
       "applicability": "EU validation of the 172S, Section 2 pp. 14-22; states alignment with FAA 3A12 Rev 88.",
-      "rights": {"holder": "European Union Aviation Safety Agency", "basis": "Page footer: all rights reserved, proprietary document; EASA website reuse terms not read", "redistribution": "reference_only", "copy_in_repository": false}
+      "rights": {"holder": "European Union Aviation Safety Agency", "basis": "Page footer: all rights reserved, proprietary document; cited facts only, no text copied (GAPS Q5/Q23, user 2026-11-02 07:16)", "redistribution": "facts_only", "copy_in_repository": false}
     },
     {
       "id": "S8",
@@ -494,7 +494,7 @@
       "access_status": "read",
       "sha256_prefix": "eea885263b57ec4b",
       "applicability": "IO-360-L2A ratings and mass; FAA basis stated as TCDS 1E10.",
-      "rights": {"holder": "European Union Aviation Safety Agency", "basis": "Page footer: all rights reserved, proprietary document; EASA website reuse terms not read", "redistribution": "reference_only", "copy_in_repository": false}
+      "rights": {"holder": "European Union Aviation Safety Agency", "basis": "Page footer: all rights reserved, proprietary document; cited facts only, no text copied (GAPS Q5/Q23, user 2026-11-02 07:16)", "redistribution": "facts_only", "copy_in_repository": false}
     },
     {
       "id": "S17",
