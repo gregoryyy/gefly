@@ -3,6 +3,27 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 07:36 — Record the S17 list, electrical and tachometer decisions
+
+TODO: 2.1 scope refined. Agent: Claude Code orchestrator; researcher subagent
+(extraction), quality subagent (13 of 13 spot checks against S17 matched; changes
+requested).
+
+**Implementation notes**
+
+The user accepted three recommendations ([input](input/2026-11-02-s17-lists-electrical-tach.md)):
+- the whole S17 Fig. 2-3 and Fig. 6-3 lists as cited facts (a Q5 exception);
+- the ammeter and the low-voltage annunciator in `ind`;
+- the Section 2 tachometer arcs as governing.
+
+GAPS Q5 and Q23 record them. fix/m1-contracts (#32) declares the decided `ind` set in
+SCENARIO-CONTRACTS §4 and adds the CONTRACTS §1 unit suffixes.
+
+**Deviations**
+
+The extraction branch (data/s17-ind-wb) is in rework after the quality review. Peer
+pending (batched).
+
 ## 2026-11-02 07:16 — Record the accepted Q23 proposals
 
 TODO: 2.1 scope set; 1.3.2 empty mass/CG source decided. Agent: Claude Code orchestrator.

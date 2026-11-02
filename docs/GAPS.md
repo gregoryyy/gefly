@@ -211,6 +211,12 @@ coverage, rights and live rollout remain future implementation selections.
 
 Why: affects code reuse, distribution, aircraft manuals, avionics depictions, maps and navigation data. The user's direction is now free/open source; select a compatible open-source license and review separately licensed assets/data. Blocking: license-dependent distribution and restricted asset ingestion.
 
+Answer (S17 whole lists): **2026-11-02 07:36, user** ([input](input/2026-11-02-s17-lists-electrical-tach.md)):
+"Accept both". The complete S17 Fig. 2-3 instrument-marking list (p. 2-6) and the
+Fig. 6-3 loading-station arms (p. 6-9) may be extracted as cited facts. This is an
+exception to the needed-points rule for these two lists only; no text or figure is
+copied.
+
 Answer (EASA TCDS): **2026-11-02 07:16, user** ([input](input/2026-11-02-q23-proposals.md),
 Q23): the EASA TCDS values (manifest S5 IM.A.051, S9 EASA.IM.E.032) are used as
 cited facts (`facts_only`), like the POH: values with page citations, no copied text.
@@ -367,6 +373,15 @@ recommendations in the table below are accepted as decisions:
 Carried into [CONTRACTS](design/CONTRACTS.md), [SCENARIO-CONTRACTS](design/SCENARIO-CONTRACTS.md),
 [FDM-172S](design/FDM-172S.md), the [aircraft manifest](../data/aircraft/c172s-classic/manifest.json)
 and [TODO](TODO.md) 2.1.
+
+Update: **2026-11-02 07:36, user** ([input](input/2026-11-02-s17-lists-electrical-tach.md)):
+- **Q-S8 list:** the ammeter and the low-voltage annunciator join the engine and fuel
+  indications in `ind` ("Include now").
+- **Tachometer green arc:** the S17 Section 2 Fig. 2-3 altitude-dependent arcs govern
+  ("Section 2 limits"). The Section 7 p. 7-20 value (1900–2400 rpm) is a recorded
+  source conflict.
+- **Extraction:** research note `docs/research/2026-11-02-172s-engine-fuel-ind-and-sample-loading.md`
+  branch data/s17-ind-wb.
 
 | Item | Source | Status | Blocks M2? | Recommendation |
 | --- | --- | --- | --- | --- |
