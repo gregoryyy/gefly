@@ -71,6 +71,8 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.2 Add session-only pitch/roll/rudder sensitivity controls, Gentle/Default presets and safe pause/focus behavior; defaults preserve the previous control mapping. See [how to try it](../app/README.md). Partial R-INPUT-1; hardware calibration and aircraft-response validation remain separate. Peer pending.
 
+- [x] 2.0.3 Add bounded in-session flight-state review: scrub/play recorded states through both views, keep live JSBSim paused, and return to the true paused live state. Partial R-REVIEW-1; input/event replay, persistence and video export remain future work. Peer pending.
+
 - [ ] 2.1 Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.
 - [ ] 2.3 code2 implements the corresponding browser controls, instruments and exercise feedback against frozen contracts **in parallel with 2.2**.

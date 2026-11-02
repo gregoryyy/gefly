@@ -31,6 +31,7 @@ try {
       });}
     };
   });
+  await mkdir(new URL('../../output/flight/',import.meta.url),{recursive:true});
   await page.goto('http://127.0.0.1:5174');
   await page.waitForFunction(()=>!document.querySelector('#start').disabled);
   assert.equal(await page.locator('#status').textContent(),'Paused','initial scene waits for explicit start');
@@ -62,6 +63,39 @@ try {
   await page.mouse.move(1000,300);await page.mouse.up();
   assert.equal(Number(await page.locator('#pitch-control').textContent()),0,'stick release outside pad clears pitch');
   assert(Math.abs(Number(await page.locator('#roll-control').textContent())+0.109375)<0.01,'stick release retains only visible study offset');
+  const liveBeforeReview=await state();
+  await page.locator('#review-flight').click();
+  await page.waitForTimeout(120);const reviewPaused=await state();
+  assert(reviewPaused.step>=liveBeforeReview.step,'review does not rewind the live worker');
+  assert.equal(await page.locator('#status').textContent(),'Review');
+  await page.waitForTimeout(250);assert.equal((await state()).step,reviewPaused.step,'review freezes the live engine');
+  assert.equal(await page.locator('#throttle').isDisabled(),true,'review cannot change live throttle');
+  assert.equal(await page.locator('#reset').isDisabled(),true,'review protects the current recording from reset');
+  assert.equal(await page.locator('#controls-settings').isDisabled(),true,'live controls are unavailable in review');
+  await page.locator('#review-time').focus();await page.keyboard.press('Home');
+  await page.waitForTimeout(50);
+  assert.equal(await page.locator('#heading').textContent(),'082°','seeking shows the initial recorded heading');
+  assert.equal(await page.locator('.throttle-control').isVisible(),false,'unrecorded throttle position is hidden');
+  assert.equal(await page.locator('#power').textContent(),'—','timeline focus cannot expose live throttle');
+  await page.keyboard.press('Space');await page.waitForTimeout(250);
+  assert(Number(await page.locator('#review-time').inputValue())>0,'review playback advances selected time');
+  assert.equal((await state()).step,reviewPaused.step,'review playback does not run JSBSim');
+  await page.keyboard.press('Space');
+  const chaseBefore=await page.locator('#chase').getAttribute('aria-pressed');
+  await page.keyboard.press('v');
+  assert.notEqual(await page.locator('#chase').getAttribute('aria-pressed'),chaseBefore,'V switches camera with timeline focus');
+  await page.locator('#chase').click();assert.equal((await state()).step,reviewPaused.step,'review camera switch preserves live state');
+  await page.locator('#review-time').focus();await page.keyboard.press('End');
+  await page.screenshot({path:fileURLToPath(new URL('../../output/flight/flight-review.png',import.meta.url))});
+  await page.locator('#review-exit').click();
+  assert.equal(await page.locator('#status').textContent(),'Paused','returning live remains paused');
+  await page.waitForTimeout(50);
+  const liveHeading=((reviewPaused.heading_rad*180/Math.PI)%360+360)%360;
+  assert.equal(await page.locator('#heading').textContent(),`${String(Math.round(liveHeading)%360).padStart(3,'0')}°`,'returning live restores actual live state');
+  assert.equal((await state()).step,reviewPaused.step);
+  await page.locator('#reset').click();await page.waitForFunction(()=>!document.querySelector('#start').disabled);
+  assert.equal(await page.locator('#review-flight').isDisabled(),true,'restart clears current-flight review');
+  await page.locator('#start').click();
   await page.locator('#controls-settings').click();
   await page.waitForFunction(()=>document.querySelector('#status').textContent==='Paused');
   const settingsPaused=await state();await page.waitForTimeout(200);
@@ -113,7 +147,7 @@ try {
   await noGL.addInitScript(()=>{const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(kind,...args){return kind.startsWith('webgl')?null:original.call(this,kind,...args);};});
   await noGL.goto('http://127.0.0.1:5174');await noGL.waitForFunction(()=>document.querySelector('#notice').textContent.includes('Scene unavailable'));
   await noGL.waitForTimeout(400);assert.equal(await noGL.locator('#pause').isDisabled(),true);assert.deepEqual(noGLErrors,[]);await noGL.close();
-  console.log(JSON.stringify({result:'pass',browser:browser.version(),initial:{step:initial.step,tas_mps:initial.tas_mps},right_bank_delta_rad:after.roll_rad-before.roll_rad,checks:['explicit start','live JSBSim','full-width canvas','loaded aerial imagery','pause','view invariance','reset keyboard focus','right bank','on-screen hold and outside release','draggable stick and outside release','blur pause','settings pause and focus','gain presets and defaults','custom gain and reset preservation','local runtime and bundled imagery only','missing engine','WebGL failure'],screenshots:'output/flight/{cockpit,chase}.png'},null,2));
+  console.log(JSON.stringify({result:'pass',browser:browser.version(),initial:{step:initial.step,tas_mps:initial.tas_mps},right_bank_delta_rad:after.roll_rad-before.roll_rad,checks:['explicit start','live JSBSim','full-width canvas','loaded aerial imagery','pause','view invariance','reset keyboard focus','right bank','on-screen hold and outside release','draggable stick and outside release','blur pause','state review and seeking','review playback without engine advancement','review return and reset','settings pause and focus','gain presets and defaults','custom gain and reset preservation','local runtime and bundled imagery only','missing engine','WebGL failure'],screenshots:'output/flight/{cockpit,chase}.png'},null,2));
 } finally {
   await browser?.close();server.kill('SIGTERM');
 }

@@ -1,6 +1,8 @@
 import './style.css';
 import { createScene } from './scene';
 import { createSession } from './session';
+import { FlightTrace } from './flight-trace';
+import { createFlightReviewControls } from './flight-review-controls';
 import { applyControlSettings, DEFAULT_CONTROL_SETTINGS, type ControlSettings } from './control-settings';
 import { createControlSettingsPanel } from './control-settings-panel';
 import type { Controls, FlightState, FlightScene } from './types';
@@ -14,6 +16,7 @@ root.innerHTML = `
     <div class="location"><strong>EGELSBACH</strong><span>C172 research aircraft · airborne practice</span></div>
     <div class="session-status"><i id="status-dot"></i><span id="status" role="status">Loading flight…</span><span id="clock">00:00</span></div>
     <nav class="view-controls" aria-label="Flight views"><button id="cockpit" class="selected" aria-pressed="true">Cockpit</button><button id="chase" aria-pressed="false">Chase <kbd>V</kbd></button></nav>
+    <span id="review-button-slot"></span>
     <button id="controls-settings" class="settings-trigger" aria-haspopup="dialog">Controls</button>
     <button id="pause" disabled>Pause <kbd>SPACE</kbd></button>
   </header>
@@ -64,6 +67,9 @@ let sceneFailed = false, ready = false, running = false, failed = false;
 let hasFlown = false, startWhenReady = false;
 let latest: FlightState | null = null, previous: FlightState | null = null;
 let verticalSpeedFpm = 0, throttle = 0.69, stickX = 0, stickY = 0;
+const flightTrace = new FlightTrace();
+let reviewing = false, reviewPlaying = false, reviewTime_s = 0;
+let liveStatus = 'Loading flight…';
 // Existing E1 fixture's empirical input offset, not an aircraft coefficient.
 let rollOffset = -0.109375;
 let controlSettings: ControlSettings = { ...DEFAULT_CONTROL_SETTINGS };
@@ -78,9 +84,16 @@ const notice = (message: string) => { el('notice').textContent = message; el('no
 function updateSessionUI() {
   const unavailable = !ready || failed || sceneFailed;
   const paused = !running;
-  el('flight-gate').hidden = running;
-  el<HTMLButtonElement>('start').disabled = unavailable;
-  el<HTMLButtonElement>('pause').disabled = unavailable;
+  el('flight-gate').hidden = running || reviewing;
+  el<HTMLButtonElement>('start').disabled = unavailable || reviewing;
+  el<HTMLButtonElement>('pause').disabled = unavailable || reviewing;
+  el<HTMLButtonElement>('reset').disabled = reviewing;
+  el<HTMLButtonElement>('controls-settings').disabled = reviewing;
+  el<HTMLInputElement>('throttle').disabled = reviewing;
+  document.querySelector<HTMLElement>('.control-panel')!.hidden = reviewing;
+  document.querySelector<HTMLElement>('.throttle-control')!.hidden = reviewing;
+  if (reviewing) el('power').textContent = '—';
+  updateReviewControls();
   el('pause').innerHTML = `${running ? 'Pause' : 'Resume'} <kbd>SPACE</kbd>`;
   el('status-dot').classList.toggle('flying', running);
   el('control-state').textContent = running ? 'CONTROLS ACTIVE' : 'START FLIGHT TO CONTROL';
@@ -113,6 +126,8 @@ const session = createSession({
       verticalSpeedFpm += (1 - Math.exp(-dt / 0.5)) * (raw - verticalSpeedFpm);
     }
     previous = state; latest = state;
+    if (!reviewing) flightTrace.record(state, verticalSpeedFpm * 0.3048 / 60);
+    updateReviewControls();
   },
   onReady(trim) {
     ready = true; failed = false; throttle = trim.throttle;
@@ -122,7 +137,7 @@ const session = createSession({
     if (startWhenReady && !document.hidden && !sceneFailed) { startWhenReady = false; startFlight(); }
     updateSessionUI();
   },
-  onStatus(message) { el('status').textContent = message; },
+  onStatus(message) { liveStatus = message; el('status').textContent = reviewing ? 'Review' : message; },
   onError(message) {
     failed = true; running = false; ready = false; startWhenReady = false;
     neutralize(); notice(`Flight stopped. ${message}`); updateSessionUI();
@@ -137,6 +152,48 @@ const controlSettingsPanel = createControlSettingsPanel({
 });
 el('controls-settings').onclick = () => controlSettingsPanel.open();
 
+const reviewControls = createFlightReviewControls({
+  buttonContainer: el('review-button-slot'),
+  barContainer: document.querySelector<HTMLElement>('.flight-app')!,
+  onEnter: enterReview,
+  onExit: exitReview,
+  onSeek(time_s) {
+    const bounds = flightTrace.bounds();
+    if (!reviewing || !bounds || !Number.isFinite(time_s)) return;
+    reviewPlaying = false; reviewTime_s = clamp(time_s, bounds.start_s, bounds.end_s);
+    updateReviewControls();
+  },
+  onTogglePlay: toggleReviewPlayback,
+});
+function updateReviewControls() {
+  const bounds = flightTrace.bounds();
+  reviewControls.update({
+    available: !!bounds && bounds.count >= 2 && ready && !failed && !sceneFailed,
+    active: reviewing, playing: reviewPlaying,
+    start_s: bounds?.start_s ?? 0, end_s: bounds?.end_s ?? 0,
+    current_s: reviewing ? reviewTime_s : (bounds?.end_s ?? 0), clipped: bounds?.clipped ?? false,
+  });
+}
+function enterReview() {
+  const bounds = flightTrace.bounds();
+  if (reviewing || !bounds || bounds.count < 2 || !ready || failed || sceneFailed) return;
+  reviewing = true; reviewTime_s = bounds.start_s;
+  pauseFlight(); el('status').textContent = 'Review'; focusFlight();
+}
+function exitReview() {
+  if (!reviewing) return;
+  reviewing = reviewPlaying = false;
+  el('status').textContent = liveStatus;
+  neutralize(); updateSessionUI(); focusFlight();
+}
+function toggleReviewPlayback() {
+  const bounds = flightTrace.bounds();
+  if (!reviewing || !bounds) return;
+  if (!reviewPlaying && reviewTime_s >= bounds.end_s) reviewTime_s = bounds.start_s;
+  reviewPlaying = !reviewPlaying; updateReviewControls();
+}
+
+
 function held(code: string) { return keys.has(code) || keyboardControls.has(code) || [...pointerControls.values()].includes(code); }
 function publishInput() {
   const raw: Controls = {
@@ -149,7 +206,7 @@ function publishInput() {
   el('roll-control').textContent = controls.aileron.toFixed(2);
   el('pitch-control').textContent = controls.elevator.toFixed(2);
   el('rudder-control').textContent = controls.rudder.toFixed(2);
-  el('power').textContent = `${Math.round(throttle * 100)}%`;
+  el('power').textContent = reviewing ? '—' : `${Math.round(throttle * 100)}%`;
   el('joystick-knob').style.transform = `translate(${stickX * 46}px, ${-stickY * 46}px)`;
   document.querySelectorAll<HTMLElement>('[data-code]').forEach(button => button.classList.toggle('held', held(button.dataset.code!)));
 }
@@ -162,15 +219,18 @@ function neutralize() {
   publishInput();
 }
 function pauseFlight() {
+  reviewPlaying = false;
   startWhenReady = false; neutralize(); running = false; session.pause(); updateSessionUI();
 }
 function startFlight() {
-  if (!ready || failed || sceneFailed || !scene) return;
+  if (!ready || failed || sceneFailed || !scene || reviewing) return;
   neutralize(); running = true; hasFlown = true; session.start(); updateSessionUI(); focusFlight();
 }
 function togglePause() { if (running) pauseFlight(); else startFlight(); }
 function reset() {
+  if (reviewing) return;
   if (sceneFailed) { notice('The 3D scene is unavailable. Reload with WebGL enabled.'); return; }
+  flightTrace.clear();
   startWhenReady = running; running = false; ready = false; failed = false;
   neutralize(); session.pause(); latest = previous = null; verticalSpeedFpm = 0;
   notice(''); session.reset(); updateSessionUI(); focusFlight();
@@ -241,8 +301,20 @@ for (const button of Array.from(document.querySelectorAll<HTMLButtonElement>('[d
 }
 
 addEventListener('keydown', event => {
-  if (controlSettingsPanel.isOpen()) return;
-  if (editing(event.target) || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (controlSettingsPanel.isOpen() || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (reviewing) {
+    const timeline = event.target instanceof HTMLElement && event.target.id === 'review-time';
+    if (editing(event.target) && !timeline) return;
+    const nativeSpace = event.target instanceof HTMLElement && !!event.target.closest('button,a,summary');
+    if (event.code === 'Space' && !nativeSpace) {
+      event.preventDefault(); if (!event.repeat) toggleReviewPlayback();
+    }
+    if (event.code === 'KeyV' && !event.repeat) {
+      event.preventDefault(); setView(view === 'cockpit' ? 'chase' : 'cockpit');
+    }
+    return;
+  }
+  if (editing(event.target)) return;
   if (event.code === 'Space' && event.target instanceof HTMLElement && event.target.closest('button,a,summary')) return;
   if (flightKeys.has(event.code)) {
     event.preventDefault(); if (running) { keys.add(event.code); publishInput(); }
@@ -296,8 +368,18 @@ function animate(now: number) {
     throttle = clamp(throttle + ((held('KeyW') ? 1 : 0) - (held('KeyS') ? 1 : 0)) * dt * 0.25, 0, 1);
     el<HTMLInputElement>('throttle').value = String(throttle * 100); publishInput();
   }
+  if (reviewing && reviewPlaying) {
+    const bounds = flightTrace.bounds();
+    if (bounds) {
+      reviewTime_s = Math.min(bounds.end_s, reviewTime_s + dt);
+      if (reviewTime_s >= bounds.end_s) reviewPlaying = false;
+      updateReviewControls();
+    }
+  }
+  const reviewSample = reviewing ? flightTrace.atTime(reviewTime_s) : null;
   if (latest) {
-    const state = latest;
+    const state = reviewSample?.state ?? latest;
+    const shownVsiFpm = reviewSample ? reviewSample.vertical_speed_mps / 0.3048 * 60 : verticalSpeedFpm;
     if (scene && !sceneFailed) {
       try { scene.update(state, view); } catch {
         sceneFailed = true; pauseFlight(); notice('The 3D scene stopped rendering. Reload to restart.'); updateSessionUI();
@@ -308,7 +390,7 @@ function animate(now: number) {
     el('tas').textContent = kt.toFixed(0); el('alt').textContent = Math.round(ft).toLocaleString('en-US');
     el('heading').textContent = `${String(Math.round(heading) % 360).padStart(3, '0')}°`;
     el('bank').textContent = `${Math.abs(state.roll_rad * 180 / Math.PI).toFixed(0)}°`;
-    el('vsi').textContent = `${verticalSpeedFpm >= 0 ? '+' : ''}${Math.round(verticalSpeedFpm / 10) * 10}`;
+    el('vsi').textContent = `${shownVsiFpm >= 0 ? '+' : ''}${Math.round(shownVsiFpm / 10) * 10}`;
     el('clock').textContent = `${String(Math.floor(state.t_s / 60)).padStart(2, '0')}:${String(Math.floor(state.t_s % 60)).padStart(2, '0')}`;
     dial('airspeed', kt, 180, 'TRUE AIRSPEED', 'KNOTS · NOT IAS', 20);
     dial('altitude', ((ft % 1000) + 1000) % 1000, 1000, 'ALTITUDE', 'FEET · MODULO 1000', 100);
@@ -320,5 +402,5 @@ dial('airspeed', 0, 180, 'TRUE AIRSPEED', 'KNOTS · NOT IAS', 20);
 dial('altitude', 0, 1000, 'ALTITUDE', 'STUDY DATUM', 100);
 attitude({ roll_rad: 0, pitch_rad: 0 } as FlightState);
 publishInput(); updateSessionUI(); requestAnimationFrame(animate);
-addEventListener('pagehide', () => { session.dispose(); controlSettingsPanel.dispose(); scene?.dispose(); });
+addEventListener('pagehide', () => { session.dispose(); controlSettingsPanel.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
 void sceneReady;

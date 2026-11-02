@@ -3,6 +3,37 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 12:36 — Review the recorded flight without rewinding physics
+
+TODO: 2.0.3 complete as a bounded state-review increment; R-REVIEW-1 remains partial.
+Agent: Codex orchestrator; flight_trace_core/code1 and flight_review_ui/code2 in
+parallel, with flight_housekeeping on app instructions. Independent quality:
+flight_housekeeping, excluding its own README; independent validation: flight_validate.
+
+**Implementation notes**
+
+Added Review, a timeline, playback and Back to live. Copied state samples and
+captured vertical speed feed both views/instruments while the real worker stays
+paused. Returning live restores its actual state and requires explicit Resume.
+A bounded immutable ring retains up to ten simulation minutes/36,000 samples;
+restart/reload clears it. No unrecorded control positions are shown in review.
+
+Strict TypeScript/build, eighteen native tests and twenty actual-browser checks
+passed. Quality found timeline hotkey suppression and a live throttle leak;
+both were fixed and affected quality review passed. See the scoped
+[review evidence](reviews/2026-11-02-flight-state-review.md).
+
+**Deviations**
+
+Peer pending. This is recorded state viewing, not input-driven re-simulation,
+configuration/event replay, persistent recordings or video export. The aircraft
+model, geography and training-fidelity limits are unchanged.
+
+**Insights**
+
+Keeping a paused live worker separate from the review cursor makes rewind useful
+without silently changing the flight the learner will resume.
+
 ## 2026-11-02 12:08 — Adjust control sensitivity in the running simulator
 
 TODO: 2.0.2 complete as a demonstrable input increment; R-INPUT-1 remains partial.

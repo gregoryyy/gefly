@@ -64,6 +64,27 @@ The visible **study roll offset** starts at the existing E1 fixture's empirical
 it to zero for unassisted roll input. It is an experimental assist, not a sourced
 aircraft trim value. Sensitivity changes do not scale this offset.
 
+## Review a flight
+
+Fly a gentle turn for about ten seconds, then select **Review** in the header.
+Review becomes available after at least two flight-state samples. Entering review
+releases held controls and pauses the actual flight engine. Drag the timeline or
+select **Play** to inspect the recorded scene and instruments, including the
+vertical-speed value captured with each sample. Space plays or pauses review;
+V switches cockpit/chase views.
+
+Select **Back to live** to return to the latest actual flight state. The engine
+stays paused until you explicitly resume. Seeking through the recording never
+restores the engine to an earlier state. Flight controls, sensitivity settings
+and flight reset are unavailable during review; throttle and other control
+positions are not recorded and are hidden or left unset there.
+
+This is a **recorded trace, not resimulated replay**. The current flight's recent
+state history stays in page memory, bounded to 600 simulation seconds and 36,000
+samples. Flight reset or page reload clears it. There is no export, persistence,
+video recording, or input/event log. Full synchronized configuration, event and
+input replay remains future work under the [replay contract](../docs/design/CONTRACTS.md).
+
 ## Imagery and network access
 
 CesiumJS 1.146.0 displays a bundled, openly licensed starter photograph from the
