@@ -104,6 +104,8 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.18 Compact the current cockpit: paired four-detent flap/continuous trim sliders and keycaps, Slash restoring initial trim, vertical throttle/mixture in the engine panel, AP above flap/trim, controls available while paused with physics frozen and pending commands applied on Resume. Add OBS hold acceleration/drag and keyboard adjustment; preserve full-turn/event-partition invariance, read-only Review, harmonized panel colors and original screw hardware. Partial R-INPUT-1/R-NAV-1/R-VIEW-1/R-REVIEW-1; peer pending.
 
+- [x] 2.0.19 Replace the fixed scene crosshair with actual camera-projected aircraft-forward direction; add bounded edge guidance and hide behind-camera directions. Recompute through look/FOV/view/resize and recorded Review without changing physical state or input. See [review evidence](reviews/2026-11-02-forward-marker.md). Partial R-VIEW-1/R-INPUT-1/R-REVIEW-1; peer pending.
+
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.
 - [ ] 2.3 code2 implements the corresponding browser controls, instruments and exercise feedback against frozen contracts **in parallel with 2.2**.

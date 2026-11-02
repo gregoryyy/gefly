@@ -50,3 +50,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-02-paused-controls-and-pr-checkpoint.md](2026-11-02-paused-controls-and-pr-checkpoint.md) — Compact levers, paused editing, OBS gestures and PR-first scope.
 
 - [2026-11-02-next-navigation-layout.md](2026-11-02-next-navigation-layout.md) — Queued NAV/RPM block and engine/AP-column swap after the PR.
+
+- [2026-11-02 aircraft-forward orientation marker](2026-11-02-aircraft-forward-marker.md): project the nose direction into the view so it moves when looking sideways.

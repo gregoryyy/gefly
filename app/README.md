@@ -74,6 +74,16 @@ Review. The chosen FOV survives a view switch and is independent of yoke mode
 and hold-drag look. Scrolling over dialogs or the practice map keeps those
 interfaces' normal behavior; Ctrl/pinch events bypass this FOV control.
 
+The scene crosshair marks the aircraft's **body-forward direction**. Hold-drag
+to look sideways and it moves across the screen to show where the nose points;
+an edge chevron guides you when that direction lies outside the visible view.
+The marker hides when the nose direction is behind the camera. It also works
+while paused. Try hold-drag in Review, where releasing retains the inspection
+view, then scroll to change FOV: the marker follows the actual camera perspective
+and the displayed aircraft state. It is an orientation aid, not a flight-path,
+velocity or control-input indicator, and does not change flight physics or
+claim a real C172 HUD installation.
+
 Use the **0° / 10° / 20° / 30°** flap buttons, **[** to retract or **]** to extend
 while flying. The
 selector sets the generic model's target; the displayed actual flap angle takes

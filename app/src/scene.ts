@@ -4,6 +4,8 @@ import {
   Matrix3, Matrix4, Model, PerspectiveFrustum, Rectangle, ShadowMode, SingleTileImageryProvider, Transforms,
 } from 'cesium';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
+import { createForwardMarker } from './forward-marker';
+import { projectForwardDirection } from './forward-marker-projection';
 import { createAircraftVisual } from './aircraft-visual';
 import { aircraftBasisENU, boundedCameraLook, cockpitCameraENU, chaseCameraENU, type CameraLook } from './aircraft-orientation';
 import { DEFAULT_FOV_RAD, MIN_FOV_RAD, MAX_FOV_RAD } from './field-of-view.ts';
@@ -50,6 +52,8 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   widget.canvas.setAttribute('aria-label', 'Hessen aerial imagery flight scene');
   widget.canvas.setAttribute('tabindex', '-1');
   const scene = widget.scene;
+  const forwardMarker = createForwardMarker(container);
+  const header = container.parentElement?.querySelector<HTMLElement>('.topbar');
   scene.screenSpaceCameraController.enableInputs = false;
   scene.globe.enableLighting = false;
   scene.globe.baseColor = Color.fromCssColorString('#263a37');
@@ -160,6 +164,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   const cameraPosition = new Cartesian3();
   const cameraDirection = new Cartesian3();
   const cameraUp = new Cartesian3();
+  const forwardWorld = new Cartesian3();
   const local = new Cartesian3();
   const localDirection = new Cartesian3();
   const localUp = new Cartesian3();
@@ -210,6 +215,8 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     Cartesian3.fromRadians(lon_rad, lat_rad, state.ground_height_ellipsoid_m ?? alt_msl_m, Ellipsoid.WGS84, position);
     Transforms.eastNorthUpToFixedFrame(position, Ellipsoid.WGS84, frame);
     const basis = aircraftBasisENU(heading_rad, pitch_rad, roll_rad);
+    Cartesian3.fromElements(...basis.forward, localDirection);
+    Matrix4.multiplyByPointAsVector(frame, localDirection, forwardWorld);
     // Cesium's corrected model axes are forward/left/up. Build those columns
     // directly in ENU, then resolve them to Earth-fixed coordinates. This avoids
     // a glTF axis correction being confused with heading/pitch/roll conventions.
@@ -247,6 +254,19 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     frustum.fov = lastFov_rad;
     const fovDeg = (frustum.fov / DEG_RAD).toFixed(1);
     if (container.dataset.fovDeg !== fovDeg) container.dataset.fovDeg = fovDeg;
+    // Project body-forward as a direction at infinity: it must move when the
+    // camera looks away, independently of aircraft position or velocity.
+    const bounds = container.getBoundingClientRect();
+    const top = Math.max(18, (header?.getBoundingClientRect().bottom ?? bounds.top) - bounds.top + 12);
+    const fovy = frustum.fovy;
+    forwardMarker.update(typeof fovy === 'number' ? projectForwardDirection({
+      right: Cartesian3.dot(forwardWorld, scene.camera.rightWC),
+      up: Cartesian3.dot(forwardWorld, scene.camera.upWC),
+      forward: Cartesian3.dot(forwardWorld, scene.camera.directionWC),
+      width_px: container.clientWidth, height_px: container.clientHeight,
+      fov_y_rad: fovy,
+      insets: { top, left: 36, right: 36, bottom: 18 },
+    }) : null);
     widget.render();
 
   }
@@ -264,6 +284,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       photographAbort.abort();
       observer.disconnect();
       clearTimeout(loadTimeout);
+      forwardMarker.dispose();
       status.remove();
       widget.destroy();
       credits.remove();

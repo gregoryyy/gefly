@@ -46,9 +46,6 @@ button kbd { margin-left: 8px; }
 .primary { width: 100%; padding: 13px; background: var(--accent); color: #1b2831; font-weight: 650; border-color: var(--accent); }
 .primary:hover { background: #f3ce92; }
 .gate-hint { display: block; font-size: 10px; line-height: 1.7; margin-top: 13px; color: #859ead; }
-.crosshair { position: absolute; left: 50%; top: calc((100% - var(--deck-height)) * .48); transform: translateX(-50%); display: flex; align-items: center; gap: 9px; opacity: .8; pointer-events: none; }
-.crosshair i { width: 18px; height: 1px; background: #f1e9ce; }
-.crosshair b { height: 4px; width: 4px; border: 1px solid #f1e9ce; border-radius: 50%; }
 .control-panel { position: absolute; left: 18px; bottom: calc(var(--deck-height) + 16px); width: 310px; background: var(--panel); border: 1px solid var(--border); border-radius: 9px; padding: 14px; z-index: 3; box-shadow: 0 6px 30px #08142055; }
 .control-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
 .control-heading strong { font-size: 9px; letter-spacing: 1.1px; }

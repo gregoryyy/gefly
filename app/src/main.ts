@@ -44,7 +44,6 @@ root.innerHTML = `
   <aside id="landing-feedback" hidden></aside>
   <div id="camera-fov" class="camera-fov">60° FOV · two-finger scroll</div>
   <div id="pointer-mode" class="pointer-mode">Click scene: yoke · Hold-drag: look</div>
-  <div class="crosshair" aria-hidden="true"><i></i><b></b><i></i></div>
   <aside id="flight-controls-panel" class="control-panel" aria-label="Flight controls">
     <div class="control-heading"><strong>FLIGHT CONTROLS</strong><span id="control-state">START FLIGHT TO CONTROL</span></div>
     <div class="control-body">

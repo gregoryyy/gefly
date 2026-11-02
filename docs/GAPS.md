@@ -64,6 +64,12 @@ this selection was recorded.
 
 Why: fixes the first required platform/input experience and optional peripherals.
 
+Refinement: **2026-11-02 20:13, user** (recording time): requested that the
+crosshair indicate the aircraft's front and move as the camera looks sideways;
+see [verbatim input](input/2026-11-02-aircraft-forward-marker.md). Implemented as
+a projected body-forward orientation cue, with edge guidance outside the view
+and no flight-path/physics claim.
+
 Refinement: **2026-11-02 19:56, user** (recording time): confirmed Slash restores
 initial trim; requested compact matching flap/trim and throttle/mixture levers,
 paused control availability with frozen physics, faster/dragged OBS, shared

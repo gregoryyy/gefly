@@ -3,6 +3,54 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 20:28 — Keep the nose-direction cue aligned while looking around
+
+TODO: 2.0.19 complete as a bounded R-VIEW-1/R-INPUT-1/R-REVIEW-1 increment.
+Agent: Codex orchestrator/integration; fov_input/code1 on pure perspective
+projection/tests and forward_ui/code2 on the overlay, with fov_housekeeping
+maintaining app instructions in parallel. Independent quality: fov_housekeeping,
+excluding its own prose. Independent validation: trim_validate.
+
+**Implementation notes**
+
+Replaced the fixed scene crosshair with aircraft body-forward direction projected
+through the actual Cesium camera axes and vertical FOV. Looking right moves the
+marker left, looking left moves it right; FOV/view/resize and displayed recorded
+states recompute it. Offscreen directions in front get a bounded edge chevron;
+behind-camera/invalid projections hide. Header-safe placement and a short-view
+clipping origin keep cues useful on narrow scenes. The overlay remains pointer
+transparent, above Review/virtual controls and below Map/header UI.
+
+Independent geometry verification compared actual ENU-to-ECEF camera projection
+with screen positions (720→467.205 / 972.795), edge36, release, recorded seeking,
+FOV, chase and desktop/mobile resizing. Physics state, step and digest stayed
+unchanged. A mobile Review screenshot found same-z occlusion, resolved by z5;
+actual timeline clicking through the visible cue passed. An optional Cesium
+fovy type needed narrowing, now guarded with unavailable projections hidden.
+
+Shared `just ci` passed: 98 app native tests, five aircraft-adapter tests,
+TypeScript/UI build, 84 assurance tests, 11 airspeed assessment tests and
+repository/study/render gates. Optional native JSBSim cases remain explicit
+skips (9 of23) and the Linux-only fixture is not Mac runtime evidence. Focused
+actual Chrome projection and existing FOV regressions passed five groups each,
+with independent affected runtime checks. See
+[review evidence](reviews/2026-11-02-forward-marker.md). Final foundation and
+assurance integrity/diff were rechecked for publication.
+
+**Deviations**
+
+Peer pending under the batched cadence. This is a body-direction orientation
+cue, not flight path, pilot input or an installed/certified aircraft HUD.
+Behind-camera directions hide and foreground Map/header retain priority.
+Existing aircraft, scenery and training limits remain unchanged.
+
+**Insights**
+
+The actual vertical FOV and camera basis are needed to place a direction cue;
+a fixed screen point or direct pointer offset cannot preserve it through view,
+zoom and viewport changes. DOM visibility alone missed the mobile Review-bar
+occlusion; the final pixel/stacking and click-through checks caught it.
+
 ## 2026-11-02 20:06 — Classic cockpit, compact controls and landing-practice checkpoint
 
 TODO: 2.0.10–2.0.13, 2.0.15/2.0.16/2.0.18 complete as bounded prototype
