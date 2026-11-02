@@ -1,22 +1,41 @@
 // Actual browser/JSBSim integration, not a dynamics-fidelity test.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { access, mkdir } from 'node:fs/promises';
+import { access, copyFile, mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 const app = fileURLToPath(new URL('..', import.meta.url));
-await access(new URL('../../studies/e1-browser/sim/dist/jsbsim.wasm', import.meta.url))
+const runtime = fileURLToPath(new URL('../../studies/e1-browser/sim/', import.meta.url));
+await access(join(runtime, 'dist/jsbsim.wasm'))
   .catch(() => { throw new Error('Build the local research engine first: just build-flight-engine'); });
-const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','5174'], {cwd:app, stdio:'pipe'});
-let serverOutput='';server.stdout.on('data',chunk=>{serverOutput+=chunk;});server.stderr.on('data',chunk=>{serverOutput+=chunk;});
-let browser;
-try {
+// Missing-engine case: a temporary runtime copy holding worker.js and the build
+// record but not dist/jsbsim.{mjs,wasm}, served by a second dev server. Only the
+// jsbsim.mjs request is exercised: the worker's import of it fails first, so a
+// missing jsbsim.wasm alone is not separately covered.
+const missingRoot = await mkdtemp(join(tmpdir(), 'gefly-missing-engine-'));
+await mkdir(join(missingRoot, 'dist'));
+await copyFile(join(runtime, 'worker.js'), join(missingRoot, 'worker.js'));
+await copyFile(join(runtime, 'dist/build-info.json'), join(missingRoot, 'dist/build-info.json')).catch(() => {});
+for (const file of ['dist/jsbsim.mjs', 'dist/jsbsim.wasm'])
+  await access(join(missingRoot, file)).then(() => { throw new Error(`${file} must be absent from the missing-engine copy`); }, () => {});
+const servers = [];
+async function startServer(port, env = {}) {
+  const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port',String(port),'--strictPort'], {cwd:app, stdio:'pipe', env:{...process.env, ...env}});
+  servers.push(server);
+  let serverOutput='';server.stdout.on('data',chunk=>{serverOutput+=chunk;});server.stderr.on('data',chunk=>{serverOutput+=chunk;});
   for(let attempt=0;attempt<100;attempt++) {
     if(server.exitCode!==null)throw new Error(`Flight server failed: ${serverOutput}`);
-    try {if(serverOutput.includes('Local:') && (await fetch('http://127.0.0.1:5174')).ok && server.exitCode===null)break;}catch{}
-    if(attempt===99)throw new Error(`Flight server timed out: ${serverOutput}`);
+    try {if(serverOutput.includes('Local:') && (await fetch(`http://127.0.0.1:${port}`)).ok && server.exitCode===null)return;}catch{}
     await new Promise(resolve=>setTimeout(resolve,100));
   }
+  throw new Error(`Flight server timed out: ${serverOutput}`);
+}
+let browser;
+try {
+  await startServer(5174);
+  await startServer(5175, { GEFLY_FLIGHT_RUNTIME: missingRoot });
   browser = await chromium.launch({headless:true, ...(process.env.CHROME ? {executablePath:process.env.CHROME} : {channel:'chrome'})});
   const page = await browser.newPage({viewport:{width:1440,height:900}});
   const errors=[]; const hosts=new Set();
@@ -39,6 +58,19 @@ try {
   await page.waitForFunction(()=>document.querySelector('#status').textContent==='Flying'&&window.__flightStates.length>5);
   const state=()=>page.evaluate(()=>window.__flightStates.at(-1));
   const initial=await state();assert(initial.step>0&&initial.tas_mps>40&&initial.tas_mps<55);
+  await page.locator('#toggle-map').click();
+  await page.getByRole('button',{name:'Zoom map in',exact:true}).waitFor();
+  await page.waitForFunction(()=>!document.querySelector('[aria-label="Zoom map in"]').disabled);
+  assert.equal(await page.locator('#practice-map-panel').isVisible(),true);
+  await page.waitForFunction(()=>document.querySelector('.practice-map-readout').textContent.includes('true'));
+  assert.equal(await page.locator('.practice-map-mode').textContent(),'Live');
+  const mapState=await state();const mapText=await page.locator('.practice-map-readout').textContent();
+  const mapLatitude=Number(mapText.match(/([0-9.]+)° N/)[1]);
+  assert(Math.abs(mapLatitude-mapState.lat_rad*180/Math.PI)<0.00025,'map latitude tracks live state within display rounding and update interval');
+  await page.getByRole('button',{name:'Fit path',exact:true}).click();
+  assert.equal(await page.evaluate(()=>document.activeElement.id),'scene','map buttons preserve flight keyboard focus');
+  await page.getByRole('button',{name:'Follow',exact:true}).click();
+
   const canvasBox=await page.locator('#scene canvas').boundingBox(), sceneBox=await page.locator('#scene').boundingBox();
   assert(Math.abs(canvasBox.x-sceneBox.x)<1 && Math.abs(canvasBox.width-sceneBox.width)<1,'flight canvas fills its host without credit-style clipping');
   await page.locator('#pause').click();await page.waitForTimeout(150);const paused=await state();
@@ -68,6 +100,7 @@ try {
   await page.waitForTimeout(120);const reviewPaused=await state();
   assert(reviewPaused.step>=liveBeforeReview.step,'review does not rewind the live worker');
   assert.equal(await page.locator('#status').textContent(),'Review');
+  await page.waitForFunction(()=>document.querySelector('.practice-map-mode').textContent==='Recorded review');
   await page.waitForTimeout(250);assert.equal((await state()).step,reviewPaused.step,'review freezes the live engine');
   assert.equal(await page.locator('#throttle').isDisabled(),true,'review cannot change live throttle');
   assert.equal(await page.locator('#reset').isDisabled(),true,'review protects the current recording from reset');
@@ -75,6 +108,8 @@ try {
   await page.locator('#review-time').focus();await page.keyboard.press('Home');
   await page.waitForTimeout(50);
   assert.equal(await page.locator('#heading').textContent(),'082°','seeking shows the initial recorded heading');
+  await page.waitForFunction(()=>document.querySelector('.practice-map-readout').textContent.includes('082° true'));
+  assert((await page.locator('.practice-map-readout').textContent()).includes('49.9600° N'),'map follows selected historical location');
   assert.equal(await page.locator('.throttle-control').isVisible(),false,'unrecorded throttle position is hidden');
   assert.equal(await page.locator('#power').textContent(),'—','timeline focus cannot expose live throttle');
   await page.keyboard.press('Space');await page.waitForTimeout(250);
@@ -89,6 +124,7 @@ try {
   await page.screenshot({path:fileURLToPath(new URL('../../output/flight/flight-review.png',import.meta.url))});
   await page.locator('#review-exit').click();
   assert.equal(await page.locator('#status').textContent(),'Paused','returning live remains paused');
+  await page.waitForFunction(()=>document.querySelector('.practice-map-mode').textContent==='Live');
   await page.waitForTimeout(50);
   const liveHeading=((reviewPaused.heading_rad*180/Math.PI)%360+360)%360;
   assert.equal(await page.locator('#heading').textContent(),`${String(Math.round(liveHeading)%360).padStart(3,'0')}°`,'returning live restores actual live state');
@@ -98,6 +134,8 @@ try {
   await page.locator('#start').click();
   await page.locator('#controls-settings').click();
   await page.waitForFunction(()=>document.querySelector('#status').textContent==='Paused');
+  // The DOM pauses immediately; let queued worker state messages drain first.
+  await page.waitForTimeout(150);
   const settingsPaused=await state();await page.waitForTimeout(200);
   assert.equal((await state()).step,settingsPaused.step,'settings pause the actual engine');
   await page.locator('#settings-gentle').click();
@@ -133,21 +171,26 @@ try {
   await page.waitForFunction(()=>document.querySelector('#scene').dataset.imagery==='ready',null,{timeout:45000});
   await mkdir(new URL('../../output/flight/',import.meta.url),{recursive:true});
   await page.screenshot({path:fileURLToPath(new URL('../../output/flight/cockpit.png',import.meta.url))});
+  await page.screenshot({path:fileURLToPath(new URL('../../output/flight/practice-map.png',import.meta.url))});
+  await page.getByRole('button',{name:'Close practice map',exact:true}).click();
+  assert.equal(await page.locator('#toggle-map').getAttribute('aria-pressed'),'false');
   await page.locator('#chase').click();
   await page.waitForFunction(()=>document.querySelector('#scene').dataset.imagery==='ready',null,{timeout:45000});
   await page.screenshot({path:fileURLToPath(new URL('../../output/flight/chase.png',import.meta.url))});
   await page.evaluate(()=>window.dispatchEvent(new Event('blur')));await page.waitForTimeout(100);const blurred=await state();
   await page.waitForTimeout(250);assert.equal((await state()).step,blurred.step,'blur must pause');
-  assert.deepEqual(errors,[]);assert([...hosts].every(host=>['127.0.0.1','www.gds-srv.hessen.de'].includes(host)),`only local runtime and declared official imagery requests: ${[...hosts].join(', ')}`);
-  assert.deepEqual([...hosts],['127.0.0.1'],'starter imagery and runtime are local');
-  const missing=await browser.newPage();await missing.route('**/studies/e1-browser/sim/worker.js',route=>route.abort());
-  await missing.goto('http://127.0.0.1:5174');await missing.waitForFunction(()=>document.querySelector('#status').textContent==='Error');
-  assert.match(await missing.locator('#notice').textContent(),/build-flight-engine/);await missing.close();
+  assert.deepEqual(errors,[]);assert.deepEqual([...hosts],['127.0.0.1'],'runtime should be local only');
+  const missing=await browser.newPage();const engineResponses=[];
+  missing.on('response',response=>{if(new URL(response.url()).pathname.endsWith('/dist/jsbsim.mjs'))engineResponses.push(response.status());});
+  await missing.goto('http://127.0.0.1:5175');await missing.waitForFunction(()=>document.querySelector('#status').textContent==='Error');
+  assert.match(await missing.locator('#notice').textContent(),/build-flight-engine/);
+  assert(engineResponses.length>0&&engineResponses.every(status=>status===404),'absent dist/jsbsim.mjs is requested and not served');await missing.close();
   const noGL=await browser.newPage();const noGLErrors=[];noGL.on('pageerror',e=>noGLErrors.push(String(e)));
   await noGL.addInitScript(()=>{const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(kind,...args){return kind.startsWith('webgl')?null:original.call(this,kind,...args);};});
   await noGL.goto('http://127.0.0.1:5174');await noGL.waitForFunction(()=>document.querySelector('#notice').textContent.includes('Scene unavailable'));
   await noGL.waitForTimeout(400);assert.equal(await noGL.locator('#pause').isDisabled(),true);assert.deepEqual(noGLErrors,[]);await noGL.close();
-  console.log(JSON.stringify({result:'pass',browser:browser.version(),initial:{step:initial.step,tas_mps:initial.tas_mps},right_bank_delta_rad:after.roll_rad-before.roll_rad,checks:['explicit start','live JSBSim','full-width canvas','loaded aerial imagery','pause','view invariance','reset keyboard focus','right bank','on-screen hold and outside release','draggable stick and outside release','blur pause','state review and seeking','review playback without engine advancement','review return and reset','settings pause and focus','gain presets and defaults','custom gain and reset preservation','local runtime and bundled imagery only','missing engine','WebGL failure'],screenshots:'output/flight/{cockpit,chase}.png'},null,2));
+  console.log(JSON.stringify({result:'pass',browser:browser.version(),initial:{step:initial.step,tas_mps:initial.tas_mps},right_bank_delta_rad:after.roll_rad-before.roll_rad,checks:['explicit start','live JSBSim','full-width canvas','loaded aerial imagery','local practice map and true heading','map focus and history selection','pause','view invariance','reset keyboard focus','right bank','on-screen hold and outside release','draggable stick and outside release','blur pause','state review and seeking','review playback without engine advancement','review return and reset','settings pause and focus','gain presets and defaults','custom gain and reset preservation','local runtime and bundled imagery only','missing engine','WebGL failure'],screenshots:'output/flight/{cockpit,chase}.png'},null,2));
 } finally {
-  await browser?.close();server.kill('SIGTERM');
+  await browser?.close();for(const server of servers)server.kill('SIGTERM');
+  await rm(missingRoot,{recursive:true,force:true});
 }

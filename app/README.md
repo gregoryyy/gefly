@@ -85,6 +85,27 @@ samples. Flight reset or page reload clears it. There is no export, persistence,
 video recording, or input/event log. Full synchronized configuration, event and
 input replay remains future work under the [replay contract](../docs/design/CONTRACTS.md).
 
+## Practice map
+
+Select **Map** in the header to show or hide a north-up practice map. It loads
+MapLibre on demand and uses the same local overview/detail photographs as the
+flight scene. The aircraft marker shows true heading; the plotted route uses up
+to 600 points from the current flight's retained state trace. **Trace start**
+marks the first retained sample, not an airport reference point. Flight reset
+clears the route.
+
+To try it, fly a gentle turn, open **Map**, then enter **Review** and drag the
+timeline. The aircraft marker follows the selected recorded state. The route
+shows the whole retained trace, including any part flown after the selected
+review time; it is not a historical-only path. Use the map's zoom or **Fit**
+controls to inspect it. These controls return keyboard focus to the flight
+scene and do not change aircraft state or physics.
+
+The map makes no external tile or map-service requests: its imagery and metadata
+are local. It is geographic practice context, not a navigation chart. It does
+not supply authoritative airport positions, fixes, radio information or
+elevations, and it does not implement the complete EDDF region.
+
 ## Imagery and network access
 
 CesiumJS 1.146.0 displays a bundled, openly licensed starter photograph from the
@@ -129,13 +150,18 @@ See [ARCH](../docs/ARCH.md), [SPEC](../docs/SPEC.md) and
 
 ```sh
 npm --prefix app run build     # strict TypeScript and UI bundle; excludes research runtime
-npm --prefix app test          # worker/session lifecycle and input validation
+npm --prefix app test          # worker/session lifecycle, input validation, served engine path
 npm --prefix app run test:browser  # real JSBSim; local engine and installed Chrome required
 ```
 
-Node.js 24.2+ is required. The browser check starts its own temporary server on
-127.0.0.1:5174 and writes ignored screenshots to `output/flight/`. Set `CHROME` to
-an executable path if Chrome is not installed in its usual location. `just fly`
-uses 127.0.0.1:5173. Without `just`, invoke the study build with
-`bash studies/e1-browser/sim/build.sh output/flight/engine-build`, then
+The browser smoke also serves a temporary runtime copy without
+`dist/jsbsim.{mjs,wasm}` (through `GEFLY_FLIGHT_RUNTIME`) and checks the build hint.
+Only the failed `dist/jsbsim.mjs` import is exercised; a missing `jsbsim.wasm`
+alone is not separately covered.
+
+Node.js 24.2+ is required. The browser check starts temporary servers on
+127.0.0.1:5174 and 5175 and writes ignored screenshots to `output/flight/`.
+Set `CHROME` to an executable path if Chrome is not installed in its usual
+location. `just fly` uses 127.0.0.1:5173. Without `just`, invoke the study build
+with `bash studies/e1-browser/sim/build.sh output/flight/engine-build`, then
 `npm --prefix app run dev`.

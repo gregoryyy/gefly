@@ -28,6 +28,7 @@ REQUIRED = {
     "docs/ROAD.md", "docs/DONE.md", "docs/SPEC.md", "docs/design/CONCEPT.md",
     "docs/research/README.md", "docs/agents/peer.md", "utils/pdf/style.css",
     "utils/pdf/mermaid.html", "utils/pdf/latex.lua", "utils/peer_review.py",
+    ".gitattributes", "utils/merge/sorted_log.py",
 }
 IGNORED_DIRS = {
     ".git", "node_modules", ".venv", "venv", "__pycache__", "dist", "build", "target",
@@ -74,6 +75,31 @@ def local_links(path, errors):
             linked = path.parent / unquote(parsed.path)
             if not linked.exists():
                 errors.append(f"{path.relative_to(ROOT)}:{number}: missing link target {target}")
+
+
+def input_index(errors):
+    """The union-merged input index lists every input record exactly once."""
+    directory = ROOT / "docs/input"
+    index = directory / "README.md"
+    if not directory.is_dir():
+        return
+    if not index.is_file():
+        errors.append("missing input index: docs/input/README.md")
+        return
+    listed = {}
+    for number, line in prose_lines(index.read_text(encoding="utf-8")):
+        for target in re.findall(r"\]\(<?([^\s)>#]+)>?(?:#[^)]*)?\)", line):
+            name = unquote(target)
+            listed.setdefault(name, []).append(number)
+            if not (directory / name).is_file():
+                errors.append(f"docs/input/README.md:{number}: listed input record does not exist: {target}")
+    for name, numbers in sorted(listed.items()):
+        if len(numbers) > 1:
+            lines = ", ".join(map(str, numbers))
+            errors.append(f"docs/input/README.md: {name} is listed {len(numbers)} times (lines {lines})")
+    for path in sorted(directory.glob("*.md")):
+        if path.name != "README.md" and path.name not in listed:
+            errors.append(f"docs/input/README.md: input record {path.name} is not listed")
 
 
 def read_toml(path, errors):
@@ -179,6 +205,7 @@ def main():
     documents = list(markdown_files())
     for path in documents:
         local_links(path, errors)
+    input_index(errors)
     agents(errors)
     if errors:
         for error in errors:
@@ -186,7 +213,7 @@ def main():
         print(f"Scaffold check failed with {len(errors)} issue(s).", file=sys.stderr)
         return 1
     print(f"Scaffold check passed: {len(documents)} Markdown files, {len(ROLES)} native Codex agent definitions and a Claude peer dispatcher.")
-    print("Scope: file/link targets and declared agent routing; live discovery, provider identity, external URLs, heading anchors and simulator behavior are not checked.")
+    print("Scope: file/link targets, input-index completeness and declared agent routing; live discovery, provider identity, external URLs, heading anchors and simulator behavior are not checked.")
     return 0
 
 

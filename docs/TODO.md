@@ -28,7 +28,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 - [x] 0.18 Scope the cross-provider peer gate per Q15; superseded 2026-11-01 11:54 by proclens's batched cadence (every few PRs, *peer pending* in between, coverage required before milestone acceptance/release).
 - [ ] 0.19 Run the first batched Codex peer review of Claude-authored work since `3faf9c8` (PRs #4–#6 and later) on a machine with the Codex CLI. Deferred by the user (2026-11-02 08:01); peer pending continues for the Claude-authored batch #32–#36.
 - [x] 0.20 Select model size and reasoning effort per task by difficulty and risk (Q20); recorded in AGENTS, BOOT and the agent workflow.
-- [ ] 0.21 Run the reciprocal Claude peer review of Codex-authored work (PRs #27–#30: 1.3.1, 1.5.2, 1.14, 1.15, 2.0) through the router with a frozen packet; required with 0.19 before milestone 1 acceptance.
+- [ ] 0.21 Run the reciprocal Claude peer review of Codex-authored work (PRs #27–#30: 1.3.1, 1.5.2, 1.14, 1.15, 2.0) through the router with a frozen packet; required with 0.19 before milestone 1 acceptance. First run 2026-11-02: #27/#29 accept, #28a fixed after changes_required; #28b and #30 blocked on withheld material and need renewed packets ([report](reviews/2026-11-01-codex-prs-27-30-peer.md)).
 
 ## 1. Foundation
 
@@ -75,6 +75,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.3 Add bounded in-session flight-state review: scrub/play recorded states through both views, keep live JSBSim paused, and return to the true paused live state. Partial R-REVIEW-1; input/event replay, persistence and video export remain future work. Peer pending.
 
+- [x] 2.0.4 Add a local practice map with true heading, a bounded retained flight path, Fit/Follow controls and a marker synchronized with recorded-state review. Independent quality and actual-browser validation passed; see [review evidence](reviews/2026-11-02-practice-map.md). Partial R-WORLD-1/R-REVIEW-1; navigation charts, airport elevation and regional acceptance remain separate. Peer pending.
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.
 - [ ] 2.3 code2 implements the corresponding browser controls, instruments and exercise feedback against frozen contracts **in parallel with 2.2**.

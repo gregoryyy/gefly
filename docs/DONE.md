@@ -3,6 +3,151 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 14:47 — See the aircraft and retained flight path on a practice map
+
+TODO: 2.0.4 complete as a bounded map increment; R-WORLD-1/R-REVIEW-1 remain partial.
+Agent: Codex orchestrator; practice_map_core/code1 and practice_map_ui/code2 in
+parallel, with flight_housekeeping on application instructions. Independent
+quality: flight_housekeeping, excluding its own README; validation: flight_validate.
+
+**Implementation notes**
+
+Added a lazy MapLibre panel using the existing bundled Hessen photographs,
+true-heading aircraft marker, whole retained route, zoom and Fit/Follow controls.
+Review seeking moves the marker to the selected historical state while live
+physics stays paused. Bounded immutable sampling plots at most 600 points at
+four updates per second; reset clears the path. Map failures leave flight usable.
+MapLibre is pinned with its complete license retained in source and build output.
+
+Strict TypeScript/build, 26 native tests and 22 real-browser check groups passed.
+Independent actual-browser validation confirmed visible imagery/path, heading,
+review isolation, focus, compact layout, reset and failure isolation. Fixed the
+Vite worker URL initialization failure and the ambiguous route legend; affected
+quality review passed. See [review evidence](reviews/2026-11-02-practice-map.md).
+
+**Deviations**
+
+Peer pending. This is a limited visual practice aid, not a navigation chart,
+accepted airport/runway data, real terrain or the EDDF/100 NM region. It changes
+no aircraft physics and does not complete the first circuit or training gates.
+
+**Insights**
+
+A selected-time marker and an explicitly labeled whole retained route let a
+learner compare a turn with its path without rewinding the live engine.
+
+## 2026-11-02 10:05 — Prepare the handover to Codex
+
+TODO: 0.19 handed over (deferred, due before milestone 1 acceptance). Agent: Claude Code
+orchestrator.
+
+**Implementation notes**
+
+Added the [Claude → Codex handover](handover/2026-11-02-claude-to-codex.md). It covers:
+- the PR merge order #33 → #32 → #34 → #35 → #36 → #37 (merge commits only);
+- the Codex peer review of the Claude-authored batch since `3faf9c8`, with suggested
+  packets and focus points;
+- the renewed #28b/#30 packets (TODO 0.21);
+- the decided and blocked milestone 2 state;
+- environment notes.
+
+**Deviations**
+
+Peer pending (batched).
+
+## 2026-11-02 09:49 — Add a sorted-log merge driver for DONE
+
+TODO: none (process tooling, user-approved 2026-11-02). Agent: Claude Code
+orchestrator; code1 subagent (implementation); quality subagent (three rounds,
+final verdict accept).
+
+**Implementation notes**
+
+- `utils/merge/sorted_log.py` merges `docs/DONE.md` three-way per `## ` entry and
+  keeps the result newest first.
+  - It conflicts only when both sides changed the same entry differently, on delete
+    vs change, and on overlapping preamble edits.
+  - It falls back to `git merge-file` for duplicate headings, existing markers, an
+    entry removed on both sides with additions, and parse failures.
+  - Headings inside code fences are ignored. The original text is kept.
+- `.gitattributes` maps DONE to the driver and the append-only input index to
+  `merge=union`.
+- `check.py` checks that every input record is listed exactly once. This added the
+  missing `2026-11-01-tool-layout.md` index line.
+- `just setup` registers the driver, with a guard that falls back to
+  `git merge-file --diff3` when the script or python3 is missing, and
+  `recursive=text`.
+- SDLC "Log merges" explains why GitHub's web merge and conflict editor are not used
+  for DONE.
+- On real history, merges that conflict with plain git merge cleanly and match the
+  recorded results.
+
+Checks: 189 unit tests OK; check.py exit 0; `utils/ci/run.py --require-node` exit 0
+(passed with skipped checks: e1-jsbsim 9 of 23); assure 0 errors.
+
+**Deviations**
+
+GitHub's web merge does not run custom drivers, so the orchestrator re-syncs branches
+locally. Peer pending (batched).
+
+## 2026-11-02 08:20 — Estimate S17 indication gaps from FlightGear c172p
+
+TODO: 2.1 inputs. Agent: Claude Code orchestrator; researcher subagent; quality
+subagent (two rounds; final verdict accept, 10 of 10 spot checks against c172p matched).
+
+**Implementation notes**
+
+Follows the GAPS Q23 update of 08:01. Manifest 0.3.0 adds S14, FlightGear c172p
+`63ba8527` (GPL-2.0-or-later per LICENSE, CONTRIBUTING.md and file headers;
+`facts_only`, numbers only, nothing copied). The value files are re-pinned.
+indication-loading-values 0.2.0 holds these estimates, all 172P-applicable:
+- dial ranges for the tachometer, oil pressure, oil temperature, fuel quantity, vacuum
+  and ammeter;
+- the EGT scale (°F, 25 °F per division);
+- the Hobbs display and time base;
+- the low-fuel basis (total content).
+
+S17 values still govern where they exist. Checks: validate_manifest exit 0; 180 unit
+tests OK (1 skipped); `assure check` 0 errors.
+
+**Deviations**
+
+Still TBD-src (FlightGear has no answer): the fuel-flow range, tach-time counting,
+sender-fault detection and the annunciator switch-label serial. Quality fixes (08:40): S14 is marked `estimate_only`/`172P`, and
+both validators enforce estimate-only use and the variant named in `applicability`;
+`hash_basis` added; manifest 0.3.1, value files re-pinned. Peer pending (batched).
+
+## 2026-11-02 14:56 — Integrate PR 35 with the current flight interface
+
+TODO: 0.21 / 1.6 integration only. Agent: Codex orchestrator; pr35_vite/code1 and
+pr35_smoke/code2 resolved disjoint application conflicts in parallel, with
+pr35_housekeeping on application instructions and record preservation.
+Independent quality and validation: pr32_merge_review.
+
+**Implementation notes**
+
+Retained the extracted research-runtime middleware and real missing-engine smoke
+case alongside main's Cesium asset serving/build copying, control settings and
+recorded-state review tests. The native test command includes both branches'
+tests. Preserved complete DONE records and TODO status; corrected SBOM's obsolete
+statement that Cesium integration was still future work.
+
+Strict TypeScript/UI build and all 22 native tests passed. The real-engine Chrome
+smoke passed all 20 check groups, including the actual missing-module 404 case.
+The first run exposed queued state messages racing the settings pause baseline;
+the test now allows the existing pause-settling interval before checking a frozen
+worker step. Product behavior was unchanged; affected independent review passed.
+
+**Deviations**
+
+This is merge integration, not renewed acceptance of the historical peer packets
+or the foundation milestone. Existing peer-pending and blocked outcomes remain.
+
+**Insights**
+
+A clean conflict resolution must preserve both the newer flight interface and
+the negative runtime test; choosing either whole side would lose coverage.
+
 ## 2026-11-02 14:50 — Reconcile PR 32 with current main
 
 TODO: 1.6 integration only. Agent: Codex orchestrator; pr32_merge_review performs
@@ -149,6 +294,43 @@ first. TODO 0.19 is marked deferred.
 
 Peer pending (batched) for the Claude-authored batch #32–#36.
 
+## 2026-11-02 07:58 — Extract 172S engine/fuel/electrical indications and POH sample loading
+
+TODO: 2.1 inputs; 1.3.2 empty mass/CG source. Agent: Claude Code orchestrator;
+researcher subagent (extraction from S17 Rev 5 page images; SHA-256 prefix
+`420dbdaf5517a7a0` matched); quality subagent (three rounds, 13 of 13 spot checks
+matched, final verdict accept).
+
+**Implementation notes**
+
+- New `data/aircraft/c172s-classic/indication-loading-values.json` and its schema.
+  - It holds the 18 `ind` engine, fuel and electrical indications with S17 Fig. 2-3
+    markings. The Section 2 tachometer arcs govern, and p. 7-20 is a recorded
+    conflict.
+  - It holds the Fig. 6-5 sample loading: 1642 lb basic empty weight, 62.6 × 1000
+    lb-in moment, and a derived arm of 0.96836 m, labelled as a sample and not a
+    weighed aircraft. It also holds the Fig. 6-3 station arms.
+- The validator now:
+  - checks exact and affine unit conversions;
+  - checks marking units and their order;
+  - recomputes the arm, with a tolerance capped at 0.5 %;
+  - requires that `governs` points to a recorded conflict, and that electrical
+    indications carry an `inclusion` decision.
+- The CLI negative tests now copy the manifest bytes.
+- Research note added.
+
+Checks: `validate_manifest.py` exit 0; 177 unit tests OK (1 skipped); `assure check`
+0 errors.
+
+**Deviations**
+
+- TBD-src: dial ranges, EGT scale, hour-meter counting, the basis of the low-fuel
+  threshold, and the serial at which the annunciator switch labels change.
+- The manifest `empty_mass` field still needs a follow-up bump that points to the
+  sample.
+- This branch includes fix/m1-tooling (#34) and fix/m1-records (#33).
+- Peer pending (batched).
+
 ## 2026-11-02 07:36 — Record the S17 list, electrical and tachometer decisions
 
 TODO: 2.1 scope refined. Agent: Claude Code orchestrator; researcher subagent
@@ -190,6 +372,51 @@ The user accepted all Q23 recommendations ("yes to proposals. go on";
 
 The `ind` digest layout still waits for the researcher's S17 Section 7 engine/fuel
 list. Peer pending (batched).
+
+## 2026-11-02 00:53 — Claude peer review of Codex PRs #27–#30 and fixes (TODO 0.21)
+
+TODO: 0.21 in progress (#28b and #30 packets to renew). Agent: Claude Code orchestrator; peer
+dispatcher subagent (fresh Claude CLI 2.1.316 per packet; model evidence
+`claude-haiku-5-5` and `claude-opus-5-5`), code2 subagent (fixes), quality subagent
+(three rounds, final verdict accept).
+
+**Implementation notes**
+
+Report: [peer review](reviews/2026-11-01-codex-prs-27-30-peer.md) and
+[JSON](reviews/2026-11-01-codex-prs-27-30-peer.json), five packets frozen at main
+`396553c` (#28 split into 28a tooling and 28b docs). Router results: #27 accept;
+#28a changes_required; #28b and #30 review_blocked (material withheld, not defects);
+#29 accept. There were no critical or high findings.
+
+The fixes in this PR:
+- `status.ts` counts a DONE completion only per task ID. Exception or pending wording
+  cancels it; "peer pending" and "pending merge" still count as complete. A ticked
+  parent's record covers its subtasks, and a ticked parent with open subtasks gets
+  the warning `done-parent-open-children`.
+- `evidence.ts` checks that a cited source applies to the aircraft variant, using
+  known 172 model designators (case-insensitive; `S/N` is not read as a variant).
+- The SBOM CesiumJS row now says it is not adopted in the application yet.
+- The missing-engine smoke test serves a runtime copy without `dist/jsbsim.*`.
+- New `app/runtime.ts` and its tests prove that the `build-flight-engine` output is
+  the path `just fly` serves.
+
+Other #28b findings are handled in their own PRs: the CI text in #34, the E14 clash in
+#32, and the BRIEFING IDs match the SPEC edits in #33.
+
+Checks on Node 24: the assure suite passed 83 of 83; `assure check` reported 0 errors;
+the app suite passed 9 of 9; `utils/ci/run.py --require-node` passed with skipped
+checks (e1-jsbsim 9 of 23).
+
+**Deviations**
+
+- The real-engine browser smoke test was not run (no engine build and no Chrome here):
+  not evaluated.
+- Known limitations: the completion check still passes some unlisted negative wording
+  ("failing tests", "needs review"); 172I is not recognised; negated designators
+  ("not the 172S") are still read as naming the variant; "unstated" sources are
+  lenient (L3); `app/runtime.ts` is not type-checked (L6).
+- The fixes are Claude-authored, so they need the Codex peer review (TODO 0.19 batch).
+  The #28b and #30 packets need renewal with the withheld material.
 
 ## 2026-11-02 00:30 — Apply foundation-review tooling fixes (TODO 1.6)
 

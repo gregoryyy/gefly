@@ -99,3 +99,41 @@ test('constructor rejects caps outside the supported memory and duration bounds'
   }
   assert.doesNotThrow(() => new FlightTrace({ maxSamples: 2, maxDuration_s: 0.001 }));
 });
+
+test('plot samples handle empty, one-frame and uncapped histories with immutable existing states', () => {
+  const trace = new FlightTrace();
+  assert.deepEqual(trace.sampledStates(), []);
+  assert.equal(Object.isFrozen(trace.sampledStates()), true);
+  trace.record(state(1), 0);
+  const first = trace.sampledStates();
+  assert.equal(first.length, 1);
+  assert.equal(first[0], trace.atTime(1)!.state);
+  assert.equal(Object.isFrozen(first), true);
+  assert.equal(Object.isFrozen(first[0]), true);
+  assert.throws(() => { (first as FlightState[]).push(state(2)); }, TypeError);
+  trace.record(state(2), 0);
+  assert.deepEqual(trace.sampledStates().map((sample) => sample.step), [1, 2]);
+  assert.equal(first.length, 1);
+});
+
+test('plot sampling preserves endpoints and evenly spaced existing states through ring wraps', () => {
+  const trace = new FlightTrace({ maxSamples: 10 });
+  for (let step = 0; step < 35; step++) trace.record(state(step), 0);
+  assert.deepEqual(trace.sampledStates(4).map((sample) => sample.step), [25, 28, 31, 34]);
+  assert.deepEqual(trace.sampledStates(5).map((sample) => sample.step), [25, 27, 29, 31, 34]);
+  assert.deepEqual(trace.sampledStates(2).map((sample) => sample.step), [25, 34]);
+  for (const sample of trace.sampledStates(4)) assert.equal(sample, trace.atTime(sample.t_s)!.state);
+});
+
+test('plot sampling caps large histories and rejects unsupported sample budgets', () => {
+  const trace = new FlightTrace();
+  for (let step = 0; step < 36000; step++) trace.record(state(step, step / 120), 0);
+  assert.equal(trace.sampledStates().length, 600);
+  const points = trace.sampledStates(1000);
+  assert.equal(points.length, 1000);
+  assert.equal(points[0].step, 0);
+  assert.equal(points.at(-1)!.step, 35999);
+  for (const maxPoints of [0, 1, -1, 2.5, 1001, NaN, Infinity]) {
+    assert.throws(() => trace.sampledStates(maxPoints), RangeError);
+  }
+});

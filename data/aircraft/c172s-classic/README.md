@@ -25,7 +25,7 @@ procedures or document copies (`not_included`), and its `fidelity` is fixed to
 | `configuration` | Manufacturer, model, TCDS, category, serial range, panel, flight manual, engine and propeller. |
 | `mass_limits`, `speed_limits`, `engine.ratings`, `propeller.limits` | Quantities (below). Airspeeds are split by reference (`IAS`, `CAS`). |
 | `avionics` | Standard and optional equipment from the read POH; `fit_status: tbd` because the modelled fit is still open. |
-| `sources` | Source register: id, document, revision, URL, access date and status, SHA-256 prefix of the read copy, applicability and rights. |
+| `sources` | Source register: id, document, revision, URL, access date and status, SHA-256 prefix with `hash_basis` (`document`: the read copy's bytes; `file_listing`: a `sha256sum` listing of the files read, printed in the research note), applicability and rights. `use: estimate_only` with `variant` (for example S14, `172P`) marks a source that may support only `estimated` values. |
 | `not_included`, `pending` | Deliberate exclusions, and page-cited items not yet transferred. |
 | `prepared` | Date, preparing agent and input documents. |
 
@@ -44,7 +44,14 @@ Status follows R-DATA-2:
   with `access_status` `read`/`read_selected_pages`.
 - `derived`: computed or inferred from cited facts; `derivation` explains how. An exact
   unit conversion of a sourced value stays `sourced` and is described in `conversion`.
-- `estimated`: an engineering estimate; none are present.
+- `estimated`: an engineering estimate. The only estimates are in
+  `indication-loading-values.json`: dial ranges and behaviour taken from the FlightGear
+  c172p model (S14, a 172P, another variant; GAPS Q23 update 2026-11-02 08:01). They
+  carry `applicability` and S14 citations, whose `page` is a repository file path at the
+  pinned commit, and never become sourced 172S facts. The validator and the assurance
+  check reject a `sourced`/`derived` value citing an `estimate_only` source, an `estimated`
+  value citing none, an `applicability` that does not name the source `variant`, and a
+  `variant` equal to the aircraft designator (leading token of `configuration.model`).
 - `unknown`: `value` is `null` and `todo` says what is needed. Disagreeing sources are
   listed in `conflicts` (for example VFE CAS and the utility ramp mass) without choosing.
 
@@ -116,7 +123,42 @@ POH tables, need new units and multi-number points, and leave the separate
 propeller (TCDS static rpm 2300–2400) still have to be modelled. These are calibration
 inputs, not validation results.
 
-These three draft source files are the current data inventory. There is still
+## Engine/fuel indications and sample loading
+
+[indication-loading-values.json](indication-loading-values.json) holds, as cited facts
+from S17 ([research note](../../../docs/research/2026-11-02-172s-engine-fuel-ind-and-sample-loading.md);
+user decision 2026-11-02, GAPS entry pending):
+
+- `indications`: every engine and fuel gauge or counter of the classic panel, keyed by its
+  proposed `ind` field name (`tach_prop_radps`, `oil_press_pa`, `oil_temp_k`, `egt_k`,
+  `fuel_flow_m3ps`, `fuel_qty_left_m3`, `fuel_qty_right_m3`, `vac_suction_pa`, the hour meters
+  `tach_time_s`/`hobbs_time_s`, and the electrical `ammeter_a`), with the Figure 2-3 markings (green arcs, red lines;
+  Figure 2-3 has no yellow arcs) and `scale` (dial range), which S17 does not state. Where
+  the FlightGear c172p model (S14, 172P) has a gauge, `scale` is `estimated` from it with
+  `applicability`; otherwise (fuel flow, tach-time counter) it stays `unknown`.
+  `hobbs_time_s.counting` estimates the Hobbs time base from the same model.
+- `annunciators`: OIL PRESS, L/R LOW FUEL, L/R VAC and VOLTS with colour, trigger
+  threshold, persistence and flash time. The LOW FUEL threshold trigger has an estimated
+  `basis` (total tank content, from S14); the sourced S17 threshold governs.
+- `sample_loading`: the basic empty weight and moment of the **sample airplane** of
+  Figure 6-5 (`nature` is fixed to say so; not a weighed aircraft), the derived empty
+  arm, the datum, and the station arms of Figure 6-3.
+- `conflicts`: the tachometer green arc (the Figure 2-3 arcs govern by user decision
+  2026-11-02 07:36 and carry `governs: true`; p. 7-20 stays recorded) and the sample's
+  baggage moment (not used). The whole Figure 2-3 and Figure 6-3 lists exceed the
+  no-whole-table limit and are accepted as an exception for those two lists only (GAPS Q5).
+- The validator also checks that markings use the indication's units, that arcs have
+  lower < upper and red line minimum < maximum, that every `governs: true` marking's field
+  is listed in a conflict's `fields`, and that the derived empty arm equals moment/mass
+  within `uncertainty_si` (positive, at most 0.5 % of the arm). Electrical-scope entries
+  must state their `inclusion` decision.
+
+Units: `K` (from `degF`, affine), `Pa` (from `psi` or `inHg`, gauge pressure or suction),
+`rad/s`, `m^3`, `m^3/s`, `s` (from `h` or `s`), `V`, `A`, `m`, `kg`, `kg*m` (from the
+published `lb-in/1000`) and `kg/m^3`. The `ind` field order itself is frozen in
+SCENARIO-CONTRACTS, not here.
+
+These four draft source files are the current data inventory. There is still
 **no project-owned JSBSim 172S model** here: no aerodynamic coefficient set,
 propulsion/gear implementation, frozen E2 case set or validated flight behavior.
 See the [model plan](../../../docs/design/FDM-172S.md) for the remaining source,
