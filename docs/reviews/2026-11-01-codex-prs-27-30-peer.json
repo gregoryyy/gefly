@@ -1,0 +1,746 @@
+{
+  "recorded": "2026-11-02 00:22 Europe/Berlin (execution clock); TODO 0.21",
+  "scope": "Batched Claude peer review of Codex-authored PRs #27, #28, #30, #29 merged to main",
+  "revision": "396553c7dd79fba1e1d5a3099864f945f90883cb",
+  "base": "65faaeabb41b8b82cd632fe79f8ee9e4c8fa4c2c",
+  "spec_revision": {
+    "blob": "a879cd0f42dfdbe49c884667db9e42eb64918bfd",
+    "last_changed_commit": "2900ca38fbab72d5bc23094f19b39e6d90d7e11d"
+  },
+  "authorship": "All 15 commits in 65faaea..396553c are Codex/OpenAI-authored (DONE records name the Codex orchestrator and Codex subagents; no Claude author or Claude trailers). No merge brings in a Claude-authored commit.",
+  "excluded_claude_authored": [
+    "CI study-gate/render-check/process-group-timeout code from Claude commits 3d2fe4f, 8e63a68, e8d5ead, only relocated by PR #28 into utils/ci/run.py and utils/ci/test_run.py (reserved for the Codex review, TODO 0.19)",
+    "Claude-authored DONE entries (19:06 and earlier; 7 lines from 22c4b65) that merge reconciliation only reordered",
+    "All base content at 65faaea"
+  ],
+  "excluded_by_contract": [
+    "docs/reviews/** (prior reviewer conclusions)",
+    "app/package-lock.json bytes (replaced by a generated per-package summary)",
+    "pre-existing docs/DONE.md history"
+  ],
+  "checks": {
+    "local": "PATH=/opt/node24/bin:$PATH python3 utils/ci/run.py --require-node; Python 3.13.18, Node v24.22.1; exit 0",
+    "local_final_line": "Foundation CI: passed with skipped checks (study studies/e1-jsbsim: 9 of 23 skipped).",
+    "hosted": "Foundation run 41357526229 on main 396553c: Browser application, Python 3.11, Python 3.15 success (observed via gh run view)"
+  },
+  "packet_defects": [
+    "The pr29 packet's EVAL extraction printed 'EVAL section E15 not found' (the dispatcher's regex missed the final section); the E15 text was present in the packet diff, and the reviewer used it."
+  ],
+  "packets": [
+    {
+      "packet_id": "pr27",
+      "pr": 27,
+      "range": "65faaea..aeb5d3f",
+      "criteria_scope": "TODO 1.3.1",
+      "external_report": {
+        "status": "completed",
+        "accepted": true,
+        "author_provider": "codex",
+        "reviewer_provider": "claude",
+        "packet": {
+          "path": "packet-pr27.md",
+          "sha256": "06facad58d4b8979793de1418f7a086b57fd2ecb4e83bc0d87bf2f1343b355a1",
+          "revision": "396553c7dd79fba1e1d5a3099864f945f90883cb",
+          "bytes": 81121
+        },
+        "cli": {
+          "executable": "claude",
+          "version": "2.1.316"
+        },
+        "model_evidence": [
+          "claude-haiku-5-5",
+          "claude-opus-5-5"
+        ],
+        "review": {
+          "quality": [
+            {
+              "severity": "low",
+              "location": "studies/e2-c172s/test_mass_properties.py, test_build_mass_properties.py",
+              "description": "The tests do not check diagnostic text. Core tests only use assertRaises(ValueError), and CLI tests only check for the 'ERROR:' prefix and the absence of 'Traceback'. T1.3.1-b requires actionable diagnostics, and the source does produce path-qualified messages (e.g. 'components[0].mass_kg: must be positive'). However, a regression to an uninformative message would still pass. Expected: assert the field path or reason (e.g. assertRaisesRegex on 'components\\[0\\]\\.mass_kg') for at least one case per rejection class.",
+              "evidence": "test_mass_properties.py test_invalid_masses_and_coordinates_rejected / test_unphysical_symmetric_and_asymmetric_tensors_rejected use bare assertRaises; test_build_mass_properties.py assert_invalid checks only 'ERROR:' and no 'Traceback'."
+            },
+            {
+              "severity": "low",
+              "location": "studies/e2-c172s/build_mass_properties.py:_unique_object; build_document envelope check; mass_properties.py field-set check",
+              "description": "Some diagnostics do not say which item is wrong. A duplicate key reports 'duplicate JSON object key' without naming the key. The envelope and component field-set errors list the expected set but not the missing or unexpected key. For example, a unit-suffixed key such as 'mass_lb' is rejected without naming it. Expected: include the offending key name(s) and, for nested duplicates, their location.",
+              "evidence": "build_mass_properties.py: raise ValueError(\"duplicate JSON object key\"); raise ValueError(\"input requires exactly schema_version, frame and components\"); mass_properties.py: raise ValueError(f\"{name}: expected exactly {sorted(_FIELDS)}\")."
+            },
+            {
+              "severity": "low",
+              "location": "studies/e2-c172s/test_mass_properties.py",
+              "description": "No fixture combines a nonzero intrinsic component tensor with a nonzero parallel-axis offset. For example, the 12 kg 2x4x6 block displaced from a second body, with the analytic I = I_cg + m(r²E − rrᵀ) result. Every parallel-axis fixture uses zero-inertia point masses, and the only nonzero-intrinsic multi-component case has coincident CGs. So the summing of intrinsic and shift terms is only covered separately.",
+              "evidence": "test_unequal_masses_and_off_diagonal_signs, test_translation_and_component_order..., test_uniform_mass_and_length_scaling use component() with default zero inertia; test_intrinsic_tensors_add_for_coincident_components uses cg [0,0,0] for both."
+            },
+            {
+              "severity": "low",
+              "location": "studies/e2-c172s/mass_properties.py:_tensor Jacobi loop",
+              "description": "If the 32-iteration Jacobi loop exits without reaching the 1e-15 off-diagonal threshold, the diagonal is still checked as if it held the eigenvalues. Non-convergence is not reported. For 3x3 symmetric matrices with largest-pivot rotation this is practically unreachable. As hardening, raise ValueError on non-convergence instead of continuing.",
+              "evidence": "for _ in range(32): ... if abs(second[p][q]) <= 1e-15: break — no else-branch handling before the realizability check."
+            }
+          ],
+          "validation": [
+            {
+              "criterion": "T1.3.1-a: arithmetic correctness of component mass, CG and inertia (incl. parallel-axis terms and units) against independently checkable synthetic fixtures",
+              "expected": "Fixtures with hand-checkable analytic results for total mass, combined CG, parallel-axis diagonal and negative-product off-diagonal terms in SI units, and an implementation matching them.",
+              "observed": "I recomputed the fixtures by hand and they agree with the code. Equal masses (3 kg at ±2 m) give Iyy = Izz = 24. Unequal masses (1 kg at the origin, 3 kg at (4,8,12)) give CG (3,6,9) and tensor [[156,-24,-36],[-24,120,-72],[-36,-72,60]], consistent with reduced mass 3/4 × (d²E − ddᵀ). The block 12 kg with sides 2/4/6 gives 52/40/20. The CLI off-axis case gives Ixy = −2. The rotated linear body gives C eigenvalues 3,0,0. The README example gives 2 kg, Iyy = Izz = 2. The source applies I_component + m(r²E − rrᵀ) with off-diagonal −m·rᵢrⱼ, consistent with the stated −∫xy dm convention. The Jacobi rotation formulas are consistent with tan2θ = 2a_pq/(a_qq − a_pp). Translation invariance, order independence, scaling (63 = 7·3²) and extreme-magnitude cases are also covered. The test count (8 + 17 = 25) matches the recorded gate. One gap: no combined intrinsic-plus-offset fixture (low finding).",
+              "status": "pass",
+              "evidence": "Diff: studies/e2-c172s/mass_properties.py calculate_mass_properties; test_mass_properties.py (17 tests); test_build_mass_properties.py (8 tests); recorded gate 'Study tests (studies/e2-c172s): 25 executed, 0 skipped'."
+            },
+            {
+              "criterion": "T1.3.1-b: strict SI input validation (missing/nonfinite/negative/ill-typed values, non-SI units) with actionable diagnostics",
+              "expected": "Rejection of missing fields, NaN/Inf/overflow, nonpositive mass, bool/string/tuple types, unexpected or unit-mismatched fields, duplicate keys and wrong frame, with diagnostics identifying the problem.",
+              "observed": "The rejections are implemented and tested:\n- missing id and missing frame;\n- NaN, Infinity, -Infinity and 1e9999 in the CLI, plus math.nan, math.inf and 10**400 in the core;\n- zero and negative masses;\n- bool, str, tuple and short lists;\n- unknown fields ('extra', 'surprise'), root and nested duplicate keys;\n- wrong schema_version and the 'structural' frame;\n- asymmetric or unphysical tensors;\n- malformed or non-UTF-8 JSON, and a missing file (exit 2, no traceback).\n\nSI units are enforced by an exact schema with unit-named fields (mass_kg, cg_m, inertia_cg_kg_m2) and frame 'body'. Any other unit-labelled key is rejected as unexpected. Value-level unit mislabelling cannot be detected, which is inherent. Most core diagnostics are path-qualified. Diagnostic text is untested, and some messages omit the offending key (low findings).",
+              "status": "pass",
+              "evidence": "Diff: mass_properties.py _number/_tensor/field checks; build_mass_properties.py build_document/_unique_object/_reject_constant/main; tests test_invalid_masses_and_coordinates_rejected, test_empty_malformed_unknown_and_duplicate_fields_rejected, test_wrong_envelope_rejected, test_non_json_constants_and_overflowing_numbers_rejected, test_duplicate_keys_rejected_at_root_and_nested."
+            },
+            {
+              "criterion": "T1.3.1-c: tests run in the shared offline gate and failure propagates (nonzero)",
+              "expected": "The E2 directory is part of the shared gate's study phase, and a failing E2 test makes the gate exit nonzero.",
+              "observed": "PR #27 adds 'studies/e2-c172s' to STUDY_TEST_DIRS. test_mass_study_failure_fails_shared_gate installs a failing E2 fixture and asserts returncode != 0, the E2 phase label in stdout, and the failure text in stderr. The recorded gate at main (after the PR #28 relocation to utils/ci/run.py) shows the E2 phase running 25 of 25 tests with exit 0. The recorded hosted Foundation run on main reports success. The process_exited zombie-handling change to the timeout test is narrowly scoped: it treats only /proc state 'Z' or an absent PID as exited and leaves production cleanup unchanged.",
+              "status": "pass",
+              "evidence": "Diff: utils/ci.py STUDY_TEST_DIRS; utils/test_ci.py test_mass_study_failure_fails_shared_gate and ProcessStateTests; recorded gate output 'GEFLY-STUDY-RESULT {\"discovered\": 25, \"executed\": 25, \"skipped\": 0}', exit=0; hosted run 41357526229 recorded as success."
+            },
+            {
+              "criterion": "T1.3.1-d: no invented aircraft-specific coefficients; synthetic data labelled; no fidelity, M-a, R-SIM-5 or R-AIR-1 acceptance claimed (R-FID-3, R-DATA-2)",
+              "expected": "No aircraft-specific values in code, fixtures or docs. Synthetic data and outputs are explicitly labelled. TODO, DONE, README and FDM-172S text claim only calculation groundwork and leave M-a and TODO 1.3.2–1.3.4 open.",
+              "observed": "All fixtures are abstract round-number or extreme-magnitude bodies with docstrings saying they are synthetic and not aircraft evidence. CLI output carries status 'synthetic_or_user_supplied_not_aircraft_validation'. The study README states it is 'not a Cessna 172S model or M-a acceptance' and lists the remaining M-a gaps. FDM-172S §1.3 says the tool 'supplies no aircraft values and does not complete M-a'. The TODO 1.3.1 text and the DONE Deviations leave sourced inputs, JSBSim mapping and M-a open. The commit 'Refs' line and the README 'supports ... R-AIR-1, R-DATA-2 and R-SIM-5' are traceability references, not acceptance claims. The assurance report shows these requirements as uncovered or planned, with eligibility false.",
+              "status": "pass",
+              "evidence": "Diff: studies/e2-c172s/README.md, docs/design/FDM-172S.md §1.3 addition, docs/TODO.md 1.3.1; build_mass_properties.py status field; DONE 2026-11-01 19:35 Deviations; assurance report criteria table (assure:mvp-r-air-1 / r-sim-5 planned, eligibility false)."
+            }
+          ],
+          "recommendation": "accept",
+          "limitations": [
+            "I ran no checks. All test and gate outcomes are orchestrator-recorded evidence, and hosted CI logs were not supplied.",
+            "The relocated main-state runner (utils/ci/run.py, utils/ci/test_run.py from PR #28) is not in this packet. Failure propagation at main is inferred from PR #27 source plus the recorded main gate output, not from main-state runner source.",
+            "Excluded content was not reviewed: Claude-authored CI code, prior review records under docs/reviews/, pre-existing DONE entries, and base content at 65faaea.",
+            "Full acceptance of SPEC rows R-AIR-1, R-DATA-2, R-SIM-5, R-SIM-6 and R-FID-3 was out of scope and not evaluated. I checked only for overclaiming.",
+            "Floating-point edge-case behavior (Jacobi convergence, the 1e-12 relative tolerance) was reviewed by reading the source, not by execution."
+          ]
+        },
+        "limitations": [
+          "CLI routing and returned model names are evidence, not backend attestation.",
+          "Packet review does not independently execute the packet's test commands."
+        ],
+        "router_exit_code": 0
+      }
+    },
+    {
+      "packet_id": "pr28a",
+      "pr": 28,
+      "range": "aeb5d3f..5cb5b73 (tooling paths)",
+      "criteria_scope": "TODO 1.14 AS1-AS7, TODO 1.15",
+      "external_report": {
+        "status": "completed",
+        "accepted": false,
+        "author_provider": "codex",
+        "reviewer_provider": "claude",
+        "packet": {
+          "path": "packet-pr28a.md",
+          "sha256": "721d4f53e05a0f534fc1066962573f36e3874ef2d0240af4e7cdce674074c31f",
+          "revision": "396553c7dd79fba1e1d5a3099864f945f90883cb",
+          "bytes": 319752
+        },
+        "cli": {
+          "executable": "claude",
+          "version": "2.1.316"
+        },
+        "model_evidence": [
+          "claude-haiku-5-5",
+          "claude-opus-5-5"
+        ],
+        "review": {
+          "quality": [
+            {
+              "severity": "medium",
+              "location": "utils/assure/src/status.ts (extractStatus, DONE `TODO:` clause handling)",
+              "description": "A DONE metadata clause counts as a completion `records` link unless it contains one of remain|remains|future|parent|open|deferred. Wording that is common in this repository, such as 'in progress', 'pending', 'started' or 'retained', still produces a `records` fact. Because `done-missing-record` in graph.ts only checks that some `records` fact exists, a TODO ticked [x] whose only DONE mention says 'in progress' passes the AS2 'completed task lacking an applicable DONE record' check. Expected: only explicit completion wording should create `records`, or non-completion wording should be enumerated more fully. A negative fixture is also expected. Reproduction: DONE body `TODO: 1.1 in progress. Agent: x.` with `- [x] 1.1` in TODO gives no done-missing-record finding.",
+              "evidence": "status.ts: `const relation = /\\b(remain|remains|future|parent|open|deferred)\\b/i.test(clause) ? 'refs' : 'records'`. The packet's DONE 20:40 entry reads 'TODO: 1.14.1 complete; 1.14.2–1.14.4 in progress', and its second clause would emit `records` for 1.14.2–1.14.4. status.test.ts has no 'in progress' case."
+            },
+            {
+              "severity": "medium",
+              "location": "utils/assure/src/evidence.ts (inspectAircraft)",
+              "description": "Source applicability is copied into an `applicability` attribute but is never compared with the aircraft or manifest. `dataClass` comes only from the inherited `status` field. A value with status `sourced` whose citation points to a generic 172P source is therefore classed and linked as sourced evidence for the 172S manifest. AS3 explicitly requires not treating a generic 172P datum as sourced 172S evidence. No guard or negative fixture covers this.",
+              "evidence": "evidence.ts: `attrs: { ... applicability: source.applicability ... }` is never read again. `dataClass: status` comes from `context.status`. evidence.test.ts only tests the manifest_id mismatch, not applicability."
+            },
+            {
+              "severity": "low",
+              "location": "utils/assure/src/graph.ts (upstream inventory check)",
+              "description": "The integrity check verifies only the files listed in UPSTREAM.json. A file added under utils/assure/upstream/ but not listed would not be byte-checked. It would also be excluded from current scanning by `excluded`. The inventory's file count or completeness against the directory is not enforced.",
+              "evidence": "graph.ts loop `for (const entry of inventory.files)` has no reverse check of `snapshot.paths` under `inventoryPrefix`. The `excluded` regex includes `(?:utils\\/)?assure\\/upstream\\/`."
+            },
+            {
+              "severity": "low",
+              "location": "utils/assure/src/graph.ts (problem sort, markdownReport truncation)",
+              "description": "Problems are sorted by the severity string, so the order is error < note < warning. markdownReport shows only the first 200 findings. Once findings exceed 200, the low-value notes are shown and the warnings are truncated. Expected order: error, warning, note.",
+              "evidence": "graph.ts: ``.sort((a, b) => `${a.severity}:...`.localeCompare(...))`` and `graph.problems.slice(0, 200)`."
+            },
+            {
+              "severity": "low",
+              "location": "utils/assure/src/graph.ts (localeCompare ordering)",
+              "description": "Problems, nodes and inputHash ordering use `String.prototype.localeCompare`, which depends on ICU and locale. AS1 and AS7 require deterministic, compatible output across local and hosted environments; evidence.ts already uses a code-unit `compare` helper that avoids this. Using it everywhere would remove the locale dependence.",
+              "evidence": "graph.ts uses `localeCompare` for facts, problems, nodes and reads. evidence.ts defines `const compare = (a, b) => a < b ? -1 : a > b ? 1 : 0`."
+            },
+            {
+              "severity": "low",
+              "location": "utils/assure/src/snapshot.ts (history and path limits)",
+              "description": "Reaching 5,000 commits or 12,000 paths makes every check throw InputError (exit 2), and the remedy offered is 'narrow repository'. Once the repository grows past the limit, the shared gate fails permanently. The code also spawns one `git diff-tree` per commit, each with its own 10 s timeout. A documented upgrade path or a bounded-window mode would avoid a future hard break.",
+              "evidence": "snapshot.ts: `if (commits.length >= 5000) throw new InputError('history limit reached; narrow repository before checking')` and a per-commit `diff-tree` loop."
+            },
+            {
+              "severity": "low",
+              "location": "utils/ci/test_run.py (test_missing_node_is_reported_skip_not_pass)",
+              "description": "The test name says a missing Node is reported as a skip rather than a pass. It now asserts that the gate fails because assurance requires Node. Without Node the render phase still prints 'skipped', so `--require-node` no longer changes the overall exit status. The name and that flag's semantics are misleading for maintainers.",
+              "evidence": "test_run.py hunk changes the assertion to `assertNotEqual(result.returncode, 0)` and `Foundation CI: FAILED.` but keeps the old test name."
+            },
+            {
+              "severity": "low",
+              "location": "utils/README.md (shared gate description)",
+              "description": "The README says the required phases 'check the aircraft/source data' and run assurance 'alongside existing aircraft validators'. The supplied run.py hunks and the recorded gate output show no distinct aircraft-data validation phase. Either such a phase runs in unshown code, possibly inside the tool tests, or the documentation overclaims.",
+              "evidence": "Recorded phases: Scaffold, Offline tool tests, Study tests ×2, Synthetic render, Assurance, Assessment airspeed, whitespace. None of them is an aircraft-data validation phase."
+            }
+          ],
+          "validation": [
+            {
+              "criterion": "AS1 Rebuildable lineage with honest coverage",
+              "expected": "Deterministic graph from a revision or worktree, retaining identity, source, revision, relation and certainty. Requirements, TODO/DONE/GAPS and commit refs are extracted. Py/JS/MJS/C++ are at least file-level objects, JSON fields have stable pointers, and no fetching occurs.",
+              "observed": "buildGraph emits file-level objects for the CODE extensions, lexical test identities, RFC 6901 JSON field nodes and commit/merge change edges, with explicit file-level limitations. Determinism is tested by two builds of the same snapshot and by a selected-revision read. Ordering uses locale-dependent localeCompare (low finding).",
+              "status": "pass",
+              "evidence": "graph.ts buildGraph; graph.test.ts tests 'AS1 deterministic graph...', 'AS1 code files...', 'AS1 merge commit...'; snapshot.test.ts revision/merge tests; recorded 72/72 assurance tests passed."
+            },
+            {
+              "criterion": "AS2 Plan, decision and record integrity",
+              "expected": "Detect duplicates, undefined IDs, completed-but-blocked tasks, completed tasks lacking an applicable DONE record and malformed trailers. Partial answers are not resolved, and historical defects stay distinguishable.",
+              "observed": "Duplicate, dangling, completed-blocked, DONE order/heading/body/metadata, partial-question and legacy-trailer warnings are implemented and tested. However, a DONE clause saying 'in progress' or 'pending' counts as an applicable completion record, so a ticked task with only such a mention passes the missing-record check.",
+              "status": "fail",
+              "evidence": "status.ts relation keyword list; graph.ts done-missing-record; DONE 20:40 text '1.14.2–1.14.4 in progress'; no negative fixture in status.test.ts."
+            },
+            {
+              "criterion": "AS3 Aircraft and JSON provenance",
+              "expected": "Values linked by pointer to source/revision/page, units, applicability and rights. Unknown and unvalidated status preserved. Generic 172P data not treated as sourced 172S evidence. Diagnostics for missing references, mismatched versions and malformed pointers.",
+              "observed": "Source/page/revision/rights links, unknown/unvalidated notes, revision-mismatch and manifest-identity errors are implemented. Applicability is stored but never evaluated, so the 172P/172S distinction rests entirely on the data's status field and has no guard or fixture. The aircraft data files themselves are not in the packet.",
+              "status": "fail",
+              "evidence": "evidence.ts inspectAircraft; evidence.test.ts 'known aircraft values retain...' covers only the manifest_id mismatch; the packet excludes data/aircraft JSON content."
+            },
+            {
+              "criterion": "AS4 Versioned run and acceptance evidence",
+              "expected": "Schema-versioned records with stable IDs, requirement refs, mode, revision, procedure, result and all seven input roles pinned by hash or selector, or explained. Manual/source records are labelled, and nothing is inferred from test titles.",
+              "observed": "parseCatalog enforces exact fields, schemaVersion 1, ID grammar, seven-role coverage, hash pins and RFC 6901 selectors. It requires manual_review declarations, and acceptance needs explicit records. Lexical tests are labelled 'not execution'.",
+              "status": "pass",
+              "evidence": "evidence.ts parseCatalog; FORMAT.md; evidence.test.ts schema/hash/path/review tests; catalog.json seeded records."
+            },
+            {
+              "criterion": "AS5 Freshness and invalid acceptance rejection",
+              "expected": "Reject accepted claims backed by missing, malformed, failed, skipped, blocked, not-evaluated or stale evidence, including transitive dependencies. Whole-input hashes are checked, not just endpoints. Calibration and holdout must be disjoint, spent holdouts are refused, and shared source files are allowed. Negative fixtures exist.",
+              "observed": "Implemented with transitive resolve(), full-file pin hashing, terminal-outcome promotion checks, fixture overlap/spent/freeze checks and post-resolution fixture acceptance. Negative fixtures cover each failure mode. All 14 seeded criteria are planned and none are accepted.",
+              "status": "pass",
+              "evidence": "evidence.ts resolve/criterion/fixture blocks; evidence.test.ts outcome, stale-input, cycle, fixture and terminal tests; recorded report shows 14 planned, eligibility false."
+            },
+            {
+              "criterion": "AS6 Useful trace, report and change impact",
+              "expected": "Documented trace, report, diff and impact commands with JSON output. The report separates planned work, claims, outcomes, certainty and stale/missing items. Impact reaches JSON fields and claims, unknown edges are not an all-clear, and nothing is posted automatically.",
+              "observed": "The CLI implements check, report, trace, diff, impact and lineage with JSON output and documented exit codes. Impact uses conservative same-file closure and reports `unknown`. The report has separate tables. Severity sorting can truncate warnings before notes (low).",
+              "status": "pass",
+              "evidence": "cli.ts; graph.ts trace/impact/diffGraphs/markdownReport; cli.test.ts and graph.test.ts AS6 tests; utils/assure/README.md."
+            },
+            {
+              "criterion": "AS7 Shared offline gate and safe operation",
+              "expected": "Same local and hosted entry point with compatible failure status, callable from any directory. No installs, fetches, browser, simulator or providers, and no source mutation. Safe handling of malformed, oversized, cyclic and escaping inputs. Offline tests on supported runtimes.",
+              "observed": "run.py runs assurance tests (per-file nonempty, zero-skip summaries) and `check`. The hosted workflow uses the same command with pinned setup-node (Node 26). GIT_* and NODE_* variables are stripped, and Git runs with no lazy fetch, no prompt and no optional locks. Path, size, symlink and cycle limits are tested. Local exit 0 and hosted success are recorded. The Node 24.2 floor itself is not exercised; observed runtimes were 24.22 and 26.",
+              "status": "pass",
+              "evidence": "run.py run_assurance; foundation.yml; snapshot.ts git(); cli.test.ts unrelated-caller test; test_run.py AssuranceRuntimeTests and fake-node negatives; recorded gate output and hosted run 41357526229 (orchestrator-reported)."
+            },
+            {
+              "criterion": "TODO 1.15 Relocation under utils/assure and utils/ci with retained just commands, complete test discovery, older-revision inspection, upstream byte pins and ignored-output boundaries",
+              "expected": "Tools moved, `just` recipe names unchanged, recursive Python and assurance test discovery, pre-move snapshots readable without worktree fallback, 13 pinned upstream files byte-checked, and outputs confined to ignored utils/assure/out.",
+              "observed": "Files are renamed with ROOT=parents[2]. The justfile keeps check/ci/test-tools/reqs and adds assure/assure-test/lineage. utils/ci/__init__.py and relative imports allow discovery, and 141 Python tests ran. The graph.ts old-layout reader is tested for committed-only snapshots and worktree refusal. The inventory lists 13 files with an integrity test. .gitignore and the lineage ignore/symlink checks are tested. Inventory completeness is not enforced (low).",
+              "status": "pass",
+              "evidence": "Diff renames; justfile hunk; graph.ts inventory logic; graph.test.ts 'AS8 runtime inventory...'; cli.test.ts lineage test; .gitignore hunk; recorded 141 tool and 72 assurance tests."
+            },
+            {
+              "criterion": "Overclaim check against traced SPEC rows (R-ASR-1..5, R-BOOT-3)",
+              "expected": "The bounded tasks do not claim acceptance of the broader SPEC rows.",
+              "observed": "DONE entries and the report state bounded tooling acceptance only, list all R-ASR rows as planned/uncovered, and record zero accepted MVP criteria and no fidelity claims. The utils/README aircraft-validator phase claim could not be confirmed (low).",
+              "status": "pass",
+              "evidence": "DONE 21:05 Deviations; recorded report Implementation relationships table; TODO 1.14/1.15 text."
+            }
+          ],
+          "recommendation": "changes_required",
+          "limitations": [
+            "Only part a paths were reviewed; AS8 and documentation/status reconciliation are in part b.",
+            "Claude-authored pre-relocation function bodies in utils/ci/run.py and test_run.py are excluded, and unchanged context of run.py (run_tests, check_whitespace, run_render_check) is not supplied.",
+            "Aircraft data JSON, docs/SPEC.md body, TODO/GAPS/DONE full text, review records and app/ sources were not supplied. The AS3 judgement rests on adapter code and tests only.",
+            "The justfile header (e.g. `set positional-arguments`) is not shown, so the `just assure *args` and \"$1\" recipes were not fully verifiable.",
+            "All check results are orchestrator-recorded. Hosted logs are not included, and the gate output was condensed with assurance findings elided. I ran nothing.",
+            "The Node 24.2 minimum is documented but not observed; the recorded runtimes are Node 24.22.1 locally and 26 on the hosted runner."
+          ]
+        },
+        "limitations": [
+          "CLI routing and returned model names are evidence, not backend attestation.",
+          "Packet review does not independently execute the packet's test commands."
+        ],
+        "router_exit_code": 1
+      }
+    },
+    {
+      "packet_id": "pr28b",
+      "pr": 28,
+      "range": "aeb5d3f..5cb5b73 (documentation/status paths)",
+      "criteria_scope": "TODO 1.14 AS8, 1.14.1, 1.14.4, 1.15 docs",
+      "external_report": {
+        "status": "blocked",
+        "accepted": false,
+        "author_provider": "codex",
+        "reviewer_provider": "claude",
+        "packet": {
+          "path": "packet-pr28b.md",
+          "sha256": "055a328d31bda98a02b9f57fd1874202fd788c67811383dd06c57b95bdcca29b",
+          "revision": "396553c7dd79fba1e1d5a3099864f945f90883cb",
+          "bytes": 216092
+        },
+        "cli": {
+          "executable": "claude",
+          "version": "2.1.316"
+        },
+        "model_evidence": [
+          "claude-haiku-5-5",
+          "claude-opus-5-5"
+        ],
+        "review": {
+          "quality": [
+            {
+              "severity": "medium",
+              "location": "docs/design/EXERCISE-01.md, section 'Proposed SPEC/EVAL edits (not applied)'",
+              "description": "An evaluation ID is now misassigned. The proposal still offers 'New EVAL section (E7 or a dedicated E14) \"Does Exercise 01 assess what it claims?\"'. In the same PR, EVAL E14 became 'Does bounded assurance reject stale or unsupported acceptance?'. AS8 asks for misassigned entries to be reconciled. The PR edited the neighbouring bullet text but kept the conflicting ID. Expected: refer to E7 or to an unallocated ID such as E15. Reproduction: compare the EXERCISE-01 bullet with the new docs/EVAL.md E14 heading.",
+              "evidence": "Packet diff docs/design/EXERCISE-01.md hunk @@ -260,34 +263,44 @@ (unchanged 'E7 or a dedicated E14' line) vs docs/EVAL.md hunk @@ -228,8 +228,22 @@ adding '## E14. Does bounded assurance ...'"
+            },
+            {
+              "severity": "medium",
+              "location": "docs/EVAL.md E0-CI criterion CI5 (and CI2) vs docs/SBOM.md / README.md",
+              "description": "The current CI safety prose contradicts itself after the stack and assurance change. SBOM now says the workflow sets up Node 26 with actions/setup-node v7.1.0, and README says hosted CI uses 'an explicit Node 26 line'. EVAL CI5 still says gate execution uses 'the runner's preinstalled Node.js after checkout/interpreter setup'. CI2 still lists the phases without the assurance phase that the gate now runs. The PR edited CI1 in the same table, so this is touched, current text, not a historical record. Expected: update CI5 and CI2 to the setup-node and assurance reality, or mark them explicitly as the historical scope of TODO 1.1.1.",
+              "evidence": "docs/EVAL.md hunk @@ -15,17 +15,17 @@ (CI1 changed; CI2/CI5 unchanged context); docs/SBOM.md hunks @@ -53,26 +53,26 @@ and 'Assurance toolchain'; README.md hunk @@ -26,58 +26,81 @@"
+            },
+            {
+              "severity": "medium",
+              "location": "docs/design/BRIEFING.md §5 'Proposed SPEC and SEC edits'",
+              "description": "Two open product proposals were rewritten without a recorded decision. 'SPEC new R-BRIEF-2 (proposed)' became 'SPEC R-BRIEF-1 (proposed additional criterion)'. 'SPEC new R-COMM-2 (proposed)' became 'SPEC R-COMM-1 (proposed additional criterion)'. Proposing a new requirement is a different product option from extending an existing one. This looks like a way to silence the undefined-ID diagnostic, not a decision. AS8 requires genuinely open decisions to be preserved. Expected: keep the proposal's meaning, for example by labelling the IDs as proposed and not yet declared, or by excluding them through the extractor or catalog. Any change of proposal content should be recorded as a decision.",
+              "evidence": "Packet diff docs/design/BRIEFING.md hunk @@ -409,19 +409,19 @@; no GAPS/DONE record in packet authorizing the change"
+            },
+            {
+              "severity": "low",
+              "location": "docs/design/FDM-172S.md §7 Q-11",
+              "description": "Q-11 asked two things: 'Accept P-1..P-15 and the forward-CG holdout?'. It is now marked 'Resolved to working P-1..P-15 proposals under Q21', but the forward-CG holdout part is dropped. In §3 the forward-CG holdout is still 'Holdout (proposal)'. This treats a partial answer as resolving the whole question, against AS2/AS8. Expected: mark Q-11 as partly resolved and keep the forward-CG holdout open.",
+              "evidence": "docs/design/FDM-172S.md hunk @@ -283,24 +293,28 @@ (removed text 'Q-11 Accept P-1..P-15 and the forward-CG holdout?'); §3 table row 'Holdout (proposal) | POH stall speeds, forward CG'"
+            },
+            {
+              "severity": "low",
+              "location": "docs/RESULTS.md E14 entry",
+              "description": "The E14 result is scoped to implementation checkpoint 2900ca38 and says only that 'Final record-only changes receive affected renewal'. E14 requires inspecting the final merge result and recording the actual local and hosted outcomes in RESULTS. No RESULTS entry records the relocated layout (TODO 1.15) or the integrated main revision. Those outcomes appear only in DONE prose and in this packet's orchestrator-run checks. Expected: a RESULTS record of the integrated revision's local and hosted outcomes, or an explicit pending statement.",
+              "evidence": "docs/RESULTS.md hunk @@ -196,8 +196,69 @@ ('implementation checkpoint is 2900ca38'); EVAL E14 'Inspect the final merge result ... Record actual local/hosted outcomes ... in RESULTS'"
+            },
+            {
+              "severity": "low",
+              "location": "docs/SBOM.md 'Repository-tool CI inventory'; README.md `just ci` comment",
+              "description": "Two descriptions of the shared runner are now outdated. SBOM says it checks 'scaffold structure, offline standard-library tool tests and whitespace'. The README recipe comment says 'scaffold, repository-tool tests, tracked whitespace'. The PR touched both locations, but neither mentions the study, render and assurance phases. The README prose further down is correct.",
+              "evidence": "docs/SBOM.md hunk @@ -26,17 +26,17 @@; README.md 'Local commands' block; recorded gate output showing Study/Synthetic render/Assurance phases"
+            },
+            {
+              "severity": "low",
+              "location": "docs/design/EXERCISE-01.md Open questions item 6",
+              "description": "The struck-through answer history ('~~Extract the S17 Fig. 5-1 airspeed calibration~~ extracted (PR #17, 2026-11-01)') was replaced outright instead of being kept with a newer status. That removes the dated provenance of the earlier resolution.",
+              "evidence": "docs/design/EXERCISE-01.md hunk @@ -260,34 +263,44 @@"
+            },
+            {
+              "severity": "low",
+              "location": "docs/BOOT.md 'Options' note and repository tree",
+              "description": "The new note says the upstream example paths keep Propeller's layout. However, Gefly-specific `utils/assure/` and `utils/ci/` lines were inserted into that same tree, while `<subproject>/ (here assure/, semgit/)` stayed. The tree now mixes the two layouts. Expected: keep one layout in the tree, or label which lines are Gefly-specific.",
+              "evidence": "docs/BOOT.md hunks @@ -115,16 +115,19 @@ and @@ -211,20 +214,22 @@"
+            }
+          ],
+          "validation": [
+            {
+              "criterion": "AS8 — Record upstream commit/license and local adaptations",
+              "expected": "Pinned upstream commit, license and local adaptation boundary recorded",
+              "observed": "SBOM records Propeller core GPL-3.0-or-later at 99dc6005…, per-file UPSTREAM.json and notices, and adapters tested separately. RESULTS and DONE record 13 byte-preserved files. The upstream inventory and notices themselves are part-a paths.",
+              "status": "pass",
+              "evidence": "docs/SBOM.md 'Assurance toolchain'; docs/RESULTS.md E14; DONE 21:05. UPSTREAM.json and THIRD_PARTY_NOTICES.md are not in part b."
+            },
+            {
+              "criterion": "AS8 — Reconcile selected JSBSim/stack vs old pending prose",
+              "expected": "Current documents state the Q17 selection; old 'not selected/candidate' prose retired",
+              "observed": "README, ARCH, SBOM, SPEC, EVAL E1, ROAD, TODO 1.2.x, app/packages/tests READMEs and the study READMEs are updated. 'JSBSim has not been selected' and 'JSBSim is a candidate' were removed. Residual CI/Node prose drift is reported as a quality finding.",
+              "status": "pass",
+              "evidence": "Diff hunks for README.md, docs/ARCH.md, docs/SBOM.md, docs/SPEC.md, docs/EVAL.md, docs/ROAD.md, docs/TODO.md; recorded assurance check reporting decision guards and 0 errors"
+            },
+            {
+              "criterion": "AS8 — Reconcile runway/instructor decisions",
+              "expected": "RWY 26 / right-hand circuit / no instructor reviewer reflected consistently; no unwarranted training claims",
+              "observed": "EXERCISE-01, ROAD phase 2, TODO 0.10.2 and 1.5, and RESULTS are consistent with each other. Stronger training claims remain gated. The GAPS Q7 answer text itself is base content and not in the packet.",
+              "status": "pass",
+              "evidence": "docs/design/EXERCISE-01.md, docs/ROAD.md, docs/TODO.md hunks; limitation: GAPS Q7 not supplied"
+            },
+            {
+              "criterion": "AS8 — Delivered ASI and cruise/glide/fuel data vs remaining blockers",
+              "expected": "Delivered data no longer described as missing; real remaining blockers kept",
+              "observed": "The data README, EXERCISE-01 and FDM-172S now cite the available POH and performance values and keep the remaining blockers (percent-power basis, max-speed/ceiling, flaps 20°, VFE conflict, case freeze). Q-11 is over-resolved; see quality finding.",
+              "status": "pass",
+              "evidence": "data/aircraft/c172s-classic/README.md, docs/design/EXERCISE-01.md, docs/design/FDM-172S.md hunks; assurance report lists performance-values.json and poh-values.json"
+            },
+            {
+              "criterion": "AS8 — Reconcile duplicated/misassigned progress entries (incl. restored FDM DONE entry, normalized legacy records)",
+              "expected": "Inspectable evidence that the restored and normalized DONE entries match their recorded source revisions without altered observations",
+              "observed": "DONE 20:40 and 21:05 claim the FDM entry was restored from the last correct main revision and two legacy records were normalized. Those DONE edits are excluded from the packet, which supplies only the new entries. Only the indirect assurance-integrity pass is available.",
+              "status": "blocked",
+              "evidence": "Missing evidence: docs/DONE.md diff for the restored/normalized entries and the source revision used for restoration"
+            },
+            {
+              "criterion": "AS8 — Preserve historical/raw records and genuinely open decisions",
+              "expected": "History and open proposals preserved; no silent recasting of open decisions",
+              "observed": "Historical BOOT and upstream paths are kept with a note, and GAPS Q22 was added without altering earlier answers. However, the BRIEFING R-BRIEF-2/R-COMM-2 proposals were recast, FDM Q-11 was over-resolved, and EXERCISE-01 struck-through history was removed.",
+              "status": "fail",
+              "evidence": "docs/design/BRIEFING.md §5, docs/design/FDM-172S.md §7, docs/design/EXERCISE-01.md open question 6 hunks"
+            },
+            {
+              "criterion": "AS8 — Separate completed document/decision work from unimplemented runtime; no compound ticking",
+              "expected": "Parents stay open while substantive parts remain; runtime gaps stated",
+              "observed": "TODO 1.2 and 1.2.2 stay open while 1.2.3 is ticked. 1.3 stays open, with 1.3.2–1.3.4 added. 1.5 stays open, with 1.5.1 added. README, ARCH and SPEC state that no product simulator or 172S model exists. 1.14 is ticked only with all subtasks ticked.",
+              "status": "pass",
+              "evidence": "docs/TODO.md hunk @@ -12,49 +12,59 @@; README.md status; docs/SPEC.md 'Outside the current delivery'"
+            },
+            {
+              "criterion": "AS8 — Show representative positive/negative fixtures, review findings and current integrated checks",
+              "expected": "Fixtures, findings summary and current integrated check evidence visible",
+              "observed": "RESULTS E14 summarizes the real-Node suite fixtures and the seven quality findings. The orchestrator-run gate at 396553c passed: 141 tool, 25 E2, 14 E1 (+9 skipped), 72 assurance and 11 airspeed tests, with 0 integrity errors. Hosted run 41357526229 passed all three jobs. RESULTS does not record the integrated revision (low finding). The fixture contents are in part a.",
+              "status": "pass",
+              "evidence": "docs/RESULTS.md E14; packet 'Recorded checks' section"
+            },
+            {
+              "criterion": "AS8 — Reconciliation not claimed as extractor understanding of every sentence",
+              "expected": "Explicit limits on what the graph or checks establish",
+              "observed": "ARCH, SEC, SDLC, RESULTS and the assurance report state that the graph does not verify source truth, numerical adequacy or every prose contradiction.",
+              "status": "pass",
+              "evidence": "docs/ARCH.md 'Assurance tooling'; docs/RESULTS.md E14 final paragraph; report header"
+            },
+            {
+              "criterion": "AS8 — Quality, validate and batched peer remain independent; current revision/packet evidence and missing coverage explicit",
+              "expected": "Independence rules documented; peer coverage gaps stated",
+              "observed": "AGENTS and SDLC keep the roles separate. DONE 22:14 states that peer review is pending for the integration and that earlier peer reports cover only their recorded revisions. TODO 0.19 remains open.",
+              "status": "pass",
+              "evidence": "AGENTS.md 'Assurance at integration'; docs/SDLC.md new section; DONE 22:14 Deviations"
+            },
+            {
+              "criterion": "TODO 1.14.1 — Record adoption, frozen criteria, source-of-truth rules and exclusive implementation ownership",
+              "expected": "All four elements recorded",
+              "observed": "Adoption (GAPS Q22), criteria (docs/assure/SPEC.md AS1–AS8, SPEC R-ASR-1..5) and source-of-truth rules (assure SPEC 'Scope and source of truth') are present. No part-b document states exclusive implementation ownership of the assurance runtime. SDLC names a single integration owner only for shared records. This may be in ASSR.md, a part-a path.",
+              "status": "blocked",
+              "evidence": "docs/GAPS.md Q22, docs/SPEC.md 'Assurance acceptance', docs/assure/SPEC.md. Missing: an ownership record in supplied part-b content."
+            },
+            {
+              "criterion": "TODO 1.14.4 — Reconcile known status drift, integrate offline local/CI checks, record independent quality/validation and scoped peer disposition",
+              "expected": "Ticked status supported by delivered reconciliation and recorded checks/reviews",
+              "observed": "The local and hosted integrated checks are recorded as passing, and the review records are referenced (withheld by design). However, residual drift remains in touched files (E14 ID collision, CI5 Node prose), and the progress-entry restoration cannot be verified.",
+              "status": "fail",
+              "evidence": "Quality findings 1–3; blocked AS8 progress-entry row; packet 'Recorded checks'"
+            },
+            {
+              "criterion": "TODO 1.15 documentation consistency (paths, just commands)",
+              "expected": "Current docs consistently use utils/ci/run.py, utils/ci/check.py, utils/assure/, docs/assure/ and unchanged just recipe names",
+              "observed": "README, ARCH, BOOT, SBOM, EVAL CI1, the data README and the e1-jsbsim README all use the new paths and the unchanged `just` names. Remaining issues are descriptive (BOOT tree mixing, gate-scope comments).",
+              "status": "pass",
+              "evidence": "Diff hunks README.md, docs/ARCH.md, docs/BOOT.md, docs/SBOM.md, docs/EVAL.md, data/aircraft/c172s-classic/README.md, studies/e1-jsbsim/README.md"
+            },
+            {
+              "criterion": "Overclaiming check against traced SPEC rows R-ASR-1..5 / R-BOOT-3",
+              "expected": "Bounded tasks do not claim acceptance of the broader SPEC rows",
+              "observed": "The report lists R-ASR-1..5 as planned/uncovered. TODO, DONE and RESULTS limit the claims to bounded tooling, and the 14 MVP criteria stay planned with zero accepted.",
+              "status": "pass",
+              "evidence": "Recorded assurance report 'Implementation relationships'; DONE 21:05 Deviations; RESULTS E14"
+            }
+          ],
+          "recommendation": "blocked",
+          "limitations": [
+            "Part b only: implementation, fixtures, justfile, workflow, docs/assure/ASSR.md, UPSTREAM.json and notices are evaluated in part a and were not inspected here.",
+            "Pre-existing and restored docs/DONE.md content, docs/reviews/** and docs/input/** were withheld. The progress-entry reconciliation and review findings could not be verified directly.",
+            "Base-content decision records (GAPS Q5, Q7, Q17, Q18, Q21) were not supplied. Consistency was checked against the supplied documents' own citations of them.",
+            "Study result claims (reference-Mac digest match, Cesium timings) were not checked against raw JSON, which was not supplied.",
+            "All check outputs are orchestrator-recorded evidence; this review executed nothing.",
+            "The diff covers aeb5d3f..5cb5b73. Later main changes (PR #29/#30) appear only through the recorded check output."
+          ]
+        },
+        "limitations": [
+          "CLI routing and returned model names are evidence, not backend attestation.",
+          "Packet review does not independently execute the packet's test commands."
+        ],
+        "diagnostic": "review_blocked",
+        "router_exit_code": 2
+      }
+    },
+    {
+      "packet_id": "pr30",
+      "pr": 30,
+      "range": "5cb5b73..a450894",
+      "criteria_scope": "TODO 2.0",
+      "external_report": {
+        "status": "blocked",
+        "accepted": false,
+        "author_provider": "codex",
+        "reviewer_provider": "claude",
+        "packet": {
+          "path": "packet-pr30.md",
+          "sha256": "00f756daea99f794e0e02c3bc9de3802b6b7a18d3574f1af1b9970ebf78d9839",
+          "revision": "396553c7dd79fba1e1d5a3099864f945f90883cb",
+          "bytes": 128461
+        },
+        "cli": {
+          "executable": "claude",
+          "version": "2.1.316"
+        },
+        "model_evidence": [
+          "claude-haiku-5-5",
+          "claude-opus-5-5"
+        ],
+        "review": {
+          "quality": [
+            {
+              "severity": "medium",
+              "location": "docs/SBOM.md (candidate table, CesiumJS 1.146.0 row)",
+              "description": "The CesiumJS row was changed to say it was 'Adopted through the application lockfile for the local prototype'. CesiumJS is not in app/package.json or app/package-lock.json, and the app imports only three. Because the SBOM records a dependency that is not present, the inventory is wrong and claims more than was delivered. Expected: CesiumJS stays 'Not adopted' (study-only, CDN without SRI), and only three.js is recorded as adopted. To reproduce, compare the SBOM row with the lockfile summary (76 entries, no 'cesium' package) and package.json dependencies (three only). The SBOM's own new section also says 'CesiumJS and MapLibre integration remain future work', which contradicts the row.",
+              "evidence": "Diff docs/SBOM.md hunk @@ -123,18 +129,18 @@ (CesiumJS row) vs. same file's new 'Experimental browser application' paragraph; app/package.json dependencies; packet lockfile summary"
+            },
+            {
+              "severity": "medium",
+              "location": "app/tests/smoke.mjs (missing-engine check); app/src/session.ts (error paths)",
+              "description": "The 'missing engine' smoke check simulates a missing runtime by aborting the request for worker.js. In real use the runtime is missing in a different way: worker.js is a tracked file that loads fine, and the generated dist/jsbsim.mjs and dist/jsbsim.wasm are absent (the Vite middleware returns 404 for them). The test never exercises that case. The smoke script also refuses to run unless dist/jsbsim.wasm already exists. Depending on how the worker handles a failed module or WASM load, which this packet does not show, the user may see 'JSBSim stopped: <worker message>' with no build hint, or wait up to 30 s for the load timeout. The documented failure mode is therefore unverified. Expected: a check that serves worker.js but returns 404 for dist/jsbsim.mjs or jsbsim.wasm, and asserts a prompt error that mentions `just build-flight-engine`.",
+              "evidence": "smoke.mjs: `missing.route('**/studies/e1-browser/sim/worker.js', route=>route.abort())` and the initial `access(.../dist/jsbsim.wasm)` precondition; vite.config.ts allowlist/404 path; session.ts `m.type === 'error'` branch and LOAD_TIMEOUT_MS = 30_000"
+            },
+            {
+              "severity": "medium",
+              "location": "justfile build-flight-engine; vite.config.ts runtimeRoot; app/tests/smoke.mjs",
+              "description": "The launch path depends on studies/e1-browser/sim/build.sh writing dist/jsbsim.{mjs,wasm} and build-info.json under studies/e1-browser/sim/dist. The justfile passes output/flight/engine-build as the build directory, and the middleware serves from studies/e1-browser/sim/dist. build.sh is not in the packet, so nothing supplied shows that `just build-flight-engine` produces the files `just fly` serves. Neither CI job builds the engine or runs test:browser. Expected: supplied build-script evidence or a recorded smoke run that ties the two together.",
+              "evidence": "justfile diff (build-flight-engine passes output/flight/engine-build); vite.config.ts `runtimeRoot = resolve(..., '../studies/e1-browser/sim')`; workflow browser-application job runs only `npm ci`, `build`, `test`; recorded checks contain no test:browser output"
+            },
+            {
+              "severity": "low",
+              "location": "app/src/style.css @media(max-width:1100px)",
+              "description": "On viewports up to 1100 px wide, `.model-label{display:none}` hides the header label 'JSBSim · c172x research model'. The header still shows 'FRANKFURT / EGELSBACH' with coordinates and a live dot. The generic-model notice then appears only inside the collapsed 'Model & scenery limits' panel, and the footer only says 'not validated for training'. This weakens the always-visible labelling that the model is generic research data. Expected: keep a short generic-model label visible at every supported width.",
+              "evidence": "style.css first media query `.model-label{display:none}`; main.ts topbar markup and `#limitations` hidden by default"
+            },
+            {
+              "severity": "low",
+              "location": ".github/workflows/foundation.yml browser-application job",
+              "description": "`npm --prefix app ci` runs dependency lifecycle scripts (for example esbuild's postinstall) in CI. The read-only token, pinned actions and lockfile integrity limit the risk. Adding `--ignore-scripts`, or recording why the scripts are needed, would match the SEC.md supply-chain posture. No automated check confirms that the production bundle (app/dist) contains no runtime/model assets. Exclusion currently holds only because the Worker URL is a plain string and the engine is never built in CI.",
+              "evidence": "workflow diff 'Install locked browser dependencies'; main/session.ts `new Worker('/studies/e1-browser/sim/worker.js', ...)`; docs/SEC.md new section claims exclusion"
+            },
+            {
+              "severity": "low",
+              "location": "app/package-lock.json (summary)",
+              "description": "The lockfile contains `@napi-rs/lzma-linux-x64-gnu@1.5.1` (optional, dev) for a single platform. No parent `@napi-rs/lzma` entry or obvious direct-dependency source appears in the summary. Its provenance should be confirmed, because the SBOM states that the exact transitive inventory lives in this file.",
+              "evidence": "Packet lockfile summary entry list"
+            }
+          ],
+          "validation": [
+            {
+              "criterion": "T2.0-a (R-REUSE-1, R-SIM-2): real JSBSim worker owns fixed 1/120 s dynamics; no replacement UI physics or scripted fallback; render rate does not change the simulation step",
+              "expected": "The app delegates stepping to the JSBSim worker at dt 1/120 s, has no local dynamics or fallback, and does not couple render frame time to stepping",
+              "observed": "session.ts sends `init` with `dt_s: 1/120`, `aircraft: 'c172x'`, then `run`/`pause`. The app contains no integration of state; it only renders the latest worker state. Every failure path calls fail() with no fallback. Render dt in animate() affects only the wall-clock throttle slew for W/S, not stepping. The session test asserts dt_s 1/120 and the worker URL. The worker's internal stepping is pre-existing base content and is not supplied, and no different-render-rate fixture exists (none is claimed).",
+              "status": "pass",
+              "evidence": "app/src/session.ts initialize()/run()/fail(); app/src/main.ts animate(); app/src/session.test.ts test 1"
+            },
+            {
+              "criterion": "T2.0-b (R-SIM-1, R-UX-1): documented local launch path (`just build-flight-engine`, `just fly`) reaches a controllable flight; missing runtime / WebGL failure reported",
+              "expected": "Evidence that the documented commands produce and serve the runtime and reach controllable flight, plus visible reporting of runtime and WebGL failures",
+              "observed": "The commands and README instructions are present. The WebGL-failure path and notice are implemented. build.sh is not supplied, so the build output location cannot be tied to the served dist/ path. No smoke or browser run output is supplied: the local gate does not test app/, and hosted CI runs only build and mock-worker tests. The missing-runtime test covers a blocked worker.js, not the realistic unbuilt-engine case.",
+              "status": "blocked",
+              "evidence": "justfile, vite.config.ts, app/README.md; recorded checks contain no test:browser output; build.sh absent from packet"
+            },
+            {
+              "criterion": "T2.0-c (R-INPUT-1): keyboard/touchpad input with focus release; pause/restart",
+              "expected": "Keyboard and pointer controls; inputs neutralized on focus loss or editable focus; pause and restart implemented",
+              "observed": "Arrow keys, A/D, W/S, Space, R and V are handled with modifier and editable-target guards. The pointer stick is released on pointerleave. Window blur and visibilitychange pause and neutralize; focusin on editable elements neutralizes. Flight buttons return focus to the scene. Pause and reset lifecycle are covered by mock-worker tests. Runtime confirmation exists only as unsupplied smoke output.",
+              "status": "pass",
+              "evidence": "app/src/main.ts keydown/keyup/blur/focusin/visibilitychange/pointer handlers, togglePause(), reset(); session.test.ts tests 2–3"
+            },
+            {
+              "criterion": "T2.0-d (R-VIEW-1): cockpit and chase views, procedural scene; live TAS, attitude, study altitude, heading, VSI with units/datums labelled",
+              "expected": "Two views that do not change state; a procedural scene; instruments labelled with units and datums",
+              "observed": "setView() changes only the camera mode, and scene.update() reads the same worker state for both views. The scene is procedural three.js geometry. Labels: 'KT · TRUE AIRSPEED', 'KNOTS · NOT IAS', 'FT · STUDY ALTITUDE', 'HEADING · TRUE', 'FT / MIN · DERIVED', and an attitude indicator with a bank readout. The camera and attitude sign conventions are consistent with the stated axes.",
+              "status": "pass",
+              "evidence": "app/src/main.ts markup, setView(), animate(); app/src/scene.ts update()"
+            },
+            {
+              "criterion": "T2.0-e: dependencies version- and integrity-locked; licenses recorded (SBOM/notices); restricted research runtime/model assets excluded from production bundle and CI",
+              "expected": "Exact pins and integrity for every package; an accurate SBOM and notices; no runtime/model assets in the bundle or CI",
+              "observed": "package.json pins exact versions. All 76 lockfile entries have integrity hashes and resolve from registry.npmjs.org. The three.js MIT notice is retained, and the bundle excludes the worker (string URL). CI never builds the engine. However, the SBOM wrongly records CesiumJS as adopted through the application lockfile, and the lockfile contains no CesiumJS.",
+              "status": "fail",
+              "evidence": "app/package.json; lockfile summary; THIRD_PARTY_NOTICES.md and LICENSES/three-MIT.txt; docs/SBOM.md CesiumJS row (quality finding 1)"
+            },
+            {
+              "criterion": "T2.0-f (R-FID-3 boundary): visible generic-research-data labelling with adjustable study input offset; no 172S, EDFE scenery, QNH/QFE, circuit, deployment or milestone claim",
+              "expected": "Visible limitation labelling and offset control; no overclaim of the broader SPEC rows",
+              "observed": "The roll-offset slider is visible with its value. The footer reads 'NOT VALIDATED FOR TRAINING', and a limits panel explains the generic 172P data, procedural scenery, TAS vs IAS and the uncorrected datum. README, ARCH, TODO and DONE explicitly disclaim the 172S model, EDFE scenery, QNH/QFE, circuit, deployment and milestone. One weakness: the model label is hidden at ≤1100 px (low finding).",
+              "status": "pass",
+              "evidence": "app/src/main.ts markup; app/README.md; docs/TODO.md 2.0 text; DONE entry Deviations"
+            },
+            {
+              "criterion": "T2.0-g: session-lifecycle tests are meaningful and the smoke test checks the claimed behaviors",
+              "expected": "Lifecycle tests with non-trivial assertions, and smoke checks that match each claimed behavior",
+              "observed": "The five session tests are meaningful: single worker, init dt, ready→input→run ordering, pause during load, stale-worker isolation on reset, input coalescing and snapshot immutability, paused input suppression, invalid-state and invalid-control failure, and dispose. The smoke script covers pause, view invariance, focus, right bank, pointer release, blur, local-only hosts and WebGL failure. Its 'missing engine' check does not exercise the realistic unbuilt-runtime case, and no smoke output is supplied.",
+              "status": "fail",
+              "evidence": "app/src/session.test.ts; app/tests/smoke.mjs; quality finding 2"
+            },
+            {
+              "criterion": "Packet completeness: recorded browser smoke / real-JSBSim run evidence and build-script source",
+              "expected": "Recorded output of `npm --prefix app run test:browser` at the reviewed revision, and the studies/e1-browser/sim/build.sh and worker.js sources the launch path depends on",
+              "observed": "Not supplied. The DONE entry claims a ten-check actual-Chrome smoke pass, but the recorded checks contain no such output, and the hosted CI logs are summarized, not included.",
+              "status": "blocked",
+              "evidence": "Packet 'Recorded checks' section (local gate does not build/test app/; hosted job runs build + mock tests only)"
+            }
+          ],
+          "recommendation": "blocked",
+          "limitations": [
+            "Review limited to the frozen packet; no commands were run by the reviewer. All check results are orchestrator-recorded.",
+            "Pre-existing worker.js, build.sh and JSBSim/c172x assets are base content not supplied, so the worker's fixed-step pacing and the build output location are unverified.",
+            "Raw hosted CI logs, smoke-run output and screenshots are absent. The SBOM's 'zero reported advisories' audit claim has no supplied evidence.",
+            "Lockfile reviewed only via the generated summary (no dependency graph, scripts or license fields beyond the summary).",
+            "Excluded local quality/validation review records were not considered, per packet instructions.",
+            "Workflow-level permissions block is not shown in the diff hunk; the read-only token claim relies on SEC.md."
+          ]
+        },
+        "limitations": [
+          "CLI routing and returned model names are evidence, not backend attestation.",
+          "Packet review does not independently execute the packet's test commands."
+        ],
+        "diagnostic": "review_blocked",
+        "router_exit_code": 2
+      }
+    },
+    {
+      "packet_id": "pr29",
+      "pr": 29,
+      "range": "a450894..396553c",
+      "criteria_scope": "TODO 1.1.3, 1.5.1, 1.5.2 (AA1-AA6)",
+      "external_report": {
+        "status": "completed",
+        "accepted": true,
+        "author_provider": "codex",
+        "reviewer_provider": "claude",
+        "packet": {
+          "path": "packet-pr29.md",
+          "sha256": "9ce87844eaffef7cc16b41da9b18adaf2a348479b69204900543ef690527bc00",
+          "revision": "396553c7dd79fba1e1d5a3099864f945f90883cb",
+          "bytes": 172593
+        },
+        "cli": {
+          "executable": "claude",
+          "version": "2.1.316"
+        },
+        "model_evidence": [
+          "claude-haiku-5-5",
+          "claude-opus-5-5"
+        ],
+        "review": {
+          "quality": [
+            {
+              "severity": "low",
+              "location": "packages/training/airspeed-calibration.test.ts (AA-T7 cases)",
+              "description": "The malformed-data fixture set is narrower than the AA-T7 plan. It covers duplicate IAS and reversed CAS, but not duplicate CAS or reversed (decreasing) IAS. It covers nonfinite SI IAS (Infinity) and a negative original_value, but not NaN, a negative SI `value`, or a non-string `source_sha256`. The adapter code handles these cases symmetrically (`speed()`, both strict-increase checks, the `typeof` hash guard). Expected: each listed AA-T7 mutation class has its own negative fixture with the asserted field path. Reproduction: set `points[1].cas.value` equal to `points[0].cas.value`, or set `points[0].ias.value = -1`; no test asserts the resulting path.",
+              "evidence": "packet diff: airspeed-calibration.test.ts AA-T7 case list; airspeed-calibration.ts `speed()` and the strict-increase checks in `table()`; docs/design/ASSESSMENT-AIRSPEED.md AA-T7"
+            },
+            {
+              "severity": "low",
+              "location": "packages/training/assessment-airspeed.ts detent selection; docs/design/ASSESSMENT-AIRSPEED.md AA2",
+              "description": "AA2 writes the bound as `(detent_deg − 0.5) × π/180`. The implementation computes `((deg − 0.5) * Math.PI) / 180`, evaluated left to right. That can differ in the last ulp from `(deg − 0.5) * (Math.PI / 180)`. The tests use the same expression, so the implementation and tests agree, and the boundary-neighbour tests pass. However, the frozen contract does not pin the evaluation order. A future evaluator or rederivation in another implementation could classify an exact-boundary sample differently. Expected: the contract states the exact floating-point expression (or the evaluator artifact hash is relied on explicitly for boundary samples).",
+              "evidence": "packet diff: assessment-airspeed.ts `tables.find(...)` bounds; assessment-airspeed.test.ts AA-T4 `bound` expression; AA2 text"
+            },
+            {
+              "severity": "low",
+              "location": "utils/ci/run.py run_training_tests",
+              "description": "The training suite is discovered by the glob `packages/training/*.test.ts`, and the only check is that the list is nonempty. Deleting or renaming two of the three test files (for example the integration test) would still pass the gate, as long as one declared passing test remains. Expected (optional hardening): pin the expected training test files, or a minimum file set, so loss of the AA integration coverage fails the gate. Assurance has the same pre-existing pattern.",
+              "evidence": "packet: utils/ci/run.py `run_training_tests` and the `_run_node_suite` `not tests` check; utils/ci/test_run.py `test_missing_training_suite_fails_shared_gate` covers only the all-missing case"
+            }
+          ],
+          "validation": [
+            {
+              "criterion": "AA1 — adapt exactly the three normal-static tables with identity/count/metadata checks; reject malformed fields with field path; no sorting/repair",
+              "expected": "Fixed identities (0/10/30°, normal, sourced, 7/5/4 points). Required schema 1.0.0, values_id, semver version, declared status and `not validated`. Required nonempty metadata and citations (optional section), m/s units with matching references and kt originals. Rejection of nonfinite or negative speeds, non-strictly-increasing IAS/CAS and malformed hashes, with a path. No sorting.",
+              "observed": "`table()` checks flaps_deg, static_source, status, reading, nonempty condition/selection/conversion/uncertainty, nonempty citations (sparse holes rejected via Array.from), and the exact point count. `quantity()` checks unit, reference, original_unit, and finite nonnegative value/original_value. Points must be strictly increasing in both IAS and CAS. Points are built in source order with no sort. Root checks cover schema, values_id, SemVer regex, status enum, fidelity and the lowercase 64-hex hash. Errors carry source-relative paths (`$`, `source_sha256`, `airspeed_calibration.<id>.points[i].cas.value`). Tests assert paths for about 37 mutations, 4 bad hashes and a null root. The input is unchanged after failure. The optional section is omitted when absent. Recorded run: 3/3 adapter tests pass. Minor fixture gaps are noted in quality.",
+              "status": "pass",
+              "evidence": "packet diff: packages/training/airspeed-calibration.ts; airspeed-calibration.test.ts AA-T1/AA-T7/AA1; recorded local gate GEFLY-ASSURE-RESULT for airspeed-calibration.test.ts (3 passed, 0 skipped)"
+            },
+            {
+              "criterion": "AA2 — CAS-first invalid precedence, inclusive ±0.5° direct radian bounds without epsilon, all other angles no_calibration_table, no numeric IAS when unavailable",
+              "expected": "invalid_cas, then invalid_flap; inclusive direct bounds; 20°/transit unavailable; null IAS",
+              "observed": "The mapper checks `Number.isFinite(cas) && cas >= 0` before `Number.isFinite(flap)`, with no coercion of strings or null. The bounds are computed directly with `>=`/`<=` and no epsilon. Any other angle returns `unavailable: no_calibration_table` with `cal_ias_mps: null`. AA-T4 tests all six bounds plus inside and outside ulp neighbours, 5°/20°/25°, and degree-like radians. AA-T6 tests NaN/±Infinity/negative/string/null with flap NaN to prove precedence.",
+              "status": "pass",
+              "evidence": "packet diff: assessment-airspeed.ts; assessment-airspeed.test.ts AA-T4/AA-T6; recorded run 6/6 pass"
+            },
+            {
+              "criterion": "AA3 — in-range inverse piecewise-linear IAS on stored SI anchors; exact anchors including endpoints; deterministic",
+              "expected": "Formula `ias0 + (cas−cas0)/(cas1−cas0)×(ias1−ias0)`; exact stored IAS at anchors; no reconversion of knots; no time/randomness",
+              "observed": "The interpolation expression matches the specified formula and order, using `*_mps` stored values only. Exact equality returns `point.ias_mps`. The result is a pure function with no clock, randomness or state. AA-T2 covers all 16 anchors, including the six endpoints, and the shared-CAS/different-table case. AA-T3 uses independent values: 28.29445 and 32.1528 check arithmetically from the supplied source data (midpoint 30.35225; quarter point 33.5675). The integrated test repeats calls with deepEqual.",
+              "status": "pass",
+              "evidence": "packet diff: assessment-airspeed.ts interpolation loop; assessment-airspeed.test.ts AA-T2/AA-T3/AA-T8; integration test; source JSON points in packet"
+            },
+            {
+              "criterion": "AA4 — strictly below/above range returns direction, invalid flag, null IAS and boundary point; preserves table; no extrapolation/clamp/band",
+              "expected": "below_range/above_range with cal_ias_valid false, cal_ias_mps null, boundary = first/last point, table preserved",
+              "observed": "Strict `<`/`>` comparisons against the first and last CAS return the boundary point and table by identity. Equal endpoints return mapped. No band logic exists. AA-T5 covers ulp and ±1 m/s outside every table. The integrated test checks boundary original_ias_kt values of 50 and 80.",
+              "status": "pass",
+              "evidence": "packet diff: assessment-airspeed.ts; assessment-airspeed.test.ts AA-T5; assessment-airspeed.integration.test.ts"
+            },
+            {
+              "criterion": "AA5 — preserve source identity/hash/labels/manifest and table metadata; recursively frozen detached bundle; no label promotion; every result carries mapping ID/version and source; mapped/range carry table",
+              "expected": "Full provenance preserved; deep freeze; no aliasing; draft/not validated unchanged; mapping `gefly.assessment-airspeed.normal-static-linear` v1.0.0",
+              "observed": "The adapter builds new frozen objects for source, manifest, each citation, the citations array, points, the points array, tables and the bundle. AA-T1 asserts a recursive `Object.isFrozen` and that the bundle is unchanged after mutating the parsed input. Status and fidelity are copied verbatim. The AA1 test shows `reviewed` preserved, not promoted, and fidelity fixed to `not validated`. Every mapper branch spreads `provenance` with the mapping ID/version. Mapped/range results carry `table`; unavailable results have `table: null` as the contract allows. AA-T8 checks provenance for all outcome kinds.",
+              "status": "pass",
+              "evidence": "packet diff: airspeed-calibration.ts; assessment-airspeed.ts `provenance`; airspeed-calibration.test.ts AA-T1/AA1; assessment-airspeed.test.ts AA-T8; contracts/assessment-airspeed.ts"
+            },
+            {
+              "criterion": "AA6 — browser-compatible pure TypeScript; CAL IAS outside ind/digests; future pins documented; no recorder/UI/bands/etc. implemented or claimed",
+              "expected": "No Node/fs/DOM/network/clock/renderer imports in the modules; documentation places CAL IAS outside `ind`/digests per C4; no overclaiming",
+              "observed": "Both modules contain only `import type` from contracts, which is erased by type stripping. They use only Number/Math/Object/Array/RegExp, and class fields avoid non-erasable parameter properties. Node APIs appear only in tests. EXERCISE-01 rule 7 is rewritten to keep values outside `ind` and digests, with source/hash/mapping/evaluator pins and rederivation. SCENARIO-CONTRACTS adopts C4 only for this slice. The integration test uses a throwing `ind` getter to show it is never read. README, ARCH, SBOM, SEC, RESULTS and EVAL E15 explicitly disclaim a recorder, ASI, bands, exercise acceptance and fidelity.",
+              "status": "pass",
+              "evidence": "packet diff: assessment-airspeed.ts and airspeed-calibration.ts import lines; EXERCISE-01.md rule 7; SCENARIO-CONTRACTS.md §5 note; integration test `ind` getter; README/ARCH/SBOM/SEC/RESULTS limitation text"
+            },
+            {
+              "criterion": "Overclaiming check against traced SPEC rows (R-TRAIN-2, R-SIM-3, R-SIM-4, R-DATA-1, R-DATA-2, R-FID-3)",
+              "expected": "Bounded tasks must not claim acceptance of the broader SPEC criteria",
+              "observed": "TODO parents 1.1 and 1.5 remain unchecked. RESULTS, DONE and E15 state that no browser, full exercise, replay, ASI, band classifier, fidelity or training credit is accepted. They state that the adapter does not bind the hash or establish rights or applicability, and that the 14 MVP criteria remain planned. The assurance report shows all R-* rows as planned/uncovered. No overclaim was found.",
+              "status": "pass",
+              "evidence": "packet: TODO diff; RESULTS E15 entry; EVAL E15; DONE entries; assurance report criteria table"
+            },
+            {
+              "criterion": "TODO 1.1.3 — separate, nonempty, zero-skip Node coverage in the shared local/hosted gate, preserving assurance checks and failure propagation",
+              "expected": "A distinct training phase that fails on missing, empty, skipped or failed tests and propagates failure to the gate exit, with the assurance tests and integrity check still run",
+              "observed": "`_run_node_suite` is refactored from the assurance logic with behaviour preserved: assurance still passes `entry` and runs `cli.ts check` unless `tests_only`. `run_training_tests` reuses the per-file/global summary validation (passed == tests, zero skip/fail/cancel/todo, every file present) and is invoked unconditionally in `main()`, setting `failed`. New fixtures show that a training failure fails the gate after assurance integrity passes, and that a missing suite fails. The recorded local gate shows the separate 'Assessment airspeed tests: passed (11 tests)' with 3 per-file summaries and exit 0. Hosted run 41357526229 is recorded as green on all jobs. Because the phase requires Node and is unconditional in run.py, that implies execution, but the workflow YAML and raw logs are not in the packet.",
+              "status": "pass",
+              "evidence": "packet: utils/ci/run.py full file and diff; utils/ci/test_run.py new tests; recorded local gate output; hosted run summary (orchestrator-observed, logs absent)"
+            },
+            {
+              "criterion": "TODO 1.5.1 — CAL IAS kept outside the instrument digest per SCENARIO-CONTRACTS C4; criterion slice frozen with field names",
+              "expected": "Documentation reconciled to C4 (`cal_ias_mps`/`cal_ias_valid` outside `ind`/digest) and the frozen slice uses those names",
+              "observed": "EXERCISE-01 rule 7 no longer records the derived IAS in `ind`, and it uses the C4 field names. ASSESSMENT-AIRSPEED AA6 and the contract types use `cal_ias_mps`/`cal_ias_valid`. SCENARIO-CONTRACTS records C4 adoption for this slice only. The 'reviewed' qualifier relies on excluded local review records, which per the packet instructions are not grounds to block.",
+              "status": "pass",
+              "evidence": "packet diff: EXERCISE-01.md, SCENARIO-CONTRACTS.md, ASSESSMENT-AIRSPEED.md, contracts/assessment-airspeed.ts"
+            }
+          ],
+          "recommendation": "accept",
+          "limitations": [
+            "This review covers only the supplied packet. No tests, type checks or reproductions were run by the reviewer; all execution results are orchestrator-recorded evidence.",
+            "The hosted GitHub Actions workflow definition and raw hosted logs are not supplied. Hosted execution of the training phase is inferred from run.py wiring and the recorded green job status.",
+            "The source JSON excerpt omits the `manifest` object and other file content. The manifest path/ID assertions and the file SHA-256 are accepted as recorded, not verified.",
+            "Full SCENARIO-CONTRACTS.md, EXERCISE-01.md, SPEC.md and the merged (non-diff) versions of the other documents were not supplied; only diff hunks were reviewed. The packet's 'EVAL section E15 not found' notice conflicts with the diff, which adds E15; the diff text was used.",
+            "Local quality/validation review records, the DONE history before this PR, app/package-lock.json and Claude-authored relocated CI helpers (study gate, render check, process-group timeout) are excluded and were not evaluated.",
+            "Source applicability, POH revision accuracy, data rights, physical correctness of the instructional detent/interpolation choices and educational validity are outside scope and were not assessed.",
+            "The adapter's caller-declared hash is format-checked only. The byte-to-object binding is the trusted caller's documented responsibility and was not reviewed as an enforced control."
+          ]
+        },
+        "limitations": [
+          "CLI routing and returned model names are evidence, not backend attestation.",
+          "Packet review does not independently execute the packet's test commands."
+        ],
+        "router_exit_code": 0
+      }
+    }
+  ],
+  "dispatcher_disposition": "Not accepted as a batch. pr27 and pr29 accept with low findings only. pr28a changes_required (2 medium, AS2/AS3 fail). pr28b blocked (3 medium, AS8/1.14.4 fail, 2 blocked rows). pr30 blocked (3 medium, T2.0-e/g fail, 2 blocked rows). Findings go back to the orchestrator for coder assignment; affected packets need renewed peer review after repairs and with fuller evidence. Dispatcher spot-checks confirmed the SBOM CesiumJS row, the status.ts completion-wording regex, the EXERCISE-01 E14 collision and the BRIEFING R-BRIEF-1/R-COMM-1 relabel at main; the other findings were not independently verified. Backend identity is not attested."
+}

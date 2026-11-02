@@ -3,6 +3,37 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 14:56 — Integrate PR 35 with the current flight interface
+
+TODO: 0.21 / 1.6 integration only. Agent: Codex orchestrator; pr35_vite/code1 and
+pr35_smoke/code2 resolved disjoint application conflicts in parallel, with
+pr35_housekeeping on application instructions and record preservation.
+Independent quality and validation: pr32_merge_review.
+
+**Implementation notes**
+
+Retained the extracted research-runtime middleware and real missing-engine smoke
+case alongside main's Cesium asset serving/build copying, control settings and
+recorded-state review tests. The native test command includes both branches'
+tests. Preserved complete DONE records and TODO status; corrected SBOM's obsolete
+statement that Cesium integration was still future work.
+
+Strict TypeScript/UI build and all 22 native tests passed. The real-engine Chrome
+smoke passed all 20 check groups, including the actual missing-module 404 case.
+The first run exposed queued state messages racing the settings pause baseline;
+the test now allows the existing pause-settling interval before checking a frozen
+worker step. Product behavior was unchanged; affected independent review passed.
+
+**Deviations**
+
+This is merge integration, not renewed acceptance of the historical peer packets
+or the foundation milestone. Existing peer-pending and blocked outcomes remain.
+
+**Insights**
+
+A clean conflict resolution must preserve both the newer flight interface and
+the negative runtime test; choosing either whole side would lose coverage.
+
 ## 2026-11-02 14:50 — Reconcile PR 32 with current main
 
 TODO: 1.6 integration only. Agent: Codex orchestrator; pr32_merge_review performs
@@ -190,6 +221,51 @@ The user accepted all Q23 recommendations ("yes to proposals. go on";
 
 The `ind` digest layout still waits for the researcher's S17 Section 7 engine/fuel
 list. Peer pending (batched).
+
+## 2026-11-02 00:53 — Claude peer review of Codex PRs #27–#30 and fixes (TODO 0.21)
+
+TODO: 0.21 in progress (#28b and #30 packets to renew). Agent: Claude Code orchestrator; peer
+dispatcher subagent (fresh Claude CLI 2.1.316 per packet; model evidence
+`claude-haiku-5-5` and `claude-opus-5-5`), code2 subagent (fixes), quality subagent
+(three rounds, final verdict accept).
+
+**Implementation notes**
+
+Report: [peer review](reviews/2026-11-01-codex-prs-27-30-peer.md) and
+[JSON](reviews/2026-11-01-codex-prs-27-30-peer.json), five packets frozen at main
+`396553c` (#28 split into 28a tooling and 28b docs). Router results: #27 accept;
+#28a changes_required; #28b and #30 review_blocked (material withheld, not defects);
+#29 accept. There were no critical or high findings.
+
+The fixes in this PR:
+- `status.ts` counts a DONE completion only per task ID. Exception or pending wording
+  cancels it; "peer pending" and "pending merge" still count as complete. A ticked
+  parent's record covers its subtasks, and a ticked parent with open subtasks gets
+  the warning `done-parent-open-children`.
+- `evidence.ts` checks that a cited source applies to the aircraft variant, using
+  known 172 model designators (case-insensitive; `S/N` is not read as a variant).
+- The SBOM CesiumJS row now says it is not adopted in the application yet.
+- The missing-engine smoke test serves a runtime copy without `dist/jsbsim.*`.
+- New `app/runtime.ts` and its tests prove that the `build-flight-engine` output is
+  the path `just fly` serves.
+
+Other #28b findings are handled in their own PRs: the CI text in #34, the E14 clash in
+#32, and the BRIEFING IDs match the SPEC edits in #33.
+
+Checks on Node 24: the assure suite passed 83 of 83; `assure check` reported 0 errors;
+the app suite passed 9 of 9; `utils/ci/run.py --require-node` passed with skipped
+checks (e1-jsbsim 9 of 23).
+
+**Deviations**
+
+- The real-engine browser smoke test was not run (no engine build and no Chrome here):
+  not evaluated.
+- Known limitations: the completion check still passes some unlisted negative wording
+  ("failing tests", "needs review"); 172I is not recognised; negated designators
+  ("not the 172S") are still read as naming the variant; "unstated" sources are
+  lenient (L3); `app/runtime.ts` is not type-checked (L6).
+- The fixes are Claude-authored, so they need the Codex peer review (TODO 0.19 batch).
+  The #28b and #30 packets need renewal with the withheld material.
 
 ## 2026-11-02 00:30 — Apply foundation-review tooling fixes (TODO 1.6)
 

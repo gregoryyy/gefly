@@ -8,17 +8,72 @@ export interface Problem { check: string; severity: 'error' | 'warning' | 'note'
 export interface StatusExtraction extends Extraction { problems: Problem[] }
 const BY = 'gefly/status@0.1';
 
+// A task ID, optionally a range `1.1–1.3` (hyphen, en or em dash) or `1.1 to 1.3`.
+const ID_PATTERN = /\b(\d+(?:\.\d+)+)(?:\s*[–—-]\s*(\d+(?:\.\d+)*)|\s+to\s+(\d+(?:\.\d+)+))?/g;
+
 export function todoIds(text: string): string[] {
   const found: string[] = [];
-  for (const match of text.matchAll(/\b(\d+(?:\.\d+)+)(?:\s*[–-]\s*(\d+(?:\.\d+)*))?/g)) {
-    if (!match[2]) { found.push(match[1]); continue; }
+  for (const match of text.matchAll(ID_PATTERN)) {
+    const last = match[2] ?? match[3];
+    if (!last) { found.push(match[1]); continue; }
     const prefix = match[1].slice(0, match[1].lastIndexOf('.') + 1);
     const start = Number(match[1].slice(prefix.length));
-    const end = Number(match[2].slice(match[2].lastIndexOf('.') + 1));
+    const end = Number(last.slice(last.lastIndexOf('.') + 1));
     if (end < start || end - start > 200) continue;
     for (let n = start; n <= end; n++) found.push(`${prefix}${n}`);
   }
   return [...new Set(found)];
+}
+
+// AS2: completion is decided per task ID, not per DONE `TODO:` line. The metadata
+// is split into `;` clauses, then into segments at commas and `and`/`&`. A segment
+// that holds only IDs takes the wording of the next worded segment in its clause
+// (`1.1 and 1.2 complete, 1.3 open`); a clause of IDs only is the historical bare
+// list form (`TODO: 0.1–0.6.`) and records completion. Worded segments record
+// completion only with explicit completion wording (`complete`, `done`, `recorded`)
+// and no progress, partial, open or exception wording (`in progress`, `partially`,
+// `except`, `apart from`, `but`, `unverified`, `limitations`). Exception wording
+// makes every ID of its segment incomplete (`1.1 complete apart from 1.1.3`); a
+// segment that starts with it, or a later segment without task IDs that holds any
+// not-complete wording, also qualifies the earlier IDs of its clause. `done-ish`
+// is not completion wording. The
+// mandated workflow markers `peer pending` and `pending merge` do not negate it.
+const COMPLETED = /\b(?:complete|completed|done|finished|recorded)\b(?!-)/i;
+const WORKFLOW_MARKERS = /\bpeer\W+pending\b|\bpending\W+merge\b/gi;
+const NOT_COMPLETED = /\b(?:in[\s-]+progress|partial|partially|partly|pending|started|starting|ongoing|underway|incomplete|not|no|remain|remains|remaining|future|parent|open|deferred|blocked|preparation|portion|support|except|excepting|excluding|apart|but|without|other\s+than|unverified|unvalidated|untested|unreviewed|unchecked|limitation|limitations|caveat|caveats)\b/i;
+const EXCEPTION_LEAD = /^(?:except|excepting|excluding|apart|but|without|other\s+than)\b/i;
+const wording = (segment: string) => segment.replace(ID_PATTERN, ' ').replace(/[\s.,/()*_&:]+/g, ' ').trim();
+const completes = (segment: string): boolean => {
+  const text = segment.replace(WORKFLOW_MARKERS, ' ');
+  return COMPLETED.test(text) && !NOT_COMPLETED.test(text);
+};
+
+/** Each task ID in DONE `TODO:` metadata, with whether it is a completion record. */
+export function completionRecords(metadata: string): { id: string; complete: boolean }[] {
+  const result: { id: string; complete: boolean }[] = [];
+  for (const clause of metadata.split(';')) {
+    const segments = clause.split(/,|\band\b|&/i);
+    const bareClause = segments.every((segment) => !wording(segment));
+    const clauseStart = result.length;
+    for (let i = 0; i < segments.length; i++) {
+      // `1.1 complete, except 1.1.3`: a segment led by exception wording also
+      // qualifies every earlier ID of its clause.
+      // `1.1 complete, verification pending`: not-complete wording in a later
+      // segment without task IDs also qualifies the earlier IDs of its clause.
+      const ids = todoIds(segments[i]);
+      const qualifier = segments[i].replace(WORKFLOW_MARKERS, ' ');
+      if (EXCEPTION_LEAD.test(wording(segments[i])) || (!ids.length && NOT_COMPLETED.test(qualifier)))
+        for (const earlier of result.slice(clauseStart)) earlier.complete = false;
+      if (!ids.length) continue;
+      let complete = bareClause;
+      if (!bareClause) {
+        const worded = segments.slice(i).find((segment) => wording(segment));
+        complete = worded !== undefined && completes(worded);
+      }
+      for (const id of ids) result.push({ id, complete });
+    }
+  }
+  return result;
 }
 
 const fact = (at: string, subject: NodeRef, relation: NewFact['relation'], object: NodeRef, source: string): NewFact =>
@@ -98,10 +153,8 @@ export function extractStatus(todo: Doc, gaps: Doc, done: Doc, at: string): Stat
     const node: NodeInfo = { kind: 'done', id, title: plain(entry.title), source, hash: textHash(entry.body), attrs: { time: entry.stamp, scope: 'recorded work; not acceptance' } };
     x.nodes.push(node); x.facts.push(fact(at, node, 'defined-in', { kind: 'document', id: done.path }, source));
     const metadata = /^TODO:\s*([\s\S]*?)(?=\n\s*\n|\bAgent:|\bPR:|\bBranch:|$)/m.exec(meta)?.[1] ?? '';
-    for (const clause of metadata.split(';')) for (const task of todoIds(clause)) {
-      const relation = /\b(remain|remains|future|parent|open|deferred)\b/i.test(clause) ? 'refs' : 'records';
-      x.facts.push(fact(at, node, relation, { kind: 'todo', id: task }, source));
-    }
+    for (const task of completionRecords(metadata))
+      x.facts.push(fact(at, node, task.complete ? 'records' : 'refs', { kind: 'todo', id: task.id }, source));
   }
   return x;
 }
