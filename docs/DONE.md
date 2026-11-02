@@ -3,6 +3,57 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 21:40 — Hear procedural engine and propeller sound
+
+TODO: 2.0.27 complete as a bounded R-AUDIO-1/R-REVIEW-1 increment.
+Agent: Codex orchestrator/integration; fov_input/code1 on synthesis/parameters,
+engine_sound_ui/code2 on controls/browser coverage, with fov_housekeeping on
+parallel inputs/source research. Independent quality: fov_housekeeping on code,
+excluding its prose; fov_input on main/UI, excluding its core. Validate:
+trim_validate, no implementation authored. Cross-provider peer pending.
+
+**Implementation notes**
+
+Added original Web Audio exhaust pulses, mechanical rumble and filtered
+blade-pass airflow driven by actual RPM, manifold pressure and fuel flow.
+Trusted Start/Resume/ReviewPlay/Space or sound-control gestures activate audio;
+no context is created on load or synthetic UI activation. Quick mute stays
+beside the clock, including Review, with volume under Options. Playing Review
+uses selected captured engine state; pause/seek/hidden/failure/reset/paused
+Review silence output, and teardown closes the graph. Zero/missing/invalid
+engine state stays silent; fuel cutoff removes exhaust while actual rotating
+propeller mechanical/airflow layers can remain. No sample downloads, microphone,
+recording, network, runtime dependency or dynamics/state-field change.
+
+Fixed two review findings before acceptance: partial graph-construction failure
+now closes/discards its context before serialized retry, and focused quick-mute
+keyboard events cannot issue flight commands. Current controls require trusted
+click/input activation. Native tests pass 122 plus five adapter tests. Seven
+actual Chrome groups and independent signal/state/mobile checks pass; shared
+runtime OfflineAudioContext renders verify harmonics, bounded maximum-volume
+peaks (.288 author / .2576 independent) and stopped/paused/missing silence.
+Selected Review RPM follows captured samples and audio controls preserve full
+physical state, step and digest. Existing Review4/engine9/layout9-viewport
+regressions pass. Shared CI passes UI build, 84 assurance and 11 assessment tests
+plus repository/study/render gates; optional JSBSim9-of-23 and Linux-only checks
+remain explicit skips. See [review evidence](reviews/2026-11-02-engine-audio.md)
+for frozen source hash, reviewer exclusions and local WAV/JSON evidence.
+
+**Deviations**
+
+This is a procedural piston/propeller approximation, not an acoustic calibration
+or recording of an installed aircraft. Physical-speaker/headphone listening,
+Safari/hardware audio and actual OS backgrounding were not independently
+accepted; visibility-policy gating and real browser output were checked.
+Failure/retry/disposal author evidence was inspected separately by validate.
+
+**Insights**
+
+A shared runtime/offline graph lets tests verify real PCM and spectrum rather
+than only audio-status flags. Playback must remain separate from simulation and
+synchronously gated before hidden-page rendering can stop. Browser activation
+and keyboard isolation belong to the sound controls as well as Start/Resume.
+
 ## 2026-11-02 21:22 — Visualize spatial wing airflow-angle estimates
 
 TODO: 2.0.25 complete as a bounded R-SIM-7/R-VIEW-1/R-REVIEW-1 diagnostic;

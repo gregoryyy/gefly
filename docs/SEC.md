@@ -157,3 +157,13 @@ capture listener handles eligible vertical scene events before Cesium; Ctrl/Meta
 editable, modal and sibling UI/map gestures are excluded. It requests no device
 permission, makes no network/storage calls and sends no simulation input. FOV is
 retained separately from aircraft/review state and reset to default on reload.
+
+## Procedural engine audio
+
+Web Audio is activated by explicit browser/user interaction. The original local
+synthesis graph uses existing engine telemetry; it fetches no audio assets and
+requests no microphone, media-device, network or recording access. Mute/volume
+are session-only preferences, independent of flight input. Pause/hidden/failure/
+reset/paused Review silence the graph; page teardown closes it. Missing or denied
+audio leaves flight usable with a retry/unavailable indication. Test-only local
+WAV previews are disposable outputs, not runtime telemetry or recordings.

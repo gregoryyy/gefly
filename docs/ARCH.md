@@ -287,3 +287,14 @@ body-relative proxy, compared only with the model's common positive alpha-max.
 This display consumes selected recorded states and never feeds the engine.
 Regional separation, induced flow, twist and local control effects require a
 separate applicable aerodynamic model; current tail/fuselage regions stay unknown.
+
+## Engine sound presentation
+
+A single gesture-created Web Audio graph consumes actual selected engine state
+(propeller angular velocity, manifold pressure and fuel flow). Original periodic
+exhaust, mechanical and filtered blade-pass layers are presentation only; gain
+curves/timbre are uncalibrated sound design. No signal feeds back into dynamics,
+input, trace sampling or deterministic state. A shared graph can also render
+offline test PCM; no sample asset or external service is required. Immediate
+lifecycle gates silence output before a hidden-page RAF can stop. Playing Review
+synthesizes selected recorded states; it is not replay of captured audio.

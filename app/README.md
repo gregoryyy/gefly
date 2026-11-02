@@ -314,6 +314,22 @@ samples. Flight reset or page reload clears it. There is no export, persistence,
 video recording, or input/event log. Full synchronized configuration, event and
 input replay remains future work under the [replay contract](../docs/design/CONTRACTS.md).
 
+## Engine sound
+
+Start or resume flight to activate the original synthesized piston/propeller
+sound. Pitch follows actual propeller RPM; actual manifold pressure and fuel
+flow shape the engine's load/timbre. The speaker button beside the flight clock
+mutes/unmutes at any time, including Review. **Options → Engine sound** adjusts
+volume. A locked/blocked browser can be retried with the speaker button; missing
+Web Audio does not block flying.
+
+Pause, hidden/focus-lost pages, failed/reset flights and paused Review are silent.
+Playing Review synthesizes the selected captured engine state. Zero RPM or
+missing telemetry is silent; fuel cutoff removes combustion while an actually
+rotating propeller can retain mechanical/airflow sound. This is a procedural
+approximation, not a calibrated recording of an installed aircraft. It uses no
+microphone, downloaded sample, provider service or extra runtime dependency.
+
 ## Spatial stall awareness
 
 Open **View → Stall awareness** to inspect six reference wing regions. The

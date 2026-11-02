@@ -59,3 +59,4 @@ These inputs are included in the local repository. Recheck privacy before remote
 
 - [2026-11-02 handbook loading and flight envelope](2026-11-02-handbook-loading-envelope.md): exact clarification selects loading and flight-envelope diagrams.
 - [2026-11-02 spatial stall awareness](2026-11-02-spatial-stall-awareness.md): show where stalling begins on different aircraft parts; research distinguishes local-airflow estimates from actual separation.
+- [2026-11-02 engine audio](2026-11-02-engine-audio.md): create engine sound; procedural approximation based on actual simulator engine telemetry.

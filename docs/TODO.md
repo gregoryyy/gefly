@@ -120,6 +120,8 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [ ] 2.0.26 Develop source-applicable regional aerodynamics for actual part-by-part stall/separation onset and recovery (wing twist, local section data, induced flow/downwash, flap/aileron/tail effects). Compare reusable open sectional models first; freeze reference cases before accepting regional colors as real stall state. Completes the deeper R-SIM-7 target; the 2.0.25 kinematic display does not implement this physics.
 
+- [x] 2.0.27 Add original synthesized engine/propeller audio from actual RPM/load/fuel telemetry with smooth changes, trusted user activation, quick mute and Options volume. Silence pause/hidden/failure/reset/paused Review/dispose; playing Review uses selected samples. Handle unsupported/blocked audio without interrupting flight. R-AUDIO-1/R-REVIEW-1; no calibrated installed-aircraft acoustic claim. Independent quality/actual-browser validation passed; see [review evidence](reviews/2026-11-02-engine-audio.md). Peer pending.
+
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.
 - [ ] 2.3 code2 implements the corresponding browser controls, instruments and exercise feedback against frozen contracts **in parallel with 2.2**.
