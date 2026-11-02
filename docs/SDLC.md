@@ -59,6 +59,12 @@ Initial scaffolding may be created before the first commit. Thereafter use featu
 
 Before opening a PR, fetch the current target branch and verify that the proposed head merges cleanly with it. Resolve conflicts locally, run the affected checks, and only then push/open the PR. Recheck mergeability after publication and refresh existing open PRs when their target advances. Preserve complete dated DONE records when merging; do not accept conflict fragments independently.
 
+### Log merges
+
+[`.gitattributes`](../.gitattributes) merges DONE with the [sorted-log driver](../utils/merge/sorted_log.py) and the input index by line union. Run `just setup` once per clone to register the driver; without it Git uses its ordinary text merge. The driver merges whole entries by heading (ignoring `## ` inside code fences) and writes them newest first. It leaves conflict markers when both sides changed one entry differently, one side deleted an entry the other changed, or the preamble edits overlap. Duplicate headings, input that already contains markers, an entry removed on both sides while either side adds entries (a likely rename) and any parse failure fall back to a diff3 `git merge-file` result. A branch that lacks the script, or a machine without `python3`, gets the same fallback. The input index is append-only: add one line per new record and never reorder or rewrite lines; `just check` requires every record to be listed exactly once.
+
+GitHub's web merge and conflict editor do not run custom drivers, so do not resolve DONE conflicts there ("accept both" scrambles the order). The orchestrator re-syncs the branch with main locally instead, then runs the assurance check.
+
 Record TODO IDs and requirement IDs in changes. Commit descriptions include `Refs:` trailers, for example `Refs: TODO 1.4, R-SIM-1` when that requirement exists. PR descriptions state problem, behavior, validation, security/data impact, source applicability and limitations. The [PR template](../.github/pull_request_template.md) supplies the checklist.
 
 ## Definition of done

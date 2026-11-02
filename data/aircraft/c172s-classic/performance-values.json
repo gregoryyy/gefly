@@ -8,8 +8,8 @@
   "manifest": {
     "path": "manifest.json",
     "manifest_id": "gefly.aircraft.c172s-classic",
-    "manifest_version": "0.2.2",
-    "manifest_sha256": "04f86a9ba6cab89680acaa732e9df87266d8557928a3990ee678fa719b1515e5"
+    "manifest_version": "0.3.1",
+    "manifest_sha256": "6199b74c949d99a602f777c74129bc8444c76bbfb74976004fe966d91e18cbee"
   },
   "extraction": "User decision 2026-11-01 18:43 (GAPS Q5): extract only the needed points of the Lycoming IO-360-L2A power curve as cited facts, never the whole chart; user decision 2026-11-01 19:04 (GAPS Q5): likewise selected points of the Lycoming fuel-consumption chart (Figure 3-9); the no-piecemeal rule of the POH extraction applies. POH cruise and glide values follow the user decision 2026-11-01 13:59. Purpose: calibration of a JSBSim piston engine and airframe in the circuit regime (research note docs/research/2026-11-01-c172s-poh-values.md). Chart points were read on page images rendered at 400 dpi.",
   "engine_ratings": {

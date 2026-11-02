@@ -283,6 +283,36 @@ test('known aircraft values retain source/page/class/units/reference lineage wit
   assert.ok(checks(run(f, c)).includes('aircraft.manifest'));
 });
 
+test('estimate-only sources support only estimated aircraft values that name the other variant', () => {
+  // User decision 2026-11-02 08:01: FlightGear c172p (S14, 172P) values stay estimated.
+  const f = files(), c = catalog();
+  const base = 'data/aircraft/c172s-classic/';
+  const names = ['manifest.json', 'poh-values.json', 'performance-values.json', 'indication-loading-values.json'];
+  for (const name of names) f[base + name] = readFileSync(new URL('../../../' + base + name, import.meta.url), 'utf8');
+  c.aircraft = [{ manifest: base + 'manifest.json', values: names.slice(1).map(name => base + name) }];
+  const valid = run(f, c);
+  assert.deepEqual(errors(valid), []);
+  const scale = valid.nodes.find(node => node.id === base + 'indication-loading-values.json#/indications/oil_temp_k/scale/upper');
+  assert.equal(scale?.attrs?.dataClass, 'estimated'); assert.match(scale?.attrs?.applicability ?? '', /\b172P\b/);
+  assert.equal(valid.nodes.find(node => node.attrs?.sourceId === 'S14')?.attrs?.use, 'estimate_only');
+  const mutate = (change: (values: any, manifest: any) => void) => {
+    const g = { ...f }, values = JSON.parse(f[base + 'indication-loading-values.json']), manifest = JSON.parse(f[base + 'manifest.json']);
+    change(values, manifest);
+    g[base + 'indication-loading-values.json'] = JSON.stringify(values); g[base + 'manifest.json'] = JSON.stringify(manifest);
+    return errors(run(g, c));
+  };
+  const s14 = (values: any) => structuredClone(values.indications.hobbs_time_s.counting.citations[0]);
+  const has = (list: ReturnType<typeof errors>, check: string, text: RegExp) => list.some(problem => problem.check === check && text.test(problem.message));
+  assert.ok(has(mutate(values => { values.indications.oil_temp_k.scale.status = 'sourced'; }), 'aircraft.estimate', /sourced parameter cites an estimate-only/));
+  assert.ok(has(mutate(values => { values.indications.oil_press_pa.markings[2].citations = [s14(values)]; }), 'aircraft.estimate', /sourced parameter/));
+  assert.ok(has(mutate(values => { values.annunciators.ann_low_fuel_left.triggers[0].citations = [s14(values)]; }), 'aircraft.estimate', /sourced parameter/));
+  assert.ok(has(mutate(values => { values.indications.oil_temp_k.scale.citations = structuredClone(values.indications.oil_temp_k.citations); }), 'aircraft.estimate', /cites no estimate-only/));
+  assert.ok(has(mutate(values => { values.indications.egt_k.scale.applicability = 'FlightGear Cessna 172 model'; }), 'aircraft.applicability', /does not name variant 172P/));
+  assert.ok(has(mutate(values => { values.indications.hobbs_time_s.counting.applicability = 'c172p model'; }), 'aircraft.applicability', /does not name variant 172P/));
+  assert.ok(has(mutate((_values, manifest) => { manifest.sources.find((s: any) => s.id === 'S14').variant = '172S'; }), 'aircraft.estimate', /differs from the aircraft/));
+  assert.ok(has(mutate((_values, manifest) => { delete manifest.sources.find((s: any) => s.id === 'S14').variant; }), 'aircraft.estimate', /variant designator/));
+});
+
 function realAircraft() {
   const f = files(), c = catalog();
   const base = 'data/aircraft/c172s-classic/';
