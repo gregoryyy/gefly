@@ -51,6 +51,34 @@ class ManifestValidationTests(unittest.TestCase):
     def test_r_air_1_c172s_classic_manifest_is_valid(self):
         self.assertEqual(vm.validate(self.manifest(), self.schema), [])
 
+    def test_estimate_only_source_needs_variant_and_distinct_designator(self):
+        manifest = self.manifest()
+        source = next(s for s in manifest["sources"] if s["id"] == "S14")
+        self.assertEqual((source["use"], source["variant"], source["hash_basis"]),
+                         ("estimate_only", "172P", "file_listing"))
+        del source["variant"]
+        self.assertRejected(manifest, "missing required field 'variant'")
+        manifest = self.manifest()
+        next(s for s in manifest["sources"] if s["id"] == "S14")["variant"] = "172S"
+        self.assertRejected(manifest, "estimate_only variant '172S' equals the aircraft designator")
+
+    def test_read_source_needs_hash_basis(self):
+        manifest = self.manifest()
+        self.assertEqual({s["hash_basis"] for s in manifest["sources"] if s["id"] != "S14" and "sha256_prefix" in s},
+                         {"document"})
+        del next(s for s in manifest["sources"] if s["id"] == "S17")["hash_basis"]
+        self.assertRejected(manifest, "missing required field 'hash_basis'")
+        manifest = self.manifest()
+        next(s for s in manifest["sources"] if s["id"] == "S17")["hash_basis"] = "pages"
+        self.assertRejected(manifest, "hash_basis")
+
+    def test_sourced_manifest_value_cannot_cite_estimate_only_source(self):
+        manifest = self.manifest()
+        s14 = next(s for s in manifest["sources"] if s["id"] == "S14")
+        manifest["configuration"]["model"]["citations"].append(
+            {"source_id": "S14", "revision": s14["revision"], "page": "c172p-set.xml"})
+        self.assertRejected(manifest, "sourced value cites estimate_only source 'S14'")
+
     def test_r_data_1_citation_of_unregistered_source_fails(self):
         manifest = self.manifest()
         manifest["sources"] = [s for s in manifest["sources"] if s["id"] != "S9"]
@@ -713,6 +741,61 @@ class IndicationLoadingValuesTests(unittest.TestCase):
         self.assertEqual(citation["source_id"], "S14")
         citation["revision"] = "master 0000000"
         self.assertRejected(document, "differs from register")
+
+    def s14(self, document):
+        return copy.deepcopy(document["indications"]["hobbs_time_s"]["counting"]["citations"][0])
+
+    def test_estimate_only_source_cannot_support_sourced_scale(self):
+        document = self.values()
+        document["indications"]["oil_temp_k"]["scale"]["status"] = "sourced"
+        self.assertRejected(document, "sourced value cites estimate_only source 'S14'")
+
+    def test_estimate_only_source_cannot_support_sourced_red_line(self):
+        document = self.values()
+        marking = document["indications"]["oil_press_pa"]["markings"][2]
+        marking["citations"] = [self.s14(document)]
+        self.assertRejected(document, "markings[2].citations[0]: sourced value cites estimate_only source 'S14'")
+
+    def test_estimate_only_source_cannot_replace_sourced_low_fuel_threshold(self):
+        document = self.values()
+        trigger = document["annunciators"]["ann_low_fuel_left"]["triggers"][0]
+        trigger["threshold"].update(value=round(8 * 3.785411784e-3, 6), original_value=8)
+        trigger["citations"] = [self.s14(document)]
+        self.assertRejected(document, "sourced value cites estimate_only source 'S14'")
+
+    def test_derived_value_cannot_cite_estimate_only_source(self):
+        document = self.values()
+        arm = document["sample_loading"]["values"]["basic_empty_arm"]
+        arm["citations"].append(self.s14(document))
+        self.assertRejected(document, "derived value cites estimate_only source 'S14'")
+
+    def test_estimated_value_must_cite_an_estimate_only_source(self):
+        document = self.values()
+        scale = document["indications"]["oil_temp_k"]["scale"]
+        scale["citations"] = copy.deepcopy(document["indications"]["oil_temp_k"]["citations"])
+        self.assertRejected(document, "oil_temp_k.scale: estimated value cites no estimate_only source")
+        document = self.values()
+        counting = document["indications"]["hobbs_time_s"]["counting"]
+        counting["citations"] = copy.deepcopy(document["indications"]["hobbs_time_s"]["citations"])
+        self.assertRejected(document, "counting: estimated value cites no estimate_only source")
+
+    def test_estimated_applicability_must_name_the_source_variant(self):
+        document = self.values()
+        document["indications"]["egt_k"]["scale"]["applicability"] = "FlightGear model of a Cessna 172."
+        self.assertRejected(document, "egt_k.scale.applicability: does not name the variant '172P'")
+        document = self.values()
+        document["annunciators"]["ann_low_fuel_right"]["triggers"][0]["basis"]["applicability"] = "c172p model"
+        self.assertRejected(document, "basis.applicability: does not name the variant '172P'")
+
+    def test_estimate_variant_must_differ_from_aircraft(self):
+        document, manifest = self.values(), copy.deepcopy(self.manifest)
+        source = next(s for s in manifest["sources"] if s["id"] == "S14")
+        source["variant"] = "172S"
+        for item in document["indications"].values():
+            if item["scale"]["status"] == "estimated":
+                item["scale"]["applicability"] = "Cessna 172S estimate."
+        errors = vm.validate_indication_values(document, self.schema, manifest)
+        self.assertTrue(any("variant '172S' equals the aircraft designator" in e for e in errors), errors)
 
     def test_derived_arm_needs_derivation(self):
         document = self.values()

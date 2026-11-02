@@ -152,6 +152,9 @@ not 172S facts, and they never override a sourced S17 value.
 | Correction | The [E1 engine-stack note](2026-11-01-e1-engine-stack-candidates.md) (E6, same commit) found "GPL-2.0 text, no 'or later' found" and rated c172p *possibly incompatible*; `CONTRIBUTING.md` and the headers above resolve the version as **or later**, which is compatible with the project's GPL-3.0-or-later. The JSBSim aero file `c172p.xml` still has no licence tag of its own. |
 | Redistribution and use | GPL permits redistribution, but this extraction takes only numbers and behaviour descriptions in our own words, with file path and commit; no code, XML, Nasal, texture or other asset is copied. Manifest `rights.redistribution` is `facts_only`. Face textures were viewed to read their numerals; one (EGT) shows an instrument maker's logo, which is not used. |
 
+In the manifest (0.3.1) S14 carries `use: estimate_only`, `variant: 172P` and
+`hash_basis: file_listing`.
+
 Files read (the manifest `sha256_prefix` `b294b9c8a5c14917` is the SHA-256 of this exact
 `sha256sum` listing, two spaces, LF line ends, in this order):
 

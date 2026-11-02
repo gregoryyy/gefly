@@ -25,7 +25,7 @@ procedures or document copies (`not_included`), and its `fidelity` is fixed to
 | `configuration` | Manufacturer, model, TCDS, category, serial range, panel, flight manual, engine and propeller. |
 | `mass_limits`, `speed_limits`, `engine.ratings`, `propeller.limits` | Quantities (below). Airspeeds are split by reference (`IAS`, `CAS`). |
 | `avionics` | Standard and optional equipment from the read POH; `fit_status: tbd` because the modelled fit is still open. |
-| `sources` | Source register: id, document, revision, URL, access date and status, SHA-256 prefix of the read copy, applicability and rights. |
+| `sources` | Source register: id, document, revision, URL, access date and status, SHA-256 prefix with `hash_basis` (`document`: the read copy's bytes; `file_listing`: a `sha256sum` listing of the files read, printed in the research note), applicability and rights. `use: estimate_only` with `variant` (for example S14, `172P`) marks a source that may support only `estimated` values. |
 | `not_included`, `pending` | Deliberate exclusions, and page-cited items not yet transferred. |
 | `prepared` | Date, preparing agent and input documents. |
 
@@ -48,7 +48,10 @@ Status follows R-DATA-2:
   `indication-loading-values.json`: dial ranges and behaviour taken from the FlightGear
   c172p model (S14, a 172P, another variant; GAPS Q23 update 2026-11-02 08:01). They
   carry `applicability` and S14 citations, whose `page` is a repository file path at the
-  pinned commit, and never become sourced 172S facts.
+  pinned commit, and never become sourced 172S facts. The validator and the assurance
+  check reject a `sourced`/`derived` value citing an `estimate_only` source, an `estimated`
+  value citing none, an `applicability` that does not name the source `variant`, and a
+  `variant` equal to the aircraft designator (leading token of `configuration.model`).
 - `unknown`: `value` is `null` and `todo` says what is needed. Disagreeing sources are
   listed in `conflicts` (for example VFE CAS and the utility ramp mass) without choosing.
 

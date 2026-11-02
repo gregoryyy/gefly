@@ -48,6 +48,7 @@ KEYWORDS = {
     "minProperties", "items", "minItems", "minLength", "pattern", "allOf", "if", "then",
 }
 READ_STATUSES = {"read", "read_selected_pages"}
+ESTIMATE_ONLY = "estimate_only"
 # Exact SI factors: (original unit, SI unit) -> SI value per original unit.
 CONVERSIONS = {
     ("lb", "kg"): 0.45359237,
@@ -223,10 +224,32 @@ def walk(node, path="$"):
             yield from walk(item, f"{path}[{index}]")
 
 
-def cross_references(manifest, errors, sources=None):
-    """Check citations in manifest against a source register (default: its own)."""
+def aircraft_designator(manifest):
+    """Leading token of configuration.model.value (for example '172S'), or None."""
+    model = manifest.get("configuration", {}).get("model") if isinstance(manifest, dict) else None
+    value = model.get("value") if isinstance(model, dict) else None
+    if isinstance(model, dict) and isinstance(value, str) and value.split():
+        return value.split()[0]
+    return None
+
+
+def names_designator(text, designator):
+    """True if text names designator as a whole token (172P matches, 172PX does not)."""
+    return isinstance(text, str) and re.search(
+        r"(?<![A-Za-z0-9])" + re.escape(designator) + r"(?![A-Za-z0-9])", text) is not None
+
+
+def cross_references(manifest, errors, sources=None, designator=None):
+    """Check citations in manifest against a source register (default: its own).
+
+    An estimate_only source (another variant's model, GAPS Q23 update 2026-11-02 08:01) may
+    support only 'estimated' nodes: sourced/derived nodes must not cite it, every estimated
+    node must cite one, and an estimated node's applicability must name the source's
+    variant, which must differ from the aircraft designator.
+    """
     if sources is None:
         sources = manifest.get("sources")
+        designator = aircraft_designator(manifest)
     if not isinstance(sources, list):
         return
     register = {}
@@ -235,6 +258,10 @@ def cross_references(manifest, errors, sources=None):
             if source["id"] in register:
                 errors.append(f"$.sources[{index}]: duplicate source id {source['id']!r}")
             register[source["id"]] = source
+            if source.get("use") == ESTIMATE_ONLY and designator is not None \
+                    and source.get("variant") == designator:
+                errors.append(f"$.sources[{index}]: estimate_only variant {designator!r} equals "
+                              f"the aircraft designator")
     for path, node in walk(manifest):
         if "source_id" in node:
             source = register.get(node["source_id"])
@@ -249,6 +276,23 @@ def cross_references(manifest, errors, sources=None):
                 if source is not None and source.get("access_status") not in READ_STATUSES:
                     errors.append(f"{path}.citations[{index}]: {node['status']} value cites "
                                   f"unread source {citation['source_id']!r}")
+                if source is not None and source.get("use") == ESTIMATE_ONLY:
+                    errors.append(f"{path}.citations[{index}]: {node['status']} value cites "
+                                  f"estimate_only source {citation['source_id']!r}")
+        if node.get("status") == "estimated":
+            citations = node.get("citations") if isinstance(node.get("citations"), list) else []
+            estimates = [register[c["source_id"]] for c in citations
+                         if isinstance(c, dict) and c.get("source_id") in register
+                         and register[c["source_id"]].get("use") == ESTIMATE_ONLY]
+            if not estimates:
+                errors.append(f"{path}: estimated value cites no estimate_only source")
+            for source in estimates:
+                variant = source.get("variant")
+                if not isinstance(variant, str) or not names_designator(node.get("applicability"), variant):
+                    errors.append(f"{path}.applicability: does not name the variant {variant!r} "
+                                  f"of estimate_only source {source.get('id')!r}")
+                elif designator is not None and names_designator(variant, designator):
+                    errors.append(f"{path}: variant {variant!r} equals the aircraft designator")
 
 
 def conversions(manifest, errors):
@@ -522,7 +566,8 @@ def sibling_checks(document, schema, manifest, manifest_sha256=None):
         elif pin.get("manifest_sha256") != manifest_sha256:
             errors.append(f"$.manifest.manifest_sha256: {pin.get('manifest_sha256')!r} does not "
                           f"match the SHA-256 of the manifest file {manifest_sha256!r}")
-    cross_references(document, errors, sources if isinstance(sources, list) else [])
+    cross_references(document, errors, sources if isinstance(sources, list) else [],
+                     aircraft_designator(manifest))
     conversions(document, errors)
     return errors
 

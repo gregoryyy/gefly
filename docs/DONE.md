@@ -27,7 +27,9 @@ tests OK (1 skipped); `assure check` 0 errors.
 
 Still TBD-src (FlightGear has no answer): the fuel-flow range, tach-time counting,
 sender-fault detection and the annunciator switch-label serial. The quality review of
-this change is pending. Peer pending (batched).
+this change is pending. Quality fixes (08:40): S14 is marked `estimate_only`/`172P`, and
+both validators enforce estimate-only use and the variant named in `applicability`;
+`hash_basis` added; manifest 0.3.1, value files re-pinned. Peer pending (batched).
 
 ## 2026-11-02 08:01 — Record FlightGear for S17 gaps; Codex review deferred
 

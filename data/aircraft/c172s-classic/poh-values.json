@@ -8,8 +8,8 @@
   "manifest": {
     "path": "manifest.json",
     "manifest_id": "gefly.aircraft.c172s-classic",
-    "manifest_version": "0.3.0",
-    "manifest_sha256": "fe5b216b26d1ae4927a11960a0819fa498fa36a924e3444ee78fa377d3feb4a5"
+    "manifest_version": "0.3.1",
+    "manifest_sha256": "6199b74c949d99a602f777c74129bc8444c76bbfb74976004fe966d91e18cbee"
   },
   "extraction": "User decision 2026-11-01 13:59: extract only values the project needs (Exercise 01 IAS assessment and plausibility checks near EDFE), as individual cited facts; no Cessna text, whole table or figure. Each quantity was read in S17 and checked against a rendered page image.",
   "airspeed_calibration": {

@@ -8,8 +8,8 @@
   "manifest": {
     "path": "manifest.json",
     "manifest_id": "gefly.aircraft.c172s-classic",
-    "manifest_version": "0.3.0",
-    "manifest_sha256": "fe5b216b26d1ae4927a11960a0819fa498fa36a924e3444ee78fa377d3feb4a5"
+    "manifest_version": "0.3.1",
+    "manifest_sha256": "6199b74c949d99a602f777c74129bc8444c76bbfb74976004fe966d91e18cbee"
   },
   "extraction": "User decision GAPS Q23, 2026-11-02: (a) every engine and fuel indication of the classic-panel 172S joins the worker-computed ind state; (b) empty mass/CG come from the POH sample loading example, labelled as a sample. Each value was read on a rendered page image of S17 (SHA-256 prefix 420dbdaf5517a7a0); no Cessna text, table or figure is copied. Keys are proposed ind field names; the ind order is frozen in SCENARIO-CONTRACTS, not here. Estimated values (GAPS Q23 update 2026-11-02 08:01, input docs/input/2026-11-02-flightgear-gaps-codex-deferred.md) fill gaps S17 leaves open: dial ranges, the EGT scale, Hobbs counting and the low-fuel basis come from the FlightGear c172p model (S14, a 172P, another variant), as numbers and behaviour descriptions in our own words with file and commit; no FlightGear code, XML or asset is copied.",
   "indications": {
