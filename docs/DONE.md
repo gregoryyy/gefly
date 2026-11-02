@@ -6,7 +6,7 @@ above previous entries. This log records implementation, not simulator validity.
 ## 2026-11-02 08:20 — Estimate S17 indication gaps from FlightGear c172p
 
 TODO: 2.1 inputs. Agent: Claude Code orchestrator; researcher subagent; quality
-subagent review in progress.
+subagent (two rounds; final verdict accept, 10 of 10 spot checks against c172p matched).
 
 **Implementation notes**
 
@@ -26,8 +26,7 @@ tests OK (1 skipped); `assure check` 0 errors.
 **Deviations**
 
 Still TBD-src (FlightGear has no answer): the fuel-flow range, tach-time counting,
-sender-fault detection and the annunciator switch-label serial. The quality review of
-this change is pending. Quality fixes (08:40): S14 is marked `estimate_only`/`172P`, and
+sender-fault detection and the annunciator switch-label serial. Quality fixes (08:40): S14 is marked `estimate_only`/`172P`, and
 both validators enforce estimate-only use and the variant named in `applicability`;
 `hash_basis` added; manifest 0.3.1, value files re-pinned. Peer pending (batched).
 
