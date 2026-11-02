@@ -11,6 +11,8 @@ import { createSixPack } from './six-pack';
 import { createAutopilotPanel } from './autopilot-panel';
 import { createRadioNavPanel } from './radio-nav-panel';
 import { createEnginePanel } from './engine-panel';
+import { createEngineAudio } from './engine-audio';
+import { createAudioControls } from './audio-controls';
 import { createPointerYoke } from './pointer-yoke';
 import { createFieldOfViewControl, DEFAULT_FOV_RAD } from './field-of-view';
 import { createPressureAltimeterPanel } from './pressure-altimeter-panel';
@@ -30,7 +32,7 @@ root.innerHTML = `
   <header class="topbar">
     <a class="brand" href="https://github.com/gregoryyy/gefly" target="_blank" rel="noreferrer">gefly<span>FLIGHT LAB</span></a>
     <div class="location"><strong>EGELSBACH</strong><span>C172 research aircraft · airborne practice</span></div>
-    <div class="session-status"><i id="status-dot"></i><span id="status" role="status">Loading flight…</span><span id="clock">00:00</span></div>
+    <div class="session-status"><i id="status-dot"></i><span id="status" role="status">Loading flight…</span><span id="clock">00:00</span><span id="audio-button-slot"></span></div>
     <details id="view-menu" class="top-menu"><summary>View</summary><nav class="menu-content view-controls" aria-label="Flight views"><button id="cockpit" class="selected" aria-pressed="true">Cockpit</button><button id="chase" aria-pressed="false">Chase <kbd>V</kbd></button><button id="toggle-map" aria-pressed="false" aria-controls="practice-map-panel">Map</button><button id="toggle-flight-data" aria-pressed="false" aria-controls="flight-data-panel">Flight data</button><button id="toggle-stall-awareness" aria-pressed="false" aria-controls="stall-awareness-panel">Stall awareness</button><button id="toggle-controls" aria-pressed="true" aria-controls="flight-controls-panel">Flight controls</button></nav></details>
     <span id="review-button-slot"></span>
     <button id="controls-settings" class="settings-trigger" aria-haspopup="dialog">Options</button>
@@ -88,6 +90,8 @@ root.innerHTML = `
 </main>`;
 
 const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
+let audioControls: ReturnType<typeof createAudioControls> | null = null;
+const engineAudio = createEngineAudio({ onStatus(status) { audioControls?.update(status); } });
 const sixPack = createSixPack(el('six-pack'));
 const landingFeedback = createLandingFeedback(el('landing-feedback'));
 const flightData = createFlightPathGroundPanel({ container: el('flight-data-panel'), onClose: () => setFlightDataVisible(false) });
@@ -197,7 +201,7 @@ const session = createSession({
   },
   onStatus(message) { liveStatus = message; el('status').textContent = reviewing ? 'Review' : message; },
   onError(message) {
-    failed = true; running = false; ready = false; startWhenReady = false;
+    failed = true; running = false; ready = false; startWhenReady = false; engineAudio.update(null, false);
     neutralize(); notice(`Flight stopped. ${message}`); updateSessionUI();
   },
 });
@@ -217,6 +221,34 @@ limitsButton.id = 'limits'; limitsButton.type = 'button';
 limitsButton.textContent = 'Model & systems information'; limitsButton.setAttribute('aria-expanded', 'false');
 optionsDialog.insertBefore(limitsButton, el('settings-close'));
 optionsDialog.insertBefore(el('limitations'), el('settings-close'));
+const audioSettingsSlot = document.createElement('div'); audioSettingsSlot.id = 'audio-settings-slot';
+optionsDialog.insertBefore(audioSettingsSlot, el('settings-close'));
+audioControls = createAudioControls({
+  buttonContainer: el('audio-button-slot'), settingsContainer: audioSettingsSlot,
+  onToggleMute() {
+    const status = engineAudio.getStatus();
+    if (!status.unlocked || status.state === 'unavailable') {
+      if (status.muted) engineAudio.setMuted(false);
+      void engineAudio.unlock();
+    }
+    else engineAudio.setMuted(!status.muted);
+  },
+  onVolume(volume) { engineAudio.setVolume(volume); void engineAudio.unlock(); },
+});
+audioControls.update(engineAudio.getStatus());
+// Unlock only from a trusted activation, never from worker/RAF/startup callbacks.
+function activateEngineAudio(event: Event): void {
+  if (!event.isTrusted || !(event.target instanceof Element)) return;
+  const target = event.target;
+  const button = target.closest('#start, #pause, #review-play');
+  const key = event instanceof KeyboardEvent ? event : null;
+  const flightSpace = key?.code === 'Space' && !editing(target) && !menuOpen()
+    && !document.querySelector('dialog[open]') && !target.closest('button,a,summary');
+  if ((button && (!key || key.code === 'Space' || key.code === 'Enter')) || flightSpace) void engineAudio.unlock();
+}
+document.addEventListener('click', activateEngineAudio, true);
+document.addEventListener('keydown', activateEngineAudio, true);
+
 el('controls-settings').onclick = () => { closeViewMenu(); controlSettingsPanel.open(); };
 const viewMenu = el<HTMLDetailsElement>('view-menu');
 function closeViewMenu() { for (const id of ['view-menu', 'flight-menu']) el<HTMLDetailsElement>(id).open = false; }
@@ -290,7 +322,7 @@ const aircraftHandbook = createAircraftHandbook({
   buttonContainer: viewMenu.querySelector<HTMLElement>('nav')!,
   onOpen() {
     closeViewMenu();
-    if (reviewing) { reviewPlaying = false; updateReviewControls(); }
+    if (reviewing) { reviewPlaying = false; engineAudio.update(null, false); updateReviewControls(); }
     else pauseFlight();
   },
   onClose: focusFlight,
@@ -373,7 +405,7 @@ const reviewControls = createFlightReviewControls({
   onSeek(time_s) {
     const bounds = flightTrace.bounds();
     if (!reviewing || !bounds || !Number.isFinite(time_s)) return;
-    reviewPlaying = false; reviewTime_s = clamp(time_s, bounds.start_s, bounds.end_s);
+    reviewPlaying = false; engineAudio.update(null, false); reviewTime_s = clamp(time_s, bounds.start_s, bounds.end_s);
     lastMapUpdate_ms = -Infinity;
     updateReviewControls();
   },
@@ -397,6 +429,7 @@ function enterReview() {
 }
 function exitReview() {
   if (!reviewing) return;
+  engineAudio.update(null, false);
   reviewing = reviewPlaying = false; lastMapUpdate_ms = -Infinity;
   el('status').textContent = liveStatus;
   neutralize(); updateSessionUI();
@@ -410,7 +443,9 @@ function toggleReviewPlayback() {
   const bounds = flightTrace.bounds();
   if (!reviewing || !bounds) return;
   if (!reviewPlaying && reviewTime_s >= bounds.end_s) reviewTime_s = bounds.start_s;
-  reviewPlaying = !reviewPlaying; updateReviewControls();
+  reviewPlaying = !reviewPlaying;
+  if (!reviewPlaying) engineAudio.update(null, false);
+  updateReviewControls();
 }
 
 
@@ -450,7 +485,7 @@ function neutralize() {
 }
 function pauseFlight() {
   if (mapDisposed) return;
-  reviewPlaying = false;
+  reviewPlaying = false; engineAudio.update(null, false);
   startWhenReady = false; neutralize(); running = false; session.pause(); updateSessionUI();
 }
 function startFlight() {
@@ -469,6 +504,7 @@ function reset(preset = landingPreset) {
   lastMapUpdate_ms = -Infinity;
   pressureAltimeter.update(null, false);
   startWhenReady = running; running = false; ready = false; failed = false;
+  engineAudio.update(null, false);
   neutralize(); session.pause(); latest = previous = null; verticalSpeedFpm = 0;
   pitchTrimControl.update(null, false, false, null);
   flightData.update(null, false); stallAwareness.update(null, false);
@@ -699,6 +735,8 @@ function animate(now: number) {
         sceneFailed = true; pauseFlight(); notice('The 3D scene stopped rendering. Reload to restart.'); updateSessionUI();
       }
     }
+    engineAudio.update(state, ready && !failed && !sceneFailed && !document.hidden
+      && (reviewing ? reviewPlaying : running));
     pressureAltimeter.update(state, reviewing);
     sixPack.update(state, shownVsiFpm, reviewing);
     enginePanel.update(state, reviewing, controlsAvailable(), { mixture_norm: mixtureCommand, mixture_auto: mixtureAutomatic });
@@ -721,5 +759,5 @@ function animate(now: number) {
   requestAnimationFrame(animate);
 }
 publishInput(); updateSessionUI(); requestAnimationFrame(animate);
-addEventListener('pagehide', () => { mapDisposed = true; aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
+addEventListener('pagehide', () => { mapDisposed = true; engineAudio.dispose(); audioControls?.dispose(); document.removeEventListener('click', activateEngineAudio, true); document.removeEventListener('keydown', activateEngineAudio, true); aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
 void sceneReady;
