@@ -3,6 +3,27 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 07:16 — Record the accepted Q23 proposals
+
+TODO: 2.1 scope set; 1.3.2 empty mass/CG source decided. Agent: Claude Code orchestrator.
+
+**Implementation notes**
+
+The user accepted all Q23 recommendations ("yes to proposals. go on";
+[input](input/2026-11-02-q23-proposals.md)). Recorded in:
+- GAPS Q23 (status column updated) and Q5;
+- TODO 2.1: milestone 2 = circuit flight, sensed checklist items, static briefing and
+  engine/fuel indications in `ind`; text radio in phase 3;
+- fix/m1-contracts (#32): CONTRACTS §10 and SCENARIO-CONTRACTS marked agreed, Q-S3 and
+  Q-S8 decided, FDM-172S Q-1 = POH sample loading, labelled;
+- fix/m1-tooling (#34): manifest S5/S9 `facts_only`, version 0.2.2, value files
+  re-pinned.
+
+**Deviations**
+
+The `ind` digest layout still waits for the researcher's S17 Section 7 engine/fuel
+list. Peer pending (batched).
+
 ## 2026-11-02 00:53 — Claude peer review of Codex PRs #27–#30 and fixes (TODO 0.21)
 
 TODO: 0.21 in progress (#28b and #30 packets to renew). Agent: Claude Code orchestrator; peer
