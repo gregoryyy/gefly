@@ -27,6 +27,8 @@
 // cost per step for each block, separating compute cost from post-idle wake cost.
 import createJSBSim from './dist/jsbsim.mjs';
 import { indicatedAltitude_m, validSetting } from './altimeter.js';
+import { cockpitFields } from './cockpit.js';
+import { autopilotCommand, engineFields } from './engine.js';
 
 const MAX_CATCHUP = 12;          // steps per tick (100 ms at 1/120 s)
 const TIMER_SLACK_MS = 0.1;     // wake margin after a step's due time
@@ -136,12 +138,40 @@ function readState() {
   return M.HEAPF64.subarray(p, p + 8);
 }
 
+function readCockpitFields() {
+  if (typeof M._gf_cockpit_state !== 'function') return {};
+  const pointer = M._gf_cockpit_state() >> 3;
+  return cockpitFields(M.HEAPF64.subarray(pointer, pointer + 8));
+}
+
+function readEngineFields() {
+  if (typeof M._gf_engine_state !== 'function') return {};
+  const pointer = M._gf_engine_state() >> 3;
+  return engineFields(M.HEAPF64.subarray(pointer, pointer + 13));
+}
+
+function onAutopilot(msg) {
+  const command = autopilotCommand(msg, readState()[6]);
+  if (!command || typeof M._gf_set_autopilot !== 'function') {
+    postMessage({ type: 'autopilot-rejected', message: 'Autopilot command unavailable or invalid.' });
+    return;
+  }
+  const rc = M._gf_set_autopilot(command.mode, command.target_heading_rad);
+  if (rc !== 0) {
+    postMessage({ type: 'autopilot-rejected', message: `Autopilot command rejected: ${rc}` });
+    return;
+  }
+  // Mode and target changes are visible while paused, without running physics.
+  postState();
+}
+
 function stateMessage() {
   const s = readState();
   return {
     type: 'state', step: stepIndex, t_s: s[0], lat_rad: s[1], lon_rad: s[2],
     alt_msl_m: s[3], roll_rad: s[4], pitch_rad: s[5], heading_rad: s[6], tas_mps: s[7],
     last_input_wall_ms: lastInputWallMs, step_cost_us: lastStepCostUs, ...altimeterFields,
+    ...readCockpitFields(), ...readEngineFields(),
   };
 }
 
@@ -159,6 +189,14 @@ function applyDueInputs() {
     const inp = pending.shift();
     const rc = M._gf_set_inputs(inp.elevator, inp.aileron, inp.rudder, inp.throttle);
     if (rc !== 0) { fail(`set_inputs rc=${rc}`); return false; }
+    if (typeof M._gf_set_secondary_inputs === 'function') {
+      const secondary = M._gf_set_secondary_inputs(inp.flap_norm, inp.brake_norm);
+      if (secondary !== 0) { fail(`secondary inputs rc=${secondary}`); return false; }
+    }
+    if (typeof M._gf_set_engine_controls === 'function') {
+      const engine = M._gf_set_engine_controls(inp.mixture_norm, inp.mixture_auto ? 1 : 0);
+      if (engine !== 0) { fail(`engine controls rc=${engine}`); return false; }
+    }
     if (inp.step < stepIndex) lateInputs += 1;
     lastInputWallMs = inp.wall_ms;
     appliedInputs += 1;
@@ -251,19 +289,25 @@ async function onInit(msg) {
   postMessage({
     type: 'ready',
     build: { jsbsim_tag: build.jsbsim_tag, emsdk: build.emsdk, wasm_bytes: build.wasm_bytes,
-             jsbsim_commit: build.jsbsim_commit, wasm_sha256: build.wasm_sha256, flags: build.flags },
+             jsbsim_commit: build.jsbsim_commit, wasm_sha256: build.wasm_sha256, flags: build.flags,
+             aircraft_adapter: build.aircraft_adapter },
     trim: { status: M._gf_trim_status(), throttle: M._gf_trim_throttle(), pitch_trim: M._gf_trim_pitch() },
   });
   postState();
 }
 
 function onInput(msg) {
+  const mixture_norm = msg.mixture_norm === undefined ? 1 : msg.mixture_norm;
+  const mixture_auto = msg.mixture_auto === undefined ? true : msg.mixture_auto;
   const ok = Number.isInteger(msg.step) && msg.step >= 0 && finiteIn(msg.wall_ms, 0, Number.MAX_VALUE)
     && finiteIn(msg.elevator, -1, 1) && finiteIn(msg.aileron, -1, 1)
-    && finiteIn(msg.rudder, -1, 1) && finiteIn(msg.throttle, 0, 1);
+    && finiteIn(msg.rudder, -1, 1) && finiteIn(msg.throttle, 0, 1)
+    && finiteIn(msg.flap_norm ?? 0, 0, 1) && finiteIn(msg.brake_norm ?? 0, 0, 1)
+    && finiteIn(mixture_norm, 0, 1) && typeof mixture_auto === 'boolean';
   if (!ok) { postMessage({ type: 'error', message: 'input rejected: non-finite, out of range or bad step' }); return; }
   const inp = { step: msg.step, wall_ms: msg.wall_ms, elevator: msg.elevator, aileron: msg.aileron,
-                rudder: msg.rudder, throttle: msg.throttle };
+                rudder: msg.rudder, throttle: msg.throttle, flap_norm: msg.flap_norm ?? 0, brake_norm: msg.brake_norm ?? 0,
+                mixture_norm, mixture_auto };
   let i = pending.length;
   while (i > 0 && pending[i - 1].step > inp.step) i -= 1;   // stable insert
   pending.splice(i, 0, inp);
@@ -309,6 +353,7 @@ self.onmessage = (ev) => {
       switch (msg.type) {
         case 'input': onInput(msg); break;
         case 'altimeter': onAltimeter(msg); break;
+        case 'autopilot': onAutopilot(msg); break;
         case 'run': onRun(msg); break;
         case 'pause': onHalt(); break;
         case 'stop': onHalt(); postMessage(stats()); break;

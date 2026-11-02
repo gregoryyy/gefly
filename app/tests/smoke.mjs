@@ -16,7 +16,7 @@ await access(join(runtime, 'dist/jsbsim.wasm'))
 // missing jsbsim.wasm alone is not separately covered.
 const missingRoot = await mkdtemp(join(tmpdir(), 'gefly-missing-engine-'));
 await mkdir(join(missingRoot, 'dist'));
-for (const file of ['worker.js', 'altimeter.js']) await copyFile(join(runtime, file), join(missingRoot, file));
+for (const file of ['worker.js', 'altimeter.js', 'cockpit.js', 'engine.js']) await copyFile(join(runtime, file), join(missingRoot, file));
 await copyFile(join(runtime, 'dist/build-info.json'), join(missingRoot, 'dist/build-info.json')).catch(() => {});
 for (const file of ['dist/jsbsim.mjs', 'dist/jsbsim.wasm'])
   await access(join(missingRoot, file)).then(() => { throw new Error(`${file} must be absent from the missing-engine copy`); }, () => {});

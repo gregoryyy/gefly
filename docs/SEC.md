@@ -111,7 +111,7 @@ usable simulator path when community or AI services are unavailable.
 
 ## Local browser flight prototype
 
-The experimental Vite server binds to 127.0.0.1 and allowlists only the study worker the project-owned pressure module and its three generated runtime files. It does not expose the repository through that middleware. npm installation and the pinned study build download upstream dependencies; JSBSim and application assets remain local. The renderer uses a bundled, openly licensed Hessen starter photograph with versioned bounds and source metadata; no live imagery service is contacted during flight. No device geolocation, accounts, telemetry, persistence or AI/provider calls are used. Generated generic aircraft data stays local and is excluded from the production UI build. Browser checks cover missing runtime, WebGL failure, control release and focus-loss pause. The UI-only production build is not a published simulator deployment.
+The experimental Vite server binds to 127.0.0.1 and allowlists only the study worker, three project-owned instrument modules and three generated runtime files. It does not expose the repository through that middleware. npm installation and the pinned study build download upstream dependencies; JSBSim and application assets remain local. The renderer uses a bundled, openly licensed Hessen starter photograph with versioned bounds and source metadata; no live imagery service is contacted during flight. No device geolocation, accounts, telemetry, persistence or AI/provider calls are used. Generated generic aircraft data stays local and is excluded from the production UI build. Browser checks cover missing runtime, WebGL failure, control release and focus-loss pause. The UI-only production build is not a published simulator deployment.
 
 Control sensitivity settings are bounded dimensionless gains held only in page memory. They have no persistence or network path, preserve throttle, and leave the declared study roll offset separate. Opening the settings dialog pauses flight and releases held inputs; closing it does not resume automatically. These input preferences do not calibrate or modify aircraft physics.
 
@@ -129,3 +129,25 @@ Paused changes can replace only the last instrument snapshot with identical
 physical/environment state and preserved VSI; prior frozen samples remain intact.
 Review uses captured settings and disables adjustment. No pressure data is stored
 or sent externally, and launch QFE never substitutes for accepted airport data.
+
+Scene pointing gestures do not request pointer lock or device permissions. Their
+inputs are bounded and neutralize on cancellation, focus loss and yoke exit;
+captured look can continue beyond the scene until release, with pilot pointer
+axes neutral. Camera offsets never enter dynamics. Numeric throttle shortcuts and
+AP shortcuts are suppressed inside open dialogs and editable controls. The live
+mobile engine dialog releases held inputs and keeps flight running, as labeled.
+
+Cockpit/engine state groups are validated atomically before copying and display;
+missing old-engine capabilities remain unavailable rather than synthesized.
+Flap, brake and mixture commands are finite/bounded. AP messages accept only
+Off/Level/Heading with finite normalized true-heading targets. Raw manual pilot
+input disconnects AP, and its roll correction cannot silently compete with the
+controller. Review disables all these live controls and renders captured fields.
+Paused setting/mode changes replace only the final permitted instrument fields,
+with physical/environment/other engine state and VSI unchanged.
+
+The local mixture adapter accepts a pinned source-byte hash, rejects unsupported
+wiring and source/destination overlap, and preserves other source bytes and
+notices. It prepares ignored output without changing the upstream checkout;
+metadata hashes identify the adapter and generated model. No source/model import,
+persistence, personal telemetry or external service was introduced in the UI.

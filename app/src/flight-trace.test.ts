@@ -156,3 +156,29 @@ test('paused pressure setting changes replace only the last instrument snapshot 
   assert.equal(trace.record({ ...initial, p_static_pa: NaN }, 2), false);
   assert.equal(trace.atTime(1)!.state.altimeter_setting_pa, 96_000);
 });
+
+test('six-pack and applied secondary-control values remain captured on the selected frame', () => {
+  const trace = new FlightTrace();
+  const first = { ...state(1), cas_mps: 43, turn_rate_radps: -.02, slip_ball_rad: .1,
+    flap_rad: Math.PI/18, brake_left_norm: 1, brake_right_norm: 1, on_ground: 0 };
+  assert.equal(trace.record(first, -1), true);
+  assert.equal(trace.record({ ...first, step: 2, t_s: 2, flap_rad: Math.PI/9, brake_left_norm: 0, brake_right_norm: 0 }, 1), true);
+  first.flap_rad = 0;
+  assert.equal(trace.atTime(1)!.state.flap_rad, Math.PI/18);
+  assert.equal(trace.atTime(1)!.state.brake_left_norm, 1);
+  assert.equal(trace.atTime(2)!.state.flap_rad, Math.PI/9);
+  assert.equal(trace.atTime(2)!.state.brake_left_norm, 0);
+});
+
+test('paused AP mode changes preserve physical/engine state and prior immutable review frames', () => {
+  const trace=new FlightTrace();
+  const first={...state(1),manifold_pressure_pa:80_000,prop_radps:200,mixture_norm:.95,mixture_auto:1,
+    oil_pressure_pa:400_000,oil_temp_k:350,egt_k:800,fuel_flow_m3ps:.00001,fuel_left_m3:.05,fuel_right_m3:.05,
+    ap_mode:2,ap_heading_target_rad:1.4,ap_aileron_norm:.2};
+  assert.equal(trace.record(first,1),true);const prior=trace.atTime(1)!;
+  assert.equal(trace.record({...first,ap_mode:0,ap_aileron_norm:0},99),true);
+  assert.equal(trace.atTime(1)!.state.ap_mode,0);assert.equal(trace.atTime(1)!.vertical_speed_mps,1);
+  assert.equal(prior.state.ap_mode,2);
+  assert.equal(trace.record({...first,ap_mode:1,prop_radps:150},1),false);
+  assert.equal(trace.record({...first,ap_mode:0},1),false,'servo-only changes without a setting/mode event cannot rewrite paused history');
+});

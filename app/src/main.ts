@@ -1,5 +1,8 @@
 import './style.css';
 import './practice-map.css';
+import { createSixPack } from './six-pack';
+import { createEnginePanel } from './engine-panel';
+import { createPointerYoke } from './pointer-yoke';
 import { createPressureAltimeterPanel } from './pressure-altimeter-panel';
 import { createScene } from './scene';
 import { createSession } from './session';
@@ -13,7 +16,7 @@ import type { PracticeMap } from './practice-map';
 const root = document.querySelector<HTMLDivElement>('#app')!;
 root.innerHTML = `
 <main class="flight-app">
-  <div id="scene" aria-label="Flight scene" tabindex="0"></div>
+  <div id="scene" aria-label="Flight scene" tabindex="0" data-pointer-mode="off"></div>
   <header class="topbar">
     <a class="brand" href="https://github.com/gregoryyy/gefly" target="_blank" rel="noreferrer">gefly<span>FLIGHT LAB</span></a>
     <div class="location"><strong>EGELSBACH</strong><span>C172 research aircraft · airborne practice</span></div>
@@ -32,6 +35,7 @@ root.innerHTML = `
     <button id="start" class="primary" disabled>Loading…</button>
     <span class="gate-hint">Drag the stick or hold the control buttons. Keyboard arrows also work.</span>
   </section>
+  <div id="pointer-mode" class="pointer-mode">Click scene: yoke · Hold-drag: look</div>
   <div class="crosshair" aria-hidden="true"><i></i><b></b><i></i></div>
   <aside class="control-panel" aria-label="Flight controls">
     <div class="control-heading"><strong>FLIGHT CONTROLS</strong><span id="control-state">START FLIGHT TO CONTROL</span></div>
@@ -43,30 +47,37 @@ root.innerHTML = `
       </div>
     </div>
     <div class="axis-display"><span>ROLL <b id="roll-control">0</b></span><span>PITCH <b id="pitch-control">0</b></span><span>RUDDER <b id="rudder-control">0</b></span></div>
-    <details class="control-options"><summary>Keyboard & assistance</summary><p>↑ Push nose down · ↓ Pull nose up<br>← / → Bank · A / D Rudder<br>W / S Throttle · Space Pause · R Restart</p><label for="roll-offset">Study roll offset <output id="offset-value">−0.109</output></label><input id="roll-offset" type="range" min="-0.25" max="0.25" step="0.001" value="-0.109375" aria-label="Experimental roll input offset"><small>Experimental input assist. Set to zero for unassisted roll input.</small></details>
+    <details class="control-options"><summary>Keyboard & assistance</summary><p>↑ Push nose down · ↓ Pull nose up<br>← / → Bank · A / D Rudder<br>W / S Throttle · 1–9: 10–90% · 0: idle<br>F / ⇧F Flaps · B Hold wheel brakes<br>P Capture heading / AP off<br>Space Pause · R Restart</p><label for="roll-offset">Roll correction <output id="offset-value">−0.109</output></label><input id="roll-offset" type="range" min="-0.25" max="0.25" step="0.001" value="-0.109375" aria-label="Experimental roll correction for the generic model"><small>The generic model tends to roll right with centered controls. This adds a small constant left-aileron command. Zero removes the correction; it is not aircraft trim.</small><div class="roll-correction-presets"><button id="roll-correction-off" type="button">Off · 0%</button><button id="roll-correction-default" type="button">Study default</button></div></details>
   </aside>
   <div class="scenery-label">Egelsbach starter photograph · ellipsoid surface (no terrain)</div>
   <aside id="practice-map-panel" class="practice-map-panel" aria-label="Practice map" hidden></aside>
   <section class="flight-deck" aria-label="Flight instruments">
     <div class="deck-heading"><span class="eyebrow">CLASSIC INSTRUMENTS <b>EXPERIMENTAL</b></span><span id="view-label">COCKPIT VIEW</span></div>
     <div class="instruments">
-      <div class="gauge"><canvas id="airspeed" width="300" height="300" aria-label="True airspeed dial"></canvas><div class="gauge-readout"><b id="tas">—</b><span>KT · TRUE AIRSPEED</span></div></div>
-      <div class="gauge attitude"><canvas id="attitude" width="300" height="300" aria-label="Attitude indicator"></canvas><div class="gauge-readout"><b id="bank">—</b><span>BANK · DEGREES</span></div></div>
-      <div id="pressure-altimeter" class="gauge"></div>
-      <div class="flight-data"><div><span>HEADING · TRUE</span><b id="heading">—</b></div><div><span>VERTICAL SPEED</span><b id="vsi">—</b><small>FT / MIN · DERIVED</small></div></div>
-      <div class="throttle-control"><label for="throttle">THROTTLE <b id="power">—</b></label><input id="throttle" type="range" min="0" max="100" value="69" aria-label="Throttle percentage"><span>IDLE <i></i> FULL</span><p><kbd>W</kbd> Increase <kbd>S</kbd> Decrease</p></div>
-      <div class="session-controls"><button id="reset">Restart flight <kbd>R</kbd></button><p>Fixed-step JSBSim<br>Generic c172x research model</p><button id="limits" aria-expanded="false">Model & scenery limits</button></div>
+      <div id="six-pack"></div>
+      <aside class="engine-controls" aria-label="Aircraft controls">
+        <div class="throttle-control"><label for="throttle">THROTTLE <b id="power">—</b></label><input id="throttle" type="range" min="0" max="100" value="69" aria-label="Throttle percentage"><span>IDLE <i></i> FULL</span><p><kbd>W</kbd> Increase <kbd>S</kbd> Decrease</p></div>
+        <div class="flap-controls"><div class="config-heading"><label>FLAPS</label><b id="flaps-actual">—</b></div><div class="flap-detents" role="group" aria-label="Flap target"><button id="flaps-0" data-flap="0" aria-pressed="true">UP</button><button id="flaps-10" data-flap="10" aria-pressed="false">10°</button><button id="flaps-20" data-flap="20" aria-pressed="false">20°</button><button id="flaps-30" data-flap="30" aria-pressed="false">30°</button></div><small><kbd>F</kbd> Extend · <kbd>⇧ F</kbd> Retract</small></div>
+        <div class="brake-controls"><button id="wheel-brakes" data-code="KeyB" class="control-key" aria-label="Hold wheel brakes">WHEEL BRAKES <kbd>B</kbd></button><small id="brake-state">Wheel brakes · ground contact only</small></div>
+        <div class="session-controls"><button id="reset">Restart flight <kbd>R</kbd></button><button id="limits" aria-expanded="false">Model & scenery limits</button></div>
+      </aside>
+      <div id="engine-systems"></div>
     </div>
     <footer><span>LOCAL RESEARCH PROTOTYPE · NOT VALIDATED FOR TRAINING</span><span>Imagery: HVBG · DL-DE Zero 2.0</span></footer>
-    <div id="limitations" hidden>Generic JSBSim 172P research data, not the planned C172S. Aerial imagery provides geographic context on an ellipsoid; no terrain heights, current airport information or navigation data are supplied. TAS is not IAS. The pressure altimeter uses an ideal ISA scale-offset model driven by JSBSim static pressure; launch-point QFE is a practice datum, not airport elevation. Installed C172S instrument errors and limits are not modeled. No validated landing, circuit assessment, weather, radio or checklists yet. The adjustable study roll offset adds a constant aileron input to counter the generic model’s initial roll-off; this is an experimental assist, not an aircraft trim specification. Local research runtime assets are excluded from distribution.</div>
+    <div id="limitations" hidden>Generic JSBSim 172P research data, not the planned C172S. Aerial imagery provides geographic context on an ellipsoid; no terrain heights, current airport information or navigation data are supplied. Airspeed shows ideal engine CAS, not installation-calibrated IAS; older engines explicitly fall back to TAS. Heading is true, and the ideal turn-rate aid is not a full gyro turn-coordinator model. The pressure altimeter uses an ideal ISA scale-offset model driven by JSBSim static pressure; launch-point QFE is a practice datum, not airport elevation. Installed C172S instrument errors and limits are not modeled. No validated landing, circuit assessment, weather, radio or checklists yet. The adjustable study roll offset adds a constant aileron input to counter the generic model’s initial roll-off; this is an experimental assist, not an aircraft trim specification. Local research runtime assets are excluded from distribution.</div>
   </section>
 </main>`;
 
 const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
+const sixPack = createSixPack(el('six-pack'));
 const sceneContainer = el('scene');
 const focusFlight = () => sceneContainer.focus({ preventScroll: true });
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 let view: 'cockpit' | 'chase' = 'cockpit';
+let pointerYoke: ReturnType<typeof createPointerYoke> | null = null;
+let cameraLook = { yaw_rad: 0, pitch_rad: 0 };
+let flapTarget_deg = 0;
+let mixtureCommand = 1, mixtureAutomatic = true, apDisconnectPending = false;
 let scene: FlightScene | null = null;
 let sceneFailed = false, ready = false, running = false, failed = false;
 let hasFlown = false, startWhenReady = false;
@@ -85,7 +96,7 @@ const keys = new Set<string>();
 const pointerControls = new Map<number, string>();
 const keyboardControls = new Set<string>();
 let stickPointer: number | null = null;
-const flightKeys = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyA', 'KeyD', 'KeyW', 'KeyS']);
+const flightKeys = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyA', 'KeyD', 'KeyW', 'KeyS', 'KeyB']);
 const editing = (target: EventTarget | null) => target instanceof HTMLElement && (!!target.closest('input,select,textarea') || target.isContentEditable);
 const notice = (message: string) => { el('notice').textContent = message; el('notice').hidden = !message; };
 
@@ -104,7 +115,7 @@ function updateSessionUI() {
   updateReviewControls();
   el('pause').innerHTML = `${running ? 'Pause' : 'Resume'} <kbd>SPACE</kbd>`;
   el('status-dot').classList.toggle('flying', running);
-  el('control-state').textContent = running ? 'CONTROLS ACTIVE' : 'START FLIGHT TO CONTROL';
+  el('control-state').textContent = running ? (latest?.ap_mode ? 'AUTOPILOT · ROLL' : 'CONTROLS ACTIVE') : 'START FLIGHT TO CONTROL';
   el('control-state').classList.toggle('active', running);
   el('joystick').setAttribute('aria-disabled', String(paused));
   document.querySelectorAll<HTMLButtonElement>('[data-code]').forEach(button => { button.disabled = paused; });
@@ -128,6 +139,7 @@ function updateSessionUI() {
 
 const session = createSession({
   onState(state) {
+    const oldAp = latest?.ap_mode ?? 0;
     if (previous && state.t_s > previous.t_s) {
       const dt = state.t_s - previous.t_s;
       const raw = (state.alt_msl_m - previous.alt_msl_m) / dt / 0.3048 * 60;
@@ -136,6 +148,7 @@ const session = createSession({
     previous = state; latest = state;
     if (!reviewing) flightTrace.record(state, verticalSpeedFpm * 0.3048 / 60);
     updateReviewControls();
+    if (oldAp !== (state.ap_mode ?? 0)) { apDisconnectPending = false; publishInput(); updateSessionUI(); }
   },
   onReady(trim) {
     ready = true; failed = false; throttle = trim.throttle;
@@ -160,8 +173,21 @@ const controlSettingsPanel = createControlSettingsPanel({
 });
 el('controls-settings').onclick = () => controlSettingsPanel.open();
 const pressureAltimeter = createPressureAltimeterPanel({
-  container: el('pressure-altimeter'), onOpen: pauseFlight, onClose: focusFlight,
+  container: sixPack.altimeterContainer, onOpen: pauseFlight, onClose: focusFlight,
   onSetting(setting_pa) { if (!reviewing && ready && !failed) session.setAltimeter(setting_pa); },
+});
+
+const enginePanel = createEnginePanel({
+  container: el('engine-systems'),
+  onMixture(norm, automatic) {
+    if (!running || reviewing) return;
+    mixtureCommand = norm; mixtureAutomatic = automatic; publishInput();
+  },
+  onAutopilot(mode, target_heading_rad) {
+    if (reviewing || (!running && mode !== 0)) return;
+    apDisconnectPending = false; session.setAutopilot(mode, target_heading_rad);
+  },
+  onOpen: neutralize, onClose: focusFlight,
 });
 
 el('toggle-map').onclick = () => { void setMapVisible(!mapVisible); focusFlight(); };
@@ -242,8 +268,15 @@ function publishInput() {
     elevator: clamp((held('ArrowUp') ? 0.35 : 0) - (held('ArrowDown') ? 0.35 : 0) + stickY * 0.4, -1, 1),
     aileron: clamp((held('ArrowRight') ? 0.45 : 0) - (held('ArrowLeft') ? 0.45 : 0) + stickX * 0.5, -1, 1),
     rudder: (held('KeyD') ? 0.35 : 0) - (held('KeyA') ? 0.35 : 0), throttle,
+    flap_norm: flapTarget_deg / 30, brake_norm: held('KeyB') ? 1 : 0,
+    mixture_norm: mixtureCommand, mixture_auto: mixtureAutomatic,
   };
-  const controls = applyControlSettings(raw, controlSettings, rollOffset);
+  if (latest?.ap_mode && !apDisconnectPending && (raw.elevator !== 0 || raw.aileron !== 0 || raw.rudder !== 0)) {
+    apDisconnectPending = true; session.setAutopilot(0);
+  }
+  const controls = applyControlSettings(raw, controlSettings, latest?.ap_mode ? 0 : rollOffset);
+  const direction = rollOffset < 0 ? 'left' : rollOffset > 0 ? 'right' : 'off';
+  el('offset-value').textContent = `${Math.abs(rollOffset * 100).toFixed(1)}% ${direction}${latest?.ap_mode ? ' · suspended by AP' : ''}`;
   session.input(controls);
   el('roll-control').textContent = controls.aileron.toFixed(2);
   el('pitch-control').textContent = controls.elevator.toFixed(2);
@@ -253,6 +286,7 @@ function publishInput() {
   document.querySelectorAll<HTMLElement>('[data-code]').forEach(button => button.classList.toggle('held', held(button.dataset.code!)));
 }
 function neutralize() {
+  pointerYoke?.cancel();
   keys.clear(); pointerControls.clear(); keyboardControls.clear(); stickX = stickY = 0;
   if (stickPointer !== null) {
     const pointer = stickPointer; stickPointer = null;
@@ -272,7 +306,7 @@ function togglePause() { if (running) pauseFlight(); else startFlight(); }
 function reset() {
   if (reviewing) return;
   if (sceneFailed) { notice('The 3D scene is unavailable. Reload with WebGL enabled.'); return; }
-  flightTrace.clear();
+  flightTrace.clear(); flapTarget_deg = 0; mixtureCommand = 1; mixtureAutomatic = true; apDisconnectPending = false;
   if (practiceMap && latest) { try { practiceMap.update(latest, [], 'live'); } catch { mapUnavailable(); } }
   lastMapUpdate_ms = -Infinity;
   pressureAltimeter.update(null, false);
@@ -295,6 +329,10 @@ el<HTMLInputElement>('roll-offset').oninput = event => {
   rollOffset = Number((event.target as HTMLInputElement).value);
   el('offset-value').textContent = rollOffset.toFixed(3); publishInput();
 };
+for (const [id, value] of [['roll-correction-off', 0], ['roll-correction-default', -0.109375]] as const) {
+  el(id).onclick = () => { rollOffset = value; el<HTMLInputElement>('roll-offset').value = String(value); publishInput(); focusFlight(); };
+}
+
 el('limits').onclick = () => {
   const expanded = el('limitations').hidden;
   el('limitations').hidden = !expanded; el('limits').setAttribute('aria-expanded', String(expanded));
@@ -302,6 +340,35 @@ el('limits').onclick = () => {
 
 // Pointer capture keeps a drag usable when it crosses the pad edge. Release,
 // cancellation, lost capture and focus loss all clear user axes immediately.
+function updateConfiguration(state: Readonly<FlightState> | null, recorded: boolean): void {
+  const available = state?.flap_rad !== undefined && state.brake_left_norm !== undefined;
+  document.querySelectorAll<HTMLButtonElement>('[data-flap]').forEach(button => {
+    button.disabled = !available || !running || recorded;
+    button.setAttribute('aria-pressed', String(!recorded && Number(button.dataset.flap) === flapTarget_deg));
+  });
+  el<HTMLButtonElement>('wheel-brakes').disabled = !available || !running || recorded;
+  el('flaps-actual').textContent = available ? `${(state!.flap_rad! * 180 / Math.PI).toFixed(0)}°${recorded ? ' · recorded' : ' actual'}` : 'Rebuild engine';
+  el('brake-state').textContent = !available ? 'Wheel brakes unavailable' : recorded
+    ? `Recorded wheel brakes: ${Math.round(Math.max(state!.brake_left_norm!, state!.brake_right_norm!) * 100)}%`
+    : `${state!.on_ground ? 'Ground contact' : 'Airborne · ground braking only'} · applied ${Math.round(Math.max(state!.brake_left_norm!, state!.brake_right_norm!) * 100)}%`;
+}
+document.querySelectorAll<HTMLButtonElement>('[data-flap]').forEach(button => {
+  button.onclick = () => {
+    if (!running || reviewing || latest?.flap_rad === undefined) return;
+    flapTarget_deg = Number(button.dataset.flap); publishInput(); focusFlight();
+  };
+});
+pointerYoke = createPointerYoke({
+  element: sceneContainer,
+  enabled: () => running && !reviewing && !controlSettingsPanel.isOpen() && !document.querySelector('dialog[open]'),
+  onYoke(x, y) { stickX = x; stickY = y; publishInput(); },
+  onLook(yaw_rad, pitch_rad) { cameraLook = { yaw_rad, pitch_rad }; },
+  onMode(mode) {
+    el('pointer-mode').textContent = mode === 'yoke' ? 'YOKE ACTIVE · click to release · hold-drag to look' : mode === 'look' ? 'LOOKING · release to return' : 'Click scene: yoke · Hold-drag: look';
+    sceneContainer.dataset.pointerMode = mode;
+  },
+});
+
 const joystick = el('joystick');
 function moveStick(event: PointerEvent) {
   const rect = joystick.getBoundingClientRect();
@@ -346,7 +413,7 @@ for (const button of Array.from(document.querySelectorAll<HTMLButtonElement>('[d
 }
 
 addEventListener('keydown', event => {
-  if (controlSettingsPanel.isOpen() || el<HTMLDialogElement>('altimeter-dialog').open || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (document.querySelector('dialog[open]') || event.ctrlKey || event.metaKey || event.altKey) return;
   if (reviewing) {
     const timeline = event.target instanceof HTMLElement && event.target.id === 'review-time';
     if (editing(event.target) && !timeline) return;
@@ -365,6 +432,16 @@ addEventListener('keydown', event => {
     event.preventDefault(); if (running) { keys.add(event.code); publishInput(); }
   }
   if (event.repeat) return;
+  if (running && /^(Digit|Numpad)[0-9]$/.test(event.code)) {
+    event.preventDefault(); throttle = Number(event.code.at(-1)) / 10;
+    el<HTMLInputElement>('throttle').value = String(throttle * 100); publishInput();
+  }
+  if (event.code === 'KeyP' && running && latest?.ap_mode !== undefined) {
+    event.preventDefault(); session.setAutopilot(latest.ap_mode ? 0 : 2);
+  }
+  if (event.code === 'KeyF' && running && latest?.flap_rad !== undefined) {
+    event.preventDefault(); flapTarget_deg = clamp(flapTarget_deg + (event.shiftKey ? -10 : 10), 0, 30); publishInput();
+  }
   if (event.code === 'Space') { event.preventDefault(); togglePause(); }
   if (event.code === 'KeyR') reset();
   if (event.code === 'KeyV') setView(view === 'cockpit' ? 'chase' : 'cockpit');
@@ -381,31 +458,6 @@ const sceneReady = createScene(sceneContainer).then(result => {
   notice(`Scene unavailable: ${error instanceof Error ? error.message : String(error)}. Reload with WebGL enabled.`);
   session.pause(); updateSessionUI();
 });
-function dial(id: string, value: number, max: number, label: string, unit: string, increment: number) {
-  const canvas = el<HTMLCanvasElement>(id), ctx = canvas.getContext('2d')!;
-  ctx.clearRect(0, 0, 300, 300); ctx.save(); ctx.translate(150,150);
-  ctx.beginPath(); ctx.arc(0,0,137,0,Math.PI*2); ctx.fillStyle='#10191d'; ctx.fill();
-  ctx.strokeStyle='#4b575b'; ctx.lineWidth=2; ctx.stroke();
-  const start=-Math.PI*1.25, span=Math.PI*1.5;
-  for(let n=0;n<=max;n+=increment/2) {
-    const angle=start+n/max*span, major=n%increment===0;
-    ctx.save(); ctx.rotate(angle); ctx.beginPath(); ctx.moveTo(major?105:113,0); ctx.lineTo(124,0); ctx.strokeStyle=major?'#e8e9de':'#677477'; ctx.lineWidth=major?2:1; ctx.stroke(); ctx.restore();
-    if(major) { ctx.fillStyle='#e8e9de'; ctx.font='17px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(String(n),Math.cos(angle)*87,Math.sin(angle)*87); }
-  }
-  ctx.textAlign='center'; ctx.fillStyle='#94a7ac'; ctx.font='13px sans-serif'; ctx.fillText(label,0,-37); ctx.font='11px sans-serif';ctx.fillText(unit,0,48);
-  ctx.rotate(start+clamp(value,0,max)/max*span); ctx.beginPath(); ctx.moveTo(-17,-4);ctx.lineTo(110,0);ctx.lineTo(-17,4);ctx.fillStyle='#e9bf78';ctx.fill();
-  ctx.beginPath();ctx.arc(0,0,8,0,Math.PI*2);ctx.fillStyle='#d4d6cc';ctx.fill();ctx.restore();
-}
-function attitude(state: FlightState) {
-  const ctx=el<HTMLCanvasElement>('attitude').getContext('2d')!;
-  ctx.clearRect(0,0,300,300);ctx.save();ctx.translate(150,150);
-  ctx.beginPath();ctx.arc(0,0,136,0,Math.PI*2);ctx.clip();ctx.save();ctx.rotate(-state.roll_rad);ctx.translate(0,state.pitch_rad*180/Math.PI*3);
-  ctx.fillStyle='#7cabc0';ctx.fillRect(-400,-600,800,600);ctx.fillStyle='#886b49';ctx.fillRect(-400,0,800,600);
-  ctx.strokeStyle='#f2ead6';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-400,0);ctx.lineTo(400,0);ctx.stroke();
-  ctx.font='13px monospace';ctx.textAlign='center';ctx.fillStyle='#f2ead6';
-  for(let deg=-30;deg<=30;deg+=10) { if(!deg)continue;const y=-deg*3;ctx.beginPath();ctx.moveTo(-25,y);ctx.lineTo(25,y);ctx.stroke();ctx.fillText(String(Math.abs(deg)),44,y+4); }
-  ctx.restore();ctx.strokeStyle='#ebbf77';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-75,0);ctx.lineTo(-25,0);ctx.lineTo(-25,8);ctx.moveTo(75,0);ctx.lineTo(25,0);ctx.lineTo(25,8);ctx.stroke();ctx.beginPath();ctx.arc(0,0,4,0,Math.PI*2);ctx.fillStyle='#ebbf77';ctx.fill();ctx.restore();
-}
 let lastFrame = performance.now();
 function animate(now: number) {
   const dt = clamp((now - lastFrame) / 1000, 0, 0.1); lastFrame = now;
@@ -435,25 +487,18 @@ function animate(now: number) {
     }
 
     if (scene && !sceneFailed) {
-      try { scene.update(state, view); } catch {
+      try { scene.update(state, view, cameraLook); } catch {
         sceneFailed = true; pauseFlight(); notice('The 3D scene stopped rendering. Reload to restart.'); updateSessionUI();
       }
     }
-    const kt = state.tas_mps * 3600 / 1852;
     pressureAltimeter.update(state, reviewing);
-    const heading = ((state.heading_rad * 180 / Math.PI) % 360 + 360) % 360;
-    el('tas').textContent = kt.toFixed(0);
-    el('heading').textContent = `${String(Math.round(heading) % 360).padStart(3, '0')}°`;
-    el('bank').textContent = `${Math.abs(state.roll_rad * 180 / Math.PI).toFixed(0)}°`;
-    el('vsi').textContent = `${shownVsiFpm >= 0 ? '+' : ''}${Math.round(shownVsiFpm / 10) * 10}`;
+    sixPack.update(state, shownVsiFpm, reviewing);
+    enginePanel.update(state, reviewing, running);
+    updateConfiguration(state, reviewing);
     el('clock').textContent = `${String(Math.floor(state.t_s / 60)).padStart(2, '0')}:${String(Math.floor(state.t_s % 60)).padStart(2, '0')}`;
-    dial('airspeed', kt, 180, 'TRUE AIRSPEED', 'KNOTS · NOT IAS', 20);
-    attitude(state);
   }
   requestAnimationFrame(animate);
 }
-dial('airspeed', 0, 180, 'TRUE AIRSPEED', 'KNOTS · NOT IAS', 20);
-attitude({ roll_rad: 0, pitch_rad: 0 } as FlightState);
 publishInput(); updateSessionUI(); requestAnimationFrame(animate);
-addEventListener('pagehide', () => { mapDisposed = true; practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
+addEventListener('pagehide', () => { mapDisposed = true; practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
 void sceneReady;

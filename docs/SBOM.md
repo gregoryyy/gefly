@@ -10,9 +10,9 @@ plan rather than assuming a single engine license covers all these materials.
 
 ## Experimental browser application
 
-The local [application](../app/README.md) pins three.js 0.187.0 (MIT) to generate the original generic aircraft visual, Vite 7.3.7 (MIT), TypeScript 5.9.3 (Apache-2.0), @types/three 0.187.0 (MIT) and Playwright 1.64.1 (Apache-2.0). Exact transitive versions/integrity hashes are in `app/package-lock.json`; installation audited with zero reported advisories on 2026-11-01. The three.js license is retained under [LICENSES](../LICENSES/three-MIT.txt). Fonts use local system fallbacks. Application, engine and the bundled Hessen starter image are local; there are no runtime imagery-service requests.
+The local [application](../app/README.md) pins three.js 0.187.0 (MIT) to generate the original generic aircraft visual, Vite 8.3.5 (MIT), TypeScript 5.9.3 (Apache-2.0), @types/three 0.187.0 (MIT) and Playwright 1.64.1 (Apache-2.0). Exact transitive versions/integrity hashes are in `app/package-lock.json`; installation audited with zero reported advisories on 2026-11-01. The three.js license is retained under [LICENSES](../LICENSES/three-MIT.txt). Fonts use local system fallbacks. Application, engine and the bundled Hessen starter image are local; there are no runtime imagery-service requests.
 
-JSBSim and c172x remain generated local research assets under the existing study recipe and rights limitations below. Vite serves only the five named worker/runtime files (including the project-owned ideal pressure model) in development; the production UI build excludes all of them and is not a deployable flight simulator. No runtime model assets or source SDKs are committed or published.
+JSBSim and c172x remain generated local research assets under the existing study recipe and rights limitations below. Vite serves only the seven named worker/runtime files (the worker, three project-owned instrument modules and three generated engine/build files) in development; the production UI build excludes all of them and is not a deployable flight simulator. No runtime model assets or source SDKs are committed or published.
 
 
 CesiumJS 1.146.0 (Apache-2.0) now renders the actual geographic scene. Its workers, widgets, textures, license and third-party inventories come from the locked npm package, without Cesium ion or commercial base layers; see [license](../LICENSES/Cesium-Apache-2.0.txt). A fixed official Hessen ATKIS DOP20 starter photograph is bundled under `app/public/imagery/`: [source bounds, request URL, byte hash and license](../app/public/imagery/SOURCE.json). The 1024×1024 JPEG is an unmodified GetMap image from the `he_dop_rgb` layer, covering 8.62–8.66° E / 49.95–49.975° N (approximately 3 × 2.8 km). [Dataset terms](https://opendata.hessen.de/de/dataset/atkis-dop-20) specify [DL-DE Zero 2.0](https://www.govdata.de/dl-de/zero-2-0); voluntary source credit remains visible. No acquisition date or current airport conditions are claimed. The photograph is draped on the ellipsoid and establishes no terrain, accepted airport elevation, chart geometry or navigational authority. A bundled 512×512 coarse overview adds regional context at 8.4–8.9° E / 49.8–50.1° N; its separate byte hash and request are also recorded in SOURCE.json. The application labels overview-only coverage and reports missing coverage beyond it; EDDF/100 NM expansion remains future work.
@@ -202,3 +202,16 @@ material cannot be combined with GPL-3.0-or-later) and an isolation/replacement
 note before adoption.
 Proprietary, non-commercial-only or no-derivatives material is excluded from the
 distribution; link to it instead when it is a needed reference.
+
+## Local cockpit adapter
+
+`studies/e1-browser/sim/prepare-aircraft.py` prepares an ignored copy of pinned
+JSBSim c172x data. It hash-guards the original XML and adds only a default-on
+execute gate for the automatic-mixture channel, leaving all other bytes and
+coefficients unchanged. The original checkout is not modified. The build record
+contains adapter ID, script/source/prepared SHA-256 hashes. Generated adapted
+model bytes remain embedded only in the excluded local research runtime; this is
+not a distribution-rights or selected-172S fidelity acceptance. Engine telemetry
+and the modern roll autopilot reuse the already pinned source; no new numerical
+or browser dependencies were added. Python's standard library supports the
+adapter and its five tests. See [source mappings](research/2026-11-02-classic-controls.md).

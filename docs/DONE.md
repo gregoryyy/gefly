@@ -3,6 +3,55 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 18:10 — Fly a classic six-pack with real controls and basic autopilot
+
+TODO: 2.0.6/2.0.7 complete as bounded cockpit/control increments; affected
+requirements remain partial. Agent: Codex orchestrator; classic_camera/code1,
+classic_sixpack/code2 and classic_pointer on disjoint implementation paths, with
+classic_research maintaining sources/application instructions in parallel.
+Independent quality: classic_research (excluding its own prose); independent
+validation: altimeter_validate.
+
+**Implementation notes**
+
+Corrected aircraft glTF/ENU axes and added temporary cockpit/chase look. The
+standard six-pack uses actual CAS, attitude, pressure altitude, ideal turn/ball,
+true heading and derived VSI. Short scene click toggles relative yoke; held drag
+looks around, with explicit release/cancel/focus behavior. Flap detents and held
+wheel brakes operate existing model controls. Numbers 1–9 set 10–90% throttle,
+0 selects idle; correction is shown as percent left input with Off/default presets.
+
+Added actual RPM/MAP/oil/EGT/fuel readouts, manual/model-auto mixture and source
+wings-level/true-heading roll AP. A pinned, default-on mixture gate is prepared
+only in an ignored aircraft copy; original coefficients/source remain intact and
+build hashes identify the adaptation. Raw pilot input disconnects AP; the study
+roll correction is suspended under AP. Recorded review captures engine/config
+values with controls disabled. Mobile header and live engine dialog fit narrow
+screens without hiding Controls/Pause.
+
+TypeScript/UI build, 65 native tests, five adapter tests and browser suites of
+26 base/eight classic/nine engine groups passed. Independent actual-browser
+validation checked source values, aircraft orientation, brake invariance in
+flight, flap traversal, pointer modes, mixture cutoff, AP heading/level response,
+manual authority, review/reset, missing data and mobile behavior. Partial-state,
+zero-MAP and header-clipping findings were fixed and affected reviews passed.
+See [review evidence](reviews/2026-11-02-classic-flight-controls.md).
+
+**Deviations**
+
+Peer pending. Generic model telemetry and roll AP are not installed C172S
+fidelity. Legacy altitude hold remains disabled because its source wiring and
+state behavior need separate work; no ALT/NAV/approach or autothrottle is claimed.
+True heading, ideal CAS/turn display, unaccepted terrain/airport datum and
+unvalidated landings remain explicit limitations. Ground braking is not air drag.
+
+**Insights**
+
+Source reuse still needs integration checks: the generic model's automatic
+mixture would overwrite a manual knob, and two independent AP streams must not
+compete. Visible values and actual flight response must agree before a control
+is described as implemented.
+
 ## 2026-11-02 16:29 — Adjust pressure and read the altimeter in flight review
 
 TODO: 2.0.5 complete as a bounded pressure-practice increment; R-AIR-3/R-REVIEW-1

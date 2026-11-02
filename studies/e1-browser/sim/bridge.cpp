@@ -13,6 +13,7 @@
 // Return codes: 0 ok, negative = error (see kErr*).
 #include <FGFDMExec.h>
 #include <FGJSBBase.h>
+#include <input_output/FGPropertyManager.h>
 #include <simgear/misc/sg_path.hxx>
 #include <emscripten/emscripten.h>
 
@@ -31,6 +32,8 @@ constexpr double kKtToMps = 1852.0 / 3600.0; // exact
 constexpr double kPi = 3.141592653589793;
 // NIST SP 811: pound-force per square foot to Pa (physical conversion).
 constexpr double kPsfToPa = 47.88025898033584;
+constexpr double kPsiToPa = 6894.757293168;
+constexpr double kUsGalToM3 = 0.003785411784;
 
 constexpr int kErrNotInit = -1;
 constexpr int kErrNonFinite = -2;
@@ -51,10 +54,38 @@ char g_hex[17] = {0};
 int g_trim_ok = 0;
 double g_trim_throttle = 0.0;
 double g_trim_pitch = 0.0;
+int g_mixture_auto = 1;
+int g_ap_mode = 0;
+double g_ap_heading_target = 0.0;
 
 bool finite_all(std::initializer_list<double> v) {
   for (double x : v) if (!std::isfinite(x)) return false;
   return true;
+}
+
+// Reuse the upstream modern roll AP only. Legacy c172ap channels remain off;
+// no altitude hold, replacement controller or new tuning coefficients are added.
+void configure_autopilot() {
+  auto& f = *g_fdm;
+  for (const char* name : {"ap/heading_hold", "ap/altitude_hold", "ap/attitude_hold",
+                           "ap/airspeed_hold", "ap/aileron_cmd", "ap/elevator_cmd"}) {
+    f.SetPropertyValue(name, 0.0);
+  }
+  f.SetPropertyValue("ap/autopilot-roll-on", g_ap_mode == 0 ? 0.0 : 1.0);
+  f.SetPropertyValue("ap/roll-attitude-mode", g_ap_mode == 2 ? 1.0 : 0.0);
+  f.SetPropertyValue("guidance/heading-selector-switch", 1.0);
+  f.SetPropertyValue("guidance/specified-heading-rad", g_ap_heading_target);
+  f.SetPropertyValue("navigation/actual-heading-rad", f.GetPropertyValue("attitude/heading-true-rad"));
+  if (g_ap_mode == 0) f.SetPropertyValue("ap/roll-cmd-norm-output", 0.0);
+}
+
+void reset_ap_integrators() {
+  auto& f = *g_fdm;
+  for (const char* name : {"ap/roll-rate-pid-control/initial-integrator-value",
+                           "ap/roll-command-pid-control/initial-integrator-value"}) {
+    if (f.GetPropertyManager()->HasNode(name)) f.SetPropertyValue(name, 0.0);
+  }
+  f.SetPropertyValue("ap/roll-cmd-norm-output", 0.0);
 }
 
 void read_state() {
@@ -101,6 +132,10 @@ EMSCRIPTEN_KEEPALIVE int gf_init(double dt_s, double lat_rad, double lon_rad,
     g_fdm.reset();
     return kErrLoad;
   }
+  g_mixture_auto = 1; g_ap_mode = 0; g_ap_heading_target = std::fmod(heading_rad, 2.0 * kPi);
+  if (g_ap_heading_target < 0) g_ap_heading_target += 2.0 * kPi;
+  f.SetPropertyValue("systems/automatic-mixture-enabled", 1.0);
+  configure_autopilot();
   // c172x declares a CSV output that JSBSim opens at RunIC even when disabled.
   f.SetOutputFileName(0, "/dev/null");
   f.DisableOutput();
@@ -151,8 +186,47 @@ EMSCRIPTEN_KEEPALIVE int gf_set_inputs(double elevator, double aileron, double r
   return 0;
 }
 
+// Existing generic c172x flap/gear controls. Normalized commands, not new
+// aerodynamic coefficients; flaps traverse 0..30 degrees in the model itself.
+EMSCRIPTEN_KEEPALIVE int gf_set_secondary_inputs(double flap_norm, double brake_norm) {
+  if (!g_fdm) return kErrNotInit;
+  if (!finite_all({flap_norm, brake_norm})) return kErrNonFinite;
+  if (flap_norm < 0 || flap_norm > 1 || brake_norm < 0 || brake_norm > 1) return kErrRange;
+  g_fdm->SetPropertyValue("fcs/flap-cmd-norm", flap_norm);
+  g_fdm->SetPropertyValue("fcs/left-brake-cmd-norm", brake_norm);
+  g_fdm->SetPropertyValue("fcs/right-brake-cmd-norm", brake_norm);
+  return 0;
+}
+
+// Manual mixture gates the existing automatic channel in the prepared model.
+// The original auto-mixture formula and all engine coefficients are unchanged.
+EMSCRIPTEN_KEEPALIVE int gf_set_engine_controls(double mixture_norm, double mixture_auto) {
+  if (!g_fdm) return kErrNotInit;
+  if (!finite_all({mixture_norm, mixture_auto})) return kErrNonFinite;
+  if (mixture_norm < 0 || mixture_norm > 1 || (mixture_auto != 0 && mixture_auto != 1)) return kErrRange;
+  if (!g_fdm->GetPropertyManager()->HasNode("systems/automatic-mixture-enabled")) return kErrLoad;
+  g_mixture_auto = static_cast<int>(mixture_auto);
+  g_fdm->SetPropertyValue("systems/automatic-mixture-enabled", mixture_auto);
+  if (g_mixture_auto == 0) g_fdm->SetPropertyValue("fcs/mixture-cmd-norm", mixture_norm);
+  return 0;
+}
+
+EMSCRIPTEN_KEEPALIVE int gf_set_autopilot(double mode, double target_true_rad) {
+  if (!g_fdm) return kErrNotInit;
+  if (!finite_all({mode, target_true_rad})) return kErrNonFinite;
+  if (mode != 0 && mode != 1 && mode != 2) return kErrRange;
+  const int next_mode = static_cast<int>(mode);
+  if (g_ap_mode != next_mode) reset_ap_integrators();
+  g_ap_mode = next_mode;
+  g_ap_heading_target = std::fmod(target_true_rad, 2.0 * kPi);
+  if (g_ap_heading_target < 0) g_ap_heading_target += 2.0 * kPi;
+  configure_autopilot();
+  return 0;
+}
+
 EMSCRIPTEN_KEEPALIVE int gf_step() {
   if (!g_fdm) return kErrNotInit;
+  configure_autopilot();
   if (!g_fdm->Run()) return kErrRun;
   g_steps += 1.0;
   read_state();
@@ -172,6 +246,53 @@ EMSCRIPTEN_KEEPALIVE double gf_static_pressure_pa() {
 EMSCRIPTEN_KEEPALIVE double gf_sealevel_pressure_pa() {
   return g_fdm ? g_fdm->GetPropertyValue("atmosphere/P-sl-psf") * kPsfToPa
                : std::numeric_limits<double>::quiet_NaN();
+}
+
+// Read-only cockpit values, separate from the original study dynamics digest.
+// CAS m/s, true heading rate rad/s, pilot specific force body Y/Z in g,
+// actual flap rad, left/right normalized brake commands, weight-on-wheels 0/1.
+EMSCRIPTEN_KEEPALIVE double* gf_cockpit_state() {
+  static double values[8];
+  if (!g_fdm) {
+    for (double& value : values) value = std::numeric_limits<double>::quiet_NaN();
+    return values;
+  }
+  auto& f = *g_fdm;
+  values[0] = f.GetPropertyValue("velocities/vc-fps") * kFtToM;
+  values[1] = f.GetPropertyValue("velocities/psidot-rad_sec");
+  values[2] = f.GetPropertyValue("accelerations/n-pilot-y-norm");
+  values[3] = f.GetPropertyValue("accelerations/n-pilot-z-norm");
+  values[4] = f.GetPropertyValue("fcs/flap-pos-deg") * kPi / 180.0;
+  values[5] = f.GetPropertyValue("fcs/left-brake-cmd-norm");
+  values[6] = f.GetPropertyValue("fcs/right-brake-cmd-norm");
+  values[7] = f.GetPropertyValue("gear/wow") > 0 ? 1.0 : 0.0;
+  return values;
+}
+
+// MAP Pa, prop/engine rad/s (fixed direct drive), applied mixture/auto state,
+// oil Pa/K, EGT K, fuel m3/s and left/right m3, then AP mode/true target/raw output.
+// These are upstream generic model values, not a validated C172S instrument fit.
+EMSCRIPTEN_KEEPALIVE double* gf_engine_state() {
+  static double values[13];
+  if (!g_fdm) {
+    for (double& value : values) value = std::numeric_limits<double>::quiet_NaN();
+    return values;
+  }
+  auto& f = *g_fdm;
+  values[0] = f.GetPropertyValue("propulsion/engine[0]/map-pa");
+  values[1] = f.GetPropertyValue("propulsion/engine[0]/engine-rpm") * 2.0 * kPi / 60.0;
+  values[2] = f.GetPropertyValue("fcs/mixture-cmd-norm");
+  values[3] = g_mixture_auto;
+  values[4] = f.GetPropertyValue("propulsion/engine[0]/oil-pressure-psi") * kPsiToPa;
+  values[5] = (f.GetPropertyValue("propulsion/engine[0]/oil-temperature-degF") - 32.0) * 5.0 / 9.0 + 273.15;
+  values[6] = (f.GetPropertyValue("propulsion/engine[0]/egt-degF") - 32.0) * 5.0 / 9.0 + 273.15;
+  values[7] = f.GetPropertyValue("propulsion/engine[0]/fuel-flow-rate-gph") * kUsGalToM3 / 3600.0;
+  values[8] = f.GetPropertyValue("propulsion/tank[0]/contents-volume-gal") * kUsGalToM3;
+  values[9] = f.GetPropertyValue("propulsion/tank[1]/contents-volume-gal") * kUsGalToM3;
+  values[10] = g_ap_mode;
+  values[11] = g_ap_heading_target;
+  values[12] = f.GetPropertyValue("ap/roll-cmd-norm-output");
+  return values;
 }
 
 // 1 trimmed, -1 trim threw (state and controls are whatever the partial trim
