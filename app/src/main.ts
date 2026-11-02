@@ -1,6 +1,8 @@
 import './style.css';
 import { createScene } from './scene';
 import { createSession } from './session';
+import { applyControlSettings, DEFAULT_CONTROL_SETTINGS, type ControlSettings } from './control-settings';
+import { createControlSettingsPanel } from './control-settings-panel';
 import type { Controls, FlightState, FlightScene } from './types';
 
 const root = document.querySelector<HTMLDivElement>('#app')!;
@@ -12,6 +14,7 @@ root.innerHTML = `
     <div class="location"><strong>EGELSBACH</strong><span>C172 research aircraft · airborne practice</span></div>
     <div class="session-status"><i id="status-dot"></i><span id="status" role="status">Loading flight…</span><span id="clock">00:00</span></div>
     <nav class="view-controls" aria-label="Flight views"><button id="cockpit" class="selected" aria-pressed="true">Cockpit</button><button id="chase" aria-pressed="false">Chase <kbd>V</kbd></button></nav>
+    <button id="controls-settings" class="settings-trigger" aria-haspopup="dialog">Controls</button>
     <button id="pause" disabled>Pause <kbd>SPACE</kbd></button>
   </header>
   <section id="notice" class="notice" role="status" aria-live="polite" hidden></section>
@@ -63,6 +66,7 @@ let latest: FlightState | null = null, previous: FlightState | null = null;
 let verticalSpeedFpm = 0, throttle = 0.69, stickX = 0, stickY = 0;
 // Existing E1 fixture's empirical input offset, not an aircraft coefficient.
 let rollOffset = -0.109375;
+let controlSettings: ControlSettings = { ...DEFAULT_CONTROL_SETTINGS };
 const keys = new Set<string>();
 const pointerControls = new Map<number, string>();
 const keyboardControls = new Set<string>();
@@ -125,13 +129,22 @@ const session = createSession({
   },
 });
 
+const controlSettingsPanel = createControlSettingsPanel({
+  container: root, initial: controlSettings,
+  onOpen: pauseFlight,
+  onClose: focusFlight,
+  onChange(settings) { controlSettings = { ...settings }; neutralize(); },
+});
+el('controls-settings').onclick = () => controlSettingsPanel.open();
+
 function held(code: string) { return keys.has(code) || keyboardControls.has(code) || [...pointerControls.values()].includes(code); }
 function publishInput() {
-  const controls: Controls = {
+  const raw: Controls = {
     elevator: clamp((held('ArrowUp') ? 0.35 : 0) - (held('ArrowDown') ? 0.35 : 0) + stickY * 0.4, -1, 1),
-    aileron: clamp((held('ArrowRight') ? 0.45 : 0) - (held('ArrowLeft') ? 0.45 : 0) + stickX * 0.5 + rollOffset, -1, 1),
+    aileron: clamp((held('ArrowRight') ? 0.45 : 0) - (held('ArrowLeft') ? 0.45 : 0) + stickX * 0.5, -1, 1),
     rudder: (held('KeyD') ? 0.35 : 0) - (held('KeyA') ? 0.35 : 0), throttle,
   };
+  const controls = applyControlSettings(raw, controlSettings, rollOffset);
   session.input(controls);
   el('roll-control').textContent = controls.aileron.toFixed(2);
   el('pitch-control').textContent = controls.elevator.toFixed(2);
@@ -228,6 +241,7 @@ for (const button of Array.from(document.querySelectorAll<HTMLButtonElement>('[d
 }
 
 addEventListener('keydown', event => {
+  if (controlSettingsPanel.isOpen()) return;
   if (editing(event.target) || event.ctrlKey || event.metaKey || event.altKey) return;
   if (event.code === 'Space' && event.target instanceof HTMLElement && event.target.closest('button,a,summary')) return;
   if (flightKeys.has(event.code)) {
@@ -306,5 +320,5 @@ dial('airspeed', 0, 180, 'TRUE AIRSPEED', 'KNOTS · NOT IAS', 20);
 dial('altitude', 0, 1000, 'ALTITUDE', 'STUDY DATUM', 100);
 attitude({ roll_rad: 0, pitch_rad: 0 } as FlightState);
 publishInput(); updateSessionUI(); requestAnimationFrame(animate);
-addEventListener('pagehide', () => { session.dispose(); scene?.dispose(); });
+addEventListener('pagehide', () => { session.dispose(); controlSettingsPanel.dispose(); scene?.dispose(); });
 void sceneReady;

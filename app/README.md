@@ -46,10 +46,23 @@ retain focus for accessible adjustment. Losing window focus pauses the flight
 and releases held inputs. Optional flight hardware and phone orientation are
 later work.
 
+Open **Controls** in the header to adjust pitch, roll and rudder sensitivity from
+25% to 150%. **Default** uses 100% on all three axes; **Gentle** uses 50% pitch,
+50% roll and 70% rudder. Opening the dialog pauses flight. Changing settings,
+selecting **Done**, or pressing Escape does not resume it; use **Start flight**
+or **Resume flight** when ready. Closing the dialog returns keyboard focus to
+the flight scene.
+
+To compare the response, start a flight, open **Controls**, select **Gentle**,
+then **Done** and **Resume flight**. Try a small stick movement or a brief held
+button input. Repeat with **Default** to compare. Sensitivity settings last for
+the current page session; restarting the flight with R preserves them. They
+change input response, not the aircraft's physics or calibration.
+
 The visible **study roll offset** starts at the existing E1 fixture's empirical
 −0.109375 aileron input to counter this generic model's initial roll-off. Adjust
 it to zero for unassisted roll input. It is an experimental assist, not a sourced
-aircraft trim value.
+aircraft trim value. Sensitivity changes do not scale this offset.
 
 ## Imagery and network access
 

@@ -3,6 +3,41 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 12:08 — Adjust control sensitivity in the running simulator
+
+TODO: 2.0.2 complete as a demonstrable input increment; R-INPUT-1 remains partial.
+Agent: Codex orchestrator; code1/control_settings_core and code2/control_settings_ui
+implemented disjoint paths in parallel, with flight_housekeeping updating app
+instructions. Independent quality: flight_housekeeping, excluding its own README;
+independent validation: flight_validate.
+
+**Implementation notes**
+
+Added a Controls dialog with pitch, roll and rudder sensitivity sliders, Gentle
+and Default presets. Opening it pauses real JSBSim time; Done/Escape returns
+flight focus without resuming. Settings survive flight reset and remain local to
+the current page. Pure bounded gain mapping preserves the former defaults,
+throttle and the separate study roll offset. No aircraft dynamics were changed.
+
+Strict TypeScript/build and eleven native tests passed. Seventeen real-browser
+checks passed, including actual paused engine time, preset/custom gains, defaults,
+reset preservation, keyboard range adjustment and native close-event focus.
+The browser check waits for the asynchronous native close event before checking
+focus, rather than treating the intermediate restored opener as the final state.
+The project rules now retain the user's priority for demonstrable increments.
+See [settings review](reviews/2026-11-02-control-sensitivity.md) for scoped evidence.
+
+**Deviations**
+
+Peer pending. This is an input preference, not aircraft rig calibration, improved
+model fidelity, optional flight hardware support or acceptance of the full input
+requirement. It adds no stored preferences, replay or training-credit claim.
+
+**Insights**
+
+A small settings panel provides a direct in-flight comparison while keeping the
+physics model and source assumptions unchanged.
+
 ## 2026-11-02 10:02 — Make flight controls visible and stabilize the scene
 
 TODO: 2.0.1 complete as an experimental usability/visual increment.

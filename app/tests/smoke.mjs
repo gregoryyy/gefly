@@ -62,6 +62,36 @@ try {
   await page.mouse.move(1000,300);await page.mouse.up();
   assert.equal(Number(await page.locator('#pitch-control').textContent()),0,'stick release outside pad clears pitch');
   assert(Math.abs(Number(await page.locator('#roll-control').textContent())+0.109375)<0.01,'stick release retains only visible study offset');
+  await page.locator('#controls-settings').click();
+  await page.waitForFunction(()=>document.querySelector('#status').textContent==='Paused');
+  const settingsPaused=await state();await page.waitForTimeout(200);
+  assert.equal((await state()).step,settingsPaused.step,'settings pause the actual engine');
+  await page.locator('#settings-gentle').click();
+  assert.equal(await page.locator('#sensitivity-roll').inputValue(),'50');
+  await page.locator('#settings-close').click();
+  await page.waitForFunction(()=>document.activeElement.id==='scene',null,{timeout:1000});
+  assert.equal(await page.evaluate(()=>document.activeElement.id),'scene','settings restore flight focus');
+  assert.equal(await page.locator('#status').textContent(),'Paused','closing settings does not resume');
+  await page.locator('#start').click();await page.keyboard.down('ArrowRight');
+  assert(Math.abs(Number(await page.locator('#roll-control').textContent())-(0.45*0.5-0.109375))<0.01,'gentle preset scales pilot input without scaling offset');
+  await page.keyboard.up('ArrowRight');
+  await page.locator('#reset').click();await page.waitForFunction(()=>document.querySelector('#status').textContent==='Flying');
+  await page.keyboard.down('ArrowRight');
+  assert(Math.abs(Number(await page.locator('#roll-control').textContent())-(0.45*0.5-0.109375))<0.01,'flight reset preserves selected sensitivity');
+  await page.keyboard.up('ArrowRight');
+  await page.locator('#controls-settings').click();
+  await page.locator('#sensitivity-pitch').focus();await page.keyboard.press('End');
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#control-settings').isVisible(),false,'Escape closes settings');
+  await page.locator('#start').click();await page.keyboard.down('ArrowUp');
+  assert(Math.abs(Number(await page.locator('#pitch-control').textContent())-0.525)<0.01,'custom sensitivity reaches active controls');
+  await page.keyboard.up('ArrowUp');
+  await page.locator('#controls-settings').click();await page.locator('#settings-default').click();
+  assert.equal(await page.locator('#sensitivity-pitch').inputValue(),'100');
+  assert.equal(await page.locator('#sensitivity-roll').inputValue(),'100');
+  assert.equal(await page.locator('#sensitivity-rudder').inputValue(),'100');
+  await page.screenshot({path:fileURLToPath(new URL('../../output/flight/control-settings.png',import.meta.url))});
+  await page.locator('#settings-close').click();await page.locator('#start').click();
   await page.locator('#pause').click();
   await page.locator('#reset').click();
   await page.waitForFunction(()=>!document.querySelector('#start').disabled);
@@ -83,7 +113,7 @@ try {
   await noGL.addInitScript(()=>{const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(kind,...args){return kind.startsWith('webgl')?null:original.call(this,kind,...args);};});
   await noGL.goto('http://127.0.0.1:5174');await noGL.waitForFunction(()=>document.querySelector('#notice').textContent.includes('Scene unavailable'));
   await noGL.waitForTimeout(400);assert.equal(await noGL.locator('#pause').isDisabled(),true);assert.deepEqual(noGLErrors,[]);await noGL.close();
-  console.log(JSON.stringify({result:'pass',browser:browser.version(),initial:{step:initial.step,tas_mps:initial.tas_mps},right_bank_delta_rad:after.roll_rad-before.roll_rad,checks:['explicit start','live JSBSim','full-width canvas','loaded aerial imagery','pause','view invariance','reset keyboard focus','right bank','on-screen hold and outside release','draggable stick and outside release','blur pause','local runtime and bundled imagery only','missing engine','WebGL failure'],screenshots:'output/flight/{cockpit,chase}.png'},null,2));
+  console.log(JSON.stringify({result:'pass',browser:browser.version(),initial:{step:initial.step,tas_mps:initial.tas_mps},right_bank_delta_rad:after.roll_rad-before.roll_rad,checks:['explicit start','live JSBSim','full-width canvas','loaded aerial imagery','pause','view invariance','reset keyboard focus','right bank','on-screen hold and outside release','draggable stick and outside release','blur pause','settings pause and focus','gain presets and defaults','custom gain and reset preservation','local runtime and bundled imagery only','missing engine','WebGL failure'],screenshots:'output/flight/{cockpit,chase}.png'},null,2));
 } finally {
   await browser?.close();server.kill('SIGTERM');
 }
