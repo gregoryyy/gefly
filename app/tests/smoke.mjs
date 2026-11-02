@@ -16,7 +16,7 @@ await access(join(runtime, 'dist/jsbsim.wasm'))
 // missing jsbsim.wasm alone is not separately covered.
 const missingRoot = await mkdtemp(join(tmpdir(), 'gefly-missing-engine-'));
 await mkdir(join(missingRoot, 'dist'));
-await copyFile(join(runtime, 'worker.js'), join(missingRoot, 'worker.js'));
+for (const file of ['worker.js', 'altimeter.js']) await copyFile(join(runtime, file), join(missingRoot, file));
 await copyFile(join(runtime, 'dist/build-info.json'), join(missingRoot, 'dist/build-info.json')).catch(() => {});
 for (const file of ['dist/jsbsim.mjs', 'dist/jsbsim.wasm'])
   await access(join(missingRoot, file)).then(() => { throw new Error(`${file} must be absent from the missing-engine copy`); }, () => {});
@@ -43,9 +43,10 @@ try {
   page.on('request',request=>{ const url=new URL(request.url()); if(['http:','https:'].includes(url.protocol))hosts.add(url.hostname); });
   await page.addInitScript(()=>{
     const NativeWorker=window.Worker;
-    window.__flightStates=[];
+    window.__flightStates=[]; window.__flightStats=[];
     window.Worker=class extends NativeWorker {
-      constructor(...args){super(...args);this.addEventListener('message',event=>{
+      constructor(...args){super(...args);if(String(args[0]).includes('/studies/e1-browser/sim/worker.js')) window.__flightWorker=this;this.addEventListener('message',event=>{
+        if(event.data?.type==='stats')window.__flightStats.push(event.data);
         if(event.data?.type==='state'){window.__flightStates.push(event.data);if(window.__flightStates.length>500)window.__flightStates.shift();}
       });}
     };
@@ -57,6 +58,12 @@ try {
   await page.locator('#start').click();
   await page.waitForFunction(()=>document.querySelector('#status').textContent==='Flying'&&window.__flightStates.length>5);
   const state=()=>page.evaluate(()=>window.__flightStates.at(-1));
+  const physics=async()=>{
+    const count=await page.evaluate(()=>window.__flightStats.length);
+    await page.evaluate(()=>window.__flightWorker.postMessage({type:'stats'}));
+    await page.waitForFunction(count=>window.__flightStats.length>count,count);
+    return page.evaluate(()=>window.__flightStats.at(-1));
+  };
   const initial=await state();assert(initial.step>0&&initial.tas_mps>40&&initial.tas_mps<55);
   await page.locator('#toggle-map').click();
   await page.getByRole('button',{name:'Zoom map in',exact:true}).waitFor();
@@ -73,8 +80,42 @@ try {
 
   const canvasBox=await page.locator('#scene canvas').boundingBox(), sceneBox=await page.locator('#scene').boundingBox();
   assert(Math.abs(canvasBox.x-sceneBox.x)<1 && Math.abs(canvasBox.width-sceneBox.width)<1,'flight canvas fills its host without credit-style clipping');
-  await page.locator('#pause').click();await page.waitForTimeout(150);const paused=await state();
+  await page.locator('#pause').click();await page.waitForTimeout(150);let paused=await state();
   await page.waitForTimeout(300);assert.equal((await state()).step,paused.step,'pause must freeze JSBSim');
+  const pausedPhysics = await physics();
+  const standardPressure = await state();
+  assert(standardPressure.p_static_pa > 0, 'static pressure comes from the rebuilt engine');
+  assert.equal(standardPressure.altimeter_setting_pa, 101325);
+  assert.match(await page.locator('#altimeter-reference').textContent(), /QNH.*STD/);
+  await page.locator('#altimeter-open').click();
+  await page.locator('#altimeter-qfe').click();
+  await page.waitForFunction(() => { const s=window.__flightStates.at(-1); return s.altimeter_setting_pa===s.altimeter_qfe_pa; });
+  const launchQfe = await state();
+  await page.waitForFunction(()=>document.querySelector('#altimeter-indication').textContent===`${(Math.round(window.__flightStates.at(-1).altimeter_indicated_m/.3048)||0).toLocaleString('en-US')} ft indicated`);
+  assert(Math.abs(launchQfe.altimeter_indicated_m) < 3, 'launch QFE reads near zero near the launch point');
+  assert.equal(launchQfe.step, pausedPhysics.step, 'pressure adjustment does not advance JSBSim');
+  assert.equal(launchQfe.alt_msl_m, pausedPhysics.final_state[3], 'pressure knob does not change physical altitude');
+  await page.locator('#altimeter-unit').selectOption('inHg');
+  assert.match(await page.locator('#altimeter-applied').textContent(), /inHg/);
+  assert.equal((await state()).altimeter_setting_pa, launchQfe.altimeter_setting_pa, 'display units do not change pressure');
+  await page.locator('#altimeter-unit').selectOption('hPa');
+  await page.locator('#altimeter-setting').fill('1000'); await page.locator('#altimeter-setting').press('Tab');
+  await page.waitForFunction(() => window.__flightStates.at(-1).altimeter_setting_pa===100000);
+  assert((await state()).altimeter_indicated_m < standardPressure.altimeter_indicated_m, 'lower setting lowers indication');
+  await page.locator('#altimeter-setting').fill('1101'); await page.locator('#altimeter-setting').press('Tab');
+  await page.waitForTimeout(100); assert.equal((await state()).altimeter_setting_pa,100000,'out-of-range pressure is not applied');
+  await page.locator('#altimeter-qnh').click();
+  await page.waitForFunction(() => window.__flightStates.at(-1).altimeter_setting_pa===window.__flightStates.at(-1).altimeter_qnh_pa);
+  const viewBeforePressureKeys=await page.locator('#chase').getAttribute('aria-pressed');
+  await page.keyboard.press('r'); await page.keyboard.press('v'); await page.keyboard.press('Space');
+  await page.waitForTimeout(200);
+  assert.equal((await physics()).digest,pausedPhysics.digest,'pressure controls and modal shortcuts do not change the dynamics digest');
+  assert.equal(await page.locator('#chase').getAttribute('aria-pressed'),viewBeforePressureKeys,'modal shortcuts cannot switch view');
+  await page.screenshot({path:fileURLToPath(new URL('../../output/flight/pressure-altimeter.png',import.meta.url))});
+  await page.locator('#altimeter-close').click();
+  await page.waitForFunction(()=>document.activeElement.id==='scene');
+  assert.equal(await page.locator('#status').textContent(),'Paused','closing pressure settings leaves flight paused');
+  paused=await state(); // A knob publication includes the final paused step, even between regular state streams.
   await page.locator('#chase').click();assert.equal(await page.locator('#chase').getAttribute('aria-pressed'),'true');
   assert.equal((await state()).step,paused.step,'view switch must not advance paused state');
   await page.locator('#reset').click();await page.waitForFunction(()=>!document.querySelector('#start').disabled);
@@ -95,6 +136,10 @@ try {
   await page.mouse.move(1000,300);await page.mouse.up();
   assert.equal(Number(await page.locator('#pitch-control').textContent()),0,'stick release outside pad clears pitch');
   assert(Math.abs(Number(await page.locator('#roll-control').textContent())+0.109375)<0.01,'stick release retains only visible study offset');
+  await page.locator('#altimeter-open').click(); await page.locator('#altimeter-qfe').click();
+  await page.waitForFunction(()=>{const s=window.__flightStates.at(-1);return s.altimeter_setting_pa===s.altimeter_qfe_pa;});
+  const recordedQfe=(await state()).altimeter_qfe_pa;
+  await page.locator('#altimeter-close').click(); await page.locator('#start').click(); await page.waitForTimeout(150);
   const liveBeforeReview=await state();
   await page.locator('#review-flight').click();
   await page.waitForTimeout(120);const reviewPaused=await state();
@@ -108,6 +153,8 @@ try {
   await page.locator('#review-time').focus();await page.keyboard.press('Home');
   await page.waitForTimeout(50);
   assert.equal(await page.locator('#heading').textContent(),'082°','seeking shows the initial recorded heading');
+  assert.match(await page.locator('#altimeter-reference').textContent(),/RECORDED.*QNH.*STD/,'review restores historical pressure setting');
+  assert.equal(await page.locator('#altimeter-open').isDisabled(),true,'pressure adjustment unavailable in review');
   await page.waitForFunction(()=>document.querySelector('.practice-map-readout').textContent.includes('082° true'));
   assert((await page.locator('.practice-map-readout').textContent()).includes('49.9600° N'),'map follows selected historical location');
   assert.equal(await page.locator('.throttle-control').isVisible(),false,'unrecorded throttle position is hidden');
@@ -121,6 +168,8 @@ try {
   assert.notEqual(await page.locator('#chase').getAttribute('aria-pressed'),chaseBefore,'V switches camera with timeline focus');
   await page.locator('#chase').click();assert.equal((await state()).step,reviewPaused.step,'review camera switch preserves live state');
   await page.locator('#review-time').focus();await page.keyboard.press('End');
+  await page.waitForFunction(()=>document.querySelector('#altimeter-reference').textContent.includes('LAUNCH QFE'));
+  assert.match(await page.locator('#altimeter-open').textContent(),new RegExp((recordedQfe/100).toFixed(2).replace('.', '\\.')),'review end restores recorded QFE');
   await page.screenshot({path:fileURLToPath(new URL('../../output/flight/flight-review.png',import.meta.url))});
   await page.locator('#review-exit').click();
   assert.equal(await page.locator('#status').textContent(),'Paused','returning live remains paused');
@@ -189,7 +238,7 @@ try {
   await noGL.addInitScript(()=>{const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(kind,...args){return kind.startsWith('webgl')?null:original.call(this,kind,...args);};});
   await noGL.goto('http://127.0.0.1:5174');await noGL.waitForFunction(()=>document.querySelector('#notice').textContent.includes('Scene unavailable'));
   await noGL.waitForTimeout(400);assert.equal(await noGL.locator('#pause').isDisabled(),true);assert.deepEqual(noGLErrors,[]);await noGL.close();
-  console.log(JSON.stringify({result:'pass',browser:browser.version(),initial:{step:initial.step,tas_mps:initial.tas_mps},right_bank_delta_rad:after.roll_rad-before.roll_rad,checks:['explicit start','live JSBSim','full-width canvas','loaded aerial imagery','local practice map and true heading','map focus and history selection','pause','view invariance','reset keyboard focus','right bank','on-screen hold and outside release','draggable stick and outside release','blur pause','state review and seeking','review playback without engine advancement','review return and reset','settings pause and focus','gain presets and defaults','custom gain and reset preservation','local runtime and bundled imagery only','missing engine','WebGL failure'],screenshots:'output/flight/{cockpit,chase}.png'},null,2));
+  console.log(JSON.stringify({result:'pass',browser:browser.version(),initial:{step:initial.step,tas_mps:initial.tas_mps},right_bank_delta_rad:after.roll_rad-before.roll_rad,checks:['static-pressure altimeter and launch QFE','pressure units and bounds','paused pressure and modal isolation','recorded pressure review','explicit start','live JSBSim','full-width canvas','loaded aerial imagery','local practice map and true heading','map focus and history selection','pause','view invariance','reset keyboard focus','right bank','on-screen hold and outside release','draggable stick and outside release','blur pause','state review and seeking','review playback without engine advancement','review return and reset','settings pause and focus','gain presets and defaults','custom gain and reset preservation','local runtime and bundled imagery only','missing engine','WebGL failure'],screenshots:'output/flight/{cockpit,chase}.png'},null,2));
 } finally {
   await browser?.close();for(const server of servers)server.kill('SIGTERM');
   await rm(missingRoot,{recursive:true,force:true});

@@ -49,6 +49,11 @@ research aircraft remains experimental; see
 path over local imagery. During **Review**, its marker follows the selected
 historical state. It is a practice aid with limited coverage, not a navigation chart.
 
+The altimeter's **pressure window** opens paused pressure practice. Compare QNH,
+launch-point QFE and standard pressure, or adjust the setting manually in hPa or
+inHg. The ideal indication follows engine static pressure; launch QFE is a
+practice reference, not airport elevation. Review retains the recorded setting.
+
 ## Status and entry points
 
 Technical foundation is underway, with [native](studies/e1-jsbsim/README.md) and

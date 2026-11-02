@@ -64,6 +64,30 @@ The visible **study roll offset** starts at the existing E1 fixture's empirical
 it to zero for unassisted roll input. It is an experimental assist, not a sourced
 aircraft trim value. Sensitivity changes do not scale this offset.
 
+## Pressure setting
+
+Select **Pressure** by the altimeter to pause flight and inspect its setting.
+Try the QNH reference, **Launch QFE** and standard-pressure shortcuts, or adjust
+the pressure manually. Switch hPa/inHg to compare display units; the underlying
+pressure is unchanged. Closing the panel leaves flight paused until you resume.
+The shortcuts set a pressure for practice; they do not represent dedicated
+QNH/QFE switches on a mechanical altimeter.
+
+**Launch QFE** uses the pressure at the initial airborne position and reads zero
+there. It is height relative to that launch pressure, **not EDFE field elevation,
+terrain height or AGL**. The ideal indication is computed in the worker from
+JSBSim's actual static pressure. In the default standard atmosphere, the QNH
+reference and standard setting coincide. Application adjustment bounds are
+practice limits, not the selected aircraft's installed-instrument range.
+
+Review shows the recorded pressure setting and indication; adjustment is disabled.
+Changing a setting while paused replaces only the latest trace frame, and flight
+reset restores the default setting. This is a bounded ideal instrument: aircraft
+errors, lag, real weather and an accepted airport reference remain future work.
+An older local engine without pressure exports leaves the indication unavailable;
+run `just build-flight-engine` to rebuild it. See the
+[source notes](../docs/research/2026-11-02-pressure-altimeter.md).
+
 ## Review a flight
 
 Fly a gentle turn for about ten seconds, then select **Review** in the header.
@@ -137,11 +161,13 @@ separate deliberate update rather than a runtime dependency.
   model or accepted EDFE airport-height alignment. Imagery does not establish
   authoritative runway geometry, navigation data or chart material.
 - Airspeed is **TAS**, not indicated airspeed. Heading is **true**, not magnetic.
-  The altitude is the study's JSBSim height output with an unresolved local datum;
-  it is not a QNH/QFE pressure-altimeter simulation.
+  The pressure indication is an ideal instrument driven by JSBSim static pressure;
+  its launch-point QFE is a practice reference, not an accepted airport datum.
+  The study geometric height remains distinct from that indication.
 - Aircraft handling, cockpit instrumentation and approach/landing behavior have
-  not been validated for flight training. QNH/QFE/standard pressure, navigation,
-  checklists, radio and a scored circuit remain future increments.
+  not been validated for flight training. Installed-instrument fidelity, airport
+  pressure references, navigation, checklists, radio and a scored circuit remain
+  future increments.
 
 See [ARCH](../docs/ARCH.md), [SPEC](../docs/SPEC.md) and
 [contributor rules](../AGENTS.md) for the intended simulator and source boundaries.
@@ -157,7 +183,11 @@ npm --prefix app run test:browser  # real JSBSim; local engine and installed Chr
 The browser smoke also serves a temporary runtime copy without
 `dist/jsbsim.{mjs,wasm}` (through `GEFLY_FLIGHT_RUNTIME`) and checks the build hint.
 Only the failed `dist/jsbsim.mjs` import is exercised; a missing `jsbsim.wasm`
-alone is not separately covered.
+alone is not separately covered. The copied runtime includes `altimeter.js`, so
+the pressure-instrument module remains available during this negative case. The
+development runtime serves only `worker.js`, `altimeter.js` and the three declared
+engine/build-record files; these research runtime files are excluded from the
+production UI bundle.
 
 Node.js 24.2+ is required. The browser check starts temporary servers on
 127.0.0.1:5174 and 5175 and writes ignored screenshots to `output/flight/`.

@@ -22,12 +22,15 @@
 #include <cstring>
 #include <initializer_list>
 #include <memory>
+#include <limits>
 
 namespace {
 
 constexpr double kFtToM = 0.3048;            // exact
 constexpr double kKtToMps = 1852.0 / 3600.0; // exact
 constexpr double kPi = 3.141592653589793;
+// NIST SP 811: pound-force per square foot to Pa (physical conversion).
+constexpr double kPsfToPa = 47.88025898033584;
 
 constexpr int kErrNotInit = -1;
 constexpr int kErrNonFinite = -2;
@@ -160,6 +163,17 @@ EMSCRIPTEN_KEEPALIVE int gf_step() {
 EMSCRIPTEN_KEEPALIVE double* gf_state() { return g_state; }
 EMSCRIPTEN_KEEPALIVE int gf_state_len() { return kStateLen; }
 EMSCRIPTEN_KEEPALIVE double gf_step_index() { return g_steps; }
+// Read-only atmosphere accessors. Kept outside the original 14-double study
+// state/digest: adding an instrument must not alter the dynamics benchmark.
+EMSCRIPTEN_KEEPALIVE double gf_static_pressure_pa() {
+  return g_fdm ? g_fdm->GetPropertyValue("atmosphere/P-psf") * kPsfToPa
+               : std::numeric_limits<double>::quiet_NaN();
+}
+EMSCRIPTEN_KEEPALIVE double gf_sealevel_pressure_pa() {
+  return g_fdm ? g_fdm->GetPropertyValue("atmosphere/P-sl-psf") * kPsfToPa
+               : std::numeric_limits<double>::quiet_NaN();
+}
+
 // 1 trimmed, -1 trim threw (state and controls are whatever the partial trim
 // left, not restored to the post-RunIC state), 0 not attempted.
 EMSCRIPTEN_KEEPALIVE int gf_trim_status() { return g_trim_ok; }

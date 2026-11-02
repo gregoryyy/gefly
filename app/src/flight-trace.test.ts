@@ -137,3 +137,22 @@ test('plot sampling caps large histories and rejects unsupported sample budgets'
     assert.throws(() => trace.sampledStates(maxPoints), RangeError);
   }
 });
+
+test('paused pressure setting changes replace only the last instrument snapshot and preserve prior objects', () => {
+  const trace = new FlightTrace();
+  const initial = { ...state(1), p_static_pa: 96_000, altimeter_setting_pa: 101_325,
+    altimeter_indicated_m: 450, altimeter_qnh_pa: 101_325, altimeter_qfe_pa: 96_000,
+    altimeter_qfe_datum_m: 396.24 };
+  assert.equal(trace.record(initial, 2), true);
+  const old = trace.atTime(1)!;
+  const changed = { ...initial, altimeter_setting_pa: 96_000, altimeter_indicated_m: 0 };
+  assert.equal(trace.record(changed, 999), true);
+  assert.equal(trace.bounds()!.count, 1);
+  assert.equal(trace.atTime(1)!.state.altimeter_indicated_m, 0);
+  assert.equal(trace.atTime(1)!.vertical_speed_mps, 2);
+  assert.equal(old.state.altimeter_setting_pa, 101_325);
+  assert.equal(trace.record({ ...initial, alt_msl_m: 123 }, 2), false);
+  assert.equal(trace.record({ ...initial, p_static_pa: 95_000 }, 2), false);
+  assert.equal(trace.record({ ...initial, p_static_pa: NaN }, 2), false);
+  assert.equal(trace.atTime(1)!.state.altimeter_setting_pa, 96_000);
+});

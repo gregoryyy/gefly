@@ -6,6 +6,15 @@ An experimental [local browser application](../app/README.md) now integrates the
 
 A lazy-loaded MapLibre practice map now shows the selected flight position, true heading and a bounded whole retained path over the same local imagery. Review uses the historical marker state, while the full retained line remains visible. It does not supply accepted airport, chart, fix or procedure data.
 
+The research worker also computes an ideal ISA scale-offset pressure altimeter
+from actual JSBSim static pressure at each fixed step. Read-only pressure exports
+leave the original 14-value dynamics state/digest unchanged. A bounded setting
+message can update the instrument at a paused step; the trace replaces only its
+last instrument snapshot while retaining physical state and VSI. Review renders
+captured indications. This is a prototype field extension, not completion of the
+full v1.1 state/digest contracts. Its launch-point QFE datum is explicitly airborne,
+not an airport elevation; see [model sources](research/2026-11-02-pressure-altimeter.md).
+
 Additional user decisions: a **free/open-source flight-school community site**,
 **LLM-assisted flight-experience authoring and AI interaction**, an initial
 **EDDF/100 NM regional model from real source material**, and **reuse of open

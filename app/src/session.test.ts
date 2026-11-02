@@ -124,3 +124,29 @@ test('invalid controls and worker-load failures are visible; disposed sessions i
   session.dispose(); session.start(); session.reset();
   assert.equal(MockWorker.instances.length, 2);
 });
+
+test('altimeter setting crosses the worker boundary while paused without resuming flight', (t) => {
+  const { session } = fixture(t); session.reset();
+  const worker = MockWorker.instances[0]; worker.emit(ready);
+  const before = worker.messages.length;
+  for (const setting of [NaN, Infinity, 79_999, 110_001]) session.setAltimeter(setting);
+  assert.equal(worker.messages.length, before);
+  session.setAltimeter(99_500);
+  assert.deepEqual(worker.messages.at(-1), { type: 'altimeter', setting_pa: 99_500 });
+  assert.equal(worker.messages.some((message) => message.type === 'run'), false);
+  session.dispose(); const count = worker.messages.length;
+  session.setAltimeter(101_325); assert.equal(worker.messages.length, count);
+});
+
+test('pressure indications are copied as a complete finite group; partial pressure state fails', (t) => {
+  const { session, states, errors } = fixture(t); session.reset();
+  const worker = MockWorker.instances[0]; worker.emit(ready);
+  const air = { p_static_pa: 96_000, altimeter_setting_pa: 101_325, altimeter_indicated_m: 450,
+    altimeter_qnh_pa: 101_325, altimeter_qfe_pa: 96_000, altimeter_qfe_datum_m: 396.24 };
+  const message = { ...state, ...air }; worker.emit(message);
+  assert.equal((states[0] as typeof message).p_static_pa, air.p_static_pa);
+  message.altimeter_setting_pa = 88_000;
+  assert.equal((states[0] as typeof message).altimeter_setting_pa, 101_325);
+  worker.emit({ ...state, p_static_pa: 96_000 });
+  assert.match(errors[0], /invalid state/);
+});

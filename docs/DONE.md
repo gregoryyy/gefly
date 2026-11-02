@@ -3,119 +3,42 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
-## 2026-11-02 14:47 — See the aircraft and retained flight path on a practice map
+## 2026-11-02 16:29 — Adjust pressure and read the altimeter in flight review
 
-TODO: 2.0.4 complete as a bounded map increment; R-WORLD-1/R-REVIEW-1 remain partial.
-Agent: Codex orchestrator; practice_map_core/code1 and practice_map_ui/code2 in
-parallel, with flight_housekeeping on application instructions. Independent
-quality: flight_housekeeping, excluding its own README; validation: flight_validate.
+TODO: 2.0.5 complete as a bounded pressure-practice increment; R-AIR-3/R-REVIEW-1
+remain partial. Agent: Codex orchestrator; altimeter_core/code1 and altimeter_ui/code2
+in parallel, with altimeter_research maintaining sources/application instructions.
+Independent quality: altimeter_research (excluding its own prose); independent
+validation: altimeter_validate.
 
 **Implementation notes**
 
-Added a lazy MapLibre panel using the existing bundled Hessen photographs,
-true-heading aircraft marker, whole retained route, zoom and Fit/Follow controls.
-Review seeking moves the marker to the selected historical state while live
-physics stays paused. Bounded immutable sampling plots at most 600 points at
-four updates per second; reset clears the path. Map failures leave flight usable.
-MapLibre is pinned with its complete license retained in source and build output.
+Added a three-pointer pressure altimeter with actual JSBSim ambient pressure,
+manual settings, hPa/inHg display and QNH/launch-QFE/standard teaching shortcuts.
+The pure ideal ISA model runs in the fixed-step worker. Read-only pressure exports
+preserve the original 14-value dynamics state/digest. Paused knob adjustments do
+not advance flight; the last trace frame can replace only instrument values,
+preserving physical/environment fields and VSI. Review displays recorded settings.
 
-Strict TypeScript/build, 26 native tests and 22 real-browser check groups passed.
-Independent actual-browser validation confirmed visible imagery/path, heading,
-review isolation, focus, compact layout, reset and failure isolation. Fixed the
-Vite worker URL initialization failure and the ambiguous route legend; affected
-quality review passed. See [review evidence](reviews/2026-11-02-practice-map.md).
+Build, 39 native tests and all 26 actual-Chrome smoke groups passed. Independent
+browser validation confirmed pressure values, zero at the launch datum, unchanged
+physics/digest, modal controls, history/reset, compact layout and unavailable-data
+fallback. Fixed a range/rebuild hint and negative-zero formatting; affected reviews
+passed. The inherited Vite 8 manualChunks-object build failure was corrected using
+supported Rolldown code splitting. Reordered complete inherited DONE records to
+repair the integration-order check, preserving their contents. See [review evidence](reviews/2026-11-02-pressure-altimeter.md).
 
 **Deviations**
 
-Peer pending. This is a limited visual practice aid, not a navigation chart,
-accepted airport/runway data, real terrain or the EDDF/100 NM region. It changes
-no aircraft physics and does not complete the first circuit or training gates.
+Peer pending. Launch QFE references the airborne launch point, not EDFE elevation;
+QNH is the fixed engine atmosphere reference, not operational weather. This ideal
+instrument does not model C172S installation errors/limits or complete the circuit,
+full replay/event contracts, pressure procedures or training-fidelity gates.
 
 **Insights**
 
-A selected-time marker and an explicitly labeled whole retained route let a
-learner compare a turn with its path without rewinding the live engine.
-
-## 2026-11-02 10:05 — Prepare the handover to Codex
-
-TODO: 0.19 handed over (deferred, due before milestone 1 acceptance). Agent: Claude Code
-orchestrator.
-
-**Implementation notes**
-
-Added the [Claude → Codex handover](handover/2026-11-02-claude-to-codex.md). It covers:
-- the PR merge order #33 → #32 → #34 → #35 → #36 → #37 (merge commits only);
-- the Codex peer review of the Claude-authored batch since `3faf9c8`, with suggested
-  packets and focus points;
-- the renewed #28b/#30 packets (TODO 0.21);
-- the decided and blocked milestone 2 state;
-- environment notes.
-
-**Deviations**
-
-Peer pending (batched).
-
-## 2026-11-02 09:49 — Add a sorted-log merge driver for DONE
-
-TODO: none (process tooling, user-approved 2026-11-02). Agent: Claude Code
-orchestrator; code1 subagent (implementation); quality subagent (three rounds,
-final verdict accept).
-
-**Implementation notes**
-
-- `utils/merge/sorted_log.py` merges `docs/DONE.md` three-way per `## ` entry and
-  keeps the result newest first.
-  - It conflicts only when both sides changed the same entry differently, on delete
-    vs change, and on overlapping preamble edits.
-  - It falls back to `git merge-file` for duplicate headings, existing markers, an
-    entry removed on both sides with additions, and parse failures.
-  - Headings inside code fences are ignored. The original text is kept.
-- `.gitattributes` maps DONE to the driver and the append-only input index to
-  `merge=union`.
-- `check.py` checks that every input record is listed exactly once. This added the
-  missing `2026-11-01-tool-layout.md` index line.
-- `just setup` registers the driver, with a guard that falls back to
-  `git merge-file --diff3` when the script or python3 is missing, and
-  `recursive=text`.
-- SDLC "Log merges" explains why GitHub's web merge and conflict editor are not used
-  for DONE.
-- On real history, merges that conflict with plain git merge cleanly and match the
-  recorded results.
-
-Checks: 189 unit tests OK; check.py exit 0; `utils/ci/run.py --require-node` exit 0
-(passed with skipped checks: e1-jsbsim 9 of 23); assure 0 errors.
-
-**Deviations**
-
-GitHub's web merge does not run custom drivers, so the orchestrator re-syncs branches
-locally. Peer pending (batched).
-
-## 2026-11-02 08:20 — Estimate S17 indication gaps from FlightGear c172p
-
-TODO: 2.1 inputs. Agent: Claude Code orchestrator; researcher subagent; quality
-subagent (two rounds; final verdict accept, 10 of 10 spot checks against c172p matched).
-
-**Implementation notes**
-
-Follows the GAPS Q23 update of 08:01. Manifest 0.3.0 adds S14, FlightGear c172p
-`63ba8527` (GPL-2.0-or-later per LICENSE, CONTRIBUTING.md and file headers;
-`facts_only`, numbers only, nothing copied). The value files are re-pinned.
-indication-loading-values 0.2.0 holds these estimates, all 172P-applicable:
-- dial ranges for the tachometer, oil pressure, oil temperature, fuel quantity, vacuum
-  and ammeter;
-- the EGT scale (°F, 25 °F per division);
-- the Hobbs display and time base;
-- the low-fuel basis (total content).
-
-S17 values still govern where they exist. Checks: validate_manifest exit 0; 180 unit
-tests OK (1 skipped); `assure check` 0 errors.
-
-**Deviations**
-
-Still TBD-src (FlightGear has no answer): the fuel-flow range, tach-time counting,
-sender-fault detection and the annunciator switch-label serial. Quality fixes (08:40): S14 is marked `estimate_only`/`172P`, and
-both validators enforce estimate-only use and the variant named in `applicability`;
-`hash_basis` added; manifest 0.3.1, value files re-pinned. Peer pending (batched).
+Pressure practice becomes tangible when the learner can change an indication
+while the real aircraft state and dynamics digest remain fixed.
 
 ## 2026-11-02 14:56 — Integrate PR 35 with the current flight interface
 
@@ -170,6 +93,39 @@ model or training milestones. Existing peer-pending dispositions remain.
 
 Merging complete dated records avoids attaching one branch's body to the other
 branch's heading or deviations.
+
+## 2026-11-02 14:47 — See the aircraft and retained flight path on a practice map
+
+TODO: 2.0.4 complete as a bounded map increment; R-WORLD-1/R-REVIEW-1 remain partial.
+Agent: Codex orchestrator; practice_map_core/code1 and practice_map_ui/code2 in
+parallel, with flight_housekeeping on application instructions. Independent
+quality: flight_housekeeping, excluding its own README; validation: flight_validate.
+
+**Implementation notes**
+
+Added a lazy MapLibre panel using the existing bundled Hessen photographs,
+true-heading aircraft marker, whole retained route, zoom and Fit/Follow controls.
+Review seeking moves the marker to the selected historical state while live
+physics stays paused. Bounded immutable sampling plots at most 600 points at
+four updates per second; reset clears the path. Map failures leave flight usable.
+MapLibre is pinned with its complete license retained in source and build output.
+
+Strict TypeScript/build, 26 native tests and 22 real-browser check groups passed.
+Independent actual-browser validation confirmed visible imagery/path, heading,
+review isolation, focus, compact layout, reset and failure isolation. Fixed the
+Vite worker URL initialization failure and the ambiguous route legend; affected
+quality review passed. See [review evidence](reviews/2026-11-02-practice-map.md).
+
+**Deviations**
+
+Peer pending. This is a limited visual practice aid, not a navigation chart,
+accepted airport/runway data, real terrain or the EDDF/100 NM region. It changes
+no aircraft physics and does not complete the first circuit or training gates.
+
+**Insights**
+
+A selected-time marker and an explicitly labeled whole retained route let a
+learner compare a turn with its path without rewinding the live engine.
 
 ## 2026-11-02 12:36 — Review the recorded flight without rewinding physics
 
@@ -237,6 +193,25 @@ requirement. It adds no stored preferences, replay or training-credit claim.
 A small settings panel provides a direct in-flight comparison while keeping the
 physics model and source assumptions unchanged.
 
+## 2026-11-02 10:05 — Prepare the handover to Codex
+
+TODO: 0.19 handed over (deferred, due before milestone 1 acceptance). Agent: Claude Code
+orchestrator.
+
+**Implementation notes**
+
+Added the [Claude → Codex handover](handover/2026-11-02-claude-to-codex.md). It covers:
+- the PR merge order #33 → #32 → #34 → #35 → #36 → #37 (merge commits only);
+- the Codex peer review of the Claude-authored batch since `3faf9c8`, with suggested
+  packets and focus points;
+- the renewed #28b/#30 packets (TODO 0.21);
+- the decided and blocked milestone 2 state;
+- environment notes.
+
+**Deviations**
+
+Peer pending (batched).
+
 ## 2026-11-02 10:02 — Make flight controls visible and stabilize the scene
 
 TODO: 2.0.1 complete as an experimental usability/visual increment.
@@ -278,6 +253,68 @@ milestone, training credit or public deployment is accepted.
 
 An obvious flight-control affordance and a stable source snapshot make the
 prototype usable; passing worker tests alone cannot establish that experience.
+
+## 2026-11-02 09:49 — Add a sorted-log merge driver for DONE
+
+TODO: none (process tooling, user-approved 2026-11-02). Agent: Claude Code
+orchestrator; code1 subagent (implementation); quality subagent (three rounds,
+final verdict accept).
+
+**Implementation notes**
+
+- `utils/merge/sorted_log.py` merges `docs/DONE.md` three-way per `## ` entry and
+  keeps the result newest first.
+  - It conflicts only when both sides changed the same entry differently, on delete
+    vs change, and on overlapping preamble edits.
+  - It falls back to `git merge-file` for duplicate headings, existing markers, an
+    entry removed on both sides with additions, and parse failures.
+  - Headings inside code fences are ignored. The original text is kept.
+- `.gitattributes` maps DONE to the driver and the append-only input index to
+  `merge=union`.
+- `check.py` checks that every input record is listed exactly once. This added the
+  missing `2026-11-01-tool-layout.md` index line.
+- `just setup` registers the driver, with a guard that falls back to
+  `git merge-file --diff3` when the script or python3 is missing, and
+  `recursive=text`.
+- SDLC "Log merges" explains why GitHub's web merge and conflict editor are not used
+  for DONE.
+- On real history, merges that conflict with plain git merge cleanly and match the
+  recorded results.
+
+Checks: 189 unit tests OK; check.py exit 0; `utils/ci/run.py --require-node` exit 0
+(passed with skipped checks: e1-jsbsim 9 of 23); assure 0 errors.
+
+**Deviations**
+
+GitHub's web merge does not run custom drivers, so the orchestrator re-syncs branches
+locally. Peer pending (batched).
+
+## 2026-11-02 08:20 — Estimate S17 indication gaps from FlightGear c172p
+
+TODO: 2.1 inputs. Agent: Claude Code orchestrator; researcher subagent; quality
+subagent (two rounds; final verdict accept, 10 of 10 spot checks against c172p matched).
+
+**Implementation notes**
+
+Follows the GAPS Q23 update of 08:01. Manifest 0.3.0 adds S14, FlightGear c172p
+`63ba8527` (GPL-2.0-or-later per LICENSE, CONTRIBUTING.md and file headers;
+`facts_only`, numbers only, nothing copied). The value files are re-pinned.
+indication-loading-values 0.2.0 holds these estimates, all 172P-applicable:
+- dial ranges for the tachometer, oil pressure, oil temperature, fuel quantity, vacuum
+  and ammeter;
+- the EGT scale (°F, 25 °F per division);
+- the Hobbs display and time base;
+- the low-fuel basis (total content).
+
+S17 values still govern where they exist. Checks: validate_manifest exit 0; 180 unit
+tests OK (1 skipped); `assure check` 0 errors.
+
+**Deviations**
+
+Still TBD-src (FlightGear has no answer): the fuel-flow range, tach-time counting,
+sender-fault detection and the annunciator switch-label serial. Quality fixes (08:40): S14 is marked `estimate_only`/`172P`, and
+both validators enforce estimate-only use and the variant named in `applicability`;
+`hash_basis` added; manifest 0.3.1, value files re-pinned. Peer pending (batched).
 
 ## 2026-11-02 08:01 — Record FlightGear for S17 gaps; Codex review deferred
 

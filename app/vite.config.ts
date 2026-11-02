@@ -15,7 +15,7 @@ const contentTypes: Record<string, string> = {
 export default defineConfig({
   define: { CESIUM_BASE_URL: JSON.stringify('/cesium/') },
   server: { port: 5173, strictPort: true },
-  build: { rollupOptions: { output: { manualChunks: { cesium: ['cesium'] } } } },
+  build: { rolldownOptions: { output: { codeSplitting: { groups: [{ name: 'cesium', test: /node_modules\/(?:cesium|@cesium)\// }] } } } },
   plugins: [{
     name: 'local-flight-assets',
     configureServer(server) {

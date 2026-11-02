@@ -26,6 +26,7 @@
 // runs steps back to back while paused (no pacing) and replies with the mean
 // cost per step for each block, separating compute cost from post-idle wake cost.
 import createJSBSim from './dist/jsbsim.mjs';
+import { indicatedAltitude_m, validSetting } from './altimeter.js';
 
 const MAX_CATCHUP = 12;          // steps per tick (100 ms at 1/120 s)
 const TIMER_SLACK_MS = 0.1;     // wake margin after a step's due time
@@ -71,6 +72,54 @@ let costCount = 0;
 let runWallStartMs = 0;
 let runWallMs = 0;
 let untilStep = Infinity;
+// Ideal pressure instrument only. Its setting never changes the atmosphere,
+// dynamics state, integration step or original study digest.
+let altimeterSettingPa = 101325;
+let altimeterReferences = null;
+let altimeterFields = {};
+
+function updateAltimeter() {
+  // Clear first, so unsupported/out-of-domain pressure never leaves ghost values.
+  altimeterFields = {};
+  if (!altimeterReferences) return;
+  const p_static_pa = M._gf_static_pressure_pa();
+  const indicated_m = indicatedAltitude_m(p_static_pa, altimeterSettingPa);
+  if (indicated_m === null) return;
+  altimeterFields = {
+    p_static_pa, altimeter_setting_pa: altimeterSettingPa,
+    altimeter_indicated_m: indicated_m, ...altimeterReferences,
+  };
+}
+
+function initializeAltimeter() {
+  altimeterSettingPa = 101325;
+  altimeterReferences = null;
+  altimeterFields = {};
+  // An older local engine remains flyable; the UI can request its rebuild.
+  if (typeof M._gf_static_pressure_pa !== 'function'
+    || typeof M._gf_sealevel_pressure_pa !== 'function') return;
+  const qnh_pa = M._gf_sealevel_pressure_pa();
+  const qfe_pa = M._gf_static_pressure_pa();
+  const datum_m = readState()[3];
+  if (!validSetting(qnh_pa) || !validSetting(qfe_pa) || !Number.isFinite(datum_m)) return;
+  altimeterReferences = {
+    altimeter_qnh_pa: qnh_pa, altimeter_qfe_pa: qfe_pa,
+    altimeter_qfe_datum_m: datum_m,
+  };
+  updateAltimeter();
+}
+
+function onAltimeter(msg) {
+  if (!validSetting(msg.setting_pa) || !altimeterReferences) {
+    postMessage({ type: 'altimeter-rejected', message: 'Pressure setting unavailable or outside practice bounds.' });
+    return;
+  }
+  altimeterSettingPa = msg.setting_pa;
+  updateAltimeter();
+  // A knob adjustment while paused publishes a new instrument frame at the same
+  // physics step; it does not run JSBSim or invent an aircraft control input.
+  postState();
+}
 
 function fail(message) {
   running = false;
@@ -92,7 +141,7 @@ function stateMessage() {
   return {
     type: 'state', step: stepIndex, t_s: s[0], lat_rad: s[1], lon_rad: s[2],
     alt_msl_m: s[3], roll_rad: s[4], pitch_rad: s[5], heading_rad: s[6], tas_mps: s[7],
-    last_input_wall_ms: lastInputWallMs, step_cost_us: lastStepCostUs,
+    last_input_wall_ms: lastInputWallMs, step_cost_us: lastStepCostUs, ...altimeterFields,
   };
 }
 
@@ -129,6 +178,7 @@ function stepOnce() {
   const b = performance.now();
   if (rc !== 0) { fail(`step rc=${rc} at step ${stepIndex}`); return false; }
   stepIndex += 1;
+  updateAltimeter();
   lastStepCostUs = (b - a) * 1000;
   if (costCount < costs.length) costs[costCount++] = lastStepCostUs;
   return true;
@@ -196,6 +246,7 @@ async function onInit(msg) {
   stepIndex = 0; pending = []; lastInputWallMs = null; lastStepCostUs = 0;
   missedSteps = 0; droppedSteps = 0; maxLagSteps = 0; maxLagMs = 0; lateInputs = 0; appliedInputs = 0; maxBatch = 0; ticks = 0;
   costs = new Float32Array(COST_CAPACITY); costCount = 0; runWallMs = 0;
+  initializeAltimeter();
   initialized = true;
   postMessage({
     type: 'ready',
@@ -257,6 +308,7 @@ self.onmessage = (ev) => {
       if (!initialized) { postMessage({ type: 'error', message: `${msg.type} before init` }); return; }
       switch (msg.type) {
         case 'input': onInput(msg); break;
+        case 'altimeter': onAltimeter(msg); break;
         case 'run': onRun(msg); break;
         case 'pause': onHalt(); break;
         case 'stop': onHalt(); postMessage(stats()); break;

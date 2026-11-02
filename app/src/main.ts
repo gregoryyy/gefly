@@ -1,5 +1,6 @@
 import './style.css';
 import './practice-map.css';
+import { createPressureAltimeterPanel } from './pressure-altimeter-panel';
 import { createScene } from './scene';
 import { createSession } from './session';
 import { FlightTrace } from './flight-trace';
@@ -51,13 +52,13 @@ root.innerHTML = `
     <div class="instruments">
       <div class="gauge"><canvas id="airspeed" width="300" height="300" aria-label="True airspeed dial"></canvas><div class="gauge-readout"><b id="tas">—</b><span>KT · TRUE AIRSPEED</span></div></div>
       <div class="gauge attitude"><canvas id="attitude" width="300" height="300" aria-label="Attitude indicator"></canvas><div class="gauge-readout"><b id="bank">—</b><span>BANK · DEGREES</span></div></div>
-      <div class="gauge"><canvas id="altitude" width="300" height="300" aria-label="Study geometric altitude dial"></canvas><div class="gauge-readout"><b id="alt">—</b><span>FT · STUDY ALTITUDE</span></div></div>
+      <div id="pressure-altimeter" class="gauge"></div>
       <div class="flight-data"><div><span>HEADING · TRUE</span><b id="heading">—</b></div><div><span>VERTICAL SPEED</span><b id="vsi">—</b><small>FT / MIN · DERIVED</small></div></div>
       <div class="throttle-control"><label for="throttle">THROTTLE <b id="power">—</b></label><input id="throttle" type="range" min="0" max="100" value="69" aria-label="Throttle percentage"><span>IDLE <i></i> FULL</span><p><kbd>W</kbd> Increase <kbd>S</kbd> Decrease</p></div>
       <div class="session-controls"><button id="reset">Restart flight <kbd>R</kbd></button><p>Fixed-step JSBSim<br>Generic c172x research model</p><button id="limits" aria-expanded="false">Model & scenery limits</button></div>
     </div>
     <footer><span>LOCAL RESEARCH PROTOTYPE · NOT VALIDATED FOR TRAINING</span><span>Imagery: HVBG · DL-DE Zero 2.0</span></footer>
-    <div id="limitations" hidden>Generic JSBSim 172P research data, not the planned C172S. Aerial imagery provides geographic context on an ellipsoid; no terrain heights, current airport information or navigation data are supplied. TAS is not IAS. Altitude uses the study's uncorrected geometric datum, not a QNH/QFE pressure altimeter. No validated landing, circuit assessment, weather, radio or checklists yet. The adjustable study roll offset adds a constant aileron input to counter the generic model’s initial roll-off; this is an experimental assist, not an aircraft trim specification. Local research runtime assets are excluded from distribution.</div>
+    <div id="limitations" hidden>Generic JSBSim 172P research data, not the planned C172S. Aerial imagery provides geographic context on an ellipsoid; no terrain heights, current airport information or navigation data are supplied. TAS is not IAS. The pressure altimeter uses an ideal ISA scale-offset model driven by JSBSim static pressure; launch-point QFE is a practice datum, not airport elevation. Installed C172S instrument errors and limits are not modeled. No validated landing, circuit assessment, weather, radio or checklists yet. The adjustable study roll offset adds a constant aileron input to counter the generic model’s initial roll-off; this is an experimental assist, not an aircraft trim specification. Local research runtime assets are excluded from distribution.</div>
   </section>
 </main>`;
 
@@ -158,6 +159,10 @@ const controlSettingsPanel = createControlSettingsPanel({
   onChange(settings) { controlSettings = { ...settings }; neutralize(); },
 });
 el('controls-settings').onclick = () => controlSettingsPanel.open();
+const pressureAltimeter = createPressureAltimeterPanel({
+  container: el('pressure-altimeter'), onOpen: pauseFlight, onClose: focusFlight,
+  onSetting(setting_pa) { if (!reviewing && ready && !failed) session.setAltimeter(setting_pa); },
+});
 
 el('toggle-map').onclick = () => { void setMapVisible(!mapVisible); focusFlight(); };
 function mapUnavailable() {
@@ -270,6 +275,7 @@ function reset() {
   flightTrace.clear();
   if (practiceMap && latest) { try { practiceMap.update(latest, [], 'live'); } catch { mapUnavailable(); } }
   lastMapUpdate_ms = -Infinity;
+  pressureAltimeter.update(null, false);
   startWhenReady = running; running = false; ready = false; failed = false;
   neutralize(); session.pause(); latest = previous = null; verticalSpeedFpm = 0;
   notice(''); session.reset(); updateSessionUI(); focusFlight();
@@ -340,7 +346,7 @@ for (const button of Array.from(document.querySelectorAll<HTMLButtonElement>('[d
 }
 
 addEventListener('keydown', event => {
-  if (controlSettingsPanel.isOpen() || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (controlSettingsPanel.isOpen() || el<HTMLDialogElement>('altimeter-dialog').open || event.ctrlKey || event.metaKey || event.altKey) return;
   if (reviewing) {
     const timeline = event.target instanceof HTMLElement && event.target.id === 'review-time';
     if (editing(event.target) && !timeline) return;
@@ -433,22 +439,21 @@ function animate(now: number) {
         sceneFailed = true; pauseFlight(); notice('The 3D scene stopped rendering. Reload to restart.'); updateSessionUI();
       }
     }
-    const kt = state.tas_mps * 3600 / 1852, ft = state.alt_msl_m / 0.3048;
+    const kt = state.tas_mps * 3600 / 1852;
+    pressureAltimeter.update(state, reviewing);
     const heading = ((state.heading_rad * 180 / Math.PI) % 360 + 360) % 360;
-    el('tas').textContent = kt.toFixed(0); el('alt').textContent = Math.round(ft).toLocaleString('en-US');
+    el('tas').textContent = kt.toFixed(0);
     el('heading').textContent = `${String(Math.round(heading) % 360).padStart(3, '0')}°`;
     el('bank').textContent = `${Math.abs(state.roll_rad * 180 / Math.PI).toFixed(0)}°`;
     el('vsi').textContent = `${shownVsiFpm >= 0 ? '+' : ''}${Math.round(shownVsiFpm / 10) * 10}`;
     el('clock').textContent = `${String(Math.floor(state.t_s / 60)).padStart(2, '0')}:${String(Math.floor(state.t_s % 60)).padStart(2, '0')}`;
     dial('airspeed', kt, 180, 'TRUE AIRSPEED', 'KNOTS · NOT IAS', 20);
-    dial('altitude', ((ft % 1000) + 1000) % 1000, 1000, 'ALTITUDE', 'FEET · MODULO 1000', 100);
     attitude(state);
   }
   requestAnimationFrame(animate);
 }
 dial('airspeed', 0, 180, 'TRUE AIRSPEED', 'KNOTS · NOT IAS', 20);
-dial('altitude', 0, 1000, 'ALTITUDE', 'STUDY DATUM', 100);
 attitude({ roll_rad: 0, pitch_rad: 0 } as FlightState);
 publishInput(); updateSessionUI(); requestAnimationFrame(animate);
-addEventListener('pagehide', () => { mapDisposed = true; practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
+addEventListener('pagehide', () => { mapDisposed = true; practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
 void sceneReady;

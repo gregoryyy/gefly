@@ -74,7 +74,7 @@ em++ -O2 -std=c++17 $EXC_FLAGS -I"$SRC/src" -I"$BUILD/src" "$HERE/bridge.cpp" \
   "$BUILD/src/libJSBSim.a" -o "$DIST/jsbsim.mjs" \
   -sMODULARIZE=1 -sEXPORT_ES6=1 -sEXPORT_NAME=createJSBSim -sENVIRONMENT=worker,web,node \
   -sALLOW_MEMORY_GROWTH=1 -sEXPORTED_RUNTIME_METHODS=HEAPF64,UTF8ToString \
-  -sEXPORTED_FUNCTIONS=_gf_init,_gf_set_inputs,_gf_step,_gf_state,_gf_state_len,_gf_step_index,_gf_digest_hex,_gf_trim_status,_gf_trim_throttle,_gf_trim_pitch \
+  -sEXPORTED_FUNCTIONS=_gf_init,_gf_set_inputs,_gf_step,_gf_state,_gf_state_len,_gf_step_index,_gf_digest_hex,_gf_trim_status,_gf_trim_throttle,_gf_trim_pitch,_gf_static_pressure_pa,_gf_sealevel_pressure_pa \
   "${EMBED[@]}"
 
 # 5. Build record read by worker.js ("ready" message)
