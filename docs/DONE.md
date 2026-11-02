@@ -36,6 +36,60 @@ no aircraft physics and does not complete the first circuit or training gates.
 A selected-time marker and an explicitly labeled whole retained route let a
 learner compare a turn with its path without rewinding the live engine.
 
+## 2026-11-02 14:56 — Integrate PR 35 with the current flight interface
+
+TODO: 0.21 / 1.6 integration only. Agent: Codex orchestrator; pr35_vite/code1 and
+pr35_smoke/code2 resolved disjoint application conflicts in parallel, with
+pr35_housekeeping on application instructions and record preservation.
+Independent quality and validation: pr32_merge_review.
+
+**Implementation notes**
+
+Retained the extracted research-runtime middleware and real missing-engine smoke
+case alongside main's Cesium asset serving/build copying, control settings and
+recorded-state review tests. The native test command includes both branches'
+tests. Preserved complete DONE records and TODO status; corrected SBOM's obsolete
+statement that Cesium integration was still future work.
+
+Strict TypeScript/UI build and all 22 native tests passed. The real-engine Chrome
+smoke passed all 20 check groups, including the actual missing-module 404 case.
+The first run exposed queued state messages racing the settings pause baseline;
+the test now allows the existing pause-settling interval before checking a frozen
+worker step. Product behavior was unchanged; affected independent review passed.
+
+**Deviations**
+
+This is merge integration, not renewed acceptance of the historical peer packets
+or the foundation milestone. Existing peer-pending and blocked outcomes remain.
+
+**Insights**
+
+A clean conflict resolution must preserve both the newer flight interface and
+the negative runtime test; choosing either whole side would lose coverage.
+
+## 2026-11-02 14:50 — Reconcile PR 32 with current main
+
+TODO: 1.6 integration only. Agent: Codex orchestrator; pr32_merge_review performs
+independent quality and validation of the merge resolution.
+
+**Implementation notes**
+
+Merged current main into fix/m1-contracts. Preserved both branches' complete DONE
+records in descending date order, and retained TODO 2.0.1–2.0.3 alongside the
+expanded milestone 2 scope in 2.1. Contract changes and user decisions are retained.
+Independent quality and validation passed: every parent record is intact, task
+status is preserved, and the original contract/input files are unchanged.
+
+**Deviations**
+
+This resolves integration conflicts; it does not accept the pending foundation,
+model or training milestones. Existing peer-pending dispositions remain.
+
+**Insights**
+
+Merging complete dated records avoids attaching one branch's body to the other
+branch's heading or deviations.
+
 ## 2026-11-02 12:36 — Review the recorded flight without rewinding physics
 
 TODO: 2.0.3 complete as a bounded state-review increment; R-REVIEW-1 remains partial.
@@ -143,6 +197,169 @@ milestone, training credit or public deployment is accepted.
 
 An obvious flight-control affordance and a stable source snapshot make the
 prototype usable; passing worker tests alone cannot establish that experience.
+
+## 2026-11-02 08:01 — Record FlightGear for S17 gaps; Codex review deferred
+
+TODO: 0.19 deferred. Agent: Claude Code orchestrator.
+
+**Implementation notes**
+
+The user's answer is recorded ([input](input/2026-11-02-flightgear-gaps-codex-deferred.md)).
+GAPS Q23 now says the S17 gaps follow the FlightGear Cessna 172 model, labelled
+`estimated`, with that model treated as another variant and its licence recorded
+first. TODO 0.19 is marked deferred.
+
+**Deviations**
+
+Peer pending (batched) for the Claude-authored batch #32–#36.
+
+## 2026-11-02 07:36 — Record the S17 list, electrical and tachometer decisions
+
+TODO: 2.1 scope refined. Agent: Claude Code orchestrator; researcher subagent
+(extraction), quality subagent (13 of 13 spot checks against S17 matched; changes
+requested).
+
+**Implementation notes**
+
+The user accepted three recommendations ([input](input/2026-11-02-s17-lists-electrical-tach.md)):
+- the whole S17 Fig. 2-3 and Fig. 6-3 lists as cited facts (a Q5 exception);
+- the ammeter and the low-voltage annunciator in `ind`;
+- the Section 2 tachometer arcs as governing.
+
+GAPS Q5 and Q23 record them. fix/m1-contracts (#32) declares the decided `ind` set in
+SCENARIO-CONTRACTS §4 and adds the CONTRACTS §1 unit suffixes.
+
+**Deviations**
+
+The extraction branch (data/s17-ind-wb) is in rework after the quality review. Peer
+pending (batched).
+
+## 2026-11-02 07:16 — Record the accepted Q23 proposals
+
+TODO: 2.1 scope set; 1.3.2 empty mass/CG source decided. Agent: Claude Code orchestrator.
+
+**Implementation notes**
+
+The user accepted all Q23 recommendations ("yes to proposals. go on";
+[input](input/2026-11-02-q23-proposals.md)). Recorded in:
+- GAPS Q23 (status column updated) and Q5;
+- TODO 2.1: milestone 2 = circuit flight, sensed checklist items, static briefing and
+  engine/fuel indications in `ind`; text radio in phase 3;
+- fix/m1-contracts (#32): CONTRACTS §10 and SCENARIO-CONTRACTS marked agreed, Q-S3 and
+  Q-S8 decided, FDM-172S Q-1 = POH sample loading, labelled;
+- fix/m1-tooling (#34): manifest S5/S9 `facts_only`, version 0.2.2, value files
+  re-pinned.
+
+**Deviations**
+
+The `ind` digest layout still waits for the researcher's S17 Section 7 engine/fuel
+list. Peer pending (batched).
+
+## 2026-11-02 00:53 — Claude peer review of Codex PRs #27–#30 and fixes (TODO 0.21)
+
+TODO: 0.21 in progress (#28b and #30 packets to renew). Agent: Claude Code orchestrator; peer
+dispatcher subagent (fresh Claude CLI 2.1.316 per packet; model evidence
+`claude-haiku-5-5` and `claude-opus-5-5`), code2 subagent (fixes), quality subagent
+(three rounds, final verdict accept).
+
+**Implementation notes**
+
+Report: [peer review](reviews/2026-11-01-codex-prs-27-30-peer.md) and
+[JSON](reviews/2026-11-01-codex-prs-27-30-peer.json), five packets frozen at main
+`396553c` (#28 split into 28a tooling and 28b docs). Router results: #27 accept;
+#28a changes_required; #28b and #30 review_blocked (material withheld, not defects);
+#29 accept. There were no critical or high findings.
+
+The fixes in this PR:
+- `status.ts` counts a DONE completion only per task ID. Exception or pending wording
+  cancels it; "peer pending" and "pending merge" still count as complete. A ticked
+  parent's record covers its subtasks, and a ticked parent with open subtasks gets
+  the warning `done-parent-open-children`.
+- `evidence.ts` checks that a cited source applies to the aircraft variant, using
+  known 172 model designators (case-insensitive; `S/N` is not read as a variant).
+- The SBOM CesiumJS row now says it is not adopted in the application yet.
+- The missing-engine smoke test serves a runtime copy without `dist/jsbsim.*`.
+- New `app/runtime.ts` and its tests prove that the `build-flight-engine` output is
+  the path `just fly` serves.
+
+Other #28b findings are handled in their own PRs: the CI text in #34, the E14 clash in
+#32, and the BRIEFING IDs match the SPEC edits in #33.
+
+Checks on Node 24: the assure suite passed 83 of 83; `assure check` reported 0 errors;
+the app suite passed 9 of 9; `utils/ci/run.py --require-node` passed with skipped
+checks (e1-jsbsim 9 of 23).
+
+**Deviations**
+
+- The real-engine browser smoke test was not run (no engine build and no Chrome here):
+  not evaluated.
+- Known limitations: the completion check still passes some unlisted negative wording
+  ("failing tests", "needs review"); 172I is not recognised; negated designators
+  ("not the 172S") are still read as naming the variant; "unstated" sources are
+  lenient (L3); `app/runtime.ts` is not type-checked (L6).
+- The fixes are Claude-authored, so they need the Codex peer review (TODO 0.19 batch).
+  The #28b and #30 packets need renewal with the withheld material.
+
+## 2026-11-02 00:30 — Apply foundation-review tooling fixes (TODO 1.6)
+
+TODO: 1.6 in progress. Agent: Claude Code orchestrator; code1 subagent implemented.
+
+**Implementation notes**
+
+The manifest validator rejects duplicate JSON keys. Value files pin the manifest by id,
+`manifest_version` and `manifest_sha256` (SHA-256 of the file bytes), and the schemas
+require these fields. The CI runner has an app npm phase (`npm ci --ignore-scripts`);
+an install failure counts as a skip only when the output shows a network or certificate
+error, and `--require-node` makes it a failure. test_run skips Node-dependent cases on
+Node older than 24.2 instead of failing. Dependabot watches `/app` npm weekly. EVAL
+CI2/CI5, SBOM and SEC text match. Checks on Node 24: 152 unit tests OK;
+`utils/ci/run.py --require-node` passed with skipped checks (e1-jsbsim 9 of 23).
+
+**Deviations**
+
+In this sandbox, `npm ci` needs `npm_config_cafile` because of the proxy certificate.
+Peer pending (batched).
+
+## 2026-11-02 00:25 — Contract fixes and renewed foundation review (TODO 1.6)
+
+TODO: 1.6 in progress. Agent: Claude Code orchestrator; a renewed quality/validate
+subagent re-checked the merged contract and record fixes.
+
+**Implementation notes**
+
+Branch fix/m1-contracts (separate PR) fixes the review blockers B1–B4 in CONTRACTS
+§10 (derived `setting_ref`, `sim_core`/`env_core`, worker-computed `ind`, single
+worker `seq` allocator, one rights enum, JCS/SHA-256 hashing), the VFE detent bands
+and phone-loss `fallback` source across SCENARIO-CONTRACTS, EXERCISE-01 and
+PHONE-CONTROL. The renewed review found B1–B4 fixed and seven low items. They are now
+fixed: §9 is marked as applied, the v1 `seq` text is kept apart from the v1.1
+proposal, `sim_core` naming, phone proposals use `proposal_id`, the EXERCISE-01 flap
+selection points to the AA2 radian bounds, the proposed EVAL section no longer reuses
+E14, C17 is in order, and Q16/TODO/study text says Apple M1 Pro.
+
+**Deviations**
+
+v1.1 contracts remain proposals until accepted (Q23 Q-S7). Peer pending (batched).
+
+## 2026-11-02 00:21 — Apply foundation-review record fixes (TODO 1.6)
+
+TODO: 1.6 in progress; 1.2.1.1 and 0.21 added. Agent: Claude Code orchestrator; the
+TODO 1.6 quality and validate subagents produced the findings.
+
+**Implementation notes**
+
+Applied the proposed SPEC edits (R-SIM-3, R-SIM-4 from CONTRACTS §9 plus the v1.1
+worker rules, R-COMM-1 AFIS information-only, R-BRIEF-1 failure states); removed stale
+stack/prototype text from SPEC and CONCEPT; reconciled GAPS Q16 to the measured M1
+Pro, fixed the stale PR #24 reference; added GAPS Q23, a register of the open design
+questions from SCENARIO-CONTRACTS, FDM-172S, EXERCISE-01, BRIEFING and PHONE-CONTROL;
+added TODO 1.2.1.1 (real-terrain re-test) and 0.21 (Claude review of Codex PRs
+#27–#30).
+
+**Deviations**
+
+Contract and tooling fixes are on separate branches; user scope decisions (Q23) open.
+Peer pending (batched).
 
 ## 2026-11-02 00:03 — Remove the aircraft measurement campaign from the 172S plan
 

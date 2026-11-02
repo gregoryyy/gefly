@@ -34,6 +34,28 @@ test('AS2 strict dangling, duplicate and completed-blocked status failures', () 
     assert(graph.problems.some((p) => p.check === check), check);
 });
 
+test('AS2 a ticked task whose only DONE mention is in progress lacks a completion record', () => {
+  const entry = (todoLine: string) => `## 2026-11-01 19:00 — Work\n\nTODO: ${todoLine}. Agent: fixture.\n\n**Implementation notes**\n\nImplement fixture.\n\n**Deviations**\n\nNone.\n`;
+  for (const wording of ['1.1 in progress', '1.1 partially done'])
+    assert(buildGraph(fixture({ 'docs/DONE.md': entry(wording) })).problems.some((p) => p.check === 'done-missing-record' && p.id === '1.1'), wording);
+  const tasks = '## 1. Work\n- [x] 1.1 Parent (R-DEMO-1).\n  - [x] 1.1.1 Child.\n';
+  const parent = buildGraph(fixture({ 'docs/TODO.md': tasks, 'docs/DONE.md': entry('1.1 complete; 1.1.1 in progress') }));
+  assert(!parent.problems.some((p) => p.check === 'done-missing-record'), 'parent completion covers its subtasks');
+  const child = buildGraph(fixture({ 'docs/TODO.md': tasks, 'docs/DONE.md': entry('1.1.1 complete; parent 1.1 remains open') }));
+  assert(child.problems.some((p) => p.check === 'done-missing-record' && p.id === '1.1'), 'child completion does not cover its parent');
+});
+
+test('AS2 an unticked ancestor record does not cover a ticked child, and a ticked parent with open children warns', () => {
+  const entry = (todoLine: string) => `## 2026-11-01 19:00 — Work\n\nTODO: ${todoLine}. Agent: fixture.\n\n**Implementation notes**\n\nImplement fixture.\n\n**Deviations**\n\nNone.\n`;
+  const unticked = buildGraph(fixture({ 'docs/TODO.md': '## 1. Work\n- [ ] 1.1 Parent (R-DEMO-1).\n  - [x] 1.1.1 Child.\n', 'docs/DONE.md': entry('1.1 complete') }));
+  assert(unticked.problems.some((p) => p.check === 'done-missing-record' && p.id === '1.1.1'), 'record of an unticked parent does not cover the child');
+  const open = buildGraph(fixture({ 'docs/TODO.md': '## 1. Work\n- [x] 1.1 Parent (R-DEMO-1).\n  - [ ] 1.1.1 Child.\n  - [x] 1.1.2 Done child.\n', 'docs/DONE.md': entry('1.1 complete') }));
+  const warning = open.problems.find((p) => p.check === 'done-parent-open-children' && p.id === '1.1');
+  assert.equal(warning?.severity, 'warning');
+  assert.match(warning?.message ?? '', /1\.1\.1/);
+  assert.doesNotMatch(warning?.message ?? '', /1\.1\.2/);
+});
+
 test('AS2 explicit TODO slash/range references check every task without inferring decimal versions', () => {
   const graph = buildGraph(fixture({ 'docs/design/NOTE.md': 'TODO 1.1/1.99; TODO 1.1–1.3. Schema v9.4 and ratio 1.8 are not task references.\n' }));
   for (const id of ['todo:1.99', 'todo:1.2', 'todo:1.3']) assert(graph.problems.some((p) => p.check === 'dangling-reference' && p.id === id), id);

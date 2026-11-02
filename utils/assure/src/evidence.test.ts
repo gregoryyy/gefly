@@ -282,3 +282,69 @@ test('known aircraft values retain source/page/class/units/reference lineage wit
   const poh = JSON.parse(f[base + 'poh-values.json']); poh.manifest.manifest_id = 'wrong-aircraft'; f[base + 'poh-values.json'] = JSON.stringify(poh);
   assert.ok(checks(run(f, c)).includes('aircraft.manifest'));
 });
+
+function realAircraft() {
+  const f = files(), c = catalog();
+  const base = 'data/aircraft/c172s-classic/';
+  for (const name of ['manifest.json', 'poh-values.json', 'performance-values.json']) f[base + name] = readFileSync(new URL('../../../' + base + name, import.meta.url), 'utf8');
+  c.aircraft = [{ manifest: base + 'manifest.json', values: [base + 'poh-values.json', base + 'performance-values.json'] }];
+  return { f, c, base };
+}
+function withS17(applicability: string) {
+  const { f, c, base } = realAircraft();
+  const manifest = JSON.parse(f[base + 'manifest.json']);
+  manifest.sources.find((source: any) => source.id === 'S17').applicability = applicability;
+  f[base + 'manifest.json'] = JSON.stringify(manifest);
+  const result = run(f, c);
+  return { result, source: result.nodes.find(node => node.attrs?.sourceId === 'S17'), parameter: base + 'poh-values.json#/airspeed_calibration/normal_flaps_0/points/0/ias' };
+}
+
+test('AS3 a sourced datum from a 172P-only source does not count as 172S evidence', () => {
+  const { f, c, base } = realAircraft();
+  const s17 = run(f, c).nodes.find(node => node.attrs?.sourceId === 'S17');
+  assert.equal(s17?.attrs?.appliesToAircraft, 'true');
+  const engine = run(f, c).nodes.find(node => node.attrs?.sourceId === 'S8');
+  assert.equal(engine?.attrs?.appliesToAircraft, 'unstated');
+  const manifest = JSON.parse(f[base + 'manifest.json']);
+  const index = manifest.sources.findIndex((source: any) => source.id === 'S17');
+  manifest.sources[index].applicability = 'Generic Cessna 172P information manual.';
+  f[base + 'manifest.json'] = JSON.stringify(manifest);
+  const foreign = run(f, c);
+  const parameter = base + 'poh-values.json#/airspeed_calibration/normal_flaps_0/points/0/ias';
+  assert.ok(errors(foreign).some(problem => problem.check === 'aircraft.applicability' && problem.id === parameter), 'S17-only sourced value rejected');
+  assert.equal(foreign.nodes.find(node => node.attrs?.sourceId === 'S17')?.attrs?.appliesToAircraft, 'false');
+  // A second, 172S-applicable citation keeps the value but warns about the foreign one.
+  const poh = JSON.parse(f[base + 'poh-values.json']);
+  const point = poh.airspeed_calibration.normal_flaps_0;
+  const s1b = manifest.sources.find((source: any) => source.id === 'S1b');
+  point.citations = [...(point.citations ?? []), { source_id: 'S1b', revision: s1b.revision, page: '28' }];
+  f[base + 'poh-values.json'] = JSON.stringify(poh);
+  const mixed = run(f, c).problems.filter(problem => problem.check === 'aircraft.applicability' && problem.id === parameter);
+  assert.deepEqual(mixed.map(problem => problem.severity), ['warning']);
+});
+
+test('AS3 designators normalize C-prefix, case, spacing and 172SP before applicability matching', () => {
+  for (const [text, variants] of [['Cessna C172S information manual', '172S'], ['Skyhawk SP (172SP) manual', '172S'], ['172s handbook', '172S'],
+    ['Model 172 S handbook', '172S'], ['C172P and FR172 manuals', '172P,FR172'], ['Reims FR172K and R172K', 'FR172K,R172K']] as const) {
+    const { result, source } = withS17(text);
+    assert.equal(source?.attrs?.applicableVariants, variants, text);
+    assert.equal(errors(result).some(problem => problem.check === 'aircraft.applicability'), !variants.split(',').includes('172S'), text);
+  }
+  const { source } = withS17('The 172 aero-data note; IO-360 engine; 172S8001 and on.');
+  assert.equal(source?.attrs?.applicableVariants, '', 'bare family name, engine model and serial numbers are not designators');
+  assert.equal(withS17('generic c172s manual').source?.attrs?.applicableVariants, '172S', 'lower-case c prefix');
+  for (const [text, variants] of [['Model 172 PA conversion; 172 A and the 172 I flew', ''], ['172nd edition, 172T', ''],
+    ['Cessna 172N, Model 172 S/N 17270050 and on', '172N'], ['Cessna 172P; Model 172 S/N 17274010', '172P'], ['Model 172 S.', '']] as const) {
+    const { result, source } = withS17(text);
+    assert.equal(source?.attrs?.applicableVariants, variants, text);
+    assert.equal(errors(result).some(problem => problem.check === 'aircraft.applicability'), variants !== '', text);
+  }
+});
+
+test('AS3 known limitation: a negated designator ("not the 172S") is still read as naming 172S', () => {
+  // Documented limitation (FORMAT.md), not correct behavior: textual matching cannot
+  // read negation, so this 172P-only source is treated as also covering the 172S.
+  const { result, source, parameter } = withS17('Generic Cessna 172P information manual; not the 172S.');
+  assert.equal(source?.attrs?.applicableVariants, '172P,172S');
+  assert.ok(!result.problems.some(problem => problem.check === 'aircraft.applicability' && problem.id === parameter));
+});

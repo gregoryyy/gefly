@@ -54,7 +54,7 @@ jobs:
         with:
           node-version: '24'
       - name: Install locked browser dependencies
-        run: npm --prefix app ci
+        run: npm --prefix app ci --ignore-scripts
       - name: Check and bundle browser application
         run: npm --prefix app run build
       - name: Test worker session lifecycle
