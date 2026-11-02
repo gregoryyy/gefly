@@ -3,6 +3,71 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 20:06 — Classic cockpit, compact controls and landing-practice checkpoint
+
+TODO: 2.0.10–2.0.13, 2.0.15/2.0.16/2.0.18 complete as bounded prototype
+increments. R-INPUT-1/R-VIEW-1/R-REVIEW-1/R-NAV-1/R-SIM-1/R-SIM-5 remain
+partial. Agent: Codex orchestrator; trim_core/code1 and fov_input/code2 on
+parallel disjoint implementation streams, with fov_housekeeping on app/source
+instructions and later separate pointer work. Independent quality:
+fov_housekeeping excluding its own pointer/prose, and trim_core covering pointer
+code excluding its own engine/NAV work. Independent validation: trim_validate.
+
+**Implementation notes**
+
+Added elevator trim preserving startup trim, compact matching vertical trim and
+four-stop flap levers, Slash startup restore, Q/W rudder and consistent nosewheel
+steering. Throttle/mixture are vertical in the engine unit; AP is above flap/trim.
+Ready controls work while paused: selected settings persist, physical state/time
+stays frozen and Resume applies queued commands. Recorded Review stays read-only.
+
+The eight enlarged round faces form a 2×4 grid with a separate rounded six-pack
+panel, matching column heights and shared metal/housing finishes with original
+screw details. Dual COM/NAV units, independent OBS, original NAV cards/CDI/flags
+and opt-in fictional LAB guidance are synchronized with recorded settings. OBS
+supports accelerated hold, captured drag and keyboard adjustment, including
+multi-turn/event-partition invariance. Yoke mode/anchor survives pointer exit;
+Review look persists through release and seeking. Restart is in Flight, controls
+in View, and explanations in Options. Postflight pause uses unobstructed header
+Resume; map controls remain accessible.
+
+Four flat-ground contact studies expose actual upstream wheel compression,
+load, slip and structural contacts without replacement wobble forces. Landing
+fixtures retain selected descent/side/bank conditions; the renderer uses actual
+geodetic height while the original 14-value dynamics ABI remains unchanged.
+See [independent review](reviews/2026-11-02-elevator-trim.md) and
+[source applicability](research/2026-11-02-landing-and-radio.md).
+
+At integrated source commit 2cc0f96, shared `just ci` passed: 92 app native tests,
+five aircraft-adapter tests, TypeScript/UI build, 84 assurance tests, 11 airspeed
+assessment tests and repository/study/render gates. Optional native JSBSim cases
+remain explicit skips (9 of 23), not passes; the platform-specific Linux fixture
+is likewise not Mac runtime evidence. Seven actual Chrome suites passed 73
+check groups, plus eight deterministic 120/240 Hz landing cases and repeats.
+Browser runs were split after updating obsolete flap-button test selectors;
+all final suites passed on unchanged integrated implementation. Foundation and
+assurance integrity/diff were checked again for final documentation. Main's
+merged TypeScript 7.0.2 update was integrated locally with no content conflicts.
+
+**Deviations**
+
+Peer pending under the batched cadence. Generic c172x remains research data,
+not accepted C172S training fidelity. LAB is fictional true-reference geometry,
+COM is a legacy 25 kHz subset, and real navaid/ILS/8.33 kHz communication,
+component damage, surveyed landing terrain and physical hardware/OS-focus
+acceptance remain open. Per the user's PR-first instruction, the third bearing
+display/round RPM/fuel row, engine/AP-column swap and ALT/NAV/APR/REV guidance
+are subsequent TODO 2.0.14/2.0.17 work; disabled mode buttons are not completion.
+No Flightvectors poster bitmap was redistributed.
+
+**Insights**
+
+Actual browser checks found portal queries that failed only on a fresh mobile
+load, stylesheet import-order overrides and overlapping pause/map controls;
+a desktop resize alone missed those cases. Paused control positions must be
+separated from actual applied engine state. Multi-turn OBS dragging must retain
+full accumulated travel before reducing equivalent course deltas modulo360.
+
 ## 2026-11-02 18:32 — Adjust camera FOV with two-finger scene scrolling
 
 TODO: 2.0.9 complete as a bounded camera-input increment; R-INPUT-1/R-VIEW-1

@@ -74,8 +74,10 @@ C172S tolerances. Independent app samples distinguish baseline/faster early load
 
 Run `just build-flight-engine`, then `npm --prefix app test`,
 `npm --prefix app run build`, `npm --prefix app run test:landing` and
-`npm --prefix app run test:browser`. Publication shared CI and assurance outcomes
-are recorded in DONE. Rebuildable JSON/scripts/screenshots stay ignored in
+`npm --prefix app run test:browser`. At unchanged integrated implementation commit 2cc0f96, shared CI passed. Final
+foundation/assurance checks and the inspected main diff are recorded in DONE.
+Seven final Chrome suites passed 73 groups (split runs after obsolete test
+widget selectors were updated). Rebuildable JSON/scripts/screenshots stay ignored in
 output/flight: final-controls-independent, fresh-mobile-independent,
 obs-longdrag-independent, controls-review-independent, landing-radio-independent,
 final-cosmetics-independent, final-pause-map-independent, landing-fixtures, navigation-input-browser and
