@@ -3,6 +3,25 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 10:05 — Prepare the handover to Codex
+
+TODO: 0.19 handed over (deferred, due before milestone 1 acceptance). Agent: Claude Code
+orchestrator.
+
+**Implementation notes**
+
+Added the [Claude → Codex handover](handover/2026-11-02-claude-to-codex.md). It covers:
+- the PR merge order #33 → #32 → #34 → #35 → #36 → #37 (merge commits only);
+- the Codex peer review of the Claude-authored batch since `3faf9c8`, with suggested
+  packets and focus points;
+- the renewed #28b/#30 packets (TODO 0.21);
+- the decided and blocked milestone 2 state;
+- environment notes.
+
+**Deviations**
+
+Peer pending (batched).
+
 ## 2026-11-02 09:49 — Add a sorted-log merge driver for DONE
 
 TODO: none (process tooling, user-approved 2026-11-02). Agent: Claude Code
