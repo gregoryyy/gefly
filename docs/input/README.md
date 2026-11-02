@@ -30,5 +30,6 @@ These records preserve the user's original intent. Do not edit accepted input re
 - [2026-11-01 Q3/Q5/Q7/Q10/Q12 answers](2026-11-01-aircraft-license-exercise-answers.md): FR172 and/or 172S engine variants, GPL-3 with permissive-preferred third-party policy, first circuit exercise at Egelsbach, community rules in phase 3.
 
 - [2026-11-01 assurance adoption](2026-11-01-assurance-adoption.md): adopt bounded assurance following the Propeller comparison.
+- [2026-11-01 tool layout](2026-11-01-tool-layout.md): move the assurance tool under utils/ and structure the CI tools under utils/ci/.
 
 These inputs are included in the local repository. Recheck privacy before remote publication.

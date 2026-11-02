@@ -11,7 +11,7 @@ from unittest.mock import patch
 from . import check
 
 
-class ScaffoldTests(unittest.TestCase):
+class ScaffoldFixture(unittest.TestCase):
     def setUp(self):
         directory = tempfile.TemporaryDirectory(prefix="gefly-scaffold-test-")
         self.addCleanup(directory.cleanup)
@@ -57,6 +57,8 @@ class ScaffoldTests(unittest.TestCase):
         self.assertNotEqual(code, 0)
         self.assertIn(diagnostic, stderr)
 
+
+class ScaffoldTests(ScaffoldFixture):
     def test_complete_fixture_with_encoded_local_link_passes(self):
         code, stdout, stderr = self.run_check()
         self.assertEqual(code, 0, stderr)
@@ -94,6 +96,36 @@ class ScaffoldTests(unittest.TestCase):
         self.write(path.relative_to(self.root), path.read_text(encoding="utf-8").replace(
             "name: peer", "name: quality"))
         self.assert_rejected("frontmatter must declare exactly one name: peer")
+
+
+class InputIndexTests(ScaffoldFixture):
+    def setUp(self):
+        super().setUp()
+        self.write("docs/input/2026-01-01-a.md", "# A\n")
+        self.write("docs/input/2026-01-02-b.md", "# B\n")
+        self.write("docs/input/README.md", "# Inputs\n\n- [A](2026-01-01-a.md): a.\n"
+                   "- [B](2026-01-02-b.md): b.\n")
+
+    def test_complete_index_passes(self):
+        code, _, stderr = self.run_check()
+        self.assertEqual(code, 0, stderr)
+
+    def test_unlisted_record_fails(self):
+        self.write("docs/input/2026-01-03-c.md", "# C\n")
+        self.assert_rejected("input record 2026-01-03-c.md is not listed")
+
+    def test_record_listed_twice_fails(self):
+        self.write("docs/input/README.md", "- [A](2026-01-01-a.md)\n- [B](2026-01-02-b.md)\n"
+                   "- [A again](2026-01-01-a.md)\n")
+        self.assert_rejected("2026-01-01-a.md is listed 2 times (lines 1, 3)")
+
+    def test_missing_listed_record_fails(self):
+        (self.root / "docs/input/2026-01-02-b.md").unlink()
+        self.assert_rejected("docs/input/README.md:4: listed input record does not exist: 2026-01-02-b.md")
+
+    def test_missing_index_fails(self):
+        (self.root / "docs/input/README.md").unlink()
+        self.assert_rejected("missing input index: docs/input/README.md")
 
 
 if __name__ == "__main__":

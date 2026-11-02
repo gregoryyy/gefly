@@ -3,6 +3,41 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 09:49 — Add a sorted-log merge driver for DONE
+
+TODO: none (process tooling, user-approved 2026-11-02). Agent: Claude Code
+orchestrator; code1 subagent (implementation); quality subagent (three rounds,
+final verdict accept).
+
+**Implementation notes**
+
+- `utils/merge/sorted_log.py` merges `docs/DONE.md` three-way per `## ` entry and
+  keeps the result newest first.
+  - It conflicts only when both sides changed the same entry differently, on delete
+    vs change, and on overlapping preamble edits.
+  - It falls back to `git merge-file` for duplicate headings, existing markers, an
+    entry removed on both sides with additions, and parse failures.
+  - Headings inside code fences are ignored. The original text is kept.
+- `.gitattributes` maps DONE to the driver and the append-only input index to
+  `merge=union`.
+- `check.py` checks that every input record is listed exactly once. This added the
+  missing `2026-11-01-tool-layout.md` index line.
+- `just setup` registers the driver, with a guard that falls back to
+  `git merge-file --diff3` when the script or python3 is missing, and
+  `recursive=text`.
+- SDLC "Log merges" explains why GitHub's web merge and conflict editor are not used
+  for DONE.
+- On real history, merges that conflict with plain git merge cleanly and match the
+  recorded results.
+
+Checks: 189 unit tests OK; check.py exit 0; `utils/ci/run.py --require-node` exit 0
+(passed with skipped checks: e1-jsbsim 9 of 23); assure 0 errors.
+
+**Deviations**
+
+GitHub's web merge does not run custom drivers, so the orchestrator re-syncs branches
+locally. Peer pending (batched).
+
 ## 2026-11-02 00:03 — Remove the aircraft measurement campaign from the 172S plan
 
 TODO: E2. Agent: Claude Code orchestrator (no subagents).
