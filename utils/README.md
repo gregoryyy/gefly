@@ -209,6 +209,29 @@ fidelity. Keep independent quality/specification review and the batched external
 peer range under [SDLC](../docs/SDLC.md). See [ASSR](../docs/assure/ASSR.md) for
 source provenance, certainty and acceptance boundaries.
 
+## Log merge driver
+
+[merge/sorted_log.py](merge/sorted_log.py) is the standard-library Git merge driver
+that `.gitattributes` assigns to `docs/DONE.md`. `just setup` registers it in the
+clone's local Git config as a guarded shell command: if the checked-out branch
+lacks the script or `python3` is not on `PATH`, it runs `git merge-file --diff3 -L ours -L base -L theirs` on the
+same files instead, so older branches still get conflict markers rather than an
+unmarked ours-only result. It also sets `merge.sorted-log.recursive` to `text`, so
+the built-in text merge combines criss-cross merge bases.
+
+The driver merges the preamble with `git merge-file` and the `## ` entries
+three-way by heading, ignoring headings inside code fences. It emits each chosen
+entry's original text and orders entries newest first by their `YYYY-MM-DD HH:MM`
+stamp; trailing spaces and tabs do not count as changes. Divergent edits,
+delete/change pairs and overlapping preamble edits keep diff3-style markers and
+exit 1. Duplicate headings, existing markers, an entry removed on both sides while
+either side adds entries, and any parsing failure fall back to `git merge-file`
+(exit 1). A missing script or `python3` uses the same fallback.
+The input index uses Git's `union` driver and is append-only; `just check` requires
+each `docs/input/` record to be listed exactly once. Tests, including temporary
+repository merges, run in `just test-tools`. See
+[SDLC](../docs/SDLC.md#log-merges) for the GitHub web-merge limitation.
+
 ## Document builds
 
 `just pdf FILE`, `just pdfs [PATHS]` and `just docs [PATHS]` use pandoc and headless Chrome

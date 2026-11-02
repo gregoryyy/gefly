@@ -16,6 +16,13 @@ stampdir := justfile_directory() / ".pdfstamps"
 default:
     @just --list
 
+# Register the DONE merge driver named in .gitattributes; run once per clone.
+# Branches without the script fall back to a diff3 text merge.
+setup:
+    git -C "{{justfile_directory()}}" config merge.sorted-log.name "Gefly sorted log"
+    git -C "{{justfile_directory()}}" config merge.sorted-log.driver 'if [ -f utils/merge/sorted_log.py ] && command -v python3 >/dev/null 2>&1; then python3 utils/merge/sorted_log.py %O %A %B %P; else git merge-file --diff3 -L ours -L base -L theirs %A %O %B || exit 1; fi'
+    git -C "{{justfile_directory()}}" config merge.sorted-log.recursive text
+
 # Check the scaffold, local document links and native agent definitions; no PDF tools needed
 check:
     python3 "{{justfile_directory()}}/utils/ci/check.py"
