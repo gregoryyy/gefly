@@ -42,6 +42,7 @@ A missing or failed engine build is an error, not a switch to scripted flight.
 | V | Switch cockpit / chase view |
 | F / Shift+F | Extend / retract flaps one 10° detent |
 | B (hold) | Apply both wheel brakes; release to let go |
+| Two-finger vertical scroll over the scene | Up: zoom in; down: zoom out |
 | Escape | Release scene yoke/look control |
 
 Press and hold the on-screen flight buttons, or drag the virtual joystick to
@@ -58,6 +59,15 @@ again to disengage. To look around, hold the click for about a quarter-second,
 then drag. Releasing returns to the prior yoke mode. Escape, leaving the scene,
 window focus loss, a modal or entering Review releases the transient controls.
 Header buttons, instrument controls and the joystick do not toggle scene yoke.
+
+Use **two fingers to scroll vertically over the flight scene** to adjust the
+camera field of view (FOV): scroll up to zoom in with a narrower perspective, or
+down to zoom out with a wider perspective. The default is **60°**, bounded to
+**20–100°**. This changes only the camera perspective, never the aircraft's state
+or physics. It works in cockpit and chase views, including while paused or in
+Review. The chosen FOV survives a view switch and is independent of yoke mode
+and hold-drag look. Scrolling over dialogs or the practice map keeps those
+interfaces' normal behavior; Ctrl/pinch events bypass this FOV control.
 
 Use the **0° / 10° / 20° / 30°** flap buttons, F or Shift+F while flying. The
 selector sets the generic model's target; the displayed actual flap angle takes

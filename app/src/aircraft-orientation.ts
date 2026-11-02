@@ -5,7 +5,7 @@ export interface AircraftBasisENU {
   readonly right: VectorENU;
   readonly up: VectorENU;
 }
-export interface CameraLook { yaw_rad: number; pitch_rad: number }
+export interface CameraLook { yaw_rad: number; pitch_rad: number; fov_rad?: number }
 export interface CameraPoseENU {
   readonly direction: VectorENU;
   readonly up: VectorENU;

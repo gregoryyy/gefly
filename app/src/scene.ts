@@ -1,11 +1,12 @@
 import {
   Axis, Cartesian3, CesiumWidget, Color, Credit, Ellipsoid, EllipsoidTerrainProvider,
   ImageryLayer, Ion, JulianDate,
-  Matrix3, Matrix4, Model, Rectangle, ShadowMode, SingleTileImageryProvider, Transforms,
+  Matrix3, Matrix4, Model, PerspectiveFrustum, Rectangle, ShadowMode, SingleTileImageryProvider, Transforms,
 } from 'cesium';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 import { createAircraftVisual } from './aircraft-visual';
 import { aircraftBasisENU, boundedCameraLook, cockpitCameraENU, chaseCameraENU, type CameraLook } from './aircraft-orientation';
+import { DEFAULT_FOV_RAD, MIN_FOV_RAD, MAX_FOV_RAD } from './field-of-view.ts';
 import type { FlightScene, FlightState } from './types';
 
 const DEG_RAD = Math.PI / 180;
@@ -165,6 +166,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   let lastView: 'cockpit' | 'chase' = 'cockpit';
   let lastState = INITIAL_STATE;
   let lastLook: CameraLook = { yaw_rad: 0, pitch_rad: 0 };
+  let lastFov_rad = DEFAULT_FOV_RAD;
 
   // This visual is authored here, not fetched aircraft/model data. Loading it must
   // not delay the first geographic scene or start an alternate render loop.
@@ -198,6 +200,11 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       throw new RangeError('Cannot render a non-finite aircraft state');
     }
     lastState = state; lastView = view; lastLook = boundedCameraLook(look);
+    // Keep zoom independent of look gestures and updates that omit camera input.
+    if (look?.fov_rad !== undefined) {
+      lastFov_rad = Number.isFinite(look.fov_rad)
+        ? Math.max(MIN_FOV_RAD, Math.min(MAX_FOV_RAD, look.fov_rad)) : DEFAULT_FOV_RAD;
+    }
     const { lat_rad, lon_rad, alt_msl_m, pitch_rad, roll_rad, heading_rad } = state;
     imageryStatus(state);
     Cartesian3.fromRadians(lon_rad, lat_rad, alt_msl_m, Ellipsoid.WGS84, position);
@@ -233,6 +240,13 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       Matrix4.multiplyByPointAsVector(frame, localUp, cameraUp);
     }
     scene.camera.setView({ destination: cameraPosition, orientation: { direction: cameraDirection, up: cameraUp } });
+    const frustum = scene.camera.frustum;
+    if (!(frustum instanceof PerspectiveFrustum)) throw new Error('Flight view requires a perspective camera');
+    // Cesium uses horizontal FOV in landscape and vertical FOV in portrait.
+    // Change projection only: position, gaze and aircraft state stay unchanged.
+    frustum.fov = lastFov_rad;
+    const fovDeg = (frustum.fov / DEG_RAD).toFixed(1);
+    if (container.dataset.fovDeg !== fovDeg) container.dataset.fovDeg = fovDeg;
     widget.render();
 
   }

@@ -84,6 +84,8 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [ ] 2.0.8 Complete the next source-scoped cockpit controls: manual elevator trim, engine start/electrical controls and applicable fuel selector/carb-heat behavior. Identify the exact aircraft installation and retain unimplemented labels; this does not replace the model, navigation, briefing and exercise gates below.
 
+- [x] 2.0.9 Add scene two-finger vertical-scroll FOV control (20–100°, default 60°), separate from flight/yoke/look, with camera/view/reset persistence, modifier/UI isolation and actual-browser physics-invariance checks. See [review evidence](reviews/2026-11-02-field-of-view.md). Partial R-INPUT-1/R-VIEW-1; peer pending.
+
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.
 - [ ] 2.3 code2 implements the corresponding browser controls, instruments and exercise feedback against frozen contracts **in parallel with 2.2**.

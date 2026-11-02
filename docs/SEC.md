@@ -151,3 +151,9 @@ wiring and source/destination overlap, and preserves other source bytes and
 notices. It prepares ignored output without changing the upstream checkout;
 metadata hashes identify the adapter and generated model. No source/model import,
 persistence, personal telemetry or external service was introduced in the UI.
+
+Scene wheel zoom is a bounded, page-local camera preference. A non-passive
+capture listener handles eligible vertical scene events before Cesium; Ctrl/Meta/Alt,
+editable, modal and sibling UI/map gestures are excluded. It requests no device
+permission, makes no network/storage calls and sends no simulation input. FOV is
+retained separately from aircraft/review state and reset to default on reload.

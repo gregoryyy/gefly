@@ -57,7 +57,7 @@ export interface FlightState extends AltimeterState, CockpitState, EngineState {
 }
 export interface Controls { elevator: number; aileron: number; rudder: number; throttle: number; flap_norm?: number; brake_norm?: number; mixture_norm?: number; mixture_auto?: boolean }
 export interface FlightScene {
-  update(state: FlightState, view: 'cockpit' | 'chase', look?: { yaw_rad: number; pitch_rad: number }): void;
+  update(state: FlightState, view: 'cockpit' | 'chase', look?: { yaw_rad: number; pitch_rad: number; fov_rad?: number }): void;
   dispose(): void;
 }
 export interface FlightSession {

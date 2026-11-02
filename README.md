@@ -56,7 +56,8 @@ practice reference, not airport elevation. Review retains the recorded setting.
 
 The classic **six-pack** now shows airspeed, attitude, pressure altitude, ideal
 turn/slip, true heading and vertical speed. Click the scene to toggle touchpad
-yoke control; hold-drag to look around. **F / Shift+F** selects flaps, **B** holds
+yoke control; hold-drag to look around. Two-finger vertical scrolling
+adjusts camera FOV. **F / Shift+F** selects flaps, **B** holds
 wheel brakes, and **1–9** selects 10–90% throttle (**0** idle). The engine panel
 adds mixture, RPM, manifold pressure, oil and fuel readouts. **P** captures a true
 heading or disconnects the roll-only autopilot; altitude hold is not implemented.

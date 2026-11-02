@@ -3,6 +3,39 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 18:32 — Adjust camera FOV with two-finger scene scrolling
+
+TODO: 2.0.9 complete as a bounded camera-input increment; R-INPUT-1/R-VIEW-1
+remain partial. Agent: Codex orchestrator; fov_input/code1 and fov_scene/code2 in
+parallel, with fov_housekeeping on app instructions. Independent quality:
+fov_housekeeping (excluding its own prose); validation: altimeter_validate.
+
+**Implementation notes**
+
+Scene vertical scrolling adjusts actual perspective FOV from 20 to 100 degrees,
+starting at 60, with an on-screen angle readout. It works in cockpit/chase,
+paused flight and Review. FOV persists through view/resize/flight-reset actions;
+reload restores the default. Yoke/look and aircraft state remain separate.
+Ctrl/Meta/Alt/pinch, horizontal and UI/map/dialog scrolls bypass the FOV control.
+
+TypeScript/UI build, 70 native tests, five adapter tests and five focused Chrome
+check groups passed. Actual wheel/pixel checks preserve paused physical state,
+WASM digest and active yoke/input values. Fixed Cesium consuming bubbling wheel
+events by capturing eligible scroll first. A compact shorter-desktop pause gate
+also restores access to the view buttons. Affected reviews passed; see
+[review evidence](reviews/2026-11-02-field-of-view.md).
+
+**Deviations**
+
+Peer pending. Browser wheel input is verified; physical finger hardware was not
+automated. FOV is a page-local viewing preference, not recorded aircraft state.
+Existing generic-aircraft and training-fidelity limits are unchanged.
+
+**Insights**
+
+Native canvas event delivery must be checked in the actual renderer: isolated
+input tests could not reveal Cesium consuming events before a bubbling handler.
+
 ## 2026-11-02 18:10 — Fly a classic six-pack with real controls and basic autopilot
 
 TODO: 2.0.6/2.0.7 complete as bounded cockpit/control increments; affected

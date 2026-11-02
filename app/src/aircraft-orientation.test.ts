@@ -73,6 +73,15 @@ test('zero look retains a slightly downward cockpit gaze and original chase dist
   near(Math.hypot(...chase.offset), Math.hypot(30, 11));
 });
 
+test('FOV changes projection input without changing cockpit pose or chase orbit', () => {
+  const basis = aircraftBasisENU(1.1, 0.3, -0.4);
+  const look = { yaw_rad: 0.2, pitch_rad: -0.1 };
+  for (const fov_rad of [20, 60, 100].map(degrees => degrees * Math.PI / 180)) {
+    assert.deepEqual(cockpitCameraENU(basis, { ...look, fov_rad }), cockpitCameraENU(basis, look));
+    assert.deepEqual(chaseCameraENU(1.1, { ...look, fov_rad }), chaseCameraENU(1.1, look));
+  }
+});
+
 test('look changes camera gaze/orbit with finite perpendicular vectors and no body mutation', () => {
   const basis = aircraftBasisENU(1.1, 0.3, -0.4);
   const before = structuredClone(basis);

@@ -2,6 +2,7 @@
 
 These records preserve the user's original intent. Do not edit accepted input records; add a new dated correction when necessary. Decisions and interpretation belong in GAPS and the affected specification, not silent edits to the brief.
 
+- [2026-11-02 touchpad FOV](2026-11-02-touchpad-fov.md): two-finger vertical scrolling controls camera field of view.
 - [2026-11-02 classic cockpit and controls](2026-11-02-classic-flight-controls.md): chase orientation, six-pack, flaps/brakes, confirmed scene click/hold gesture, throttle numbers, roll-correction clarity, engine instruments, mixture and autopilot.
 - [2026-10-31 project brief](2026-10-31-project-brief.md): original request, including the requested work split.
 - [2026-10-31 initial decisions](2026-10-31-initial-decisions.md): user's aircraft/framework and platform answers.

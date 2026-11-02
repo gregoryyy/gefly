@@ -3,6 +3,7 @@ import './practice-map.css';
 import { createSixPack } from './six-pack';
 import { createEnginePanel } from './engine-panel';
 import { createPointerYoke } from './pointer-yoke';
+import { createFieldOfViewControl, DEFAULT_FOV_RAD } from './field-of-view';
 import { createPressureAltimeterPanel } from './pressure-altimeter-panel';
 import { createScene } from './scene';
 import { createSession } from './session';
@@ -35,6 +36,7 @@ root.innerHTML = `
     <button id="start" class="primary" disabled>Loading…</button>
     <span class="gate-hint">Drag the stick or hold the control buttons. Keyboard arrows also work.</span>
   </section>
+  <div id="camera-fov" class="camera-fov">60° FOV · two-finger scroll</div>
   <div id="pointer-mode" class="pointer-mode">Click scene: yoke · Hold-drag: look</div>
   <div class="crosshair" aria-hidden="true"><i></i><b></b><i></i></div>
   <aside class="control-panel" aria-label="Flight controls">
@@ -76,6 +78,7 @@ const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(ma
 let view: 'cockpit' | 'chase' = 'cockpit';
 let pointerYoke: ReturnType<typeof createPointerYoke> | null = null;
 let cameraLook = { yaw_rad: 0, pitch_rad: 0 };
+let cameraFov_rad = DEFAULT_FOV_RAD;
 let flapTarget_deg = 0;
 let mixtureCommand = 1, mixtureAutomatic = true, apDisconnectPending = false;
 let scene: FlightScene | null = null;
@@ -188,6 +191,15 @@ const enginePanel = createEnginePanel({
     apDisconnectPending = false; session.setAutopilot(mode, target_heading_rad);
   },
   onOpen: neutralize, onClose: focusFlight,
+});
+
+const fieldOfView = createFieldOfViewControl({
+  element: sceneContainer, getFov: () => cameraFov_rad,
+  isBlocked: () => !!document.querySelector('dialog[open]'),
+  onChange(fov_rad) {
+    cameraFov_rad = fov_rad;
+    el('camera-fov').textContent = `${Math.round(fov_rad * 180 / Math.PI)}° FOV · two-finger scroll`;
+  },
 });
 
 el('toggle-map').onclick = () => { void setMapVisible(!mapVisible); focusFlight(); };
@@ -487,7 +499,7 @@ function animate(now: number) {
     }
 
     if (scene && !sceneFailed) {
-      try { scene.update(state, view, cameraLook); } catch {
+      try { scene.update(state, view, { ...cameraLook, fov_rad: cameraFov_rad }); } catch {
         sceneFailed = true; pauseFlight(); notice('The 3D scene stopped rendering. Reload to restart.'); updateSessionUI();
       }
     }
@@ -500,5 +512,5 @@ function animate(now: number) {
   requestAnimationFrame(animate);
 }
 publishInput(); updateSessionUI(); requestAnimationFrame(animate);
-addEventListener('pagehide', () => { mapDisposed = true; practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
+addEventListener('pagehide', () => { mapDisposed = true; practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
 void sceneReady;
