@@ -8,7 +8,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build",
     "check": "tsc --noEmit",
-    "test": "node --test src/session.test.ts",
+    "test": "node --test src/session.test.ts tests/runtime.test.ts",
     "test:browser": "node tests/smoke.mjs"
   },
   "dependencies": {

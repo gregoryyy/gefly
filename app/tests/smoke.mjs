@@ -1,22 +1,41 @@
 // Actual browser/JSBSim integration, not a dynamics-fidelity test.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { access, mkdir } from 'node:fs/promises';
+import { access, copyFile, mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 const app = fileURLToPath(new URL('..', import.meta.url));
-await access(new URL('../../studies/e1-browser/sim/dist/jsbsim.wasm', import.meta.url))
+const runtime = fileURLToPath(new URL('../../studies/e1-browser/sim/', import.meta.url));
+await access(join(runtime, 'dist/jsbsim.wasm'))
   .catch(() => { throw new Error('Build the local research engine first: just build-flight-engine'); });
-const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','5174'], {cwd:app, stdio:'pipe'});
-let serverOutput='';server.stdout.on('data',chunk=>{serverOutput+=chunk;});server.stderr.on('data',chunk=>{serverOutput+=chunk;});
-let browser;
-try {
+// Missing-engine case: a temporary runtime copy holding worker.js and the build
+// record but not dist/jsbsim.{mjs,wasm}, served by a second dev server. Only the
+// jsbsim.mjs request is exercised: the worker's import of it fails first, so a
+// missing jsbsim.wasm alone is not separately covered.
+const missingRoot = await mkdtemp(join(tmpdir(), 'gefly-missing-engine-'));
+await mkdir(join(missingRoot, 'dist'));
+await copyFile(join(runtime, 'worker.js'), join(missingRoot, 'worker.js'));
+await copyFile(join(runtime, 'dist/build-info.json'), join(missingRoot, 'dist/build-info.json')).catch(() => {});
+for (const file of ['dist/jsbsim.mjs', 'dist/jsbsim.wasm'])
+  await access(join(missingRoot, file)).then(() => { throw new Error(`${file} must be absent from the missing-engine copy`); }, () => {});
+const servers = [];
+async function startServer(port, env = {}) {
+  const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port',String(port),'--strictPort'], {cwd:app, stdio:'pipe', env:{...process.env, ...env}});
+  servers.push(server);
+  let serverOutput='';server.stdout.on('data',chunk=>{serverOutput+=chunk;});server.stderr.on('data',chunk=>{serverOutput+=chunk;});
   for(let attempt=0;attempt<100;attempt++) {
     if(server.exitCode!==null)throw new Error(`Flight server failed: ${serverOutput}`);
-    try {if(serverOutput.includes('Local:') && (await fetch('http://127.0.0.1:5174')).ok && server.exitCode===null)break;}catch{}
-    if(attempt===99)throw new Error(`Flight server timed out: ${serverOutput}`);
+    try {if(serverOutput.includes('Local:') && (await fetch(`http://127.0.0.1:${port}`)).ok && server.exitCode===null)return;}catch{}
     await new Promise(resolve=>setTimeout(resolve,100));
   }
+  throw new Error(`Flight server timed out: ${serverOutput}`);
+}
+let browser;
+try {
+  await startServer(5174);
+  await startServer(5175, { GEFLY_FLIGHT_RUNTIME: missingRoot });
   browser = await chromium.launch({headless:true, ...(process.env.CHROME ? {executablePath:process.env.CHROME} : {channel:'chrome'})});
   const page = await browser.newPage({viewport:{width:1440,height:900}});
   const errors=[]; const hosts=new Set();
@@ -54,14 +73,17 @@ try {
   await page.evaluate(()=>window.dispatchEvent(new Event('blur')));await page.waitForTimeout(100);const blurred=await state();
   await page.waitForTimeout(250);assert.equal((await state()).step,blurred.step,'blur must pause');
   assert.deepEqual(errors,[]);assert.deepEqual([...hosts],['127.0.0.1'],'runtime should be local only');
-  const missing=await browser.newPage();await missing.route('**/studies/e1-browser/sim/worker.js',route=>route.abort());
-  await missing.goto('http://127.0.0.1:5174');await missing.waitForFunction(()=>document.querySelector('#status').textContent==='Error');
-  assert.match(await missing.locator('#notice').textContent(),/build-flight-engine/);await missing.close();
+  const missing=await browser.newPage();const engineResponses=[];
+  missing.on('response',response=>{if(new URL(response.url()).pathname.endsWith('/dist/jsbsim.mjs'))engineResponses.push(response.status());});
+  await missing.goto('http://127.0.0.1:5175');await missing.waitForFunction(()=>document.querySelector('#status').textContent==='Error');
+  assert.match(await missing.locator('#notice').textContent(),/build-flight-engine/);
+  assert(engineResponses.length>0&&engineResponses.every(status=>status===404),'absent dist/jsbsim.mjs is requested and not served');await missing.close();
   const noGL=await browser.newPage();const noGLErrors=[];noGL.on('pageerror',e=>noGLErrors.push(String(e)));
   await noGL.addInitScript(()=>{const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(kind,...args){return kind.startsWith('webgl')?null:original.call(this,kind,...args);};});
   await noGL.goto('http://127.0.0.1:5174');await noGL.waitForFunction(()=>document.querySelector('#notice').textContent.includes('Scene unavailable'));
   await noGL.waitForTimeout(400);assert.equal(await noGL.locator('#pause').isDisabled(),true);assert.deepEqual(noGLErrors,[]);await noGL.close();
   console.log(JSON.stringify({result:'pass',browser:browser.version(),initial:{step:initial.step,tas_mps:initial.tas_mps},right_bank_delta_rad:after.roll_rad-before.roll_rad,checks:['live JSBSim','pause','view invariance','reset keyboard focus','right bank','touchpad release','blur pause','local requests only','missing engine','WebGL failure'],screenshots:'output/flight/{cockpit,chase}.png'},null,2));
 } finally {
-  await browser?.close();server.kill('SIGTERM');
+  await browser?.close();for(const server of servers)server.kill('SIGTERM');
+  await rm(missingRoot,{recursive:true,force:true});
 }

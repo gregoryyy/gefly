@@ -124,6 +124,51 @@ The user accepted all Q23 recommendations ("yes to proposals. go on";
 The `ind` digest layout still waits for the researcher's S17 Section 7 engine/fuel
 list. Peer pending (batched).
 
+## 2026-11-02 00:53 — Claude peer review of Codex PRs #27–#30 and fixes (TODO 0.21)
+
+TODO: 0.21 in progress (#28b and #30 packets to renew). Agent: Claude Code orchestrator; peer
+dispatcher subagent (fresh Claude CLI 2.1.316 per packet; model evidence
+`claude-haiku-5-5` and `claude-opus-5-5`), code2 subagent (fixes), quality subagent
+(three rounds, final verdict accept).
+
+**Implementation notes**
+
+Report: [peer review](reviews/2026-11-01-codex-prs-27-30-peer.md) and
+[JSON](reviews/2026-11-01-codex-prs-27-30-peer.json), five packets frozen at main
+`396553c` (#28 split into 28a tooling and 28b docs). Router results: #27 accept;
+#28a changes_required; #28b and #30 review_blocked (material withheld, not defects);
+#29 accept. There were no critical or high findings.
+
+The fixes in this PR:
+- `status.ts` counts a DONE completion only per task ID. Exception or pending wording
+  cancels it; "peer pending" and "pending merge" still count as complete. A ticked
+  parent's record covers its subtasks, and a ticked parent with open subtasks gets
+  the warning `done-parent-open-children`.
+- `evidence.ts` checks that a cited source applies to the aircraft variant, using
+  known 172 model designators (case-insensitive; `S/N` is not read as a variant).
+- The SBOM CesiumJS row now says it is not adopted in the application yet.
+- The missing-engine smoke test serves a runtime copy without `dist/jsbsim.*`.
+- New `app/runtime.ts` and its tests prove that the `build-flight-engine` output is
+  the path `just fly` serves.
+
+Other #28b findings are handled in their own PRs: the CI text in #34, the E14 clash in
+#32, and the BRIEFING IDs match the SPEC edits in #33.
+
+Checks on Node 24: the assure suite passed 83 of 83; `assure check` reported 0 errors;
+the app suite passed 9 of 9; `utils/ci/run.py --require-node` passed with skipped
+checks (e1-jsbsim 9 of 23).
+
+**Deviations**
+
+- The real-engine browser smoke test was not run (no engine build and no Chrome here):
+  not evaluated.
+- Known limitations: the completion check still passes some unlisted negative wording
+  ("failing tests", "needs review"); 172I is not recognised; negated designators
+  ("not the 172S") are still read as naming the variant; "unstated" sources are
+  lenient (L3); `app/runtime.ts` is not type-checked (L6).
+- The fixes are Claude-authored, so they need the Codex peer review (TODO 0.19 batch).
+  The #28b and #30 packets need renewal with the withheld material.
+
 ## 2026-11-02 00:30 — Apply foundation-review tooling fixes (TODO 1.6)
 
 TODO: 1.6 in progress. Agent: Claude Code orchestrator; code1 subagent implemented.
@@ -183,6 +228,21 @@ added TODO 1.2.1.1 (real-terrain re-test) and 0.21 (Claude review of Codex PRs
 **Deviations**
 
 Contract and tooling fixes are on separate branches; user scope decisions (Q23) open.
+Peer pending (batched).
+
+## 2026-11-02 00:03 — Remove the aircraft measurement campaign from the 172S plan
+
+TODO: E2. Agent: Claude Code orchestrator (no subagents).
+
+**Implementation notes**
+
+The user has no aircraft and asked to stay in scope. FDM-172S no longer proposes a
+measurement campaign: geometry beyond TCDS/POH dimensions and the empty mass/CG are
+estimated, labelled and bounded by sensitivity runs; Q-2 is closed.
+
+**Deviations**
+
+This change reached PR #24's branch after it merged, so it lands here instead.
 
 ## 2026-11-01 23:27 — Resolve PR 29 against merged browser prototype
 

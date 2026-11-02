@@ -56,10 +56,10 @@ E10), not by authoring. Packages reference only its entries.
 | Entry ID | `<kind>:<key>`, stable across editions, e.g. `aerodrome:EDFE`, `runway:EDFE/26`, `holding-point:EDFE/26/<designator>`, `frequency:EDFE/afis`, `circuit:EDFE/26/<side>`. Keys use published designators only. |
 | Entry fields | Original value and unit, SI value, datum/reference, uncertainty, value class, `source_id`, source edition/AIRAC, access date and status (`validated`, `approximate`, `placeholder`, `unavailable`). |
 | Sources | Register as in the [EDFE source survey](../research/2026-11-01-edfe-aerodrome-sources.md) (E1 DFS AIP, E2a operator flyer, E3 OurAirports): publisher, edition, URL, inspected flag, hash, rights class. |
-| Rights class | `public-domain`, `open-attribution`, `odbl` (separate attributed database), `project` (GPL-3.0-or-later), `permission` (written grant on record), `reference-only` (cite edition/hash; store or ship no content). |
+| Rights class | The shared enum of [CONTRACTS §10.5](CONTRACTS.md#105-rights-classes-one-enum): `public_domain`, `open_licence {spdx, attribution, share_alike}` (covers the earlier `open-attribution`, `odbl` as a separate attributed database, and `project` = GPL-3.0-or-later), `permission` (written grant on record), `facts_only` (individual cited values; no text, tables or figures), `reference_only` (cite id and edition hash; store or ship no value and no per-value hash), `rights_unknown` (blocks shipping). |
 | Coverage | Per kind and area: validated, approximate, unavailable (R-REGION-1). |
 
-`reference-only` sources (DFS AIP E1 under E1a §8; operator material E2a–E2c) may be
+`reference_only` sources (DFS AIP E1 under E1a §8; operator material E2a–E2c) may be
 cited to a reviewer but cannot supply a shipped value or derived chart. A value
 known only from them stays `unknown` until a shippable source or permission exists.
 
@@ -115,7 +115,7 @@ training variation). Every report and notice is shown as "historical" or
 | Hook | Package supplies | Runtime owns |
 | --- | --- | --- |
 | `checklists` | Manifest checklist IDs and the phase where each applies (R-TRAIN-4). | Items, sensed vs acknowledged state. |
-| `radio` | `frequency:` station references, service type (AFIS informs, it does not clear) and ordered exchange intents from an enumerated vocabulary (`report-holding-point`, `report-downwind`, `report-vacated`). | Phrasing, readback checks and scenario transitions (R-COMM-1, ARCH radio state machine). |
+| `radio` | `frequency:` station references, service type (AFIS informs, it does not clear) and ordered exchange intents from an enumerated vocabulary (`report-holding-point`, `report-downwind`, `report-final`, `report-vacated`; BRIEFING calls R1, R3, R5, R6, SCENARIO-CONTRACTS C8). | Phrasing, readback checks and scenario transitions (R-COMM-1, ARCH radio state machine). |
 | `assessment` | Criterion IDs from the frozen exercise criteria (TODO 1.5) and phase. | Measurement, events, debrief traces (R-TRAIN-2). |
 
 Tolerances come from the cited criteria; a package cannot introduce one.
@@ -141,7 +141,7 @@ draft hash. Unreported metadata is `unknown`, never guessed.
 ## Hash scope and review records
 
 `content_hash` = SHA-256 over the RFC 8785 (JCS) canonical serialization of the
-entire package document. Every field above is in scope; referenced artifacts are
+entire package document ([CONTRACTS §10.6](CONTRACTS.md#106-canonical-hashing)). Every field above is in scope; referenced artifacts are
 included through their pinned hashes. Nothing outside the document is in scope.
 
 Review and lifecycle are **separate records keyed by `content_hash`**: `{content_hash,
@@ -194,7 +194,7 @@ are reported `not evaluated`, never passed. Each finding has `code`, `stage`,
 | V3 Quantities | Units, references, frames; finite and in bounds; conversions round-trip. | `V3-UNIT /hooks/assessment/2: missing unit and altitude reference (MSL/AGL).` |
 | V4 References | Catalog edition, profile, manifest and snapshot resolve with matching hashes; every ID resolves, kind matches role, status not `unavailable`. Fails closed. | `V4-UNRESOLVED /geography/2: 'waypoint:EDFE/NOVEMBER' is not in eddf-100nm@<edition>; choose an entry or request ingestion.` |
 | V5 Fabrication | No literal where a reference is required; hand-entered copies of catalog values rejected; prose claims flagged (warning). | `V5-LITERAL /hooks/radio/stations/0: real frequencies must reference a frequency: entry.` |
-| V6 Rights | Each entry's rights class permits run/ship/render; no `reference-only` content embedded. | `V6-RIGHTS /geography/5: chart is reference-only (DFS AIP E1); use a generated map from shippable entries.` |
+| V6 Rights | Each entry's rights class permits run/ship/render; no `reference_only` value or per-value hash and no `rights_unknown` content embedded. | `V6-RIGHTS /geography/5: chart is reference_only (DFS AIP E1); use a generated map from shippable entries.` |
 | V7 Coherence | Inside `extent`; runway, circuit and holding point share an aerodrome; objective IDs exist in the profile; equipment, checklists and radio fit supported; `allowed_actions` within role; phase graph reachable and terminating. | `V7-EQUIPMENT /hooks/radio/1: station needs a second COM radio not in configuration 172S-<id>.` |
 | V8 Briefing | Mode labelled; validity at scenario time; replaced/cancelled notices resolved; missing data explicit; applied conditions agree or explain. | `V8-VALIDITY /environment: report validity ends before scenario_time.` |
 | V9 Acceptance | No `unknown` or `placeholder` values; V1–V8 clean of blocking findings; reviewer not an author; reviewed hash equals `content_hash`. | `V9-UNKNOWN: 9 values are unknown; acceptance requires sourced entries.` |
@@ -215,7 +215,7 @@ Follows [SEC](../SEC.md) (LLM authoring and malicious import threats).
 - **No secrets or personal data.** Provider keys stay out of packages, prompts,
   logs and bundles. Packages hold identity IDs only; provider prompts contain the
   request and catalog extracts, subject to the Q13 data-flow decision.
-- **Rights.** V6 blocks embedded `reference-only` material; DFS portal pages are not
+- **Rights.** V6 blocks embedded `reference_only` material; DFS portal pages are not
   machine-retrieved (EDFE survey, E1a).
 - **Abuse.** Bounded size and generation rate/cost; provider failure is reported.
 
@@ -240,7 +240,7 @@ aircraft:
   {manifest: c172s-classic, manifest_version: tbd, manifest_hash: tbd,
    configuration: tbd, assists: [none], fidelity: tbd}   # TODO 1.3; avionics fit TBD
 initial_conditions:
-  position: {ref: "holding-point:EDFE/26/tbd"}       # designator TBD: E1 (reference-only)
+  position: {ref: "holding-point:EDFE/26/tbd"}       # designator TBD: E1 (reference_only)
   heading: {class: derived, from: "runway:EDFE/26", uncertainty: unknown}
   aircraft_state: {ref: "c172s-classic#state/engine-running-holding-point"}  # Q7
   loading: {ref: "c172s-classic#loading/tbd"}
@@ -299,7 +299,8 @@ package cannot be accepted before TODO 1.3, 1.5 and 1.7 supply sourced entries.
 5. R-BRIEF-1: add snapshot `mode` and the `applied_conditions` relation.
 6. R-COMM-1: state that AI output never changes simulation, avionics or clearance
    state.
-7. SEC: add "rights violation through embedded reference-only material" (V6) and
+7. SEC: add "rights violation through embedded `reference_only` material or
+   brute-forceable per-value hashes" (V6, CONTRACTS §10.6) and
    name quoted source fields, retrieval allowlisting and ingestion-time handling as
    the prompt-injection controls; fail-closed validation.
 8. EVAL E9: use V1–V9 codes as fixture expectations; include a hand-written package.
@@ -313,7 +314,7 @@ package cannot be accepted before TODO 1.3, 1.5 and 1.7 supply sourced entries.
   which model metadata a provider actually reports; prompt/output retention.
 - Schema language (JSON Schema or stack-native) follows TODO 1.2/Q17.
 - Catalog edition cadence versus AIRAC; automatic revalidation versus re-review.
-- Shippable sources or DFS permission for values now only `reference-only`.
+- Shippable sources or DFS permission for values now only `reference_only`.
 - Identity scheme for authors/reviewers; single or dual review; the instructor
   partner (Q7).
 - Runway, circuit side/altitude, holding point (TODO 1.5/1.7); weather rule-set home.
