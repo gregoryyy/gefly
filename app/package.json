@@ -12,6 +12,7 @@
     "test:browser": "node tests/smoke.mjs"
   },
   "dependencies": {
+    "cesium": "1.146.0",
     "three": "0.187.0"
   },
   "devDependencies": {

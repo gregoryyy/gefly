@@ -3,6 +3,48 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 10:02 — Make flight controls visible and stabilize the scene
+
+TODO: 2.0.1 complete as an experimental usability/visual increment.
+Agent: Codex orchestrator; code1/flight_ui_v2 and code2/flight_scene_v2 in parallel,
+with flight_housekeeping maintaining application instructions and scene_sources
+researching official imagery. Independent quality: flight_housekeeping (excluding
+its own README); independent validation: flight_validate.
+
+**Implementation notes**
+
+Replaced the marketing overlay with a compact flight deck, explicit Start/Resume,
+visible hold buttons and a draggable stick with pointer capture/release. Initial
+flight stays paused until started; focus loss clearly exposes Resume. Keyboard
+and slider interaction remain available, with actual control-position feedback.
+
+Replaced procedural scenery with Cesium and bundled, openly licensed official
+Hessen starter/overview photographs. Source bounds, requests, unknown acquisition
+dates, image hashes and DL-DE Zero terms accompany the assets. Camera/aircraft
+visuals consume JSBSim state without modifying dynamics. Fixed the misapplied
+credit styling that shrank the canvas, removed resizing from the render loop,
+and removed adaptive imagery swaps/live-service dependence.
+
+Strict TypeScript/build, five session tests and fourteen real-Chrome integration
+checks passed. Independent affected validation observed both images ready in
+652 ms, full canvas coverage, actual button/stick flight response, localhost-only
+requests and no differences in two paused pixel comparisons. Source-image failures
+are visible and nonfatal. See the scoped [quality/validation report](reviews/2026-11-02-flight-controls-imagery.md).
+
+**Deviations**
+
+The live WMS's adaptive queue, oversized-image XML errors and request timeouts
+failed the attempted live-loading approach; those runs are not passes. The final
+scene uses a small detailed photograph plus a coarse overview, not the planned
+EDDF/100 NM region, real terrain, accepted airport elevation or validated 172S
+model. Research aircraft data is not redistributed. Peer pending; no simulator
+milestone, training credit or public deployment is accepted.
+
+**Insights**
+
+An obvious flight-control affordance and a stable source snapshot make the
+prototype usable; passing worker tests alone cannot establish that experience.
+
 ## 2026-11-01 23:27 — Resolve PR 29 against merged browser prototype
 
 TODO: 1.5.2 and 2.0 retained with their distinct scope.
