@@ -211,7 +211,7 @@ their owner behind the frozen shape.
 | Scenario-record builder: catalog/nav resolution (S4), runway-bearing conversion with WMM2025 (S5), local `reference_only` resolution (local-only record) | code1 | `packages/simulation/` scenario module | open |
 | Loader → worker `init` (`ic`, `env`, seeds) | code1 | `packages/simulation/` | open |
 | `sim` names/order incl. `wow_nose`, `wow_main_l`, `wow_main_r` (C2) | code1 | `packages/simulation/` | freeze |
-| `ind` digest layout: encoder and field order (list below); worker computes `ind` every step (CONTRACTS §10.2) | code1 | `packages/simulation/` | freeze after the S17 Section 7 engine/fuel list is extracted (Q-S8 decided) |
+| `ind` digest layout: encoder and field order (list below); worker computes `ind` every step (CONTRACTS §10.2) | code1 | `packages/simulation/` | freeze at first `digest_layout` 1 code; set decided (Q-S8) |
 | `sim_core`/`env_core` stream fields (CONTRACTS §10.2) | code1 | `packages/simulation/` | freeze |
 | Single `seq` allocator in the worker; proposal/accept messages (CONTRACTS §10.3) | code1 | `packages/simulation/` | freeze |
 | `ind` field values: JS env fields (`magvar_east_rad`, `zeta_m`, `h_ell_m`) | code1 | env module | freeze names |
@@ -222,22 +222,27 @@ their owner behind the frozen shape.
 | Briefing view, debrief/seek UI, fallback input events | code2 | `app/` | open |
 | iPhone profile (`source: "iphone"`) | code2 | `app/` | **Later** (TODO 1.13) |
 
-**Declared `ind` list for `digest_layout` 1 (Proposal, in order):**
+**Declared `ind` list for `digest_layout` 1 (set decided, GAPS Q23 2026-11-02; in order):**
 `magvar_east_rad`, `zeta_m`, `h_ell_m`, `altimeter.setting_pa`,
 `altimeter.setting_ref` (enum QNH=0, QFE=1, STD=2; derived constant, CONTRACTS
 §10.1), `altimeter.indicated_m`, `asi_ias_mps`, `vsi_mps`, `ai_pitch_rad`,
 `ai_roll_rad`, `hi_heading_rad`, `compass_heading_mag_rad`, `tach_prop_radps`,
-then the engine/fuel indications of Q-S8. No display preference (e.g. the hPa/inHg
-unit) is in the list. Instrument behaviour behind these names is TBD-src (S17
-Section 7). **Q-S8 decided (GAPS Q23, user 2026-11-02 07:16):** every engine/fuel indication of the classic-panel 172S joins
-the list. The layout freezes, and `digest_layout` 1 code may be written, once the
-researcher has extracted that list with page citations; after that, adding a field is deferred to a major version (§6).
-Recommendation: include every engine/fuel indication of the classic-panel 172S
-(S17 Section 7 panel list, to be extracted with page citations by the researcher;
-the controls note Part B lists controls, not indications), all in `ind`, computed
-inside WASM from the propulsion state so they are bit-reproducible, named
-`eng.<indication>_<si-unit>`. code2 proposes entries; code1 owns order and
-encoding.
+then the classic-panel 172S engine, fuel and electrical indications (S17 Fig. 7-2
+items; sources and markings in `data/aircraft/c172s-classic/indication-loading-values.json`,
+branch data/s17-ind-wb):
+`tach_time_s`, `hobbs_time_s`, `oil_press_pa` (gauge pressure), `oil_temp_k`,
+`egt_k`, `fuel_flow_m3ps`, `fuel_qty_left_m3`, `fuel_qty_right_m3`, `fuel_qty_left_off`,
+`fuel_qty_right_off` (uint32 0/1, needle at OFF on a sender fault), `vac_suction_pa`,
+`ammeter_a`, `ann_oil_press`, `ann_low_fuel_left`, `ann_low_fuel_right`, `ann_vac_left`,
+`ann_vac_right`, `ann_volts` (annunciators: enum off=0, flashing=1, steady=2).
+
+No display preference (e.g. the hPa/inHg unit) is in the list. The EGT index pointer
+and the annunciator test/dim switch are inputs, not `ind`. Instrument behaviour behind
+these names (dial ranges, EGT scale, hour-meter counting, low-fuel threshold basis) is
+TBD-src. All values are computed inside WASM from the propulsion and electrical state,
+so they are bit-reproducible. code1 owns the encoding; the layout freezes when code1
+writes the first `digest_layout` 1 code, after which adding a field needs a major
+version (§6). Tachometer markings follow S17 Section 2 Fig. 2-3 (user, 2026-11-02).
 
 Interfaces: code2 reads `sim`/`env` only through the CONTRACTS state stream and
 snapshots; code1 stores logged events as opaque validated envelopes and never
@@ -295,7 +300,7 @@ layout is implemented, and moving evaluator values (C1, C4, C14) into a digest.
 - **Q-S6** Store typed radio text in the session log, or only the parsed intent?
 - **Q-S7** Accept C1–C17, especially the derived `setting_ref` (C5), the Q19
   clarification of v1 §3 and the rights enum?
-- **Q-S8 (decided: all classic-panel engine/fuel indications)** Which engine/fuel indications join the
+- **Q-S8 (decided: all classic-panel engine, fuel and electrical indications, §4 list)** Which engine/fuel indications join the
   declared `ind` list before the first `digest_layout` 1 code? Recommendation: all
   classic-panel 172S engine/fuel indications (S17 Section 7, TBD-src extraction),
   all `ind`, computed in WASM.

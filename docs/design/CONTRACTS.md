@@ -22,7 +22,8 @@ M1/Chrome" (merged, PR #9); one user-run session, preliminary. Hardware attribut
 
 **Internal units are SI**: m, s, kg, N, Pa, K, rad, m/s, rad/s, kg/m³. Angles are
 radians. Heading/track ψ ∈ [0, 2π); pitch θ ∈ [−π/2, π/2]; roll φ ∈ (−π, π].
-Field names carry their unit suffix (`_m`, `_mps`, `_rad`, `_pa`, `_k`, `_kg`).
+Field names carry their unit suffix (`_m`, `_mps`, `_rad`, `_radps`, `_pa`, `_k`, `_kg`,
+`_s`, `_m3`, `_m3ps`, `_a`).
 
 Conversion boundaries (convert once, test round trips):
 
@@ -267,7 +268,7 @@ geoid/quasigeoid model id (GCG2016 or EGM2008) and grid hash.
 
 `ind` (instrument indications): ASI IAS, altimeter indication with setting and
 reference, VSI, attitude indicator, heading indicator/compass, tachometer,
-engine/fuel gauges. The 172S classic instrument set is TBD-src (S17 Section 7);
+engine/fuel gauges. The 172S classic engine/fuel/electrical set is listed in SCENARIO-CONTRACTS §4; dial ranges are TBD-src;
 the declared field list and its blocking open item are in SCENARIO-CONTRACTS §4.
 `ind` gets its **own digest** so instrument divergence is detectable during review
 (R-REVIEW-1). Because `ind` is computed in JavaScript, whose `Math` functions are
