@@ -1,0 +1,29 @@
+.flight-path-ground-panel { position: absolute; top: 90px; right: 18px; z-index: 7; width: min(480px, calc(100% - 36px)); max-height: calc(100dvh - 120px); overflow: auto; overscroll-behavior: contain; padding: 16px; color: #e4edf0; background: #14232bf5; border: 1px solid #9aafb95c; border-radius: 10px; box-shadow: 0 12px 45px #020b15a6; font: 11px/1.5 system-ui, sans-serif; }
+.flight-path-ground-panel[hidden] { display: none; }
+.flight-path-ground-panel:focus-visible { outline: 2px solid #e8c388; outline-offset: 2px; }
+.flight-data-heading { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.flight-data-heading h2 { font-size: 16px; line-height: 1.3; margin: 0; font-weight: 500; }
+.flight-data-heading button { padding: 3px 9px; font-size: 20px; line-height: 1.2; }
+.flight-data-reference { display: flex; flex-wrap: wrap; gap: 5px 12px; color: #a4bac5; font-size: 9px; margin: 6px 0 14px; }
+#flight-data-mode { color: #e8c388; letter-spacing: 1px; }
+.flight-path-reading { display: flex; align-items: baseline; gap: 12px; }
+#flight-path-percent { color: #f1d3a0; font: 32px ui-monospace, monospace; overflow-wrap: anywhere; }
+#flight-path-direction { color: #b5cbd4; font-size: 10px; letter-spacing: 1px; }
+.flight-path-motion { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin: 12px 0 5px; }
+.flight-path-motion dt { font-size: 9px; color: #9eb4c0; }
+.flight-path-motion dd { margin: 2px 0 0; font-size: 12px; }
+.flight-path-motion output, .flight-data-table-scroll output { font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+#flight-path-status, #ground-data-status { font-size: 9px; line-height: 1.5; color: #a7bac3; margin: 7px 0; }
+#flight-path-status:empty, #ground-data-status:empty { display: none; }
+.flight-path-ground-panel h3 { font-size: 12px; margin: 17px 0 8px; font-weight: 500; }
+.flight-data-table-scroll { overflow-x: auto; }
+.flight-data-table-scroll table { border-collapse: collapse; width: 100%; font-size: 10px; }
+.flight-data-table-scroll th, .flight-data-table-scroll td { border-bottom: 1px solid #8399a033; padding: 7px 5px; text-align: right; white-space: nowrap; }
+.flight-data-table-scroll th:first-child { text-align: left; padding-left: 0; }
+.flight-data-table-scroll thead th { font-size: 8px; color: #abc0c9; font-weight: 500; }
+.flight-data-table-scroll tbody th { font-size: 9px; font-weight: 500; }
+.flight-data-table-scroll tbody th output { display: block; font-size: 8px; color: #9fb3bd; }
+.flight-data-table-scroll output[data-contact="1"] { color: #a8dbab; }
+.flight-data-structure { display: flex; flex-wrap: wrap; gap: 4px 12px; justify-content: space-between; margin: 12px 0 8px; font-size: 10px; }
+.flight-data-structure output { color: #e8c388; }
+@media (max-width: 620px) { .flight-path-ground-panel { top: 108px; right: 10px; width: calc(100% - 20px); padding: 12px; max-height: calc(100dvh - 120px); } .flight-data-heading h2 { font-size: 14px; } }

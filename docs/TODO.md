@@ -112,6 +112,10 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.22 Fit cockpit height to content and scale all inline instruments/controls together; retain main instruments and AP/flap/trim before collapsing engine/radio on narrow views. Partial R-VIEW-1; see [review evidence](reviews/2026-11-02-review-panel.md), peer pending.
 
+- [x] 2.0.23 Add a View flight-data panel with signed ground-relative flight-path gradient in %, low-speed unavailable handling and actual per-wheel contact/compression/strut load/slip plus structure contacts. Synchronize with selected recorded Review without changing physics. Partial R-SIM-3/R-VIEW-1/R-REVIEW-1; no structural damage limits or ILS deviation inferred. Independent quality/actual-browser validation passed; peer pending.
+
+- [x] 2.0.24 Add a View Aircraft handbook with original sourced reference diagrams for the active research 1982 C172P: loading/CG, published flight-envelope load-factor/airspeed references, critical CAS speeds and model gear geometry. Pause for reading; retain accessible tables/source/applicability and narrow-screen operation. No live loading point without applicable mass/CG telemetry. Partial R-AIR-2/R-DATA-1/R-VIEW-1; see [review evidence](reviews/2026-11-02-flight-data-handbook.md). Independent quality/actual-browser validation passed; peer pending.
+
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.
 - [ ] 2.3 code2 implements the corresponding browser controls, instruments and exercise feedback against frozen contracts **in parallel with 2.2**.

@@ -463,6 +463,20 @@ question as they arrive.
 
 ### Q3. Which Cessna 172 variant, year and avionics fit?
 
+Handbook clarification: **2026-11-02 21:02, user**: “Loading and flight envelope”.
+Initial handbook diagrams prioritize CG loading and published flight-load-factor /
+airspeed references for the active research C172P. Complete stall/gust boundaries
+and live loading/load-factor points require additional applicable data; published
+reference limits must not be presented as a validated complete V-n envelope.
+See [answer](input/2026-11-02-handbook-loading-envelope.md).
+
+Implementation assumption: **2026-11-02 20:54, Codex orchestrator**: the requested View
+handbook initially covers sourced loading/CG, CAS limits and gear-layout reference
+diagrams for the **active generic 1982 C172P**. The diagram-selection clarification
+was subsequently answered above; this small reference subset does not change the selected 172S product
+configuration or accept its aircraft fidelity. Charts have no fabricated live
+mass/CG point. See [input](input/2026-11-02-flight-data-handbook.md).
+
 Why: operating limits, engine/propeller, systems, instrument ranges and procedures must refer to one applicable configuration. Proposed: research availability and redistribution rights for a specific C172S configuration before recommending a conventional panel or glass cockpit. Blocking: TODO 1.3 and aircraft-specific implementation; generic studies may continue.
 
 Answer: **2026-11-01 10:27, user** (recorded by orchestrator, Claude Code;

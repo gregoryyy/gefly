@@ -54,3 +54,7 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-02 aircraft-forward orientation marker](2026-11-02-aircraft-forward-marker.md): project the nose direction into the view so it moves when looking sideways.
 
 - [2026-11-02 Review data and panel scaling](2026-11-02-review-panel-scaling.md): critical airspeed markings, recorded throttle/control data, R for Review, less empty panel height and uniform scaling with main-panel visibility priority.
+
+- [2026-11-02 flight data and handbook](2026-11-02-flight-data-handbook.md): glide-path percentage and ground-reaction panels, plus aircraft load/reference diagrams under View.
+
+- [2026-11-02 handbook loading and flight envelope](2026-11-02-handbook-loading-envelope.md): exact clarification selects loading and flight-envelope diagrams.

@@ -92,11 +92,24 @@ try {
   for (const key of heldKeys) await page.keyboard.up(key);
   await page.locator('#pause').click(); await page.waitForFunction(() => document.querySelector('#status').textContent === 'Paused');
   const paused = await stats();
+  // Native range values serialize to fewer decimal digits than worker timestamps.
+  // Seek inside this real sample's interval, rather than onto a rounded boundary
+  // which can correctly select its predecessor under FlightTrace.atTime's rule.
+  const followingTime = await page.evaluate(time => window.__reviewStates.find(s => s.t_s > time)?.t_s, captured.t_s);
+  assert(Number.isFinite(followingTime) && followingTime > captured.t_s, 'captured sample has a later actual recorded frame');
+  const seekCaptured = async () => {
+    const nativeTime = await page.locator('#review-time').evaluate((input, time) => {
+      input.value = String(time); input.dispatchEvent(new Event('input', { bubbles: true }));
+      return Number(input.value);
+    }, captured.t_s + (followingTime - captured.t_s) / 2);
+    assert(nativeTime > captured.t_s && nativeTime < followingTime, 'native seek remains inside the captured frame interval');
+    await page.waitForFunction(step => document.querySelector('#flight-data-panel').dataset.step === String(step), captured.step);
+  };
   for (const [id, value] of [['throttle', 80], ['mixture-control', 70], ['flap-control', 20], ['pitch-trim-control', 10]]) await setRange(id, value);
   await page.locator('#scene').focus();
   await page.keyboard.down('r'); await page.waitForFunction(() => document.querySelector('#status').textContent === 'Review');
   await page.keyboard.down('r'); assert.equal(await text('status'), 'Review', 'key repeat cannot immediately leave Review'); await page.keyboard.up('r');
-  await page.locator('#review-time').evaluate((input, time) => { input.value = String(time); input.dispatchEvent(new Event('input', { bubbles: true })); }, captured.t_s);
+  await seekCaptured();
   await page.waitForFunction(() => document.querySelector('#power').textContent === '25%');
   const inputsAtReview = await page.evaluate(() => window.__reviewInputs.length);
   assert(await page.locator('.throttle-control').isVisible()); assert(await page.locator('#recorded-control-details').isVisible());
@@ -134,7 +147,7 @@ try {
 
   await page.locator('#scene').focus(); await page.keyboard.press('r');
   await page.waitForFunction(() => document.querySelector('#status').textContent === 'Review');
-  await page.locator('#review-time').evaluate((input, time) => { input.value = String(time); input.dispatchEvent(new Event('input', { bubbles: true })); }, captured.t_s);
+  await seekCaptured();
   await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(150);
   assert(await page.locator('#recorded-control-details').isVisible());
   assert.equal(await text('recorded-throttle'), '25.0%'); assert.equal(await text('recorded-mixture'), '60.0%');

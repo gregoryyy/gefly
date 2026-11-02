@@ -314,6 +314,25 @@ samples. Flight reset or page reload clears it. There is no export, persistence,
 video recording, or input/event log. Full synchronized configuration, event and
 input replay remains future work under the [replay contract](../docs/design/CONTRACTS.md).
 
+## Flight data and handbook
+
+Open **View → Flight data** for signed ground-relative flight-path gradient
+(climb positive, descent negative), horizontal ground speed and vertical speed.
+Below 1 m/s horizontal ground speed, gradient is unavailable. The panel also
+shows each wheel's contact, compression, modeled strut load and slip, plus
+structure-contact indications. These use the selected live or recorded Review
+sample; the loads are not component stress or damage limits. This adds no
+height to the cockpit. Close it with its button or Escape.
+
+Open **View → Aircraft handbook** for original loading/CG, published flight-load-factor/airspeed
+references, critical CAS-speed and generic gear-geometry diagrams, with accessible tables and source links. These
+are 1982 C172P references for the active research model; they do not establish
+selected-172S fidelity or a live mass/CG calculation. Opening the handbook pauses
+flight or Review playback; closing it leaves the flight paused until Resume.
+Published flight-envelope references do not supply a complete stall/gust envelope
+or a live load-factor point. No manual pages or images are bundled or fetched
+when the handbook opens.
+
 ## Practice map
 
 Select **View → Map** in the header to show or hide a north-up practice map. It loads

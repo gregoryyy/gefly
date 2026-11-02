@@ -3,6 +3,61 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 21:07 — Inspect flight path, gear reactions and aircraft reference diagrams
+
+TODO: 2.0.23–2.0.24 complete as bounded R-SIM-3/R-VIEW-1/R-REVIEW-1/
+R-AIR-2/R-DATA-1 increments. Agent: Codex orchestrator/integration; fov_input/code1
+on flight gradient/data panel, panel_scaling/code2 on the handbook, with
+fov_housekeeping alongside on immutable input and source facts. Independent
+quality: panel_scaling/fov_housekeeping on flight data/root integration;
+fov_input on Handbook/data, excluding own code; orchestrator on the code1-authored
+Review-test precision repair only. Independent validation: trim_validate.
+
+**Implementation notes**
+
+View → Flight data opens a compact modeless panel with signed ground-relative
+flight-path percent, horizontal/vertical ground velocity and actual per-wheel
+contact, compression, strut load and slip plus structure contacts. It follows
+the selected live/recorded state without changing physics or cockpit height.
+Low groundspeed and missing data remain unavailable, never synthetic zeroes.
+
+View → Aircraft handbook pauses live flight or Review playback and displays
+four original vector references with accessible tables: normal-category CG
+loading, published flight-envelope factor/speed guides, CAS limits and model
+gear geometry. The user's clarification prioritizes loading/flight envelope.
+Closing stays paused. Manufacturer/JSBSim sources, conditions, units and hashes
+are explicit; no manual pages/images or network document fetch are added.
+
+New Chrome checks pass four Flight Data groups and three Handbook groups,
+including landing/recorded values, frozen full state/step/digest, modeless
+shortcuts, pause/no-resume, four diagrams, mobile and local-only requests.
+Existing smoke26, Review4 and layout9-viewport/portal regressions pass. A flaky
+exact-timestamp seek was traced to Chrome range decimal rounding; the test now
+seeks inside an actual frame interval and verifies its exact selected step.
+The product's floor-seek behavior remains unchanged. Independent actual Chrome
+validation passed six groups plus three affected envelope/source/mobile checks.
+Shared CI passed 109 native tests, five adapter tests, UI build, 84 assurance and
+11 assessment tests plus repository/study/render gates. Optional JSBSim9-of-23
+and Linux-only checks remain explicit skips. See
+[review evidence](reviews/2026-11-02-flight-data-handbook.md) for exact source hash,
+reviewer exclusions and reproducible evidence. Cross-provider peer pending.
+
+**Deviations**
+
+Flight-path percentage is ground-track slope, not ILS deviation or aerodynamic
+glide ratio. Wheel loads are modeled normal strut reactions, not full force
+vectors, stress or damage limits. Handbook figures apply to the generic research
+1982 C172P and do not accept the planned C172S. Published envelope guides do not
+invent missing stall/gust boundaries, negative flaps-down limits, a filled
+approved V-n operating region or live loading/load-factor points.
+
+**Insights**
+
+Existing captured telemetry can make landing behavior inspectable without
+altering dynamics. Separating original reference plots from live aircraft
+inferences preserves useful Handbook diagrams while documenting missing data.
+Native range serialization needs interval-based tests for floor-seek behavior.
+
 ## 2026-11-02 20:50 — Show recorded controls and critical speeds in a fitted cockpit
 
 TODO: 2.0.20–2.0.22 complete as bounded R-AIR-2/R-DATA-1/R-INPUT-1/
