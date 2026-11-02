@@ -71,19 +71,19 @@ export interface NavigationIndication {
   valid: boolean; reason: string; to_from: 'TO' | 'FROM' | 'OFF'; cdi_norm: number | null;
   radial_true_deg: number | null; dme_nm: number | null;
 }
-/** VOR-style ±10° CDI: FAA PHAK Ch16 and AIM 1-1; true-reference LAB only.
- * https://www.faa.gov/sites/faa.gov/files/pilot_handbook_1.pdf
- * https://www.faa.gov/air_traffic/publications/aim_html/chap1_section_1.html
- * No real station data, magnetic declination, propagation, terrain or ILS model.
+export interface BearingDistanceIndication {
+  valid: boolean; reason: string; bearing_true_deg: number | null; dme_nm: number | null;
+}
+/** Same fictional service/geometry for CDI and bearing instruments. OBS does
+ * not affect a station bearing; reverse initial great-circle bearings are not
+ * generally the outbound radial plus 180 degrees.
  */
-export function navigationIndication(config: Readonly<RadioNavSnapshot>, position: Readonly<NavPosition> | null, receiver: RadioReceiver = 1): NavigationIndication {
-  const unavailable = (reason: string, dme_nm: number | null = null): NavigationIndication => ({
-    valid: false, reason, to_from: 'OFF', cdi_norm: null, radial_true_deg: null, dme_nm,
-  });
+function labGeometry(config: Readonly<RadioNavSnapshot>, position: Readonly<NavPosition> | null, receiver: RadioReceiver) {
+  const unavailable = (reason: string, dme_nm: number | null = null) => ({ reason, dme_nm,
+    radial_rad: null as number | null, bearing_true_deg: null as number | null });
   if (!validRadioNavSnapshot(config)) return unavailable('Radio configuration unavailable');
   if (receiver !== 1 && receiver !== 2) return unavailable('NAV receiver unavailable');
   const frequency = receiver === 1 ? config.radio_nav_active_khz : config.radio_nav2_active_khz;
-  const obs_deg = receiver === 1 ? config.radio_obs_deg : config.radio_obs2_deg;
   if (frequency < 112000 && Math.floor(frequency / 100) % 2 === 1) return unavailable('ILS/LOC unsupported');
   if (!config.radio_demo_enabled) return unavailable('LAB off · no real station database');
   if (frequency !== DEMO_NAV.frequency_khz) return unavailable('No LAB signal on active channel');
@@ -94,17 +94,38 @@ export function navigationIndication(config: Readonly<RadioNavSnapshot>, positio
   const dLat = position.lat_rad - stationLat, dLon = position.lon_rad - stationLon;
   const hav = Math.sin(dLat / 2) ** 2 + Math.cos(stationLat) * Math.cos(position.lat_rad) * Math.sin(dLon / 2) ** 2;
   const angle = 2 * Math.asin(Math.sqrt(Math.max(0, Math.min(1, hav))));
-  const horizontal_m = angle * EARTH_RADIUS_M;
-  if (horizontal_m / NM_M > DEMO_NAV.radius_nm) return unavailable('Outside 60 NM LAB radius');
-  // Geometric slant range on the declared sphere, including station altitude.
-  const stationRadius = EARTH_RADIUS_M + DEMO_NAV.altitude_m;
-  const aircraftRadius = EARTH_RADIUS_M + position.alt_msl_m;
-  const dme_nm = Math.sqrt((position.alt_msl_m - DEMO_NAV.altitude_m) ** 2
-    + 4 * stationRadius * aircraftRadius * Math.sin(angle / 2) ** 2) / NM_M;
-  // An explicit demo ambiguity radius; it is not a real cone-of-confusion model.
-  if (horizontal_m < 100) return unavailable('LAB station passage · bearing ambiguous', dme_nm);
-  const bearing = Math.atan2(Math.sin(dLon) * Math.cos(position.lat_rad),
+  if (angle * EARTH_RADIUS_M / NM_M > DEMO_NAV.radius_nm) return unavailable('Outside 60 NM LAB radius');
+  const stationRadius = EARTH_RADIUS_M + DEMO_NAV.altitude_m, aircraftRadius = EARTH_RADIUS_M + position.alt_msl_m;
+  const dme_nm = Math.hypot(position.alt_msl_m - DEMO_NAV.altitude_m,
+    2 * Math.sqrt(stationRadius) * Math.sqrt(aircraftRadius) * Math.sin(angle / 2)) / NM_M;
+  if (!Number.isFinite(dme_nm)) return unavailable('LAB range unavailable');
+  if (angle * EARTH_RADIUS_M < 100) return unavailable('LAB station passage · bearing ambiguous', dme_nm);
+  const radial_rad = Math.atan2(Math.sin(dLon) * Math.cos(position.lat_rad),
     Math.cos(stationLat) * Math.sin(position.lat_rad) - Math.sin(stationLat) * Math.cos(position.lat_rad) * Math.cos(dLon));
+  const inbound = Math.atan2(-Math.sin(dLon) * Math.cos(stationLat),
+    Math.cos(position.lat_rad) * Math.sin(stationLat) - Math.sin(position.lat_rad) * Math.cos(stationLat) * Math.cos(dLon));
+  return { reason: 'Fictional LAB · TRUE reference', dme_nm, radial_rad, bearing_true_deg: ((inbound / DEG) + 360) % 360 };
+}
+
+/** Direct TRUE bearing to the existing NAV-selected LAB; not ADF/NDB reception. */
+export function bearingDistanceIndication(config: Readonly<RadioNavSnapshot>, position: Readonly<NavPosition> | null, receiver: RadioReceiver = 1): BearingDistanceIndication {
+  const geometry = labGeometry(config, position, receiver);
+  return { valid: geometry.bearing_true_deg !== null, reason: geometry.reason,
+    bearing_true_deg: geometry.bearing_true_deg, dme_nm: geometry.dme_nm };
+}
+/** VOR-style ±10° CDI: FAA PHAK Ch16 and AIM 1-1; true-reference LAB only.
+ * https://www.faa.gov/sites/faa.gov/files/pilot_handbook_1.pdf
+ * https://www.faa.gov/air_traffic/publications/aim_html/chap1_section_1.html
+ * No real station data, magnetic declination, propagation, terrain or ILS model.
+ */
+export function navigationIndication(config: Readonly<RadioNavSnapshot>, position: Readonly<NavPosition> | null, receiver: RadioReceiver = 1): NavigationIndication {
+  const unavailable = (reason: string, dme_nm: number | null = null): NavigationIndication => ({
+    valid: false, reason, to_from: 'OFF', cdi_norm: null, radial_true_deg: null, dme_nm,
+  });
+  const geometry = labGeometry(config, position, receiver);
+  if (geometry.radial_rad === null) return unavailable(geometry.reason, geometry.dme_nm);
+  const obs_deg = receiver === 1 ? config.radio_obs_deg : config.radio_obs2_deg;
+  const dme_nm = geometry.dme_nm, bearing = geometry.radial_rad;
   const radial_true_deg = ((bearing / DEG) + 360) % 360;
   const difference = bearing - obs_deg * DEG;
   const side = Math.cos(difference);

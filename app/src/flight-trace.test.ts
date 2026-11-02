@@ -2,7 +2,28 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { DEFAULT_RADIO_NAV } from './radio-nav.ts';
 import { FlightTrace } from './flight-trace.ts';
-import { STALL_FIELDS, type FlightState } from './types.ts';
+import { COLLISION_FIELDS, STALL_FIELDS, type FlightState } from './types.ts';
+
+test('recorded collision preserves the final event and rejects malformed or same-clock rewrites', () => {
+  const trace = new FlightTrace();
+  const zero = { collision_mask: 0, collision_step: 0, collision_t_s: 0,
+    collision_down_mps: 0, collision_groundspeed_mps: 0 };
+  assert(trace.record({ ...state(0), ...zero }, 0));
+  const event = { collision_mask: 16, collision_step: 2, collision_t_s: 2,
+    collision_down_mps: -1.2, collision_groundspeed_mps: 28 };
+  for (const key of COLLISION_FIELDS) {
+    const partial = { ...state(2), ...event } as FlightState; delete partial[key];
+    assert.equal(trace.record(partial, 0), false);
+  }
+  assert.equal(trace.record({ ...state(1), ...event }, 0), false, 'future collision identity is invalid');
+  assert.equal(trace.record({ ...state(2), ...event, collision_step: 0, collision_t_s: 0 }, 0), false);
+  const frame = { ...state(2), ...event };
+  assert(trace.record(frame, 0)); frame.collision_down_mps = 100;
+  assert.equal(trace.atTime(2)!.state.collision_down_mps, -1.2);
+  assert.equal(trace.atTime(1)!.state.collision_mask, 0);
+  assert.equal(trace.record({ ...state(2), ...event, collision_mask: 8 }, 0), false);
+  assert.equal(trace.atTime(2)!.state.collision_mask, 16);
+});
 
 test('airflow snapshots preserve actual motion and CG without paused rewrites or partial groups', () => {
   const trace = new FlightTrace();
@@ -264,4 +285,26 @@ test('paused radio edits replace only last avionics snapshot without changing ph
   assert(Object.isFrozen(prior.state));
   assert.equal(trace.record({ ...first, radio_obs_deg: 95, tas_mps: first.tas_mps + 1 }, 2), false);
   assert.equal(trace.record({ ...first, radio_nav2_active_khz: 114001 }, 2), false);
+});
+
+test('engine actual running and ignition request stay recorded and cannot rewrite a paused physical state', () => {
+  const trace = new FlightTrace();
+  const first = { ...state(1), engine_running: 1, engine_command_on: 1 };
+  assert(trace.record(first, 0));
+  assert(trace.record({ ...state(2), engine_running: 0, engine_command_on: 0 }, -1));
+  assert.equal(trace.atTime(1)!.state.engine_running, 1);
+  assert.equal(trace.atTime(2)!.state.engine_running, 0);
+  assert.equal(trace.record({ ...state(3), engine_running: 0 }, -1), false);
+  assert.equal(trace.record({ ...state(3), engine_running: 2, engine_command_on: 0 }, -1), false);
+  assert.equal(trace.record({ ...state(2), engine_running: 1, engine_command_on: 1 }, -1), false);
+});
+
+test('decimal range serialization selects the stored interior frame while real earlier times still floor', () => {
+  const trace = new FlightTrace();
+  const exact = 3.7583333333333226;
+  assert(trace.record({ ...state(1), t_s: exact - 1 / 120 }, 0));
+  assert(trace.record({ ...state(2), t_s: exact }, 0));
+  assert(trace.record({ ...state(3), t_s: exact + 1 / 120 }, 0));
+  assert.equal(trace.atTime(Number(exact.toPrecision(15)))!.state.step, 2);
+  assert.equal(trace.atTime(exact - 1e-9)!.state.step, 1);
 });

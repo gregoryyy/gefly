@@ -16,6 +16,7 @@ export function createAudioControls(options: AudioControlsOptions): {
   const button = document.createElement('button');
   button.id = 'audio-toggle'; button.type = 'button'; button.className = 'audio-toggle';
   button.setAttribute('aria-controls', 'audio-settings');
+  button.setAttribute('aria-keyshortcuts', 'S');
   button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <path d="M4 9h4l5-4v14l-5-4H4z"/>
     <g class="audio-waves"><path d="M16 8a6 6 0 0 1 0 8M19 5a10 10 0 0 1 0 14"/></g>
@@ -26,10 +27,10 @@ export function createAudioControls(options: AudioControlsOptions): {
   const settings = document.createElement('section');
   settings.id = 'audio-settings'; settings.className = 'audio-settings';
   settings.setAttribute('aria-labelledby', 'audio-settings-title');
-  settings.innerHTML = `<div class="audio-settings-heading"><h3 id="audio-settings-title">Engine sound</h3><span id="audio-status" role="status">Ready after Start</span></div>
+  settings.innerHTML = `<div class="audio-settings-heading"><h3 id="audio-settings-title">Engine and wind sound</h3><span id="audio-status" role="status">Press S to enable</span></div>
     <label for="audio-volume">Volume <output id="audio-volume-value" for="audio-volume">30%</output></label>
-    <input id="audio-volume" type="range" min="0" max="100" step="1" value="30" aria-label="Engine sound volume percentage">
-    <p>Synthesized piston and propeller approximation. No recording or microphone access.</p>`;
+    <input id="audio-volume" type="range" min="0" max="100" step="1" value="30" aria-label="Engine and wind sound volume percentage">
+    <p>Synthesized piston, propeller and airflow approximation. No recording or microphone access.</p>`;
   options.settingsContainer.append(settings);
   const volume = settings.querySelector<HTMLInputElement>('#audio-volume')!;
   const output = settings.querySelector<HTMLOutputElement>('#audio-volume-value')!;
@@ -37,8 +38,8 @@ export function createAudioControls(options: AudioControlsOptions): {
   let disposed = false, lastKey = '';
   function toggle(event: MouseEvent): void { if (!disposed && event.isTrusted) options.onToggleMute(); }
   function isolateShortcut(event: KeyboardEvent): void {
-    // Preserve native Tab/Space/Enter behavior, while keeping focused audio UI out of flight shortcuts.
-    event.stopPropagation();
+    // S remains the global sound shortcut. Other keys stay out of flight controls.
+    if (event.code !== 'KeyS') event.stopPropagation();
   }
   function changeVolume(event: Event): void {
     const value = volume.valueAsNumber / 100;
@@ -62,12 +63,12 @@ export function createAudioControls(options: AudioControlsOptions): {
       button.setAttribute('aria-pressed', String(status.muted));
       const action = unavailable ? 'Engine sound unavailable' : retry ? 'Retry engine sound'
         : !status.unlocked ? 'Enable engine sound' : status.muted ? 'Unmute engine sound' : 'Mute engine sound';
-      button.setAttribute('aria-label', action); button.title = action;
+      button.setAttribute('aria-label', `${action} (S)`); button.title = `${action} (S)`;
       const percent = Math.round(status.volume * 100);
       volume.value = String(percent); output.value = `${percent}%`;
       volume.setAttribute('aria-valuetext', `${percent} percent`);
       stateLabel.textContent = unavailable ? 'Unavailable' : retry ? 'Activation unavailable · retry sound button'
-        : status.muted || status.volume === 0 ? 'Muted' : !status.unlocked ? 'Ready after Start'
+        : status.muted || status.volume === 0 ? 'Muted' : !status.unlocked ? 'Press S to enable'
           : status.state === 'playing' ? 'Playing' : 'Ready · paused';
     },
     dispose() {

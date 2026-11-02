@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { DEFAULT_RADIO_NAV, DEMO_NAV, navigationIndication, RADIO_NAV_FIELDS, setObs,
+import { bearingDistanceIndication, DEFAULT_RADIO_NAV, DEMO_NAV, navigationIndication, RADIO_NAV_FIELDS, setObs,
   swapRadio, tuneStandby, validFrequency, validRadioNavSnapshot } from './radio-nav.ts';
 
 const DEG = Math.PI / 180;
@@ -9,6 +9,33 @@ const demo = { ...DEFAULT_RADIO_NAV, radio_demo_enabled: 1 };
 // meridian offsets at the declared station have exact north/south bearings.
 const north = { lat_rad: (DEMO_NAV.latitude_deg + .1) * DEG, lon_rad: DEMO_NAV.longitude_deg * DEG, alt_msl_m: 1000 };
 const south = { ...north, lat_rad: (DEMO_NAV.latitude_deg - .1) * DEG };
+
+test('direct true bearing to LAB is independent of OBS and CDI TO/FROM ambiguity', () => {
+  const inbound = bearingDistanceIndication(demo, north);
+  assert(inbound.valid); assert.equal(inbound.bearing_true_deg, 180);
+  assert.equal(bearingDistanceIndication(demo, south).bearing_true_deg, 0);
+  assert.equal(bearingDistanceIndication(setObs(demo, 90), north).bearing_true_deg, 180);
+  assert.equal(navigationIndication(setObs(demo, 90), north).valid, false);
+  assert.equal(bearingDistanceIndication(setObs(demo, 90), north).dme_nm, inbound.dme_nm);
+  assert(!bearingDistanceIndication(DEFAULT_RADIO_NAV, north).valid);
+  assert(!bearingDistanceIndication({ ...demo, radio_nav_active_khz: 114000 }, north).valid);
+  assert(!bearingDistanceIndication(demo, { ...north, lat_rad: north.lat_rad + 2 * DEG }).valid);
+});
+
+test('spherical inbound bearing is not a reciprocal outbound radial and retains geometric DME at passage', () => {
+  const east = { ...north, lat_rad: DEMO_NAV.latitude_deg * DEG, lon_rad: (DEMO_NAV.longitude_deg + .5) * DEG };
+  const inbound = bearingDistanceIndication(demo, east);
+  const outbound = navigationIndication(demo, east);
+  assert(inbound.valid); assert(outbound.radial_true_deg !== null);
+  assert(Math.abs(inbound.bearing_true_deg! - ((outbound.radial_true_deg + 180) % 360)) > .3,
+    'initial great-circle bearings at opposite ends differ from a flat reciprocal');
+  // Same-latitude route begins slightly north of west, not exactly 270 degrees.
+  assert(inbound.bearing_true_deg! > 270 && inbound.bearing_true_deg! < 271);
+  const overhead = bearingDistanceIndication(demo, { lat_rad: DEMO_NAV.latitude_deg * DEG,
+    lon_rad: DEMO_NAV.longitude_deg * DEG, alt_msl_m: 1852 });
+  assert.equal(overhead.valid, false); assert.equal(overhead.bearing_true_deg, null); assert.equal(overhead.dme_nm, 1);
+  for (const invalid of [null, { ...north, alt_msl_m: Infinity }, { ...north, lat_rad: NaN }]) assert(!bearingDistanceIndication(demo, invalid).valid);
+});
 
 test('legacy channel boundaries, spacing, swap and immutable snapshots', () => {
   for (const frequency of [118000, 121500, 136975]) assert(validFrequency('com', frequency));

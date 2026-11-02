@@ -56,6 +56,8 @@ unavailable. Returning to live restores pending control settings.
 | Space | Start / pause / resume |
 | R | Enter / leave recorded Review |
 | V | Switch cockpit / chase view |
+| S | Toggle engine and airflow sound (off by default) |
+| E | Request engine ignition/starter on or off |
 | / | Restore initial trim |
 | [ / ] | Retract / extend flaps one 10° detent |
 | B (hold) | Apply both wheel brakes; release to let go |
@@ -314,19 +316,34 @@ samples. Flight reset or page reload clears it. There is no export, persistence,
 video recording, or input/event log. Full synchronized configuration, event and
 input replay remains future work under the [replay contract](../docs/design/CONTRACTS.md).
 
+## Ground collision
+
+Normal wheel landings continue through the model's spring/damper/friction response.
+A native tail/wingtip contact or collision with the shared illustrative fuselage,
+propeller/spinner or fin outline stops the flight at its first detected fixed step.
+Controls and Resume stay locked, engine audio stops, and the final state remains
+available for **R → Review** and hold-drag camera inspection. Use **Flight → Restart
+flight** to start again. In Review, the banner follows the selected recorded frame.
+
+Collision coverage is the existing flat ellipsoid surface and declared visual
+proxies, not terrain/buildings or calibrated aircraft damage geometry. Contact is
+sampled after each fixed step; up to one step of penetration can remain, rather
+than a continuous collision solve or a repositioned aircraft. Missing older-engine
+contact data is explicitly unavailable. No hard-landing damage threshold is invented.
+
 ## Engine sound
 
-Start or resume flight to activate the original synthesized piston/propeller
-sound. Pitch follows actual propeller RPM; actual manifold pressure and fuel
+Sound starts **off**. Press **S** or the speaker beside the clock to enable the
+original synthesized piston/propeller sound; press S again to mute. Pitch follows actual propeller RPM; actual manifold pressure and fuel
 flow shape the engine's load/timbre. The speaker button beside the flight clock
 mutes/unmutes at any time, including Review. **Options → Engine sound** adjusts
 volume. A locked/blocked browser can be retried with the speaker button; missing
 Web Audio does not block flying.
 
 Pause, hidden/focus-lost pages, failed/reset flights and paused Review are silent.
-Playing Review synthesizes the selected captured engine state. Zero RPM or
-missing telemetry is silent; fuel cutoff removes combustion while an actually
-rotating propeller can retain mechanical/airflow sound. This is a procedural
+Playing Review synthesizes the selected captured engine state. Zero RPM or missing engine telemetry silences engine channels; independent
+airflow noise follows valid actual TAS. Fuel cutoff or actual stopped-engine
+state removes combustion while a rotating propeller can retain mechanical sound. This is a procedural
 approximation, not a calibrated recording of an installed aircraft. It uses no
 microphone, downloaded sample, provider service or extra runtime dependency.
 
@@ -453,3 +470,50 @@ Set `CHROME` to an executable path if Chrome is not installed in its usual
 location. `just fly` uses 127.0.0.1:5173. Without `just`, invoke the study build
 with `bash studies/e1-browser/sim/build.sh output/flight/engine-build`, then
 `npm --prefix app run dev`.
+
+### Engine switch and airflow sound
+
+Press **E** or the engine panel’s **ENG ON/OFF** switch to request ignition and
+starter operation. **RUN/STOP** shows actual native combustion state, independently
+of the selected command. Paused commands apply when flight resumes; Review and
+collision frames remain read-only. Off cuts ignition without forcing propeller RPM
+to zero. On enables both magnetos and native cranking until running, without
+changing throttle or mixture. Fuel/mixture can prevent a successful start. Battery,
+priming, starter duty limits and an installed C172 starting checklist are unmodeled.
+An older local runtime shows ENG INOP: rebuild with `just build-flight-engine`.
+
+Sound remains **off by default**, with **S** to toggle. Original broadband airflow
+noise and a subtle whistle follow actual true airspeed, including engine-off glides;
+the whistle is a broad airy noise band that emerges at higher airspeed and
+disappears at low or zero airflow; engine exhaust
+uses the actual running flag, while windmilling can retain rotation sound. Playing
+Review follows recorded values. This is sound design, without calibrated cockpit
+acoustics or simulated weather gusts; it uses no microphone or downloaded audio.
+
+### Compact classic panel
+
+The separate six-pack housing sits beside a 2×2 secondary block: NAV1/NAV2
+above **BRG/DME** and **PROP RPM**. BRG points to the opt-in fictional LAB station
+using true heading and direct spherical bearing; it is independent of the VOR OBS
+setting and is not an installed ADF/NDB receiver. DME remains geometric slant
+distance. RPM follows actual propeller rotation, with a sourced generic model
+2700 RPM marker, without invented operating arcs.
+
+The engine column precedes autopilot/flaps/trim and includes a distinct round
+left/right fuel gauge plus vertical throttle and mixture. Fuel follows actual
+model tank contents; its full-scale capacity uses the pinned model's default
+fuel density, rather than a C172S usable-fuel or reserve figure. Desktop columns
+share their top/bottom edges on a shorter panel. All inline controls keep the same
+scale; engine and radio move to dialogs on narrow views, while all four secondary
+round displays remain available through **View → NAV instruments**.
+
+The audio mix also uses actual wheel contact and ground motion for rolling and
+brief touchdown sounds. Initial frames, pause/resume and seeking do not invent a
+wheel impact. Engine-only idle is quieter than higher-RPM operation at matched
+load; all layers remain behind the same S mute and lifecycle controls.
+
+Chase view now uses the aircraft mesh to cast a soft native Cesium sun shadow on
+the existing flat ellipsoid near the ground. It follows the selected live/Review
+state, fades with height and is hidden at or above 120 m AGL or when compatible
+ground data is missing. The scene uses a fixed sun/date and has no surveyed
+terrain; the shadow is a viewing cue, not another source of contact physics.

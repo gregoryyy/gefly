@@ -3,12 +3,12 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 7px;
-  width: var(--nav-gauge-size);
-  flex: 0 0 var(--nav-gauge-size);
+  width: calc(var(--nav-gauge-size) * 2 + 8px);
+  flex: 0 0 calc(var(--nav-gauge-size) * 2 + 8px);
   align-content: start;
   min-width: 0;
 }
-.navigation-gauges-content { display: grid; grid-template-columns: minmax(0, 1fr); gap: 7px; min-width: 0; }
+.navigation-gauges-content { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 8px; min-width: 0; }
 .navigation-gauge { min-width: 0; text-align: center; }
 .navigation-gauge-face { display: block; width: 100%; height: auto; aspect-ratio: 1; filter: drop-shadow(0 3px 3px #0008); }
 .navigation-gauges-content [hidden], .navigation-open[hidden] { display: none !important; }
@@ -28,6 +28,15 @@
 .nav-cdi-needle { fill: none; stroke: #f1f1df; stroke-width: 3.5; stroke-linecap: round; }
 .nav-warning-flag rect, .nav-gs-inop rect { fill: #a43e2e; stroke: #de775c; stroke-width: .8; }
 .nav-warning-flag text, .nav-gs-inop text { fill: #fff4cf; text-anchor: middle; font: bold 10px system-ui,sans-serif; }
+.bearing-warning-flag rect { fill: #a43e2e; stroke: #de775c; stroke-width: .8; }
+.bearing-warning-flag text { fill: #fff4cf; text-anchor: middle; font: bold 10px system-ui,sans-serif; }
+.nav-bearing-pointer path { fill: #edcc70; stroke: #edcc70; stroke-width: 2.5; }
+.rpm-pointer { fill: #eed8a5; }
+.rpm-model-reference { stroke: #ee7865; stroke-width: 4; }
+.rpm-unavailable { fill: #d39779; font: 12px system-ui,sans-serif; text-anchor: middle; }
+.navigation-aux-readout { min-height: 28px; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; align-items: baseline; gap: 2px 5px; margin-top: 2px; }
+.navigation-aux-readout output { color: #ebd5a9; font: 15px/1.2 ui-monospace,SFMono-Regular,monospace; font-variant-numeric: tabular-nums; }
+.navigation-aux-readout span { color: #a7b5b2; font: 6px system-ui,sans-serif; letter-spacing: .4px; }
 .nav-gs-inop text { font-size: 9px; }
 .nav-to-from-symbol { fill: #e5e9df; }
 .nav-to-from-symbol text { text-anchor: middle; font: 11px system-ui,sans-serif; }
@@ -48,7 +57,7 @@
 .navigation-dialog::backdrop { background: #0009; }
 .navigation-dialog h2 { margin: 0; font: 18px system-ui,sans-serif; }
 .navigation-dialog-note { color: #b9c7c3; font: 11px/1.4 system-ui,sans-serif; margin: 6px 0 12px; }
-.navigation-dialog .navigation-gauges-content { width: 160px; margin: 0 auto; }
+.navigation-dialog .navigation-gauges-content { width: min(300px, 100%); margin: 0 auto; }
 .navigation-dialog #navigation-close { display: block; width: 100%; margin-top: 12px; }
 @media (max-width: 900px) {
   .navigation-gauges { --nav-gauge-size: 122px; }

@@ -18,7 +18,7 @@ function autopilotState(state: Readonly<FlightState> | null): AutopilotState | n
 }
 /** Separate classic-style mode controls for the existing generic roll AP only. */
 export function createAutopilotPanel(options: AutopilotOptions): {
-  update(state: Readonly<FlightState> | null, reviewing: boolean, running: boolean): void;
+  update(state: Readonly<FlightState> | null, reviewing: boolean, running: boolean, readOnly?: boolean): void;
   dispose(): void;
 } {
   const { container } = options;
@@ -47,15 +47,15 @@ export function createAutopilotPanel(options: AutopilotOptions): {
   const decrease = element<HTMLButtonElement>('ap-heading-decrease'), increase = element<HTMLButtonElement>('ap-heading-increase');
   const media = window.matchMedia('(max-width: 0px)');
   let latest: AutopilotState | null = null;
-  let reviewing = false, running = false, disposed = false;
+  let reviewing = false, running = false, readOnly = false, disposed = false;
   container.replaceChildren(opener, content); document.body.append(dialog);
   function render(): void {
-    const canControl = !!latest && running && !reviewing;
+    const canControl = !!latest && running && !reviewing && !readOnly;
     element('ap-state-label').textContent = reviewing ? 'RECORDED' : 'LIVE';
     element('ap-status').textContent = !latest ? 'UNAVAILABLE' : latest.ap_mode === 0 ? 'OFF' : latest.ap_mode === 1 ? 'WINGS LEVEL' : `HDG ${headingText(latest.ap_heading_target_rad)}`;
     dialog.querySelector('.autopilot-dialog-note')!.textContent = reviewing ? 'Recorded AP state · controls are read-only.' : running ? 'Flight continues while this panel is open.' : 'Flight is paused.';
     level.disabled = heading.disabled = !canControl;
-    off.disabled = !latest || reviewing || (!running && latest.ap_mode === 0);
+    off.disabled = !latest || reviewing || readOnly || (!running && latest.ap_mode === 0);
     target.disabled = decrease.disabled = increase.disabled = !canControl || latest?.ap_mode !== 2;
     for (const [button, mode] of [[off, 0], [level, 1], [heading, 2]] as const) button.setAttribute('aria-pressed', String(latest?.ap_mode === mode));
     if (reviewing || document.activeElement !== target) {
@@ -64,7 +64,7 @@ export function createAutopilotPanel(options: AutopilotOptions): {
     }
   }
   function setTarget(): void {
-    if (!latest || !running || reviewing || disposed || latest.ap_mode !== 2) return;
+    if (!latest || !running || reviewing || readOnly || disposed || latest.ap_mode !== 2) return;
     const value = target.valueAsNumber;
     if (!Number.isFinite(value) || value < 0 || value > 359.9 || !target.checkValidity()) {
       target.setCustomValidity('Enter a true heading from 0 to 359.9 degrees.'); target.reportValidity(); return;
@@ -73,7 +73,7 @@ export function createAutopilotPanel(options: AutopilotOptions): {
   }
   function clearValidity(): void { target.setCustomValidity(''); }
   function click(event: MouseEvent): void {
-    if (!(event.target instanceof HTMLButtonElement) || !latest || reviewing || disposed) return;
+    if (!(event.target instanceof HTMLButtonElement) || !latest || reviewing || readOnly || disposed) return;
     const button = event.target;
     if (button === off) { if (running || latest.ap_mode !== 0) options.onAutopilot(0); return; }
     if (!running) return;
@@ -96,7 +96,7 @@ export function createAutopilotPanel(options: AutopilotOptions): {
   target.addEventListener('input', clearValidity); done.addEventListener('click', finish); dialog.addEventListener('close', close);
   media.addEventListener('change', layout); layout(); render();
   return {
-    update(state, inReview, isRunning) { if (!disposed) { latest = autopilotState(state); reviewing = inReview; running = isRunning; render(); } },
+    update(state, inReview, isRunning, locked = false) { if (!disposed) { latest = autopilotState(state); reviewing = inReview; running = isRunning; readOnly = locked; render(); } },
     dispose() {
       if (disposed) return; disposed = true;
       opener.removeEventListener('click', open); content.removeEventListener('click', click); target.removeEventListener('change', setTarget);

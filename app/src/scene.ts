@@ -7,6 +7,7 @@ import 'cesium/Build/Cesium/Widgets/widgets.css';
 import { createForwardMarker } from './forward-marker';
 import { projectForwardDirection } from './forward-marker-projection';
 import { createAircraftVisual } from './aircraft-visual';
+import { createAircraftShadow } from './aircraft-shadow';
 import { aircraftBasisENU, boundedCameraLook, cockpitCameraENU, chaseCameraENU, type CameraLook } from './aircraft-orientation';
 import { DEFAULT_FOV_RAD, MIN_FOV_RAD, MAX_FOV_RAD } from './field-of-view.ts';
 import type { FlightScene, FlightState } from './types';
@@ -44,7 +45,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     useBrowserRecommendedResolution: true,
     showRenderLoopErrors: false,
     scene3DOnly: true,
-    shadows: false,
+    shadows: true,
     msaaSamples: 2,
     contextOptions: { webgl: { alpha: false, antialias: true, powerPreference: 'high-performance' } },
   }); } catch (error) { credits.remove(); throw error; }
@@ -52,6 +53,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   widget.canvas.setAttribute('aria-label', 'Hessen aerial imagery flight scene');
   widget.canvas.setAttribute('tabindex', '-1');
   const scene = widget.scene;
+  const aircraftShadow = createAircraftShadow(scene, container);
   const forwardMarker = createForwardMarker(container);
   const header = container.parentElement?.querySelector<HTMLElement>('.topbar');
   scene.screenSpaceCameraController.enableInputs = false;
@@ -229,6 +231,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       aircraft.modelMatrix = Matrix4.clone(modelMatrix, aircraft.modelMatrix);
       aircraft.show = view === 'chase';
     }
+    aircraftShadow.update(state, view, aircraft);
     if (view === 'cockpit') {
       const camera = cockpitCameraENU(basis, lastLook);
       Cartesian3.fromElements(...camera.direction, localDirection);
@@ -285,6 +288,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       observer.disconnect();
       clearTimeout(loadTimeout);
       forwardMarker.dispose();
+      aircraftShadow.dispose();
       status.remove();
       widget.destroy();
       credits.remove();

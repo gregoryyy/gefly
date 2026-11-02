@@ -10,6 +10,7 @@ export interface EngineAudioStatus {
 }
 export interface EngineAudioGraph {
   update(parameters: EngineAudioParameters, volume: number, active: boolean): void;
+  hasContactSound(): boolean;
   dispose(): void;
 }
 const clampVolume = (value: number) => Math.min(1, Math.max(0, value));
@@ -21,11 +22,15 @@ export function createEngineAudioGraph(context: BaseAudioContext): EngineAudioGr
   const gain = () => remember(context.createGain());
   const oscillator = () => remember(context.createOscillator());
   const exhaust = oscillator(), mechanical = oscillator(), bladePulse = oscillator();
-  const exhaustGain = gain(), mechanicalGain = gain(), propellerGain = gain(), modulation = gain(), master = gain();
+  const exhaustGain = gain(), mechanicalGain = gain(), propellerGain = gain(), windGain = gain(), whistleGain = gain(), modulation = gain(), master = gain();
   const exhaustFilter = remember(context.createBiquadFilter());
   const propFilter = remember(context.createBiquadFilter());
+  const windFilter = remember(context.createBiquadFilter()), windHighpass = remember(context.createBiquadFilter());
+  const windWhistle = remember(context.createBiquadFilter());
+  const rollingFilter = remember(context.createBiquadFilter()), contactFilter = remember(context.createBiquadFilter());
+  const rollingGain = gain(), contactGain = gain();
   const compressor = remember(context.createDynamicsCompressor());
-  const noise = remember(context.createBufferSource());
+  const noise = remember(context.createBufferSource()), windNoise = remember(context.createBufferSource());
   const exhaustWave = new Float32Array(33), exhaustPhase = new Float32Array(33);
   for (let harmonic = 1; harmonic < exhaustWave.length; harmonic++) {
     exhaustWave[harmonic] = Math.exp(-harmonic * .075) / Math.pow(harmonic, .8);
@@ -33,16 +38,25 @@ export function createEngineAudioGraph(context: BaseAudioContext): EngineAudioGr
   }
   exhaust.setPeriodicWave(context.createPeriodicWave(exhaustPhase, exhaustWave));
   mechanical.type = 'triangle'; bladePulse.type = 'sine';
+  windWhistle.type = 'bandpass'; windWhistle.Q.value = 2.5;
   exhaustFilter.type = 'lowpass'; exhaustFilter.Q.value = .65;
   propFilter.type = 'lowpass'; propFilter.Q.value = .65;
-  const buffer = context.createBuffer(1, Math.ceil(context.sampleRate * 2), context.sampleRate);
-  const samples = buffer.getChannelData(0);
-  let seed = 0x172c172;
-  for (let i = 0; i < samples.length; i++) {
-    seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5;
-    samples[i] = (seed >>> 0) / 2147483648 - 1;
+  windFilter.type = 'lowpass'; windFilter.Q.value = .55;
+  windHighpass.type = 'highpass'; windHighpass.frequency.value = 120; windHighpass.Q.value = .55;
+  rollingFilter.type = 'lowpass'; rollingFilter.Q.value = .6;
+  contactFilter.type = 'lowpass'; contactFilter.frequency.value = 260; contactFilter.Q.value = .6;
+  function noiseBuffer(initialSeed: number): AudioBuffer {
+    const buffer = context.createBuffer(1, Math.ceil(context.sampleRate * 2), context.sampleRate);
+    const samples = buffer.getChannelData(0);
+    let seed = initialSeed;
+    for (let i = 0; i < samples.length; i++) {
+      seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5;
+      samples[i] = (seed >>> 0) / 2147483648 - 1;
+    }
+    return buffer;
   }
-  noise.buffer = buffer; noise.loop = true;
+  noise.buffer = noiseBuffer(0x172c172); noise.loop = true;
+  windNoise.buffer = noiseBuffer(0x175af41); windNoise.loop = true;
   // Propeller passage modulates broadband airflow instead of adding a plain tone.
   modulation.gain.value = .25;
   const propEnvelope = gain(); propEnvelope.gain.value = .75;
@@ -50,15 +64,30 @@ export function createEngineAudioGraph(context: BaseAudioContext): EngineAudioGr
   noise.connect(propFilter); propFilter.connect(propEnvelope); propEnvelope.connect(propellerGain);
   exhaust.connect(exhaustFilter); exhaustFilter.connect(exhaustGain);
   mechanical.connect(mechanicalGain);
+  // Airflow is independent of engine rotation/fuel and propeller modulation.
+  windNoise.connect(windHighpass); windHighpass.connect(windFilter); windFilter.connect(windGain);
+  windNoise.connect(windWhistle); windWhistle.connect(whistleGain); whistleGain.connect(compressor);
+  noise.connect(rollingFilter); rollingFilter.connect(rollingGain); rollingGain.connect(compressor);
+  noise.connect(contactFilter); contactFilter.connect(contactGain); contactGain.connect(compressor);
   exhaustGain.connect(compressor); mechanicalGain.connect(compressor); propellerGain.connect(compressor);
+  windGain.connect(compressor);
   compressor.threshold.value = -18; compressor.knee.value = 14; compressor.ratio.value = 3;
   compressor.attack.value = .003; compressor.release.value = .15;
   compressor.connect(master); master.connect(context.destination);
-  exhaustGain.gain.value = mechanicalGain.gain.value = propellerGain.gain.value = master.gain.value = 0;
-  exhaust.frequency.value = mechanical.frequency.value = bladePulse.frequency.value = 0;
-  exhaust.start(); mechanical.start(); bladePulse.start(); noise.start();
+  exhaustGain.gain.value = mechanicalGain.gain.value = propellerGain.gain.value = windGain.gain.value = whistleGain.gain.value = rollingGain.gain.value = contactGain.gain.value = master.gain.value = 0;
+  exhaust.frequency.value = mechanical.frequency.value = bladePulse.frequency.value = windWhistle.frequency.value = 0;
+  exhaust.start(); mechanical.start(); bladePulse.start(); noise.start(); windNoise.start();
   const targets = new Map<AudioParam, number>();
   let disposed = false;
+  let previousGround: { step: number; time_s: number; mask: number } | null = null;
+  let contactEnd_s = 0;
+  function resetContact(): void {
+    if (previousGround || contactEnd_s > 0) {
+      contactGain.gain.cancelScheduledValues(context.currentTime); contactGain.gain.setValueAtTime(0, context.currentTime);
+    }
+    previousGround = null;
+    contactEnd_s = 0;
+  }
   function smooth(parameter: AudioParam, value: number): void {
     if (targets.get(parameter) === value) return;
     targets.set(parameter, value);
@@ -70,6 +99,29 @@ export function createEngineAudioGraph(context: BaseAudioContext): EngineAudioGr
       const finite = Object.values(parameters).every(value => typeof value !== 'number' || Number.isFinite(value));
       const audible = active && parameters.valid && finite && Number.isFinite(volume);
       smooth(master.gain, audible ? clampVolume(volume) * .8 : 0);
+      if (!audible || volume <= 0 || !parameters.ground_available) resetContact();
+      else {
+        const previous = previousGround;
+        const newFrame = !previous || previous.step !== parameters.frame_step || previous.time_s !== parameters.frame_t_s;
+        if (newFrame) {
+          // A first frame, backward seek or long presentation gap establishes a
+          // baseline. The 250 ms continuity guard is audio policy, not physics.
+          const continuous = previous && parameters.frame_step > previous.step
+            && parameters.frame_t_s > previous.time_s && parameters.frame_t_s - previous.time_s <= .25;
+          if (previous && !continuous) resetContact();
+          const newlyContacting = continuous ? parameters.wheel_contact_mask & ~previous.mask : 0;
+          if (newlyContacting) {
+            const count = [1, 2, 4].filter(bit => newlyContacting & bit).length;
+            const amount = Math.min(.18, parameters.touchdown_gain * Math.sqrt(count)), now = context.currentTime;
+            contactGain.gain.cancelScheduledValues(now); contactGain.gain.setValueAtTime(0, now);
+            contactGain.gain.linearRampToValueAtTime(amount, now + .003);
+            contactGain.gain.exponentialRampToValueAtTime(.00001, now + .18);
+            contactGain.gain.setValueAtTime(0, now + .2);
+            contactEnd_s = now + .2;
+          }
+          previousGround = { step: parameters.frame_step, time_s: parameters.frame_t_s, mask: parameters.wheel_contact_mask };
+        }
+      }
       if (!parameters.valid || !finite) return;
       smooth(exhaust.frequency, Math.min(400, Math.max(0, parameters.firing_hz)));
       smooth(mechanical.frequency, Math.min(200, Math.max(0, parameters.rotation_hz)));
@@ -77,14 +129,21 @@ export function createEngineAudioGraph(context: BaseAudioContext): EngineAudioGr
       smooth(exhaustGain.gain, Math.min(.36, Math.max(0, parameters.exhaust_gain)));
       smooth(mechanicalGain.gain, Math.min(.045, Math.max(0, parameters.mechanical_gain)));
       smooth(propellerGain.gain, Math.min(.1, Math.max(0, parameters.propeller_gain)));
+      smooth(windGain.gain, Math.min(.14, Math.max(0, parameters.wind_gain)));
+      smooth(windWhistle.frequency, Math.min(2200, Math.max(0, parameters.wind_whistle_hz)));
+      smooth(whistleGain.gain, Math.min(.10, Math.max(0, parameters.wind_whistle_gain)));
       smooth(exhaustFilter.frequency, Math.min(5000, Math.max(300, parameters.noise_cutoff_hz)));
       smooth(propFilter.frequency, Math.min(2200, Math.max(200, parameters.noise_cutoff_hz * .55)));
+      smooth(windFilter.frequency, Math.min(2600, Math.max(400, parameters.wind_cutoff_hz)));
+      smooth(rollingGain.gain, Math.min(.12, Math.max(0, parameters.rolling_gain)));
+      smooth(rollingFilter.frequency, Math.min(2000, Math.max(300, parameters.rolling_cutoff_hz)));
     },
+    hasContactSound() { return !disposed && context.currentTime < contactEnd_s; },
     dispose() {
       if (disposed) return;
       disposed = true;
       master.gain.cancelScheduledValues(context.currentTime); master.gain.setValueAtTime(0, context.currentTime);
-      for (const source of [exhaust, mechanical, bladePulse, noise]) source.stop();
+      for (const source of [exhaust, mechanical, bladePulse, noise, windNoise]) source.stop();
       for (const node of nodes) node.disconnect();
     },
   };
@@ -103,19 +162,20 @@ export function createEngineAudio(options: { onStatus?: (status: EngineAudioStat
     ?? (globalThis as typeof globalThis & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   let context: AudioContext | null = null, graph: EngineAudioGraph | null = null;
   let unlocking: Promise<void> | null = null;
-  let parameters = engineAudioParameters(null), playing = false, muted = false, volume = .3;
+  let parameters = engineAudioParameters(null), playing = false, muted = true, volume = .3;
   let disposed = false, failed = false, lastStatus = '';
   const status = (): EngineAudioStatus => {
     const unlocked = context?.state === 'running';
     return { supported: !!AudioContextConstructor, unlocked, muted, volume,
       state: disposed ? 'disposed' : (!AudioContextConstructor || failed) ? 'unavailable' : !unlocked ? 'locked'
-        : muted || volume === 0 ? 'muted' : playing && parameters.valid && parameters.rotation_hz > 0 ? 'playing' : 'ready' };
+        : muted || volume === 0 ? 'muted' : playing && parameters.valid
+          && (parameters.rotation_hz > 0 || parameters.wind_gain > 0 || parameters.rolling_gain > 0 || graph?.hasContactSound()) ? 'playing' : 'ready' };
   };
   function notify(): void {
     const current = status(), signature = JSON.stringify(current);
     if (signature !== lastStatus) { lastStatus = signature; options.onStatus?.(current); }
   }
-  function apply(): void { graph?.update(parameters, volume, playing && !muted && !failed && !disposed); notify(); }
+  function apply(): void { graph?.update(parameters, volume, playing && !muted && !failed && !disposed && context?.state === 'running'); notify(); }
   function stateChanged(): void { apply(); }
   notify();
   return {

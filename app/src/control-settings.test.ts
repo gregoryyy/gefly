@@ -97,3 +97,11 @@ test('manual pitch trim bypasses pilot-axis gains and rejects invalid commands',
     assert.throws(() => applyControlSettings({ ...neutral, pitch_trim_norm }, DEFAULT_CONTROL_SETTINGS, 0), RangeError);
   }
 });
+
+// The new command must survive gain/offset processing independently of axes.
+test('engine ignition selection survives control settings without a fabricated default', () => {
+  const raw = { elevator: 0, aileron: 0, rudder: 0, throttle: .5 };
+  assert.equal(applyControlSettings({ ...raw, engine_running: false }, DEFAULT_CONTROL_SETTINGS, 0).engine_running, false);
+  assert.equal(applyControlSettings({ ...raw, engine_running: true }, DEFAULT_CONTROL_SETTINGS, 0).engine_running, true);
+  assert.equal('engine_running' in applyControlSettings(raw, DEFAULT_CONTROL_SETTINGS, 0), false);
+});

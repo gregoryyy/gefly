@@ -100,7 +100,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.16 Arrange desktop round instruments in a 2×4 grid with the six-pack on an extra rounded panel; align panel-column heights, group the main cockpit units (AP/power grouping refined in 2.0.18), make trim/flaps vertical and move explanatory copy to Options. Preserve responsive live/recorded operation and visible labels/units/flags. Partial R-INPUT-1/R-VIEW-1; peer pending.
 
-- [ ] 2.0.17 After the requested PR checkpoint, add the third navigation/bearing display and round RPM/fuel gauges. Latest layout: NAV1/NAV2 above a third bearing display/RPM row, with the engine column before AP/flaps; integrate fuel indications without obscuring controls. Confirm sourced equipment/reference behavior; a provisional fictional true-reference ADF-style teaching display must not claim real NDB/RMI fidelity. Resolve the extra-row size/scene-height tradeoff without hiding controls.
+- [x] 2.0.17 Add the third TRUE LAB bearing/DME display, actual round RPM and a distinct dual L/R model-fuel gauge. NAV1/NAV2 sit above bearing/RPM; the engine column precedes AP/flaps. The aligned desktop deck is 388px with symmetric fuel scales, bottom engine switch, half-size flap/trim key buttons and uniform responsive scaling. Fictional bearing and pinned model references do not claim installed NDB/RMI or C172S fuel fidelity. R-PANEL-1/R-VIEW-1/R-REVIEW-1; independent quality/validation passed; see [review evidence](reviews/2026-11-02-ground-collision-engine-wind.md). Peer pending.
 
 - [x] 2.0.18 Compact the current cockpit: paired four-detent flap/continuous trim sliders and keycaps, Slash restoring initial trim, vertical throttle/mixture in the engine panel, AP above flap/trim, controls available while paused with physics frozen and pending commands applied on Resume. Add OBS hold acceleration/drag and keyboard adjustment; preserve full-turn/event-partition invariance, read-only Review, harmonized panel colors and original screw hardware. Partial R-INPUT-1/R-NAV-1/R-VIEW-1/R-REVIEW-1; peer pending.
 
@@ -121,6 +121,14 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 - [ ] 2.0.26 Develop source-applicable regional aerodynamics for actual part-by-part stall/separation onset and recovery (wing twist, local section data, induced flow/downwash, flap/aileron/tail effects). Compare reusable open sectional models first; freeze reference cases before accepting regional colors as real stall state. Completes the deeper R-SIM-7 target; the 2.0.25 kinematic display does not implement this physics.
 
 - [x] 2.0.27 Add original synthesized engine/propeller audio from actual RPM/load/fuel telemetry with smooth changes, trusted user activation, quick mute and Options volume. Silence pause/hidden/failure/reset/paused Review/dispose; playing Review uses selected samples. Handle unsupported/blocked audio without interrupting flight. R-AUDIO-1/R-REVIEW-1; no calibrated installed-aircraft acoustic claim. Independent quality/actual-browser validation passed; see [review evidence](reviews/2026-11-02-engine-audio.md). Peer pending.
+
+- [x] 2.0.28 Stop fixed-step flight on native structural or shared illustrative fuselage/propeller/fin ground contact, with an immutable event, locked controls/silent audio and Review/camera/Flight-menu restart. Preserve normal wheel physics and disclose flat-ground/discrete-proxy limits. R-SIM-8/R-REVIEW-1/R-VIEW-1; no structural-damage or aircraft safe-landing threshold claim.
+
+- [x] 2.0.29 Default sound off; add trusted S on/off shortcut with repeat/modifier/editing/menu/dialog guards and preserve quick mute/volume and Review behavior. R-AUDIO-1.
+
+- [x] 2.0.30 Add E and a cockpit engine on/off switch backed by native ignition/starter behavior and recorded actual running state; independent airspeed-driven wind noise and a speed-dependent whistle remain audible during engine-off flight; add actual-contact rolling/touchdown sounds and quieter idle/higher-RPM engine balance. Preserve paused controls, S default-off and collision/Review guards. R-ENG-1/R-AUDIO-1.
+
+- [x] 2.0.31 Add a stable chase-view ground shadow so height and wheel contact are easier to judge, synchronized with live/Review state on the existing flat-ground scene. R-VIEW-1; no terrain/physics changes.
 
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.

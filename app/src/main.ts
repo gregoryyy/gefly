@@ -4,6 +4,7 @@ import { createCockpitLayout } from './cockpit-layout';
 import { createPitchTrimControl } from './pitch-trim';
 import { createNavigationGauges } from './navigation-gauges';
 import { createLandingFeedback } from './landing-feedback';
+import { createGroundCollisionPanel } from './ground-collision-panel';
 import { createFlightPathGroundPanel } from './flight-path-ground';
 import { createStallAwarenessPanel } from './stall-awareness-panel';
 import { createAircraftHandbook } from './aircraft-handbook';
@@ -48,6 +49,7 @@ root.innerHTML = `
     <span class="gate-hint">Drag the stick or hold the control buttons. Keyboard arrows also work.</span>
   </section>
   <aside id="landing-feedback" hidden></aside>
+  <aside id="ground-collision-panel" hidden></aside>
   <aside id="flight-data-panel" aria-label="Flight path and ground reactions" hidden></aside>
   <aside id="stall-awareness-panel" aria-label="Spatial stall awareness estimates" hidden></aside>
   <div id="camera-fov" class="camera-fov">60° FOV · two-finger scroll</div>
@@ -66,9 +68,9 @@ root.innerHTML = `
       <div class="axis-display"><span>L AIL <b id="recorded-left-aileron">—</b></span><span>R AIL <b id="recorded-right-aileron">—</b></span><span>ELEV <b id="recorded-elevator">—</b></span></div>
       <div class="axis-display"><span>RUDDER <b id="recorded-rudder">—</b></span><span>L BRAKE <b id="recorded-left-brake">—</b></span><span>R BRAKE <b id="recorded-right-brake">—</b></span></div>
       <div class="axis-display"><span>FLAP CMD <b id="recorded-flap-command">—</b></span><span>ACTUAL <b id="recorded-flap-actual">—</b></span><span>TRIM <b id="recorded-trim">—</b></span></div>
-      <div class="axis-display"><span>THROTTLE <b id="recorded-throttle">—</b></span><span>MIXTURE <b id="recorded-mixture">—</b></span><span>MODE <b id="recorded-mixture-mode">—</b></span></div>
+      <div class="axis-display"><span>THROTTLE <b id="recorded-throttle">—</b></span><span>MIXTURE <b id="recorded-mixture">—</b></span><span>MODE <b id="recorded-mixture-mode">—</b></span><span>ENGINE <b id="recorded-engine">—</b></span></div>
     </div>
-    <details class="control-options"><summary>Keyboard & assistance</summary><p>↑ Push nose down · ↓ Pull nose up<br>← / → Bank · Q / W Rudder<br>1–9 Throttle: 10–90% · 0: idle<br>[ / ] Retract / extend flaps · B Hold wheel brakes<br>&#39; / &#92; Trim nose up / down<br>P Capture heading / AP off<br>Space Pause · R Review</p><label for="roll-offset">Roll correction <output id="offset-value">−0.109</output></label><input id="roll-offset" type="range" min="-0.25" max="0.25" step="0.001" value="-0.109375" aria-label="Experimental roll correction for the generic model"><small>The generic model tends to roll right with centered controls. This adds a small constant left-aileron command. Zero removes the correction; it is not aircraft trim.</small><div class="roll-correction-presets"><button id="roll-correction-off" type="button">Off · 0%</button><button id="roll-correction-default" type="button">Study default</button></div></details>
+    <details class="control-options"><summary>Keyboard & assistance</summary><p>↑ Push nose down · ↓ Pull nose up<br>← / → Bank · Q / W Rudder<br>1–9 Throttle: 10–90% · 0: idle<br>[ / ] Retract / extend flaps · B Hold wheel brakes<br>&#39; / &#92; Trim nose up / down<br>P Capture heading / AP off<br>E Engine on/off · S Sound on/off<br>Space Pause · R Review</p><label for="roll-offset">Roll correction <output id="offset-value">−0.109</output></label><input id="roll-offset" type="range" min="-0.25" max="0.25" step="0.001" value="-0.109375" aria-label="Experimental roll correction for the generic model"><small>The generic model tends to roll right with centered controls. This adds a small constant left-aileron command. Zero removes the correction; it is not aircraft trim.</small><div class="roll-correction-presets"><button id="roll-correction-off" type="button">Off · 0%</button><button id="roll-correction-default" type="button">Study default</button></div></details>
   </aside>
   <div class="scenery-label">Egelsbach starter photograph · ellipsoid surface (no terrain)</div>
   <aside id="practice-map-panel" class="practice-map-panel" aria-label="Practice map" hidden></aside>
@@ -76,13 +78,14 @@ root.innerHTML = `
     <div class="deck-heading"><span class="eyebrow">CLASSIC INSTRUMENTS <b>EXPERIMENTAL</b></span><span id="view-label">COCKPIT VIEW</span></div>
     <div class="instruments">
       <div class="primary-instruments"><div id="six-pack"></div><div id="navigation-gauges"></div></div>
+      <div class="avionics-stack cockpit-engine"><div id="engine-systems"></div></div>
       <aside class="engine-controls" aria-label="Aircraft controls"><div id="autopilot-systems"></div>
         <div class="throttle-control"><label for="throttle">THROTTLE <b id="power">—</b></label><input id="throttle" type="range" aria-orientation="vertical" min="0" max="100" value="69" aria-label="Throttle percentage"><span>IDLE <i></i> FULL</span><p><kbd>1–9</kbd> 10–90% <kbd>0</kbd> Idle</p></div>
-        <div class="vertical-config-controls"><div class="flap-controls"><div class="config-heading"><label for="flap-control">FLAPS</label><b id="flaps-actual">—</b></div><div class="flap-slider"><input id="flap-control" type="range" min="0" max="30" step="10" value="0" list="flap-stops" aria-label="Flap lever angle degrees" aria-orientation="vertical"><datalist id="flap-stops"><option value="0"></option><option value="10"></option><option value="20"></option><option value="30"></option></datalist><div class="flap-stop-labels" aria-hidden="true"><span>UP</span><span>10</span><span>20</span><span>30</span></div></div><div class="flap-keycaps"><button id="flaps-retract" type="button" aria-label="Retract flaps one detent">[</button><button id="flaps-extend" type="button" aria-label="Extend flaps one detent">]</button></div></div>
+        <div class="vertical-config-controls"><div class="flap-controls"><div class="config-heading"><label for="flap-control">FLAPS</label><b id="flaps-actual">—</b></div><div class="flap-slider"><input id="flap-control" type="range" min="0" max="30" step="10" value="0" list="flap-stops" aria-label="Flap lever angle degrees" aria-orientation="vertical"><datalist id="flap-stops"><option value="0"></option><option value="10"></option><option value="20"></option><option value="30"></option></datalist><div class="flap-stop-labels" aria-hidden="true"><span>UP</span><span>10</span><span>20</span><span>30</span></div></div><div class="flap-keycaps"><button id="flaps-retract" type="button" aria-label="Retract flaps one detent, left bracket key" aria-keyshortcuts="[" title="[ · Retract flaps">↑ <kbd>[</kbd></button><button id="flaps-extend" type="button" aria-label="Extend flaps one detent, right bracket key" aria-keyshortcuts="]" title="] · Extend flaps">↓ <kbd>]</kbd></button></div></div>
         <div id="pitch-trim"></div></div>
         <div class="brake-controls"><button id="wheel-brakes" data-code="KeyB" class="control-key" aria-label="Hold wheel brakes">WHEEL BRAKES <kbd>B</kbd></button><small id="brake-state">Wheel brakes · ground contact only</small></div>
       </aside>
-      <div class="avionics-units"><div class="avionics-stack"><div id="engine-systems"></div></div><div id="radio-nav-systems"></div></div>
+      <div class="avionics-units cockpit-radio"><div id="radio-nav-systems"></div></div>
     </div>
     <footer><span>LOCAL RESEARCH PROTOTYPE · NOT VALIDATED FOR TRAINING</span><span>Imagery: HVBG · DL-DE Zero 2.0</span></footer>
     <div id="limitations" hidden>Generic JSBSim 172P research data, not the planned C172S. Aerial imagery provides geographic context on an ellipsoid; no terrain heights, current airport information or navigation data are supplied. Airspeed shows ideal engine CAS, not installation-calibrated IAS; older engines explicitly fall back to TAS. Heading is true, and the ideal turn-rate aid is not a full gyro turn-coordinator model. The pressure altimeter uses an ideal ISA scale-offset model driven by JSBSim static pressure; launch-point QFE is a practice datum, not airport elevation. Installed C172S instrument errors and limits are not modeled. No validated landing, circuit assessment, weather, radio or checklists yet. The adjustable study roll offset adds a constant aileron input to counter the generic model’s initial roll-off; this is an experimental assist, not an aircraft trim specification. Local research runtime assets are excluded from distribution. Radio controls use a legacy 25 kHz COM subset, with no 8.33 kHz or communication service. LAB is an opt-in fictional teaching station, using true OBS/radials and spherical geometric slant distance. No real navaid database, magnetic VOR, propagation or ILS is modeled. ALT/NAV/APR/REV autopilot modes remain INOP. Landing contact studies use a flat zero-height ellipsoid, upstream generic gear forces and illustrative fixed-wheel visuals; they do not establish aircraft damage or safe load limits. Airspeed colored arcs use fixed 1982 C172P CAS references (2400 lb, forward CG, power off and zero bank for stalls), not installed IAS arcs, current-weight stall predictions or validated model bounds. The TAS fallback hides those arcs.</div>
@@ -94,6 +97,15 @@ let audioControls: ReturnType<typeof createAudioControls> | null = null;
 const engineAudio = createEngineAudio({ onStatus(status) { audioControls?.update(status); } });
 const sixPack = createSixPack(el('six-pack'));
 const landingFeedback = createLandingFeedback(el('landing-feedback'));
+const groundCollisionPanel = createGroundCollisionPanel({
+  container: el('ground-collision-panel'),
+  onReview: () => enterReview(),
+  onFlightMenu() {
+    if (reviewing) exitReview();
+    closeViewMenu(); el<HTMLDetailsElement>('flight-menu').open = true;
+    el('reset').focus({ preventScroll: true });
+  },
+});
 const flightData = createFlightPathGroundPanel({ container: el('flight-data-panel'), onClose: () => setFlightDataVisible(false) });
 const stallAwareness = createStallAwarenessPanel({ container: el('stall-awareness-panel'), onClose: () => setStallAwarenessVisible(false) });
 const sceneContainer = el('scene');
@@ -108,10 +120,12 @@ let pitchTrimTarget: number | null = null;
 let controlsVisible = true;
 let landingPreset: LandingPreset | undefined;
 let mixtureCommand = 1, mixtureAutomatic = true, apDisconnectPending = false;
+let engineCommand: boolean | null = null;
 let scene: FlightScene | null = null;
 let sceneFailed = false, ready = false, running = false, failed = false;
 let hasFlown = false, startWhenReady = false;
 let latest: FlightState | null = null, previous: FlightState | null = null;
+let collisionUnavailableNoticed = false;
 let verticalSpeedFpm = 0, throttle = 0.69, stickX = 0, stickY = 0;
 const flightTrace = new FlightTrace();
 let reviewing = false, reviewPlaying = false, reviewTime_s = 0;
@@ -130,14 +144,16 @@ const flightKeys = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', '
 const editing = (target: EventTarget | null) => target instanceof HTMLElement && (!!target.closest('input,select,textarea') || target.isContentEditable);
 const notice = (message: string) => { el('notice').textContent = message; el('notice').hidden = !message; };
 
-function controlsAvailable() { return ready && !failed && !sceneFailed && !reviewing; }
+function groundCollisionStopped() { return (latest?.collision_mask ?? 0) > 0; }
+function controlsAvailable() { return ready && !failed && !sceneFailed && !reviewing && !groundCollisionStopped(); }
 function updateSessionUI() {
   if (mapDisposed) return;
   const unavailable = !ready || failed || sceneFailed;
+  const collided = groundCollisionStopped();
   document.querySelector<HTMLElement>('.flight-app')!.dataset.review = String(reviewing);
-  el('flight-gate').hidden = running || reviewing || (hasFlown && controlsAvailable());
-  el<HTMLButtonElement>('start').disabled = unavailable || reviewing;
-  el<HTMLButtonElement>('pause').disabled = unavailable || reviewing;
+  el('flight-gate').hidden = collided || running || reviewing || (hasFlown && controlsAvailable());
+  el<HTMLButtonElement>('start').disabled = unavailable || reviewing || collided;
+  el<HTMLButtonElement>('pause').disabled = unavailable || reviewing || collided;
   el<HTMLButtonElement>('reset').disabled = reviewing;
   el<HTMLButtonElement>('airborne-practice').disabled = reviewing;
   document.querySelectorAll<HTMLButtonElement>('[data-landing]').forEach(button => { button.disabled = reviewing; });
@@ -149,12 +165,13 @@ function updateSessionUI() {
   el<HTMLButtonElement>('toggle-controls').disabled = reviewing;
   el('toggle-controls').setAttribute('aria-pressed', String(reviewing || controlsVisible));
   updateReviewControls();
-  el('pause').innerHTML = `${running ? 'Pause' : 'Resume'} <kbd>SPACE</kbd>`;
+  el('pause').innerHTML = collided ? 'Stopped' : `${running ? 'Pause' : 'Resume'} <kbd>SPACE</kbd>`;
   el('status-dot').classList.toggle('flying', running);
-  el('control-state').textContent = reviewing ? 'RECORDED · READ ONLY' : running ? (latest?.ap_mode ? 'AUTOPILOT · ROLL' : 'CONTROLS ACTIVE') : (controlsAvailable() ? 'PAUSED · CONTROLS READY' : 'LOADING CONTROLS');
+  el('control-state').textContent = reviewing ? 'RECORDED · READ ONLY' : collided ? 'COLLISION · CONTROLS LOCKED' : running ? (latest?.ap_mode ? 'AUTOPILOT · ROLL' : 'CONTROLS ACTIVE') : (controlsAvailable() ? 'PAUSED · CONTROLS READY' : 'LOADING CONTROLS');
   for (const [id, live, recorded] of [['roll-control-label', 'ROLL', 'AIL CMD'], ['pitch-control-label', 'PITCH', 'ELEV CMD'], ['rudder-control-label', 'RUDDER', 'RUD CMD']] as const) el(id).textContent = reviewing ? recorded : live;
   el('control-state').classList.toggle('active', running);
   if (reviewing) el('pointer-mode').textContent = 'REVIEW · hold-drag to set view · Escape to center';
+  else if (collided) el('pointer-mode').textContent = 'COLLISION VIEW · hold-drag to inspect';
   else if (sceneContainer.dataset.pointerMode === 'off') el('pointer-mode').textContent = 'Click scene: yoke · Hold-drag: look';
   el('joystick').setAttribute('aria-disabled', String(!controlsAvailable()));
   document.querySelectorAll<HTMLButtonElement>('[data-code]').forEach(button => { button.disabled = !controlsAvailable(); });
@@ -180,6 +197,7 @@ const session = createSession({
   onState(workerState) {
     const state = { ...workerState, ...radioPanel.snapshot() };
     const oldAp = latest?.ap_mode ?? 0;
+    const wasCollided = groundCollisionStopped();
     if (previous && state.t_s > previous.t_s) {
       const dt = state.t_s - previous.t_s;
       const raw = (state.alt_msl_m - previous.alt_msl_m) / dt / 0.3048 * 60;
@@ -187,6 +205,11 @@ const session = createSession({
     }
     previous = state; latest = state;
     if (!reviewing) flightTrace.record(state, verticalSpeedFpm * 0.3048 / 60);
+    if (state.collision_mask && !wasCollided) pauseFlight();
+    if (!collisionUnavailableNoticed && ready && (state.collision_mask === undefined || state.ground_agl_m === undefined)) {
+      collisionUnavailableNoticed = true;
+      notice('Ground collision detection unavailable. Rebuild the local flight engine/runtime.');
+    }
     updateReviewControls();
     if (oldAp !== (state.ap_mode ?? 0)) { apDisconnectPending = false; publishInput(); updateSessionUI(); }
   },
@@ -199,7 +222,7 @@ const session = createSession({
     if (startWhenReady && !document.hidden && !sceneFailed) { startWhenReady = false; startFlight(); }
     updateSessionUI();
   },
-  onStatus(message) { liveStatus = message; el('status').textContent = reviewing ? 'Review' : message; },
+  onStatus(message) { liveStatus = message; el('status').textContent = reviewing ? 'Review' : groundCollisionStopped() ? 'Ground collision' : message; },
   onError(message) {
     failed = true; running = false; ready = false; startWhenReady = false; engineAudio.update(null, false);
     neutralize(); notice(`Flight stopped. ${message}`); updateSessionUI();
@@ -233,12 +256,12 @@ audioControls = createAudioControls({
     }
     else engineAudio.setMuted(!status.muted);
   },
-  onVolume(volume) { engineAudio.setVolume(volume); void engineAudio.unlock(); },
+  onVolume(volume) { engineAudio.setVolume(volume); if (!engineAudio.getStatus().muted) void engineAudio.unlock(); },
 });
 audioControls.update(engineAudio.getStatus());
 // Unlock only from a trusted activation, never from worker/RAF/startup callbacks.
 function activateEngineAudio(event: Event): void {
-  if (!event.isTrusted || !(event.target instanceof Element)) return;
+  if (!event.isTrusted || engineAudio.getStatus().muted || !(event.target instanceof Element)) return;
   const target = event.target;
   const button = target.closest('#start, #pause, #review-play');
   const key = event instanceof KeyboardEvent ? event : null;
@@ -248,6 +271,29 @@ function activateEngineAudio(event: Event): void {
 }
 document.addEventListener('click', activateEngineAudio, true);
 document.addEventListener('keydown', activateEngineAudio, true);
+function soundShortcut(event: KeyboardEvent): void {
+  if (event.code !== 'KeyS' || event.repeat || !event.isTrusted || event.ctrlKey || event.metaKey || event.altKey
+    || editing(event.target) || menuOpen() || document.querySelector('dialog[open]')) return;
+  if (!engineAudio.getStatus().supported) return;
+  event.preventDefault(); event.stopPropagation();
+  const muted = !engineAudio.getStatus().muted;
+  engineAudio.setMuted(muted);
+  if (!muted) void engineAudio.unlock();
+}
+document.addEventListener('keydown', soundShortcut, true);
+function engineShortcut(event: KeyboardEvent): void {
+  if (event.code !== 'KeyE' || !event.isTrusted || event.repeat || event.ctrlKey || event.metaKey || event.altKey
+    || editing(event.target) || menuOpen() || document.querySelector('dialog[open]')) return;
+  if (!controlsAvailable() || latest?.engine_command_on === undefined) return;
+  event.preventDefault(); event.stopPropagation(); toggleEngine();
+}
+document.addEventListener('keydown', engineShortcut, true);
+function toggleEngine(): void {
+  if (!controlsAvailable() || latest?.engine_command_on === undefined) return;
+  engineCommand = !(engineCommand ?? latest.engine_command_on === 1);
+  publishInput();
+}
+
 
 el('controls-settings').onclick = () => { closeViewMenu(); controlSettingsPanel.open(); };
 const viewMenu = el<HTMLDetailsElement>('view-menu');
@@ -275,11 +321,12 @@ const pitchTrimControl = createPitchTrimControl({
 });
 const pressureAltimeter = createPressureAltimeterPanel({
   container: sixPack.altimeterContainer, onOpen: pauseFlight, onClose: focusFlight,
-  onSetting(setting_pa) { if (!reviewing && ready && !failed) session.setAltimeter(setting_pa); },
+  onSetting(setting_pa) { if (controlsAvailable()) session.setAltimeter(setting_pa); },
 });
 
 const enginePanel = createEnginePanel({
   container: el('engine-systems'),
+  onEngine: toggleEngine,
   onMixture(norm, automatic) {
     if (!controlsAvailable()) return;
     mixtureCommand = norm; mixtureAutomatic = automatic; publishInput();
@@ -405,7 +452,12 @@ const reviewControls = createFlightReviewControls({
   onSeek(time_s) {
     const bounds = flightTrace.bounds();
     if (!reviewing || !bounds || !Number.isFinite(time_s)) return;
-    reviewPlaying = false; engineAudio.update(null, false); reviewTime_s = clamp(time_s, bounds.start_s, bounds.end_s);
+    // Native range serialization can round its right endpoint below the last
+    // sample. Snap only floating-point-close endpoints, preserving floor seeks inside.
+    const edgeTolerance_s = 8 * Number.EPSILON * Math.max(1, Math.abs(bounds.start_s), Math.abs(bounds.end_s));
+    const selected_s = time_s >= bounds.end_s - edgeTolerance_s ? bounds.end_s
+      : time_s <= bounds.start_s + edgeTolerance_s ? bounds.start_s : time_s;
+    reviewPlaying = false; engineAudio.update(null, false); reviewTime_s = clamp(selected_s, bounds.start_s, bounds.end_s);
     lastMapUpdate_ms = -Infinity;
     updateReviewControls();
   },
@@ -434,7 +486,8 @@ function exitReview() {
   el('status').textContent = liveStatus;
   neutralize(); updateSessionUI();
   el<HTMLInputElement>('throttle').value = String(throttle * 100);
-  enginePanel.update(latest, false, controlsAvailable(), { mixture_norm: mixtureCommand, mixture_auto: mixtureAutomatic });
+  enginePanel.update(latest, false, controlsAvailable(), { mixture_norm: mixtureCommand, mixture_auto: mixtureAutomatic,
+    ...(engineCommand === null ? {} : { engine_running: engineCommand }) });
   pitchTrimControl.update(latest, false, controlsAvailable(), pitchTrimTarget);
   updateConfiguration(latest, false);
   focusFlight();
@@ -451,13 +504,14 @@ function toggleReviewPlayback() {
 
 function held(code: string) { return keys.has(code) || keyboardControls.has(code) || [...pointerControls.values()].includes(code); }
 function publishInput() {
-  if (reviewing || mapDisposed) return;
+  if (reviewing || mapDisposed || groundCollisionStopped()) return;
   const raw: Controls = {
     elevator: clamp((held('ArrowUp') ? 0.35 : 0) - (held('ArrowDown') ? 0.35 : 0) + stickY * 0.4, -1, 1),
     aileron: clamp((held('ArrowRight') ? 0.45 : 0) - (held('ArrowLeft') ? 0.45 : 0) + stickX * 0.5, -1, 1),
     rudder: (held('KeyQ') ? 0.35 : 0) - (held('KeyW') ? 0.35 : 0), throttle,
     flap_norm: flapTarget_deg / 30, brake_norm: held('KeyB') ? 1 : 0,
     mixture_norm: mixtureCommand, mixture_auto: mixtureAutomatic,
+    ...(engineCommand === null ? {} : { engine_running: engineCommand }),
     ...(pitchTrimTarget !== null ? { pitch_trim_norm: pitchTrimTarget } : {}),
   };
   if (latest?.ap_mode && !apDisconnectPending && (raw.elevator !== 0 || raw.aileron !== 0 || raw.rudder !== 0)) {
@@ -489,7 +543,7 @@ function pauseFlight() {
   startWhenReady = false; neutralize(); running = false; session.pause(); updateSessionUI();
 }
 function startFlight() {
-  if (!ready || failed || sceneFailed || !scene || reviewing) return;
+  if (!ready || failed || sceneFailed || !scene || reviewing || groundCollisionStopped()) return;
   neutralize(); running = true; hasFlown = true; session.start(); updateSessionUI(); focusFlight();
 }
 function togglePause() { if (running) pauseFlight(); else startFlight(); }
@@ -497,9 +551,9 @@ function reset(preset = landingPreset) {
   closeViewMenu();
   if (reviewing) return;
   if (sceneFailed) { notice('The 3D scene is unavailable. Reload with WebGL enabled.'); return; }
-  landingPreset = preset;
+  landingPreset = preset; collisionUnavailableNoticed = false;
   radioPanel.reset();
-  flightTrace.clear(); pitchTrimTarget = null; flapTarget_deg = 0; mixtureCommand = 1; mixtureAutomatic = true; apDisconnectPending = false;
+  flightTrace.clear(); pitchTrimTarget = null; flapTarget_deg = 0; mixtureCommand = 1; mixtureAutomatic = true; engineCommand = null; apDisconnectPending = false;
   if (practiceMap && latest) { try { practiceMap.update(latest, [], 'live'); } catch { mapUnavailable(); } }
   lastMapUpdate_ms = -Infinity;
   pressureAltimeter.update(null, false);
@@ -507,7 +561,7 @@ function reset(preset = landingPreset) {
   engineAudio.update(null, false);
   neutralize(); session.pause(); latest = previous = null; verticalSpeedFpm = 0;
   pitchTrimControl.update(null, false, false, null);
-  flightData.update(null, false); stallAwareness.update(null, false);
+  flightData.update(null, false); stallAwareness.update(null, false); groundCollisionPanel.update(null, false, false);
   enginePanel.update(null, false, false); autopilotPanel.update(null, false, false);
   radioPanel.update(null, false, false); navigationGauges.update(null, false, false); landingFeedback.update(null, false);
   updateConfiguration(null, false);
@@ -548,7 +602,7 @@ function updateConfiguration(state: Readonly<FlightState> | null, recorded: bool
   const flapLever = el<HTMLInputElement>('flap-control');
   flapLever.disabled = !available || !controlsAvailable() || recorded;
   for (const id of ['flaps-retract', 'flaps-extend']) el<HTMLButtonElement>(id).disabled = flapLever.disabled;
-  const selected = recorded ? state?.flap_command_norm === undefined ? null : state.flap_command_norm * 30 : flapTarget_deg;
+  const selected = recorded || groundCollisionStopped() ? state?.flap_command_norm === undefined ? null : state.flap_command_norm * 30 : flapTarget_deg;
   flapLever.value = String(selected ?? 0);
   flapLever.setAttribute('aria-valuetext', selected === null ? 'Recorded lever position unavailable' : `${Math.round(selected)} degrees selected`);
   el<HTMLButtonElement>('wheel-brakes').disabled = !available || !controlsAvailable() || recorded;
@@ -578,6 +632,7 @@ function updateRecordedControls(state: Readonly<FlightState>): void {
   el('recorded-throttle').textContent = value(state.throttle_norm, '%', 100);
   el('recorded-mixture').textContent = value(state.mixture_norm, '%', 100);
   el('recorded-mixture-mode').textContent = state.mixture_auto === 1 ? 'AUTO' : state.mixture_auto === 0 ? 'MANUAL' : '—';
+  el('recorded-engine').textContent = state.engine_running === 1 ? 'RUN' : state.engine_running === 0 ? 'STOP' : '—';
   el('joystick-knob').style.transform = `translate(${(state.aileron_cmd_norm ?? 0) * 46}px, ${-(state.elevator_cmd_norm ?? 0) * 46}px)`;
   const active: Record<string, boolean> = { ArrowLeft: (state.aileron_cmd_norm ?? 0) < 0, ArrowRight: (state.aileron_cmd_norm ?? 0) > 0,
     ArrowUp: (state.elevator_cmd_norm ?? 0) > 0, ArrowDown: (state.elevator_cmd_norm ?? 0) < 0,
@@ -594,12 +649,12 @@ el('flaps-retract').onclick = () => { setFlaps(flapTarget_deg - 10); focusFlight
 el('flaps-extend').onclick = () => { setFlaps(flapTarget_deg + 10); focusFlight(); };
 pointerYoke = createPointerYoke({
   element: sceneContainer,
-  lookOnly: () => reviewing,
-  enabled: () => (controlsAvailable() || reviewing) && !menuOpen() && !controlSettingsPanel.isOpen() && !document.querySelector('dialog[open]'),
+  lookOnly: () => reviewing || groundCollisionStopped(),
+  enabled: () => (controlsAvailable() || reviewing || groundCollisionStopped()) && !menuOpen() && !controlSettingsPanel.isOpen() && !document.querySelector('dialog[open]'),
   onYoke(x, y) { stickX = x; stickY = y; publishInput(); },
   onLook(yaw_rad, pitch_rad) { cameraLook = { yaw_rad, pitch_rad }; },
   onMode(mode) {
-    el('pointer-mode').textContent = reviewing ? (mode === 'look' ? 'REVIEW LOOK · release to keep view' : 'REVIEW · hold-drag to set view · Escape to center') : mode === 'yoke' ? 'YOKE ACTIVE · click to release · hold-drag to look' : mode === 'look' ? 'LOOKING · release to return' : 'Click scene: yoke · Hold-drag: look';
+    el('pointer-mode').textContent = groundCollisionStopped() && !reviewing ? 'COLLISION VIEW · hold-drag to inspect' : reviewing ? (mode === 'look' ? 'REVIEW LOOK · release to keep view' : 'REVIEW · hold-drag to set view · Escape to center') : mode === 'yoke' ? 'YOKE ACTIVE · click to release · hold-drag to look' : mode === 'look' ? 'LOOKING · release to return' : 'Click scene: yoke · Hold-drag: look';
     sceneContainer.dataset.pointerMode = mode;
   },
 });
@@ -737,15 +792,16 @@ function animate(now: number) {
     }
     engineAudio.update(state, ready && !failed && !sceneFailed && !document.hidden
       && (reviewing ? reviewPlaying : running));
-    pressureAltimeter.update(state, reviewing);
+    pressureAltimeter.update(state, reviewing, groundCollisionStopped());
     sixPack.update(state, shownVsiFpm, reviewing);
-    enginePanel.update(state, reviewing, controlsAvailable(), { mixture_norm: mixtureCommand, mixture_auto: mixtureAutomatic });
-    autopilotPanel.update(state, reviewing, controlsAvailable());
+    enginePanel.update(state, reviewing, controlsAvailable(), groundCollisionStopped() ? undefined : { mixture_norm: mixtureCommand, mixture_auto: mixtureAutomatic,
+    ...(engineCommand === null ? {} : { engine_running: engineCommand }) });
+    autopilotPanel.update(state, reviewing, controlsAvailable(), groundCollisionStopped());
     radioPanel.update(state, reviewing, controlsAvailable());
     navigationGauges.update(state, reviewing, controlsAvailable());
-    pitchTrimControl.update(state, reviewing, controlsAvailable(), pitchTrimTarget);
+    pitchTrimControl.update(state, reviewing, controlsAvailable(), groundCollisionStopped() ? null : pitchTrimTarget);
     updateConfiguration(state, reviewing);
-    if (reviewing) updateRecordedControls(state);
+    if (reviewing || groundCollisionStopped()) updateRecordedControls(state);
     else {
       el<HTMLInputElement>('throttle').value = String(throttle * 100);
       el('throttle').setAttribute('aria-valuetext', `${Math.round(throttle * 100)} percent selected`);
@@ -754,10 +810,11 @@ function animate(now: number) {
     landingFeedback.update(state, reviewing);
     flightData.update(state, reviewing);
     stallAwareness.update(state, reviewing);
+    groundCollisionPanel.update(state, reviewing, !reviewing && (flightTrace.bounds()?.count ?? 0) >= 2);
     el('clock').textContent = `${String(Math.floor(state.t_s / 60)).padStart(2, '0')}:${String(Math.floor(state.t_s % 60)).padStart(2, '0')}`;
   }
   requestAnimationFrame(animate);
 }
 publishInput(); updateSessionUI(); requestAnimationFrame(animate);
-addEventListener('pagehide', () => { mapDisposed = true; engineAudio.dispose(); audioControls?.dispose(); document.removeEventListener('click', activateEngineAudio, true); document.removeEventListener('keydown', activateEngineAudio, true); aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
+addEventListener('pagehide', () => { mapDisposed = true; engineAudio.dispose(); audioControls?.dispose(); document.removeEventListener('click', activateEngineAudio, true); document.removeEventListener('keydown', activateEngineAudio, true); document.removeEventListener('keydown', soundShortcut, true); document.removeEventListener('keydown', engineShortcut, true); groundCollisionPanel.dispose(); aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
 void sceneReady;

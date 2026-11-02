@@ -52,3 +52,48 @@
 .engine-dialog .engine-power-controls { gap: 22px; margin-top: 12px; }
 .engine-dialog .engine-power-controls .engine-control-heading, .engine-dialog .engine-power-controls .throttle-control label { min-height: 52px; font-size: 10px; }
 .engine-dialog .engine-power-controls .engine-control-heading button { padding: 3px 6px; font-size: 9px; }
+
+.engine-switch-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px; }
+.engine-switch-row button { font-size: 8px; padding: 3px 7px; }
+.engine-switch-row output { font-size: 8px; letter-spacing: .8px; color: #e8cda3; }
+
+/* One compact engine column: paired tank indication, actual digital readings,
+   and equal-length power levers. The enclosing cockpit supplies its height. */
+.engine-panel { width: 190px; }
+.engine-content { display: flex; flex-direction: column; padding: 8px; }
+.engine-heading { margin-bottom: 5px; }
+.engine-switch-row { margin: 7px 0 0; min-height: 18px; padding: 5px 6px 8px; border-top: 1px solid #8ca6b92b; }
+.engine-instrument-row { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 5px; align-items: start; }
+.engine-fuel-instrument { min-width: 0; }
+.engine-fuel-gauge { display: block; width: 88px; height: 88px; }
+.engine-fuel-gauge .fuel-bezel { fill: #101b23; stroke: #718087; stroke-width: 1.2; }
+.engine-fuel-gauge .fuel-face { fill: #17272d; stroke: #35464e; }
+.engine-fuel-gauge .fuel-scale { fill: none; stroke: #c6d3d6; stroke-width: 1; }
+.engine-fuel-gauge .fuel-labels { fill: #c6d3d6; font: 6px system-ui, sans-serif; text-anchor: middle; }
+.engine-fuel-gauge .fuel-needle { fill: none; stroke-width: 1.7; stroke-linecap: round; }
+.engine-fuel-gauge .fuel-left-needle { stroke: #e8c68f; }
+.engine-fuel-gauge .fuel-right-needle { stroke: #b2d2df; }
+.engine-fuel-gauge .fuel-hub { fill: #d6dadd; }
+.engine-fuel-gauge[data-available=false] .fuel-needle { display: none; }
+.engine-fuel-gauge .fuel-flag { fill: #f1c49a; font: 6px system-ui, sans-serif; text-anchor: middle; paint-order: stroke; stroke: #17272d; stroke-width: 2px; }
+.engine-fuel-gauge .fuel-screws circle { fill: #15232a; stroke: #738087; stroke-width: .6; }
+.engine-fuel-gauge .fuel-screws path { fill: none; stroke: #738087; stroke-width: .5; }
+.engine-instrument-row .engine-readouts { gap: 5px 4px; }
+.engine-instrument-row .engine-readouts > div { display: block; min-width: 0; padding-bottom: 3px; }
+.engine-instrument-row .engine-readouts span { display: block; font-size: 5.5px; letter-spacing: .15px; }
+.engine-content .engine-instrument-row .engine-readouts b { display: block; font-size: 14px; line-height: 1.15; }
+.engine-instrument-row .engine-readouts small { display: block; font-size: 5.5px; line-height: 1.2; }
+.engine-fuel-instrument .engine-fuel { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; padding: 4px 0 0; text-align: center; }
+.engine-fuel-instrument .engine-fuel > span { grid-column: 1 / -1; font-size: 5.5px; letter-spacing: .1px; }
+.engine-fuel-instrument .engine-fuel b { font-size: 8px; }
+.engine-content .engine-power-controls { margin-top: auto; padding-top: 7px; gap: 6px; }
+.engine-content .engine-power-controls #throttle, .engine-content .engine-power-controls #mixture-control { height: 100px; margin-top: 5px; margin-bottom: 0; }
+.engine-content .engine-power-controls .engine-control-heading { gap: 2px; }
+.engine-dialog .engine-content { min-height: 330px; }
+.engine-dialog .engine-instrument-row { grid-template-columns: 112px minmax(0, 1fr); gap: 12px; }
+.engine-dialog .engine-fuel-gauge { width: 112px; height: 112px; }
+.engine-dialog .engine-instrument-row .engine-readouts span { font-size: 7px; }
+.engine-dialog .engine-instrument-row .engine-readouts b { font-size: 19px; }
+.engine-dialog .engine-instrument-row .engine-readouts small { font-size: 7px; }
+.engine-dialog .engine-fuel-instrument .engine-fuel > span { font-size: 6.5px; }
+.engine-dialog .engine-fuel-instrument .engine-fuel b { font-size: 10px; }

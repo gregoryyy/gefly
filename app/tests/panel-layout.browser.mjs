@@ -35,7 +35,7 @@ try {
     };
     return { width: innerWidth, height: innerHeight, scale: Number(document.querySelector('.flight-app').dataset.cockpitScale),
       deck: rect('.flight-deck'), surface: rect('.instruments'), primary: rect('.primary-instruments'),
-      aircraft: rect('.engine-controls'), face: rect('#airspeed'), flaps: rect('#flap-control'), trim: rect('#pitch-trim-control'),
+      aircraft: rect('.engine-controls'), face: rect('#airspeed'), nav1: rect('#nav1-gauge .navigation-gauge-face'), nav2: rect('#nav2-gauge .navigation-gauge-face'), bearing: rect('#bearing-gauge .navigation-gauge-face'), rpmFace: rect('#rpm-gauge .navigation-gauge-face'), fuel: rect('#engine-fuel-gauge'), pressure: rect('#altimeter-open'), flaps: rect('#flap-control'), trim: rect('#pitch-trim-control'),
       ap: rect('.autopilot-content'), apButton: rect('#ap-off'), engine: rect('#engine-systems'), radio: rect('#radio-nav-systems'),
       rpm: rect('#engine-rpm'), frequency: rect('#com1-standby'), throttle: rect('#throttle'), mixture: rect('#mixture-control'),
       engineOpen: !document.querySelector('#engine-open').hidden, radioOpen: !document.querySelector('#radio-nav-open').hidden,
@@ -48,6 +48,7 @@ try {
     const g = await geometry(); observations.push(g);
     reference ??= g;
     assert(g.scale > 0 && g.scale <= 1);
+    assert(await page.locator('#altimeter-reference').isVisible(), 'active altimeter pressure reference stays visible');
     assert(g.surface.x >= -1 && g.surface.right <= width + 1, 'entire cockpit surface fits width');
     assert(g.surface.bottom <= height + 1 && g.deck.y >= 179, 'deck fits while preserving scene height');
     assert(g.appScroll <= width, 'no page horizontal overflow');
@@ -67,6 +68,19 @@ try {
       for (const key of ['throttle', 'mixture']) assert(Math.abs(g[key].height / g.scale - reference[key].height) < 3);
       for (const key of ['rpm', 'frequency', 'apButton']) assert(Math.abs(g[key].font - reference[key].font) < .1, `${key} canonical font stays fixed`);
       assert.equal(g.engineOpen, false); assert.equal(g.radioOpen, false);
+      assert(g.primary.right <= g.engine.x && g.engine.right <= g.aircraft.x && g.aircraft.right <= g.radio.x, 'engine precedes AP/flaps and radio');
+      assert(Math.abs(g.nav1.y - g.nav2.y) < 1 && Math.abs(g.bearing.y - g.rpmFace.y) < 1, 'secondary gauge rows align');
+      assert(Math.abs(g.face.y - g.nav1.y) < 1, 'six-pack and NAV top faces align');
+      assert(g.nav1.x < g.nav2.x && g.bearing.x < g.rpmFace.x && g.bearing.y > g.nav1.bottom, 'NAV1/NAV2 above BRG/RPM');
+      assert(g.fuel.height > 40 && g.fuel.bottom <= g.engine.bottom + 1, 'distinct round fuel face fits engine column');
+      assert(g.pressure.bottom <= g.primary.bottom && g.pressure.right <= g.primary.right, 'pressure control remains inside primary panel');
+      const overflow = await page.evaluate(() => ['.engine-content', '.engine-controls', '.radio-nav-content'].map(selector => {
+        const p = document.querySelector(selector), b = p.getBoundingClientRect();
+        return { selector, overflow: [...p.querySelectorAll('button,input,svg,output')].some(el => {
+          const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && (r.bottom > b.bottom + 1 || r.right > b.right + 1 || r.top < b.top - 1 || r.left < b.left - 1);
+        }) };
+      }));
+      assert(overflow.every(p => !p.overflow), `all controls remain inside compact columns: ${JSON.stringify(overflow)}`);
     } else {
       assert.equal(g.engineOpen, true); assert.equal(g.radioOpen, true);
       await page.locator('#engine-open').click();
@@ -77,7 +91,7 @@ try {
       await page.locator('#radio-nav-dialog').waitFor({ state: 'visible' });
       await page.locator('#radio-nav-close').click();
     }
-    if (width === 1440 && height === 900) assert(g.deck.height < 480, 'desktop cockpit removes former 500px fixed-height slack');
+    if (width === 1440 && height === 900) assert(g.deck.height <= 390, 'desktop cockpit is shorter than the previous 449px panel');
     if (width === 390 || (width === 1440 && height === 900)) await page.screenshot({ path: `${output}/panel-layout-${width}.png` });
   }
   // Portaled controls return to the cockpit if a narrow dialog is open during expansion.

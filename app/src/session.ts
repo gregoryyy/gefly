@@ -1,4 +1,4 @@
-import { STALL_FIELDS, validStallState, CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
+import { COLLISION_FIELDS, validCollisionState, STALL_FIELDS, validStallState, CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, ENGINE_SWITCH_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
 import type { Controls, FlightSession, FlightState, LandingPreset } from './types';
 
 interface SessionCallbacks {
@@ -21,7 +21,7 @@ function validState(value: Record<string, unknown>): value is Record<string, unk
     && Number.isInteger(value.step) && (value.step as number) >= 0
     && (value.t_s as number) >= 0 && (value.tas_mps as number) >= 0
     && Math.abs(value.lat_rad as number) <= Math.PI / 2
-    && Math.abs(value.lon_rad as number) <= Math.PI && validAltimeterState(value) && validCockpitState(value) && validEngineState(value) && validPitchTrimState(value) && validGroundState(value) && validControlState(value) && validStallState(value);
+    && Math.abs(value.lon_rad as number) <= Math.PI && validAltimeterState(value) && validCockpitState(value) && validEngineState(value) && validPitchTrimState(value) && validGroundState(value) && validControlState(value) && validStallState(value) && validCollisionState(value);
 }
 
 function validControls(value: Controls): boolean {
@@ -29,7 +29,8 @@ function validControls(value: Controls): boolean {
     && Number.isFinite(value.throttle) && value.throttle >= 0 && value.throttle <= 1
     && [value.flap_norm,value.brake_norm,value.mixture_norm].every(x => x === undefined || (Number.isFinite(x) && x >= 0 && x <= 1))
     && (value.pitch_trim_norm === undefined || (Number.isFinite(value.pitch_trim_norm) && Math.abs(value.pitch_trim_norm) <= 1))
-    && (value.mixture_auto === undefined || typeof value.mixture_auto === 'boolean');
+    && (value.mixture_auto === undefined || typeof value.mixture_auto === 'boolean')
+    && (value.engine_running === undefined || typeof value.engine_running === 'boolean');
 }
 
 /**
@@ -43,6 +44,8 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
   let wantedRunning = false;
   let disposed = false;
   let latestStep = 0;
+  let collided = false;
+  let collisionState: Readonly<FlightState> | null = null;
   let controls: Controls = { elevator: 0, aileron: 0, rudder: 0, throttle: 0.7 };
   let controlsChanged = false;
   let userControls = false;
@@ -73,7 +76,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
   }
 
   function sendInput(): void {
-    if (!worker || !ready || !wantedRunning || !controlsChanged) return;
+    if (!worker || !ready || !wantedRunning || collided || !controlsChanged) return;
     worker.postMessage({
       type: 'input', step: latestStep,
       wall_ms: performance.timeOrigin + performance.now(), ...controls,
@@ -82,7 +85,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
   }
 
   function run(): void {
-    if (!worker || !ready || !wantedRunning) return;
+    if (!worker || !ready || !wantedRunning || collided) return;
     // Always establish the current input after init/resume, before advancing.
     controlsChanged = true;
     sendInput();
@@ -94,7 +97,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
 
   function initialize(): void {
     destroyWorker();
-    latestStep = 0;
+    latestStep = 0; collided = false; collisionState = null;
     callbacks.onStatus('Loading JSBSim…');
     let current: Worker;
     try {
@@ -139,15 +142,26 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
         else callbacks.onStatus('Paused');
       } else if (m.type === 'state') {
         if (!validState(m)) { fail('The flight model returned an invalid state. Flight stopped; reset to restart.'); return; }
-        latestStep = m.step;
-        const fields = [...STATE_FIELDS, ...[...STALL_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS].filter((key) => m[key] !== undefined)];
-        callbacks.onState(Object.fromEntries(fields.map((key) => [key, m[key]])) as unknown as FlightState);
+        const fields = [...STATE_FIELDS, ...[...COLLISION_FIELDS, ...STALL_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...ENGINE_SWITCH_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS].filter((key) => m[key] !== undefined)];
+        const state = Object.fromEntries(fields.map(key => [key, m[key]])) as unknown as FlightState;
+        if (collisionState && Object.keys({ ...collisionState, ...state })
+          .some(key => state[key as keyof FlightState] !== collisionState![key as keyof FlightState])) {
+          fail('The stopped collision state changed before restart.'); return;
+        }
+        latestStep = state.step;
+        if (state.collision_mask) {
+          collided = true; collisionState = Object.freeze({ ...state });
+          wantedRunning = false; controlsChanged = false;
+          clearInterval(inputTimer); inputTimer = undefined;
+          callbacks.onStatus('Ground collision');
+        }
+        callbacks.onState(state);
       } else if (m.type === 'error') {
         fail(`JSBSim stopped: ${typeof m.message === 'string' ? m.message : 'unknown worker failure'}`);
       }
     };
     current.postMessage({
-      type: 'init', ...(landingPreset ? { landing_preset: landingPreset } : {}), dt_s: 1 / 120, aircraft: 'c172x', state_hz: 60,
+      type: 'init', ...(landingPreset ? { landing_preset: landingPreset } : {}), ground_collision: true, dt_s: 1 / 120, aircraft: 'c172x', state_hz: 60,
       ic: {
         lat_rad: 49.96 * DEG_RAD, lon_rad: 8.643 * DEG_RAD,
         alt_msl_m: 1300 * 0.3048, heading_rad: 82 * DEG_RAD,
@@ -158,6 +172,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
 
   return {
     start() {
+      if (collided) return;
       if (disposed || wantedRunning) return;
       wantedRunning = true;
       if (!worker) initialize();
@@ -169,7 +184,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       clearInterval(inputTimer);
       inputTimer = undefined;
       if (ready && worker) worker.postMessage({ type: 'pause' });
-      callbacks.onStatus('Paused');
+      callbacks.onStatus(collided ? 'Ground collision' : 'Paused');
     },
     reset(preset) {
       if (disposed) return;
@@ -181,18 +196,18 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       initialize();
     },
     setAutopilot(mode, target_heading_rad) {
-      if (disposed || !ready || !worker || ![0,1,2].includes(mode)) return;
+      if (disposed || collided || !ready || !worker || ![0,1,2].includes(mode)) return;
       if (target_heading_rad !== undefined && !Number.isFinite(target_heading_rad)) return;
       worker.postMessage({ type: 'autopilot', mode,
         ...(target_heading_rad === undefined ? {} : { target_heading_rad: ((target_heading_rad % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI) }) });
     },
     setAltimeter(setting_pa) {
-      if (disposed || !ready || !worker || !Number.isFinite(setting_pa)
+      if (disposed || collided || !ready || !worker || !Number.isFinite(setting_pa)
         || setting_pa < 80_000 || setting_pa > 110_000) return;
       worker.postMessage({ type: 'altimeter', setting_pa });
     },
     input(value) {
-      if (disposed) return;
+      if (disposed || collided) return;
       if (!validControls(value)) {
         fail('Control input must be finite: axes −1 to +1; throttle 0 to 1.');
         return;

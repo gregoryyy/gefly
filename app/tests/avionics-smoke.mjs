@@ -72,8 +72,8 @@ try {
       const r = document.querySelector(selector).getBoundingClientRect();
       return { selector, left: r.left, right: r.right, top: r.top, bottom: r.bottom, height: r.height };
     }),
-    cells: ['[data-instrument="airspeed"]', '[data-instrument="attitude"]', '[data-instrument="altimeter"]', '#nav1-gauge',
-      '[data-instrument="turn"]', '[data-instrument="heading"]', '[data-instrument="vertical-speed"]', '#nav2-gauge'].map(selector => {
+    cells: ['[data-instrument="airspeed"]', '[data-instrument="attitude"]', '[data-instrument="altimeter"]', '#nav1-gauge', '#nav2-gauge',
+      '[data-instrument="turn"]', '[data-instrument="heading"]', '[data-instrument="vertical-speed"]', '#bearing-gauge', '#rpm-gauge'].map(selector => {
       const element = document.querySelector(selector), r = element.querySelector('canvas,svg').getBoundingClientRect();
       return { selector, center_x: r.left + r.width / 2, center_y: r.top + r.height / 2, width: r.width, height: r.height };
     }),
@@ -105,7 +105,7 @@ try {
   assert.equal(await text('com1-active'), '118.000'); assert.equal(await text('nav1-active'), '113.80');
   assert.equal(await text('com2-active'), '121.500'); assert.equal(await text('nav2-active'), '114.00');
   assert.equal(await page.locator('.radio-receiver').count(), 2);
-  assert.equal(await page.locator('.navigation-gauge').count(), 2);
+  assert.equal(await page.locator('.navigation-gauge').count(), 4);
   for (const receiver of [1, 2]) {
     assert.equal(await page.locator(`#nav${receiver}-gauge`).getAttribute('data-valid'), 'false');
     assert.equal(await page.locator(`#nav${receiver}-gauge .nav-cdi-needle`).getAttribute('hidden') !== null, true);
@@ -371,12 +371,12 @@ try {
       assert(box('#autopilot-systems').bottom <= box('.vertical-config-controls').top + 1, 'autopilot is above the flap/trim pair');
       if (layout.viewport.width > 900) assert(Math.abs(box('#radio-nav-systems').height - box('.avionics-stack').height) < 1,
         'radio and engine columns have equal height');
-      for (let column = 0; column < 4; column++) {
-        assert(Math.abs(layout.cells[column].center_x - layout.cells[column + 4].center_x) < 1,
-          'all eight round faces align in four columns');
+      for (let column = 0; column < 5; column++) {
+        assert(Math.abs(layout.cells[column].center_x - layout.cells[column + 5].center_x) < 1,
+          'all ten main round faces align in five columns');
         assert(Math.abs(layout.cells[column].center_y - layout.cells[0].center_y) < 1
-          && Math.abs(layout.cells[column + 4].center_y - layout.cells[4].center_y) < 1,
-        'all eight round faces align in two rows');
+          && Math.abs(layout.cells[column + 5].center_y - layout.cells[5].center_y) < 1,
+        'all ten main round faces align in two rows');
       }
     }
     const trim = layout.vertical_controls['pitch-trim-control'], flap = layout.vertical_controls['flap-control'];
@@ -392,7 +392,7 @@ try {
         'throttle and mixture sliders are parallel with equal lengths');
     }
   }
-  checks.push('AP above parallel flap/trim sliders, 2×4 round faces and equal-height desktop columns fit all viewports');
+  checks.push('AP above parallel flap/trim sliders, 2×5 main round faces and equal-height desktop columns fit all viewports');
   assert.deepEqual(errors, []); assert.deepEqual([...hosts], ['127.0.0.1']);
   console.log(JSON.stringify({ result: 'pass', browser: browser.version(), checks, observations,
     screenshots: 'output/flight/avionics-{desktop,live,engine-mobile,engine-fresh-mobile,autopilot-mobile,radio-nav-mobile,navigation-mobile,navigation-review-mobile}.png' }, null, 2));

@@ -60,3 +60,7 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-02 handbook loading and flight envelope](2026-11-02-handbook-loading-envelope.md): exact clarification selects loading and flight-envelope diagrams.
 - [2026-11-02 spatial stall awareness](2026-11-02-spatial-stall-awareness.md): show where stalling begins on different aircraft parts; research distinguishes local-airflow estimates from actual separation.
 - [2026-11-02 engine audio](2026-11-02-engine-audio.md): create engine sound; procedural approximation based on actual simulator engine telemetry.
+- [2026-11-02 ground collision](2026-11-02-ground-collision.md): collision with ground; distinguish ordinary wheel reactions from a bounded structural/body/propeller collision stop.
+- [2026-11-02 sound key and gauge follow-up](2026-11-02-sound-key-and-gauge-followup.md): S toggles sound, initially off; follow up on additional gauges and panel vertical layout.
+- [Engine toggle and wind noise](2026-11-02-engine-toggle-wind.md) — E for engine on/off; independent airflow sound.
+- [Panel and airflow refinement](2026-11-02-panel-followup.md) — compact panel follow-up and broader high-speed whistle.
