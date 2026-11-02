@@ -107,7 +107,12 @@ Use the **0° / 10° / 20° / 30°** flap buttons, **[** to retract or **]** to 
 while flying. The
 selector sets the generic model's target; the displayed actual flap angle takes
 time to move. Hold the **wheel brake** button or B to apply both main-wheel
-brakes; release, pause or focus loss clears the held command. Brakes act through
+brakes at the **Options → Wheel brake command** setting (initially 25%, adjustable
+from 0–100%); the button shows the selected command. Release, pause or focus loss
+clears the held command. This session input preference is not aircraft brake
+pressure or a force limit. Maximum commanded braking can compress this generic
+model’s linear nose strut enough for a propeller strike; actual collisions remain
+enabled, with no brake-triggered exemption. Brakes act through
 wheel contact, not as an airbrake, so they do not directly slow the initial
 airborne flight. Ready flight controls remain available while paused; commands are staged until
 Resume without advancing physics. Recorded Review remains read-only.

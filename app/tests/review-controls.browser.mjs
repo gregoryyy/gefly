@@ -86,7 +86,7 @@ try {
   const heldKeys = ['ArrowRight', 'ArrowUp', 'KeyQ', 'KeyB'];
   for (const key of heldKeys) await page.keyboard.down(key);
   await page.waitForFunction(() => { const s = window.__reviewStates.at(-1); return s.throttle_norm === .25 && s.mixture_norm === .6
-    && s.pitch_trim_norm === -.2 && s.brake_left_norm === 1 && s.brake_right_norm === 1 && s.flap_command_norm === 1 / 3
+    && s.pitch_trim_norm === -.2 && s.brake_left_norm === .25 && s.brake_right_norm === .25 && s.flap_command_norm === 1 / 3
     && Math.abs(s.aileron_cmd_norm - (.45 - .109375)) < 1e-12 && s.elevator_cmd_norm === .35 && s.rudder_cmd_norm === .35; });
   const captured = await state();
   for (const key of heldKeys) await page.keyboard.up(key);
@@ -121,7 +121,7 @@ try {
     ['recorded-elevator', 'elevator_rad'], ['recorded-rudder', 'rudder_rad'], ['recorded-flap-actual', 'flap_rad']]) {
     assert.equal(await text(id), `${(captured[field] * 180 / Math.PI).toFixed(1)}°`);
   }
-  assert.equal(await text('recorded-left-brake'), '100.0%'); assert.equal(await text('recorded-right-brake'), '100.0%');
+  assert.equal(await text('recorded-left-brake'), '25.0%'); assert.equal(await text('recorded-right-brake'), '25.0%');
   assert.equal(await text('recorded-flap-command'), '10.0°'); assert.equal(await text('recorded-trim'), '-20.0%');
   assert.equal(await text('recorded-throttle'), '25.0%'); assert.equal(await text('recorded-mixture'), '60.0%');
   assert.equal(await text('recorded-mixture-mode'), 'MANUAL');

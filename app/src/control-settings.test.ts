@@ -73,13 +73,33 @@ test('rejects invalid gains and offsets explicitly', () => {
   }
 });
 
-test('secondary controls preserve flap and brake commands independently of yoke sensitivity', () => {
+test('flaps bypass yoke sensitivity; brakes use their separate default command gain', () => {
   const raw = { ...neutral, flap_norm: 2/3, brake_norm: 1 };
   const mapped = applyControlSettings(raw, GENTLE_CONTROL_SETTINGS, 0);
-  assert.equal(mapped.flap_norm, 2/3); assert.equal(mapped.brake_norm, 1);
+  assert.equal(mapped.flap_norm, 2/3); assert.equal(mapped.brake_norm, .25);
   for (const value of [-1, 1.01, NaN, Infinity]) {
     assert.throws(() => applyControlSettings({ ...raw, flap_norm: value }, DEFAULT_CONTROL_SETTINGS, 0));
     assert.throws(() => applyControlSettings({ ...raw, brake_norm: value }, DEFAULT_CONTROL_SETTINGS, 0));
+  }
+});
+
+test('wheel brake input gain has inclusive zero/full bounds and leaves other commands unchanged', () => {
+  const raw = Object.freeze({ ...neutral, flap_norm: .6, brake_norm: .8,
+    mixture_norm: .7, mixture_auto: false, pitch_trim_norm: -.2, engine_running: false });
+  for (const brake of [0, .25, .5, 1]) {
+    const settings = Object.freeze({ ...DEFAULT_CONTROL_SETTINGS, brake });
+    assert.deepEqual(applyControlSettings(raw, settings, 0), { ...raw, brake_norm: .8 * brake });
+  }
+  const oldSettings = { pitch: 1, roll: 1, rudder: 1 };
+  assert.equal(applyControlSettings(raw, oldSettings, 0).brake_norm, .2,
+    'older settings without a brake gain receive the current default');
+  assert.equal(applyControlSettings({ ...raw, brake_norm: 1 }, { ...oldSettings, brake: 1 }, 0).brake_norm, 1,
+    'the full native brake command remains explicitly available');
+  assert.equal('brake_norm' in applyControlSettings(neutral, oldSettings, 0), false);
+  assert.equal(DEFAULT_CONTROL_SETTINGS.brake, .25);
+  assert.equal(GENTLE_CONTROL_SETTINGS.brake, .25);
+  for (const brake of [NaN, Infinity, -Infinity, -.001, 1.001]) {
+    assert.throws(() => applyControlSettings(neutral, { ...oldSettings, brake }, 0), /wheel brake gain/);
   }
 });
 

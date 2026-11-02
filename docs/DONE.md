@@ -3,6 +3,43 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 00:50 — Adjustable wheel-brake command for ground rollout
+
+TODO: 2.0.38 complete as a bounded R-INPUT-1/R-SIM-8/R-REVIEW-1 correction.
+Agent: Codex orchestrator/integration; fov_input/code1 on command gain/settings;
+engine_sound_ui/code2 on actual native/worker/UI regression; fov_housekeeping on
+parallel input/source review and independent quality/validation. Independent
+review excludes its own raw-input prose. Cross-provider peer remains pending.
+
+**Implementation notes**
+
+B/the brake button now use a visible 25% command initially, adjustable from
+0–100% in Options. Full input previously compressed the research model nose
+strut enough for both the illustrative and source-model propeller to intersect
+the ground. Normal flat/public 3600-step rolls at the selected default stop with
+collision zero and exact unchanged-native final state/digest. Explicit maximum
+braking and intentional nose impacts retain collision stops. Paused controls,
+presets, restart persistence and recorded Review pass eight actual-browser groups,
+independently rerun with eleven focused input tests. Missing recorded brake
+telemetry displays unavailable. Shared CI, production build, foundation and
+assurance pass; [the review](reviews/2026-11-03-ground-braking.md) binds the frozen
+source and scopes. The correction updates existing PR #47.
+
+**Deviations**
+
+The 25% input preference is not a calibrated pedal force or aircraft braking
+limit. Native physics, collision geometry and WASM are unchanged. Full-command
+gear/propeller behavior needs source-applicable strut/end-stop and braking
+validation; open TODO 2.0.39 records that remaining fidelity work. Nine optional
+Python JSBSim study cases and one live-provider tool test remain skipped.
+
+**Insights**
+
+Compare geometry against actual dynamic CG before dismissing a contact as a
+false positive. A digital control should expose its commanded strength. Keep
+input usability distinct from acceptance of the underlying aircraft model, and
+preserve unavailable historical values rather than inventing zero.
+
 ## 2026-11-03 00:29 — Fly real public terrain around Egelsbach and the Taunus
 
 TODO: 2.0.32, 2.0.34 and 2.0.35 complete as bounded R-WORLD-2/R-DATA-1/

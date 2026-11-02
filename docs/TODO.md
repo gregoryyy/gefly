@@ -142,6 +142,10 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [ ] 2.0.37 Later: model buildings and other structures from reusable public geometry/data, with source dates/rights, coverage and explicit visual/obstacle/collision fidelity. R-WORLD-3/R-DATA-1.
 
+- [x] 2.0.38 Make keyboard/button wheel braking adjustable in Options (0–100% command, initially 25%), avoiding instant maximum-brake input during ordinary braking while retaining explicit full braking, native gear physics and actual-strike stops. Validate actual flat/public ground roll, controls while paused, recorded Review, release/reset and full-command collision. R-INPUT-1/R-SIM-8/R-REVIEW-1; independent quality and eight-group actual-browser validation passed, see [review](reviews/2026-11-03-ground-braking.md). Peer pending.
+
+- [ ] 2.0.39 Research source-applicable nose-strut travel/end-stop and ground-braking reference cases for the project-owned aircraft; validate full-command response and propeller clearance before changing generic-model coefficients. The input preference in 2.0.38 does not complete gear/brake fidelity. R-REUSE-1/R-SIM-8/R-DATA-1.
+
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.
 - [ ] 2.3 code2 implements the corresponding browser controls, instruments and exercise feedback against frozen contracts **in parallel with 2.2**.
