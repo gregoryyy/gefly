@@ -9,8 +9,8 @@ tests; fov_housekeeping on parallel source references/input records and the
 small shared reference module.
 
 Frozen implementation SHA-256:
-`7ccffbc1f0a6bbf97ef265d93b7f34a131dd18b8ff0b9fc6b3dd4e39cab875a7`.
-The 48 changed/new app and simulation source/test paths are sorted, hashed as
+`2b36501e0bf15adb8b3416fc9fd9b870b265679ed2449ba6d36a4948f74573e1`.
+The 49 changed/new app and simulation source/test paths are sorted, hashed as
 path + NUL + bytes + NUL; Markdown excluded. The native runtime built with the
 pinned JSBSim v1.3.3/Emscripten toolchain has WASM SHA-256
 `e808f898ffb8ff2b50ceb4892ac100de42b08584a9dd95c1de86e2d0f417e594`.
@@ -107,3 +107,16 @@ Tracked-content whitespace passes over all 402 indexed paths. `just check` and
 warnings; the final diff against origin/main is inspected for new requirements,
 completed tasks, source/review additions and preserved historical records.
 `npm --prefix app run build` passes. Vite reports large Cesium/MapLibre vendor chunks; no bundle-size or device-performance acceptance is inferred. Publication uses a fresh target fetch and local merge-tree check, followed by the GitHub mergeability result.
+
+## Hosted Node 24 compatibility follow-up
+
+The first hosted browser job exposed an existing listener cleanup difference:
+Node 24 EventTarget retained the wheel listener when removal passed Boolean
+`true`. Passing `{ capture: true }`, matching registration, fixes the existing
+disposal regression without changing zoom or input behavior. All four focused
+FOV tests pass on Node 26 and Node 24.22.2. Independent quality and
+validation cover this one-line delta; prior component source bytes are unchanged.
+The previous 48-path packet was
+`7ccffbc1f0a6bbf97ef265d93b7f34a131dd18b8ff0b9fc6b3dd4e39cab875a7`;
+the final packet includes field-of-view.ts as its 49th path. Hosted checks are
+rerun at the repaired head before handoff.

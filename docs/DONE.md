@@ -52,7 +52,9 @@ author native-browser evidence; the other ten audio groups are independently run
 Separate actual running/contact observations from requested engine controls and
 sound preferences. Preserve live/recorded labels separately from read-only locks.
 Decimal UI serialization needs presentation-only tolerance at stored Review
-frames. Native renderer shadows provide a ground cue without a second physics
+frames. Hosted Node 24 also exposed a Boolean capture-listener cleanup
+difference; matching the registration options object fixes it, with all four
+focused tests passing on Node 24 and Node 26. Native renderer shadows provide a ground cue without a second physics
 model or an extra asset/service.
 
 ## 2026-11-02 21:40 — Hear procedural engine and propeller sound

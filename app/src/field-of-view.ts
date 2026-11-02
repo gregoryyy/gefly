@@ -44,5 +44,5 @@ export function createFieldOfViewControl(options: FieldOfViewOptions): { dispose
   }
   // Capture before the renderer's canvas listener consumes native wheel input.
   element.addEventListener('wheel', wheel, { passive: false, capture: true });
-  return { dispose: () => element.removeEventListener('wheel', wheel, true) };
+  return { dispose: () => element.removeEventListener('wheel', wheel, { capture: true }) };
 }
