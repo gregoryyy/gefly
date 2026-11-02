@@ -207,8 +207,8 @@ Input event (one per change, partial fields allowed; unspecified fields hold the
 last value):
 `{v: "1.0.0", seq, step, applied_step, wall_ms, source, controls: {…}, assists?: {…}}`
 
-- `seq` is a strictly increasing integer per run (v1); the v1.1 proposal §10.3 has
-  the worker assign it on acceptance; `source` is the profile id (`keyboard`, `pointer`,
+- `seq` is a strictly increasing integer per run (v1); from v1.1 (§10.3, agreed) the
+  worker assigns it on acceptance; `source` is the profile id (`keyboard`, `pointer`,
   `gamepad:<id>`, `script`, `fallback` (v1.1: automatic device-loss handling at the
   input boundary, §10.4); `iphone` is Later, TODO 1.13).
 - **Application rule (v0.1 adopted):** an event targeting `step: s` applies
@@ -422,7 +422,7 @@ R-SIM-4, replace the acceptance text with:
 > documented tolerance and is not called bitwise deterministic. Render rate and
 > presentation interpolation do not affect digests.
 
-## 10. v1.1 additive contracts (Proposal, after TODO 1.6 review)
+## 10. v1.1 additive contracts (agreed (GAPS Q23, user 2026-11-02 07:16))
 
 Minor version `1.1.0`, with [SCENARIO-CONTRACTS](SCENARIO-CONTRACTS.md) (events,
 scenario and review records). These rules fill v1 placeholders or fix ownership;

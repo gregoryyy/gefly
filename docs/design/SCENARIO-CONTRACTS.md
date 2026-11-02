@@ -1,7 +1,7 @@
 # Scenario, event and review contracts v1.1
 
 Status: **product proposal for TODO 1.9, 2026-11-01, revised after quality review
-and the TODO 1.6 foundation review; not agreed.** A minor-version extension (`1.1.0`) of [CONTRACTS](CONTRACTS.md) v1,
+and the TODO 1.6 foundation review; agreed (GAPS Q23, user 2026-11-02 07:16).** A minor-version extension (`1.1.0`) of [CONTRACTS](CONTRACTS.md) v1,
 which stays authoritative for units, frames, step, input, state, digests and replay.
 Every change here is **additive and backward-compatible**: v1 fields keep their
 names and meaning, a v1 reader ignores the new optional fields (CONTRACTS §7), and
@@ -211,7 +211,7 @@ their owner behind the frozen shape.
 | Scenario-record builder: catalog/nav resolution (S4), runway-bearing conversion with WMM2025 (S5), local `reference_only` resolution (local-only record) | code1 | `packages/simulation/` scenario module | open |
 | Loader → worker `init` (`ic`, `env`, seeds) | code1 | `packages/simulation/` | open |
 | `sim` names/order incl. `wow_nose`, `wow_main_l`, `wow_main_r` (C2) | code1 | `packages/simulation/` | freeze |
-| `ind` digest layout: encoder and field order (list below); worker computes `ind` every step (CONTRACTS §10.2) | code1 | `packages/simulation/` | freeze, **blocked on Q-S8** |
+| `ind` digest layout: encoder and field order (list below); worker computes `ind` every step (CONTRACTS §10.2) | code1 | `packages/simulation/` | freeze after the S17 Section 7 engine/fuel list is extracted (Q-S8 decided) |
 | `sim_core`/`env_core` stream fields (CONTRACTS §10.2) | code1 | `packages/simulation/` | freeze |
 | Single `seq` allocator in the worker; proposal/accept messages (CONTRACTS §10.3) | code1 | `packages/simulation/` | freeze |
 | `ind` field values: JS env fields (`magvar_east_rad`, `zeta_m`, `h_ell_m`) | code1 | env module | freeze names |
@@ -229,9 +229,9 @@ their owner behind the frozen shape.
 `ai_roll_rad`, `hi_heading_rad`, `compass_heading_mag_rad`, `tach_prop_radps`,
 then the engine/fuel indications of Q-S8. No display preference (e.g. the hPa/inHg
 unit) is in the list. Instrument behaviour behind these names is TBD-src (S17
-Section 7). **Blocking open item (Q-S8, user scope decision pending):** the layout
-cannot freeze, and no `digest_layout` 1 code may be written, until the engine/fuel
-set is decided; after that, adding a field is deferred to a major version (§6).
+Section 7). **Q-S8 decided (GAPS Q23, user 2026-11-02 07:16):** every engine/fuel indication of the classic-panel 172S joins
+the list. The layout freezes, and `digest_layout` 1 code may be written, once the
+researcher has extracted that list with page citations; after that, adding a field is deferred to a major version (§6).
 Recommendation: include every engine/fuel indication of the classic-panel 172S
 (S17 Section 7 panel list, to be extracted with page citations by the researcher;
 the controls note Part B lists controls, not indications), all in `ind`, computed
@@ -280,21 +280,22 @@ any `digest_layout` 1 code exists. **Deferred to a future major version** (would
 a digest group over logged events (Q-S1), any `ind`/`sim` field added after the
 layout is implemented, and moving evaluator values (C1, C4, C14) into a digest.
 
-## 7. Open questions (for GAPS via the orchestrator)
+## 7. Questions (decided (GAPS Q23, user 2026-11-02 07:16); recommendations accepted)
 
 - **Q-S1** Logged events: is the session-log SHA-256 enough, or a digest group in a
   later major version?
 - **Q-S2** Altimeter `matches` tolerance and subscale unit (exercise criteria;
   installed instrument, GAPS Q3, TBD-src).
 - **Q-S3** Radio state machine (calls R1/R3/R5/R6) in milestone 2, or briefing item
-  only as EXERCISE-01 says?
+  only as EXERCISE-01 says? Decided: milestone 2 = circuit flight, sensed checklist
+  items, static briefing; text radio in roadmap phase 3.
 - **Q-S4** QFE datum kind and the vertical reference of AIP elevations (TBD-src).
 - **Q-S5** May a draft or `experimental` package produce milestone 2 scenario
   records while all real values are `tbd`?
 - **Q-S6** Store typed radio text in the session log, or only the parsed intent?
 - **Q-S7** Accept C1–C17, especially the derived `setting_ref` (C5), the Q19
   clarification of v1 §3 and the rights enum?
-- **Q-S8 (blocking, user scope decision)** Which engine/fuel indications join the
+- **Q-S8 (decided: all classic-panel engine/fuel indications)** Which engine/fuel indications join the
   declared `ind` list before the first `digest_layout` 1 code? Recommendation: all
   classic-panel 172S engine/fuel indications (S17 Section 7, TBD-src extraction),
   all `ind`, computed in WASM.
