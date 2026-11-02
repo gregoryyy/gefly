@@ -233,8 +233,9 @@ branch data/s17-ind-wb):
 `tach_time_s`, `hobbs_time_s`, `oil_press_pa` (gauge pressure), `oil_temp_k`,
 `egt_k`, `fuel_flow_m3ps`, `fuel_qty_left_m3`, `fuel_qty_right_m3`, `fuel_qty_left_off`,
 `fuel_qty_right_off` (uint32 0/1, needle at OFF on a sender fault), `vac_suction_pa`,
-`ammeter_a`, `ann_oil_press`, `ann_low_fuel_left`, `ann_low_fuel_right`, `ann_vac_left`,
-`ann_vac_right`, `ann_volts` (annunciators: enum off=0, flashing=1, steady=2).
+`ann_oil_press`, `ann_low_fuel_left`, `ann_low_fuel_right`, `ann_vac_left`,
+`ann_vac_right`, `ammeter_a`, `ann_volts` (annunciators: enum off=0, flashing=1,
+steady=2).
 
 No display preference (e.g. the hPa/inHg unit) is in the list. The EGT index pointer
 and the annunciator test/dim switch are inputs, not `ind`. Instrument behaviour behind
