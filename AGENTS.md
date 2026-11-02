@@ -39,6 +39,8 @@ Changes to these rules require a recorded design decision and corresponding SPEC
 
 ## Work and documentation
 
+Prioritize small, runnable, demonstrable product increments. Each delivery should provide a concrete way to try its visible behavior and state its remaining limits. Keep research and tooling proportional to delivering and verifying that increment.
+
 Work on feature branches after initial bootstrap; main changes through PRs when a remote exists. The user wants a free/open-source project; the public source repository is `gregoryyy/gefly`. The project license is GPL-3.0-or-later (GAPS Q5); future asset rights, contributor terms and hosting remain to be selected. Do not create a remote or change the license as a side effect of ordinary implementation. User authorization governs commits, pushes and external actions. Avoid committing another worker's unfinished changes.
 
 Keep task IDs stable. Requirements are declared once in SPEC; use IDs in tasks, test names and review evidence. Commit messages use `Refs:` trailers when commits are made. Update TODO and prepend a clock-derived `YYYY-MM-DD HH:MM` entry to DONE in **Europe/Berlin**, naming the actual agent and subagents. Do not invent model versions or test results. Raw `docs/input/` records are immutable; add corrections as new records.
