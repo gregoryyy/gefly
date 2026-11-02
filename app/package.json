@@ -8,10 +8,11 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build",
     "check": "tsc --noEmit",
-    "test": "node --test src/session.test.ts",
+    "test": "node --test src/session.test.ts src/control-settings.test.ts src/flight-trace.test.ts",
     "test:browser": "node tests/smoke.mjs"
   },
   "dependencies": {
+    "cesium": "1.146.0",
     "three": "0.187.0"
   },
   "devDependencies": {

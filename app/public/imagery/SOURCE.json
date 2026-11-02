@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "asset": "edfe-starter.jpg",
+  "sha256": "85b1acfa59a4185cd6381f0ef1208c39ac43b4d761208b9bab6968529c02940e",
+  "bytes": 336349,
+  "source": "Hessen HVBG ATKIS DOP20, WMS he_dop_rgb",
+  "sourceDataset": "https://opendata.hessen.de/de/dataset/atkis-dop-20",
+  "requestUrl": "https://www.gds-srv.hessen.de/cgi-bin/lika-services/ogc-free-images.ows?SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=he_dop_rgb&STYLES=&FORMAT=image%2Fjpeg&SRS=EPSG%3A4326&BBOX=8.62%2C49.95%2C8.66%2C49.975&WIDTH=1024&HEIGHT=1024",
+  "license": "DL-DE-Zero-2.0",
+  "licenseUrl": "https://www.govdata.de/dl-de/zero-2-0",
+  "crs": "EPSG:4326",
+  "bounds_west_south_east_north": [
+    8.62,
+    49.95,
+    8.66,
+    49.975
+  ],
+  "width_px": 1024,
+  "height_px": 1024,
+  "sourceImageDate": null,
+  "limitations": [
+    "Capture date not established.",
+    "Draped on WGS84 ellipsoid; no terrain or airport-elevation acceptance.",
+    "Starter region only, not the EDDF/100 NM region.",
+    "Not navigational chart material."
+  ],
+  "overview": {
+    "asset": "edfe-overview.jpg",
+    "sha256": "c1a09e1a8323b17980c211fc62e2b318e69014fc6b9ac508ea28d88a73569979",
+    "bytes": 67289,
+    "bounds_west_south_east_north": [
+      8.4,
+      49.8,
+      8.9,
+      50.1
+    ],
+    "width_px": 512,
+    "height_px": 512,
+    "sourceImageDate": null,
+    "requestUrl": "https://www.gds-srv.hessen.de/cgi-bin/lika-services/ogc-free-images.ows?SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=he_dop_rgb&FORMAT=image%2Fjpeg&SRS=EPSG%3A4326&BBOX=8.4%2C49.8%2C8.9%2C50.1&WIDTH=512&HEIGHT=512",
+    "limitations": [
+      "Coarse regional context only, not detailed terrain or current airport information."
+    ]
+  }
+}
