@@ -1,3 +1,4 @@
+import { startOrResume } from './flight-actions.mjs';
 // Actual Chrome/JSBSim regression for classic instruments and scene gestures.
 // This checks the product behavior, not aircraft handling or training fidelity.
 import assert from 'node:assert/strict';
@@ -83,7 +84,7 @@ try {
   assert(Number.isFinite((await state()).slip_ball_rad));
   checks.push('six-pack order and engine instrument labels');
 
-  await page.locator('#start').click();
+  await startOrResume(page);
   await page.waitForFunction(() => window.__classicStates.at(-1).step > 5);
   // This point lies in the unobstructed scene, away from the header, control pad and panel.
   await page.mouse.click(900, 150); await mode('yoke');
@@ -101,23 +102,23 @@ try {
   assert(Number(await page.locator('#roll-control').textContent()) > 0);
   await page.keyboard.press('Escape'); await mode('off'); await centered();
   await page.mouse.click(900, 150); await mode('yoke');
-  await page.mouse.move(900, 35); await mode('off'); await centered();
-  await page.mouse.click(900, 150); await mode('yoke');
-  await page.mouse.move(940, 170);
+  await page.mouse.move(900, 35); await mode('yoke'); await centered();
+  await page.mouse.move(940, 170); await mode('yoke');
+  assert(Number(await page.locator('#roll-control').textContent()) > 0, 'returning pointer resumes the original yoke anchor without another click');
   await page.evaluate(() => window.dispatchEvent(new Event('blur')));
   await mode('off'); await centered();
   const blurred = await stats(); await page.waitForTimeout(200);
   assert.equal((await stats()).step, blurred.step, 'blur pauses the actual worker');
-  await page.locator('#start').click();
+  await startOrResume(page);
   await page.waitForFunction(step => window.__classicStates.at(-1).step > step, blurred.step);
   checks.push('temporary look, restored yoke and cancellation paths');
 
-  await page.keyboard.press('f');
-  await page.waitForFunction(() => document.querySelector('#flaps-10').getAttribute('aria-pressed') === 'true');
+  await page.keyboard.press(']');
+  await page.waitForFunction(() => document.querySelector('#flap-control').value === '10');
   await page.waitForFunction(() => window.__classicStates.at(-1).flap_rad * 180 / Math.PI > 9.9, null, { timeout: 6000 });
-  await page.keyboard.press('Shift+f');
+  await page.keyboard.press('[');
   await page.waitForFunction(() => window.__classicStates.at(-1).flap_rad < .001, null, { timeout: 6000 });
-  await page.locator('#flaps-30').click();
+  await page.locator('#flap-control').focus(); await page.keyboard.press('End'); await page.locator('#scene').focus();
   await page.waitForFunction(() => window.__classicStates.at(-1).flap_rad * 180 / Math.PI > 29.9, null, { timeout: 7000 });
   assert.match(await page.locator('#flaps-actual').textContent(), /30°.*actual/);
   checks.push('flap keyboard detents and actual timed actuation');
@@ -138,7 +139,7 @@ try {
   await page.waitForFunction(() => document.querySelector('#status').textContent === 'Review');
   const reviewPaused = await stats();
   assert.equal(await page.locator('#wheel-brakes').isDisabled(), true);
-  for (const flap of [0, 10, 20, 30]) assert.equal(await page.locator(`#flaps-${flap}`).isDisabled(), true);
+  for (const id of ['flap-control', 'flaps-retract', 'flaps-extend']) assert.equal(await page.locator(`#${id}`).isDisabled(), true);
   await page.locator('#review-time').focus(); await page.keyboard.press('Home');
   await page.waitForFunction(() => document.querySelector('#flaps-actual').textContent.includes('0° · recorded'));
   await page.keyboard.press('End');
@@ -150,7 +151,7 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(150);
   const compact = await page.evaluate(() => {
-    const selectors = ['#six-pack', '.engine-controls', '#wheel-brakes', '#flaps-30', '#reset'];
+    const selectors = ['#six-pack', '.engine-controls', '#wheel-brakes', '#flap-control', '#flight-menu'];
     return { width: document.documentElement.scrollWidth, viewport: innerWidth, height: innerHeight,
       boxes: selectors.map(selector => { const r = document.querySelector(selector).getBoundingClientRect(); return { selector, left:r.left, right:r.right, top:r.top, bottom:r.bottom }; }) };
   });
@@ -164,7 +165,7 @@ try {
 
   await page.locator('#review-exit').click();
   const previousWorker = await page.evaluate(() => window.__classicWorkerId);
-  await page.locator('#reset').click();
+  await page.locator('#flight-menu > summary').click(); await page.locator('#reset').click();
   await page.waitForFunction(previous => { const s = window.__classicStates.at(-1); return s.__worker_id > previous && s.flap_rad === 0 && s.brake_left_norm === 0 && s.brake_right_norm === 0; }, previousWorker);
   assert.equal(await page.locator('#review-flight').isDisabled(), true);
   checks.push('reset clears configuration and recording');

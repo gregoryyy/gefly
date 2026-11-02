@@ -1,3 +1,4 @@
+import { startOrResume } from './flight-actions.mjs';
 // Actual Chrome renderer and JSBSim input regression; not aircraft fidelity validation.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -105,11 +106,11 @@ try {
 
   await scroll(-120);
   const chosen = await fov();
-  await page.locator('#chase').click(); await waitFov(chosen);
+  await page.locator('#view-menu > summary').click(); await page.locator('#chase').click(); await waitFov(chosen);
   assert.equal(await page.locator('#chase').getAttribute('aria-pressed'), 'true');
   await page.setViewportSize({ width: 1200, height: 800 });
   await page.waitForTimeout(150); assert.equal(await fov(), chosen);
-  await page.locator('#cockpit').click(); await waitFov(chosen);
+  await page.locator('#view-menu > summary').click(); await page.locator('#cockpit').click(); await waitFov(chosen);
   assert.equal(await page.locator('#cockpit').getAttribute('aria-pressed'), 'true',
     'the paused gate leaves the view control usable after resize');
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -120,7 +121,7 @@ try {
   await scroll(0, 120); assert.equal(await fov(), chosen);
   await page.keyboard.down('Control'); await scroll(-120); await page.keyboard.up('Control');
   assert.equal(await fov(), chosen, 'browser pinch/ctrl-wheel is not scene zoom');
-  await page.locator('#toggle-map').click();
+  await page.locator('#view-menu > summary').click(); await page.locator('#toggle-map').click();
   await page.waitForFunction(() => document.querySelector('[aria-label="Zoom map in"]')?.disabled === false);
   const mapBox = await page.locator('.practice-map-viewport').boundingBox();
   await page.mouse.move(mapBox.x + mapBox.width / 2, mapBox.y + mapBox.height / 2);
@@ -136,7 +137,7 @@ try {
   frozen(paused, await stats());
   checks.push('horizontal, ctrl-wheel, map and native pressure-dialog isolation');
 
-  await page.locator('#start').click();
+  await startOrResume(page);
   await page.waitForFunction(() => window.__fovStates.at(-1).step > 5);
   await page.mouse.click(1000, 180);
   await page.waitForFunction(() => document.querySelector('#scene').dataset.pointerMode === 'yoke');
@@ -168,7 +169,7 @@ try {
 
   const retained = await fov();
   const previousWorker = await page.evaluate(() => window.__fovWorkerId);
-  await page.locator('#reset').click();
+  await page.locator('#flight-menu > summary').click(); await page.locator('#reset').click();
   await page.waitForFunction(previous => window.__fovStates.at(-1)?.__worker_id > previous, previousWorker);
   await waitReady(); assert.equal(await fov(), retained, 'flight reset retains the session camera setting');
   await page.reload(); await waitReady(); await waitFov(60);

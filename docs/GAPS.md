@@ -64,6 +64,43 @@ this selection was recorded.
 
 Why: fixes the first required platform/input experience and optional peripherals.
 
+Refinement: **2026-11-02 20:13, user** (recording time): requested that the
+crosshair indicate the aircraft's front and move as the camera looks sideways;
+see [verbatim input](input/2026-11-02-aircraft-forward-marker.md). Implemented as
+a projected body-forward orientation cue, with edge guidance outside the view
+and no flight-path/physics claim.
+
+Refinement: **2026-11-02 19:56, user** (recording time): confirmed Slash restores
+initial trim; requested compact matching flap/trim and throttle/mixture levers,
+paused control availability with frozen physics, faster/dragged OBS, shared
+panel colors and screw details. Asked for the current PR before a third bearing
+display, auxiliary round RPM/fuel gauges and further ALT/NAV/APR/REV guidance.
+See [verbatim checkpoint record](input/2026-11-02-paused-controls-and-pr-checkpoint.md).
+Those subsequent systems remain unchecked; unavailable modes are not accepted
+merely because their buttons are drawn.
+
+Refinement: **2026-11-02 19:25, user** (recording time): supplied a classic C172
+cockpit visual reference, then requested two rows of four round instruments,
+a separate rounded six-pack panel, equal column heights, autopilot above engine,
+vertical trim/flaps and explanatory copy moved off the panel. See
+[reference record](input/2026-11-02-cockpit-reference.md) and
+[layout requests](input/2026-11-02-panel-layout-refinements.md). This is a visual
+reference, not confirmation of an exact aircraft/avionics installation.
+
+Refinement: **2026-11-02 18:54, user** (recording time): specified bracket
+flaps, apostrophe/backslash trim, Q/W rudder, 0 idle and Space pause; restart in a
+menu, retained yoke mode on pointer reentry and persistent Review look. Requested
+landing instability from gear reactions and separate radio/NAV/autopilot boxes;
+modern fullscreen instruments/ILS markers and configurable keys are later.
+See [verbatim input](input/2026-11-02-landing-radio-and-control-refinements.md).
+The prototype uses generic contact forces and opt-in fictional LAB signals;
+full classical coupled AP behavior remains open.
+
+Refinement: **2026-11-02 18:46, user** (recording time): requested elevator
+trim, top-menu Restart/Options, and Flight controls under View; see [verbatim
+input](input/2026-11-02-elevator-trim-and-menu.md). Implemented using existing
+generic-model elevator trim, with startup trim retained rather than zeroed.
+
 Refinement: **2026-11-02 18:32, user** (recording time): requested two-finger
 vertical scrolling for camera FOV; [verbatim input](input/2026-11-02-touchpad-fov.md).
 Implemented as a viewing preference, separate from pilot control input.
@@ -425,6 +462,20 @@ aircraft available, 2026-11-01). Answers are recorded here or in the referenced
 question as they arrive.
 
 ### Q3. Which Cessna 172 variant, year and avionics fit?
+
+Handbook clarification: **2026-11-02 21:02, user**: “Loading and flight envelope”.
+Initial handbook diagrams prioritize CG loading and published flight-load-factor /
+airspeed references for the active research C172P. Complete stall/gust boundaries
+and live loading/load-factor points require additional applicable data; published
+reference limits must not be presented as a validated complete V-n envelope.
+See [answer](input/2026-11-02-handbook-loading-envelope.md).
+
+Implementation assumption: **2026-11-02 20:54, Codex orchestrator**: the requested View
+handbook initially covers sourced loading/CG, CAS limits and gear-layout reference
+diagrams for the **active generic 1982 C172P**. The diagram-selection clarification
+was subsequently answered above; this small reference subset does not change the selected 172S product
+configuration or accept its aircraft fidelity. Charts have no fabricated live
+mass/CG point. See [input](input/2026-11-02-flight-data-handbook.md).
 
 Why: operating limits, engine/propeller, systems, instrument ranges and procedures must refer to one applicable configuration. Proposed: research availability and redistribution rights for a specific C172S configuration before recommending a conventional panel or glass cockpit. Blocking: TODO 1.3 and aircraft-specific implementation; generic studies may continue.
 

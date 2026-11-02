@@ -3,6 +3,276 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 21:22 — Visualize spatial wing airflow-angle estimates
+
+TODO: 2.0.25 complete as a bounded R-SIM-7/R-VIEW-1/R-REVIEW-1 diagnostic;
+actual sectional separation remains 2.0.26. Agent: Codex orchestrator on telemetry
+and integration; fov_input/code1 on pure calculations/tests, panel_scaling/code2
+on SVG/UI/browser coverage, with fov_housekeeping alongside on input/research.
+Independent quality: fov_housekeeping on implementation, excluding its prose;
+fov_input on root integration/UI, excluding its helper. Validate: trim_validate.
+
+**Implementation notes**
+
+View → Stall awareness shows six wing reference regions with local kinematic
+flow-angle estimates, numeric headroom and below/near/at-reference labels. Actual
+air-relative body velocity/angular rates/current CG drive V + omega × r at
+declared span sampling stations. The model's common positive alpha-max/85% warning
+reference drives diagnostic colors. Tail/fuselage remain hatched unknown;
+positive-only/negative-boundary limits are visible. Low, reversed, missing or
+overflowed local flow stays unavailable. Raw global warning remains uncapped;
+hysteresis is distinct. Live/selected recorded states share one read-only view.
+
+The 13-field getter is outside the original 14-double dynamics/digest buffer.
+Independent 240-step runs with/without reads match full physics/digest. Original
+source/coefficient values and the aircraft adapter remain unchanged. Independent
+quality and actual Chrome validation pass frame/cross-product math, six numeric
+comparisons within 1e-12 rad, actual roll differences (left outer −0.739° versus
+right outer 3.657°), immutable Review, missing/reference fixtures, mobile,
+keyboard/focus, overlay exclusion and unchanged cockpit height. Actual sectional
+stall physics is not accepted by these checks.
+
+Focused browser suite passes three groups; existing Flight Data4, Review4 and
+smoke26 regressions pass. Shared CI passes 118 native tests, five adapter tests,
+UI build, 84 assurance and 11 assessment tests plus repository/study/render gates.
+Optional JSBSim9-of-23 and Linux-only checks remain explicit skips. A new trace
+test's extensionless runtime import was corrected before the full suite passed.
+See [review evidence](reviews/2026-11-02-spatial-stall-awareness.md) for exact
+source/engine hashes, review exclusions and reproducible evidence. Peer pending.
+
+**Deviations**
+
+The lumped research model does not expose part-specific separation, so this
+increment deliberately shows a labeled body-relative AoA proxy rather than
+asserting local stall onset. All stations share a positive global reference;
+below-reference does not mean safe/attached flow. Wing twist, induced flow,
+downwash and local flap/aileron/tail boundaries require the source-applicable
+regional model/data work retained in TODO 2.0.26. No new forces or damage limits.
+
+**Insights**
+
+Actual rotational motion makes regional differences inspectable without changing
+flight dynamics. Distinguishing a computed airflow proxy from an aerodynamic
+separation model prevents a visually detailed diagram from overstating fidelity.
+
+## 2026-11-02 21:07 — Inspect flight path, gear reactions and aircraft reference diagrams
+
+TODO: 2.0.23–2.0.24 complete as bounded R-SIM-3/R-VIEW-1/R-REVIEW-1/
+R-AIR-2/R-DATA-1 increments. Agent: Codex orchestrator/integration; fov_input/code1
+on flight gradient/data panel, panel_scaling/code2 on the handbook, with
+fov_housekeeping alongside on immutable input and source facts. Independent
+quality: panel_scaling/fov_housekeeping on flight data/root integration;
+fov_input on Handbook/data, excluding own code; orchestrator on the code1-authored
+Review-test precision repair only. Independent validation: trim_validate.
+
+**Implementation notes**
+
+View → Flight data opens a compact modeless panel with signed ground-relative
+flight-path percent, horizontal/vertical ground velocity and actual per-wheel
+contact, compression, strut load and slip plus structure contacts. It follows
+the selected live/recorded state without changing physics or cockpit height.
+Low groundspeed and missing data remain unavailable, never synthetic zeroes.
+
+View → Aircraft handbook pauses live flight or Review playback and displays
+four original vector references with accessible tables: normal-category CG
+loading, published flight-envelope factor/speed guides, CAS limits and model
+gear geometry. The user's clarification prioritizes loading/flight envelope.
+Closing stays paused. Manufacturer/JSBSim sources, conditions, units and hashes
+are explicit; no manual pages/images or network document fetch are added.
+
+New Chrome checks pass four Flight Data groups and three Handbook groups,
+including landing/recorded values, frozen full state/step/digest, modeless
+shortcuts, pause/no-resume, four diagrams, mobile and local-only requests.
+Existing smoke26, Review4 and layout9-viewport/portal regressions pass. A flaky
+exact-timestamp seek was traced to Chrome range decimal rounding; the test now
+seeks inside an actual frame interval and verifies its exact selected step.
+The product's floor-seek behavior remains unchanged. Independent actual Chrome
+validation passed six groups plus three affected envelope/source/mobile checks.
+Shared CI passed 109 native tests, five adapter tests, UI build, 84 assurance and
+11 assessment tests plus repository/study/render gates. Optional JSBSim9-of-23
+and Linux-only checks remain explicit skips. See
+[review evidence](reviews/2026-11-02-flight-data-handbook.md) for exact source hash,
+reviewer exclusions and reproducible evidence. Cross-provider peer pending.
+
+**Deviations**
+
+Flight-path percentage is ground-track slope, not ILS deviation or aerodynamic
+glide ratio. Wheel loads are modeled normal strut reactions, not full force
+vectors, stress or damage limits. Handbook figures apply to the generic research
+1982 C172P and do not accept the planned C172S. Published envelope guides do not
+invent missing stall/gust boundaries, negative flaps-down limits, a filled
+approved V-n operating region or live loading/load-factor points.
+
+**Insights**
+
+Existing captured telemetry can make landing behavior inspectable without
+altering dynamics. Separating original reference plots from live aircraft
+inferences preserves useful Handbook diagrams while documenting missing data.
+Native range serialization needs interval-based tests for floor-seek behavior.
+
+## 2026-11-02 20:50 — Show recorded controls and critical speeds in a fitted cockpit
+
+TODO: 2.0.20–2.0.22 complete as bounded R-AIR-2/R-DATA-1/R-INPUT-1/
+R-VIEW-1/R-REVIEW-1 increments. Agent: Codex orchestrator; fov_input/code1 on
+Review, panel_scaling/code2 on layout, with fov_housekeeping alongside on inputs
+and sourced airspeed references. Independent quality: fov_housekeeping on root
+telemetry; panel_scaling on main/Review; fov_input on airspeed/layout, excluding
+each reviewer's own code. Independent validation: trim_validate.
+
+**Implementation notes**
+
+Airspeed shows explicit 1982 C172P CAS-reference arcs, VS0/VS1/VFE/VFE10/VNO/VNE
+values and source/configuration details; TAS fallback suppresses CAS markings.
+Read-only model telemetry records throttle, normalized pilot commands and actual
+left/right aileron/rudder angles, alongside existing elevator/trim/flap/brakes/
+mixture/avionics. Review shows selected captured values, including narrow-screen
+power readouts. R toggles Review with editing/menu/dialog/repeat guards; restart
+stays in Flight. Exit restores staged live settings without restarting or stepping.
+
+A shared measured zoom scales inline faces/fonts/levers together and fits panel
+height to content: 449 px at 1440×900, previously 500. Engine/Radio collapse at
+900 px, NAV at 620; primary instruments and AP/flap/trim retain priority. Fixed
+heading heights align flap/trim travel within one pixel. Review reserves scene
+space for recorded controls and transport without overlapping the header.
+
+Full Chrome suite passed: 82 functional checks across nine suites, plus nine
+layout viewport cases/fresh-mobile/portal transitions and eight landing-physics
+checks. Independent actual Chrome/WASM validation passed seven criteria groups,
+including unavailable legacy data, selected-frame values and frozen full physical
+state/step/digest. Repeated telemetry reads preserve actual WASM results. Shared
+CI passed 104 native tests, five adapter tests, TypeScript/UI build, 84 assurance
+and 11 assessment tests plus repository/study/render gates. Optional JSBSim
+9-of-23 and Linux-only checks remain explicit skips. See
+[review evidence](reviews/2026-11-02-review-panel.md) for exact source hash,
+authorship exclusions and evidence. Peer pending under the batched cadence.
+
+**Deviations**
+
+Critical speeds are fixed manufacturer KCAS references, with declared reference
+weight/CG/configuration, rather than installed IAS arcs or dynamic stall/model
+acceptance. Review remains a sampled trace, not input-event replay. No manual
+images, runtime dependencies or generated aircraft assets are redistributed.
+
+**Insights**
+
+Preserving live staged controls separately from recorded values prevents Review
+from silently changing Resume behavior. One canonical layout scale protects main
+instrument size when secondary panels collapse; content fitting removes stale
+fixed-height space. Conventional IAS arcs must not be copied onto a CAS gauge.
+
+## 2026-11-02 20:28 — Keep the nose-direction cue aligned while looking around
+
+TODO: 2.0.19 complete as a bounded R-VIEW-1/R-INPUT-1/R-REVIEW-1 increment.
+Agent: Codex orchestrator/integration; fov_input/code1 on pure perspective
+projection/tests and forward_ui/code2 on the overlay, with fov_housekeeping
+maintaining app instructions in parallel. Independent quality: fov_housekeeping,
+excluding its own prose. Independent validation: trim_validate.
+
+**Implementation notes**
+
+Replaced the fixed scene crosshair with aircraft body-forward direction projected
+through the actual Cesium camera axes and vertical FOV. Looking right moves the
+marker left, looking left moves it right; FOV/view/resize and displayed recorded
+states recompute it. Offscreen directions in front get a bounded edge chevron;
+behind-camera/invalid projections hide. Header-safe placement and a short-view
+clipping origin keep cues useful on narrow scenes. The overlay remains pointer
+transparent, above Review/virtual controls and below Map/header UI.
+
+Independent geometry verification compared actual ENU-to-ECEF camera projection
+with screen positions (720→467.205 / 972.795), edge36, release, recorded seeking,
+FOV, chase and desktop/mobile resizing. Physics state, step and digest stayed
+unchanged. A mobile Review screenshot found same-z occlusion, resolved by z5;
+actual timeline clicking through the visible cue passed. An optional Cesium
+fovy type needed narrowing, now guarded with unavailable projections hidden.
+
+Shared `just ci` passed: 98 app native tests, five aircraft-adapter tests,
+TypeScript/UI build, 84 assurance tests, 11 airspeed assessment tests and
+repository/study/render gates. Optional native JSBSim cases remain explicit
+skips (9 of23) and the Linux-only fixture is not Mac runtime evidence. Focused
+actual Chrome projection and existing FOV regressions passed five groups each,
+with independent affected runtime checks. See
+[review evidence](reviews/2026-11-02-forward-marker.md). Final foundation and
+assurance integrity/diff were rechecked for publication.
+
+**Deviations**
+
+Peer pending under the batched cadence. This is a body-direction orientation
+cue, not flight path, pilot input or an installed/certified aircraft HUD.
+Behind-camera directions hide and foreground Map/header retain priority.
+Existing aircraft, scenery and training limits remain unchanged.
+
+**Insights**
+
+The actual vertical FOV and camera basis are needed to place a direction cue;
+a fixed screen point or direct pointer offset cannot preserve it through view,
+zoom and viewport changes. DOM visibility alone missed the mobile Review-bar
+occlusion; the final pixel/stacking and click-through checks caught it.
+
+## 2026-11-02 20:06 — Classic cockpit, compact controls and landing-practice checkpoint
+
+TODO: 2.0.10–2.0.13, 2.0.15/2.0.16/2.0.18 complete as bounded prototype
+increments. R-INPUT-1/R-VIEW-1/R-REVIEW-1/R-NAV-1/R-SIM-1/R-SIM-5 remain
+partial. Agent: Codex orchestrator; trim_core/code1 and fov_input/code2 on
+parallel disjoint implementation streams, with fov_housekeeping on app/source
+instructions and later separate pointer work. Independent quality:
+fov_housekeeping excluding its own pointer/prose, and trim_core covering pointer
+code excluding its own engine/NAV work. Independent validation: trim_validate.
+
+**Implementation notes**
+
+Added elevator trim preserving startup trim, compact matching vertical trim and
+four-stop flap levers, Slash startup restore, Q/W rudder and consistent nosewheel
+steering. Throttle/mixture are vertical in the engine unit; AP is above flap/trim.
+Ready controls work while paused: selected settings persist, physical state/time
+stays frozen and Resume applies queued commands. Recorded Review stays read-only.
+
+The eight enlarged round faces form a 2×4 grid with a separate rounded six-pack
+panel, matching column heights and shared metal/housing finishes with original
+screw details. Dual COM/NAV units, independent OBS, original NAV cards/CDI/flags
+and opt-in fictional LAB guidance are synchronized with recorded settings. OBS
+supports accelerated hold, captured drag and keyboard adjustment, including
+multi-turn/event-partition invariance. Yoke mode/anchor survives pointer exit;
+Review look persists through release and seeking. Restart is in Flight, controls
+in View, and explanations in Options. Postflight pause uses unobstructed header
+Resume; map controls remain accessible.
+
+Four flat-ground contact studies expose actual upstream wheel compression,
+load, slip and structural contacts without replacement wobble forces. Landing
+fixtures retain selected descent/side/bank conditions; the renderer uses actual
+geodetic height while the original 14-value dynamics ABI remains unchanged.
+See [independent review](reviews/2026-11-02-elevator-trim.md) and
+[source applicability](research/2026-11-02-landing-and-radio.md).
+
+At integrated source commit 2cc0f96, shared `just ci` passed: 92 app native tests,
+five aircraft-adapter tests, TypeScript/UI build, 84 assurance tests, 11 airspeed
+assessment tests and repository/study/render gates. Optional native JSBSim cases
+remain explicit skips (9 of 23), not passes; the platform-specific Linux fixture
+is likewise not Mac runtime evidence. Seven actual Chrome suites passed 73
+check groups, plus eight deterministic 120/240 Hz landing cases and repeats.
+Browser runs were split after updating obsolete flap-button test selectors;
+all final suites passed on unchanged integrated implementation. Foundation and
+assurance integrity/diff were checked again for final documentation. Main's
+merged TypeScript 7.0.2 update was integrated locally with no content conflicts.
+
+**Deviations**
+
+Peer pending under the batched cadence. Generic c172x remains research data,
+not accepted C172S training fidelity. LAB is fictional true-reference geometry,
+COM is a legacy 25 kHz subset, and real navaid/ILS/8.33 kHz communication,
+component damage, surveyed landing terrain and physical hardware/OS-focus
+acceptance remain open. Per the user's PR-first instruction, the third bearing
+display/round RPM/fuel row, engine/AP-column swap and ALT/NAV/APR/REV guidance
+are subsequent TODO 2.0.14/2.0.17 work; disabled mode buttons are not completion.
+No Flightvectors poster bitmap was redistributed.
+
+**Insights**
+
+Actual browser checks found portal queries that failed only on a fresh mobile
+load, stylesheet import-order overrides and overlapping pause/map controls;
+a desktop resize alone missed those cases. Paused control positions must be
+separated from actual applied engine state. Multi-turn OBS dragging must retain
+full accumulated travel before reducing equivalent course deltas modulo360.
+
 ## 2026-11-02 18:32 — Adjust camera FOV with two-finger scene scrolling
 
 TODO: 2.0.9 complete as a bounded camera-input increment; R-INPUT-1/R-VIEW-1

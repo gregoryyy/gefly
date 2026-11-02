@@ -37,6 +37,34 @@ const state = {
 };
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+test('session accepts complete spatial-airflow telemetry including warnings above one', t => {
+  const { session, states, errors } = fixture(t); session.start();
+  const worker = MockWorker.instances[0]; worker.emit(ready);
+  const airflow = { aero_u_mps: 30, aero_v_mps: -2, aero_w_mps: 8, aero_p_radps: .2,
+    aero_q_radps: -.1, aero_r_radps: .05, cg_structural_x_m: 1.05, cg_structural_y_m: .01,
+    cg_structural_z_m: .93, aero_alpha_rad: .28, aero_alpha_max_rad: .28,
+    stall_warning_norm: 1.5, stall_hysteresis_norm: 1 };
+  worker.emit({ ...state, ...airflow });
+  assert.equal((states[0] as Record<string, number>).stall_warning_norm, 1.5);
+  assert.equal((states[0] as Record<string, number>).cg_structural_x_m, 1.05);
+  worker.emit({ ...state, ...airflow, aero_alpha_max_rad: 0 });
+  assert.equal(states.length, 1); assert.equal(errors.length, 1);
+});
+
+test('session forwards only complete finite control telemetry and rejects partial groups', t => {
+  const { session, states, errors } = fixture(t);
+  session.start();
+  const worker = MockWorker.instances[0]; worker.emit(ready);
+  const controls = { throttle_norm: .7, aileron_cmd_norm: -.45, elevator_cmd_norm: .35,
+    rudder_cmd_norm: -.35, aileron_rad: -.12, right_aileron_rad: .08, rudder_rad: -.14 };
+  worker.emit({ ...state, ...controls, injected_extra: 5 });
+  assert.equal((states[0] as Record<string, number>).throttle_norm, .7);
+  assert.equal((states[0] as Record<string, number>).right_aileron_rad, .08);
+  assert.equal(Object.hasOwn(states[0] as object, 'injected_extra'), false);
+  worker.emit({ ...state, throttle_norm: .7 });
+  assert.equal(states.length, 1); assert.equal(errors.length, 1);
+});
+
 test('starts a real module worker, waits for ready and sends trimmed input before run', (t) => {
   const { session, errors, states } = fixture(t);
   session.start(); session.start();
@@ -182,4 +210,57 @@ test('autopilot capture/disconnect messages do not start paused physics or inven
 test('partial engine/autopilot telemetry cannot enable controls', (t) => {
   const {session,states,errors}=fixture(t);session.reset();const worker=MockWorker.instances[0];worker.emit(ready);
   worker.emit({...state,ap_mode:1,mixture_norm:.5});assert.equal(states.length,0);assert.match(errors[0],/invalid state/);
+});
+
+test('trim is coalesced with inputs, copied atomically, and partial telemetry stops flight', async (t) => {
+  const { session, states, errors } = fixture(t); session.start();
+  const worker = MockWorker.instances[0]; worker.emit(ready);
+  const trim = { pitch_trim_norm: -.2, pitch_trim_initial_norm: .168, elevator_rad: -.05 };
+  const message = { ...state, ...trim }; worker.emit(message);
+  message.pitch_trim_norm = .9;
+  assert.equal(states[0].pitch_trim_norm, -.2);
+  session.input({ elevator: 0, aileron: 0, rudder: 0, throttle: .7, pitch_trim_norm: -.2 });
+  await sleep(70);
+  assert.equal(worker.messages.at(-1)?.pitch_trim_norm, -.2);
+  session.pause(); const count = worker.messages.length;
+  session.input({ elevator: 0, aileron: 0, rudder: 0, throttle: .7, pitch_trim_norm: .2 });
+  await sleep(70); assert.equal(worker.messages.length, count, 'paused trim inputs cannot advance or alter worker');
+  worker.emit({ ...state, pitch_trim_norm: -.2 });
+  assert.match(errors[0], /invalid state/);
+});
+
+test('landing preset is explicit and ground telemetry is atomic', (t) => {
+  const { session, states, errors } = fixture(t); session.reset('banked');
+  const worker = MockWorker.instances[0];
+  assert.equal(worker.messages[0].landing_preset, 'banked');
+  worker.emit(ready);
+  worker.emit({ ...state, ground_agl_m: 3 });
+  assert.equal(states.length, 0); assert.match(errors[0], /invalid state/);
+  session.reset();
+  assert.equal(MockWorker.instances.at(-1)!.messages[0].landing_preset, undefined);
+});
+
+test('paused flight commands are staged and sent before physics resumes', async (t) => {
+  const { session } = fixture(t); session.start();
+  const worker = MockWorker.instances[0]; worker.emit(ready); worker.emit(state);
+  session.pause(); const before = worker.messages.length;
+  session.input({ elevator: .2, aileron: -.1, rudder: .3, throttle: .4,
+    flap_norm: 2 / 3, pitch_trim_norm: -.2, mixture_norm: .6, mixture_auto: false });
+  await sleep(70); assert.equal(worker.messages.length, before);
+  session.start();
+  const input = worker.messages.at(-2)!;
+  assert.equal(input.type, 'input'); assert.equal(worker.messages.at(-1)!.type, 'run');
+  assert.equal(input.flap_norm, 2 / 3); assert.equal(input.pitch_trim_norm, -.2);
+  assert.equal(input.mixture_norm, .6); assert.equal(input.throttle, .4);
+});
+
+test('actual applied flap command is optional but must be finite and normalized', (t) => {
+  const { session, states, errors } = fixture(t); session.reset();
+  const worker = MockWorker.instances[0]; worker.emit(ready);
+  const cockpit = { cas_mps: 40, turn_rate_radps: 0, flap_rad: .1,
+    brake_left_norm: 0, brake_right_norm: 0, on_ground: 0 };
+  worker.emit({ ...state, ...cockpit, flap_command_norm: 2 / 3 });
+  assert.equal(states[0].flap_command_norm, 2 / 3);
+  worker.emit({ ...state, ...cockpit, flap_command_norm: 1.01 });
+  assert.match(errors[0], /invalid state/);
 });

@@ -1,0 +1,31 @@
+.handbook-dialog { width: min(1000px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); margin: auto; padding: 24px; overflow: auto; color: #e3edf0; background: #172831; border: 1px solid #74858b; border-radius: 12px; box-shadow: 0 20px 100px #020a15b3; }
+.handbook-dialog::backdrop { background: #06121cb8; backdrop-filter: blur(4px); }
+.handbook-header { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
+.handbook-header h2 { margin: 4px 0 6px; font-size: 25px; font-weight: 500; }
+.handbook-header p { margin: 0; color: #a9bec7; font-size: 12px; line-height: 1.5; }
+.handbook-close { flex: 0 0 auto; font-size: 12px; padding: 9px 13px; }
+.handbook-scope { margin: 14px 0 20px; padding: 10px 12px; color: #e2c38d; background: #24343a; border-left: 2px solid #d7b57c; font-size: 12px; line-height: 1.5; }
+.handbook-figures { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.handbook-figure { min-width: 0; margin: 0; padding: 14px; border: 1px solid #74858b66; border-radius: 8px; background: #102029; }
+.handbook-figure h3 { margin: 0 0 7px; font-size: 15px; font-weight: 500; }
+.handbook-figure > p, .handbook-figure figcaption { font-size: 11px; line-height: 1.5; color: #a9bec7; margin: 7px 0 0; }
+.handbook-figure figcaption a { text-decoration: underline; text-underline-offset: 3px; color: #d8c29a; }
+.handbook-figure svg { display: block; width: 100%; height: auto; margin-top: 10px; border-radius: 5px; background: #0a1720; }
+.handbook-figure svg text { fill: #c5d3d8; font-family: ui-monospace, SFMono-Regular, monospace; }
+.handbook-figure svg .handbook-grid { stroke: #879eaa2e; stroke-width: 1; }
+.handbook-figure svg .handbook-axis { stroke: #b2c6ce; stroke-width: 1; }
+.handbook-figure svg .handbook-normal { fill: #6bbaa231; stroke: #8fd3b6; stroke-width: 2; }
+.handbook-figure svg .handbook-utility { fill: #e2bd7430; stroke: #e2bd74; stroke-width: 2; stroke-dasharray: 6 3; }
+.handbook-legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 9px; font-size: 11px; color: #bad0d5; }
+.handbook-legend .normal { color: #8fd3b6; }
+.handbook-legend .utility { color: #e2bd74; }
+.handbook-table { width: 100%; border-collapse: collapse; margin-top: 10px; color: #c7d6da; font-size: 11px; font-variant-numeric: tabular-nums; }
+.handbook-table th, .handbook-table td { text-align: left; padding: 5px 4px; border-bottom: 1px solid #74858b33; }
+.handbook-table th { font-weight: 500; color: #e4c58d; }
+.handbook-source-note { font-size: 11px; line-height: 1.5; color: #a9bec7; margin: 18px 0 0; }
+@media (max-width: 640px) {
+  .handbook-dialog { padding: 16px; }
+  .handbook-header h2 { font-size: 21px; }
+  .handbook-figures { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .handbook-figure { padding: 12px; }
+}

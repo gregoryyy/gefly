@@ -24,6 +24,7 @@ export function applyControlSettings(
   requireRange('throttle', raw.throttle, 0, 1);
   if (raw.flap_norm !== undefined) requireRange('flaps', raw.flap_norm, 0, 1);
   if (raw.brake_norm !== undefined) requireRange('wheel brake', raw.brake_norm, 0, 1);
+  if (raw.pitch_trim_norm !== undefined) requireRange('pitch trim', raw.pitch_trim_norm, -1, 1);
   if (raw.mixture_norm !== undefined) requireRange('mixture', raw.mixture_norm, 0, 1);
   if (raw.mixture_auto !== undefined && typeof raw.mixture_auto !== 'boolean') throw new TypeError('Mixture automatic mode must be boolean');
   requireRange('pitch gain', settings.pitch, 0.25, 1.5);
@@ -36,6 +37,7 @@ export function applyControlSettings(
     aileron: clampAxis(raw.aileron * settings.roll + rollOffset),
     rudder: clampAxis(raw.rudder * settings.rudder),
     throttle: raw.throttle,
+    ...(raw.pitch_trim_norm !== undefined ? { pitch_trim_norm: raw.pitch_trim_norm } : {}),
     ...(raw.flap_norm !== undefined ? { flap_norm: raw.flap_norm } : {}),
     ...(raw.brake_norm !== undefined ? { brake_norm: raw.brake_norm } : {}),
     ...(raw.mixture_norm !== undefined ? { mixture_norm: raw.mixture_norm } : {}),

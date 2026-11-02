@@ -1,3 +1,4 @@
+import { startOrResume } from './flight-actions.mjs';
 // Actual Chrome/JSBSim engine and basic-autopilot regression, not handling validation.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -73,7 +74,7 @@ try {
     return stats();
   };
   const resume = async () => {
-    const before = await stats(); await page.locator('#start').click();
+    const before = await stats(); await startOrResume(page);
     await page.waitForFunction(step => window.__engineStates.at(-1).step > step, before.step);
   };
   const burst = async steps => {
@@ -91,7 +92,7 @@ try {
   }, value);
   const reset = async () => {
     const previous = await page.evaluate(() => window.__engineWorkerId);
-    await page.locator('#reset').click();
+    await page.locator('#flight-menu > summary').click(); await page.locator('#reset').click();
     await page.waitForFunction(previous => { const s=window.__engineStates.at(-1); return s.__worker_id > previous && s.mixture_auto===1 && s.ap_mode===0 && s.prop_radps>0; }, previous);
   };
 
@@ -117,6 +118,7 @@ try {
   }
   await page.keyboard.press('Digit7');
   await page.waitForFunction(() => window.__engineInputs.at(-1)?.throttle === .7);
+  await page.locator('#controls-settings').click();
   await page.locator('.control-options summary').click();
   await page.locator('#roll-correction-off').click();
   await page.waitForFunction(() => document.querySelector('#offset-value').textContent.includes('0.0%'));
@@ -124,8 +126,9 @@ try {
   await page.locator('#roll-correction-default').click();
   await page.waitForFunction(() => document.querySelector('#offset-value').textContent.includes('10.9% left'));
   assert(Math.abs(Number(await page.locator('#roll-offset').inputValue())+.109375)<.00051,'range displays the nearest supported UI step');
-  await page.waitForFunction(()=>window.__engineInputs.at(-1)?.aileron===-.109375);
   await page.locator('.control-options summary').click();
+  await page.locator('#settings-close').click(); await resume();
+  await page.waitForFunction(()=>window.__engineInputs.at(-1)?.aileron===-.109375);
   checks.push('digit and numpad throttle commands reach the flight worker');
 
   await setRange('#mixture-control', 60);
@@ -149,10 +152,10 @@ try {
   await page.waitForFunction(() => document.querySelector('#offset-value').textContent.includes('suspended by AP'));
   assert.equal(Number(await page.locator('#roll-control').textContent()), 0, 'study offset is absent from pilot roll input under AP');
   await page.locator('#scene').focus(); await page.keyboard.press('Digit7');
-  await page.locator('#flaps-10').click();
+  await page.locator('#flaps-extend').click();
   await page.waitForFunction(() => window.__engineStates.at(-1).flap_rad > .01);
   assert.equal((await state()).ap_mode, 2, 'throttle and flap actions preserve AP');
-  await page.locator('#flaps-0').click();
+  await page.locator('#flaps-retract').click();
   checks.push('heading capture and roll-offset suspension preserve secondary controls');
 
   const targetBefore = (await state()).ap_heading_target_rad;
@@ -211,6 +214,9 @@ try {
   const liveBeforeDialog = await state();
   await page.waitForFunction(step => window.__engineStates.at(-1).step>step+10,liveBeforeDialog.step);
   assert.equal(await page.locator('#mixture-control').count(),1); assert.equal(await page.locator('#ap-heading-target').count(),1);
+  await page.locator('#engine-close').click();
+  assert(await page.locator('#autopilot-open').isHidden(), 'primary autopilot remains inline');
+  assert(await page.locator('#ap-heading-target').isVisible());
   const throttleBefore = await page.locator('#throttle').inputValue(); const modeBefore = (await state()).ap_mode;
   await page.locator('#ap-heading-target').fill('');
   await page.keyboard.press('5'); await page.keyboard.press('Control+1'); await page.keyboard.press('Space'); await page.keyboard.press('p');
@@ -218,12 +224,12 @@ try {
   assert.equal(await page.locator('#throttle').inputValue(),throttleBefore);
   assert.equal((await state()).ap_mode,modeBefore);
   assert.equal(await page.locator('#status').textContent(),'Flying');
-  const compact = await page.evaluate(() => { const r=document.querySelector('#engine-dialog').getBoundingClientRect();return { left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:document.documentElement.scrollWidth,viewport:innerWidth,height:innerHeight }; });
+  const compact = await page.evaluate(() => { const r=document.querySelector('#autopilot-systems').getBoundingClientRect();return { left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:document.documentElement.scrollWidth,viewport:innerWidth,height:innerHeight }; });
   assert.equal(compact.width,compact.viewport); assert(compact.left>=0 && compact.right<=390 && compact.top>=0 && compact.bottom<=568);
   await page.screenshot({ path:`${output}/engine-mobile.png` });
-  await page.locator('#engine-close').click();
-  await page.waitForFunction(() => !document.querySelector('#engine-dialog').open && document.activeElement.id==='scene');
-  checks.push('compact live dialog, single controls, shortcut isolation and focus');
+  await page.locator('#scene').focus();
+  assert.equal(await page.locator('dialog[open]').count(), 0);
+  checks.push('compact engine dialog, inline autopilot, single controls, shortcut isolation and focus');
   observations.compact=compact;
   assert.deepEqual(errors,[]); assert.deepEqual([...hosts],['127.0.0.1']);
   console.log(JSON.stringify({ result:'pass',browser:browser.version(),checks,observations,screenshots:'output/flight/engine-mobile.png' },null,2));

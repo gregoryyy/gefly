@@ -88,3 +88,12 @@ test('engine mixture and automatic/manual selection bypass yoke sensitivity', ()
   assert.equal(mapped.mixture_norm, .6); assert.equal(mapped.mixture_auto, false);
   assert.throws(() => applyControlSettings({ ...neutral, mixture_norm: 1.1 }, DEFAULT_CONTROL_SETTINGS, 0));
 });
+
+test('manual pitch trim bypasses pilot-axis gains and rejects invalid commands', () => {
+  for (const pitch_trim_norm of [-1, 0.168, 1]) {
+    assert.equal(applyControlSettings({ ...neutral, pitch_trim_norm }, GENTLE_CONTROL_SETTINGS, -.1).pitch_trim_norm, pitch_trim_norm);
+  }
+  for (const pitch_trim_norm of [NaN, Infinity, -1.001, 1.001]) {
+    assert.throws(() => applyControlSettings({ ...neutral, pitch_trim_norm }, DEFAULT_CONTROL_SETTINGS, 0), RangeError);
+  }
+});

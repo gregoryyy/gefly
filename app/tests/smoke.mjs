@@ -1,3 +1,4 @@
+import { startOrResume } from './flight-actions.mjs';
 // Actual browser/JSBSim integration, not a dynamics-fidelity test.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -55,7 +56,7 @@ try {
   await page.goto('http://127.0.0.1:5174');
   await page.waitForFunction(()=>!document.querySelector('#start').disabled);
   assert.equal(await page.locator('#status').textContent(),'Paused','initial scene waits for explicit start');
-  await page.locator('#start').click();
+  await startOrResume(page);
   await page.waitForFunction(()=>document.querySelector('#status').textContent==='Flying'&&window.__flightStates.length>5);
   const state=()=>page.evaluate(()=>window.__flightStates.at(-1));
   const physics=async()=>{
@@ -65,7 +66,7 @@ try {
     return page.evaluate(()=>window.__flightStats.at(-1));
   };
   const initial=await state();assert(initial.step>0&&initial.tas_mps>40&&initial.tas_mps<55);
-  await page.locator('#toggle-map').click();
+  await page.locator('#view-menu > summary').click(); await page.locator('#toggle-map').click();
   await page.getByRole('button',{name:'Zoom map in',exact:true}).waitFor();
   await page.waitForFunction(()=>!document.querySelector('[aria-label="Zoom map in"]').disabled);
   assert.equal(await page.locator('#practice-map-panel').isVisible(),true);
@@ -108,6 +109,7 @@ try {
   await page.waitForFunction(() => window.__flightStates.at(-1).altimeter_setting_pa===window.__flightStates.at(-1).altimeter_qnh_pa);
   const viewBeforePressureKeys=await page.locator('#chase').getAttribute('aria-pressed');
   await page.keyboard.press('r'); await page.keyboard.press('v'); await page.keyboard.press('Space');
+  assert.equal(await page.locator('#status').textContent(), 'Paused', 'modal R cannot enter Review');
   await page.waitForTimeout(200);
   assert.equal((await physics()).digest,pausedPhysics.digest,'pressure controls and modal shortcuts do not change the dynamics digest');
   assert.equal(await page.locator('#chase').getAttribute('aria-pressed'),viewBeforePressureKeys,'modal shortcuts cannot switch view');
@@ -116,10 +118,10 @@ try {
   await page.waitForFunction(()=>document.activeElement.id==='scene');
   assert.equal(await page.locator('#status').textContent(),'Paused','closing pressure settings leaves flight paused');
   paused=await state(); // A knob publication includes the final paused step, even between regular state streams.
-  await page.locator('#chase').click();assert.equal(await page.locator('#chase').getAttribute('aria-pressed'),'true');
+  await page.locator('#view-menu > summary').click(); await page.locator('#chase').click();assert.equal(await page.locator('#chase').getAttribute('aria-pressed'),'true');
   assert.equal((await state()).step,paused.step,'view switch must not advance paused state');
-  await page.locator('#reset').click();await page.waitForFunction(()=>!document.querySelector('#start').disabled);
-  await page.locator('#start').click();await page.waitForFunction(()=>document.querySelector('#status').textContent==='Flying');
+  await page.locator('#flight-menu > summary').click(); await page.locator('#reset').click();await page.waitForFunction(()=>!document.querySelector('#start').disabled);
+  await startOrResume(page);await page.waitForFunction(()=>document.querySelector('#status').textContent==='Flying');
   assert.equal(await page.evaluate(()=>document.activeElement.id),'scene','restart returns flight keyboard focus');
   await page.waitForTimeout(100);const before=await state();
   await page.keyboard.down('ArrowRight');await page.waitForTimeout(650);await page.keyboard.up('ArrowRight');
@@ -139,7 +141,7 @@ try {
   await page.locator('#altimeter-open').click(); await page.locator('#altimeter-qfe').click();
   await page.waitForFunction(()=>{const s=window.__flightStates.at(-1);return s.altimeter_setting_pa===s.altimeter_qfe_pa;});
   const recordedQfe=(await state()).altimeter_qfe_pa;
-  await page.locator('#altimeter-close').click(); await page.locator('#start').click(); await page.waitForTimeout(150);
+  await page.locator('#altimeter-close').click(); await startOrResume(page); await page.waitForTimeout(150);
   const liveBeforeReview=await state();
   await page.locator('#review-flight').click();
   await page.waitForTimeout(120);const reviewPaused=await state();
@@ -157,8 +159,8 @@ try {
   assert.equal(await page.locator('#altimeter-open').isDisabled(),true,'pressure adjustment unavailable in review');
   await page.waitForFunction(()=>document.querySelector('.practice-map-readout').textContent.includes('082° true'));
   assert((await page.locator('.practice-map-readout').textContent()).includes('49.9600° N'),'map follows selected historical location');
-  assert.equal(await page.locator('.throttle-control').isVisible(),false,'unrecorded throttle position is hidden');
-  assert.equal(await page.locator('#power').textContent(),'—','timeline focus cannot expose live throttle');
+  assert.equal(await page.locator('.throttle-control').isVisible(),true,'recorded throttle remains visible');
+  assert.match(await page.locator('#power').textContent(), /^\d+%$/, 'timeline focus keeps the recorded throttle indication');
   await page.keyboard.press('Space');await page.waitForTimeout(250);
   assert(Number(await page.locator('#review-time').inputValue())>0,'review playback advances selected time');
   assert.equal((await state()).step,reviewPaused.step,'review playback does not run JSBSim');
@@ -166,7 +168,7 @@ try {
   const chaseBefore=await page.locator('#chase').getAttribute('aria-pressed');
   await page.keyboard.press('v');
   assert.notEqual(await page.locator('#chase').getAttribute('aria-pressed'),chaseBefore,'V switches camera with timeline focus');
-  await page.locator('#chase').click();assert.equal((await state()).step,reviewPaused.step,'review camera switch preserves live state');
+  await page.locator('#view-menu > summary').click(); await page.locator('#chase').click();assert.equal((await state()).step,reviewPaused.step,'review camera switch preserves live state');
   await page.locator('#review-time').focus();await page.keyboard.press('End');
   await page.waitForFunction(()=>document.querySelector('#altimeter-reference').textContent.includes('LAUNCH QFE'));
   assert.match(await page.locator('#altimeter-open').textContent(),new RegExp((recordedQfe/100).toFixed(2).replace('.', '\\.')),'review end restores recorded QFE');
@@ -178,9 +180,9 @@ try {
   const liveHeading=((reviewPaused.heading_rad*180/Math.PI)%360+360)%360;
   assert.equal(await page.locator('#heading').textContent(),`${String(Math.round(liveHeading)%360).padStart(3,'0')}°`,'returning live restores actual live state');
   assert.equal((await state()).step,reviewPaused.step);
-  await page.locator('#reset').click();await page.waitForFunction(()=>!document.querySelector('#start').disabled);
+  await page.locator('#flight-menu > summary').click(); await page.locator('#reset').click();await page.waitForFunction(()=>!document.querySelector('#start').disabled);
   assert.equal(await page.locator('#review-flight').isDisabled(),true,'restart clears current-flight review');
-  await page.locator('#start').click();
+  await startOrResume(page);
   await page.locator('#controls-settings').click();
   await page.waitForFunction(()=>document.querySelector('#status').textContent==='Paused');
   // The DOM pauses immediately; let queued worker state messages drain first.
@@ -193,10 +195,10 @@ try {
   await page.waitForFunction(()=>document.activeElement.id==='scene',null,{timeout:1000});
   assert.equal(await page.evaluate(()=>document.activeElement.id),'scene','settings restore flight focus');
   assert.equal(await page.locator('#status').textContent(),'Paused','closing settings does not resume');
-  await page.locator('#start').click();await page.keyboard.down('ArrowRight');
+  await startOrResume(page);await page.keyboard.down('ArrowRight');
   assert(Math.abs(Number(await page.locator('#roll-control').textContent())-(0.45*0.5-0.109375))<0.01,'gentle preset scales pilot input without scaling offset');
   await page.keyboard.up('ArrowRight');
-  await page.locator('#reset').click();await page.waitForFunction(()=>document.querySelector('#status').textContent==='Flying');
+  await page.locator('#flight-menu > summary').click(); await page.locator('#reset').click();await page.waitForFunction(()=>document.querySelector('#status').textContent==='Flying');
   await page.keyboard.down('ArrowRight');
   assert(Math.abs(Number(await page.locator('#roll-control').textContent())-(0.45*0.5-0.109375))<0.01,'flight reset preserves selected sensitivity');
   await page.keyboard.up('ArrowRight');
@@ -204,7 +206,7 @@ try {
   await page.locator('#sensitivity-pitch').focus();await page.keyboard.press('End');
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#control-settings').isVisible(),false,'Escape closes settings');
-  await page.locator('#start').click();await page.keyboard.down('ArrowUp');
+  await startOrResume(page);await page.keyboard.down('ArrowUp');
   assert(Math.abs(Number(await page.locator('#pitch-control').textContent())-0.525)<0.01,'custom sensitivity reaches active controls');
   await page.keyboard.up('ArrowUp');
   await page.locator('#controls-settings').click();await page.locator('#settings-default').click();
@@ -212,18 +214,18 @@ try {
   assert.equal(await page.locator('#sensitivity-roll').inputValue(),'100');
   assert.equal(await page.locator('#sensitivity-rudder').inputValue(),'100');
   await page.screenshot({path:fileURLToPath(new URL('../../output/flight/control-settings.png',import.meta.url))});
-  await page.locator('#settings-close').click();await page.locator('#start').click();
+  await page.locator('#settings-close').click();await startOrResume(page);
   await page.locator('#pause').click();
-  await page.locator('#reset').click();
+  await page.locator('#flight-menu > summary').click(); await page.locator('#reset').click();
   await page.waitForFunction(()=>!document.querySelector('#start').disabled);
-  await page.locator('#cockpit').click();
+  await page.locator('#view-menu > summary').click(); await page.locator('#cockpit').click();
   await page.waitForFunction(()=>document.querySelector('#scene').dataset.imagery==='ready',null,{timeout:45000});
   await mkdir(new URL('../../output/flight/',import.meta.url),{recursive:true});
   await page.screenshot({path:fileURLToPath(new URL('../../output/flight/cockpit.png',import.meta.url))});
   await page.screenshot({path:fileURLToPath(new URL('../../output/flight/practice-map.png',import.meta.url))});
   await page.getByRole('button',{name:'Close practice map',exact:true}).click();
   assert.equal(await page.locator('#toggle-map').getAttribute('aria-pressed'),'false');
-  await page.locator('#chase').click();
+  await page.locator('#view-menu > summary').click(); await page.locator('#chase').click();
   await page.waitForFunction(()=>document.querySelector('#scene').dataset.imagery==='ready',null,{timeout:45000});
   await page.screenshot({path:fileURLToPath(new URL('../../output/flight/chase.png',import.meta.url))});
   await page.evaluate(()=>window.dispatchEvent(new Event('blur')));await page.waitForTimeout(100);const blurred=await state();
