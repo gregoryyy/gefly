@@ -124,3 +124,62 @@ test('invalid controls and worker-load failures are visible; disposed sessions i
   session.dispose(); session.start(); session.reset();
   assert.equal(MockWorker.instances.length, 2);
 });
+
+test('altimeter setting crosses the worker boundary while paused without resuming flight', (t) => {
+  const { session } = fixture(t); session.reset();
+  const worker = MockWorker.instances[0]; worker.emit(ready);
+  const before = worker.messages.length;
+  for (const setting of [NaN, Infinity, 79_999, 110_001]) session.setAltimeter(setting);
+  assert.equal(worker.messages.length, before);
+  session.setAltimeter(99_500);
+  assert.deepEqual(worker.messages.at(-1), { type: 'altimeter', setting_pa: 99_500 });
+  assert.equal(worker.messages.some((message) => message.type === 'run'), false);
+  session.dispose(); const count = worker.messages.length;
+  session.setAltimeter(101_325); assert.equal(worker.messages.length, count);
+});
+
+test('pressure indications are copied as a complete finite group; partial pressure state fails', (t) => {
+  const { session, states, errors } = fixture(t); session.reset();
+  const worker = MockWorker.instances[0]; worker.emit(ready);
+  const air = { p_static_pa: 96_000, altimeter_setting_pa: 101_325, altimeter_indicated_m: 450,
+    altimeter_qnh_pa: 101_325, altimeter_qfe_pa: 96_000, altimeter_qfe_datum_m: 396.24 };
+  const message = { ...state, ...air }; worker.emit(message);
+  assert.equal((states[0] as typeof message).p_static_pa, air.p_static_pa);
+  message.altimeter_setting_pa = 88_000;
+  assert.equal((states[0] as typeof message).altimeter_setting_pa, 101_325);
+  worker.emit({ ...state, p_static_pa: 96_000 });
+  assert.match(errors[0], /invalid state/);
+});
+
+test('flap and wheel-brake targets cross the coalesced worker boundary without gain changes', async (t) => {
+  const { session } = fixture(t); session.start();
+  const worker = MockWorker.instances[0]; worker.emit(ready); worker.emit(state);
+  session.input({ elevator: 0, aileron: 0, rudder: 0, throttle: .7, flap_norm: 1/3, brake_norm: 1 });
+  await sleep(70);
+  assert.equal(worker.messages.at(-1)?.flap_norm, 1/3);
+  assert.equal(worker.messages.at(-1)?.brake_norm, 1);
+  session.input({ elevator: 0, aileron: 0, rudder: 0, throttle: .7, flap_norm: 1/3, brake_norm: 0 });
+  await sleep(70); assert.equal(worker.messages.at(-1)?.brake_norm, 0);
+});
+
+test('partial cockpit snapshots cannot enable secondary controls or display invalid readouts', (t) => {
+  const { session, states, errors } = fixture(t); session.reset();
+  const worker = MockWorker.instances[0]; worker.emit(ready);
+  worker.emit({ ...state, flap_rad: 0, brake_left_norm: 0 });
+  assert.equal(states.length, 0); assert.match(errors[0], /invalid state/);
+});
+
+test('autopilot capture/disconnect messages do not start paused physics or invent a heading', (t) => {
+  const { session } = fixture(t); session.reset(); const worker=MockWorker.instances[0];worker.emit(ready);
+  session.setAutopilot(2); assert.deepEqual(worker.messages.at(-1), { type:'autopilot', mode:2 });
+  session.setAutopilot(2,-Math.PI/2);
+  assert.equal(worker.messages.at(-1)?.target_heading_rad, Math.PI*1.5);
+  session.setAutopilot(0); assert.deepEqual(worker.messages.at(-1), {type:'autopilot',mode:0});
+  const count=worker.messages.length;session.setAutopilot(2,NaN);assert.equal(worker.messages.length,count);
+  assert.equal(worker.messages.some(message=>message.type==='run'),false);
+});
+
+test('partial engine/autopilot telemetry cannot enable controls', (t) => {
+  const {session,states,errors}=fixture(t);session.reset();const worker=MockWorker.instances[0];worker.emit(ready);
+  worker.emit({...state,ap_mode:1,mixture_norm:.5});assert.equal(states.length,0);assert.match(errors[0],/invalid state/);
+});

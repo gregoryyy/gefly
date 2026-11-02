@@ -72,3 +72,19 @@ test('rejects invalid gains and offsets explicitly', () => {
     assert.throws(() => applyControlSettings(neutral, DEFAULT_CONTROL_SETTINGS, offset), /roll offset/);
   }
 });
+
+test('secondary controls preserve flap and brake commands independently of yoke sensitivity', () => {
+  const raw = { ...neutral, flap_norm: 2/3, brake_norm: 1 };
+  const mapped = applyControlSettings(raw, GENTLE_CONTROL_SETTINGS, 0);
+  assert.equal(mapped.flap_norm, 2/3); assert.equal(mapped.brake_norm, 1);
+  for (const value of [-1, 1.01, NaN, Infinity]) {
+    assert.throws(() => applyControlSettings({ ...raw, flap_norm: value }, DEFAULT_CONTROL_SETTINGS, 0));
+    assert.throws(() => applyControlSettings({ ...raw, brake_norm: value }, DEFAULT_CONTROL_SETTINGS, 0));
+  }
+});
+
+test('engine mixture and automatic/manual selection bypass yoke sensitivity', () => {
+  const mapped = applyControlSettings({ ...neutral, mixture_norm: .6, mixture_auto: false }, GENTLE_CONTROL_SETTINGS, 0);
+  assert.equal(mapped.mixture_norm, .6); assert.equal(mapped.mixture_auto, false);
+  assert.throws(() => applyControlSettings({ ...neutral, mixture_norm: 1.1 }, DEFAULT_CONTROL_SETTINGS, 0));
+});

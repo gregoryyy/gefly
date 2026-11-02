@@ -1,0 +1,52 @@
+.six-pack {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 12px;
+  width: min(100%, 480px);
+  flex: 0 1 480px;
+  align-items: start;
+  justify-items: stretch;
+}
+.six-pack .six-pack-gauge {
+  min-width: 0;
+  width: auto;
+  flex: initial;
+  text-align: center;
+}
+.six-pack .gauge canvas {
+  display: block;
+  width: min(100%, 145px);
+  height: auto;
+  aspect-ratio: 1;
+  margin: 0 auto;
+  filter: drop-shadow(0 3px 3px #0008);
+}
+.six-pack .gauge-readout { margin-top: 2px; }
+.six-pack .gauge-readout b {
+  display: block;
+  min-height: 23px;
+  font-size: clamp(15px, 1.7vw, 21px);
+  font-weight: 500;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: #f1dbb5;
+}
+.six-pack .gauge-readout span {
+  display: block;
+  min-height: 10px;
+  margin-top: 2px;
+  font-size: clamp(6px, .58vw, 8px);
+  letter-spacing: .6px;
+  line-height: 1.25;
+  color: #a9bdc6;
+}
+.six-pack #turn-rate { font-size: clamp(12px, 1.3vw, 17px); padding-top: 2px; }
+.six-pack .pressure-altimeter #altimeter-open { margin-top: 4px; }
+.six-pack .altimeter-availability { max-width: 140px; margin: 3px auto 0; }
+@media (max-width: 600px) {
+  .six-pack { gap: 6px 9px; width: min(100%, 360px); flex-basis: auto; }
+  .six-pack .gauge canvas { width: min(100%, 106px); }
+  .six-pack .gauge-readout b { min-height: 18px; font-size: 16px; }
+  .six-pack #turn-rate { font-size: 12px; }
+  .six-pack .gauge-readout span { min-height: 9px; font-size: 6px; letter-spacing: .35px; }
+}

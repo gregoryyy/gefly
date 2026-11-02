@@ -64,6 +64,17 @@ this selection was recorded.
 
 Why: fixes the first required platform/input experience and optional peripherals.
 
+Refinement: **2026-11-02 18:32, user** (recording time): requested two-finger
+vertical scrolling for camera FOV; [verbatim input](input/2026-11-02-touchpad-fov.md).
+Implemented as a viewing preference, separate from pilot control input.
+
+Refinement: **2026-11-02 18:10, user** (recording time): confirmed short scene
+click toggles touchpad yoke control; hold-drag looks around and release restores
+the preceding yoke mode. Requested numeric throttle keys, flaps/wheel brakes,
+six-pack instruments and engine/autopilot controls; see [verbatim input](input/2026-11-02-classic-flight-controls.md).
+The implemented first autopilot is scoped to generic roll/true-heading control;
+no aircraft installation or altitude-hold decision is inferred.
+
 Answer: **2026-10-31 15:40, user** (recorded by orchestrator): “mac desktop, controlled via
 keyboard and touchpad, optionally connected landing gear, rudder and ailerons.
 reuse geo-fs settings”.

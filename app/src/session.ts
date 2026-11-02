@@ -1,3 +1,4 @@
+import { ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
 import type { Controls, FlightSession, FlightState } from './types';
 
 interface SessionCallbacks {
@@ -20,12 +21,14 @@ function validState(value: Record<string, unknown>): value is Record<string, unk
     && Number.isInteger(value.step) && (value.step as number) >= 0
     && (value.t_s as number) >= 0 && (value.tas_mps as number) >= 0
     && Math.abs(value.lat_rad as number) <= Math.PI / 2
-    && Math.abs(value.lon_rad as number) <= Math.PI;
+    && Math.abs(value.lon_rad as number) <= Math.PI && validAltimeterState(value) && validCockpitState(value) && validEngineState(value);
 }
 
 function validControls(value: Controls): boolean {
   return [value.elevator, value.aileron, value.rudder].every((axis) => Number.isFinite(axis) && Math.abs(axis) <= 1)
-    && Number.isFinite(value.throttle) && value.throttle >= 0 && value.throttle <= 1;
+    && Number.isFinite(value.throttle) && value.throttle >= 0 && value.throttle <= 1
+    && [value.flap_norm,value.brake_norm,value.mixture_norm].every(x => x === undefined || (Number.isFinite(x) && x >= 0 && x <= 1))
+    && (value.mixture_auto === undefined || typeof value.mixture_auto === 'boolean');
 }
 
 /**
@@ -135,7 +138,8 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       } else if (m.type === 'state') {
         if (!validState(m)) { fail('The flight model returned an invalid state. Flight stopped; reset to restart.'); return; }
         latestStep = m.step;
-        callbacks.onState(Object.fromEntries(STATE_FIELDS.map((key) => [key, m[key]])) as unknown as FlightState);
+        const fields = [...STATE_FIELDS, ...[...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS].filter((key) => m[key] !== undefined)];
+        callbacks.onState(Object.fromEntries(fields.map((key) => [key, m[key]])) as unknown as FlightState);
       } else if (m.type === 'error') {
         fail(`JSBSim stopped: ${typeof m.message === 'string' ? m.message : 'unknown worker failure'}`);
       }
@@ -171,6 +175,17 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       userControls = false;
       controlsChanged = true;
       initialize();
+    },
+    setAutopilot(mode, target_heading_rad) {
+      if (disposed || !ready || !worker || ![0,1,2].includes(mode)) return;
+      if (target_heading_rad !== undefined && !Number.isFinite(target_heading_rad)) return;
+      worker.postMessage({ type: 'autopilot', mode,
+        ...(target_heading_rad === undefined ? {} : { target_heading_rad: ((target_heading_rad % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI) }) });
+    },
+    setAltimeter(setting_pa) {
+      if (disposed || !ready || !worker || !Number.isFinite(setting_pa)
+        || setting_pa < 80_000 || setting_pa > 110_000) return;
+      worker.postMessage({ type: 'altimeter', setting_pa });
     },
     input(value) {
       if (disposed) return;

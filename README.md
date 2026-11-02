@@ -49,6 +49,20 @@ research aircraft remains experimental; see
 path over local imagery. During **Review**, its marker follows the selected
 historical state. It is a practice aid with limited coverage, not a navigation chart.
 
+The altimeter's **pressure window** opens paused pressure practice. Compare QNH,
+launch-point QFE and standard pressure, or adjust the setting manually in hPa or
+inHg. The ideal indication follows engine static pressure; launch QFE is a
+practice reference, not airport elevation. Review retains the recorded setting.
+
+The classic **six-pack** now shows airspeed, attitude, pressure altitude, ideal
+turn/slip, true heading and vertical speed. Click the scene to toggle touchpad
+yoke control; hold-drag to look around. Two-finger vertical scrolling
+adjusts camera FOV. **F / Shift+F** selects flaps, **B** holds
+wheel brakes, and **1–9** selects 10–90% throttle (**0** idle). The engine panel
+adds mixture, RPM, manifold pressure, oil and fuel readouts. **P** captures a true
+heading or disconnects the roll-only autopilot; altitude hold is not implemented.
+On narrow screens, open **Engine & autopilot** for those controls.
+
 ## Status and entry points
 
 Technical foundation is underway, with [native](studies/e1-jsbsim/README.md) and

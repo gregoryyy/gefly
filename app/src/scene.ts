@@ -1,10 +1,12 @@
 import {
-  Cartesian3, CesiumWidget, Color, Credit, Ellipsoid, EllipsoidTerrainProvider,
-  HeadingPitchRoll, ImageryLayer, Ion, JulianDate,
-  Matrix4, Model, Rectangle, ShadowMode, SingleTileImageryProvider, Transforms,
+  Axis, Cartesian3, CesiumWidget, Color, Credit, Ellipsoid, EllipsoidTerrainProvider,
+  ImageryLayer, Ion, JulianDate,
+  Matrix3, Matrix4, Model, PerspectiveFrustum, Rectangle, ShadowMode, SingleTileImageryProvider, Transforms,
 } from 'cesium';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 import { createAircraftVisual } from './aircraft-visual';
+import { aircraftBasisENU, boundedCameraLook, cockpitCameraENU, chaseCameraENU, type CameraLook } from './aircraft-orientation';
+import { DEFAULT_FOV_RAD, MIN_FOV_RAD, MAX_FOV_RAD } from './field-of-view.ts';
 import type { FlightScene, FlightState } from './types';
 
 const DEG_RAD = Math.PI / 180;
@@ -16,8 +18,6 @@ function inside(rectangle: Rectangle, state: FlightState): boolean {
   return state.lon_rad >= rectangle.west && state.lon_rad <= rectangle.east
     && state.lat_rad >= rectangle.south && state.lat_rad <= rectangle.north;
 }
-// Visual camera offset only: gives the pilot a useful ground view below the nose.
-const COCKPIT_LOOK_DOWN_RAD = 8 * DEG_RAD;
 const INITIAL_STATE: FlightState = {
   step: 0, t_s: 0, lat_rad: 49.96 * DEG_RAD, lon_rad: 8.643 * DEG_RAD,
   alt_msl_m: 1300 * 0.3048, pitch_rad: 0, roll_rad: 0,
@@ -155,7 +155,8 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   const position = new Cartesian3();
   const frame = new Matrix4();
   const modelMatrix = new Matrix4();
-  const modelHpr = new HeadingPitchRoll();
+  const modelRotation = new Matrix3();
+  const localModelMatrix = new Matrix4();
   const cameraPosition = new Cartesian3();
   const cameraDirection = new Cartesian3();
   const cameraUp = new Cartesian3();
@@ -164,6 +165,8 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   const localUp = new Cartesian3();
   let lastView: 'cockpit' | 'chase' = 'cockpit';
   let lastState = INITIAL_STATE;
+  let lastLook: CameraLook = { yaw_rad: 0, pitch_rad: 0 };
+  let lastFov_rad = DEFAULT_FOV_RAD;
 
   // This visual is authored here, not fetched aircraft/model data. Loading it must
   // not delay the first geographic scene or start an alternate render loop.
@@ -172,6 +175,11 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     modelUrl = url;
     const model = await Model.fromGltfAsync({
       url, modelMatrix: Matrix4.clone(modelMatrix), scale: 1,
+      // Our original visual is +X nose, +Y up, +Z right. Cesium's glTF
+      // default +Z forward would rotate it again and put the aircraft sideways.
+      // Y-up correction alone maps it to +X forward, +Y left, +Z up.
+      // https://cesium.com/learn/cesiumjs/ref-doc/Model.html#fromGltfAsync
+      upAxis: Axis.Y, forwardAxis: Axis.X,
       minimumPixelSize: 0, shadows: ShadowMode.DISABLED,
     });
     if (disposed) { model.destroy(); return; }
@@ -186,54 +194,65 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     }
   });
 
-  function update(state: FlightState, view: 'cockpit' | 'chase'): void {
+  function update(state: FlightState, view: 'cockpit' | 'chase', look?: Readonly<CameraLook>): void {
     if (disposed) return;
     if (![state.lat_rad, state.lon_rad, state.alt_msl_m, state.pitch_rad, state.roll_rad, state.heading_rad].every(Number.isFinite)) {
       throw new RangeError('Cannot render a non-finite aircraft state');
     }
-    lastState = state; lastView = view;
+    lastState = state; lastView = view; lastLook = boundedCameraLook(look);
+    // Keep zoom independent of look gestures and updates that omit camera input.
+    if (look?.fov_rad !== undefined) {
+      lastFov_rad = Number.isFinite(look.fov_rad)
+        ? Math.max(MIN_FOV_RAD, Math.min(MAX_FOV_RAD, look.fov_rad)) : DEFAULT_FOV_RAD;
+    }
     const { lat_rad, lon_rad, alt_msl_m, pitch_rad, roll_rad, heading_rad } = state;
     imageryStatus(state);
     Cartesian3.fromRadians(lon_rad, lat_rad, alt_msl_m, Ellipsoid.WGS84, position);
     Transforms.eastNorthUpToFixedFrame(position, Ellipsoid.WGS84, frame);
-    modelHpr.heading = heading_rad - Math.PI / 2;
-    modelHpr.pitch = pitch_rad;
-    modelHpr.roll = roll_rad;
-    Transforms.headingPitchRollToFixedFrame(position, modelHpr, Ellipsoid.WGS84, undefined, modelMatrix);
+    const basis = aircraftBasisENU(heading_rad, pitch_rad, roll_rad);
+    // Cesium's corrected model axes are forward/left/up. Build those columns
+    // directly in ENU, then resolve them to Earth-fixed coordinates. This avoids
+    // a glTF axis correction being confused with heading/pitch/roll conventions.
+    Matrix3.fromArray([
+      ...basis.forward, ...basis.right.map(value => -value), ...basis.up,
+    ], 0, modelRotation);
+    Matrix4.fromRotationTranslation(modelRotation, Cartesian3.ZERO, localModelMatrix);
+    Matrix4.multiplyTransformation(frame, localModelMatrix, modelMatrix);
     if (aircraft) {
       aircraft.modelMatrix = Matrix4.clone(modelMatrix, aircraft.modelMatrix);
       aircraft.show = view === 'chase';
     }
     if (view === 'cockpit') {
-      const sh = Math.sin(heading_rad), ch = Math.cos(heading_rad);
-      const sp = Math.sin(pitch_rad), cp = Math.cos(pitch_rad);
-      const sr = Math.sin(roll_rad), cr = Math.cos(roll_rad);
-      // ENU forward and aircraft-up vectors. Positive roll lowers the right wing.
-      const fx = sh * cp, fy = ch * cp, fz = sp;
-      const ux = -sh * sp * cr + ch * sr;
-      const uy = -ch * sp * cr - sh * sr;
-      const uz = cp * cr;
-      const lookCos = Math.cos(COCKPIT_LOOK_DOWN_RAD), lookSin = Math.sin(COCKPIT_LOOK_DOWN_RAD);
-      Cartesian3.fromElements(fx * lookCos - ux * lookSin, fy * lookCos - uy * lookSin, fz * lookCos - uz * lookSin, localDirection);
-      Cartesian3.fromElements(ux * lookCos + fx * lookSin, uy * lookCos + fy * lookSin, uz * lookCos + fz * lookSin, localUp);
-      Cartesian3.fromElements(ux * 0.7, uy * 0.7, uz * 0.7, local);
+      const camera = cockpitCameraENU(basis, lastLook);
+      Cartesian3.fromElements(...camera.direction, localDirection);
+      Cartesian3.fromElements(...camera.up, localUp);
+      Cartesian3.fromElements(basis.up[0] * 0.7, basis.up[1] * 0.7, basis.up[2] * 0.7, local);
       Matrix4.multiplyByPoint(frame, local, cameraPosition);
       Matrix4.multiplyByPointAsVector(frame, localDirection, cameraDirection);
       Matrix4.multiplyByPointAsVector(frame, localUp, cameraUp);
     } else {
-      Cartesian3.fromElements(-Math.sin(heading_rad) * 30, -Math.cos(heading_rad) * 30, 11, local);
+      const camera = chaseCameraENU(heading_rad, lastLook);
+      Cartesian3.fromElements(...camera.offset, local);
+      Cartesian3.fromElements(...camera.direction, localDirection);
+      Cartesian3.fromElements(...camera.up, localUp);
       Matrix4.multiplyByPoint(frame, local, cameraPosition);
-      Cartesian3.subtract(position, cameraPosition, cameraDirection);
-      Cartesian3.normalize(cameraDirection, cameraDirection);
-      Matrix4.multiplyByPointAsVector(frame, Cartesian3.UNIT_Z, cameraUp);
+      Matrix4.multiplyByPointAsVector(frame, localDirection, cameraDirection);
+      Matrix4.multiplyByPointAsVector(frame, localUp, cameraUp);
     }
     scene.camera.setView({ destination: cameraPosition, orientation: { direction: cameraDirection, up: cameraUp } });
+    const frustum = scene.camera.frustum;
+    if (!(frustum instanceof PerspectiveFrustum)) throw new Error('Flight view requires a perspective camera');
+    // Cesium uses horizontal FOV in landscape and vertical FOV in portrait.
+    // Change projection only: position, gaze and aircraft state stay unchanged.
+    frustum.fov = lastFov_rad;
+    const fovDeg = (frustum.fov / DEG_RAD).toFixed(1);
+    if (container.dataset.fovDeg !== fovDeg) container.dataset.fovDeg = fovDeg;
     widget.render();
 
   }
 
   const observer = new ResizeObserver(() => {
-    if (!disposed) { widget.resize(); update(lastState, lastView); }
+    if (!disposed) { widget.resize(); update(lastState, lastView, lastLook); }
   });
   observer.observe(container);
   update(INITIAL_STATE, 'cockpit');

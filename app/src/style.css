@@ -124,3 +124,94 @@ footer { display: flex; justify-content: space-between; border-top: 1px solid #8
 }
 
 .settings-trigger { font-size: 11px; white-space: nowrap; }
+
+/* Standard two-row panel; aircraft controls stay beside the six instruments. */
+:root { --deck-height: 452px; }
+.instruments { align-items: flex-start; gap: 36px; max-width: 920px; }
+.engine-controls { display: flex; flex: 0 0 210px; flex-direction: column; gap: 24px; padding-top: 18px; }
+.engine-controls .throttle-control { width: 100%; max-width: none; min-width: 0; }
+.engine-controls .throttle-control p { margin-top: 8px; }
+.engine-controls .session-controls { min-width: 0; gap: 10px; }
+.config-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 10px; letter-spacing: .7px; color: #afc2cd; }
+.config-heading b { font-size: 12px; font-weight: 500; color: #f0cc95; }
+.flap-detents { display: grid; grid-template-columns: repeat(4,1fr); gap: 5px; margin-top: 10px; }
+.flap-detents button { padding: 9px 4px; font-size: 11px; }
+.flap-detents button[aria-pressed=true] { background: #d9b17a; color: #142531; }
+.flap-controls small, .brake-controls small { display: block; font-size: 9px; color: #91aab9; line-height: 1.6; margin-top: 7px; }
+.brake-controls .control-key { width: 100%; font-size: 11px; padding: 12px 7px; }
+.brake-controls .control-key.held { background: #d9b17a; color: #142531; }
+.pointer-mode { position: absolute; z-index: 2; left: 50%; transform: translateX(-50%); bottom: calc(var(--deck-height) + 18px); padding: 6px 10px; border-radius: 20px; background: #10212ad9; color: #c9dce6; font-size: 10px; white-space: nowrap; pointer-events: none; }
+#scene[data-pointer-mode=yoke] { cursor: crosshair; }
+#scene[data-pointer-mode=look] { cursor: grabbing; }
+@media (max-width: 880px) {
+  :root { --deck-height: 450px; }
+  .instruments { flex-wrap: nowrap; gap: 20px; }
+  .engine-controls { flex-basis: 175px; gap: 19px; }
+  .engine-controls .session-controls { flex-direction: column; }
+  .control-panel { transform: scale(.78); }
+}
+@media (max-width: 620px) {
+  :root { --deck-height: 540px; }
+  .flight-app { min-height: 844px; }
+  .flight-deck { padding: 9px 14px 0; }
+  .instruments { flex-direction: column; align-items: center; gap: 12px; }
+  .engine-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 17px; width: 100%; max-width: 360px; padding-top: 0; flex-basis: auto; }
+  .engine-controls .throttle-control { margin: 0; }
+  .engine-controls .throttle-control p { display: none; }
+  .flap-detents { margin-top: 7px; }
+  .flap-detents button { font-size: 9px; padding: 7px 2px; }
+  .flap-controls small, .brake-controls small { font-size: 7px; margin-top: 4px; }
+  .engine-controls .session-controls { flex-direction: column; gap: 6px; }
+  .engine-controls .session-controls button { padding: 7px; font-size: 9px; }
+  .brake-controls .control-key { font-size: 9px; padding: 8px 4px; }
+  .pointer-mode { max-width: calc(100vw - 24px); font-size: 8px; bottom: calc(var(--deck-height) + 10px); }
+  .control-panel { transform: scale(.58); bottom: calc(var(--deck-height) + 34px); left: 9px; }
+}
+@media (max-width: 620px) {
+  .topbar { display: grid; grid-template-columns: auto 1fr auto auto; gap: 6px 8px; }
+  .topbar .brand { grid-column: 1; grid-row: 1; }
+  .topbar .session-status { grid-column: 2; grid-row: 1; margin: 0; font-size: 9px; }
+  .topbar .view-controls { grid-column: 3 / 5; grid-row: 1; justify-self: end; }
+  #review-button-slot { grid-column: 1; grid-row: 2; }
+  #review-button-slot button { width: 100%; padding: 8px; font-size: 10px; }
+  #toggle-map { grid-column: 2; grid-row: 2; }
+  #controls-settings { grid-column: 3; grid-row: 2; }
+  #pause { grid-column: 4; grid-row: 2; }
+  .topbar .settings-trigger, #pause { padding: 8px; font-size: 10px; }
+  .notice, .practice-map-panel { top: 116px; }
+  .flight-gate { top: 116px; }
+}
+.instruments { max-width: 1200px; gap: 24px; }
+#engine-systems { flex: 0 0 230px; padding-top: 5px; }
+@media (max-width: 1100px) and (min-width: 621px) {
+  .six-pack { max-width: 420px; }
+  .engine-controls { flex-basis: 165px; }
+  #engine-systems { flex-basis: 210px; }
+  #engine-systems .engine-panel { width: 210px; }
+  .instruments { gap: 16px; }
+}
+@media (max-width: 880px) and (min-width: 621px) {
+  .six-pack { max-width: 350px; }
+  .engine-controls { flex-basis: 145px; }
+  #engine-systems { flex-basis: 190px; }
+  #engine-systems .engine-panel { width: 190px; }
+  .instruments { gap: 12px; }
+}
+@media (max-width: 620px) {
+  :root { --deck-height: 574px; }
+  #engine-systems { flex: 0 0 auto; width: 100%; max-width: 360px; padding-top: 0; }
+  .instruments { gap: 10px; }
+}
+
+.roll-correction-presets { display: flex; gap: 6px; margin-top: 8px; }
+.roll-correction-presets button { font-size: 8px; padding: 5px 8px; }
+
+.camera-fov { position: absolute; z-index: 2; left: 50%; transform: translateX(-50%); bottom: calc(var(--deck-height) + 48px); color: #d3e0e8; background: #10212aaa; border-radius: 12px; padding: 4px 9px; font-size: 9px; white-space: nowrap; pointer-events: none; }
+@media (max-width: 620px) { .camera-fov { bottom: calc(var(--deck-height) + 36px); font-size: 8px; } }
+@media (min-width: 621px) and (max-height: 850px) {
+  .flight-gate { top: 84px; transform: translateX(-50%); padding: 16px 20px; }
+  .flight-gate h1 { font-size: 21px; margin: 8px 0; }
+  .flight-gate p { font-size: 11px; line-height: 1.5; margin-bottom: 12px; }
+  .flight-gate .primary { padding: 10px; }
+  .flight-gate .gate-hint { display: none; }
+}

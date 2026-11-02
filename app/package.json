@@ -8,8 +8,8 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build",
     "check": "tsc --noEmit",
-    "test": "node --test src/session.test.ts src/control-settings.test.ts src/flight-trace.test.ts src/practice-map-data.test.ts tests/runtime.test.ts",
-    "test:browser": "node tests/smoke.mjs"
+    "test": "node --test src/session.test.ts src/control-settings.test.ts src/flight-trace.test.ts src/practice-map-data.test.ts src/aircraft-orientation.test.ts src/pointer-yoke.test.ts src/field-of-view.test.ts tests/runtime.test.ts ../studies/e1-browser/sim/altimeter.test.mjs ../studies/e1-browser/sim/cockpit.test.mjs ../studies/e1-browser/sim/engine.test.mjs && python3 ../studies/e1-browser/sim/prepare-aircraft.test.py",
+    "test:browser": "node tests/smoke.mjs && node tests/classic-smoke.mjs && node tests/engine-smoke.mjs && node tests/fov-smoke.mjs"
   },
   "dependencies": {
     "cesium": "1.146.0",

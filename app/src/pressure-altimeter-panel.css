@@ -1,0 +1,45 @@
+.pressure-altimeter { position: relative; }
+.pressure-altimeter #altimeter-open {
+  margin-top: 5px;
+  padding: 4px 9px;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  border-radius: 12px;
+  color: #f0cc95;
+}
+.altimeter-availability { display: block; font-size: 7px; line-height: 1.4; color: #acbac2; margin-top: 4px; }
+.altimeter-dialog {
+  width: min(460px, calc(100vw - 32px));
+  max-height: calc(100dvh - 40px);
+  margin: auto;
+  padding: 26px 28px;
+  overflow-y: auto;
+  color: #eef3f5;
+  background: #13232e;
+  border: 1px solid #a9bec64d;
+  border-radius: 14px;
+  box-shadow: 0 24px 100px #020a15b3;
+}
+.altimeter-dialog::backdrop { background: #06121cbf; backdrop-filter: blur(5px); }
+.altimeter-dialog h2 { margin: 8px 0; font-size: 26px; font-weight: 500; letter-spacing: -.6px; }
+.altimeter-dialog p { font-size: 12px; line-height: 1.6; color: #afc2cd; }
+.altimeter-setting-row { display: grid; grid-template-columns: 36px minmax(100px, 1fr) 36px 80px; gap: 8px; align-items: end; margin-top: 24px; }
+.altimeter-setting-row label { display: block; font-size: 10px; color: #afc2cd; margin-bottom: 7px; }
+.altimeter-setting-row input, .altimeter-setting-row select { width: 100%; height: 40px; min-width: 0; border: 1px solid #8da7b75c; border-radius: 5px; background: #0c1b25; color: #f0cc95; font-size: 16px; font-variant-numeric: tabular-nums; padding: 8px; }
+.altimeter-setting-row button { height: 40px; padding: 7px; font-size: 22px; }
+.altimeter-setting-row select { font-size: 12px; }
+.altimeter-setting-row select:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.altimeter-dialog .altimeter-applied { font-size: 11px; color: #e1c397; font-variant-numeric: tabular-nums; }
+.altimeter-presets { display: flex; flex-direction: column; gap: 8px; margin: 20px 0; }
+.altimeter-presets button { text-align: left; font-size: 12px; padding: 11px 12px; }
+.altimeter-dialog .altimeter-datum { padding-top: 16px; border-top: 1px solid var(--border); font-size: 11px; }
+.altimeter-dialog .altimeter-note { color: #8fa8b7; font-size: 10px; }
+#altimeter-setting-status { min-height: 20px; margin-bottom: 12px; }
+.altimeter-dialog .primary { font-size: 13px; }
+@media (max-width: 480px) {
+  .altimeter-dialog { padding: 22px 18px; }
+  .altimeter-setting-row { grid-template-columns: 32px minmax(90px, 1fr) 32px 68px; gap: 6px; }
+  .pressure-altimeter #altimeter-open { font-size: 8px; padding: 3px 7px; margin-top: 3px; }
+}
+
+.altimeter-dialog .altimeter-indication { font-size: 26px; color: #f0cc95; margin: 12px 0; font-variant-numeric: tabular-nums; }
