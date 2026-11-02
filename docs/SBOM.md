@@ -73,11 +73,15 @@ The runtime requirements are recorded in the pinned
 and [setup-python source](https://github.com/actions/setup-python/blob/6d4fd22b20465ccc0f7354476588e8df7c9ca0e0/README.md).
 These are CI action runtimes, not application dependencies. Action/interpreter
 setup can download tools; the shared gate then uses Git, Node standard libraries
-and the Python standard library. It installs no project packages and invokes no live peer
+and the Python standard library. Its only package install is the app's npm dependencies
+from the lockfile via `npm ci --ignore-scripts` (no lifecycle scripts), in the
+browser-application job and in the runner's app phase. It invokes no live peer
 provider, PDF/browser/TeX process or simulator runtime. Tests mock provider calls.
+Value files pin the aircraft manifest by id, version and SHA-256 of the file bytes;
+the validator rejects duplicate JSON keys.
 
 [Dependabot configuration](../.github/dependabot.yml) monitors the
-`github-actions` ecosystem at `/` weekly, proposing update PRs under
+`github-actions` ecosystem at `/` and the `npm` ecosystem at `/app` weekly, proposing update PRs under
 [GitHub's documented action-update mechanism](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/auto-update-actions).
 For each proposed replacement, verify the release/tag-to-commit mapping against
 the official action repository, inspect the pinned source and runner/runtime
@@ -151,7 +155,7 @@ validated aircraft/region model.
 | JSBSim engine and included aircraft data / Aeromatic | Can an applicable C172 model meet reference cases through a suitable browser/deployment adapter? Pin engine/model versions and inspect rights separately. **Selected** (Q17; LGPL-2.1-or-later accepted as copyleft exception; bundled aircraft data not shipped). Studied in [studies/e1-jsbsim](../studies/e1-jsbsim/README.md): PyPI 1.3.3 / `v1.3.3`@`66f7faf`, engine LGPL-2.1-or-later per source headers; `c172x` data says "GPL" (unversioned) and "not to be sold"; engine/propeller/systems files carry no notice. Q5 compatibility review pending. |
 | FlightGear C172P model/package | Which flight/model/cockpit components are portable and applicable? Inspect component/asset rights and dependencies instead of importing a whole package by assumption. |
 | Existing JSBSim WASM wrapper | Is the actual early-stage wrapper maintainable and adequate? Review wrapper and bundled engine licenses and run browser/replay budgets before adoption. |
-| CesiumJS 1.146.0 | Studied in [studies/e1-browser/render](../studies/e1-browser/render/README.md) via CDN; Apache-2.0 (permissive). Ion token disabled, no ion/Bing assets. Adopted through the application lockfile for the local prototype; the older study still uses CDN loading without SRI. |
+| CesiumJS 1.146.0 | Studied in [studies/e1-browser/render](../studies/e1-browser/render/README.md) via CDN; Apache-2.0 (permissive). Ion token disabled, no ion/Bing assets. Not adopted in the application yet: `app/package.json` and `app/package-lock.json` neither declare nor lock CesiumJS, and `app/` does not import it (the local prototype renders with three.js). The study still uses CDN loading without SRI. |
 | three.js 0.187.0 | Studied in [studies/e1-browser/render](../studies/e1-browser/render/README.md) via CDN; MIT (permissive). Adopted through the application lockfile for the local prototype; the older study still uses CDN loading without SRI. |
 | emsdk 6.0.13 | Build tool for the JSBSim WASM study ([sim](../studies/e1-browser/sim/README.md)); not bundled; build outputs not committed. |
 | OpenStreetMap data | Assess relevant basemap/coverage and ODbL obligations; public tile service access is a separate policy and hosting decision. |

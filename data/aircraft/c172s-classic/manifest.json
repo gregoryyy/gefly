@@ -2,7 +2,7 @@
   "$comment": "Rights/applicability manifest, not a flight model. Field guide: README.md in this directory. Schema: data/schema/aircraft-manifest.schema.json.",
   "schema_version": "1.0.0",
   "manifest_id": "gefly.aircraft.c172s-classic",
-  "manifest_version": "0.2.1",
+  "manifest_version": "0.3.1",
   "status": "draft",
   "fidelity": "not validated",
   "configuration": {
@@ -454,6 +454,7 @@
       "accessed": "2026-11-01",
       "access_status": "read",
       "sha256_prefix": "22ac73a3922dcede",
+      "hash_basis": "document",
       "applicability": "Superseded FAA revision; 172S section XII pp. 28-31.",
       "rights": {"holder": "US federal government work", "basis": "Not subject to US copyright, 17 U.S.C. 105; other jurisdictions not analysed", "redistribution": "public_domain_us", "copy_in_repository": false}
     },
@@ -467,8 +468,9 @@
       "accessed": "2026-11-01",
       "access_status": "read",
       "sha256_prefix": "659b33b955eb7e86",
+      "hash_basis": "document",
       "applicability": "EU validation of the 172S, Section 2 pp. 14-22; states alignment with FAA 3A12 Rev 88.",
-      "rights": {"holder": "European Union Aviation Safety Agency", "basis": "Page footer: all rights reserved, proprietary document; EASA website reuse terms not read", "redistribution": "reference_only", "copy_in_repository": false}
+      "rights": {"holder": "European Union Aviation Safety Agency", "basis": "Page footer: all rights reserved, proprietary document; cited facts only, no text copied (GAPS Q5/Q23, user 2026-11-02 07:16)", "redistribution": "facts_only", "copy_in_repository": false}
     },
     {
       "id": "S8",
@@ -493,8 +495,9 @@
       "accessed": "2026-11-01",
       "access_status": "read",
       "sha256_prefix": "eea885263b57ec4b",
+      "hash_basis": "document",
       "applicability": "IO-360-L2A ratings and mass; FAA basis stated as TCDS 1E10.",
-      "rights": {"holder": "European Union Aviation Safety Agency", "basis": "Page footer: all rights reserved, proprietary document; EASA website reuse terms not read", "redistribution": "reference_only", "copy_in_repository": false}
+      "rights": {"holder": "European Union Aviation Safety Agency", "basis": "Page footer: all rights reserved, proprietary document; cited facts only, no text copied (GAPS Q5/Q23, user 2026-11-02 07:16)", "redistribution": "facts_only", "copy_in_repository": false}
     },
     {
       "id": "S17",
@@ -506,6 +509,7 @@
       "accessed": "2026-11-01",
       "access_status": "read_selected_pages",
       "sha256_prefix": "420dbdaf5517a7a0",
+      "hash_basis": "document",
       "applicability": "Conventional-panel 172S from 172S8001; information manual, not kept current.",
       "rights": {"holder": "Cessna Aircraft Company (copyright 1998)", "basis": "Copyrighted manual; third-party hosting grants no reuse right", "redistribution": "facts_only", "copy_in_repository": false}
     },
@@ -519,6 +523,7 @@
       "accessed": "2026-11-01",
       "access_status": "read_selected_pages",
       "sha256_prefix": "2ee729856d72359d",
+      "hash_basis": "document",
       "applicability": "G1000 (NAV III) 172S, serials 172S9810 and on; used only for the serial boundary.",
       "rights": {"holder": "Cessna Aircraft Company (copyright 2005)", "basis": "Copyrighted manual; third-party hosting grants no reuse right", "redistribution": "facts_only", "copy_in_repository": false}
     },
@@ -532,8 +537,25 @@
       "accessed": "2026-11-01",
       "access_status": "read_selected_pages",
       "sha256_prefix": "150de015b2d1bce7",
+      "hash_basis": "document",
       "applicability": "ID A14 from the 172 aero-data source note. Uninstalled IO-360-L2A data: ratings (p. 2-2), part-throttle fuel consumption curve 13518 (Figure 3-9, p. 3-24) and sea-level/altitude performance curve 13516-A (Figure 3-25, p. 3-40), drawn for the 160 hp rating; the 172S uses the 180 hp / 2700 rpm alternate rating. Cited pages carry no revision mark.",
       "rights": {"holder": "Lycoming (copyright 2005 and 2009, all rights reserved)", "basis": "Copyrighted manual; third-party hosting grants no reuse right; selected chart points only (user decisions 2026-11-01 18:43 and 19:04, GAPS Q5)", "redistribution": "facts_only", "copy_in_repository": false}
+    },
+    {
+      "id": "S14",
+      "title": "FlightGear Cessna 172P aircraft package (c172p), instrument, system and Nasal files",
+      "publisher": "c172p-team (FlightGear aircraft developers)",
+      "document": "c172p repository, files listed in the research note",
+      "revision": "master 63ba85273b7f44637eb4683dcdc8f97af7821653 (2026-10-05)",
+      "url": "https://github.com/c172p-team/c172p/tree/63ba85273b7f44637eb4683dcdc8f97af7821653",
+      "accessed": "2026-11-02",
+      "access_status": "read_selected_pages",
+      "sha256_prefix": "b294b9c8a5c14917",
+      "hash_basis": "file_listing",
+      "use": "estimate_only",
+      "variant": "172P",
+      "applicability": "ID S14 from the 172S/FR172 source survey. A simulator model of a different variant, the Cessna 172P (classic panel, 160/180 hp engine options), not the 172S and not a manufacturer document. Used only for estimated values (GAPS Q23 update 2026-11-02 08:01): dial ranges, display/counting behaviour and the low-fuel basis where S17 is silent. Citation 'page' is a repository file path at this commit; 'section' names the element and lines. sha256_prefix is the SHA-256 of the sha256sum listing of the 20 files read (listing in docs/research/2026-11-02-172s-engine-fuel-ind-and-sample-loading.md).",
+      "rights": {"holder": "c172p-team contributors; copyright per file (for example EGT.xml: Torsten Dreyer 2009)", "basis": "GPL-2.0-or-later: LICENSE holds the GPL v2 text, CONTRIBUTING.md states 'GPL version 2 or later', and file headers that carry a notice say 'version 2 ... or (at your option) any later version'; Nasal/annunciator_panel.nas is marked public domain; some sounds are CC-BY/CC0 (Thanks). Compatible with the project's GPL-3.0-or-later, but only numeric values and behaviour descriptions in our own words are taken, with file and commit references; no code, XML, textures or other assets are copied (GAPS Q5/Q23).", "redistribution": "facts_only", "copy_in_repository": false}
     }
   ],
   "not_included": [
@@ -553,7 +575,8 @@
     "from": [
       "docs/research/2026-11-01-c172s-fr172-sources.md",
       "docs/research/2026-11-01-jsbsim-datum-172s-controls.md (branch design/contracts-1-4, PR #12, not merged)",
-      "docs/research/2026-11-01-c172s-poh-values.md (source A14 added with the engine and cruise extraction)"
+      "docs/research/2026-11-01-c172s-poh-values.md (source A14 added with the engine and cruise extraction)",
+      "docs/research/2026-11-02-172s-engine-fuel-ind-and-sample-loading.md (source S14, FlightGear c172p, added 2026-11-02 for estimated indication values)"
     ]
   }
 }

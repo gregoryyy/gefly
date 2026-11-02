@@ -75,7 +75,7 @@ Assessment reads only per-step recorded state, never interpolated display values
 | --- | --- | --- |
 | Indicated airspeed | assessment IAS `cal_ias_mps` (evaluator-derived, SCENARIO-CONTRACTS C4; the instrument reading `ind.asi_ias_mps` is separate) | POH targets are KIAS. For assessment this value is derived from `sim.cas_mps` and `sim.flap_rad` by the CAL mapping in [Assessment airspeed](#assessment-airspeed), or is "not available" for that step. `sim.cas_mps` is never compared with a KIAS value |
 | Calibrated airspeed | `sim.cas_mps` | Limit gates against the POH **KCAS** column (p. 2-4): VNE 160 KCAS, VFE 107 KCAS (10°), 85 KCAS (10°–30°); stall-margin warning against the p. 5-12 KCAS values; input to the CAL mapping |
-| Indicated altitude | `ind` altimeter indicated altitude (exact field name **TBD** in contracts `ind`) with `setting_pa`, `setting_ref` = QNH | Used for the downwind ±150 ft tolerance (feedback); a mis-set altimeter is reported separately |
+| Indicated altitude | `ind.altimeter.indicated_m` with `ind.altimeter.setting_pa`; `setting_ref` = QNH, the scenario's expected reference (SCENARIO-CONTRACTS §4, CONTRACTS §10.1) | Used for the downwind ±150 ft tolerance (feedback); a mis-set altimeter is reported separately |
 | Derived: QNH-reference altitude | `h_qnh_ref_m` (evaluator-derived, outside the digests; SCENARIO-CONTRACTS C1) = altitude a correctly set altimeter would show: ICAO standard-atmosphere pressure–altitude relation evaluated for `env.p_static_pa` with the scenario QNH as zero reference (DEF) | Used for the 1500 ft ceiling **gate**: the operator limit is flown on a QNH altimeter, so true height (`sim.h_msl_m`) would misjudge it in non-standard temperature. Independent of the learner's own setting; derivation and constants recorded with the result for replay |
 | Height above runway | `sim.h_msl_m` − threshold elevation (AIP) | DEF; `sim.h_agl_m` near runway |
 | Derived: vertical speed | `vs_mps` = −`sim.vd_mps` | Derived, not stored in `sim`; derivation and evaluator version recorded with the result so replay re-derives it |
@@ -87,9 +87,9 @@ Assessment reads only per-step recorded state, never interpolated display values
 | Position | `sim.lat_rad`, `sim.lon_rad` → runway frame (along-track `x_rwy_m` from landing threshold, lateral `y_rwy_m`, right positive) | DEF; runway frame from scenario navigation snapshot |
 | Configuration | `sim.flap_rad`, applied `flaps_detent`, `throttle`, `mixture`, `fuel_selector`, `parking_brake`, brakes | |
 | Engine | `sim.prop_radps` → RPM | |
-| Ground contact | weight-on-wheels per gear (field name **TBD** in contracts) | Order of main/nose contact |
+| Ground contact | `sim.wow_nose`, `sim.wow_main_l`, `sim.wow_main_r` (0/1; SCENARIO-CONTRACTS C2) | Order of main/nose contact |
 | Wind | `env` wind NED vector | Headwind/crosswind components relative to runway true bearing (DEF) |
-| Teaching | `teach.phase`, `teach.events[]`, `teach.findings[]` (proposed names) | Annotations only; never read by `sim`/`env`/`ind` |
+| Teaching | Derived `assess.phase`, `assess.measure` and `teach.annotation` events (SCENARIO-CONTRACTS C13) | Annotations only; never read by `sim`/`env`/`ind` |
 
 ## Assessment airspeed
 
@@ -118,8 +118,9 @@ preserves the source conditions below. Band decisions in rules 4–5 remain
 proposals; comparing rounded SI results with knot targets needs a separate
 quantization/boundary policy before implementation.
 
-1. **Flap table**: the 0°, 10° or 30° table applies when `sim.flap_rad` is within
-   0.5° of that setting (same detent tolerance as the VFE gate, IP). Flaps 20° and
+1. **Flap table**: the 0°, 10° or 30° table applies when `sim.flap_rad` lies within the
+   radian bounds of ASSESSMENT-AIRSPEED AA2 (detent ± 0.5°, converted to radians; same
+   tolerance as the VFE gate, IP). Flaps 20° and
    flaps in transit have no tabulated calibration in S17: IAS is "not available".
 2. **Inverse interpolation**: within the selected table, KCAS increases with KIAS, so
    `sim.cas_mps` is located between the two bracketing CAS points and IAS is
@@ -197,16 +198,16 @@ Detection thresholds are DEF/IP and part of the review.
 | --- | --- | --- | --- |
 | P0 Holding point | Run start | Configuration per initial state; parking brake | Pre-take-off items as POH p. 4-15 shown as checklist (R-TRAIN-4); sensed vs acknowledged distinguished |
 | P1 Line-up | Parking brake released, aircraft moves onto runway | Lateral offset `y_rwy_m`; `sim.heading_true_rad` − runway true bearing at start of roll | Feedback only: within ±10° (IP) |
-| P2 Take-off roll | Throttle > 0.9 and `gs_mps` increasing | Flap setting; throttle; mixture; lateral offset; nose-wheel steering use | **Gate**: flaps ≤ 10° (POH p. 4-15, 4-25: > 10° not approved). **Gate**: main gear remain on runway surface (geometry AIP). Feedback: full throttle (POH p. 4-15), mixture rich (POH, field < 3000 ft) |
-| P3 Rotation | Nose-gear weight off | IAS at nose lift-off (KIAS) | IAS (CAL) at nose lift-off: target 55 KIAS (POH p. 4-15), +15/−5 kt (POH+ST) → 50–70 KIAS, flaps 0° or 10° table. Below 50 KIAS (below the extracted table) reported below band, early rotation (rule 4) |
-| P4 Initial climb | All gear off ground | IAS, pitch, bank, `track_true_rad`, flap retraction speed | Target 75 KIAS (IP choice inside POH 70–80, p. 4-15; p. 4-5 says 75–85, unresolved), +15/−5 kt (POH+ST) → 70–90 KIAS, IAS (CAL) from the 0° or 10° table. 10° flaps retracted not below 60 KIAS (POH p. 4-25), IAS (CAL) at the start of retraction from the 10° table. Stall-margin warning (IP) active. `track_true_rad` within ±10° of runway true bearing until the crosswind turn (ST "tracking" limit applied to a visual track, IP adaptation) |
+| P2 Take-off roll | Throttle > 0.9 and `gs_mps` increasing | Flap setting; throttle; mixture; lateral offset; nose-wheel steering use | **Gate**: flaps ≤ 10° (POH p. 4-15, 4-25: > 10° not approved), i.e. `sim.flap_rad` ≤ 10.5° with the 0.5° detent tolerance (IP). **Gate**: main gear remain on runway surface (geometry AIP). Feedback: full throttle (POH p. 4-15), mixture rich (POH, field < 3000 ft) |
+| P3 Rotation | `sim.wow_nose` becomes 0 | IAS at nose lift-off (KIAS) | IAS (CAL) at nose lift-off: target 55 KIAS (POH p. 4-15), +15/−5 kt (POH+ST) → 50–70 KIAS, flaps 0° or 10° table. Below 50 KIAS (below the extracted table) reported below band, early rotation (rule 4) |
+| P4 Initial climb | `wow_nose`, `wow_main_l` and `wow_main_r` all 0 | IAS, pitch, bank, `track_true_rad`, flap retraction speed | Target 75 KIAS (IP choice inside POH 70–80, p. 4-15; p. 4-5 says 75–85, unresolved), +15/−5 kt (POH+ST) → 70–90 KIAS, IAS (CAL) from the 0° or 10° table. 10° flaps retracted not below 60 KIAS (POH p. 4-25), IAS (CAL) at the start of retraction from the 10° table. Stall-margin warning (IP) active. `track_true_rad` within ±10° of runway true bearing until the crosswind turn (ST "tracking" limit applied to a visual track, IP adaptation) |
 | P5 Crosswind | First turn toward circuit side | Turn height above runway (ft); bank (°) | Turn height **TBD** (source research or reviewed experimental criterion; operator gives only a landmark). Bank ≤ 30° (IP; 30° is the skill-test "medium turn", X1 p. 249) |
 | P6 Downwind | Second turn completed; track within 30° of reciprocal runway track (DEF) | Indicated altitude (`ind`) vs circuit altitude (ft); `track_true_rad` vs reciprocal runway true bearing (°); IAS; before-landing items | Indicated altitude ±150 ft about circuit altitude (ST; altitude AIP). `track_true_rad` within ±10° of the reciprocal true bearing (ST "tracking" adapted, IP). IAS (CAL) ±15 kt about a target (ST); target **TBD** (no POH circuit speed); once set, evaluable up to 110 KIAS flaps 0°. Before-landing items fuel BOTH, mixture rich (POH p. 4-16). **Gate**: `h_qnh_ref_m` ≤ 1500 ft = 457.2 m (OPR + IP inference); margin 0 ft unless separately reviewed (any margin is IP) |
-| P7 Base | Third turn | Bank; `sim.cas_mps` vs flap setting; descent | **Gate** (all phases): `sim.cas_mps` ≤ VFE from `sim.flap_rad`: 107 KCAS for 0° < flap ≤ 10°, 85 KCAS for flap > 10° (POH p. 2-4, KCAS column). The POH bands meet at 10°; assigning exactly 10° to the 107 KCAS band and a 0.5° detent tolerance are IP. 107 rather than 109 KCAS is the conservative IP choice ([VFE conflict](#vfe-flaps-10-conflict)). No VFE gate at 0°. Bank ≤ 30° (IP) |
+| P7 Base | Third turn | Bank; `sim.cas_mps` vs flap setting; descent | **Gate** (all phases): `sim.cas_mps` ≤ VFE from `sim.flap_rad`, applied only above the 0° detent tolerance: no gate for flap ≤ 0.5°; 107 KCAS for 0.5° < flap ≤ 10.5°; 85 KCAS for flap > 10.5° (POH p. 2-4, KCAS column). The POH bands meet at 10°; assigning the 10° detent (±0.5°) to the 107 KCAS band and the 0.5° detent tolerance (same as Assessment airspeed rule 1) are IP. 107 rather than 109 KCAS is the conservative IP choice ([VFE conflict](#vfe-flaps-10-conflict)). Bank ≤ 30° (IP) |
 | P8 Final | Track within 30° of runway track and lateral offset < 1 runway width × 4 (DEF/IP) | IAS; flap; lateral offset; descent path; configuration gate | IAS (CAL). Flaps 30°: target 65 KIAS (IP choice inside POH 60–70, p. 4-17), +15/−5 kt (POH+ST) → 60–80 KIAS; above 80 KIAS (above the extracted table) reported above band (rule 4). Flaps up: target 70 KIAS (IP inside POH 65–75, p. 4-5), → 65–85 KIAS. Flaps 10° and 20° targets **TBD**; flaps 20° IAS not available (no table). VFE gate as P7; stall-margin warning (IP) active. Approach-stability gate at a height **TBD** (IP: 300 ft above threshold, configuration set, IAS within tolerance, bank ≤ 15°; all IP) |
 | P9 Flare | Height above threshold < 30 ft (DEF/IP) | Throttle; pitch; sink rate; IAS | Throttle idle by touchdown (POH p. 4-32 "power off") — feedback. Flare height threshold IP |
-| P10 Touchdown | First main-gear contact | Gear contact order; `vs_mps` at contact; along-track `x_rwy_m`; lateral offset; drift (track − heading); bank | **Gate**: main wheels before nose wheel (POH pp. 4-17, 4-32). **Gate**: touchdown at or beyond the landing threshold (AIP geometry) and within the first third of LDA (IP; LDA AIP). Lateral: all gear within runway edges (**Gate**, geometry AIP); feedback when \|`y_rwy_m`\| > ¼ runway width (IP). Sink rate: feedback threshold and hard-landing gate **TBD** (no POH value); not evaluated until an applicable source or explicitly reviewed experimental criterion is recorded |
-| P11 Rollout and stop | All gear on ground | Nose-wheel lowering; braking; lateral offset; stop position | Nose wheel lowered gently, minimum braking (POH p. 4-17) — feedback. **Gate**: stop on the runway surface. Stopped = `gs_mps` < 0.3 m/s for 2 s (DEF/IP) |
+| P10 Touchdown | First of `sim.wow_main_l`/`wow_main_r` becomes 1 | Gear contact order; `vs_mps` at contact; along-track `x_rwy_m`; lateral offset; drift (track − heading); bank | **Gate**: main wheels before nose wheel, i.e. a `wow_main_*` contact before `wow_nose` (POH pp. 4-17, 4-32). **Gate**: touchdown at or beyond the landing threshold (AIP geometry) and within the first third of LDA (IP; LDA AIP). Lateral: all gear within runway edges (**Gate**, geometry AIP); feedback when \|`y_rwy_m`\| > ¼ runway width (IP). Sink rate: feedback threshold and hard-landing gate **TBD** (no POH value); not evaluated until an applicable source or explicitly reviewed experimental criterion is recorded |
+| P11 Rollout and stop | All three `wow_*` are 1 | Nose-wheel lowering; braking; lateral offset; stop position | Nose wheel lowered gently, minimum braking (POH p. 4-17) — feedback. **Gate**: stop on the runway surface. Stopped = `gs_mps` < 0.3 m/s for 2 s (DEF/IP) |
 
 Heading/altitude excursions are counted only when outside tolerance continuously for
 more than 3 s (IP), reflecting the ST allowance for turbulence; gate exceedances
@@ -219,8 +220,9 @@ more than 3 s (IP), reflecting the ST allowance for turbulence; gate exceedances
   landing: full throttle, flaps to 20°, 60 KIAS, pp. 4-5, 4-17) or abandons the
   take-off before lift-off and stops on the runway. Recorded as a safe decision, not a
   failure (IP; aligned with X1 Exercises 12/13 "abandoned take-off", "go-around").
-- **Not completed, unsafe** (any of): `sim.cas_mps` above VFE (107/85 KCAS) or VNE
-  (160 KCAS), or 2700 RPM exceeded (POH pp. 2-4, 2-5); take-off with flaps > 10°;
+- **Not completed, unsafe** (any of): `sim.cas_mps` above VFE (107/85 KCAS, flap
+  bands as P7) or VNE (160 KCAS), or 2700 RPM exceeded (POH pp. 2-4, 2-5); take-off
+  with flaps > 10° (> 10.5° with detent tolerance);
   runway excursion; nose-first or off-runway touchdown; `h_qnh_ref_m` above 1500 ft
   (OPR + IP inference). Stall, hard-landing and structural gates stay **TBD**
   (stall-warning model and limits not sourced) and are reported "not evaluated"; the
@@ -286,7 +288,7 @@ operator rules; this exercise does not replace them.
   instructor-reviewed claim records that separate review.
 - R-TRAIN-2: add that assessment re-evaluates identically from the replay record and
   records evaluator and criterion-set versions.
-- New EVAL section (E7 or a dedicated E14) "Does Exercise 01 assess what it claims?":
+- New EVAL section (E7 or a new dedicated section after E15; E14 is the assurance question) "Does Exercise 01 assess what it claims?":
   scripted input fixtures (nominal circuit; flaps 20° take-off; VFE exceedance; long
   touchdown; nose-first touchdown; go-around; 1500 ft exceedance; ENV-1 crosswind)
   with expected gate/feedback outcomes fixed before execution, plus re-evaluation
@@ -313,4 +315,5 @@ operator rules; this exercise does not replace them.
    interpolation and stall-margin thresholds, flaps-20° IAS (no S17 calibration),
    table-range/transition limitations and the VFE 107/109 KCAS conflict. Unsupported
    samples stay not evaluated; the available points are not a complete ASI model.
-7. Exact `ind` altimeter and weight-on-wheels field names in contracts v1.
+7. ~~Exact `ind` altimeter and weight-on-wheels field names in contracts v1.~~
+   Resolved by SCENARIO-CONTRACTS C2 and §4 (proposal, pending Q-S7).

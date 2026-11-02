@@ -57,6 +57,233 @@ Checks: 189 unit tests OK; check.py exit 0; `utils/ci/run.py --require-node` exi
 GitHub's web merge does not run custom drivers, so the orchestrator re-syncs branches
 locally. Peer pending (batched).
 
+## 2026-11-02 08:20 — Estimate S17 indication gaps from FlightGear c172p
+
+TODO: 2.1 inputs. Agent: Claude Code orchestrator; researcher subagent; quality
+subagent (two rounds; final verdict accept, 10 of 10 spot checks against c172p matched).
+
+**Implementation notes**
+
+Follows the GAPS Q23 update of 08:01. Manifest 0.3.0 adds S14, FlightGear c172p
+`63ba8527` (GPL-2.0-or-later per LICENSE, CONTRIBUTING.md and file headers;
+`facts_only`, numbers only, nothing copied). The value files are re-pinned.
+indication-loading-values 0.2.0 holds these estimates, all 172P-applicable:
+- dial ranges for the tachometer, oil pressure, oil temperature, fuel quantity, vacuum
+  and ammeter;
+- the EGT scale (°F, 25 °F per division);
+- the Hobbs display and time base;
+- the low-fuel basis (total content).
+
+S17 values still govern where they exist. Checks: validate_manifest exit 0; 180 unit
+tests OK (1 skipped); `assure check` 0 errors.
+
+**Deviations**
+
+Still TBD-src (FlightGear has no answer): the fuel-flow range, tach-time counting,
+sender-fault detection and the annunciator switch-label serial. Quality fixes (08:40): S14 is marked `estimate_only`/`172P`, and
+both validators enforce estimate-only use and the variant named in `applicability`;
+`hash_basis` added; manifest 0.3.1, value files re-pinned. Peer pending (batched).
+
+## 2026-11-02 08:01 — Record FlightGear for S17 gaps; Codex review deferred
+
+TODO: 0.19 deferred. Agent: Claude Code orchestrator.
+
+**Implementation notes**
+
+The user's answer is recorded ([input](input/2026-11-02-flightgear-gaps-codex-deferred.md)).
+GAPS Q23 now says the S17 gaps follow the FlightGear Cessna 172 model, labelled
+`estimated`, with that model treated as another variant and its licence recorded
+first. TODO 0.19 is marked deferred.
+
+**Deviations**
+
+Peer pending (batched) for the Claude-authored batch #32–#36.
+
+## 2026-11-02 07:58 — Extract 172S engine/fuel/electrical indications and POH sample loading
+
+TODO: 2.1 inputs; 1.3.2 empty mass/CG source. Agent: Claude Code orchestrator;
+researcher subagent (extraction from S17 Rev 5 page images; SHA-256 prefix
+`420dbdaf5517a7a0` matched); quality subagent (three rounds, 13 of 13 spot checks
+matched, final verdict accept).
+
+**Implementation notes**
+
+- New `data/aircraft/c172s-classic/indication-loading-values.json` and its schema.
+  - It holds the 18 `ind` engine, fuel and electrical indications with S17 Fig. 2-3
+    markings. The Section 2 tachometer arcs govern, and p. 7-20 is a recorded
+    conflict.
+  - It holds the Fig. 6-5 sample loading: 1642 lb basic empty weight, 62.6 × 1000
+    lb-in moment, and a derived arm of 0.96836 m, labelled as a sample and not a
+    weighed aircraft. It also holds the Fig. 6-3 station arms.
+- The validator now:
+  - checks exact and affine unit conversions;
+  - checks marking units and their order;
+  - recomputes the arm, with a tolerance capped at 0.5 %;
+  - requires that `governs` points to a recorded conflict, and that electrical
+    indications carry an `inclusion` decision.
+- The CLI negative tests now copy the manifest bytes.
+- Research note added.
+
+Checks: `validate_manifest.py` exit 0; 177 unit tests OK (1 skipped); `assure check`
+0 errors.
+
+**Deviations**
+
+- TBD-src: dial ranges, EGT scale, hour-meter counting, the basis of the low-fuel
+  threshold, and the serial at which the annunciator switch labels change.
+- The manifest `empty_mass` field still needs a follow-up bump that points to the
+  sample.
+- This branch includes fix/m1-tooling (#34) and fix/m1-records (#33).
+- Peer pending (batched).
+
+## 2026-11-02 07:36 — Record the S17 list, electrical and tachometer decisions
+
+TODO: 2.1 scope refined. Agent: Claude Code orchestrator; researcher subagent
+(extraction), quality subagent (13 of 13 spot checks against S17 matched; changes
+requested).
+
+**Implementation notes**
+
+The user accepted three recommendations ([input](input/2026-11-02-s17-lists-electrical-tach.md)):
+- the whole S17 Fig. 2-3 and Fig. 6-3 lists as cited facts (a Q5 exception);
+- the ammeter and the low-voltage annunciator in `ind`;
+- the Section 2 tachometer arcs as governing.
+
+GAPS Q5 and Q23 record them. fix/m1-contracts (#32) declares the decided `ind` set in
+SCENARIO-CONTRACTS §4 and adds the CONTRACTS §1 unit suffixes.
+
+**Deviations**
+
+The extraction branch (data/s17-ind-wb) is in rework after the quality review. Peer
+pending (batched).
+
+## 2026-11-02 07:16 — Record the accepted Q23 proposals
+
+TODO: 2.1 scope set; 1.3.2 empty mass/CG source decided. Agent: Claude Code orchestrator.
+
+**Implementation notes**
+
+The user accepted all Q23 recommendations ("yes to proposals. go on";
+[input](input/2026-11-02-q23-proposals.md)). Recorded in:
+- GAPS Q23 (status column updated) and Q5;
+- TODO 2.1: milestone 2 = circuit flight, sensed checklist items, static briefing and
+  engine/fuel indications in `ind`; text radio in phase 3;
+- fix/m1-contracts (#32): CONTRACTS §10 and SCENARIO-CONTRACTS marked agreed, Q-S3 and
+  Q-S8 decided, FDM-172S Q-1 = POH sample loading, labelled;
+- fix/m1-tooling (#34): manifest S5/S9 `facts_only`, version 0.2.2, value files
+  re-pinned.
+
+**Deviations**
+
+The `ind` digest layout still waits for the researcher's S17 Section 7 engine/fuel
+list. Peer pending (batched).
+
+## 2026-11-02 00:53 — Claude peer review of Codex PRs #27–#30 and fixes (TODO 0.21)
+
+TODO: 0.21 in progress (#28b and #30 packets to renew). Agent: Claude Code orchestrator; peer
+dispatcher subagent (fresh Claude CLI 2.1.316 per packet; model evidence
+`claude-haiku-5-5` and `claude-opus-5-5`), code2 subagent (fixes), quality subagent
+(three rounds, final verdict accept).
+
+**Implementation notes**
+
+Report: [peer review](reviews/2026-11-01-codex-prs-27-30-peer.md) and
+[JSON](reviews/2026-11-01-codex-prs-27-30-peer.json), five packets frozen at main
+`396553c` (#28 split into 28a tooling and 28b docs). Router results: #27 accept;
+#28a changes_required; #28b and #30 review_blocked (material withheld, not defects);
+#29 accept. There were no critical or high findings.
+
+The fixes in this PR:
+- `status.ts` counts a DONE completion only per task ID. Exception or pending wording
+  cancels it; "peer pending" and "pending merge" still count as complete. A ticked
+  parent's record covers its subtasks, and a ticked parent with open subtasks gets
+  the warning `done-parent-open-children`.
+- `evidence.ts` checks that a cited source applies to the aircraft variant, using
+  known 172 model designators (case-insensitive; `S/N` is not read as a variant).
+- The SBOM CesiumJS row now says it is not adopted in the application yet.
+- The missing-engine smoke test serves a runtime copy without `dist/jsbsim.*`.
+- New `app/runtime.ts` and its tests prove that the `build-flight-engine` output is
+  the path `just fly` serves.
+
+Other #28b findings are handled in their own PRs: the CI text in #34, the E14 clash in
+#32, and the BRIEFING IDs match the SPEC edits in #33.
+
+Checks on Node 24: the assure suite passed 83 of 83; `assure check` reported 0 errors;
+the app suite passed 9 of 9; `utils/ci/run.py --require-node` passed with skipped
+checks (e1-jsbsim 9 of 23).
+
+**Deviations**
+
+- The real-engine browser smoke test was not run (no engine build and no Chrome here):
+  not evaluated.
+- Known limitations: the completion check still passes some unlisted negative wording
+  ("failing tests", "needs review"); 172I is not recognised; negated designators
+  ("not the 172S") are still read as naming the variant; "unstated" sources are
+  lenient (L3); `app/runtime.ts` is not type-checked (L6).
+- The fixes are Claude-authored, so they need the Codex peer review (TODO 0.19 batch).
+  The #28b and #30 packets need renewal with the withheld material.
+
+## 2026-11-02 00:30 — Apply foundation-review tooling fixes (TODO 1.6)
+
+TODO: 1.6 in progress. Agent: Claude Code orchestrator; code1 subagent implemented.
+
+**Implementation notes**
+
+The manifest validator rejects duplicate JSON keys. Value files pin the manifest by id,
+`manifest_version` and `manifest_sha256` (SHA-256 of the file bytes), and the schemas
+require these fields. The CI runner has an app npm phase (`npm ci --ignore-scripts`);
+an install failure counts as a skip only when the output shows a network or certificate
+error, and `--require-node` makes it a failure. test_run skips Node-dependent cases on
+Node older than 24.2 instead of failing. Dependabot watches `/app` npm weekly. EVAL
+CI2/CI5, SBOM and SEC text match. Checks on Node 24: 152 unit tests OK;
+`utils/ci/run.py --require-node` passed with skipped checks (e1-jsbsim 9 of 23).
+
+**Deviations**
+
+In this sandbox, `npm ci` needs `npm_config_cafile` because of the proxy certificate.
+Peer pending (batched).
+
+## 2026-11-02 00:25 — Contract fixes and renewed foundation review (TODO 1.6)
+
+TODO: 1.6 in progress. Agent: Claude Code orchestrator; a renewed quality/validate
+subagent re-checked the merged contract and record fixes.
+
+**Implementation notes**
+
+Branch fix/m1-contracts (separate PR) fixes the review blockers B1–B4 in CONTRACTS
+§10 (derived `setting_ref`, `sim_core`/`env_core`, worker-computed `ind`, single
+worker `seq` allocator, one rights enum, JCS/SHA-256 hashing), the VFE detent bands
+and phone-loss `fallback` source across SCENARIO-CONTRACTS, EXERCISE-01 and
+PHONE-CONTROL. The renewed review found B1–B4 fixed and seven low items. They are now
+fixed: §9 is marked as applied, the v1 `seq` text is kept apart from the v1.1
+proposal, `sim_core` naming, phone proposals use `proposal_id`, the EXERCISE-01 flap
+selection points to the AA2 radian bounds, the proposed EVAL section no longer reuses
+E14, C17 is in order, and Q16/TODO/study text says Apple M1 Pro.
+
+**Deviations**
+
+v1.1 contracts remain proposals until accepted (Q23 Q-S7). Peer pending (batched).
+
+## 2026-11-02 00:21 — Apply foundation-review record fixes (TODO 1.6)
+
+TODO: 1.6 in progress; 1.2.1.1 and 0.21 added. Agent: Claude Code orchestrator; the
+TODO 1.6 quality and validate subagents produced the findings.
+
+**Implementation notes**
+
+Applied the proposed SPEC edits (R-SIM-3, R-SIM-4 from CONTRACTS §9 plus the v1.1
+worker rules, R-COMM-1 AFIS information-only, R-BRIEF-1 failure states); removed stale
+stack/prototype text from SPEC and CONCEPT; reconciled GAPS Q16 to the measured M1
+Pro, fixed the stale PR #24 reference; added GAPS Q23, a register of the open design
+questions from SCENARIO-CONTRACTS, FDM-172S, EXERCISE-01, BRIEFING and PHONE-CONTROL;
+added TODO 1.2.1.1 (real-terrain re-test) and 0.21 (Claude review of Codex PRs
+#27–#30).
+
+**Deviations**
+
+Contract and tooling fixes are on separate branches; user scope decisions (Q23) open.
+Peer pending (batched).
+
 ## 2026-11-02 00:03 — Remove the aircraft measurement campaign from the 172S plan
 
 TODO: E2. Agent: Claude Code orchestrator (no subagents).

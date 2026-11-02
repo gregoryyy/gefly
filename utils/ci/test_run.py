@@ -17,7 +17,8 @@ from . import run as ci
 
 
 class AssuranceRuntimeTests(unittest.TestCase):
-    @unittest.skipUnless(shutil.which("node"), "Node is required for actual reporter fixtures")
+    @unittest.skipUnless(ci.node_meets_minimum(),
+                         "Node >= 24.2 is required for actual reporter fixtures")
     def test_actual_node_rejects_empty_and_skipped_files_accepts_declared_test(self):
         with tempfile.TemporaryDirectory(prefix="gefly-declared-tests-") as directory:
             root = Path(directory)
@@ -298,11 +299,22 @@ class CiEntrypointTests(GitFixture):
         self.write("utils/assure/src/gate.test.ts", "// Isolated assurance test fixture.\n")
         self.write("packages/training/gate.test.ts", "// Isolated training test fixture.\n")
         self.write("utils/ci/assurance-reporter.mjs", "// Isolated reporter fixture.\n")
+        self.write("app/package.json", '{"name": "fixture-app", "private": true}\n')
         self.commit()
         # Controlled PATH: Git only, plus a fake node when a test installs one.
         self.bin = self.outside.parent / "bin"
         self.bin.mkdir()
         os.symlink(self.git_executable, self.bin / "git")
+
+    def install_fake_npm(self, ci_exit=0, ci_message="", test_exit=0):
+        script = self.bin / "npm"
+        script.write_text(
+            "#!/bin/sh\n"
+            "echo \"fake npm $*\"\n"
+            f"case \"$*\" in *' ci '*) [ -n '{ci_message}' ] && echo '{ci_message}' >&2; "
+            f"exit {ci_exit};; esac\n"
+            f"exit {test_exit}\n", encoding="utf-8")
+        script.chmod(0o755)
 
     def install_fake_node(self, exit_code=0, version_exit=0, sleep_s=0,
                           assurance_exit=0, node_version="v26.0.0-fixture", test_skip=0,
@@ -332,6 +344,8 @@ class CiEntrypointTests(GitFixture):
         node.write_text("#!/bin/sh\nexec " + shlex.quote(sys.executable) + " "
                         + shlex.quote(str(implementation)) + ' "$@"\n', encoding="utf-8")
         node.chmod(0o755)
+        if not (self.bin / "npm").exists():
+            self.install_fake_npm()
 
     def write_study(self, body):
         self.write("studies/e1-jsbsim/test_study.py",
@@ -524,6 +538,41 @@ class CiEntrypointTests(GitFixture):
         self.assertNotIn("Foundation CI: passed.", result.stdout)
         self.assertIn("Assurance requires Node", result.stderr)
         self.assertIn("Foundation CI: FAILED.", result.stdout)
+
+    def test_app_tests_run_with_ignore_scripts_and_reach_pass(self):
+        self.install_fake_node()
+        result = self.run_gate()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("ci --ignore-scripts", result.stdout)
+        self.assertIn("Browser application tests: passed.", result.stdout)
+
+    def test_old_node_skips_app_tests_and_is_not_a_pass(self):
+        self.install_fake_node(node_version="v22.22.0")
+        result = self.run_gate()
+        self.assertIn("Browser application tests: skipped: node older than 24.2", result.stdout)
+        self.assertNotIn("Browser application tests: passed", result.stdout)
+        self.assertNotIn("Foundation CI: passed.", result.stdout)
+        failing = self.run_gate("--require-node")
+        self.assertNotEqual(failing.returncode, 0)
+        self.assertIn("Browser application tests", failing.stderr)
+
+    def test_network_failure_installing_app_is_reported_skip_not_pass(self):
+        self.install_fake_node()
+        self.install_fake_npm(ci_exit=1, ci_message="npm error code ENOTFOUND")
+        result = self.run_gate()
+        self.assertIn("Browser application tests: skipped: dependencies unavailable",
+                      result.stdout)
+        self.assertNotIn("Browser application tests: passed", result.stdout)
+        self.assertNotEqual(self.run_gate("--require-node").returncode, 0)
+
+    def test_failing_app_install_or_tests_fail_the_gate(self):
+        self.install_fake_node()
+        self.install_fake_npm(ci_exit=1, ci_message="npm error lockfile mismatch")
+        self.assertNotEqual(self.run_gate().returncode, 0)
+        self.install_fake_npm(test_exit=1)
+        result = self.run_gate()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Browser application tests failed", result.stderr)
 
     def test_assurance_integrity_failure_is_not_a_pass(self):
         self.install_fake_node(assurance_exit=1)

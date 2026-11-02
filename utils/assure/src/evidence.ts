@@ -402,7 +402,21 @@ export function inspectEvidence(readFile: (path: string) => string | undefined, 
     let manifest: ObjectValue;
     try { manifest = JSON.parse(manifestContent); if (!manifest || !Array.isArray(manifest.sources)) throw new Error(); }
     catch { problem('aircraft.schema', 'error', manifestPath, 'Malformed manifest/source list', [manifestPath]); return; }
-    const sources = new Map<string, { ref: NodeRef; value: ObjectValue }>();
+    const sources = new Map<string, { ref: NodeRef; value: ObjectValue; variants: string[] }>();
+    // AS3: the identified variant is read from the manifest configuration. A source
+    // whose applicability names only other variants (for example 172P) cannot back a
+    // `sourced` value for this variant; a source naming no variant (an engine TCDS)
+    // remains for review and is not rejected by text alone.
+    const configuration = (manifest.configuration ?? {}) as ObjectValue;
+    const modelText = String(((configuration.model ?? {}) as ObjectValue).value ?? configuration.label ?? '');
+    const variant = variantsIn(modelText)[0];
+        // Estimate-only sources (another variant's model, user decision 2026-11-02 08:01) support only
+    // 'estimated' parameters whose applicability names the source variant, never the aircraft's own designator.
+    const model = (manifest.configuration as ObjectValue | undefined)?.model as ObjectValue | undefined;
+    const designator = typeof model?.value === 'string' ? model.value.trim().split(/\s+/)[0] || undefined : undefined;
+    const names = (text: unknown, token: string) => typeof text === 'string' &&
+      new RegExp(`(?<![A-Za-z0-9])${token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![A-Za-z0-9])`).test(text);
+    const estimateOnly = (source: ObjectValue) => source.use === 'estimate_only';
     for (const [index, raw] of (manifest.sources as unknown[]).entries()) {
       const source = raw as ObjectValue, location = `${manifestPath}#/sources/${index}`;
       if (!source || typeof source.id !== 'string' || typeof source.revision !== 'string' || sources.has(source.id) ||
@@ -411,8 +425,12 @@ export function inspectEvidence(readFile: (path: string) => string | undefined, 
         problem('aircraft.source', 'error', location, 'Missing/duplicate source identity, revision, rights or applicability', [location]); continue;
       }
       const ref: NodeRef = { kind: 'object', id: location };
-      sources.set(source.id, { ref, value: source }); summary.sources++;
-      add({ ...ref, title: String(source.title ?? source.id), status: String(source.access_status ?? 'unknown'), source: location, hash: sha(canonical(source)), attrs: { domainKind: 'aircraft-source', sourceId: source.id, revision: source.revision, applicability: source.applicability, rights: JSON.stringify(source.rights), accessStatus: String(source.access_status ?? 'unknown') } });
+      const variants = variantsIn(source.applicability);
+      sources.set(source.id, { ref, value: source, variants }); summary.sources++;
+      if (estimateOnly(source) && (typeof source.variant !== 'string' || !source.variant || source.variant === designator))
+        problem('aircraft.estimate', 'error', location, 'Estimate-only source needs a variant designator that differs from the aircraft', [location]);
+      const applicable = !variant || !variants.length ? 'unstated' : String(variants.includes(variant));
+      add({ ...ref, title: String(source.title ?? source.id), status: String(source.access_status ?? 'unknown'), source: location, hash: sha(canonical(source)), attrs: { domainKind: 'aircraft-source', sourceId: source.id, revision: source.revision, applicability: source.applicability, applicableVariants: variants.join(','), appliesToAircraft: applicable, rights: JSON.stringify(source.rights), accessStatus: String(source.access_status ?? 'unknown'), use: String(source.use ?? 'source'), variant: String(source.variant ?? '') } });
       edge(ref, { kind: 'document', id: manifestPath }, location);
       if (!['read', 'read_selected_pages'].includes(String(source.access_status))) problem('aircraft.unknown', 'note', location, `Source access remains ${String(source.access_status ?? 'unknown')}`, [location]);
     }
@@ -437,25 +455,45 @@ export function inspectEvidence(readFile: (path: string) => string | undefined, 
         if (Array.isArray(value)) { value.forEach((item, index) => walk(item, `${pointer}/${index}`, inherited, depth + 1)); return; }
         const item = value as ObjectValue;
         const context = { ...inherited };
-        for (const key of ['status', 'citations', 'reading', 'conversion', 'uncertainty', 'derivation', 'condition']) if (own(item, key)) context[key] = item[key];
+        for (const key of ['status', 'citations', 'reading', 'conversion', 'uncertainty', 'derivation', 'condition', 'applicability']) if (own(item, key)) context[key] = item[key];
         if (own(item, 'value')) {
           const location = `${file}#${pointer}`, ref: NodeRef = { kind: 'object', id: location };
           const citations = Array.isArray(context.citations) ? context.citations as ObjectValue[] : [];
           const status = typeof context.status === 'string' ? context.status : 'unknown';
           const attrs: Record<string, string> = { domainKind: 'aircraft-parameter', pointer, dataClass: status, fidelity: String(data.fidelity ?? 'unknown'), citations: JSON.stringify(citations) };
           for (const key of ['value', 'unit', 'original_value', 'original_unit', 'reference']) if (own(item, key)) attrs[key] = typeof item[key] === 'string' ? item[key] as string : JSON.stringify(item[key]);
-          for (const key of ['reading', 'conversion', 'uncertainty', 'derivation', 'condition']) if (context[key] !== undefined) attrs[key] = String(context[key]);
+          for (const key of ['reading', 'conversion', 'uncertainty', 'derivation', 'condition', 'applicability']) if (context[key] !== undefined) attrs[key] = String(context[key]);
           add({ ...ref, status, source: location, hash: sha(canonical({ value: item, context, fidelity: data.fidelity ?? null })), attrs }); summary.parameters++;
           edge(ref, { kind: 'document', id: file }, location);
           if (status === 'sourced' && !citations.length) problem('aircraft.citation', 'error', location, 'Sourced parameter has no inherited/direct citation', [location]);
           if (['unknown', 'estimated', 'draft'].includes(status) || item.value === null) problem('aircraft.unknown', 'note', location, `Parameter remains ${status}; no validation inferred`, [location]);
+          const estimates = citations.map(citation => sources.get(String(citation?.source_id))?.value).filter((source): source is ObjectValue => !!source && estimateOnly(source));
+          if (['sourced', 'derived'].includes(status) && estimates.length) problem('aircraft.estimate', 'error', location, `${status} parameter cites an estimate-only source`, [location, manifestPath]);
+          if (status === 'estimated') {
+            if (!estimates.length) problem('aircraft.estimate', 'error', location, 'Estimated parameter cites no estimate-only source', [location, manifestPath]);
+            for (const source of estimates) {
+              const sourceVariant = typeof source.variant === 'string' ? source.variant : '';
+              if (!sourceVariant || !names(context.applicability, sourceVariant)) problem('aircraft.applicability', 'error', location, `Estimated parameter applicability does not name variant ${sourceVariant || '(none)'} of ${String(source.id)}`, [location, manifestPath]);
+              else if (designator !== undefined && sourceVariant === designator) problem('aircraft.applicability', 'error', location, `Estimate variant equals the aircraft designator ${designator}`, [location, manifestPath]);
+            }
+          }
+          const foreign: string[] = [];
+          let applicableCitation = false;
           for (const citation of citations) {
             const source = sources.get(String(citation?.source_id));
+            if (source) {
+              if (variant && source.variants.length && !source.variants.includes(variant)) foreign.push(`${String(citation.source_id)} (${source.variants.join(', ')})`);
+              else applicableCitation = true;
+            }
             if (!source || typeof citation.page !== 'string' || typeof citation.revision !== 'string') problem('aircraft.citation', 'error', location, 'Unknown source or missing citation page/revision', [location, manifestPath]);
             else {
               edge(ref, source.ref, location);
               if (citation.revision !== source.value.revision) problem('aircraft.revision', 'error', location, `Citation revision differs for ${String(citation.source_id)}`, [location, source.ref.id]);
             }
+          }
+          if (status === 'sourced' && foreign.length) {
+            if (!applicableCitation) problem('aircraft.applicability', 'error', location, `Sourced ${variant} parameter cites only sources applicable to other variants: ${foreign.join('; ')}`, [location, manifestPath]);
+            else problem('aircraft.applicability', 'warning', location, `Sourced ${variant} parameter also cites other-variant sources: ${foreign.join('; ')}`, [location, manifestPath]);
           }
         }
         for (const [key, child] of Object.entries(item)) if (key !== 'sources') walk(child, `${pointer}/${escapePointer(key)}`, context, depth + 1);
@@ -463,6 +501,25 @@ export function inspectEvidence(readFile: (path: string) => string | undefined, 
       try { walk(data, '', {}, 0); }
       catch { problem('aircraft.limit', 'error', file, 'Aircraft JSON exceeds traversal bounds', [file]); }
     }
+  }
+  function variantsIn(text: unknown): string[] {
+    // Specific Cessna 172-family designators, normalized: `C172S`, `c172s`, `172s`, `172 S`
+    // read as 172S; `172SP` (Skyhawk SP) is the 172S; F/R/FR prefixes are kept
+    // (`R172K`, `FR172`). The bare family name `172` is not a variant. Matching is
+    // textual: it cannot read negation or serial/avionics ranges (FORMAT.md).
+    const found: string[] = [];
+    const text_ = String(text ?? '');
+    const add = (prefix = '', suffix = '') => {
+      const model = suffix.toUpperCase() === 'SP' ? 'S' : suffix.toUpperCase();
+      const lead = prefix.toUpperCase() === 'C' ? '' : prefix.toUpperCase();
+      if (lead || model) found.push(`${lead}172${model}`);
+    };
+    // Only known model suffixes (A–S without O, J for Reims, RG, SP) are read. The
+    // spaced form takes one upper-case letter, not A or I (prose articles/pronouns),
+    // and not one followed by a letter, digit, `/`, `.` or `-` (`172 S/N 17270050`).
+    for (const m of text_.matchAll(/\b(c|C|f|F|r|R|fr|FR)?172((?:SP|RG|[A-HJ-NP-S])(?![A-Za-z]))?(?![\dA-Za-z])/gi)) add(m[1], m[2]);
+    for (const m of text_.matchAll(/\b(C|F|R|FR)?172 ([B-HJ-NP-S])(?![A-Za-z\d/.\-])/g)) add(m[1], m[2]);
+    return [...new Set(found)];
   }
   function finish() {
     for (const severity of ['error', 'warning', 'note'] as const) summary[severity] = problems.filter(problem => problem.severity === severity).length;
