@@ -240,6 +240,19 @@
         "accessed": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
         "access_status": {"enum": ["read", "read_selected_pages", "not_read"]},
         "sha256_prefix": {"type": "string", "pattern": "^[0-9a-f]{16,64}$"},
+        "hash_basis": {
+          "description": "What sha256_prefix hashes: the read document's bytes, or a sha256sum listing of the files read (listing in the research note).",
+          "enum": ["document", "file_listing"]
+        },
+        "use": {
+          "description": "estimate_only: the source may support only 'estimated' values (for example another variant's simulator model, GAPS Q23 update 2026-11-02 08:01); sourced/derived values must not cite it, and the validator requires estimated values to name its variant. Omitted: an ordinary source.",
+          "enum": ["estimate_only"]
+        },
+        "variant": {
+          "description": "Aircraft designator the source describes when it differs from this manifest's aircraft (for example 172P).",
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Za-z0-9-]*$"
+        },
         "applicability": {"type": "string", "minLength": 1},
         "rights": {
           "type": "object",
@@ -261,7 +274,11 @@
         },
         {
           "if": {"properties": {"access_status": {"enum": ["read", "read_selected_pages"]}}},
-          "then": {"required": ["sha256_prefix"]}
+          "then": {"required": ["sha256_prefix", "hash_basis"]}
+        },
+        {
+          "if": {"properties": {"use": {"const": "estimate_only"}}, "required": ["use"]},
+          "then": {"required": ["variant"]}
         }
       ]
     }

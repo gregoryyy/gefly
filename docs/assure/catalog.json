@@ -502,7 +502,8 @@
       "manifest": "data/aircraft/c172s-classic/manifest.json",
       "values": [
         "data/aircraft/c172s-classic/poh-values.json",
-        "data/aircraft/c172s-classic/performance-values.json"
+        "data/aircraft/c172s-classic/performance-values.json",
+        "data/aircraft/c172s-classic/indication-loading-values.json"
       ]
     }
   ]
