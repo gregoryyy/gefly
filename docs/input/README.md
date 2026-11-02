@@ -11,6 +11,7 @@ These records preserve the user's original intent. Do not edit accepted input re
 - [2026-10-31 Q4/Q11 answers](2026-10-31-mac-controls-briefing-answers.md): Mac keyboard/touchpad, optional yoke/joystick and pedals, GeoFS-inspired settings, scenario-first briefing.
 - [2026-10-31 licence-specific roadmap](2026-10-31-license-specific-roadmap.md): additional sailplane and ultralight pilot-training tracks.
 - [2026-10-31 independent peer](2026-10-31-independent-peer-agent.md): opposite-provider quality and specification review, Claude for Codex and vice versa.
+- [2026-11-01 no aircraft](2026-11-01-no-aircraft.md): no aircraft is available; missing geometry and empty mass/CG are estimated and labelled.
 - [2026-11-01 phone control decisions](2026-11-01-phone-control-decisions.md): iPhone 13 mini on latest iOS; Q-P1..Q-P6 proposals accepted.
 - [2026-11-01 datum, runway and POH decisions](2026-11-01-datum-runway-poh-decisions.md): physical-height datum, runway 26, POH value extraction accepted; no instructor reviewer yet.
 - [2026-11-01 contracts decisions](2026-11-01-contracts-decisions.md): all O-1..O-9 recommendations accepted; first exercise starts at the holding point.
