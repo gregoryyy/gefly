@@ -3,6 +3,58 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 21:22 — Visualize spatial wing airflow-angle estimates
+
+TODO: 2.0.25 complete as a bounded R-SIM-7/R-VIEW-1/R-REVIEW-1 diagnostic;
+actual sectional separation remains 2.0.26. Agent: Codex orchestrator on telemetry
+and integration; fov_input/code1 on pure calculations/tests, panel_scaling/code2
+on SVG/UI/browser coverage, with fov_housekeeping alongside on input/research.
+Independent quality: fov_housekeeping on implementation, excluding its prose;
+fov_input on root integration/UI, excluding its helper. Validate: trim_validate.
+
+**Implementation notes**
+
+View → Stall awareness shows six wing reference regions with local kinematic
+flow-angle estimates, numeric headroom and below/near/at-reference labels. Actual
+air-relative body velocity/angular rates/current CG drive V + omega × r at
+declared span sampling stations. The model's common positive alpha-max/85% warning
+reference drives diagnostic colors. Tail/fuselage remain hatched unknown;
+positive-only/negative-boundary limits are visible. Low, reversed, missing or
+overflowed local flow stays unavailable. Raw global warning remains uncapped;
+hysteresis is distinct. Live/selected recorded states share one read-only view.
+
+The 13-field getter is outside the original 14-double dynamics/digest buffer.
+Independent 240-step runs with/without reads match full physics/digest. Original
+source/coefficient values and the aircraft adapter remain unchanged. Independent
+quality and actual Chrome validation pass frame/cross-product math, six numeric
+comparisons within 1e-12 rad, actual roll differences (left outer −0.739° versus
+right outer 3.657°), immutable Review, missing/reference fixtures, mobile,
+keyboard/focus, overlay exclusion and unchanged cockpit height. Actual sectional
+stall physics is not accepted by these checks.
+
+Focused browser suite passes three groups; existing Flight Data4, Review4 and
+smoke26 regressions pass. Shared CI passes 118 native tests, five adapter tests,
+UI build, 84 assurance and 11 assessment tests plus repository/study/render gates.
+Optional JSBSim9-of-23 and Linux-only checks remain explicit skips. A new trace
+test's extensionless runtime import was corrected before the full suite passed.
+See [review evidence](reviews/2026-11-02-spatial-stall-awareness.md) for exact
+source/engine hashes, review exclusions and reproducible evidence. Peer pending.
+
+**Deviations**
+
+The lumped research model does not expose part-specific separation, so this
+increment deliberately shows a labeled body-relative AoA proxy rather than
+asserting local stall onset. All stations share a positive global reference;
+below-reference does not mean safe/attached flow. Wing twist, induced flow,
+downwash and local flap/aileron/tail boundaries require the source-applicable
+regional model/data work retained in TODO 2.0.26. No new forces or damage limits.
+
+**Insights**
+
+Actual rotational motion makes regional differences inspectable without changing
+flight dynamics. Distinguishing a computed airflow proxy from an aerodynamic
+separation model prevents a visually detailed diagram from overstating fidelity.
+
 ## 2026-11-02 21:07 — Inspect flight path, gear reactions and aircraft reference diagrams
 
 TODO: 2.0.23–2.0.24 complete as bounded R-SIM-3/R-VIEW-1/R-REVIEW-1/

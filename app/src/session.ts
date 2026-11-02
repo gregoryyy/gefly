@@ -1,4 +1,4 @@
-import { CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
+import { STALL_FIELDS, validStallState, CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
 import type { Controls, FlightSession, FlightState, LandingPreset } from './types';
 
 interface SessionCallbacks {
@@ -21,7 +21,7 @@ function validState(value: Record<string, unknown>): value is Record<string, unk
     && Number.isInteger(value.step) && (value.step as number) >= 0
     && (value.t_s as number) >= 0 && (value.tas_mps as number) >= 0
     && Math.abs(value.lat_rad as number) <= Math.PI / 2
-    && Math.abs(value.lon_rad as number) <= Math.PI && validAltimeterState(value) && validCockpitState(value) && validEngineState(value) && validPitchTrimState(value) && validGroundState(value) && validControlState(value);
+    && Math.abs(value.lon_rad as number) <= Math.PI && validAltimeterState(value) && validCockpitState(value) && validEngineState(value) && validPitchTrimState(value) && validGroundState(value) && validControlState(value) && validStallState(value);
 }
 
 function validControls(value: Controls): boolean {
@@ -140,7 +140,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       } else if (m.type === 'state') {
         if (!validState(m)) { fail('The flight model returned an invalid state. Flight stopped; reset to restart.'); return; }
         latestStep = m.step;
-        const fields = [...STATE_FIELDS, ...[...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS].filter((key) => m[key] !== undefined)];
+        const fields = [...STATE_FIELDS, ...[...STALL_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS].filter((key) => m[key] !== undefined)];
         callbacks.onState(Object.fromEntries(fields.map((key) => [key, m[key]])) as unknown as FlightState);
       } else if (m.type === 'error') {
         fail(`JSBSim stopped: ${typeof m.message === 'string' ? m.message : 'unknown worker failure'}`);

@@ -2,7 +2,28 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { DEFAULT_RADIO_NAV } from './radio-nav.ts';
 import { FlightTrace } from './flight-trace.ts';
-import type { FlightState } from './types';
+import { STALL_FIELDS, type FlightState } from './types.ts';
+
+test('airflow snapshots preserve actual motion and CG without paused rewrites or partial groups', () => {
+  const trace = new FlightTrace();
+  const airflow = { aero_u_mps: 30, aero_v_mps: -2, aero_w_mps: 8, aero_p_radps: .2,
+    aero_q_radps: -.1, aero_r_radps: .05, cg_structural_x_m: 1.05, cg_structural_y_m: .01,
+    cg_structural_z_m: .93, aero_alpha_rad: .28, aero_alpha_max_rad: .28,
+    stall_warning_norm: 1.5, stall_hysteresis_norm: 1 };
+  const source = { ...state(1), ...airflow };
+  assert(trace.record(source, 0));
+  source.aero_w_mps = 100;
+  assert.equal(trace.atTime(1)!.state.aero_w_mps, 8);
+  assert.equal(trace.atTime(1)!.state.stall_warning_norm, 1.5);
+  assert.equal(trace.record({ ...state(1), ...airflow, cg_structural_x_m: 2 }, 0), false);
+  for (const field of STALL_FIELDS) {
+    const partial: FlightState = { ...state(2), ...airflow }; delete partial[field];
+    assert.equal(trace.record(partial, 0), false);
+  }
+  assert(trace.record({ ...state(2), ...airflow, aero_p_radps: -.3 }, 0));
+  assert.equal(trace.atTime(1)!.state.aero_p_radps, .2);
+  assert.equal(trace.atTime(2)!.state.aero_p_radps, -.3);
+});
 
 test('Review retains immutable applied controls, rejects partial groups and paused rewrites', () => {
   const trace = new FlightTrace();

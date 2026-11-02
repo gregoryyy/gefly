@@ -24,6 +24,19 @@ export function controlFields(values) {
     aileron_rad, right_aileron_rad, rudder_rad };
 }
 
+// Read-only air-relative motion and global model diagnostic values.
+export function stallFields(values) {
+  if (values.length !== 13 || !Array.from(values).every(Number.isFinite)) return {};
+  const [aero_u_mps, aero_v_mps, aero_w_mps, aero_p_radps, aero_q_radps, aero_r_radps,
+    cg_structural_x_m, cg_structural_y_m, cg_structural_z_m,
+    aero_alpha_rad, aero_alpha_max_rad, stall_warning_norm, stall_hysteresis_norm] = values;
+  if (Math.abs(aero_alpha_rad) > Math.PI || aero_alpha_max_rad <= 0 || aero_alpha_max_rad >= Math.PI / 2
+    || stall_warning_norm < 0 || ![0, 1].includes(stall_hysteresis_norm)) return {};
+  return { aero_u_mps, aero_v_mps, aero_w_mps, aero_p_radps, aero_q_radps, aero_r_radps,
+    cg_structural_x_m, cg_structural_y_m, cg_structural_z_m,
+    aero_alpha_rad, aero_alpha_max_rad, stall_warning_norm, stall_hysteresis_norm };
+}
+
 // Generic c172x additive pitch-trim command, not physical trim-tab position.
 // Positive command is nose-down; elevator position remains in model radians.
 export function pitchTrimFields(values) {

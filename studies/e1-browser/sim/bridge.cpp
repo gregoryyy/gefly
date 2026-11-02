@@ -355,6 +355,32 @@ EMSCRIPTEN_KEEPALIVE double* gf_control_state() {
   return values;
 }
 
+// Local-airflow diagnostic inputs only; no change to the original dynamics buffer.
+// Air-relative body UVW (m/s), aero PQR (rad/s), structural CG (m; aft/right/up),
+// body alpha/max (rad), software warning (uncapped), hysteresis switch (0/1).
+EMSCRIPTEN_KEEPALIVE double* gf_stall_state() {
+  static double values[13];
+  if (!g_fdm) {
+    for (double& value : values) value = std::numeric_limits<double>::quiet_NaN();
+    return values;
+  }
+  auto& f = *g_fdm;
+  values[0] = f.GetPropertyValue("velocities/u-aero-fps") * kFtToM;
+  values[1] = f.GetPropertyValue("velocities/v-aero-fps") * kFtToM;
+  values[2] = f.GetPropertyValue("velocities/w-aero-fps") * kFtToM;
+  values[3] = f.GetPropertyValue("velocities/p-aero-rad_sec");
+  values[4] = f.GetPropertyValue("velocities/q-aero-rad_sec");
+  values[5] = f.GetPropertyValue("velocities/r-aero-rad_sec");
+  values[6] = f.GetPropertyValue("inertia/cg-x-in") * 0.0254;
+  values[7] = f.GetPropertyValue("inertia/cg-y-in") * 0.0254;
+  values[8] = f.GetPropertyValue("inertia/cg-z-in") * 0.0254;
+  values[9] = f.GetPropertyValue("aero/alpha-rad");
+  values[10] = f.GetPropertyValue("aero/alpha-max-rad");
+  values[11] = f.GetPropertyValue("systems/stall-warn-norm");
+  values[12] = f.GetPropertyValue("aero/stall-hyst-norm");
+  return values;
+}
+
 // Actual applied normalized trim command, initial longitudinal-trim command,
 // and actual elevator radians. Separate from the original dynamics digest.
 EMSCRIPTEN_KEEPALIVE double* gf_pitch_trim_state() {

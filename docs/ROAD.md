@@ -97,3 +97,11 @@ accepted flight/navigation state as classic instruments; decorative markers must
 not imply a modeled localizer/glideslope. The landing contact demonstrations
 reuse real model forces; structural damage, calibrated suspension visuals and
 accepted airport terrain/landing envelopes remain separately gated work.
+
+## Regional stall visualization
+
+Use the first spatial airflow-angle diagnostic (TODO 2.0.25) to inspect local
+kinematic differences without changing dynamics. Actual region-by-region stall
+needs source-applicable sectional aerodynamic data and induced-flow/tail modeling
+(TODO 2.0.26); a global AoA warning or fixed speed arc cannot establish local
+separation. Prefer reuse of open models and keep estimated regions explicit.

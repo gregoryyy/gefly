@@ -37,6 +37,20 @@ const state = {
 };
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+test('session accepts complete spatial-airflow telemetry including warnings above one', t => {
+  const { session, states, errors } = fixture(t); session.start();
+  const worker = MockWorker.instances[0]; worker.emit(ready);
+  const airflow = { aero_u_mps: 30, aero_v_mps: -2, aero_w_mps: 8, aero_p_radps: .2,
+    aero_q_radps: -.1, aero_r_radps: .05, cg_structural_x_m: 1.05, cg_structural_y_m: .01,
+    cg_structural_z_m: .93, aero_alpha_rad: .28, aero_alpha_max_rad: .28,
+    stall_warning_norm: 1.5, stall_hysteresis_norm: 1 };
+  worker.emit({ ...state, ...airflow });
+  assert.equal((states[0] as Record<string, number>).stall_warning_norm, 1.5);
+  assert.equal((states[0] as Record<string, number>).cg_structural_x_m, 1.05);
+  worker.emit({ ...state, ...airflow, aero_alpha_max_rad: 0 });
+  assert.equal(states.length, 1); assert.equal(errors.length, 1);
+});
+
 test('session forwards only complete finite control telemetry and rejects partial groups', t => {
   const { session, states, errors } = fixture(t);
   session.start();

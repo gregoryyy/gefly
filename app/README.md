@@ -314,6 +314,23 @@ samples. Flight reset or page reload clears it. There is no export, persistence,
 video recording, or input/event log. Full synchronized configuration, event and
 input replay remains future work under the [replay contract](../docs/design/CONTRACTS.md).
 
+## Spatial stall awareness
+
+Open **View → Stall awareness** to inspect six reference wing regions. The
+original diagram and table show a kinematic local airflow-angle estimate and
+headroom to the generic model's common positive-AoA reference. Actual air-relative
+motion, angular rates and current CG drive the display, including during recorded
+Review. Rolling can produce different left/right readings; aircraft bank alone
+is not a local stall measurement. The panel leaves the cockpit height unchanged.
+
+These are **estimates, not measured flow separation**. Below-reference is not a
+safe/attached-flow indication, and negative-angle stall boundaries are not
+established. Twist, induced flow, downwash and local flap/aileron effects are not
+resolved; tail/fuselage are unknown. Low/reversed flow and missing older-engine
+telemetry remain unavailable. No additional aerodynamic forces or damage limits
+are introduced. Source applicability and frames are documented in the
+[research note](../docs/research/2026-11-02-spatial-stall-awareness.md).
+
 ## Flight data and handbook
 
 Open **View → Flight data** for signed ground-relative flight-path gradient

@@ -275,3 +275,15 @@ current accepted claims must pass their dependency/freshness checks. The graph
 does not verify source truth, numerical adequacy or every prose contradiction.
 Independent semantic quality/specification review and the batched peer gate remain
 required under SDLC; see [assurance criteria AS1–AS8](assure/SPEC.md).
+
+## Spatial airflow-angle diagnostic
+
+The read-only stall-awareness telemetry group carries air-relative body velocity,
+aerodynamic angular velocity, current structural-frame CG and existing global
+AoA/warning/hysteresis values. Structural aft/right/up coordinates convert to
+CG-relative forward/right/down body offsets. Six documented reference-span
+stations use Vair + omega × r; atan2(local down, local forward) is a kinematic
+body-relative proxy, compared only with the model's common positive alpha-max.
+This display consumes selected recorded states and never feeds the engine.
+Regional separation, induced flow, twist and local control effects require a
+separate applicable aerodynamic model; current tail/fuselage regions stay unknown.

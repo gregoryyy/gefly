@@ -1,6 +1,22 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { controlFields, cockpitFields, pitchTrimFields, groundFields } from './cockpit.js';
+import { stallFields, controlFields, cockpitFields, pitchTrimFields, groundFields } from './cockpit.js';
+test('airflow telemetry is atomic, preserves SI frames and uncapped model warnings', () => {
+  const data = [30, -2, 8, .2, -.1, .05, 1.05, .01, .93, .28, .28, 1.5, 1];
+  const fields = stallFields(data);
+  assert.equal(Object.keys(fields).length, 13);
+  assert.equal(fields.aero_u_mps, 30); assert.equal(fields.aero_v_mps, -2);
+  assert.equal(fields.aero_p_radps, .2); assert.equal(fields.cg_structural_x_m, 1.05);
+  assert.equal(fields.aero_alpha_rad, .28); assert.equal(fields.stall_warning_norm, 1.5);
+  assert.equal(fields.stall_hysteresis_norm, 1);
+  for (const invalid of [data.slice(1), [...data, 0]]) assert.deepEqual(stallFields(invalid), {});
+  for (let i = 0; i < data.length; i++) {
+    const bad = [...data]; bad[i] = NaN; assert.deepEqual(stallFields(bad), {});
+  }
+  for (const [i, value] of [[9, 4], [10, 0], [10, Math.PI / 2], [11, -.1], [12, .5]]) {
+    const bad = [...data]; bad[i] = value; assert.deepEqual(stallFields(bad), {});
+  }
+});
 test('review telemetry separates applied commands from actual differential surfaces', () => {
   const data = [.7, -.45, .35, -.35, -.12, .08, -.14];
   assert.deepEqual(controlFields(data), { throttle_norm: .7, aileron_cmd_norm: -.45,

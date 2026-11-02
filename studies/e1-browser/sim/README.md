@@ -178,3 +178,15 @@ leave the group unavailable. Review does not reconstruct commands from current
 UI input. This read-only getter does not change coefficients, stepping or the
 original dynamics digest. Other existing groups retain flap command/position,
 left/right brake commands, actual mixture/mode, trim and avionics settings.
+
+## Spatial airflow diagnostic telemetry
+
+`gf_stall_state()` reads 13 values without changing the original 14-double
+dynamics buffer/digest: air-relative body U/V/W in m/s; aerodynamic P/Q/R in
+rad/s; current structural CG X/Y/Z in metres (aft/right/up); body alpha and
+alpha-max in radians; the existing model stall-warning output and hysteresis
+switch. The software warning is not clamped to one (it is 1.5 at alpha-max).
+The worker emits the optional group atomically; old engines leave it unavailable.
+No section-specific stall state, tail critical angle or airflow separation is
+exported or inferred by this getter. Sampling geometry belongs to the labeled
+read-only browser diagnostic, not a new flight-dynamics model.

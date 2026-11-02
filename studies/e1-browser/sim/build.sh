@@ -86,7 +86,7 @@ em++ -O2 -std=c++17 $EXC_FLAGS -I"$SRC/src" -I"$BUILD/src" "$HERE/bridge.cpp" \
   "$BUILD/src/libJSBSim.a" -o "$DIST/jsbsim.mjs" \
   -sMODULARIZE=1 -sEXPORT_ES6=1 -sEXPORT_NAME=createJSBSim -sENVIRONMENT=worker,web,node \
   -sALLOW_MEMORY_GROWTH=1 -sEXPORTED_RUNTIME_METHODS=HEAPF64,UTF8ToString \
-  -sEXPORTED_FUNCTIONS=_gf_init,_gf_init_landing,_gf_ground_state,_gf_set_inputs,_gf_step,_gf_state,_gf_state_len,_gf_step_index,_gf_digest_hex,_gf_trim_status,_gf_trim_throttle,_gf_trim_pitch,_gf_flap_command_norm,_gf_static_pressure_pa,_gf_sealevel_pressure_pa,_gf_set_secondary_inputs,_gf_cockpit_state,_gf_control_state,_gf_set_pitch_trim,_gf_pitch_trim_state,_gf_set_engine_controls,_gf_set_autopilot,_gf_engine_state \
+  -sEXPORTED_FUNCTIONS=_gf_init,_gf_init_landing,_gf_ground_state,_gf_set_inputs,_gf_step,_gf_state,_gf_state_len,_gf_step_index,_gf_digest_hex,_gf_trim_status,_gf_trim_throttle,_gf_trim_pitch,_gf_flap_command_norm,_gf_static_pressure_pa,_gf_sealevel_pressure_pa,_gf_set_secondary_inputs,_gf_cockpit_state,_gf_control_state,_gf_stall_state,_gf_set_pitch_trim,_gf_pitch_trim_state,_gf_set_engine_controls,_gf_set_autopilot,_gf_engine_state \
   "${EMBED[@]}"
 
 # 5. Build record read by worker.js ("ready" message)

@@ -58,3 +58,4 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-02 flight data and handbook](2026-11-02-flight-data-handbook.md): glide-path percentage and ground-reaction panels, plus aircraft load/reference diagrams under View.
 
 - [2026-11-02 handbook loading and flight envelope](2026-11-02-handbook-loading-envelope.md): exact clarification selects loading and flight-envelope diagrams.
+- [2026-11-02 spatial stall awareness](2026-11-02-spatial-stall-awareness.md): show where stalling begins on different aircraft parts; research distinguishes local-airflow estimates from actual separation.

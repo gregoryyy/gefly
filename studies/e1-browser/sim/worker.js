@@ -27,7 +27,7 @@
 // cost per step for each block, separating compute cost from post-idle wake cost.
 import createJSBSim from './dist/jsbsim.mjs';
 import { indicatedAltitude_m, validSetting } from './altimeter.js';
-import { controlFields, cockpitFields, pitchTrimFields, groundFields } from './cockpit.js';
+import { stallFields, controlFields, cockpitFields, pitchTrimFields, groundFields } from './cockpit.js';
 import { autopilotCommand, engineFields } from './engine.js';
 
 const MAX_CATCHUP = 12;          // steps per tick (100 ms at 1/120 s)
@@ -144,6 +144,12 @@ function readCockpitFields() {
   return cockpitFields(M.HEAPF64.subarray(pointer, pointer + 8));
 }
 
+function readStallFields() {
+  if (typeof M._gf_stall_state !== 'function') return {};
+  const pointer = M._gf_stall_state() >> 3;
+  return stallFields(M.HEAPF64.subarray(pointer, pointer + 13));
+}
+
 function readControlFields() {
   if (typeof M._gf_control_state !== 'function') return {};
   const pointer = M._gf_control_state() >> 3;
@@ -191,7 +197,7 @@ function stateMessage() {
     type: 'state', step: stepIndex, t_s: s[0], lat_rad: s[1], lon_rad: s[2],
     alt_msl_m: s[3], roll_rad: s[4], pitch_rad: s[5], heading_rad: s[6], tas_mps: s[7],
     last_input_wall_ms: lastInputWallMs, step_cost_us: lastStepCostUs, ...altimeterFields,
-    ...readControlFields(), ...readCockpitFields(), ...readPitchTrimFields(), ...readGroundFields(), ...readEngineFields(),
+    ...readStallFields(), ...readControlFields(), ...readCockpitFields(), ...readPitchTrimFields(), ...readGroundFields(), ...readEngineFields(),
   };
 }
 

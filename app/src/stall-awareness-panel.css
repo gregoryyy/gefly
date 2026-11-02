@@ -1,0 +1,48 @@
+.stall-awareness-panel { position: absolute; top: 90px; right: 18px; z-index: 7; width: min(520px, calc(100% - 36px)); max-height: calc(100dvh - 108px); overflow: auto; overscroll-behavior: contain; padding: 15px; color: #e4edf0; background: #14232b; border: 1px solid #91a6b0; border-radius: 10px; box-shadow: 0 12px 45px #020b15a6; font: 11px/1.5 system-ui, sans-serif; }
+.stall-awareness-panel[hidden] { display: none; }
+.stall-awareness-panel:focus-visible { outline: 2px solid #e8c388; outline-offset: 2px; }
+.stall-awareness-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.stall-awareness-heading h2 { font-size: 16px; font-weight: 500; margin: 0; }
+.stall-awareness-heading button { padding: 3px 9px; font-size: 20px; line-height: 1.2; }
+.stall-awareness-mode { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; margin: 6px 0 9px; font-size: 9px; color: #a8bcc5; }
+#stall-awareness-mode { color: #e8c388; letter-spacing: 1px; }
+.stall-awareness-reference { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin: 0 0 8px; }
+.stall-awareness-reference dt { font-size: 9px; color: #a8bcc5; }
+.stall-awareness-reference dd { margin: 2px 0 0; color: #edcea0; font: 17px ui-monospace, monospace; }
+.stall-awareness-diagram { display: block; width: 100%; height: auto; background: #0b1921; border: 1px solid #738d972c; border-radius: 7px; }
+.stall-awareness-diagram text { fill: #c7d7dc; font-family: system-ui, sans-serif; }
+.stall-awareness-diagram .stall-station-shape { stroke: #c6dbe1; stroke-width: 1.1; fill: #354e5d; }
+.stall-awareness-diagram [data-status=below-reference] .stall-station-shape { fill: #354e5d; }
+.stall-awareness-diagram [data-status=near-reference] .stall-station-shape { fill: #9c7036; }
+.stall-awareness-diagram [data-status=at-or-above-reference] .stall-station-shape { fill: #9c4239; }
+.stall-awareness-diagram [data-status=unavailable] .stall-station-shape { fill: url(#stall-unknown-hatch); }
+.stall-awareness-diagram .stall-station-value { fill: #f5e8cc; font: 13px ui-monospace, monospace; text-anchor: middle; }
+.stall-awareness-diagram .stall-station-name { font-size: 8px; text-anchor: middle; letter-spacing: .6px; }
+.stall-awareness-legend { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 15px; font-size: 9px; color: #bccdd4; margin: 8px 0 10px; }
+.stall-awareness-legend > span::before { content: ''; display: inline-block; width: 9px; height: 9px; margin-right: 5px; border: 1px solid #a3b5bc; background: #354e5d; vertical-align: -1px; }
+.stall-awareness-legend > .near::before { background: #9c7036; }
+.stall-awareness-legend > .at::before { background: #9c4239; }
+.stall-awareness-legend > .unknown::before { background: repeating-linear-gradient(135deg, #65757b 0 1px, #263740 1px 4px); }
+.stall-awareness-table { width: 100%; border-collapse: collapse; font-size: 10px; font-variant-numeric: tabular-nums; }
+.stall-awareness-table caption { text-align: left; font-size: 10px; margin-bottom: 5px; color: #c4d5da; }
+.stall-awareness-table th, .stall-awareness-table td { padding: 5px 4px; text-align: right; border-bottom: 1px solid #8aa0a233; }
+.stall-awareness-table th { color: #a9bec7; font-size: 9px; font-weight: 500; }
+.stall-awareness-table th:first-child { text-align: left; padding-left: 0; }
+.stall-awareness-table td { font-family: ui-monospace, monospace; }
+.stall-awareness-table td:last-child { font-family: system-ui, sans-serif; font-size: 8px; letter-spacing: .2px; }
+.stall-awareness-table tr[data-status=near-reference] td:last-child { color: #f1c888; }
+.stall-awareness-table tr[data-status=at-or-above-reference] td:last-child { color: #ffa79b; }
+.stall-awareness-status { color: #e4c48d; font-size: 10px; margin: 8px 0; }
+.stall-awareness-status:empty { display: none; }
+.stall-awareness-limit { font-size: 10px; color: #b5c8cf; margin: 9px 0 0; }
+.stall-awareness-details { margin-top: 9px; font-size: 10px; color: #a8bdc7; }
+.stall-awareness-details summary { cursor: pointer; }
+.stall-awareness-details p { margin: 8px 0; }
+.stall-awareness-details a { text-decoration: underline; text-underline-offset: 3px; color: #e4c48d; }
+@media (max-width: 620px) {
+  .stall-awareness-panel { top: 108px; right: 10px; width: calc(100% - 20px); max-height: calc(100dvh - 120px); padding: 12px; }
+  .stall-awareness-heading h2 { font-size: 14px; }
+  .stall-awareness-reference dd { font-size: 15px; }
+  .stall-awareness-table { font-size: 9px; }
+  .stall-awareness-table th, .stall-awareness-table td { padding: 5px 2px; }
+}

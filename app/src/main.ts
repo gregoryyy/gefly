@@ -5,6 +5,7 @@ import { createPitchTrimControl } from './pitch-trim';
 import { createNavigationGauges } from './navigation-gauges';
 import { createLandingFeedback } from './landing-feedback';
 import { createFlightPathGroundPanel } from './flight-path-ground';
+import { createStallAwarenessPanel } from './stall-awareness-panel';
 import { createAircraftHandbook } from './aircraft-handbook';
 import { createSixPack } from './six-pack';
 import { createAutopilotPanel } from './autopilot-panel';
@@ -30,7 +31,7 @@ root.innerHTML = `
     <a class="brand" href="https://github.com/gregoryyy/gefly" target="_blank" rel="noreferrer">gefly<span>FLIGHT LAB</span></a>
     <div class="location"><strong>EGELSBACH</strong><span>C172 research aircraft · airborne practice</span></div>
     <div class="session-status"><i id="status-dot"></i><span id="status" role="status">Loading flight…</span><span id="clock">00:00</span></div>
-    <details id="view-menu" class="top-menu"><summary>View</summary><nav class="menu-content view-controls" aria-label="Flight views"><button id="cockpit" class="selected" aria-pressed="true">Cockpit</button><button id="chase" aria-pressed="false">Chase <kbd>V</kbd></button><button id="toggle-map" aria-pressed="false" aria-controls="practice-map-panel">Map</button><button id="toggle-flight-data" aria-pressed="false" aria-controls="flight-data-panel">Flight data</button><button id="toggle-controls" aria-pressed="true" aria-controls="flight-controls-panel">Flight controls</button></nav></details>
+    <details id="view-menu" class="top-menu"><summary>View</summary><nav class="menu-content view-controls" aria-label="Flight views"><button id="cockpit" class="selected" aria-pressed="true">Cockpit</button><button id="chase" aria-pressed="false">Chase <kbd>V</kbd></button><button id="toggle-map" aria-pressed="false" aria-controls="practice-map-panel">Map</button><button id="toggle-flight-data" aria-pressed="false" aria-controls="flight-data-panel">Flight data</button><button id="toggle-stall-awareness" aria-pressed="false" aria-controls="stall-awareness-panel">Stall awareness</button><button id="toggle-controls" aria-pressed="true" aria-controls="flight-controls-panel">Flight controls</button></nav></details>
     <span id="review-button-slot"></span>
     <button id="controls-settings" class="settings-trigger" aria-haspopup="dialog">Options</button>
     <details id="flight-menu" class="top-menu"><summary>Flight</summary><nav class="menu-content" aria-label="Flight session"><button id="reset">Restart flight</button><span class="menu-label">FLAT-GROUND LANDING STUDY</span><button data-landing="normal">Baseline touchdown</button><button data-landing="hard">Fast descent</button><button data-landing="side">Sideways touchdown</button><button data-landing="banked">Banked touchdown</button><button id="airborne-practice">Airborne practice</button></nav></details>
@@ -46,6 +47,7 @@ root.innerHTML = `
   </section>
   <aside id="landing-feedback" hidden></aside>
   <aside id="flight-data-panel" aria-label="Flight path and ground reactions" hidden></aside>
+  <aside id="stall-awareness-panel" aria-label="Spatial stall awareness estimates" hidden></aside>
   <div id="camera-fov" class="camera-fov">60° FOV · two-finger scroll</div>
   <div id="pointer-mode" class="pointer-mode">Click scene: yoke · Hold-drag: look</div>
   <aside id="flight-controls-panel" class="control-panel" aria-label="Flight controls">
@@ -89,6 +91,7 @@ const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElem
 const sixPack = createSixPack(el('six-pack'));
 const landingFeedback = createLandingFeedback(el('landing-feedback'));
 const flightData = createFlightPathGroundPanel({ container: el('flight-data-panel'), onClose: () => setFlightDataVisible(false) });
+const stallAwareness = createStallAwarenessPanel({ container: el('stall-awareness-panel'), onClose: () => setStallAwarenessVisible(false) });
 const sceneContainer = el('scene');
 const focusFlight = () => sceneContainer.focus({ preventScroll: true });
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
@@ -307,11 +310,25 @@ function setFlightDataVisible(visible: boolean): void {
   el('flight-data-panel').hidden = !visible;
   el('toggle-flight-data').setAttribute('aria-pressed', String(visible));
   if (visible) {
+    el('stall-awareness-panel').hidden = true;
+    el('toggle-stall-awareness').setAttribute('aria-pressed', 'false');
     void setMapVisible(false);
     closeViewMenu(); el('flight-data-close').focus({ preventScroll: true });
   } else focusFlight();
 }
 el('toggle-flight-data').onclick = () => setFlightDataVisible(el('flight-data-panel').hasAttribute('hidden'));
+function setStallAwarenessVisible(visible: boolean): void {
+  el('stall-awareness-panel').hidden = !visible;
+  el('toggle-stall-awareness').setAttribute('aria-pressed', String(visible));
+  if (visible) {
+    el('flight-data-panel').hidden = true;
+    el('toggle-flight-data').setAttribute('aria-pressed', 'false');
+    void setMapVisible(false);
+    closeViewMenu(); el('stall-awareness-close').focus({ preventScroll: true });
+  } else focusFlight();
+}
+el('toggle-stall-awareness').onclick = () => setStallAwarenessVisible(el('stall-awareness-panel').hasAttribute('hidden'));
+
 el('toggle-map').onclick = () => {
   setFlightDataVisible(false); void setMapVisible(!mapVisible); closeViewMenu(); focusFlight();
 };
@@ -321,6 +338,11 @@ function mapUnavailable() {
 }
 async function setMapVisible(visible: boolean) {
   mapVisible = visible;
+  if (visible) {
+    el('flight-data-panel').hidden = el('stall-awareness-panel').hidden = true;
+    el('toggle-flight-data').setAttribute('aria-pressed', 'false');
+    el('toggle-stall-awareness').setAttribute('aria-pressed', 'false');
+  }
   const panel = el('practice-map-panel');
   panel.hidden = !visible;
   el('toggle-map').setAttribute('aria-pressed', String(visible));
@@ -449,7 +471,7 @@ function reset(preset = landingPreset) {
   startWhenReady = running; running = false; ready = false; failed = false;
   neutralize(); session.pause(); latest = previous = null; verticalSpeedFpm = 0;
   pitchTrimControl.update(null, false, false, null);
-  flightData.update(null, false);
+  flightData.update(null, false); stallAwareness.update(null, false);
   enginePanel.update(null, false, false); autopilotPanel.update(null, false, false);
   radioPanel.update(null, false, false); navigationGauges.update(null, false, false); landingFeedback.update(null, false);
   updateConfiguration(null, false);
@@ -693,10 +715,11 @@ function animate(now: number) {
     }
     landingFeedback.update(state, reviewing);
     flightData.update(state, reviewing);
+    stallAwareness.update(state, reviewing);
     el('clock').textContent = `${String(Math.floor(state.t_s / 60)).padStart(2, '0')}:${String(Math.floor(state.t_s % 60)).padStart(2, '0')}`;
   }
   requestAnimationFrame(animate);
 }
 publishInput(); updateSessionUI(); requestAnimationFrame(animate);
-addEventListener('pagehide', () => { mapDisposed = true; aircraftHandbook.dispose(); flightData.dispose(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
+addEventListener('pagehide', () => { mapDisposed = true; aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
 void sceneReady;

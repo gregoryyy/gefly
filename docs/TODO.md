@@ -116,6 +116,10 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.24 Add a View Aircraft handbook with original sourced reference diagrams for the active research 1982 C172P: loading/CG, published flight-envelope load-factor/airspeed references, critical CAS speeds and model gear geometry. Pause for reading; retain accessible tables/source/applicability and narrow-screen operation. No live loading point without applicable mass/CG telemetry. Partial R-AIR-2/R-DATA-1/R-VIEW-1; see [review evidence](reviews/2026-11-02-flight-data-handbook.md). Independent quality/actual-browser validation passed; peer pending.
 
+- [x] 2.0.25 Add View spatial stall awareness: six labeled wing sampling regions with kinematic local airflow-angle estimates from actual air-relative motion/current CG, headroom to the global model reference, recorded-state synchronization and unavailable/unknown handling. Partial R-SIM-7/R-VIEW-1/R-REVIEW-1; no actual sectional separation or local critical-angle claim. Independent quality/actual-browser validation passed; see [review evidence](reviews/2026-11-02-spatial-stall-awareness.md). Peer pending.
+
+- [ ] 2.0.26 Develop source-applicable regional aerodynamics for actual part-by-part stall/separation onset and recovery (wing twist, local section data, induced flow/downwash, flap/aileron/tail effects). Compare reusable open sectional models first; freeze reference cases before accepting regional colors as real stall state. Completes the deeper R-SIM-7 target; the 2.0.25 kinematic display does not implement this physics.
+
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.
 - [ ] 2.3 code2 implements the corresponding browser controls, instruments and exercise feedback against frozen contracts **in parallel with 2.2**.

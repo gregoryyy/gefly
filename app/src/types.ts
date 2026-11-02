@@ -89,7 +89,21 @@ export function validControlState(input: object): boolean {
     && value.throttle_norm! >= 0 && value.throttle_norm! <= 1
     && [value.aileron_cmd_norm, value.elevator_cmd_norm, value.rudder_cmd_norm].every(x => Math.abs(x!) <= 1);
 }
-export interface FlightState extends AltimeterState, CockpitState, EngineState, PitchTrimState, GroundState, ControlState, Partial<RadioNavSnapshot> {
+/** Read-only body-axis air-relative motion and structural-frame CG, all SI/radians. */
+export const STALL_FIELDS = ['aero_u_mps', 'aero_v_mps', 'aero_w_mps',
+  'aero_p_radps', 'aero_q_radps', 'aero_r_radps',
+  'cg_structural_x_m', 'cg_structural_y_m', 'cg_structural_z_m',
+  'aero_alpha_rad', 'aero_alpha_max_rad', 'stall_warning_norm', 'stall_hysteresis_norm'] as const;
+export type StallState = Partial<Record<typeof STALL_FIELDS[number], number>>;
+export function validStallState(input: object): boolean {
+  const value = input as StallState;
+  if (!STALL_FIELDS.some(key => value[key] !== undefined)) return true;
+  return STALL_FIELDS.every(key => typeof value[key] === 'number' && Number.isFinite(value[key]))
+    && Math.abs(value.aero_alpha_rad!) <= Math.PI
+    && value.aero_alpha_max_rad! > 0 && value.aero_alpha_max_rad! < Math.PI / 2
+    && value.stall_warning_norm! >= 0 && [0, 1].includes(value.stall_hysteresis_norm!);
+}
+export interface FlightState extends AltimeterState, CockpitState, EngineState, PitchTrimState, GroundState, ControlState, StallState, Partial<RadioNavSnapshot> {
   step: number; t_s: number; lat_rad: number; lon_rad: number;
   alt_msl_m: number; roll_rad: number; pitch_rad: number; heading_rad: number; tas_mps: number;
 }
