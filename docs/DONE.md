@@ -3,6 +3,89 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 08:05 — Fix the Claude peer-review findings for Codex PRs #39–#50 (TODO 0.21)
+
+TODO: 0.21 in progress; 1.14.1 reopened (F66; 1.14 stays ticked with an open-child warning); GAPS Q24 and Q25 opened.
+Agent: Claude Code orchestrator; code1 (simulation, worker and KAP 140), code2 (app
+interface and tests) and housekeeping (records, licences, README) subagents.
+
+**Implementation notes**
+
+- **code1** (F16, F24, F25, F39, F45–F50, F54, worker side of F55):
+  - **KAP 140:** a selector entry uses the page that was showing when entry started, so
+    a BARO entry never becomes an altitude. HDG survives cancelling an armed NAV. Loss
+    alerts clear on disconnect. Invalid sensors latch a generic `kap_sensor_fault` and
+    disconnect, labelled generic.
+  - **Collision:** contacts are matched by c172x name. When contact data is
+    unavailable the collision fields are omitted, never sent as `collision_mask: 0`. A
+    detected contact is never dropped.
+  - **Bridge:** missing properties become NaN, and the JS layer drops the whole group.
+  - **Worker:** `ready` reports `navdata_sha256`/`navdata_error`.
+- **code2** (F3, F7–F10, F21, F22, F27–F29, F31, F32, F36, F37, F40, F41, UI side of
+  F55, F57–F65, F67; F2, F13, F14, F26 already resolved):
+  - **Interface:**
+    - the rudder sign convention is recorded and tested;
+    - Review shows NO DATA for missing recorded fields;
+    - navdata hashes are compared, with a visible fail-closed alert;
+    - an imagery failure notice and a cancellable, bounded tile queue;
+    - audio retry is bounded, and the sound-off hint is visible.
+  - **Cockpit CSS:** keycaps 10 px, labels at least 7 px, cascade cleanup.
+  - **Tests:** the missing-engine smoke test derives the worker's static import graph.
+  - **Rights labels:** the app source objects carry `rights: unresolved (GAPS Q24)`.
+- **housekeeping** (F4, F5, F19, F20, F32, F33, F34, F42–F44, F51–F53, F56):
+  - **Provenance:** imagery editions are recorded as unknown, the overview photo is in
+    the notices, research-note source tables are added, and the C172P POH and JSBSim
+    values are labelled "rights unresolved".
+  - **Audit:** a fresh npm audit (0 vulnerabilities, 07:36).
+  - **Notices:** Python package licences added.
+  - **Navdata:** the EDDF centre is pinned to an OurAirports record, with the first
+    builder tests.
+  - **README and SEC:** match the current controls.
+- **Orchestrator:** GAPS Q24 (rights basis, user decision) and Q25 (confirm the
+  increments rule from F6), the TODO 1.14.1 rewording, the CI-claim correction below,
+  and README behaviour notes.
+
+Checks: see the integration entry's PR. code1 ran native engine tests against a local
+engine build (landing-physics, autopilot-native, kap140-worker, navigation-worker,
+bridge-native and kap140-panel.browser passed). The full-app browser suites time out
+on a click in this container, and do so on unmodified main too, so they count as not
+evaluated.
+
+**Deviations**
+
+- The F55 fail-closed rule also disables regional guidance for an older local runtime;
+  rebuild it.
+- F61 keycaps are 18 px high (the column limit), short of the reviewer's ~24 px target.
+- The fixes are Claude-authored, so they go to the Codex review (TODO 0.19).
+
+## 2026-11-03 08:05 — Correct hosted-CI claims for PRs #43–#45 (TODO 0.21)
+
+TODO: 0.21 in progress; corrects records for 2.0.9 through 2.0.27. Agent: Claude Code
+orchestrator; housekeeping subagent.
+
+**Implementation notes**
+
+The CI claims in these entries were local results only:
+- 2026-11-02 18:32 (#43);
+- 20:06, 20:28, 20:50, 21:07 and 21:22 (#44);
+- 21:40 (#45).
+
+Hosted Foundation runs on main failed in the Browser application unit job at
+`src/field-of-view.test.ts:74` (AssertionError true !== false):
+- 41493487096 at `4a98ed5` (#43);
+- 41520958345 at `f857801` (#44);
+- 41522096307 at `f151204` (#45).
+
+`7610edc` (#46) fixed the test, and 41573985279 at `c852694` was the first green run.
+Those PRs merged on red hosted CI. The earlier entries are kept unchanged, and their
+local claims cannot be checked because no raw local output is tracked. See peer
+findings F11, F15, F18, F23, F30, F35 and F38 in the
+[peer review](reviews/2026-11-03-codex-prs-39-50-peer.md).
+
+**Deviations**
+
+None.
+
 ## 2026-11-03 07:26 — Claude peer review of Codex PRs #39–#50 (TODO 0.21)
 
 TODO: 0.21 in progress. Agent: Claude Code orchestrator; peer dispatcher subagent;

@@ -4,6 +4,40 @@ All times are Europe/Berlin. Answers record the author and recording time. New a
 
 ## Resolved questions
 
+### Q24. Rights basis for extracted C172P POH and JSBSim c172x values in the app?
+
+Why: R-DATA-1 needs a licence, permission or rights analysis for every external
+aircraft value that ships. The Claude peer review found none (F34 high, F32;
+[report](reviews/2026-11-03-codex-prs-39-50-peer.md), 2026-11-03 08:04).
+
+What ships today:
+- **C172P POH values** (KCAS limits, stall speeds, CG limits, load factors, VA), read
+  from a third-party-hosted scan of the copyrighted 1982 Cessna C172P POH. The Q5/Q7
+  facts-only allowances name the selected 172S POH, not this document.
+- **JSBSim v1.3.3 values:** c172x contacts, span, AERORP, alpha-max, 130 lb tanks,
+  `eng_io320` 2700 RPM and the `FGTank` 6.6 lb/gal. `c172x.xml` says "GPL" with no
+  version, "educational and entertainment purposes only" and "not to be sold"; E1
+  rated it not cleared. Q17 excludes shipping the data files and did not consider
+  extracted values.
+
+Options:
+- (a) Extend the `facts_only` allowance to these named C172P POH values.
+- (b) Accept the JSBSim values under a recorded rights analysis, or ask upstream.
+- (c) Remove or replace the values, e.g. with the sourced 172S `facts_only` data
+  already in `data/aircraft/c172s-classic/`.
+
+Blocking: calling these values cleared, and any public distribution of the app
+build. Until decided, they are labelled "rights unresolved" in the SBOM,
+THIRD_PARTY_NOTICES, the research notes and the app source objects. Owner:
+orchestrator; user decision.
+
+### Q25. Confirm the "small, runnable, demonstrable increments" rule?
+
+Why: AGENTS.md (Work and documentation) carries a rule recorded in DONE on
+2026-11-02 12:08 as the user's priority. No `docs/input/` record exists for it, and
+AGENTS rule changes need a recorded decision (peer F6, 2026-11-03 08:04). If the user confirms it,
+add a new input record; do not write one retroactively.
+
 ### Q22. Adopt assurance like Propeller?
 
 Answer: **2026-11-01 20:33, user** (recording time, Europe/Berlin): “adopt assurance”.

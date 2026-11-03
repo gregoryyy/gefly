@@ -59,7 +59,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 - [ ] 1.12 (Draft: [QUALIFICATIONS](design/QUALIFICATIONS.md); open questions listed there; reviewed (local quality/validate), merged; peer pending.) Define the pilot-qualification profile contract for future sailplane/ultralight tracks: jurisdiction, authority, full licence/category, privileges, applicable source revisions and aircraft/objective mappings; retain Q14 choices until each track starts. *(decision)*
 - [ ] 1.13 (Draft: [PHONE-CONTROL](design/PHONE-CONTROL.md) — local WebRTC data channel, QR + confirmation-code pairing; Q-P1..Q-P6 decided in Q19; reviewed.) Specify and prototype the paired-iPhone orientation control (R-INPUT-3): pairing, transport, latency budget, fallback and SEC review; optional, after the input boundary in 1.4.
 - [x] 1.14 Adopt bounded level 2 assurance (Q22, R-ASR-1–R-ASR-5); AS1–AS8 locally reviewed, hosted matrix observed; scoped peer disposition is recorded separately in the assurance review report.
-  - [x] 1.14.1 Record the adoption, frozen assurance criteria, source-of-truth rules and exclusive implementation ownership.
+  - [ ] 1.14.1 Record the adoption, frozen assurance criteria and source-of-truth rules (done 2026-11-01 20:40). Path-level exclusive implementation ownership was not recorded and cannot be recovered from DONE (peer F66, 2026-11-03). Record current owners for `utils/assure/**`, its CI integration and its status records, without inferring historical ownership.
   - [x] 1.14.2 Reuse the pinned Propeller core, adapt Gefly lineage/status extraction and provide check/report/trace/diff/impact commands.
   - [x] 1.14.3 Add aircraft provenance, versioned evidence/decision guards, acceptance freshness and calibration/holdout checks with negative fixtures.
   - [x] 1.14.4 Reconcile known status drift, integrate offline local/CI checks and record independent quality/validation plus scoped peer disposition.
@@ -84,7 +84,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [ ] 2.0.8 Complete the next source-scoped cockpit controls: engine start/electrical controls and applicable fuel selector/carb-heat behavior. Manual elevator trim is delivered separately in 2.0.10. Identify the exact aircraft installation and retain unimplemented labels; this does not replace the model, navigation, briefing and exercise gates below.
 
-- [x] 2.0.9 Add scene two-finger vertical-scroll FOV control (20–100°, default 60°), separate from flight/yoke/look, with camera/view/reset persistence, modifier/UI isolation and actual-browser physics-invariance checks. See [review evidence](reviews/2026-11-02-field-of-view.md). Partial R-INPUT-1/R-VIEW-1; peer pending.
+- [x] 2.0.9 Add scene two-finger vertical-scroll FOV control (20–100°, default 60°), separate from flight/yoke/look, with camera/view/reset persistence, modifier/UI isolation and actual-browser physics-invariance checks. See [review evidence](reviews/2026-11-02-field-of-view.md). Partial R-INPUT-1/R-VIEW-1; peer pending. Hosted CI was red at merge until `7610edc` (#46); see the DONE correction of 2026-11-03 08:04.
 
 - [x] 2.0.10 Add source-backed generic elevator trim with apostrophe/backslash hold, slider and startup restore; retain it through pause/release, record actual trim/elevator, and restore fresh initial trim on restart. Move Restart/Options to the top menu and make flight controls a View option. See [review evidence](reviews/2026-11-02-elevator-trim.md). Partial R-INPUT-1/R-VIEW-1/R-REVIEW-1; C172S trim-wheel calibration and full aircraft acceptance remain open. Peer pending.
 
@@ -108,7 +108,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.20 Show source-applicable critical-speed markings on the research C172P CAS gauge, preserving source/configuration labels and suppressing incompatible TAS overlays. Partial R-AIR-2/R-DATA-1; installed IAS and dynamic stall-envelope acceptance remain separate. Independent actual-browser validation passed; peer pending.
 
-- [x] 2.0.21 Show recorded throttle, applied commands and actuator positions during read-only Review; bind R to Review and keep restart in Flight. Preserve staged live controls on exit and frozen physical state. Partial R-REVIEW-1/R-INPUT-1; independent actual-browser validation passed, peer pending.
+- [x] 2.0.21 Show recorded throttle, applied commands and actuator positions during read-only Review; bind R to Review and keep restart in Flight. Preserve staged live controls on exit and frozen physical state. Partial R-REVIEW-1/R-INPUT-1; independent actual-browser validation passed, peer pending. Hosted CI was red at merge until `7610edc` (#46); see the DONE correction of 2026-11-03 08:04.
 
 - [x] 2.0.22 Fit cockpit height to content and scale all inline instruments/controls together; retain main instruments and AP/flap/trim before collapsing engine/radio on narrow views. Partial R-VIEW-1; see [review evidence](reviews/2026-11-02-review-panel.md), peer pending.
 
@@ -120,7 +120,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [ ] 2.0.26 Develop source-applicable regional aerodynamics for actual part-by-part stall/separation onset and recovery (wing twist, local section data, induced flow/downwash, flap/aileron/tail effects). Compare reusable open sectional models first; freeze reference cases before accepting regional colors as real stall state. Completes the deeper R-SIM-7 target; the 2.0.25 kinematic display does not implement this physics.
 
-- [x] 2.0.27 Add original synthesized engine/propeller audio from actual RPM/load/fuel telemetry with smooth changes, trusted user activation, quick mute and Options volume. Silence pause/hidden/failure/reset/paused Review/dispose; playing Review uses selected samples. Handle unsupported/blocked audio without interrupting flight. R-AUDIO-1/R-REVIEW-1; no calibrated installed-aircraft acoustic claim. Independent quality/actual-browser validation passed; see [review evidence](reviews/2026-11-02-engine-audio.md). Peer pending.
+- [x] 2.0.27 Add original synthesized engine/propeller audio from actual RPM/load/fuel telemetry with smooth changes, trusted user activation, quick mute and Options volume. Silence pause/hidden/failure/reset/paused Review/dispose; playing Review uses selected samples. Handle unsupported/blocked audio without interrupting flight. R-AUDIO-1/R-REVIEW-1; no calibrated installed-aircraft acoustic claim. Independent quality/actual-browser validation passed; see [review evidence](reviews/2026-11-02-engine-audio.md). Peer pending. Hosted CI was red at merge until `7610edc` (#46); see the DONE correction of 2026-11-03 08:04.
 
 - [x] 2.0.28 Stop fixed-step flight on native structural or shared illustrative fuselage/propeller/fin ground contact, with an immutable event, locked controls/silent audio and Review/camera/Flight-menu restart. Preserve normal wheel physics and disclose flat-ground/discrete-proxy limits. R-SIM-8/R-REVIEW-1/R-VIEW-1; no structural-damage or aircraft safe-landing threshold claim.
 
