@@ -1,4 +1,5 @@
 import type { FlightState } from './types';
+import { validAlertState } from '../../studies/e1-browser/sim/altitude-alert.js';
 
 export interface EngineAudioParameters {
   valid: boolean;
@@ -8,6 +9,8 @@ export interface EngineAudioParameters {
   blade_pass_hz: number;
   exhaust_gain: number;
   mechanical_gain: number;
+  rotation_whirr_hz: number;
+  rotation_whirr_gain: number;
   propeller_gain: number;
   noise_cutoff_hz: number;
   wind_gain: number;
@@ -21,13 +24,15 @@ export interface EngineAudioParameters {
   rolling_gain: number;
   rolling_cutoff_hz: number;
   touchdown_gain: number;
+  alert_available: boolean;
+  alert_sequence: number;
 }
 
 const SILENT: EngineAudioParameters = Object.freeze({ valid: false, rpm: 0, rotation_hz: 0,
-  firing_hz: 0, blade_pass_hz: 0, exhaust_gain: 0, mechanical_gain: 0, propeller_gain: 0,
+  firing_hz: 0, blade_pass_hz: 0, exhaust_gain: 0, mechanical_gain: 0, rotation_whirr_hz: 0, rotation_whirr_gain: 0, propeller_gain: 0,
   noise_cutoff_hz: 300, wind_gain: 0, wind_cutoff_hz: 400, wind_whistle_hz: 0, wind_whistle_gain: 0,
   frame_step: -1, frame_t_s: -1, ground_available: false, wheel_contact_mask: 0, rolling_gain: 0,
-  rolling_cutoff_hz: 300, touchdown_gain: 0 });
+  rolling_cutoff_hz: 300, touchdown_gain: 0, alert_available: false, alert_sequence: 0 });
 const clamp = (value: number, low: number, high: number) => Math.min(high, Math.max(low, value));
 
 /** Original procedural timbre, not an acoustic calibration or recorded aircraft.
@@ -39,6 +44,10 @@ export function engineAudioParameters(state: Readonly<FlightState> | null): Engi
   if (!state) return result;
   if (Number.isInteger(state.step) && state.step >= 0 && Number.isFinite(state.t_s) && state.t_s >= 0) {
     result.frame_step = state.step; result.frame_t_s = state.t_s;
+    if (state.kap_alert_state !== undefined && state.kap_alert_sequence !== undefined && validAlertState(state)) {
+      result.valid = result.alert_available = true;
+      result.alert_sequence = state.kap_alert_sequence;
+    }
     const wheels = ['nose', 'left', 'right'] as const;
     if ([state.ground_forward_mps, state.ground_side_mps].every(value => typeof value === 'number' && Number.isFinite(value))
       && wheels.every(wheel => [0, 1].includes(state[`gear_${wheel}_wow`]!)
@@ -88,6 +97,11 @@ export function engineAudioParameters(state: Readonly<FlightState> | null): Engi
   return { ...result, valid: true, rpm, rotation_hz: rotation, firing_hz: rotation * 2, blade_pass_hz: rotation * 2,
     exhaust_gain: .36 * rotationGain * (.4 + .6 * load) * combustion,
     mechanical_gain: .045 * rotationGain,
+    // An audible rotational harmonic makes actual starter/coast RPM changes
+    // perceptible even when combustion stops and the fundamental is sub-bass.
+    // Harmonic/envelope are original timbre choices, not a modeled gear ratio.
+    rotation_whirr_hz: rotation * 12,
+    rotation_whirr_gain: .035 * Math.pow(clamp(rps / 45, 0, 1), .75),
     propeller_gain: .1 * rotationGain,
     noise_cutoff_hz: clamp(600 + rotation * 28 + load * 1000, 300, 5000) };
 }

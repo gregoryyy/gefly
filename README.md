@@ -38,10 +38,14 @@ just fly                  # http://127.0.0.1:5173
 ```
 
 Select **Start flight**, then use the visible on-screen controls or a draggable stick.
-Arrow keys control pitch/roll, A/D rudder, W/S throttle, Space pause,
-R to restart and V to change view. Touchpad controls are available on screen.
+Arrow keys control pitch/roll, Q/W rudder, 0 throttle idle and 1–9 throttle.
+Space pauses, R opens Review, V changes view, E toggles the engine and S toggles
+sound (initially off). Restart is in Flight. Click toggles touchpad yoke control;
+hold-drag looks around while retaining the yoke midpoint, and two-finger vertical
+scroll changes field of view.
 A bundled official Hessen photograph shows a small starter area around Egelsbach
-on an ellipsoid surface; real terrain and airport elevations remain incomplete. The generic
+over public Hessen terrain around Egelsbach, Frankfurt and the Taunus. A Flight-menu Taunus demonstration shows the hills; full regional coverage and accepted airport/runway elevations remain incomplete. Regional orthophoto tiles now add approximately 1.5–3 m detail around Frankfurt and
+the eastern approaches, loaded by view. The generic
 research aircraft remains experimental; see
 [setup, controls and limitations](app/README.md).
 
@@ -59,9 +63,18 @@ turn/slip, true heading and vertical speed. Click the scene to toggle touchpad
 yoke control; hold-drag to look around. Two-finger vertical scrolling
 adjusts camera FOV. **F / Shift+F** selects flaps, **B** holds
 wheel brakes, and **1–9** selects 10–90% throttle (**0** idle). The engine panel
-adds mixture, RPM, manifold pressure, oil and fuel readouts. **P** captures a true
-heading or disconnects the roll-only autopilot; altitude hold is not implemented.
+adds mixture, RPM, manifold pressure, oil and fuel readouts. **P** toggles the two-axis autopilot. Its KAP 140 operating controls include VS,
+current-altitude hold, selected-altitude capture and source-aware navigation;
+generic servo response and real navigation-data coverage remain limited.
 On narrow screens, open **Engine & autopilot** for those controls.
+
+**Radio stack → Stations** loads a historical Rhein-Main VOR/LOC/DME frequency into
+NAV1 or NAV2 standby; swap to activate it. **Flight → EDDF 25C ILS practice** starts
+near the sourced localizer/glideslope with NAV1 111.55 and FFM on NAV2 114.20.
+Hold AP for a quarter second, select APR and start flight to try capture.
+The bundled **2013.10** inventory is historical simulator data, with approximate
+signals and missing/ambiguous services flagged; it is not current flight information
+or a published approach. See [provenance](app/public/navdata/README.md).
 
 ## Status and entry points
 

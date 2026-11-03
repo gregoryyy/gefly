@@ -17,6 +17,6 @@ export const VISUAL_AIRFRAME: {
 export const EMPTY_COLLISION: Readonly<{ collision_mask: number; collision_step: number;
   collision_t_s: number; collision_down_mps: number; collision_groundspeed_mps: number }>;
 export function groundCollisionContact(ground_agl_m: number, roll_rad: number, pitch_rad: number,
-  structure_contact_mask: number): { available: boolean; mask: number; clearance_m: number | null };
+  structure_contact_mask: number, terrainPlane?: { east_slope: number; north_slope: number; heading_rad: number }): { available: boolean; mask: number; clearance_m: number | null };
 export function collisionRecord(mask: number, step: number, t_s: number,
   previousGround: { ground_down_mps: number; ground_forward_mps: number; ground_side_mps: number }): typeof EMPTY_COLLISION | null;

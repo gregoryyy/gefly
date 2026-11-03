@@ -27,13 +27,13 @@ test('actual MAP and fuel flow shape combustion load without changing rotation p
 
 test('zero rotation, missing and malformed actual telemetry cannot invent engine noise', () => {
   const stopped = engineAudioParameters(fixture({ prop_radps: 0 }));
-  for (const field of ['exhaust_gain', 'mechanical_gain', 'propeller_gain', 'firing_hz'] as const) assert.equal(stopped[field], 0);
+  for (const field of ['exhaust_gain', 'mechanical_gain', 'propeller_gain', 'rotation_whirr_gain', 'rotation_whirr_hz', 'firing_hz'] as const) assert.equal(stopped[field], 0);
   assert.equal(engineAudioParameters(null).valid, false);
   for (const field of ['prop_radps', 'manifold_pressure_pa', 'fuel_flow_m3ps']) {
     for (const invalid of [undefined, NaN, Infinity, -Infinity, -1]) {
       const result = engineAudioParameters(fixture({ [field]: invalid }));
       assert.equal(result.valid, true, 'usable airspeed still supplies wind');
-      assert.equal(result.exhaust_gain + result.mechanical_gain + result.propeller_gain, 0);
+      assert.equal(result.exhaust_gain + result.mechanical_gain + result.propeller_gain + result.rotation_whirr_gain, 0);
       assert(result.wind_gain > 0);
     }
   }
@@ -87,6 +87,18 @@ test('actual stopped engine suppresses exhaust even when fuel flow remains posit
   assert(engineAudioParameters(fixture()).exhaust_gain > 0);
 });
 
+test('starter and free-coast whirr follow actual rotation, independently of ignition, fuel and requested throttle', () => {
+  const low = engineAudioParameters(fixture({ prop_radps: 300 * Math.PI / 30, engine_running: 0, engine_command_on: 1, fuel_flow_m3ps: 0 }));
+  const high = engineAudioParameters(fixture({ prop_radps: 1000 * Math.PI / 30, engine_running: 0, engine_command_on: 0 }));
+  assert.equal(low.exhaust_gain + high.exhaust_gain, 0);
+  assert(Math.abs(low.rotation_whirr_hz - 60) < 1e-10);
+  assert(Math.abs(high.rotation_whirr_hz - 200) < 1e-10);
+  assert(low.rotation_whirr_gain > 0 && high.rotation_whirr_gain > low.rotation_whirr_gain);
+  const changedCommand = engineAudioParameters(fixture({ prop_radps: 1000 * Math.PI / 30, engine_running: 1, engine_command_on: 1, throttle_norm: 1, fuel_flow_m3ps: 0 }));
+  assert.equal(changedCommand.rotation_whirr_hz, high.rotation_whirr_hz);
+  assert.equal(changedCommand.rotation_whirr_gain, high.rotation_whirr_gain);
+});
+
 test('rolling uses actual wheel contact/load and horizontal ground motion independently of TAS and requested brakes', () => {
   const ground = fixture({ ground_forward_mps: 12, ground_side_mps: 5,
     gear_nose_wow: 0, gear_left_wow: 1, gear_right_wow: 1,
@@ -110,6 +122,18 @@ test('engine-only matched-load gains make upper actual RPM stronger than idle', 
   assert(idle.propeller_gain < cruise.propeller_gain / 3);
 });
 
+test('altitude alert audio accepts only the complete optional recorded counter group with a valid frame clock', () => {
+  const state = fixture({ kap_alert_state: 1, kap_alert_sequence: 7, prop_radps: undefined, tas_mps: undefined });
+  const alert = engineAudioParameters(state);
+  assert(alert.valid && alert.alert_available); assert.equal(alert.alert_sequence, 7);
+  assert.equal(alert.exhaust_gain + alert.wind_gain, 0, 'alert telemetry never invents engine or wind');
+  for (const patch of [{ kap_alert_state: undefined }, { kap_alert_sequence: undefined }, { kap_alert_sequence: -1 },
+    { kap_alert_sequence: 1.5 }, { kap_alert_sequence: Number.MAX_SAFE_INTEGER + 1 }, { kap_alert_state: 4 }, { t_s: NaN }]) {
+    assert.equal(engineAudioParameters({ ...state, ...patch }).alert_available, false);
+  }
+  assert.equal(engineAudioParameters(fixture()).alert_available, false, 'legacy group absence is unavailable');
+});
+
 test('sound-design gains and frequencies stay bounded for extreme finite inputs', () => {
   for (const magnitude of [1e-20, 1, 100, 1e6, 1e200, Number.MAX_VALUE]) {
     const result = engineAudioParameters(fixture({ prop_radps: magnitude, manifold_pressure_pa: magnitude, fuel_flow_m3ps: magnitude, tas_mps: magnitude }));
@@ -117,6 +141,8 @@ test('sound-design gains and frequencies stay bounded for extreme finite inputs'
     assert(result.rotation_hz <= 200); assert(result.firing_hz <= 400); assert(result.noise_cutoff_hz <= 5000);
     assert(result.exhaust_gain >= 0 && result.exhaust_gain <= .36);
     assert(result.mechanical_gain >= 0 && result.mechanical_gain <= .045);
+    assert(result.rotation_whirr_gain >= 0 && result.rotation_whirr_gain <= .035);
+    assert(result.rotation_whirr_hz >= 0 && result.rotation_whirr_hz <= 2400);
     assert(result.propeller_gain >= 0 && result.propeller_gain <= .1);
     assert(result.wind_gain >= 0 && result.wind_gain <= .14);
     assert(result.wind_cutoff_hz >= 400 && result.wind_cutoff_hz <= 2600);

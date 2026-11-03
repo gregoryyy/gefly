@@ -16,8 +16,13 @@
 #include <FGJSBBase.h>
 #include <input_output/FGPropertyManager.h>
 #include <models/FGGroundReactions.h>
+#include <models/FGInertial.h>
+#include <models/FGPropagate.h>
+#include <input_output/FGGroundCallback.h>
 #include <simgear/misc/sg_path.hxx>
 #include <emscripten/emscripten.h>
+#include <emscripten/heap.h>
+#include "terrain-grid.h"
 
 #include <cmath>
 #include <cstdint>
@@ -44,6 +49,7 @@ constexpr int kErrLoad = -3;
 constexpr int kErrRunIc = -4;
 constexpr int kErrRun = -5;
 constexpr int kErrRange = -6;
+constexpr int kErrTerrainCoverage = -7;
 
 // State layout (indices are part of the worker.js contract):
 // 0 t_s, 1 lat_rad (geodetic), 2 lon_rad, 3 alt_msl_m, 4 roll_rad, 5 pitch_rad,
@@ -62,21 +68,75 @@ bool g_engine_switch_controlled = false;
 bool g_engine_command_on = true;
 bool g_engine_start_requested = false;
 int g_ap_mode = 0;
+int g_ap_vertical_mode = 0;
+double g_ap_vertical_target = 0.0;
 double g_ap_heading_target = 0.0;
+std::shared_ptr<const gefly::TerrainGrid> g_pending_terrain;
+std::shared_ptr<const gefly::TerrainGrid> g_active_terrain;
+bool g_terrain_query_failed = false;
+
+class GridGroundCallback final : public JSBSim::FGGroundCallback {
+ public:
+  GridGroundCallback(std::shared_ptr<const gefly::TerrainGrid> grid, double a, double b)
+      : grid_(std::move(grid)), a_(a), b_(b) {}
+  void SetEllipse(double a, double b) override { a_ = a; b_ = b; }
+  // Source DEM is immutable. IC terrain setters cannot overwrite its datum.
+  void SetTerrainElevation(double) override {}
+  double GetAGLevel(double, const JSBSim::FGLocation& location, JSBSim::FGLocation& contact,
+      JSBSim::FGColumnVector3& normal, JSBSim::FGColumnVector3& velocity,
+      JSBSim::FGColumnVector3& angularVelocity) const override {
+    JSBSim::FGLocation point = location; point.SetEllipse(a_, b_);
+    velocity.InitMatrix(); angularVelocity.InitMatrix(); contact = point;
+    const double longitude = point.GetLongitude(), latitude = point.GetGeodLatitudeRad();
+    const auto sample = grid_->sample(longitude, latitude);
+    if (!sample) { g_terrain_query_failed = true; normal.InitMatrix(); return std::numeric_limits<double>::quiet_NaN(); }
+    std::array<double, 3> outward;
+    try { outward = gefly::terrainNormal(longitude, latitude, a_ * kFtToM, b_ * kFtToM, *sample); }
+    catch (const std::exception&) { g_terrain_query_failed = true; normal.InitMatrix(); return std::numeric_limits<double>::quiet_NaN(); }
+    normal = JSBSim::FGColumnVector3(outward[0], outward[1], outward[2]);
+    contact.SetEllipse(a_, b_); contact.SetPositionGeodetic(longitude, latitude, sample->height_m / kFtToM);
+    return point.GetGeodAltitude() - sample->height_m / kFtToM;
+  }
+ private:
+  std::shared_ptr<const gefly::TerrainGrid> grid_;
+  double a_, b_;
+};
+
+bool terrain_support_available() {
+  if (!g_fdm || !g_active_terrain || g_terrain_query_failed) return false;
+  const auto propagate = g_fdm->GetPropagate();
+  const auto& location = propagate->GetLocation();
+  if (!g_active_terrain->contains(location.GetLongitude(), location.GetGeodLatitudeRad())) return false;
+  const auto gear = g_fdm->GetGroundReactions();
+  for (unsigned i = 0; i < gear->GetNumGearUnits(); ++i) {
+    auto point = location.LocalToLocation(propagate->GetTb2l() * gear->GetGearUnit(i)->GetBodyLocation());
+    point.SetEllipse(g_fdm->GetInertial()->GetSemimajor(), g_fdm->GetInertial()->GetSemiminor());
+    if (!g_active_terrain->contains(point.GetLongitude(), point.GetGeodLatitudeRad())) return false;
+  }
+  return true;
+}
 
 bool finite_all(std::initializer_list<double> v) {
   for (double x : v) if (!std::isfinite(x)) return false;
   return true;
 }
 
-// Reuse the upstream modern roll AP only. Legacy c172ap channels remain off;
-// no altitude hold, replacement controller or new tuning coefficients are added.
+// Reuse the upstream modern roll and generic c172x pitch controllers.
+// The prepared pitch adapter changes wiring, not upstream gains.
 void configure_autopilot() {
   auto& f = *g_fdm;
-  for (const char* name : {"ap/heading_hold", "ap/altitude_hold", "ap/attitude_hold",
-                           "ap/airspeed_hold", "ap/aileron_cmd", "ap/elevator_cmd"}) {
+  for (const char* name : {"ap/heading_hold", "ap/attitude_hold",
+                           "ap/airspeed_hold", "ap/aileron_cmd"}) {
     f.SetPropertyValue(name, 0.0);
   }
+  f.SetPropertyValue("ap/altitude_hold", g_ap_vertical_mode == 0 ? 0.0 : 1.0);
+  f.SetPropertyValue("ap/gefly-vs-mode", g_ap_vertical_mode == 1 ? 1.0 : 0.0);
+  if (g_ap_vertical_mode == 1) f.SetPropertyValue("ap/gefly-vs-command-fps", g_ap_vertical_target / kFtToM);
+  // Keep the inactive altitude-error filter near zero to avoid stale targets
+  // when changing from VS or OFF into altitude hold.
+  f.SetPropertyValue("ap/altitude_setpoint", g_ap_vertical_mode == 2
+    ? g_ap_vertical_target / kFtToM : f.GetPropertyValue("position/h-sl-ft"));
+  if (g_ap_vertical_mode == 0) f.SetPropertyValue("ap/elevator_cmd", 0.0);
   f.SetPropertyValue("ap/autopilot-roll-on", g_ap_mode == 0 ? 0.0 : 1.0);
   f.SetPropertyValue("ap/roll-attitude-mode", g_ap_mode == 2 ? 1.0 : 0.0);
   f.SetPropertyValue("guidance/heading-selector-switch", 1.0);
@@ -99,7 +159,7 @@ void read_state() {
   g_state[0] = f.GetPropertyValue("simulation/sim-time-sec");
   g_state[1] = f.GetPropertyValue("position/lat-geod-rad");
   g_state[2] = f.GetPropertyValue("position/long-gc-rad");
-  g_state[3] = f.GetPropertyValue("position/h-sl-ft") * kFtToM;
+  g_state[3] = f.GetPropertyValue(g_active_terrain ? "position/geod-alt-ft" : "position/h-sl-ft") * kFtToM;
   g_state[4] = f.GetPropertyValue("attitude/phi-rad");
   g_state[5] = f.GetPropertyValue("attitude/theta-rad");
   g_state[6] = f.GetPropertyValue("attitude/psi-rad");
@@ -130,7 +190,7 @@ int load_model(double dt_s, double lat_rad, double lon_rad, double heading_rad) 
     g_fdm.reset();
     return kErrLoad;
   }
-  g_mixture_auto = 1; g_ap_mode = 0; g_ap_heading_target = std::fmod(heading_rad, 2.0 * kPi);
+  g_mixture_auto = 1; g_ap_mode = 0; g_ap_vertical_mode = 0; g_ap_vertical_target = 0.0; g_ap_heading_target = std::fmod(heading_rad, 2.0 * kPi);
   g_engine_switch_controlled = false; g_engine_command_on = true; g_engine_start_requested = false;
   if (g_ap_heading_target < 0) g_ap_heading_target += 2.0 * kPi;
   f.SetPropertyValue("systems/automatic-mixture-enabled", 1.0);
@@ -141,6 +201,11 @@ int load_model(double dt_s, double lat_rad, double lon_rad, double heading_rad) 
   f.Setdt(dt_s);
   f.SetPropertyValue("ic/lat-geod-rad", lat_rad);
   f.SetPropertyValue("ic/long-gc-rad", lon_rad);
+  g_active_terrain = g_pending_terrain; g_terrain_query_failed = false;
+  if (g_active_terrain) {
+    auto inertial = f.GetInertial();
+    inertial->SetGroundCallback(new GridGroundCallback(g_active_terrain, inertial->GetSemimajor(), inertial->GetSemiminor()));
+  }
   return 0;
 }
 
@@ -154,11 +219,40 @@ void reset_study_state() {
 
 extern "C" {
 
+// Caller-owned Float64 metres are copied; staged data affects the next init only.
+EMSCRIPTEN_KEEPALIVE int gf_configure_terrain_grid(double west, double south, double east, double north,
+    double width, double height, const double* values, double count) {
+  if (!finite_all({west, south, east, north, width, height, count})) return kErrNonFinite;
+  if (width < 2 || height < 2 || count < 4 || std::floor(width) != width || std::floor(height) != height
+      || std::floor(count) != count || count > gefly::TerrainGrid::kMaxPoints
+      || width > gefly::TerrainGrid::kMaxPoints || height > gefly::TerrainGrid::kMaxPoints) return kErrRange;
+  const uintptr_t address = reinterpret_cast<uintptr_t>(values), bytes = static_cast<size_t>(count) * sizeof(double);
+  const size_t heap = emscripten_get_heap_size();
+  if (!address || address % alignof(double) || address > heap || bytes > heap - address) return kErrRange;
+  try {
+    g_pending_terrain = std::make_shared<const gefly::TerrainGrid>(west, south, east, north,
+      static_cast<size_t>(width), static_cast<size_t>(height), values, static_cast<size_t>(count));
+    return 0;
+  } catch (const std::exception&) { return kErrRange; }
+}
+EMSCRIPTEN_KEEPALIVE int gf_clear_terrain_grid() { g_pending_terrain.reset(); return 0; }
+EMSCRIPTEN_KEEPALIVE int gf_terrain_available() { return terrain_support_available() ? 1 : 0; }
+EMSCRIPTEN_KEEPALIVE double gf_terrain_height_m(double longitude, double latitude) {
+  if (g_active_terrain) {
+    const auto sample = g_active_terrain->sample(longitude, latitude);
+    if (sample) return sample->height_m;
+  }
+  return std::numeric_limits<double>::quiet_NaN();
+}
+
 EMSCRIPTEN_KEEPALIVE int gf_init(double dt_s, double lat_rad, double lon_rad,
                                  double alt_msl_m, double heading_rad, double tas_mps) {
   if (!finite_all({dt_s, lat_rad, lon_rad, alt_msl_m, heading_rad, tas_mps})) return kErrNonFinite;
   if (!(dt_s > 0.0 && dt_s <= 0.1) || std::fabs(lat_rad) > kPi / 2 || std::fabs(lon_rad) > kPi ||
       tas_mps < 0.0) return kErrRange;
+  if (g_pending_terrain && !g_pending_terrain->contains(lon_rad, lat_rad)) {
+    g_fdm.reset(); g_active_terrain.reset(); g_terrain_query_failed = true; return kErrTerrainCoverage;
+  }
   const int rc = load_model(dt_s, lat_rad, lon_rad, heading_rad);
   if (rc != 0) return rc;
   auto& f = *g_fdm;
@@ -168,7 +262,10 @@ EMSCRIPTEN_KEEPALIVE int gf_init(double dt_s, double lat_rad, double lon_rad,
   f.SetPropertyValue("ic/gamma-deg", 0.0);
   f.SetPropertyValue("fcs/mixture-cmd-norm", 1.0);
   f.SetPropertyValue("propulsion/magneto_cmd", 3);
-  if (!f.RunIC()) { g_fdm.reset(); return kErrRunIc; }
+  const bool ran_ic = f.RunIC();
+  if (g_terrain_query_failed) { g_fdm.reset(); return kErrTerrainCoverage; }
+  if (!ran_ic) { g_fdm.reset(); return kErrRunIc; }
+  if (g_active_terrain && !terrain_support_available()) { g_fdm.reset(); return kErrTerrainCoverage; }
   f.SetPropertyValue("propulsion/set-running", -1);
   // Longitudinal trim (JSBSim mode 0) so a neutral elevator command holds
   // approximately level flight; the result lands in fcs/pitch-trim-cmd-norm,
@@ -182,6 +279,7 @@ EMSCRIPTEN_KEEPALIVE int gf_init(double dt_s, double lat_rad, double lon_rad,
   } catch (...) {
     g_trim_ok = -1;
   }
+  if (g_terrain_query_failed) { g_fdm.reset(); return kErrTerrainCoverage; }
   g_trim_throttle = f.GetPropertyValue("fcs/throttle-cmd-norm");
   g_trim_pitch = f.GetPropertyValue("fcs/pitch-trim-cmd-norm");
   reset_study_state();
@@ -198,6 +296,9 @@ EMSCRIPTEN_KEEPALIVE int gf_init_landing(double dt_s, double lat_rad, double lon
   if (!finite_all({dt_s, lat_rad, lon_rad, heading_rad, preset})) return kErrNonFinite;
   if (!(dt_s > 0.0 && dt_s <= 0.1) || std::fabs(lat_rad) > kPi / 2 || std::fabs(lon_rad) > kPi ||
       (preset != 1 && preset != 2 && preset != 3 && preset != 4)) return kErrRange;
+  if (g_pending_terrain && !g_pending_terrain->contains(lon_rad, lat_rad)) {
+    g_fdm.reset(); g_active_terrain.reset(); g_terrain_query_failed = true; return kErrTerrainCoverage;
+  }
   const int rc = load_model(dt_s, lat_rad, lon_rad, heading_rad);
   if (rc != 0) return rc;
   auto& f = *g_fdm;
@@ -214,7 +315,10 @@ EMSCRIPTEN_KEEPALIVE int gf_init_landing(double dt_s, double lat_rad, double lon
   f.SetPropertyValue("fcs/throttle-cmd-norm", 0.0);
   f.SetPropertyValue("fcs/pitch-trim-cmd-norm", 0.0);
   f.SetPropertyValue("propulsion/magneto_cmd", 3);
-  if (!f.RunIC()) { g_fdm.reset(); return kErrRunIc; }
+  const bool ran_ic = f.RunIC();
+  if (g_terrain_query_failed) { g_fdm.reset(); return kErrTerrainCoverage; }
+  if (!ran_ic) { g_fdm.reset(); return kErrRunIc; }
+  if (g_active_terrain && !terrain_support_available()) { g_fdm.reset(); return kErrTerrainCoverage; }
   f.SetPropertyValue("propulsion/set-running", -1);
   g_trim_ok = 0;  // deliberately not attempted
   g_trim_throttle = f.GetPropertyValue("fcs/throttle-cmd-norm");
@@ -319,10 +423,44 @@ EMSCRIPTEN_KEEPALIVE int gf_set_autopilot(double mode, double target_true_rad) {
   return 0;
 }
 
+// Generic research controller: target is m/s in VS mode and physical MSL m in ALT.
+EMSCRIPTEN_KEEPALIVE int gf_set_autopilot_vertical(double mode, double target) {
+  if (!g_fdm) return kErrNotInit;
+  if (!finite_all({mode, target})) return kErrNonFinite;
+  if ((mode != 0 && mode != 1 && mode != 2) ||
+      (mode == 1 && std::fabs(target) > 20.0) ||
+      (mode == 2 && (target < -2500.0 || target > 20000.0))) return kErrRange;
+  const int next = static_cast<int>(mode);
+  if (g_ap_vertical_mode != next) {
+    const char* integral = "fcs/altitude-hold-pid/initial-integrator-value";
+    if (g_fdm->GetPropertyManager()->HasNode(integral)) g_fdm->SetPropertyValue(integral, 0.0);
+    g_fdm->SetPropertyValue("ap/elevator_cmd", 0.0);
+  }
+  g_ap_vertical_mode = next;
+  g_ap_vertical_target = target;
+  configure_autopilot();
+  return 0;
+}
+
+EMSCRIPTEN_KEEPALIVE double* gf_autopilot_vertical_state() {
+  static double values[3];
+  if (!g_fdm) {
+    for (double& value : values) value = std::numeric_limits<double>::quiet_NaN();
+    return values;
+  }
+  values[0] = g_ap_vertical_mode;
+  values[1] = g_ap_vertical_target;
+  values[2] = g_fdm->GetPropertyValue("ap/elevator_cmd");
+  return values;
+}
+
 EMSCRIPTEN_KEEPALIVE int gf_step() {
   if (!g_fdm) return kErrNotInit;
+  if (g_active_terrain && !terrain_support_available()) return kErrTerrainCoverage;
   configure_autopilot();
-  if (!g_fdm->Run()) return kErrRun;
+  const bool ran = g_fdm->Run();
+  if (g_active_terrain && !terrain_support_available()) return kErrTerrainCoverage;
+  if (!ran) return kErrRun;
   // Release a requested starter as soon as the native model catches, even if no
   // further browser input arrives. Subsequent fuel starvation does not crank it
   // again automatically; a fresh off/on request is needed.
@@ -434,10 +572,12 @@ EMSCRIPTEN_KEEPALIVE double* gf_pitch_trim_state() {
   return values;
 }
 
-// CG AGL/geodetic ellipsoid height (m), horizontal heading-aligned forward and
+// CG AGL/native geodetic height (m), horizontal heading-aligned forward and
 // rightward velocities, NED down velocity (m/s), structure mask (tail/left/right
 // bits 1/2/4); then nose/left/right WOW, compression m, strut load N, slip rad.
 // Actual upstream contact quantities: no damage thresholds or added forces.
+// With Q18 terrain enabled, geodetic height is physical DHHN2016; the worker
+// converts it to rendering ellipsoid height outside the dynamics.
 EMSCRIPTEN_KEEPALIVE double* gf_ground_state() {
   static double values[18];
   if (!g_fdm || g_fdm->GetGroundReactions()->GetNumGearUnits() != 6) {

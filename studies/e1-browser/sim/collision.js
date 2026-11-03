@@ -20,14 +20,25 @@ export const EMPTY_COLLISION = Object.freeze({ collision_mask: 0, collision_step
  * Wheel WOW/compression/load are deliberately absent: JSBSim owns wheel response.
  * Native structure bits are tail/left wing/right wing, then proxy body/prop/fin.
  */
-export function groundCollisionContact(ground_agl_m, roll_rad, pitch_rad, structure_contact_mask) {
+export function groundCollisionContact(ground_agl_m, roll_rad, pitch_rad, structure_contact_mask, terrainPlane) {
   if (!Number.isFinite(ground_agl_m) || !Number.isInteger(structure_contact_mask)
     || structure_contact_mask < 0 || structure_contact_mask > 7) return { available: false, mask: 0, clearance_m: null };
   let mask = structure_contact_mask;
   let clearance = null;
   if (Number.isFinite(roll_rad) && Number.isFinite(pitch_rad)) {
     // Local down expressed in VISUAL axes. Body +Z is down, visual +Y is up.
-    const dx = -Math.sin(pitch_rad), dy = -Math.cos(roll_rad) * Math.cos(pitch_rad), dz = Math.sin(roll_rad) * Math.cos(pitch_rad);
+    let dx = -Math.sin(pitch_rad), dy = -Math.cos(roll_rad) * Math.cos(pitch_rad), dz = Math.sin(roll_rad) * Math.cos(pitch_rad);
+    if (terrainPlane !== undefined) {
+      const { east_slope: east, north_slope: north, heading_rad: heading } = terrainPlane;
+      if (![east, north, heading].every(Number.isFinite)) return { available: false, mask: structure_contact_mask, clearance_m: null };
+      // Unnormalized plane-down [northSlope,eastSlope,1] in NED. Keeping its
+      // vertical component one preserves the native vertical-AGL convention.
+      const cp = Math.cos(pitch_rad), sp = Math.sin(pitch_rad), cr = Math.cos(roll_rad), sr = Math.sin(roll_rad);
+      const ch = Math.cos(heading), sh = Math.sin(heading);
+      dx += north * cp * ch + east * cp * sh;
+      dy += north * (-cr * sp * ch - sr * sh) + east * (-cr * sp * sh + sr * ch);
+      dz += north * (sr * sp * ch - cr * sh) + east * (sr * sp * sh + cr * ch);
+    }
     const ringSupport = Math.hypot(dy * VISUAL_AIRFRAME.scaleY, dz);
     let body = Math.max(...VISUAL_AIRFRAME.profile.map(([radius, x]) => dx * x + radius * ringSupport));
     for (const shape of [VISUAL_AIRFRAME.cabin, VISUAL_AIRFRAME.roof]) {

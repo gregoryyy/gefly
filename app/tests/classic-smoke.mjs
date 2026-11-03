@@ -124,12 +124,12 @@ try {
   checks.push('flap keyboard detents and actual timed actuation');
 
   await page.keyboard.down('b');
-  await page.waitForFunction(() => { const s = window.__classicStates.at(-1); return s.brake_left_norm === 1 && s.brake_right_norm === 1; });
+  await page.waitForFunction(() => { const s = window.__classicStates.at(-1); return s.brake_left_norm === .25 && s.brake_right_norm === .25; });
   await page.keyboard.up('b');
   await page.waitForFunction(() => { const s = window.__classicStates.at(-1); return s.brake_left_norm === 0 && s.brake_right_norm === 0; });
   const brake = await page.locator('#wheel-brakes').boundingBox();
   await page.mouse.move(brake.x + brake.width / 2, brake.y + brake.height / 2); await page.mouse.down();
-  await page.waitForFunction(() => window.__classicStates.at(-1).brake_left_norm === 1);
+  await page.waitForFunction(() => window.__classicStates.at(-1).brake_left_norm === .25);
   await page.mouse.move(1100, 200); await page.mouse.up();
   await page.waitForFunction(() => { const s = window.__classicStates.at(-1); return s.brake_left_norm === 0 && s.brake_right_norm === 0; });
   assert.match(await page.locator('#brake-state').textContent(), /Airborne.*ground braking only/);

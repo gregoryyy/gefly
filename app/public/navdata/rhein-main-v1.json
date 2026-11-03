@@ -1,0 +1,2904 @@
+{
+  "version": 1,
+  "id": "rhein-main-nav810-2013-10-v1",
+  "edition": "2013.10",
+  "historical": true,
+  "source_label": "Rhein-Main NAV 2013.10 · historical",
+  "vertical_reference": "Source AMSL; exact vertical datum and survey accuracy unverified. Geometric training approximation only.",
+  "region": {
+    "center_lat_deg": 50.026706,
+    "center_lon_deg": 8.55835,
+    "radius_nm": 100,
+    "center_source": "https://ourairports.com/airports/EDDF/",
+    "center_reference": "Community airport point, not verified official ARP",
+    "distance_model": "6371000 m sphere"
+  },
+  "source": {
+    "url": "https://gitlab.com/flightgear/fgdata/-/raw/5371094f6cc81d39b5cc7d9052ba13ba4a8b8e95/Navaids/nav.dat.gz",
+    "commit": "5371094f6cc81d39b5cc7d9052ba13ba4a8b8e95",
+    "gzip_sha256": "24cfae74114d43586a5816029bb2ddeeeb1a0b6b4472b4ce775d7d748898b839",
+    "raw_sha256": "b65a1425bed63febfdbf97d57fa9e2a5565641bf00f1c9dca9a6c518b0c7c5d5",
+    "encoding": "ISO-8859-1 decoded and serialized as UTF-8",
+    "edition_header": "810 Version - data cycle 2013.10, build 20131334, metadata NavXP810.  Copyright © 2013, Robin A. Peel (robin@x-plane.com).   This data is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.  You should have received a copy of the GNU General Public License along with this program (\"AptNavGNULicence.txt\"); if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.",
+    "license": "GPL-2.0-or-later",
+    "rights_notice": "Copyright © 2013 Robin A. Peel; complete original notice retained in source-nav810.dat",
+    "changes": "Bounded regional subset; explicit pairing, units converted to metres/kHz; GS values precede FlightGear scenery-height calibration.",
+    "compiler_sha256": "438308b8014995e51c35e8959ac417aedd410399afe72c1d57bcfd2b6e622018"
+  },
+  "records": [
+    {
+      "lat_deg": 50.178667,
+      "lon_deg": 7.0695,
+      "elevation_m": 493.1664,
+      "range_nm": 50.0,
+      "uid": "dme-bue-117100-26104",
+      "id": "BUE",
+      "name": "BUCHEL TACAN",
+      "frequency_khz": 117100,
+      "kind": "DME",
+      "variation_deg_east": null,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 50.178667,
+        "lon_deg": 7.0695,
+        "elevation_m": 493.1664,
+        "range_nm": 50.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        26104
+      ]
+    },
+    {
+      "lat_deg": 50.030467,
+      "lon_deg": 8.567053,
+      "elevation_m": 134.4168,
+      "range_nm": 40.0,
+      "uid": "dme-frd-115900-26237",
+      "id": "FRD",
+      "name": "FRANKFURT DME",
+      "frequency_khz": 115900,
+      "kind": "DME",
+      "variation_deg_east": null,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 50.030467,
+        "lon_deg": 8.567053,
+        "elevation_m": 134.4168,
+        "range_nm": 40.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        26237
+      ]
+    },
+    {
+      "lat_deg": 49.945569,
+      "lon_deg": 7.267669,
+      "elevation_m": 523.0368,
+      "range_nm": 25.0,
+      "uid": "dme-hnd-116950-26274",
+      "id": "HND",
+      "name": "HAHN DME",
+      "frequency_khz": 116950,
+      "kind": "DME",
+      "variation_deg_east": null,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 49.945569,
+        "lon_deg": 7.267669,
+        "elevation_m": 523.0368,
+        "range_nm": 25.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        26274
+      ]
+    },
+    {
+      "lat_deg": 48.780228,
+      "lon_deg": 8.088486,
+      "elevation_m": 150.876,
+      "range_nm": 25.0,
+      "uid": "dme-kbd-115800-26345",
+      "id": "KBD",
+      "name": "KARLSRUHE BADEN BADEN DME",
+      "frequency_khz": 115800,
+      "kind": "DME",
+      "variation_deg_east": null,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 48.780228,
+        "lon_deg": 8.088486,
+        "elevation_m": 150.876,
+        "range_nm": 25.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        26345
+      ]
+    },
+    {
+      "lat_deg": 49.470639,
+      "lon_deg": 8.515981,
+      "elevation_m": 106.9848,
+      "range_nm": 25.0,
+      "uid": "dme-mnd-113550-26438",
+      "id": "MND",
+      "name": "MANNHEIM DME",
+      "frequency_khz": 113550,
+      "kind": "DME",
+      "variation_deg_east": null,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 49.470639,
+        "lon_deg": 8.515981,
+        "elevation_m": 106.9848,
+        "range_nm": 25.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        26438
+      ]
+    },
+    {
+      "lat_deg": 51.623611,
+      "lon_deg": 8.639444,
+      "elevation_m": 205.1304,
+      "range_nm": 25.0,
+      "uid": "dme-pad-108500-26535",
+      "id": "PAD",
+      "name": "PADERBORN/LIPPSTADT NDB-DME",
+      "frequency_khz": 108500,
+      "kind": "DME",
+      "variation_deg_east": null,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 51.623611,
+        "lon_deg": 8.639444,
+        "elevation_m": 205.1304,
+        "range_nm": 25.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        26535
+      ]
+    },
+    {
+      "lat_deg": 49.434731,
+      "lon_deg": 7.585647,
+      "elevation_m": 232.25760000000002,
+      "range_nm": 80.0,
+      "uid": "dme-rms-113400-26572",
+      "id": "RMS",
+      "name": "RAMSTEIN TACAN",
+      "frequency_khz": 113400,
+      "kind": "DME",
+      "variation_deg_east": null,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 49.434731,
+        "lon_deg": 7.585647,
+        "elevation_m": 232.25760000000002,
+        "range_nm": 80.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        26572
+      ]
+    },
+    {
+      "lat_deg": 49.212458,
+      "lon_deg": 7.116067,
+      "elevation_m": 331.6224,
+      "range_nm": 25.0,
+      "uid": "dme-sad-116750-26594",
+      "id": "SAD",
+      "name": "SAARBRUCKEN DME",
+      "frequency_khz": 116750,
+      "kind": "DME",
+      "variation_deg_east": null,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 49.212458,
+        "lon_deg": 7.116067,
+        "elevation_m": 331.6224,
+        "range_nm": 25.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        26594
+      ]
+    },
+    {
+      "lat_deg": 48.687947,
+      "lon_deg": 9.224106,
+      "elevation_m": 405.9936,
+      "range_nm": 25.0,
+      "uid": "dme-sgd-115450-26661",
+      "id": "SGD",
+      "name": "STUTTGART DME",
+      "frequency_khz": 115450,
+      "kind": "DME",
+      "variation_deg_east": null,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 48.687947,
+        "lon_deg": 9.224106,
+        "elevation_m": 405.9936,
+        "range_nm": 25.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        26661
+      ]
+    },
+    {
+      "lat_deg": 49.116469,
+      "lon_deg": 9.778156,
+      "elevation_m": 423.3672,
+      "range_nm": 14.0,
+      "uid": "dme-shd-108050-26611",
+      "id": "SHD",
+      "name": "SCHWABISCH DME",
+      "frequency_khz": 108050,
+      "kind": "DME",
+      "variation_deg_east": null,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 49.116469,
+        "lon_deg": 9.778156,
+        "elevation_m": 423.3672,
+        "range_nm": 14.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        26611
+      ]
+    },
+    {
+      "lat_deg": 50.706769,
+      "lon_deg": 8.078511,
+      "elevation_m": 615.3912,
+      "range_nm": 25.0,
+      "uid": "dme-sld-108050-26630",
+      "id": "SLD",
+      "name": "SIEGERLAND DME",
+      "frequency_khz": 108050,
+      "kind": "DME",
+      "variation_deg_east": null,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 50.706769,
+        "lon_deg": 8.078511,
+        "elevation_m": 615.3912,
+        "range_nm": 25.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        26630
+      ]
+    },
+    {
+      "lat_deg": 49.978994,
+      "lon_deg": 6.697697,
+      "elevation_m": 353.87280000000004,
+      "range_nm": 60.0,
+      "uid": "dme-spa-109500-26646",
+      "id": "SPA",
+      "name": "SPANGDAHLEM TACAN",
+      "frequency_khz": 109500,
+      "kind": "DME",
+      "variation_deg_east": null,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 49.978994,
+        "lon_deg": 6.697697,
+        "elevation_m": 353.87280000000004,
+        "range_nm": 60.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        26646
+      ]
+    },
+    {
+      "lat_deg": 50.046167,
+      "lon_deg": 8.310833,
+      "elevation_m": 143.8656,
+      "range_nm": 40.0,
+      "uid": "dme-wib-114100-26752",
+      "id": "WIB",
+      "name": "WIESBADEN TACAN",
+      "frequency_khz": 114100,
+      "kind": "DME",
+      "variation_deg_east": null,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 50.046167,
+        "lon_deg": 8.310833,
+        "elevation_m": 143.8656,
+        "range_nm": 40.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        26752
+      ]
+    },
+    {
+      "lat_deg": 49.209331,
+      "lon_deg": 7.395778,
+      "elevation_m": 366.0648,
+      "range_nm": 25.0,
+      "uid": "dme-znd-109100-26773",
+      "id": "ZND",
+      "name": "ZWEIBRUCKEN DME",
+      "frequency_khz": 109100,
+      "kind": "DME",
+      "variation_deg_east": null,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 49.209331,
+        "lon_deg": 7.395778,
+        "elevation_m": 366.0648,
+        "range_nm": 25.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        26773
+      ]
+    },
+    {
+      "lat_deg": 48.687947,
+      "lon_deg": 9.224106,
+      "elevation_m": 405.9936,
+      "range_nm": 18.0,
+      "uid": "dme-iste-115450-21020",
+      "id": "ISTE",
+      "name": "EDDS 07 DME-ILS",
+      "frequency_khz": 115450,
+      "kind": "DME",
+      "variation_deg_east": null,
+      "front_course_true_deg": null,
+      "airport": "EDDS",
+      "runway": "07",
+      "dme": {
+        "lat_deg": 48.687947,
+        "lon_deg": 9.224106,
+        "elevation_m": 405.9936,
+        "range_nm": 18.0,
+        "bias_nm": 0.8
+      },
+      "gs": null,
+      "source_line_ids": [
+        21020
+      ]
+    },
+    {
+      "lat_deg": 48.687947,
+      "lon_deg": 9.224106,
+      "elevation_m": 405.9936,
+      "range_nm": 18.0,
+      "uid": "dme-istw-115450-21021",
+      "id": "ISTW",
+      "name": "EDDS 25 DME-ILS",
+      "frequency_khz": 115450,
+      "kind": "DME",
+      "variation_deg_east": null,
+      "front_course_true_deg": null,
+      "airport": "EDDS",
+      "runway": "25",
+      "dme": {
+        "lat_deg": 48.687947,
+        "lon_deg": 9.224106,
+        "elevation_m": 405.9936,
+        "range_nm": 18.0,
+        "bias_nm": 0.9
+      },
+      "gs": null,
+      "source_line_ids": [
+        21021
+      ]
+    },
+    {
+      "lat_deg": 50.046217,
+      "lon_deg": 8.591547,
+      "elevation_m": 110.94720000000001,
+      "range_nm": 18.0,
+      "uid": "loc-ifce-110550-eddf-07c",
+      "id": "IFCE",
+      "name": "EDDF 07C ILS-cat-II",
+      "frequency_khz": 110550,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 69.614,
+      "airport": "EDDF",
+      "runway": "07C",
+      "dme": null,
+      "gs": {
+        "lat_deg": 50.032567,
+        "lon_deg": 8.539847,
+        "elevation_m": 108.20400000000001,
+        "range_nm": 15.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 69.59000000002561
+      },
+      "source_line_ids": [
+        10990,
+        14494
+      ]
+    },
+    {
+      "lat_deg": 50.0317,
+      "lon_deg": 8.530794,
+      "elevation_m": 100.2792,
+      "range_nm": 25.0,
+      "uid": "loc-ifcw-111550-eddf-25c",
+      "id": "IFCW",
+      "name": "EDDF 25C ILS-cat-II",
+      "frequency_khz": 111550,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 249.568,
+      "airport": "EDDF",
+      "runway": "25C",
+      "dme": {
+        "lat_deg": 50.042903,
+        "lon_deg": 8.583114,
+        "elevation_m": 110.94720000000001,
+        "range_nm": 18.0,
+        "bias_nm": 1.0
+      },
+      "gs": {
+        "lat_deg": 50.042903,
+        "lon_deg": 8.583114,
+        "elevation_m": 110.94720000000001,
+        "range_nm": 18.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 249.5680000000284
+      },
+      "source_line_ids": [
+        10993,
+        21018,
+        14497
+      ]
+    },
+    {
+      "lat_deg": 50.0463689,
+      "lon_deg": 8.53576845,
+      "elevation_m": 108.81360000000001,
+      "range_nm": 18.0,
+      "uid": "loc-ifne-111750-eddf-07l",
+      "id": "IFNE",
+      "name": "EDDF 07L ILS-cat-I",
+      "frequency_khz": 111750,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 69.586,
+      "airport": "EDDF",
+      "runway": "07L",
+      "dme": {
+        "lat_deg": 50.038802,
+        "lon_deg": 8.5004406,
+        "elevation_m": 108.81360000000001,
+        "range_nm": 18.0,
+        "bias_nm": 0.0
+      },
+      "gs": {
+        "lat_deg": 50.038802,
+        "lon_deg": 8.5004406,
+        "elevation_m": 108.81360000000001,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 69.58600000001024
+      },
+      "source_line_ids": [
+        10991,
+        21017,
+        14495
+      ]
+    },
+    {
+      "lat_deg": 50.03659583,
+      "lon_deg": 8.49488084,
+      "elevation_m": 108.81360000000001,
+      "range_nm": 18.0,
+      "uid": "loc-ifnw-111350-eddf-25r",
+      "id": "IFNW",
+      "name": "EDDF 25R ILS-cat-I",
+      "frequency_khz": 111350,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 249.586,
+      "airport": "EDDF",
+      "runway": "25R",
+      "dme": {
+        "lat_deg": 50.04570516,
+        "lon_deg": 8.52932127,
+        "elevation_m": 108.81360000000001,
+        "range_nm": 18.0,
+        "bias_nm": 0.0
+      },
+      "gs": {
+        "lat_deg": 50.04570516,
+        "lon_deg": 8.52932127,
+        "elevation_m": 108.81360000000001,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 249.58600000001024
+      },
+      "source_line_ids": [
+        10995,
+        21019,
+        14499
+      ]
+    },
+    {
+      "lat_deg": 50.041236,
+      "lon_deg": 8.591492,
+      "elevation_m": 110.33760000000001,
+      "range_nm": 18.0,
+      "uid": "loc-ifse-110950-eddf-07r",
+      "id": "IFSE",
+      "name": "EDDF 07R ILS-cat-II",
+      "frequency_khz": 110950,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 69.619,
+      "airport": "EDDF",
+      "runway": "07R",
+      "dme": null,
+      "gs": {
+        "lat_deg": 50.027492,
+        "lon_deg": 8.539389,
+        "elevation_m": 99.9744,
+        "range_nm": 15.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 69.59399999998277
+      },
+      "source_line_ids": [
+        10992,
+        14496
+      ]
+    },
+    {
+      "lat_deg": 50.026722,
+      "lon_deg": 8.53075,
+      "elevation_m": 99.9744,
+      "range_nm": 18.0,
+      "uid": "loc-ifsw-111150-eddf-25l",
+      "id": "IFSW",
+      "name": "EDDF 25L ILS-cat-II",
+      "frequency_khz": 111150,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 249.57,
+      "airport": "EDDF",
+      "runway": "25L",
+      "dme": null,
+      "gs": {
+        "lat_deg": 50.037992,
+        "lon_deg": 8.582733,
+        "elevation_m": 110.33760000000001,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 249.59399999998277
+      },
+      "source_line_ids": [
+        10994,
+        14498
+      ]
+    },
+    {
+      "lat_deg": 50.882286,
+      "lon_deg": 7.126439,
+      "elevation_m": 70.104,
+      "range_nm": 18.0,
+      "uid": "loc-iken-109700-eddk-32r",
+      "id": "IKEN",
+      "name": "EDDK 32R ILS-cat-III",
+      "frequency_khz": 109700,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 317.545,
+      "airport": "EDDK",
+      "runway": "32R",
+      "dme": null,
+      "gs": {
+        "lat_deg": 50.858444,
+        "lon_deg": 7.164258,
+        "elevation_m": 92.0496,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 317.56300000002375
+      },
+      "source_line_ids": [
+        11003,
+        14507
+      ]
+    },
+    {
+      "lat_deg": 50.852867,
+      "lon_deg": 7.169064,
+      "elevation_m": 92.0496,
+      "range_nm": 18.0,
+      "uid": "loc-ikes-110900-eddk-14l",
+      "id": "IKES",
+      "name": "EDDK 14L ILS-cat-III",
+      "frequency_khz": 110900,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 137.577,
+      "airport": "EDDK",
+      "runway": "14L",
+      "dme": null,
+      "gs": {
+        "lat_deg": 50.879486,
+        "lon_deg": 7.133969,
+        "elevation_m": 70.104,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 137.56300000002375
+      },
+      "source_line_ids": [
+        11001,
+        14505
+      ]
+    },
+    {
+      "lat_deg": 50.859192,
+      "lon_deg": 7.120706,
+      "elevation_m": 70.4088,
+      "range_nm": 18.0,
+      "uid": "loc-ikow-109100-eddk-24",
+      "id": "IKOW",
+      "name": "EDDK 24 ILS-cat-I",
+      "frequency_khz": 109100,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 244.335,
+      "airport": "EDDK",
+      "runway": "24",
+      "dme": null,
+      "gs": {
+        "lat_deg": 50.867047,
+        "lon_deg": 7.152247,
+        "elevation_m": 82.9056,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 244.34499999997206
+      },
+      "source_line_ids": [
+        11002,
+        14506
+      ]
+    },
+    {
+      "lat_deg": 49.214122,
+      "lon_deg": 7.094942,
+      "elevation_m": 311.2008,
+      "range_nm": 25.0,
+      "uid": "loc-dsb-108700-eddr-27",
+      "id": "DSB",
+      "name": "EDDR 27 ILS-cat-I",
+      "frequency_khz": 108700,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 267.37,
+      "airport": "EDDR",
+      "runway": "27",
+      "dme": null,
+      "gs": {
+        "lat_deg": 49.21375,
+        "lon_deg": 7.1189,
+        "elevation_m": 321.8688,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 267.39299999998184
+      },
+      "source_line_ids": [
+        11018,
+        14522
+      ]
+    },
+    {
+      "lat_deg": 48.694722,
+      "lon_deg": 9.247536,
+      "elevation_m": 359.96880000000004,
+      "range_nm": 18.0,
+      "uid": "loc-iste-110900-edds-07",
+      "id": "ISTE",
+      "name": "EDDS 07 ILS-cat-II",
+      "frequency_khz": 110900,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 73.992,
+      "airport": "EDDS",
+      "runway": "07",
+      "dme": null,
+      "gs": {
+        "lat_deg": 48.686336,
+        "lon_deg": 9.209206,
+        "elevation_m": 386.1816,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 73.96899999998277
+      },
+      "source_line_ids": [
+        11019,
+        14523
+      ]
+    },
+    {
+      "lat_deg": 48.683633,
+      "lon_deg": 9.189067,
+      "elevation_m": 386.1816,
+      "range_nm": 18.0,
+      "uid": "loc-istw-109900-edds-25",
+      "id": "ISTW",
+      "name": "EDDS 25 ILS-cat-III",
+      "frequency_khz": 109900,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 253.946,
+      "airport": "EDDS",
+      "runway": "25",
+      "dme": null,
+      "gs": {
+        "lat_deg": 48.692256,
+        "lon_deg": 9.240442,
+        "elevation_m": 359.96880000000004,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 253.96899999998277
+      },
+      "source_line_ids": [
+        11020,
+        14524
+      ]
+    },
+    {
+      "lat_deg": 49.961039,
+      "lon_deg": 7.276092,
+      "elevation_m": 486.156,
+      "range_nm": 18.0,
+      "uid": "loc-ihae-109300-edfh-03",
+      "id": "IHAE",
+      "name": "EDFH 03 ILS-cat-I",
+      "frequency_khz": 109300,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 32.393,
+      "airport": "EDFH",
+      "runway": "03",
+      "dme": null,
+      "gs": {
+        "lat_deg": 49.940205,
+        "lon_deg": 7.257351,
+        "elevation_m": 502.3104,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 32.38699999998789
+      },
+      "source_line_ids": [
+        11031,
+        14535
+      ]
+    },
+    {
+      "lat_deg": 49.928708,
+      "lon_deg": 7.244211,
+      "elevation_m": 502.3104,
+      "range_nm": 18.0,
+      "uid": "loc-ihaw-111300-edfh-21",
+      "id": "IHAW",
+      "name": "EDFH 21 ILS-cat-III",
+      "frequency_khz": 111300,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 212.381,
+      "airport": "EDFH",
+      "runway": "21",
+      "dme": null,
+      "gs": {
+        "lat_deg": 49.95776,
+        "lon_deg": 7.271232,
+        "elevation_m": 487.68,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 212.39299999998184
+      },
+      "source_line_ids": [
+        11032,
+        14536
+      ]
+    },
+    {
+      "lat_deg": 49.473211,
+      "lon_deg": 8.504894,
+      "elevation_m": 94.1832,
+      "range_nm": 18.0,
+      "uid": "loc-imaw-108550-edfm-27",
+      "id": "IMAW",
+      "name": "EDFM 27 LOC",
+      "frequency_khz": 108550,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 274.025,
+      "airport": "EDFM",
+      "runway": "27",
+      "dme": null,
+      "gs": null,
+      "source_line_ids": [
+        14053
+      ]
+    },
+    {
+      "lat_deg": 50.713308,
+      "lon_deg": 8.071567,
+      "elevation_m": 599.2368,
+      "range_nm": 18.0,
+      "uid": "loc-isiw-108900-edgs-31",
+      "id": "ISIW",
+      "name": "EDGS 31 ILS-cat-I",
+      "frequency_khz": 108900,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 308.091,
+      "airport": "EDGS",
+      "runway": "31",
+      "dme": null,
+      "gs": {
+        "lat_deg": 50.704231,
+        "lon_deg": 8.087081,
+        "elevation_m": 599.2368,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 308.1149999999907
+      },
+      "source_line_ids": [
+        11033,
+        14537
+      ]
+    },
+    {
+      "lat_deg": 51.6212,
+      "lon_deg": 8.633775,
+      "elevation_m": 205.4352,
+      "range_nm": 18.0,
+      "uid": "loc-iple-111700-edlp-06",
+      "id": "IPLE",
+      "name": "EDLP 06 ILS-cat-I",
+      "frequency_khz": 111700,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 57.133,
+      "airport": "EDLP",
+      "runway": "06",
+      "dme": null,
+      "gs": {
+        "lat_deg": 51.611367,
+        "lon_deg": 8.606108,
+        "elevation_m": 213.0552,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 57.289999999979045
+      },
+      "source_line_ids": [
+        11043,
+        14547
+      ]
+    },
+    {
+      "lat_deg": 51.607236,
+      "lon_deg": 8.599517,
+      "elevation_m": 213.0552,
+      "range_nm": 18.0,
+      "uid": "loc-iplw-108550-edlp-24",
+      "id": "IPLW",
+      "name": "EDLP 24 ILS-cat-I",
+      "frequency_khz": 108550,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 236.798,
+      "airport": "EDLP",
+      "runway": "24",
+      "dme": null,
+      "gs": {
+        "lat_deg": 51.618919,
+        "lon_deg": 8.624219,
+        "elevation_m": 205.4352,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 237.28999999997905
+      },
+      "source_line_ids": [
+        11044,
+        14548
+      ]
+    },
+    {
+      "lat_deg": 51.524247,
+      "lon_deg": 7.629056,
+      "elevation_m": 129.54000000000002,
+      "range_nm": 18.0,
+      "uid": "loc-idwe-109150-edlw-06",
+      "id": "IDWE",
+      "name": "EDLW 06 ILS-cat-II",
+      "frequency_khz": 109150,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 60.524,
+      "airport": "EDLW",
+      "runway": "06",
+      "dme": null,
+      "gs": {
+        "lat_deg": 51.518469,
+        "lon_deg": 7.609111,
+        "elevation_m": 129.54000000000002,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 60.51199999998789
+      },
+      "source_line_ids": [
+        11046,
+        14550
+      ]
+    },
+    {
+      "lat_deg": 51.513589,
+      "lon_deg": 7.598775,
+      "elevation_m": 129.54000000000002,
+      "range_nm": 18.0,
+      "uid": "loc-idww-110300-edlw-24",
+      "id": "IDWW",
+      "name": "EDLW 24 ILS-cat-II",
+      "frequency_khz": 110300,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 240.493,
+      "airport": "EDLW",
+      "runway": "24",
+      "dme": null,
+      "gs": {
+        "lat_deg": 51.521742,
+        "lon_deg": 7.618325,
+        "elevation_m": 129.54000000000002,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 240.5119999999879
+      },
+      "source_line_ids": [
+        11047,
+        14551
+      ]
+    },
+    {
+      "lat_deg": 49.221561,
+      "lon_deg": 7.411267,
+      "elevation_m": 1130.808,
+      "range_nm": 18.0,
+      "uid": "loc-izwe-108350-edrz-3",
+      "id": "IZWE",
+      "name": "EDRZ 3 ILS-cat-I",
+      "frequency_khz": 108350,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 29.971,
+      "airport": "EDRZ",
+      "runway": "3",
+      "dme": null,
+      "gs": {
+        "lat_deg": 49.201767,
+        "lon_deg": 7.395714,
+        "elevation_m": 1130.808,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 30.0
+      },
+      "source_line_ids": [
+        11055,
+        14559
+      ]
+    },
+    {
+      "lat_deg": 49.194956,
+      "lon_deg": 7.387811,
+      "elevation_m": 343.20480000000003,
+      "range_nm": 18.0,
+      "uid": "loc-izww-109350-edrz-21",
+      "id": "IZWW",
+      "name": "EDRZ 21 ILS-cat-I",
+      "frequency_khz": 109350,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 209.965,
+      "airport": "EDRZ",
+      "runway": "21",
+      "dme": null,
+      "gs": {
+        "lat_deg": 49.215864,
+        "lon_deg": 7.408144,
+        "elevation_m": 340.15680000000003,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 210.0
+      },
+      "source_line_ids": [
+        11054,
+        14558
+      ]
+    },
+    {
+      "lat_deg": 48.792706,
+      "lon_deg": 8.093017,
+      "elevation_m": 124.3584,
+      "range_nm": 18.0,
+      "uid": "loc-ikbe-109950-edsb-03",
+      "id": "IKBE",
+      "name": "EDSB 03 ILS-cat-I",
+      "frequency_khz": 109950,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 31.453,
+      "airport": "EDSB",
+      "runway": "03",
+      "dme": null,
+      "gs": {
+        "lat_deg": 48.772914,
+        "lon_deg": 8.072467,
+        "elevation_m": 138.9888,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 31.695999999996275
+      },
+      "source_line_ids": [
+        11056,
+        14560
+      ]
+    },
+    {
+      "lat_deg": 48.766106,
+      "lon_deg": 8.068092,
+      "elevation_m": 123.444,
+      "range_nm": 18.0,
+      "uid": "loc-ikbw-108750-edsb-21",
+      "id": "IKBW",
+      "name": "EDSB 21 ILS-cat-I",
+      "frequency_khz": 108750,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 211.938,
+      "airport": "EDSB",
+      "runway": "21",
+      "dme": null,
+      "gs": {
+        "lat_deg": 48.787097,
+        "lon_deg": 8.085839,
+        "elevation_m": 124.3584,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 211.69599999999627
+      },
+      "source_line_ids": [
+        11057,
+        14561
+      ]
+    },
+    {
+      "lat_deg": 49.119578,
+      "lon_deg": 9.771536,
+      "elevation_m": 399.5928,
+      "range_nm": 18.0,
+      "uid": "loc-iswh-111500-edty-28",
+      "id": "ISWH",
+      "name": "EDTY 28 ILS-cat-I",
+      "frequency_khz": 111500,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 278.81,
+      "airport": "EDTY",
+      "runway": "28",
+      "dme": null,
+      "gs": {
+        "lat_deg": 49.116808,
+        "lon_deg": 9.788064,
+        "elevation_m": 399.5928,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 278.8099999999977
+      },
+      "source_line_ids": [
+        11059,
+        14563
+      ]
+    },
+    {
+      "lat_deg": 51.401689,
+      "lon_deg": 9.368272,
+      "elevation_m": 274.0152,
+      "range_nm": 18.0,
+      "uid": "loc-ksl-108100-edvk-22",
+      "id": "KSL",
+      "name": "EDVK 22 LOC",
+      "frequency_khz": 108100,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 220.988,
+      "airport": "EDVK",
+      "runway": "22",
+      "dme": null,
+      "gs": null,
+      "source_line_ids": [
+        14055
+      ]
+    },
+    {
+      "lat_deg": 49.638611,
+      "lon_deg": 6.243889,
+      "elevation_m": 352.95840000000004,
+      "range_nm": 18.0,
+      "uid": "loc-ile-109900-ellx-06",
+      "id": "ILE",
+      "name": "ELLX 06 ILS-cat-I",
+      "frequency_khz": 109900,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 60.206,
+      "airport": "ELLX",
+      "runway": "06",
+      "dme": {
+        "lat_deg": 49.618611,
+        "lon_deg": 6.192222,
+        "elevation_m": 352.95840000000004,
+        "range_nm": 18.0,
+        "bias_nm": 0.2
+      },
+      "gs": {
+        "lat_deg": 49.617778,
+        "lon_deg": 6.191111,
+        "elevation_m": 352.95840000000004,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 60.162000000011176
+      },
+      "source_line_ids": [
+        11271,
+        21173,
+        14775
+      ]
+    },
+    {
+      "lat_deg": 49.616389,
+      "lon_deg": 6.184444,
+      "elevation_m": 352.95840000000004,
+      "range_nm": 18.0,
+      "uid": "loc-ilw-110700-ellx-24",
+      "id": "ILW",
+      "name": "ELLX 24 ILS-cat-I",
+      "frequency_khz": 110700,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 239.941,
+      "airport": "ELLX",
+      "runway": "24",
+      "dme": {
+        "lat_deg": 49.633056,
+        "lon_deg": 6.233056,
+        "elevation_m": 352.95840000000004,
+        "range_nm": 18.0,
+        "bias_nm": 0.2
+      },
+      "gs": {
+        "lat_deg": 49.632778,
+        "lon_deg": 6.233056,
+        "elevation_m": 352.95840000000004,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 240.16200000001118
+      },
+      "source_line_ids": [
+        11272,
+        21174,
+        14776
+      ]
+    },
+    {
+      "lat_deg": 49.964739,
+      "lon_deg": 6.680419,
+      "elevation_m": 338.93760000000003,
+      "range_nm": 18.0,
+      "uid": "loc-ispa-108100-etad-23",
+      "id": "ISPA",
+      "name": "ETAD 23 ILS-cat-II",
+      "frequency_khz": 108100,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 224.577,
+      "airport": "ETAD",
+      "runway": "23",
+      "dme": null,
+      "gs": {
+        "lat_deg": 49.9847,
+        "lon_deg": 6.70905,
+        "elevation_m": 365.76,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 224.59399999998277
+      },
+      "source_line_ids": [
+        11386,
+        14887
+      ]
+    },
+    {
+      "lat_deg": 49.988542,
+      "lon_deg": 6.716903,
+      "elevation_m": 365.4552,
+      "range_nm": 18.0,
+      "uid": "loc-ispe-109150-etad-05",
+      "id": "ISPE",
+      "name": "ETAD 05 ILS-cat-I",
+      "frequency_khz": 109150,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 44.604,
+      "airport": "ETAD",
+      "runway": "05",
+      "dme": null,
+      "gs": {
+        "lat_deg": 49.968975,
+        "lon_deg": 6.684944,
+        "elevation_m": 343.20480000000003,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 44.59399999998277
+      },
+      "source_line_ids": [
+        11385,
+        14886
+      ]
+    },
+    {
+      "lat_deg": 49.436894,
+      "lon_deg": 7.628147,
+      "elevation_m": 232.25760000000002,
+      "range_nm": 18.0,
+      "uid": "loc-irer-108950-etar-08",
+      "id": "IRER",
+      "name": "ETAR 08 ILS-cat-I",
+      "frequency_khz": 108950,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 82.325,
+      "airport": "ETAR",
+      "runway": "08",
+      "dme": null,
+      "gs": {
+        "lat_deg": 49.431864,
+        "lon_deg": 7.583506,
+        "elevation_m": 230.73360000000002,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 82.29399999999441
+      },
+      "source_line_ids": [
+        11387,
+        14888
+      ]
+    },
+    {
+      "lat_deg": 49.435853,
+      "lon_deg": 7.575156,
+      "elevation_m": 230.42880000000002,
+      "range_nm": 18.0,
+      "uid": "loc-irms-110500-etar-27",
+      "id": "IRMS",
+      "name": "ETAR 27 LOC",
+      "frequency_khz": 110500,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 266.291,
+      "airport": "ETAR",
+      "runway": "27",
+      "dme": null,
+      "gs": null,
+      "source_line_ids": [
+        14098
+      ]
+    },
+    {
+      "lat_deg": 49.437867,
+      "lon_deg": 7.623169,
+      "elevation_m": 235.6104,
+      "range_nm": 18.0,
+      "uid": "loc-irst-111500-etar-09",
+      "id": "IRST",
+      "name": "ETAR 09 LOC",
+      "frequency_khz": 111500,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 86.336,
+      "airport": "ETAR",
+      "runway": "09",
+      "dme": null,
+      "gs": null,
+      "source_line_ids": [
+        14097
+      ]
+    },
+    {
+      "lat_deg": 49.432061,
+      "lon_deg": 7.573228,
+      "elevation_m": 237.744,
+      "range_nm": 18.0,
+      "uid": "loc-irwl-110500-etar-26",
+      "id": "IRWL",
+      "name": "ETAR 26 ILS-cat-III",
+      "frequency_khz": 110500,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 262.262,
+      "airport": "ETAR",
+      "runway": "26",
+      "dme": {
+        "lat_deg": 49.434953,
+        "lon_deg": 7.618419,
+        "elevation_m": 237.744,
+        "range_nm": 18.0,
+        "bias_nm": 0.2
+      },
+      "gs": {
+        "lat_deg": 49.434953,
+        "lon_deg": 7.618419,
+        "elevation_m": 235.3056,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 262.2939999999944
+      },
+      "source_line_ids": [
+        11388,
+        21235,
+        14889
+      ]
+    },
+    {
+      "lat_deg": 49.390667,
+      "lon_deg": 9.951167,
+      "elevation_m": 469.6968,
+      "range_nm": 18.0,
+      "uid": "loc-insw-108900-ethn-25",
+      "id": "INSW",
+      "name": "ETHN 25 ILS-cat-I",
+      "frequency_khz": 108900,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 255.298,
+      "airport": "ETHN",
+      "runway": "25",
+      "dme": null,
+      "gs": {
+        "lat_deg": 49.3935,
+        "lon_deg": 9.960833,
+        "elevation_m": 472.7448,
+        "range_nm": 10.0,
+        "angle_deg": 3.4,
+        "front_course_true_deg": 254.9529999999795
+      },
+      "source_line_ids": [
+        11389,
+        14890
+      ]
+    },
+    {
+      "lat_deg": 48.774281,
+      "lon_deg": 7.219524,
+      "elevation_m": 309.9816,
+      "range_nm": 18.0,
+      "uid": "loc-pb-110150-lfqp-06",
+      "id": "PB",
+      "name": "LFQP 06 ILS-cat-I",
+      "frequency_khz": 110150,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 57.182,
+      "airport": "LFQP",
+      "runway": "06",
+      "dme": null,
+      "gs": {
+        "lat_deg": 48.778378,
+        "lon_deg": 7.212467,
+        "elevation_m": 309.9816,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 57.20699999999488
+      },
+      "source_line_ids": [
+        12906,
+        16400
+      ]
+    },
+    {
+      "lat_deg": 48.759061,
+      "lon_deg": 7.183722,
+      "elevation_m": 309.6768,
+      "range_nm": 18.0,
+      "uid": "loc-pb-110150-lfqp-24",
+      "id": "PB",
+      "name": "LFQP 24 ILS-cat-I",
+      "frequency_khz": 110150,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 237.201,
+      "airport": "LFQP",
+      "runway": "24",
+      "dme": {
+        "lat_deg": 48.772017,
+        "lon_deg": 7.211711,
+        "elevation_m": 309.6768,
+        "range_nm": 18.0,
+        "bias_nm": 0.0
+      },
+      "gs": {
+        "lat_deg": 48.772017,
+        "lon_deg": 7.211711,
+        "elevation_m": 309.6768,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 237.20699999999488
+      },
+      "source_line_ids": [
+        12907,
+        21973,
+        16401
+      ]
+    },
+    {
+      "lat_deg": 48.548794,
+      "lon_deg": 7.6462,
+      "elevation_m": 152.0952,
+      "range_nm": 18.0,
+      "uid": "loc-ent-108550-lfst-05",
+      "id": "ENT",
+      "name": "LFST 05 ILS-cat-I",
+      "frequency_khz": 108550,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 48.632,
+      "airport": "LFST",
+      "runway": "05",
+      "dme": {
+        "lat_deg": 48.531886,
+        "lon_deg": 7.6197,
+        "elevation_m": 153.6192,
+        "range_nm": 18.0,
+        "bias_nm": 0.2
+      },
+      "gs": {
+        "lat_deg": 48.531894,
+        "lon_deg": 7.619697,
+        "elevation_m": 170.99280000000002,
+        "range_nm": 10.0,
+        "angle_deg": 3.5,
+        "front_course_true_deg": 48.61200000002282
+      },
+      "source_line_ids": [
+        12938,
+        21991,
+        16430
+      ]
+    },
+    {
+      "lat_deg": 48.527822,
+      "lon_deg": 7.610258,
+      "elevation_m": 156.972,
+      "range_nm": 18.0,
+      "uid": "loc-stz-109550-lfst-23",
+      "id": "STZ",
+      "name": "LFST 23 ILS-cat-III",
+      "frequency_khz": 109550,
+      "kind": "LOC",
+      "variation_deg_east": null,
+      "front_course_true_deg": 228.592,
+      "airport": "LFST",
+      "runway": "23",
+      "dme": {
+        "lat_deg": 48.542728,
+        "lon_deg": 7.542728,
+        "elevation_m": 153.6192,
+        "range_nm": 18.0,
+        "bias_nm": 3.9
+      },
+      "gs": {
+        "lat_deg": 48.542733,
+        "lon_deg": 7.638261,
+        "elevation_m": 165.2016,
+        "range_nm": 10.0,
+        "angle_deg": 3.0,
+        "front_course_true_deg": 228.61200000002282
+      },
+      "source_line_ids": [
+        12939,
+        21992,
+        16431
+      ]
+    },
+    {
+      "lat_deg": 51.327758,
+      "lon_deg": 7.176983,
+      "elevation_m": 267.9192,
+      "range_nm": 60.0,
+      "uid": "vor-bam-113600",
+      "id": "BAM",
+      "name": "BARMEN VORTAC",
+      "frequency_khz": 113600,
+      "kind": "VOR",
+      "variation_deg_east": 0.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 51.327758,
+        "lon_deg": 7.176983,
+        "elevation_m": 267.9192,
+        "range_nm": 60.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        7348,
+        22830
+      ]
+    },
+    {
+      "lat_deg": 49.921103,
+      "lon_deg": 9.039811,
+      "elevation_m": 162.1536,
+      "range_nm": 25.0,
+      "uid": "vor-cha-115500",
+      "id": "CHA",
+      "name": "CHARLIE VOR",
+      "frequency_khz": 115500,
+      "kind": "VOR",
+      "variation_deg_east": 0.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": null,
+      "gs": null,
+      "source_line_ids": [
+        7687
+      ]
+    },
+    {
+      "lat_deg": 50.783519,
+      "lon_deg": 7.594194,
+      "elevation_m": 301.752,
+      "range_nm": 25.0,
+      "uid": "vor-col-108800",
+      "id": "COL",
+      "name": "COLA VORTAC",
+      "frequency_khz": 108800,
+      "kind": "VOR",
+      "variation_deg_east": 0.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 50.783519,
+        "lon_deg": 7.594194,
+        "elevation_m": 301.752,
+        "range_nm": 25.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        7768,
+        23221
+      ]
+    },
+    {
+      "lat_deg": 49.861389,
+      "lon_deg": 6.129722,
+      "elevation_m": 338.02320000000003,
+      "range_nm": 70.0,
+      "uid": "vor-dik-114400",
+      "id": "DIK",
+      "name": "DIEKIRCH VOR-DME",
+      "frequency_khz": 114400,
+      "kind": "VOR",
+      "variation_deg_east": -1.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 49.861389,
+        "lon_deg": 6.129722,
+        "elevation_m": 338.02320000000003,
+        "range_nm": 70.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        7925,
+        23366
+      ]
+    },
+    {
+      "lat_deg": 49.142753,
+      "lon_deg": 10.238306,
+      "elevation_m": 545.592,
+      "range_nm": 60.0,
+      "uid": "vor-dkb-117800",
+      "id": "DKB",
+      "name": "DINKELSBUHL VORTAC",
+      "frequency_khz": 117800,
+      "kind": "VOR",
+      "variation_deg_east": 1.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 49.142753,
+        "lon_deg": 10.238306,
+        "elevation_m": 545.592,
+        "range_nm": 60.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        7935,
+        23374
+      ]
+    },
+    {
+      "lat_deg": 51.525342,
+      "lon_deg": 7.631056,
+      "elevation_m": 113.69040000000001,
+      "range_nm": 25.0,
+      "uid": "vor-dor-108650",
+      "id": "DOR",
+      "name": "WICKEDE VOR-DME",
+      "frequency_khz": 108650,
+      "kind": "VOR",
+      "variation_deg_east": 0.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 51.525342,
+        "lon_deg": 7.631056,
+        "elevation_m": 113.69040000000001,
+        "range_nm": 25.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        10685,
+        25885
+      ]
+    },
+    {
+      "lat_deg": 50.053742,
+      "lon_deg": 8.637092,
+      "elevation_m": 149.6568,
+      "range_nm": 130.0,
+      "uid": "vor-ffm-114200",
+      "id": "FFM",
+      "name": "FRANKFURT VORTAC",
+      "frequency_khz": 114200,
+      "kind": "VOR",
+      "variation_deg_east": 0.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 50.053742,
+        "lon_deg": 8.637092,
+        "elevation_m": 149.6568,
+        "range_nm": 130.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        8162,
+        23585
+      ]
+    },
+    {
+      "lat_deg": 50.592456,
+      "lon_deg": 9.572169,
+      "elevation_m": 346.86240000000004,
+      "range_nm": 100.0,
+      "uid": "vor-ful-112100",
+      "id": "FUL",
+      "name": "FULDA VOR-DME",
+      "frequency_khz": 112100,
+      "kind": "VOR",
+      "variation_deg_east": -2.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 50.592456,
+        "lon_deg": 9.572169,
+        "elevation_m": 346.86240000000004,
+        "range_nm": 100.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        8185,
+        23605
+      ]
+    },
+    {
+      "lat_deg": 50.411947,
+      "lon_deg": 9.249164,
+      "elevation_m": 487.9848,
+      "range_nm": 130.0,
+      "uid": "vor-ged-110800",
+      "id": "GED",
+      "name": "GEDERN VORTAC",
+      "frequency_khz": 110800,
+      "kind": "VOR",
+      "variation_deg_east": -1.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 50.411947,
+        "lon_deg": 9.249164,
+        "elevation_m": 487.9848,
+        "range_nm": 130.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        8230,
+        23647
+      ]
+    },
+    {
+      "lat_deg": 51.170511,
+      "lon_deg": 7.892039,
+      "elevation_m": 555.0408,
+      "range_nm": 130.0,
+      "uid": "vor-gmh-115400",
+      "id": "GMH",
+      "name": "GERMINGHAUSEN VOR-DME",
+      "frequency_khz": 115400,
+      "kind": "VOR",
+      "variation_deg_east": 0.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 51.170511,
+        "lon_deg": 7.892039,
+        "elevation_m": 555.0408,
+        "range_nm": 130.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        8243,
+        23658
+      ]
+    },
+    {
+      "lat_deg": 48.986444,
+      "lon_deg": 6.716222,
+      "elevation_m": 322.1736,
+      "range_nm": 100.0,
+      "uid": "vor-gtq-111250",
+      "id": "GTQ",
+      "name": "GROSTENQUIN VOR-DME",
+      "frequency_khz": 111250,
+      "kind": "VOR",
+      "variation_deg_east": -1.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": null,
+      "gs": null,
+      "source_line_ids": [
+        8332,
+        23737,
+        26268
+      ]
+    },
+    {
+      "lat_deg": 49.565631,
+      "lon_deg": 8.463808,
+      "elevation_m": 99.6696,
+      "range_nm": 25.0,
+      "uid": "vor-hdm-109000",
+      "id": "HDM",
+      "name": "COLEMAN VOR",
+      "frequency_khz": 109000,
+      "kind": "VOR",
+      "variation_deg_east": -2.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": null,
+      "gs": null,
+      "source_line_ids": [
+        7770
+      ]
+    },
+    {
+      "lat_deg": 50.861678,
+      "lon_deg": 7.145517,
+      "elevation_m": 94.7928,
+      "range_nm": 25.0,
+      "uid": "vor-kbo-112150",
+      "id": "KBO",
+      "name": "KOLN/BONN VOR-DME",
+      "frequency_khz": 112150,
+      "kind": "VOR",
+      "variation_deg_east": 0.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 50.861678,
+        "lon_deg": 7.145517,
+        "elevation_m": 94.7928,
+        "range_nm": 25.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        8766,
+        24135
+      ]
+    },
+    {
+      "lat_deg": 49.850239,
+      "lon_deg": 7.369578,
+      "elevation_m": 442.87440000000004,
+      "range_nm": 40.0,
+      "uid": "vor-kir-117500",
+      "id": "KIR",
+      "name": "KIRN VORTAC",
+      "frequency_khz": 117500,
+      "kind": "VOR",
+      "variation_deg_east": 0.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 49.850239,
+        "lon_deg": 7.369578,
+        "elevation_m": 442.87440000000004,
+        "range_nm": 40.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        8742,
+        24113
+      ]
+    },
+    {
+      "lat_deg": 48.992944,
+      "lon_deg": 8.584236,
+      "elevation_m": 276.7584,
+      "range_nm": 130.0,
+      "uid": "vor-krh-115950",
+      "id": "KRH",
+      "name": "KARLSRUHE VOR-DME",
+      "frequency_khz": 115950,
+      "kind": "VOR",
+      "variation_deg_east": 0.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 48.992944,
+        "lon_deg": 8.584236,
+        "elevation_m": 276.7584,
+        "range_nm": 130.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        8664,
+        24039
+      ]
+    },
+    {
+      "lat_deg": 48.912975,
+      "lon_deg": 9.340228,
+      "elevation_m": 324.3072,
+      "range_nm": 25.0,
+      "uid": "vor-lbu-109200",
+      "id": "LBU",
+      "name": "LUBURG VOR-DME",
+      "frequency_khz": 109200,
+      "kind": "VOR",
+      "variation_deg_east": 0.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 48.912975,
+        "lon_deg": 9.340228,
+        "elevation_m": 324.3072,
+        "range_nm": 25.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        8989,
+        24334
+      ]
+    },
+    {
+      "lat_deg": 49.639444,
+      "lon_deg": 6.247222,
+      "elevation_m": 376.1232,
+      "range_nm": 25.0,
+      "uid": "vor-lux-112250",
+      "id": "LUX",
+      "name": "LUXEMBOURG VOR-DME",
+      "frequency_khz": 112250,
+      "kind": "VOR",
+      "variation_deg_east": 0.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 49.639444,
+        "lon_deg": 6.247222,
+        "elevation_m": 376.1232,
+        "range_nm": 25.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        9001,
+        24344
+      ]
+    },
+    {
+      "lat_deg": 50.276275,
+      "lon_deg": 8.848625,
+      "elevation_m": 202.9968,
+      "range_nm": 60.0,
+      "uid": "vor-mtr-110000",
+      "id": "MTR",
+      "name": "METRO VOR",
+      "frequency_khz": 110000,
+      "kind": "VOR",
+      "variation_deg_east": 0.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": null,
+      "gs": null,
+      "source_line_ids": [
+        9183
+      ]
+    },
+    {
+      "lat_deg": 50.840667,
+      "lon_deg": 6.694167,
+      "elevation_m": 111.86160000000001,
+      "range_nm": 60.0,
+      "uid": "vor-nor-116200",
+      "id": "NOR",
+      "name": "NORVENICH VORTAC",
+      "frequency_khz": 116200,
+      "kind": "VOR",
+      "variation_deg_east": -1.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 50.840667,
+        "lon_deg": 6.694167,
+        "elevation_m": 111.86160000000001,
+        "range_nm": 60.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        9458,
+        24759
+      ]
+    },
+    {
+      "lat_deg": 50.015861,
+      "lon_deg": 6.531789,
+      "elevation_m": 423.0624,
+      "range_nm": 60.0,
+      "uid": "vor-ntm-115300",
+      "id": "NTM",
+      "name": "NATTENHEIM VORTAC",
+      "frequency_khz": 115300,
+      "kind": "VOR",
+      "variation_deg_east": 0.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 50.015861,
+        "lon_deg": 6.531789,
+        "elevation_m": 423.0624,
+        "range_nm": 60.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        9374,
+        24688
+      ]
+    },
+    {
+      "lat_deg": 49.781692,
+      "lon_deg": 8.541486,
+      "elevation_m": 99.9744,
+      "range_nm": 25.0,
+      "uid": "vor-rid-112200",
+      "id": "RID",
+      "name": "RIED VOR-DME",
+      "frequency_khz": 112200,
+      "kind": "VOR",
+      "variation_deg_east": 0.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 49.781692,
+        "lon_deg": 8.541486,
+        "elevation_m": 99.9744,
+        "range_nm": 25.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        9858,
+        25131
+      ]
+    },
+    {
+      "lat_deg": 48.796244,
+      "lon_deg": 7.447981,
+      "elevation_m": 311.2008,
+      "range_nm": 60.0,
+      "uid": "vor-sav-110450",
+      "id": "SAV",
+      "name": "SAVERNE VOR-DME",
+      "frequency_khz": 110450,
+      "kind": "VOR",
+      "variation_deg_east": 1.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 48.796244,
+        "lon_deg": 7.447981,
+        "elevation_m": 311.2008,
+        "range_nm": 60.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        10050,
+        25304
+      ]
+    },
+    {
+      "lat_deg": 48.69643,
+      "lon_deg": 9.256547,
+      "elevation_m": 370.9416,
+      "range_nm": 40.0,
+      "uid": "vor-stg-116850",
+      "id": "STG",
+      "name": "Stuttgart VOR-DME",
+      "frequency_khz": 116850,
+      "kind": "VOR",
+      "variation_deg_east": 0.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 48.69643,
+        "lon_deg": 9.256547,
+        "elevation_m": 370.9416,
+        "range_nm": 40.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        10246,
+        26660
+      ]
+    },
+    {
+      "lat_deg": 48.505389,
+      "lon_deg": 7.571972,
+      "elevation_m": 175.86960000000002,
+      "range_nm": 150.0,
+      "uid": "vor-str-115600",
+      "id": "STR",
+      "name": "STRASBOURG ENTZHEIM VOR-DME",
+      "frequency_khz": 115600,
+      "kind": "VOR",
+      "variation_deg_east": 1.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": null,
+      "gs": null,
+      "source_line_ids": [
+        10242,
+        25488,
+        26659
+      ]
+    },
+    {
+      "lat_deg": 48.381586,
+      "lon_deg": 8.644836,
+      "elevation_m": 0.0,
+      "range_nm": 60.0,
+      "uid": "vor-sul-116100",
+      "id": "SUL",
+      "name": "SULZ VOR",
+      "frequency_khz": 116100,
+      "kind": "VOR",
+      "variation_deg_east": 0.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": null,
+      "gs": null,
+      "source_line_ids": [
+        10255
+      ]
+    },
+    {
+      "lat_deg": 50.250461,
+      "lon_deg": 8.162517,
+      "elevation_m": 409.3464,
+      "range_nm": 40.0,
+      "uid": "vor-tau-116700",
+      "id": "TAU",
+      "name": "TAUNUS VORTAC",
+      "frequency_khz": 116700,
+      "kind": "VOR",
+      "variation_deg_east": 0.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 50.250461,
+        "lon_deg": 8.162517,
+        "elevation_m": 409.3464,
+        "range_nm": 40.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        10335,
+        25568
+      ]
+    },
+    {
+      "lat_deg": 48.618408,
+      "lon_deg": 9.259208,
+      "elevation_m": 369.7224,
+      "range_nm": 60.0,
+      "uid": "vor-tgo-112500",
+      "id": "TGO",
+      "name": "TANGO VORTAC",
+      "frequency_khz": 112500,
+      "kind": "VOR",
+      "variation_deg_east": 0.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 48.618408,
+        "lon_deg": 9.259208,
+        "elevation_m": 369.7224,
+        "range_nm": 60.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        10313,
+        25548
+      ]
+    },
+    {
+      "lat_deg": 51.505697,
+      "lon_deg": 9.110914,
+      "elevation_m": 256.94640000000004,
+      "range_nm": 80.0,
+      "uid": "vor-wrb-113700",
+      "id": "WRB",
+      "name": "WARBURG VOR-DME",
+      "frequency_khz": 113700,
+      "kind": "VOR",
+      "variation_deg_east": 0.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 51.505697,
+        "lon_deg": 9.110914,
+        "elevation_m": 256.94640000000004,
+        "range_nm": 80.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        10637,
+        25846
+      ]
+    },
+    {
+      "lat_deg": 49.717531,
+      "lon_deg": 9.947,
+      "elevation_m": 320.6496,
+      "range_nm": 60.0,
+      "uid": "vor-wur-110200",
+      "id": "WUR",
+      "name": "WURZBURG VOR",
+      "frequency_khz": 110200,
+      "kind": "VOR",
+      "variation_deg_east": 0.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": null,
+      "gs": null,
+      "source_line_ids": [
+        10727
+      ]
+    },
+    {
+      "lat_deg": 51.048353,
+      "lon_deg": 7.279997,
+      "elevation_m": 274.9296,
+      "range_nm": 40.0,
+      "uid": "vor-wyp-109600",
+      "id": "WYP",
+      "name": "WIPPER VOR",
+      "frequency_khz": 109600,
+      "kind": "VOR",
+      "variation_deg_east": 0.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": null,
+      "gs": null,
+      "source_line_ids": [
+        10709
+      ]
+    },
+    {
+      "lat_deg": 49.229072,
+      "lon_deg": 7.417892,
+      "elevation_m": 358.74960000000004,
+      "range_nm": 60.0,
+      "uid": "vor-zwn-114800",
+      "id": "ZWN",
+      "name": "ZWEIBRUCKEN VOR-DME",
+      "frequency_khz": 114800,
+      "kind": "VOR",
+      "variation_deg_east": 0.0,
+      "front_course_true_deg": null,
+      "airport": null,
+      "runway": null,
+      "dme": {
+        "lat_deg": 49.229072,
+        "lon_deg": 7.417892,
+        "elevation_m": 358.74960000000004,
+        "range_nm": 60.0,
+        "bias_nm": 0.0
+      },
+      "gs": null,
+      "source_line_ids": [
+        10821,
+        26002
+      ]
+    }
+  ],
+  "component_issues": [
+    {
+      "station_uid": "vor-gtq-111250",
+      "component": "DME",
+      "source_line_ids": [
+        23737,
+        26268
+      ],
+      "reason": "Conflicting explicit components; DME unavailable"
+    },
+    {
+      "station_uid": "vor-str-115600",
+      "component": "DME",
+      "source_line_ids": [
+        25488,
+        26659
+      ],
+      "reason": "Conflicting explicit components; DME unavailable"
+    }
+  ],
+  "excluded_malformed_worldwide_rows": [
+    {
+      "source_line": 16455,
+      "reason": "Malformed worldwide row outside region and component margin"
+    },
+    {
+      "source_line": 16758,
+      "reason": "Malformed worldwide row outside region and component margin"
+    },
+    {
+      "source_line": 16812,
+      "reason": "Malformed worldwide row outside region and component margin"
+    },
+    {
+      "source_line": 16827,
+      "reason": "Malformed worldwide row outside region and component margin"
+    }
+  ],
+  "unmodeled_source_rows": [
+    {
+      "source_line": 260,
+      "row_type": 2,
+      "id": "ANS",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 1415,
+      "row_type": 2,
+      "id": "HDM",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 1669,
+      "row_type": 2,
+      "id": "DIK",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 1732,
+      "row_type": 2,
+      "id": "DWI",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 1819,
+      "row_type": 2,
+      "id": "EH",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 1896,
+      "row_type": 2,
+      "id": "SR",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 2095,
+      "row_type": 2,
+      "id": "FR",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 2096,
+      "row_type": 2,
+      "id": "FFM",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 2097,
+      "row_type": 2,
+      "id": "FW",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 2108,
+      "row_type": 2,
+      "id": "FTZ",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 2425,
+      "row_type": 2,
+      "id": "HAN",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 2516,
+      "row_type": 2,
+      "id": "HDL",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 2710,
+      "row_type": 2,
+      "id": "ILM",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 2997,
+      "row_type": 2,
+      "id": "KBA",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 3204,
+      "row_type": 2,
+      "id": "LJ",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 3205,
+      "row_type": 2,
+      "id": "LV",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 3206,
+      "row_type": 2,
+      "id": "LW",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 3218,
+      "row_type": 2,
+      "id": "KNG",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 3675,
+      "row_type": 2,
+      "id": "LW",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 3676,
+      "row_type": 2,
+      "id": "LE",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 3677,
+      "row_type": 2,
+      "id": "ELU",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 3992,
+      "row_type": 2,
+      "id": "NMN",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 4013,
+      "row_type": 2,
+      "id": "MTR",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 4342,
+      "row_type": 2,
+      "id": "NKR",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 4397,
+      "row_type": 2,
+      "id": "NSN",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 4689,
+      "row_type": 2,
+      "id": "PAD",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 4866,
+      "row_type": 2,
+      "id": "PFF",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 4868,
+      "row_type": 2,
+      "id": "PHG",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 5379,
+      "row_type": 2,
+      "id": "RUD",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 5409,
+      "row_type": 2,
+      "id": "SBN",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 5653,
+      "row_type": 2,
+      "id": "SEX",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 5749,
+      "row_type": 2,
+      "id": "SIL",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 5858,
+      "row_type": 2,
+      "id": "SLN",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 5897,
+      "row_type": 2,
+      "id": "PSA",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 5984,
+      "row_type": 2,
+      "id": "SE",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 5996,
+      "row_type": 2,
+      "id": "SY",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 5997,
+      "row_type": 2,
+      "id": "SG",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 6399,
+      "row_type": 2,
+      "id": "TX",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 6870,
+      "row_type": 2,
+      "id": "WBD",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 7098,
+      "row_type": 2,
+      "id": "ZBN",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 17549,
+      "row_type": 7,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 17550,
+      "row_type": 7,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 17551,
+      "row_type": 7,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 17552,
+      "row_type": 7,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 17558,
+      "row_type": 7,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 17559,
+      "row_type": 7,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 17560,
+      "row_type": 7,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 17569,
+      "row_type": 7,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 17573,
+      "row_type": 7,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 17574,
+      "row_type": 7,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 17575,
+      "row_type": 7,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 17584,
+      "row_type": 7,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 17585,
+      "row_type": 7,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 17590,
+      "row_type": 7,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 17591,
+      "row_type": 7,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 17593,
+      "row_type": 7,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 17594,
+      "row_type": 7,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 17599,
+      "row_type": 7,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 17600,
+      "row_type": 7,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 17601,
+      "row_type": 7,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 17602,
+      "row_type": 7,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 17725,
+      "row_type": 7,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 19167,
+      "row_type": 8,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 19168,
+      "row_type": 8,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 19169,
+      "row_type": 8,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 19175,
+      "row_type": 8,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 19176,
+      "row_type": 8,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 19177,
+      "row_type": 8,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 19192,
+      "row_type": 8,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 19193,
+      "row_type": 8,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 19194,
+      "row_type": 8,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 19205,
+      "row_type": 8,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 19206,
+      "row_type": 8,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 19207,
+      "row_type": 8,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 19215,
+      "row_type": 8,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 19216,
+      "row_type": 8,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 19217,
+      "row_type": 8,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 19218,
+      "row_type": 8,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 19224,
+      "row_type": 8,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 19225,
+      "row_type": 8,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 19226,
+      "row_type": 8,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 19227,
+      "row_type": 8,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 19229,
+      "row_type": 8,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    },
+    {
+      "source_line": 19371,
+      "row_type": 8,
+      "id": "----",
+      "reason": "NDB/marker or unmatched unsupported component; no simulated reception"
+    }
+  ],
+  "limitations": [
+    "Historical simulator inventory, not current AIRAC/NOTAM or real-flight data.",
+    "No RF propagation/terrain masking, surveyed runway or antenna acceptance.",
+    "Source-calibrated VOR radials are not current magnetic variation.",
+    "Only explicit paired DME/GS components are modeled."
+  ]
+}

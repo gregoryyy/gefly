@@ -11,6 +11,9 @@ import { createAircraftHandbook } from './aircraft-handbook';
 import { createSixPack } from './six-pack';
 import { createAutopilotPanel } from './autopilot-panel';
 import { createRadioNavPanel } from './radio-nav-panel';
+import { loadNavigationPackage } from '../../studies/e1-browser/sim/navigation.js';
+import { getNavigationCatalogue, setNavigationCatalogue } from './radio-nav';
+import { eddfApproachPractice } from './navigation-approach';
 import { createEnginePanel } from './engine-panel';
 import { createEngineAudio } from './engine-audio';
 import { createAudioControls } from './audio-controls';
@@ -23,7 +26,7 @@ import { FlightTrace } from './flight-trace';
 import { createFlightReviewControls } from './flight-review-controls';
 import { applyControlSettings, DEFAULT_CONTROL_SETTINGS, type ControlSettings } from './control-settings';
 import { createControlSettingsPanel } from './control-settings-panel';
-import type { Controls, FlightState, FlightScene, LandingPreset } from './types';
+import type { Controls, FlightState, FlightScene, LandingPreset, AirborneSite } from './types';
 import type { PracticeMap } from './practice-map';
 
 const root = document.querySelector<HTMLDivElement>('#app')!;
@@ -37,7 +40,7 @@ root.innerHTML = `
     <details id="view-menu" class="top-menu"><summary>View</summary><nav class="menu-content view-controls" aria-label="Flight views"><button id="cockpit" class="selected" aria-pressed="true">Cockpit</button><button id="chase" aria-pressed="false">Chase <kbd>V</kbd></button><button id="toggle-map" aria-pressed="false" aria-controls="practice-map-panel">Map</button><button id="toggle-flight-data" aria-pressed="false" aria-controls="flight-data-panel">Flight data</button><button id="toggle-stall-awareness" aria-pressed="false" aria-controls="stall-awareness-panel">Stall awareness</button><button id="toggle-controls" aria-pressed="true" aria-controls="flight-controls-panel">Flight controls</button></nav></details>
     <span id="review-button-slot"></span>
     <button id="controls-settings" class="settings-trigger" aria-haspopup="dialog">Options</button>
-    <details id="flight-menu" class="top-menu"><summary>Flight</summary><nav class="menu-content" aria-label="Flight session"><button id="reset">Restart flight</button><span class="menu-label">FLAT-GROUND LANDING STUDY</span><button data-landing="normal">Baseline touchdown</button><button data-landing="hard">Fast descent</button><button data-landing="side">Sideways touchdown</button><button data-landing="banked">Banked touchdown</button><button id="airborne-practice">Airborne practice</button></nav></details>
+    <details id="flight-menu" class="top-menu"><summary>Flight</summary><nav class="menu-content" aria-label="Flight session"><button id="reset">Restart flight</button><span class="menu-label">FLAT-GROUND LANDING STUDY</span><button data-landing="normal">Baseline touchdown</button><button data-landing="hard">Fast descent</button><button data-landing="side">Sideways touchdown</button><button data-landing="banked">Banked touchdown</button><span class="menu-label">PUBLIC TERRAIN FLIGHTS</span><button id="airborne-practice">Egelsbach airborne practice</button><button id="taunus-practice">Taunus ridge flight</button><button id="eddf-ils-practice" disabled>EDDF 25C ILS practice · historical</button></nav></details>
     <button id="pause" disabled>Pause <kbd>SPACE</kbd></button>
   </header>
   <section id="notice" class="notice" role="status" aria-live="polite" hidden></section>
@@ -70,9 +73,9 @@ root.innerHTML = `
       <div class="axis-display"><span>FLAP CMD <b id="recorded-flap-command">—</b></span><span>ACTUAL <b id="recorded-flap-actual">—</b></span><span>TRIM <b id="recorded-trim">—</b></span></div>
       <div class="axis-display"><span>THROTTLE <b id="recorded-throttle">—</b></span><span>MIXTURE <b id="recorded-mixture">—</b></span><span>MODE <b id="recorded-mixture-mode">—</b></span><span>ENGINE <b id="recorded-engine">—</b></span></div>
     </div>
-    <details class="control-options"><summary>Keyboard & assistance</summary><p>↑ Push nose down · ↓ Pull nose up<br>← / → Bank · Q / W Rudder<br>1–9 Throttle: 10–90% · 0: idle<br>[ / ] Retract / extend flaps · B Hold wheel brakes<br>&#39; / &#92; Trim nose up / down<br>P Capture heading / AP off<br>E Engine on/off · S Sound on/off<br>Space Pause · R Review</p><label for="roll-offset">Roll correction <output id="offset-value">−0.109</output></label><input id="roll-offset" type="range" min="-0.25" max="0.25" step="0.001" value="-0.109375" aria-label="Experimental roll correction for the generic model"><small>The generic model tends to roll right with centered controls. This adds a small constant left-aileron command. Zero removes the correction; it is not aircraft trim.</small><div class="roll-correction-presets"><button id="roll-correction-off" type="button">Off · 0%</button><button id="roll-correction-default" type="button">Study default</button></div></details>
+    <details class="control-options"><summary>Keyboard & assistance</summary><p>↑ Push nose down · ↓ Pull nose up<br>← / → Bank · Q / W Rudder<br>1–9 Throttle: 10–90% · 0: idle<br>[ / ] Retract / extend flaps · B Hold wheel brakes at Options command<br>&#39; / &#92; Trim nose up / down<br>P Autopilot on / off<br>E Engine on/off · S Sound on/off<br>Space Pause · R Review</p><label for="roll-offset">Roll correction <output id="offset-value">−0.109</output></label><input id="roll-offset" type="range" min="-0.25" max="0.25" step="0.001" value="-0.109375" aria-label="Experimental roll correction for the generic model"><small>The generic model tends to roll right with centered controls. This adds a small constant left-aileron command. Zero removes the correction; it is not aircraft trim.</small><div class="roll-correction-presets"><button id="roll-correction-off" type="button">Off · 0%</button><button id="roll-correction-default" type="button">Study default</button></div></details>
   </aside>
-  <div class="scenery-label">Egelsbach starter photograph · ellipsoid surface (no terrain)</div>
+  <div class="scenery-label">Hessen public terrain · Egelsbach–Frankfurt–Taunus</div>
   <aside id="practice-map-panel" class="practice-map-panel" aria-label="Practice map" hidden></aside>
   <section class="flight-deck" aria-label="Flight instruments">
     <div class="deck-heading"><span class="eyebrow">CLASSIC INSTRUMENTS <b>EXPERIMENTAL</b></span><span id="view-label">COCKPIT VIEW</span></div>
@@ -88,7 +91,7 @@ root.innerHTML = `
       <div class="avionics-units cockpit-radio"><div id="radio-nav-systems"></div></div>
     </div>
     <footer><span>LOCAL RESEARCH PROTOTYPE · NOT VALIDATED FOR TRAINING</span><span>Imagery: HVBG · DL-DE Zero 2.0</span></footer>
-    <div id="limitations" hidden>Generic JSBSim 172P research data, not the planned C172S. Aerial imagery provides geographic context on an ellipsoid; no terrain heights, current airport information or navigation data are supplied. Airspeed shows ideal engine CAS, not installation-calibrated IAS; older engines explicitly fall back to TAS. Heading is true, and the ideal turn-rate aid is not a full gyro turn-coordinator model. The pressure altimeter uses an ideal ISA scale-offset model driven by JSBSim static pressure; launch-point QFE is a practice datum, not airport elevation. Installed C172S instrument errors and limits are not modeled. No validated landing, circuit assessment, weather, radio or checklists yet. The adjustable study roll offset adds a constant aileron input to counter the generic model’s initial roll-off; this is an experimental assist, not an aircraft trim specification. Local research runtime assets are excluded from distribution. Radio controls use a legacy 25 kHz COM subset, with no 8.33 kHz or communication service. LAB is an opt-in fictional teaching station, using true OBS/radials and spherical geometric slant distance. No real navaid database, magnetic VOR, propagation or ILS is modeled. ALT/NAV/APR/REV autopilot modes remain INOP. Landing contact studies use a flat zero-height ellipsoid, upstream generic gear forces and illustrative fixed-wheel visuals; they do not establish aircraft damage or safe load limits. Airspeed colored arcs use fixed 1982 C172P CAS references (2400 lb, forward CG, power off and zero bank for stalls), not installed IAS arcs, current-weight stall predictions or validated model bounds. The TAS fallback hides those arcs.</div>
+    <div id="limitations" hidden>Generic JSBSim 172P research data, not the planned C172S. Official Hessen DGM terrain is active on normal flights, with DHHN2016 heights in dynamics and GCG2016/2023 ellipsoid conversion for rendering. The bounded Egelsbach–Frankfurt–Taunus package is not the full EDDF/100 NM region; it has approximately 32–54 m nodes and no surveyed runway flattening or obstacle/building model. Flat-ground landing-study presets remain separate. Current airport information is not supplied. Bundled radio navigation uses a historical 2013.10 FlightGear NAV810 snapshot within approximately 100 NM of a community EDDF point; it is not current AIRAC or operational flight information. Airspeed shows ideal engine CAS, not installation-calibrated IAS; older engines explicitly fall back to TAS. Heading is true, and the ideal turn-rate aid is not a full gyro turn-coordinator model. The pressure altimeter uses an ideal ISA scale-offset model driven by JSBSim static pressure; launch-point QFE is a practice datum, not airport elevation. Installed C172S instrument errors and limits are not modeled. No validated landing, circuit assessment, weather, radio or checklists yet. The adjustable study roll offset adds a constant aileron input to counter the generic model’s initial roll-off; this is an experimental assist, not an aircraft trim specification. Local research runtime assets are excluded from distribution. Radio controls use a legacy 25 kHz COM subset, with no 8.33 kHz or communication service. LAB is an opt-in fictional teaching station, using true OBS/radials and spherical geometric slant distance. Historical real VOR/LOC/GS/DME sources are modeled with spherical geometry and approximate service sectors; no RF propagation or terrain masking. VOR OBS uses sourced station magnetic calibration; LOC courses and the DG remain TRUE. Missing components stay unavailable. Autopilot operating logic follows the KAP 140 two-axis altitude-preselect reference, over reused generic JSBSim servos. AP engages ROL/current VS; ALT captures current pressure altitude, separate from the selector. Native controller response and capture anticipation are uncalibrated. TRUE DG reference and opt-in fictional LAB VOR remain teaching substitutions. NAV/APR/REV can use historical NAV1 VOR/LOC and APR uses paired GS where available. Current LOC/GS/GPS service data, hardware PFT timing and installed trim-servo/electrical/fault dynamics are not supplied. AP and altimeter BARO settings are separate. Raw manual input or trim change disconnects AP as a simulator safety substitution. Supported pressure-sensor height is −2 km to 11 km; incompatible selector/BARO combinations are rejected. Throttle remains manual; no automatic stall or overspeed protection is claimed. Landing contact studies use a flat zero-height ellipsoid, upstream generic gear forces and illustrative fixed-wheel visuals; they do not establish aircraft damage or safe load limits. Airspeed colored arcs use fixed 1982 C172P CAS references (2400 lb, forward CG, power off and zero bank for stalls), not installed IAS arcs, current-weight stall predictions or validated model bounds. The TAS fallback hides those arcs.</div>
   </section>
 </main>`;
 
@@ -119,6 +122,7 @@ let flapTarget_deg = 0;
 let pitchTrimTarget: number | null = null;
 let controlsVisible = true;
 let landingPreset: LandingPreset | undefined;
+let airborneSite: AirborneSite = 'edfe';
 let mixtureCommand = 1, mixtureAutomatic = true, apDisconnectPending = false;
 let engineCommand: boolean | null = null;
 let scene: FlightScene | null = null;
@@ -156,6 +160,8 @@ function updateSessionUI() {
   el<HTMLButtonElement>('pause').disabled = unavailable || reviewing || collided;
   el<HTMLButtonElement>('reset').disabled = reviewing;
   el<HTMLButtonElement>('airborne-practice').disabled = reviewing;
+  el<HTMLButtonElement>('taunus-practice').disabled = reviewing;
+  el<HTMLButtonElement>('eddf-ils-practice').disabled = reviewing || !getNavigationCatalogue();
   document.querySelectorAll<HTMLButtonElement>('[data-landing]').forEach(button => { button.disabled = reviewing; });
   el<HTMLButtonElement>('controls-settings').disabled = reviewing;
   el<HTMLInputElement>('throttle').disabled = !controlsAvailable();
@@ -186,16 +192,16 @@ function updateSessionUI() {
     el('gate-copy').textContent = 'The aircraft starts airborne at 90 kt. Flight time stays paused until you start.';
     el('start').textContent = 'Loading…';
   } else {
-    el('gate-label').textContent = hasFlown ? 'SIMULATION PAUSED' : 'READY AT EGELSBACH';
+    el('gate-label').textContent = hasFlown ? 'SIMULATION PAUSED' : airborneSite === 'eddf-ils' ? 'HISTORICAL EDDF 25C PRACTICE' : airborneSite === 'taunus' ? 'TAUNUS TERRAIN FLIGHT' : 'READY AT EGELSBACH';
     el('gate-title').textContent = hasFlown ? 'Ready when you are.' : 'Take the controls.';
-    el('gate-copy').textContent = landingPreset ? 'Flat-ground contact study: CG starts 3 m above the ellipsoid, at 28 m/s. These are test fixtures, not landing procedures.' : hasFlown ? 'Flight time is paused. Resume, then drag the stick or use the keyboard.' : 'Start airborne at 90 kt and 1,300 ft study altitude. Drag the stick or hold the buttons to fly.';
+    el('gate-copy').textContent = landingPreset ? 'Flat-ground contact study: CG starts 3 m above the ellipsoid, at 28 m/s. These are test fixtures, not landing procedures.' : hasFlown ? 'Flight time is paused. Resume, then drag the stick or use the keyboard.' : airborneSite === 'eddf-ils' ? 'Start 5 NM from the historical 25C glideslope antenna at 90 kt, slightly below its beam. NAV1 111.55, NAV2 FFM 114.20. Engage AP, then APR to practice capture. Geometric simulator fixture, not a published procedure.' : airborneSite === 'taunus' ? 'Start at 90 kt and 3,609 ft MSL, facing the Taunus ridge. This is a terrain demonstration, not a published route.' : 'Start airborne at 90 kt and 1,300 ft MSL over public Hessen terrain. Drag the stick or hold the buttons to fly.';
     el('start').textContent = hasFlown ? 'Resume flight →' : 'Start flight →';
   }
 }
 
 const session = createSession({
   onState(workerState) {
-    const state = { ...workerState, ...radioPanel.snapshot() };
+    const state = { ...radioPanel.snapshot(), ...workerState };
     const oldAp = latest?.ap_mode ?? 0;
     const wasCollided = groundCollisionStopped();
     if (previous && state.t_s > previous.t_s) {
@@ -218,6 +224,11 @@ const session = createSession({
     pitchTrimTarget = Math.abs(trim.pitch_trim) <= 1 ? trim.pitch_trim : null;
     el<HTMLInputElement>('throttle').value = String(throttle * 100);
     notice(!landingPreset && trim.status !== 1 ? 'Initial trim did not converge. Handling may be unstable; restart if needed.' : '');
+    if (airborneSite === 'eddf-ils' && !landingPreset) {
+      const approach = eddfApproachPractice(getNavigationCatalogue());
+      radioPanel.setConfiguration(approach.navigation);
+      session.setKap140({action:'heading', value: approach.ic.heading_rad});
+    }
     publishInput();
     if (startWhenReady && !document.hidden && !sceneFailed) { startWhenReady = false; startFlight(); }
     updateSessionUI();
@@ -233,7 +244,7 @@ const controlSettingsPanel = createControlSettingsPanel({
   container: root, initial: controlSettings,
   onOpen: pauseFlight,
   onClose: focusFlight,
-  onChange(settings) { controlSettings = { ...settings }; neutralize(); },
+  onChange(settings) { controlSettings = { ...settings }; neutralize(); updateConfiguration(latest, reviewing); },
 });
 // Options belong to the top menu; preserve the existing controls and their IDs.
 const optionsDialog = el<HTMLDialogElement>('control-settings');
@@ -337,9 +348,10 @@ el('engine-unavailable').textContent = 'INOP';
 (document.querySelector('.engine-power-controls') ?? document.querySelector('.engine-content'))!.insertBefore(document.querySelector('.throttle-control')!, document.querySelector('.engine-mixture'));
 const autopilotPanel = createAutopilotPanel({
   container: el('autopilot-systems'),
-  onAutopilot(mode, target_heading_rad) {
-    if (!controlsAvailable() && mode !== 0) return;
-    apDisconnectPending = false; session.setAutopilot(mode, target_heading_rad);
+  onCommand(command) {
+    const release = command.action === 'vertical' && command.value === 0;
+    if (!release && (reviewing || (!controlsAvailable() && command.action !== 'disconnect'))) return;
+    apDisconnectPending = false; session.setKap140(command);
   },
   onOpen: neutralize, onClose: focusFlight,
 });
@@ -347,11 +359,18 @@ const radioPanel = createRadioNavPanel({
   container: el('radio-nav-systems'),
   onChange(config) {
     if (!controlsAvailable() || !latest) return;
+    session.setNavigation(config);
     latest = { ...latest, ...config };
-    flightTrace.record(latest, verticalSpeedFpm * 0.3048 / 60);
+    // NAV1 tuning is acknowledged by the worker before the next recorded frame.
   },
   onOpen: neutralize, onClose: focusFlight,
 });
+
+void loadNavigationPackage().then(pkg => {
+  setNavigationCatalogue(pkg);
+  el<HTMLButtonElement>('eddf-ils-practice').disabled = reviewing;
+  radioPanel.update(latest, reviewing, controlsAvailable());
+}).catch(() => { /* The worker reports a fail-closed navigation loading error. */ });
 
 document.querySelector('.radio-heading strong')!.textContent = 'RADIO STACK · 25 kHz';
 const navigationGauges = createNavigationGauges({
@@ -515,8 +534,9 @@ function publishInput() {
     ...(pitchTrimTarget !== null ? { pitch_trim_norm: pitchTrimTarget } : {}),
   };
   if (latest?.ap_mode && !apDisconnectPending && (raw.elevator !== 0 || raw.aileron !== 0 || raw.rudder !== 0)) {
-    apDisconnectPending = true; session.setAutopilot(0);
+    apDisconnectPending = true; session.setKap140({action: 'disconnect'});
   }
+  raw.pilot_override = raw.elevator !== 0 || raw.aileron !== 0 || raw.rudder !== 0;
   const controls = applyControlSettings(raw, controlSettings, latest?.ap_mode ? 0 : rollOffset);
   const direction = rollOffset < 0 ? 'left' : rollOffset > 0 ? 'right' : 'off';
   el('offset-value').textContent = `${Math.abs(rollOffset * 100).toFixed(1)}% ${direction}${latest?.ap_mode ? ' · suspended by AP' : ''}`;
@@ -529,6 +549,7 @@ function publishInput() {
   document.querySelectorAll<HTMLElement>('[data-code]').forEach(button => button.classList.toggle('held', held(button.dataset.code!)));
 }
 function neutralize() {
+  if (latest?.kap_profile === 1) session.setKap140({action:'vertical', value:0});
   if (!reviewing || failed || sceneFailed) pointerYoke?.cancel();
   keys.clear(); pointerControls.clear(); keyboardControls.clear(); stickX = stickY = 0;
   if (stickPointer !== null) {
@@ -551,7 +572,9 @@ function reset(preset = landingPreset) {
   closeViewMenu();
   if (reviewing) return;
   if (sceneFailed) { notice('The 3D scene is unavailable. Reload with WebGL enabled.'); return; }
-  landingPreset = preset; collisionUnavailableNoticed = false;
+  landingPreset = preset;
+  document.querySelector('.location strong')!.textContent = airborneSite === 'eddf-ils' ? 'FRANKFURT 25C' : airborneSite === 'taunus' ? 'TAUNUS' : 'EGELSBACH';
+  collisionUnavailableNoticed = false;
   radioPanel.reset();
   flightTrace.clear(); pitchTrimTarget = null; flapTarget_deg = 0; mixtureCommand = 1; mixtureAutomatic = true; engineCommand = null; apDisconnectPending = false;
   if (practiceMap && latest) { try { practiceMap.update(latest, [], 'live'); } catch { mapUnavailable(); } }
@@ -565,7 +588,7 @@ function reset(preset = landingPreset) {
   enginePanel.update(null, false, false); autopilotPanel.update(null, false, false);
   radioPanel.update(null, false, false); navigationGauges.update(null, false, false); landingFeedback.update(null, false);
   updateConfiguration(null, false);
-  notice(''); session.reset(landingPreset); updateSessionUI(); focusFlight();
+  notice(''); session.reset(landingPreset, airborneSite); updateSessionUI(); focusFlight();
 }
 function setView(next: typeof view) {
   closeViewMenu(); view = next;
@@ -576,9 +599,12 @@ el('start').onclick = startFlight;
 el('pause').onclick = () => { togglePause(); focusFlight(); };
 el('reset').onclick = () => reset();
 document.querySelectorAll<HTMLButtonElement>('[data-landing]').forEach(button => {
-  button.onclick = () => { if (!reviewing) reset(button.dataset.landing as LandingPreset); };
+  button.onclick = () => { if (!reviewing) { airborneSite = 'edfe'; reset(button.dataset.landing as LandingPreset); } };
 });
-el('airborne-practice').onclick = () => { landingPreset = undefined; reset(); };
+el('airborne-practice').onclick = () => { airborneSite = 'edfe'; landingPreset = undefined; reset(); };
+el('eddf-ils-practice').onclick = () => { if (!reviewing && getNavigationCatalogue()) { airborneSite = 'eddf-ils'; landingPreset = undefined; reset(); } };
+el('taunus-practice').onclick = () => { airborneSite = 'taunus'; landingPreset = undefined; reset(); };
+
 el('cockpit').onclick = () => { setView('cockpit'); focusFlight(); };
 el('chase').onclick = () => { setView('chase'); focusFlight(); };
 el<HTMLInputElement>('throttle').oninput = event => { if (!controlsAvailable()) return; throttle = Number((event.target as HTMLInputElement).value) / 100; publishInput(); };
@@ -599,6 +625,11 @@ el('limits').onclick = () => {
 // cancellation, lost capture and focus loss all clear user axes immediately.
 function updateConfiguration(state: Readonly<FlightState> | null, recorded: boolean): void {
   const available = state?.flap_rad !== undefined && state.brake_left_norm !== undefined;
+  const capturedBrake = Number.isFinite(state?.brake_left_norm) && Number.isFinite(state?.brake_right_norm)
+    ? Math.max(state!.brake_left_norm!, state!.brake_right_norm!) : null;
+  const brakePercent = recorded ? capturedBrake === null ? null : Math.round(capturedBrake * 100) : Math.round((controlSettings.brake ?? .25) * 100);
+  el('wheel-brakes').firstChild!.textContent = `WHEEL BRAKES ${brakePercent === null ? '—' : `${brakePercent}%`} `;
+  el('wheel-brakes').setAttribute('aria-label', recorded ? brakePercent === null ? 'Recorded wheel brakes unavailable' : `Recorded wheel brakes, ${brakePercent} percent command` : `Hold wheel brakes, ${brakePercent} percent command; adjustable in Options`);
   const flapLever = el<HTMLInputElement>('flap-control');
   flapLever.disabled = !available || !controlsAvailable() || recorded;
   for (const id of ['flaps-retract', 'flaps-extend']) el<HTMLButtonElement>(id).disabled = flapLever.disabled;
@@ -734,7 +765,7 @@ addEventListener('keydown', event => {
     el<HTMLInputElement>('throttle').value = String(throttle * 100); publishInput();
   }
   if (event.code === 'KeyP' && controlsAvailable() && latest?.ap_mode !== undefined) {
-    event.preventDefault(); session.setAutopilot(latest.ap_mode ? 0 : 2);
+    event.preventDefault(); session.setKap140({action: latest.kap_engaged ? 'disconnect' : 'ap'});
   }
   if (['BracketLeft', 'BracketRight'].includes(event.code) && controlsAvailable() && latest?.flap_rad !== undefined) {
     event.preventDefault(); flapTarget_deg = clamp(flapTarget_deg + (event.code === 'BracketLeft' ? -10 : 10), 0, 30); publishInput();
@@ -793,6 +824,9 @@ function animate(now: number) {
     engineAudio.update(state, ready && !failed && !sceneFailed && !document.hidden
       && (reviewing ? reviewPlaying : running));
     pressureAltimeter.update(state, reviewing, groundCollisionStopped());
+    const sceneryLabel = state.terrain_profile === 1 ? 'Hessen public terrain · Egelsbach–Frankfurt–Taunus' : 'Flat-ground contact study · zero-height ellipsoid';
+    const scenery = document.querySelector<HTMLElement>('.scenery-label')!;
+    if (scenery.textContent !== sceneryLabel) scenery.textContent = sceneryLabel;
     sixPack.update(state, shownVsiFpm, reviewing);
     enginePanel.update(state, reviewing, controlsAvailable(), groundCollisionStopped() ? undefined : { mixture_norm: mixtureCommand, mixture_auto: mixtureAutomatic,
     ...(engineCommand === null ? {} : { engine_running: engineCommand }) });

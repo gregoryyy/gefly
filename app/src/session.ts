@@ -1,5 +1,9 @@
-import { COLLISION_FIELDS, validCollisionState, STALL_FIELDS, validStallState, CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, ENGINE_SWITCH_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
-import type { Controls, FlightSession, FlightState, LandingPreset } from './types';
+import { eddfApproachPractice } from './navigation-approach.ts';
+import { getNavigationCatalogue } from './radio-nav.ts';
+import { validKapCommand } from '../../studies/e1-browser/sim/kap140.js';
+import { NAVIGATION_FIELDS, validNavigation } from '../../studies/e1-browser/sim/navigation.js';
+import { ALERT_FIELDS, validAlertState, KAP_FIELDS, validKapState, TERRAIN_FIELDS, validTerrainState, COLLISION_FIELDS, validCollisionState, STALL_FIELDS, validStallState, CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, ENGINE_SWITCH_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
+import type { Controls, FlightSession, FlightState, LandingPreset, AirborneSite } from './types';
 
 interface SessionCallbacks {
   onState(state: FlightState): void;
@@ -21,7 +25,8 @@ function validState(value: Record<string, unknown>): value is Record<string, unk
     && Number.isInteger(value.step) && (value.step as number) >= 0
     && (value.t_s as number) >= 0 && (value.tas_mps as number) >= 0
     && Math.abs(value.lat_rad as number) <= Math.PI / 2
-    && Math.abs(value.lon_rad as number) <= Math.PI && validAltimeterState(value) && validCockpitState(value) && validEngineState(value) && validPitchTrimState(value) && validGroundState(value) && validControlState(value) && validStallState(value) && validCollisionState(value);
+    && Math.abs(value.lon_rad as number) <= Math.PI && validAltimeterState(value) && validCockpitState(value) && validEngineState(value) && validPitchTrimState(value) && validGroundState(value) && validControlState(value) && validStallState(value) && validCollisionState(value) && validTerrainState(value) && validKapState(value) && validAlertState(value)
+    && (!NAVIGATION_FIELDS.some(k => value[k] !== undefined) || validNavigation(value));
 }
 
 function validControls(value: Controls): boolean {
@@ -30,7 +35,8 @@ function validControls(value: Controls): boolean {
     && [value.flap_norm,value.brake_norm,value.mixture_norm].every(x => x === undefined || (Number.isFinite(x) && x >= 0 && x <= 1))
     && (value.pitch_trim_norm === undefined || (Number.isFinite(value.pitch_trim_norm) && Math.abs(value.pitch_trim_norm) <= 1))
     && (value.mixture_auto === undefined || typeof value.mixture_auto === 'boolean')
-    && (value.engine_running === undefined || typeof value.engine_running === 'boolean');
+    && (value.engine_running === undefined || typeof value.engine_running === 'boolean')
+    && (value.pilot_override === undefined || typeof value.pilot_override === 'boolean');
 }
 
 /**
@@ -50,6 +56,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
   let controlsChanged = false;
   let userControls = false;
   let landingPreset: LandingPreset | undefined;
+  let airborneSite: AirborneSite = 'edfe';
   let inputTimer: ReturnType<typeof setInterval> | undefined;
   let loadTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -142,7 +149,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
         else callbacks.onStatus('Paused');
       } else if (m.type === 'state') {
         if (!validState(m)) { fail('The flight model returned an invalid state. Flight stopped; reset to restart.'); return; }
-        const fields = [...STATE_FIELDS, ...[...COLLISION_FIELDS, ...STALL_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...ENGINE_SWITCH_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS].filter((key) => m[key] !== undefined)];
+        const fields = [...STATE_FIELDS, ...[...ALERT_FIELDS, ...KAP_FIELDS, ...NAVIGATION_FIELDS, ...TERRAIN_FIELDS, ...COLLISION_FIELDS, ...STALL_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...ENGINE_SWITCH_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS].filter((key) => m[key] !== undefined)];
         const state = Object.fromEntries(fields.map(key => [key, m[key]])) as unknown as FlightState;
         if (collisionState && Object.keys({ ...collisionState, ...state })
           .some(key => state[key as keyof FlightState] !== collisionState![key as keyof FlightState])) {
@@ -160,11 +167,15 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
         fail(`JSBSim stopped: ${typeof m.message === 'string' ? m.message : 'unknown worker failure'}`);
       }
     };
+    let approach: ReturnType<typeof eddfApproachPractice> | null = null;
+    try { if (airborneSite === 'eddf-ils' && !landingPreset) approach = eddfApproachPractice(getNavigationCatalogue()); }
+    catch { fail('Historical approach source unavailable. Reload before selecting EDDF practice.'); return; }
     current.postMessage({
-      type: 'init', ...(landingPreset ? { landing_preset: landingPreset } : {}), ground_collision: true, dt_s: 1 / 120, aircraft: 'c172x', state_hz: 60,
-      ic: {
-        lat_rad: 49.96 * DEG_RAD, lon_rad: 8.643 * DEG_RAD,
-        alt_msl_m: 1300 * 0.3048, heading_rad: 82 * DEG_RAD,
+      ...(approach ? { navigation: approach.navigation } : {}),
+      type: 'init', kap140: true, regional_navigation: true, terrain: landingPreset === undefined, ...(landingPreset ? { landing_preset: landingPreset } : {}), ground_collision: true, dt_s: 1 / 120, aircraft: 'c172x', state_hz: 60,
+      ic: approach?.ic ?? {
+        lat_rad: (airborneSite === 'taunus' ? 50.20 : 49.96) * DEG_RAD, lon_rad: (airborneSite === 'taunus' ? 8.52 : 8.643) * DEG_RAD,
+        alt_msl_m: airborneSite === 'taunus' ? 1100 : 1300 * 0.3048, heading_rad: (airborneSite === 'taunus' ? 300 : 82) * DEG_RAD,
         tas_mps: 90 * 1852 / 3600,
       },
     });
@@ -186,14 +197,24 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       if (ready && worker) worker.postMessage({ type: 'pause' });
       callbacks.onStatus(collided ? 'Ground collision' : 'Paused');
     },
-    reset(preset) {
+    reset(preset, site) {
       if (disposed) return;
       if (preset !== undefined && !['normal', 'hard', 'side', 'banked'].includes(preset)) return;
+      if (site !== undefined && !['edfe', 'taunus', 'eddf-ils'].includes(site)) return;
+      airborneSite = site ?? airborneSite;
       landingPreset = preset;
       controls = { elevator: 0, aileron: 0, rudder: 0, throttle: 0.7 };
       userControls = false;
       controlsChanged = true;
       initialize();
+    },
+    setKap140(command) {
+      if (disposed || collided || !ready || !worker || !validKapCommand(command)) return;
+      worker.postMessage({ type: 'kap140', command: { ...command } });
+    },
+    setNavigation(config) {
+      if (disposed || collided || !ready || !worker || !validNavigation(config)) return;
+      worker.postMessage({ type: 'navigation', config: Object.fromEntries(NAVIGATION_FIELDS.filter(k => config[k] !== undefined).map(k => [k, config[k]])) });
     },
     setAutopilot(mode, target_heading_rad) {
       if (disposed || collided || !ready || !worker || ![0,1,2].includes(mode)) return;

@@ -30,7 +30,7 @@ just fly
 Open the local URL printed by the development server, then select **Start flight**.
 The application loads paused so the aircraft cannot fly away while you inspect
 the controls. Starting or resetting uses the same airborne initial state near
-approximate EDFE coordinates: 1,300 ft of study altitude and 90 kt true airspeed.
+approximate EDFE coordinates: 1,300 ft MSL (DHHN2016 physical height) and 90 kt true airspeed. Choose **Flight → Taunus ridge flight** to see the hills immediately from a separate airborne demonstration.
 
 The engine build reuses the [existing browser study recipe](../studies/e1-browser/sim/README.md).
 Its generated WASM and bundled research-model data stay in ignored local build
@@ -52,7 +52,7 @@ unavailable. Returning to live restores pending control settings.
 | Q / W | Left / right rudder |
 | 1–9 | Set throttle to 10–90% |
 | 0 | Set throttle to idle |
-| P | Capture true heading / disconnect heading hold |
+| P | Autopilot on / off (simulator shortcut) |
 | Space | Start / pause / resume |
 | R | Enter / leave recorded Review |
 | V | Switch cockpit / chase view |
@@ -107,7 +107,12 @@ Use the **0° / 10° / 20° / 30°** flap buttons, **[** to retract or **]** to 
 while flying. The
 selector sets the generic model's target; the displayed actual flap angle takes
 time to move. Hold the **wheel brake** button or B to apply both main-wheel
-brakes; release, pause or focus loss clears the held command. Brakes act through
+brakes at the **Options → Wheel brake command** setting (initially 25%, adjustable
+from 0–100%); the button shows the selected command. Release, pause or focus loss
+clears the held command. This session input preference is not aircraft brake
+pressure or a force limit. Maximum commanded braking can compress this generic
+model’s linear nose strut enough for a propeller strike; actual collisions remain
+enabled, with no brake-triggered exemption. Brakes act through
 wheel contact, not as an airbrake, so they do not directly slow the initial
 airborne flight. Ready flight controls remain available while paused; commands are staged until
 Resume without advancing physics. Recorded Review remains read-only.
@@ -154,8 +159,8 @@ pilot's elevator command. Negative trim commands nose up; positive commands nose
 down. The [pinned JSBSim v1.3.3 c172x control definition](https://github.com/JSBSim-Team/jsbsim/blob/v1.3.3/aircraft/c172x/c172x.xml)
 defines that pitch-control sum; [FGFCS documents the control path](https://github.com/JSBSim-Team/jsbsim/blob/v1.3.3/src/models/FGFCS.h).
 The indicated command is not a physical trim-tab angle, calibrated trim-wheel
-position or validated selected-172S behavior. The existing roll-only autopilot
-does not control elevator trim; trimming leaves its roll mode unchanged.
+position or validated selected-172S behavior. A manual trim command change now
+disconnects the two-axis autopilot; automatic trim-servo behavior is not modeled.
 
 ## Six-pack instruments
 
@@ -199,19 +204,56 @@ automatic-mixture channel. The panel distinguishes automatic/manual operation an
 the applied value. Throttle shortcuts 1–9 select 10–90%, while 0 selects idle;
 the throttle slider provides finer adjustment.
 
-The separate autopilot box sits above the flap/trim controls. It offers **wings level** and **true-heading hold**, using the
-model's existing roll controller. Capture the current heading with P, or use the
-heading-hold control; P also disconnects heading hold. Use the displayed mode and
-target to see what is engaged. Manual pitch/roll/rudder control disconnects the AP rather
-than adding a hidden command against it. The roll correction is suspended while
-AP owns roll. This is a roll-only research controller: altitude, throttle and
-mixture remain the pilot's responsibility. It is not a validated installed
-C172S autopilot or a coupled approach system.
+The separate autopilot box models the **KAP 140 two-axis unit with altitude
+preselection**, using the later hold-to-engage behavior. Hold **AP** for at least
+0.25 s to engage ROL plus current vertical speed; press AP to disconnect. **P** is
+a simulator shortcut for AP on/off. **HDG** follows the separate **DG BUG · TRUE**
+control; HDG alone does not engage a disconnected unit.
 
-The classical **ALT / NAV / APR / REV** controls are explicitly **INOP**;
-their presence does not engage altitude, navigation or approach guidance.
-Full classical autopilot behavior and a later fullscreen modern instrument
-overlay with ILS markers remain roadmap work.
+**ALT captures the current pressure altitude**, independent of the altitude
+selector. Press it again for VS. Change the selected altitude, set a VS toward
+it, and **ARM** enables automatic altitude capture. **UP/DN** adjust VS in
+100 ft/min steps while VS is visible; the first press displays a hidden VS
+without changing it. Holding changes VS at 300 ft/min/s. In ALT, taps change the
+hold reference by 20 ft; holding requests 500 ft/min, then release captures the
+actual altitude. VS commands use the source-scoped −2000 to +1500 ft/min range.
+
+**BARO** displays the AP's separate pressure setting for 3 s; hold it 2 s to
+change hPa/inHg. It changes indicated/preselected altitude conversion, preserving
+the captured pressure-altitude hold reference. Numeric entry and selector step
+buttons are simulator conveniences; hardware knob detents are not established.
+The current ideal pressure-sensor range is −2 km to 11 km; incompatible
+selector/BARO combinations are rejected without changing the active controller.
+
+The independent altitude alerter shows **ALERT** on approach through 1000 ft
+from the selected altitude, clears within 200 ft, flashes briefly on first
+target crossing and warns when departing the 200 ft band. Five short tones
+respect the sound preference (**S**, initially off), volume, pause and Review.
+Warning timbre is original sound design. Selector/BARO edits establish a silent
+baseline; replay seeks discard old warning events instead of replaying a backlog.
+
+**NAV/APR** use worker-confirmed NAV1 validity from the historical regional
+package or isolated opt-in LAB. Select an actual source in **Radio → Stations**,
+load standby and swap active. Set the DG TRUE bug to the intended true course;
+VOR OBS uses historical station magnetic calibration, while LOC course is fixed
+TRUE. DG arming prompts HDG for 5 s. **REV is active only with LOC tuning** and
+inhibits GS. APR uses explicitly paired GS only. Missing components, ambiguous
+co-channel sources and source loss remain flagged; no current service is inferred.
+
+Try **Flight → EDDF 25C ILS practice · historical**: the aircraft starts five NM
+from the historical glideslope antenna, below the beam at 90 kt, with NAV1 IFCW
+111.55, NAV2 FFM 114.20 and the DG bug set to the LOC true course. Hold AP at least
+a quarter second, select APR and start flight. This demonstrates geometric capture
+over the existing public terrain; it is not a published procedure or clearance.
+
+This is an operating-logic model over reused generic JSBSim controllers, not a
+validated installed C172S KAP 140. Capture anticipation, normalized CDI capture
+threshold and GS correction are explicit simulator conventions. Hardware PFT
+timing, electric trim-servo/fault response and aircraft-specific calibration are
+not modeled. Raw manual axes/trim automatically disconnect as a simulator safety
+substitution; throttle and speed management remain manual. All guidance runs in
+the fixed-step worker. Paused adjustments preserve native physics, and Review
+shows captured settings/modes read-only. See [source scope](../docs/research/2026-11-03-kap140.md).
 
 ## Landing practice
 
@@ -238,13 +280,20 @@ limits, selected-172S fidelity or a validated landing exercise.
 The gray instrument panel places two round **NAV1 / NAV2** gauges beside the
 six-pack, with a separate vertical radio stack to the right. Each NAV gauge has
 an independent OBS course, CDI needle, TO/FROM indication and NAV flag.
-Glideslope is explicitly **INOP**. The radio stack provides **COM1 / NAV1** and
+NAV1 has an independent glideslope cross-needle and GS flag; NAV2 has lateral guidance only. The radio stack provides **COM1 / NAV1** and
 **COM2 / NAV2** amber active/standby displays, tuning and swap controls. COM uses an
 explicitly labeled **25 kHz subset**; it does not implement the full European
 8.33 kHz channel set. COM tuning does not provide ATC or voice communication.
 
-Opt in to the fictional **LAB** navigation demonstration to explore the NAV
-controls. Its demonstration frequency is **113.8 MHz**, at **49.96° N, 8.643° E**.
+Normal receivers use the bundled **2013.10 historical** Rhein-Main snapshot:
+31 VOR-family records, 39 localizers and 16 standalone DMEs, with only explicitly
+paired GS/DME components. **Stations** lists identifiers, frequencies, runways and
+capabilities and loads either standby receiver without silently activating it.
+The approximate 100 NM extent uses a community EDDF coordinate, not a verified
+official ARP. This is not current AIRAC/NOTAM, a chart or real-flight information.
+See [source, rights, coverage and reproduction](public/navdata/README.md).
+
+Opt in to **Fictional LAB only** to isolate the synthetic NAV demonstration. Its demonstration frequency is **113.8 MHz**, at **49.96° N, 8.643° E**.
 These are synthetic exercise settings, not a real published station, frequency
 assignment or accepted navaid database. The demonstration does not implement
 an ILS receiver or establish usable real-world navigation coverage.
@@ -252,8 +301,8 @@ an ILS receiver or establish usable real-world navigation coverage.
 To try it, start flight, enable **LAB**, tune NAV1 standby to **113.80**, then swap
 it active. Adjust NAV1's OBS and watch its matching gauge. Give NAV2 a different
 OBS course or active frequency to compare the two receivers independently. LAB
-off, an unmatched active channel or unavailable geometry leaves the NAV flag
-visible and the needle unavailable. Review uses captured tuning and position;
+only mode excludes the regional records. Unmatched channels, unavailable components,
+invalid geometry or ambiguous co-channel service remain flagged. Review uses captured tuning and position;
 its radio and OBS controls are read-only.
 
 The user's C172 cockpit poster guides the arrangement and interaction; the
@@ -325,8 +374,7 @@ Controls and Resume stay locked, engine audio stops, and the final state remains
 available for **R → Review** and hold-drag camera inspection. Use **Flight → Restart
 flight** to start again. In Review, the banner follows the selected recorded frame.
 
-Collision coverage is the existing flat ellipsoid surface and declared visual
-proxies, not terrain/buildings or calibrated aircraft damage geometry. Contact is
+Normal flights use the bounded public terrain surface. Native gear/structure contacts sample it at each contact point; visual body/propeller/fin proxies use the local DEM triangle plane. Flat landing studies remain explicit. Neither profile supplies building collision, calibrated damage geometry or continuous collision detection. Contact is
 sampled after each fixed step; up to one step of penetration can remain, rather
 than a continuous collision solve or a repositioned aircraft. Missing older-engine
 contact data is explicitly unavailable. No hard-landing damage threshold is invented.
@@ -431,7 +479,7 @@ separate deliberate update rather than a runtime dependency.
 - The local study model is JSBSim's generic `c172x` (172P research configuration),
   **not the selected project-owned 172S**. Its model/data rights and applicability
   remain as documented in the study; it is not redistributed here.
-- Aerial imagery is draped on the WGS-84 ellipsoid. There is no actual elevation
+- Normal flights use public DGM/GCG terrain; explicit landing studies retain the flat ellipsoid. There is no accepted surveyed runway-elevation
   model or accepted EDFE airport-height alignment. Imagery does not establish
   authoritative runway geometry, navigation data or chart material.
 - Airspeed is ideal **CAS**, not a validated installed IAS indication; an older
@@ -493,10 +541,10 @@ acoustics or simulated weather gusts; it uses no microphone or downloaded audio.
 ### Compact classic panel
 
 The separate six-pack housing sits beside a 2×2 secondary block: NAV1/NAV2
-above **BRG/DME** and **PROP RPM**. BRG points to the opt-in fictional LAB station
+above **BRG/DME** and **PROP RPM**. BRG points to a received VOR (including opt-in LAB)
 using true heading and direct spherical bearing; it is independent of the VOR OBS
-setting and is not an installed ADF/NDB receiver. DME remains geometric slant
-distance. RPM follows actual propeller rotation, with a sourced generic model
+setting and is not an installed ADF/NDB receiver. DME uses its independently sourced antenna and geometric slant
+distance minus source bias; a LOC can provide DME without a bearing pointer. RPM follows actual propeller rotation, with a sourced generic model
 2700 RPM marker, without invented operating arcs.
 
 The engine column precedes autopilot/flaps/trim and includes a distinct round
@@ -513,7 +561,42 @@ wheel impact. Engine-only idle is quieter than higher-RPM operation at matched
 load; all layers remain behind the same S mute and lifecycle controls.
 
 Chase view now uses the aircraft mesh to cast a soft native Cesium sun shadow on
-the existing flat ellipsoid near the ground. It follows the selected live/Review
+the active terrain receiver near the ground (or the flat receiver in explicit contact studies). It follows the selected live/Review
 state, fades with height and is hidden at or above 120 m AGL or when compatible
-ground data is missing. The scene uses a fixed sun/date and has no surveyed
-terrain; the shadow is a viewing cue, not another source of contact physics.
+ground data is missing. The scene uses a fixed sun/date; the shadow is a viewing cue, not another source of contact physics.
+
+## Public terrain and sharper imagery
+
+Normal flights use the local public Hessen package spanning 8.45–8.90°E and
+49.85–50.35°N. It contains real Rhine–Main/Taunus elevations from the official
+32 m overview of DGM1, resampled to approximately 32–54m point spacing. Native
+wheel/structure contacts sample this surface with slope normals at fixed steps.
+DHHN2016 physical heights drive the atmosphere and dynamics; GCG2016/2023
+quasigeoid offsets are added only for rendering. Review retains the actual
+height fields. Missing/corrupt data and coverage exits stop flight, without an
+invisible flat-ground fallback. Rebuild the local engine after updating.
+
+Try **Flight → Taunus ridge flight**, then Start and Chase, for an immediate
+terrain demonstration. It is not a published route or procedure. The four
+**Flat-ground landing study** presets retain their previous isolated fixtures.
+
+The sharper airport overlay has approximately 0.75 m output pixels, sampled from
+public 20 cm orthophotography, over the wider starter photograph. Derived relief
+shading covers the DEM outside photographic coverage. A bundled 723-tile pyramid now covers 8.48–8.80°E / 49.93–50.12°N, with approximately
+3.07 m output pixels across the area and 1.54 m around Frankfurt/approaches and
+Egelsbach. Tiles load by view, with six concurrent requests and 64 decoded source
+images; coarse ancestors/relief remain available when detail is missing. The
+separate 0.75 m airport photograph stays above regional tiles. Current imagery has no established capture date and
+is not airport/runway reference data. See the [terrain package](public/terrain/README.md),
+[imagery provenance](public/imagery/DETAIL-SOURCE.json) and
+[third-party notices](../THIRD_PARTY_NOTICES.md).
+
+Try **Flight → EDDF 25C ILS practice**, then Chase, for the Frankfurt imagery.
+Reload an already-open development page after updating assets. The package is
+67.2 MiB on disk; a flight requests only needed tiles. See the
+[regional imagery manifest and rights](public/imagery/rhein-main/README.md).
+
+The **Stations** picker supports a 50 NM nearby filter, name/identifier/airport/
+frequency search and distance ordering. Click outside or press Escape to close;
+the header filters remain visible while only the results scroll. Review uses its
+selected recorded position and leaves loading frequencies read-only.

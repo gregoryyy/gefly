@@ -2,7 +2,7 @@
 
 Status: selected stack with proposed product component boundaries. **Web application**, **Cessna 172**, **EASA PPL first**, **classic instruments before glass** and **QNH/QFE/standard-pressure coverage** are user decisions. Aircraft: a classic-panel 172S first, then the Reims FR172, as distinct engine configurations (Q3); the first exercise is a circuit at Frankfurt-Egelsbach (EDFE). The dynamics engine is **JSBSim** (Q17), used as a replaceable LGPL library; the web stack is TypeScript with a CesiumJS renderer (three.js fallback), MapLibre 2D maps and JSBSim in a module Web Worker at a fixed **1/120 s** step (Q17). Exact radio fit and geographic data provider remain open. Native and browser studies exist; the complete learner simulator and project-owned 172S flight model are not implemented. Expanded scope and proposed delivery slices are in [the training design](design/TRAINING.md).
 
-An experimental [local browser application](../app/README.md) now integrates the existing study worker with a TypeScript flight deck and Cesium scene with a bundled official Hessen starter photograph. npm/Vite owns this bounded application; the reusable package boundaries below remain the target for subsequent extraction. Its generic study aircraft is built only for local research, and imagery is draped on the WGS84 ellipsoid without an accepted terrain/elevation model. The project-owned 172S model, real EDFE circuit and production runtime distribution remain incomplete.
+An experimental [local browser application](../app/README.md) now integrates the existing study worker with a TypeScript flight deck and Cesium scene with a bundled official Hessen starter photograph. npm/Vite owns this bounded application; the reusable package boundaries below remain the target for subsequent extraction. Its generic study aircraft is built only for local research. Normal flights now use a bounded public Hessen DEM and GCG2016/2023 package, shared by a native physical-height terrain callback and the Cesium ellipsoid-height surface; flat landing studies remain explicit opt-outs. This prototype surface is not accepted airport/runway or full regional fidelity. The project-owned 172S model, real EDFE circuit and production runtime distribution remain incomplete.
 
 A lazy-loaded MapLibre practice map now shows the selected flight position, true heading and a bounded whole retained path over the same local imagery. Review uses the historical marker state, while the full retained line remains visible. It does not supply accepted airport, chart, fix or procedure data.
 
@@ -298,3 +298,30 @@ input, trace sampling or deterministic state. A shared graph can also render
 offline test PCM; no sample asset or external service is required. Immediate
 lifecycle gates silence output before a hidden-page RAF can stop. Playing Review
 synthesizes selected recorded states; it is not replay of captured audio.
+
+The classic autopilot now separates a fixed-step KAP operating-state machine
+from the reused generic native roll/pitch controllers. Engine telemetry keeps
+its backward-compatible thirteen-field group; KAP mode/target/validity data is a
+separate atomic extension, with its own pressure setting and NAV1 configuration.
+UI timing recognizes physical button gestures, while simulation-time state owns
+mode transitions, arming and capture. Recorded mode snapshots never drive native
+physics. A shared pure navigation module now drives both NAV instrument receivers
+and fixed-step NAV1/AP guidance from the same immutable historical NAV810 package.
+Normal initialization verifies bounded same-origin bytes/hash/schema before physics;
+LAB remains an explicit isolated source. Real VOR OBS uses sourced station magnetic
+calibration, while LOC/GS courses and the prototype DG remain true. Components
+retain separate coordinates/heights/ranges and DME bias; missing, conflicting or
+co-channel ambiguous service is unavailable. The source-derived EDDF 25C start is
+a geometric intercept fixture over existing public terrain, not a published
+procedure. Recorded tuning and the page-local frozen dataset drive Review.
+These fixtures do not establish current operational service, RF propagation,
+receiver calibration or installed servo, PFT/electrical/trim-fault fidelity.
+
+Regional orthophotos add a bounded local XYZ/Web-Mercator imagery provider over
+unchanged terrain/dynamics. A versioned manifest identifies every 512-pixel tile;
+source groups retain exact WMS requests and raw hashes, while derived tile hashes
+bind crop/re-encoding output. Cesium requests visible levels; the provider deduplicates
+loads, caps six concurrent requests and 64 decoded source images, and returns a
+fresh canvas to avoid closing images still held by GPU upload. Missing finer
+levels crop the correct north-down ancestor subrectangle. The old coarse/relief
+layers remain underneath and the sharper Egelsbach overlay remains above.

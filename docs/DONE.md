@@ -3,6 +3,286 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 05:33 — Detailed regional textures and compact radio station discovery
+
+TODO: 2.0.33 and 2.0.42 complete for bounded R-WORLD-4/R-NAV-4/R-PANEL-1/
+R-DATA-1/R-REVIEW-1. COM directory remains planned in 2.0.43.
+Agent: Codex orchestrator/integration; texture_provider/code1 implements the bounded
+provider/tests; texture_assets/code2 implements ingestion/assets/tests; radio_layout
+implements the parallel radio slice. texture_research performs parallel research/
+input housekeeping and independent quality/spec validation of non-authored code,
+assets, source transformations and browser behavior. Its own prose is excluded
+from self-approval. Root inspects the adopted source grant and integrated artifacts.
+
+**Implementation notes**
+
+Ship 723 openly licensed local orthophoto tiles around Egelsbach, Frankfurt and
+the eastern approaches: 70,489,589 derived JPEG bytes (67.2 MiB), from 200 raw WMS
+source groups. Web Mercator levels 10–14 cover 8.48–8.80°E/49.93–50.12°N; selected
+level 15 areas provide approximately 1.54 m output pixels, with approximately 3.07 m
+regional pixels. Source dates remain unknown; source 20 cm is not output 20 cm.
+Capture exact raw requests/hashes, adaptive 512/1024/2048px grouping and crop/JPEG 85
+transformations. The view loader validates bytes/hashes/dimensions, deduplicates
+requests, caps six fetches/64 source images and crops the correct ancestor on
+missing detail. Preserve coarse/relief fallback and the separate 0.75 m EDFE overlay.
+
+Fix the Cesium imagery LOD interaction: exact-zero finest terrain error becomes
+Infinity and then integer level 0. A numerical 1e-6 m display floor selects detailed
+imagery while preserving exact shared/native height samples; it is not an accuracy
+claim. A trial 0.25 m floor failed near-ground refinement and was replaced.
+
+Compact the radio stack within its existing shared column height. Stations keeps
+search/nearby filters and close control in a reachable header while only results
+scroll; use live/recorded position, 50 NM proximity, distance order and explicit
+missing-position state. Backdrop/Escape dismiss and restore focus; standby/swap
+and read-only Review remain intact. Record the confirmed KAP 140 target separately.
+
+Independent quality/specification pass at 741-path packet
+`decb6d47407d90400cf480a312610d0364bfd76bf853e61732d5d19ba712393a`:
+verify all 723 hashes and independently regenerate every tile from all 200 actual
+raw source groups;11 provider/assets/terrain tests, four compiler tests, actual
+Chrome GPUlevel 15/512px, cache64/fetch6, exact stable screenshots, zero measured
+camera drift and unchanged state. Radio interaction and seven independent full-
+cockpit viewport cases pass; root's maintained layout test passes ten viewports.
+Actual full-app EDDF/APR/GS/Review and public terrain/contact/guard/failure checks
+pass. The public-terrain test now waits for worker pause acknowledgment before
+capturing its contact frame; runtime behavior is unchanged. Shared CI passes 202
+app tests, six adapter tests and foundation/assurance/training gates; nine of 23
+existing native study tests remain explicitly skipped. Build, scaffold and
+assurance pass. See [independent review](reviews/2026-11-03-regional-textures.md).
+
+**Deviations**
+
+Ingestion required adaptive smaller requests after slow WMS metatiles and a
+storage interruption; the user freed space. The bounded tile budget is 80 MiB,
+with quality 85 retained. Full 100 NM, native20 cm output, buildings, live external
+imagery and current chart/airport acceptance remain separate. COM discovery is
+queued with source/currentness and 8.33 kHz applicability work; no ATC service is
+invented. External Claude CLI 2.1.193 times out after 180 s with no report/model
+identity. Its earlier runtime packet is not final coverage; peer remains pending.
+
+**Insights**
+
+GPU-level checks caught a coarse-LOD bug that schema/source tests could not.
+A software rendering floor must avoid both division by zero and unwanted mesh
+refinement. Keep screenshot comparisons bounded and acknowledge worker pause
+before comparing recorded physical frames.
+
+## 2026-11-03 04:47 — Confirmed KAP 140 equipment target
+
+TODO: 2.0.40 confirmed equipment target; remaining 2.0.14.
+Refs: R-AP-1.
+Agent: Codex orchestrator; no subagents needed for this decision-only record.
+
+**Implementation notes**
+
+Preserve the exact question/answer in a new immutable input record and update
+GAPS/R-AP-1 to distinguish the confirmed two-axis/preselect equipment target
+from the previous assumption. Retire the obsolete fictional-only navigation
+condition in that same current decision paragraph. No runtime change.
+
+**Deviations**
+
+Serial-specific installation, firmware applicability and accepted fidelity remain
+unresolved; the confirmation does not accept the generic servos or historical data.
+
+**Insights**
+
+An equipment choice and validation of its simulation are separate decisions.
+
+## 2026-11-03 02:56 — Historical Rhein-Main radio navigation and EDDF ILS practice
+
+TODO: 2.0.41 complete as bounded R-NAV-4 and partial R-NAV-1/R-NAV-2/R-DATA-1/
+R-REVIEW-1. Full current regional data, official boundary and installed avionics
+fidelity remain open. Agent: Codex orchestrator/integration; ap_native/code1 on
+shared signals/loader/worker and native tests; engine_sound_ui/code2 starts gauge
+work, then nav_ui/code2 completes instruments/directory/browser fixture after a
+provider capacity failure; ap_research performs parallel source research/input;
+nav_review independently checks source completeness, code/security/numerics and
+specification/browser behavior. Research prose is not independent acceptance.
+Cross-provider peer remains pending under the existing cadence; preceding Claude
+CLI attempts timed out without a review, and this increment claims no new peer pass.
+
+**Implementation notes**
+
+Ship a redistributable NAV810 cycle 2013.10 snapshot: 31 VOR-family sources,
+39 localizers and 16 standalone DMEs around a provisional community EDDF point.
+Preserve explicit paired GS/DME antennas, station magnetic calibration, DME bias,
+original notice/license and corresponding source subset. Conflicting components
+and overlapping co-channel sources fail closed. Shared geometry drives both NAV
+receivers and fixed-step NAV1/AP guidance; hash-verified local packages freeze on
+load. The compact Stations directory loads standby frequencies with explicit swap.
+NAV1 gains GS cross-needle/flag; bearing and DME availability remain independent.
+Flight → historical EDDF 25C starts a source-derived five-NM intercept over public
+terrain with IFCW111.55/NAV1 and FFM114.20/NAV2. Paused tuning and recorded Review
+retain coherent controls and source-derived indications.
+
+Independent source audit preserves all 70 VOR/LOC parents and all 52 DME source
+rows from the 241-row extent, including ambiguous components. Native IFCW APR/GS
+tracks for ten seconds with decreasing deviations; full-app Chrome demonstrates
+paused first OBS, both receivers, real terrain, APR/GS capture and read-only Review.
+Existing LAB gesture/mobile/bearing/Review and five-group AP flight regressions
+pass. One concurrent headless AP run timed out; sequential retry passes unchanged.
+Shared CI passes 195 app Node tests, six adapter tests and foundation/assurance/
+training gates; nine of 23 existing native study tests remain explicitly skipped.
+Build, scaffold, assurance and reproducible compiler output pass. See
+[review evidence](reviews/2026-11-03-rhein-main-navigation.md).
+
+**Deviations**
+
+The source edition is historical, not current AIRAC/NOTAM/service status. The
+approximate 100 NM extent is not the verified official-ARP R-REGION-1 boundary;
+normal terrain still covers only the existing smaller package. NDB/markers are
+inventoried but unsupported. Reception sectors/geometry and generic AP servos are
+uncalibrated; no published procedure, installed receiver or approach fidelity is
+accepted. Only three EDDF ILS records have paired DME; absent components stay off.
+
+**Insights**
+
+Nearest antenna cannot identify the operating runway on reused ILS frequencies.
+Source receivability must also remain independent of OBS ambiguity and station
+passage, so changing OBS cannot select another transmitter. Explicit flight presets
+must establish panel tuning before the first state without invoking gated live input.
+
+## 2026-11-03 02:10 — KAP 140 operating controls, two-axis guidance and altitude alerts
+
+TODO: 2.0.40 complete as bounded R-AP-1/R-INPUT-1/R-REVIEW-1 operating logic;
+2.0.14 remains open for deeper installed fidelity and navigation coverage.
+Agent: Codex orchestrator/integration; ap_native/code1 on native adapter,
+operating/alerter modules and existing regression updates; engine_sound_ui/code2
+on panel/audio/new browser fixtures; ap_research on parallel source research and
+independent quality/validation of non-authored implementation. Own research/input
+and original worker-proof source are excluded from independent self-approval;
+root reviews the adopted fixture, and independent checks cover root additions.
+Actual Claude CLI peer attempt times out at 180 s without a report/model identity;
+external peer remains pending.
+
+**Implementation notes**
+
+Replace the roll-only box with source-scoped KAP 140 two-axis/preselect controls:
+AP hold-to-engage into ROL/current VS, HDG, current-pressure ALT capture, separate
+selected altitude/ARM, UP/DN and BARO. DG arming computes its intercept and source
+loss falls back visibly. REV is LOC-only; conditional GS capture accepts above
+or below. Native pitch reuses pinned JSBSim gains with MSL/VS wiring and a true
+OFF output gate. Actual flight climbs, captures selected altitude and tracks a
+fictional VOR course. Independent altitude alerts produce the 1000/200 ft cues
+and five original warning tones through the existing sound preference. Paused
+settings, retained manual override, atomic telemetry and recorded Review remain
+coherent; the compact panel stays 140 px.
+
+Independent quality/validation pass at the frozen 37-source packet: 25 browser
+groups, eight native-worker checks and targeted source/unit evidence. Native VOR
+intercept ends at normalized CDI 0.0474 after 180 simulated seconds. Shared CI
+passes 184 app Node tests, six adapter tests and the foundation/assurance/training
+suites; production build passes. Source hashes, criteria and caveats are in
+[the review](reviews/2026-11-03-kap140.md).
+
+**Deviations**
+
+Generic servos/capture tuning are not installed KAP performance. TRUE DG and LAB
+VOR remain teaching substitutions; real LOC/GS/GPS services, hardware PFT,
+electrical/autotrim/fault behavior and aircraft-specific calibration are open.
+Warning timbre and silent selector-reset policy are simulator conventions.
+Physical audio output is unverified: the host default audio clock stalls even
+with bare sine; native silent-sink/Offline tests render actual PCM while keeping
+production device settings unchanged. Nine optional Python JSBSim study cases
+and one live-provider tool test remain skipped. This is not milestone/release or
+training-credit acceptance.
+
+**Insights**
+
+Separate operating-state logic, source validity, pressure references and physical
+servo response. ALT capture and the selected altitude are distinct controls.
+Check actual course convergence and native output instead of accepting lit mode
+buttons. Test gesture releases, retained pilot input and telemetry compatibility;
+keep sound-event counters distinct from rendering and replay seeks.
+
+## 2026-11-03 00:50 — Adjustable wheel-brake command for ground rollout
+
+TODO: 2.0.38 complete as a bounded R-INPUT-1/R-SIM-8/R-REVIEW-1 correction.
+Agent: Codex orchestrator/integration; fov_input/code1 on command gain/settings;
+engine_sound_ui/code2 on actual native/worker/UI regression; fov_housekeeping on
+parallel input/source review and independent quality/validation. Independent
+review excludes its own raw-input prose. Cross-provider peer remains pending.
+
+**Implementation notes**
+
+B/the brake button now use a visible 25% command initially, adjustable from
+0–100% in Options. Full input previously compressed the research model nose
+strut enough for both the illustrative and source-model propeller to intersect
+the ground. Normal flat/public 3600-step rolls at the selected default stop with
+collision zero and exact unchanged-native final state/digest. Explicit maximum
+braking and intentional nose impacts retain collision stops. Paused controls,
+presets, restart persistence and recorded Review pass eight actual-browser groups,
+independently rerun with eleven focused input tests. Missing recorded brake
+telemetry displays unavailable. Shared CI, production build, foundation and
+assurance pass; [the review](reviews/2026-11-03-ground-braking.md) binds the frozen
+source and scopes. The correction updates existing PR #47.
+
+**Deviations**
+
+The 25% input preference is not a calibrated pedal force or aircraft braking
+limit. Native physics, collision geometry and WASM are unchanged. Full-command
+gear/propeller behavior needs source-applicable strut/end-stop and braking
+validation; open TODO 2.0.39 records that remaining fidelity work. Nine optional
+Python JSBSim study cases and one live-provider tool test remain skipped.
+
+**Insights**
+
+Compare geometry against actual dynamic CG before dismissing a contact as a
+false positive. A digital control should expose its commanded strength. Keep
+input usability distinct from acceptance of the underlying aircraft model, and
+preserve unavailable historical values rather than inventing zero.
+
+## 2026-11-03 00:29 — Fly real public terrain around Egelsbach and the Taunus
+
+TODO: 2.0.32, 2.0.34 and 2.0.35 complete as bounded R-WORLD-2/R-DATA-1/
+R-SIM-3/R-INPUT-1/R-AUDIO-1/R-ENG-1 increments, with affected Review/shadow checks.
+Agent: Codex orchestrator/integration; fov_input/code1 on native terrain and
+pointer midpoint; engine_sound_ui/code2 on rendered terrain and audible spool;
+fov_housekeeping on parallel source/input research. Independent quality and
+validate: fov_housekeeping on non-authored implementation; code2 independently
+reviews root/code1 integration, with own renderer/audio excluded. Root/code2
+check primary-source facts separately from housekeeping-authored research.
+Cross-provider peer pending: actual Claude CLI packet review timed out at 180 seconds with no report/model identity. This is an increment, not milestone acceptance.
+
+**Implementation notes**
+
+Bundle hash-pinned public Hessen elevation and BKG quasigeoid data for the
+Egelsbach/Frankfurt/Taunus patch. Native wheels/structural supports sample the
+physical height/slope surface; Cesium uses the same triangle interpolation with
+explicit height conversion. Corruption and coverage exits stop safely without
+flat fallback. Flight → Taunus ridge flight demonstrates relief; Review and
+chase shadow retain the correct receiver. A 3000×1800 airport photograph improves
+local detail to about 0.75 m/pixel. Hold-look release preserves the yoke midpoint.
+Actual RPM now drives an audible rotation layer during native start/coast-down.
+
+Independent checks include full-grid source reproduction, 41 geoid holdouts,
+actual native callbacks, four public-terrain, three renderer and three pointer
+browser groups, plus eleven actual audio groups. Shared CI, production build,
+foundation and assurance pass with explicit optional study skips. Existing
+collision/shadow and interactive smoke regressions pass. Frozen source/data
+hashes, reviewer scopes and evidence are in [the review](reviews/2026-11-03-public-terrain.md).
+
+**Deviations**
+
+This is roughly 32×55 km with overview terrain, not full 100 NM or survey-grade
+airport elevations. Finest loaded near-ground rendered mesh differs by less than
+the predeclared 0.25 m implementation budget; this is not DEM accuracy. A local
+triangle-plane/discrete-step body proxy does not establish full mesh collision
+or damage limits. Photo coverage remains local; regional tiling, procedural
+materials and structures remain open TODO 2.0.33/2.0.36/2.0.37. Audio is original
+uncalibrated synthesis; airborne windmilling follows real model RPM. Nine optional
+Python JSBSim study cases and one live-provider tool test are skipped, not passed.
+
+**Insights**
+
+Keep physical vertical datum separate from rendered ellipsoid height, and bind
+collision/rendering to the same interpolation. Verify the loaded GPU texture and
+mesh, since provider metadata alone cannot establish actual detail. A camera
+gesture must not redefine a flight-input anchor. Audible rotational harmonics
+can expose actual native coast-down without inventing a physics ramp.
+
 ## 2026-11-02 23:18 — Compact classic cockpit, landing cues and synchronized sound
 
 TODO: 2.0.17, 2.0.28–2.0.31 complete as bounded R-PANEL-1/R-SIM-8/

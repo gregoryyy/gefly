@@ -64,6 +64,27 @@ this selection was recorded.
 
 Why: fixes the first required platform/input experience and optional peripherals.
 
+Refinement: **2026-11-03 04:47, user confirmation recorded by orchestrator**:
+“Yes, match the KAP 140” confirms the BendixKing KAP 140 two-axis unit with
+altitude preselection as the target; see [verbatim exchange](input/2026-11-03-kap140-confirmation.md).
+The equipment choice is confirmed. Exact installation/firmware applicability and
+installed servo/trim/electrical/PFT/fault fidelity remain open in 2.0.14.
+The bounded operating model is delivered in 2.0.40; historical regional NAV1
+sources are delivered in 2.0.41, without current-service or installed-fidelity acceptance.
+
+Refinement: **2026-11-03 01:54, user request recorded by orchestrator**: asked that
+the autopilot work like the original; see [raw request](input/2026-11-03-autopilot-original.md).
+Superseded equipment-selection assumption: ~~Implementation fit assumed from the
+classic reference and prior C172 sources: KAP 140 two-axis with altitude
+preselection.~~ The later hold-to-engage software behavior remains source-scoped;
+the confirmation does not identify a firmware revision.
+This is not a serial-specific installation decision. [R-AP-1](SPEC.md) and task
+2.0.40 scope its operating model with generic native servos and TRUE DG. Historical
+regional signals are now available under R-NAV-4/2.0.41, alongside isolated LAB.
+Current operational services and installed performance/PFT/trim-fault fidelity
+remain open in 2.0.14. Older roll-only/INOP notes below describe
+the earlier increments, not the current operating model.
+
 Refinement: **2026-11-02 20:13, user** (recording time): requested that the
 crosshair indicate the aircraft's front and move as the camera looks sideways;
 see [verbatim input](input/2026-11-02-aircraft-forward-marker.md). Implemented as

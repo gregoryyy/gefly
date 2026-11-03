@@ -54,7 +54,7 @@ try {
           if (message?.type === 'input') window.__collisionInputs.push({ ...message });
           // Explicit supported initial-condition fixture: JSBSim still computes
           // every state/contact itself. This does not inject collision messages.
-          if (message?.type === 'init' && window.__collisionFixture) message = { ...message, state_hz: 1000,
+          if (message?.type === 'init' && window.__collisionFixture) message = { ...message, terrain: false, state_hz: 1000,
             ic: { ...message.ic, alt_msl_m: 30, tas_mps: 45 } };
         }
         return super.postMessage(message, ...rest);

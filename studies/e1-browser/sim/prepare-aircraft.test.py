@@ -16,6 +16,10 @@ FIXTURE = (b'<!-- Synthetic author/license notice -->\n<fdm_config>\n'
            + module.CHANNEL + b'        <value>0.987654</value>\n      </channel>\n'
            b'    </system>\n  <autopilot file="upstream-unchanged"/>\n</fdm_config>\n')
 
+AP_FIXTURE = (b'<!-- Synthetic AP notice -->\n<autopilot>\n'
+              b'  <property> ap/altitude_hold     </property>\n'
+              + module.AP_AGL + b'\n' + module.AP_ERROR + b'\n'
+              + module.AP_HDOT_INPUT + b'\n' + module.AP_ELEVATOR + b'\n</autopilot>')
 
 class PrepareAircraftTests(unittest.TestCase):
     def test_patch_changes_only_default_on_gate_wiring_and_is_idempotent(self):
@@ -35,19 +39,32 @@ class PrepareAircraftTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary); source = root / 'source'; source.mkdir()
             (source / 'c172x.xml').write_bytes(FIXTURE)
+            (source / 'c172ap.xml').write_bytes(AP_FIXTURE)
             (source / 'copyright.txt').write_bytes(b'unchanged license notice\n')
             (source / 'systems').mkdir(); (source / 'systems' / 'ap.xml').write_bytes(b'unchanged coefficients\n')
             output = root / 'prepared' / 'c172x'; metadata = root / 'manifest.json'
-            with patch.object(module, 'SOURCE_XML_SHA256', module.sha256(FIXTURE)):
+            with patch.object(module, 'SOURCE_XML_SHA256', module.sha256(FIXTURE)), patch.object(module, 'SOURCE_AP_SHA256', module.sha256(AP_FIXTURE)):
                 first = module.prepare_aircraft(source, output, metadata)
                 second = module.prepare_aircraft(source, output, metadata)
             self.assertEqual(first, second)
             self.assertEqual((source / 'c172x.xml').read_bytes(), FIXTURE)
+            self.assertEqual((source / 'c172ap.xml').read_bytes(), AP_FIXTURE)
+            self.assertEqual((output / 'c172ap.xml').read_bytes(), module.patch_autopilot(AP_FIXTURE))
+            self.assertEqual(first['ap_source_sha256'], module.sha256(AP_FIXTURE))
             self.assertEqual((output / 'copyright.txt').read_bytes(), b'unchanged license notice\n')
             self.assertEqual((output / 'systems' / 'ap.xml').read_bytes(), b'unchanged coefficients\n')
             self.assertEqual(first['prepared_sha256'], module.sha256((output / 'c172x.xml').read_bytes()))
             self.assertEqual(first['source_sha256'], module.sha256(FIXTURE))
             self.assertEqual(json.loads(metadata.read_text()), first)
+
+    def test_ap_patch_requires_expected_wiring_and_keeps_notice(self):
+        changed = module.patch_autopilot(AP_FIXTURE)
+        self.assertIn(b'<!-- Synthetic AP notice -->', changed)
+        self.assertIn(module.AP_MSL, changed)
+        self.assertIn(module.AP_ELEVATOR_GATE, changed)
+        for token in (module.AP_AGL, module.AP_HDOT_INPUT, module.AP_ERROR, module.AP_ELEVATOR):
+            with self.subTest(token=token), self.assertRaises(ValueError):
+                module.patch_autopilot(AP_FIXTURE.replace(token, b''))
 
     def test_unknown_source_bytes_are_rejected_before_replacing_existing_output(self):
         with tempfile.TemporaryDirectory() as temporary:

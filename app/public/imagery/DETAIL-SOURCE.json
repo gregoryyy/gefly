@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "asset": "edfe-detail.jpg",
+  "bytes": 1254477,
+  "sha256": "e435cfda769b714dbbf6bc99916a0e41079bfba199a99b65fc7aa7f5f8b93dba",
+  "source": "Hessen HVBG ATKIS DOP20 orthophotography",
+  "sourceDataset": "https://opendata.hessen.de/en/dataset/atkis-dop-20",
+  "license": "DL-DE-Zero-2.0",
+  "licenseUrl": "https://www.govdata.de/dl-de/zero-2-0",
+  "crs": "EPSG:4326",
+  "bounds_west_south_east_north": [
+    8.628,
+    49.954,
+    8.66,
+    49.966
+  ],
+  "width_px": 3000,
+  "height_px": 1800,
+  "requestUrl": "https://www.gds-srv.hessen.de/cgi-bin/lika-services/ogc-free-images.ows?SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=he_dop_rgb&FORMAT=image%2Fjpeg&SRS=EPSG%3A4326&BBOX=8.628%2C49.954%2C8.660%2C49.966&WIDTH=3000&HEIGHT=1800",
+  "sourceImageDate": null,
+  "source_ground_resolution_m": 0.2,
+  "output_approx_ground_resolution_m": [
+    0.76,
+    0.74
+  ],
+  "limitations": [
+    "Resampled GetMap extract, not native 20 cm detail.",
+    "Capture date not established; not current airport/runway reference information.",
+    "Aerial colors are draped over the separately sourced terrain; building geometry is not modeled."
+  ]
+}

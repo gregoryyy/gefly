@@ -94,7 +94,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.13 Add a separate radio/NAV box with active/standby COM1/NAV1 tuning/swap, OBS and opt-in fictional LAB CDI/TO-FROM/geometric DME, synchronized with recorded configuration. Move roll/heading autopilot into its own classic-style unit; unsupported ALT/NAV/APR/REV stay explicitly INOP. Partial R-NAV-1/R-INPUT-1/R-REVIEW-1; real station data, 8.33 kHz channels and coupled guidance remain open. Peer pending.
 
-- [ ] 2.0.14 Deepen the classical autopilot with source-scoped altitude, navigation and approach controls/modes after the applicable barometric/navigation models and reference cases exist. Do not accept disabled panel buttons as functional completion. Requested next, after the current PR checkpoint; then add the requested fullscreen modern instrument overlay including ILS markers; key-binding customization also remains later (see ROAD).
+- [ ] 2.0.14 Complete installed-autopilot fidelity beyond the operating model in 2.0.40: applicable real LOC/GS/GPS services, aircraft-specific servo/trim/electrical/PFT/fault behavior and independent reference cases. The bounded ALT/preselect/NAV/APR/REV operating controls are delivered in 2.0.40; they do not establish real ILS or installed-aircraft performance. The requested fullscreen modern instrument overlay with ILS markers and configurable keys remain later (see ROAD).
 
 - [x] 2.0.15 Refine the cockpit toward the supplied visual reference: two round NAV indicators with independent OBS/CDI/TO-FROM/flags, dual COM1/NAV1 and COM2/NAV2 tuning/swap, and recorded 11-field configuration. Original vector faces; poster not redistributed and no exact installation inferred. Real ILS/station-data fidelity remains open. Partial R-NAV-1/R-VIEW-1/R-REVIEW-1; peer pending.
 
@@ -129,6 +129,30 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 - [x] 2.0.30 Add E and a cockpit engine on/off switch backed by native ignition/starter behavior and recorded actual running state; independent airspeed-driven wind noise and a speed-dependent whistle remain audible during engine-off flight; add actual-contact rolling/touchdown sounds and quieter idle/higher-RPM engine balance. Preserve paused controls, S default-off and collision/Review guards. R-ENG-1/R-AUDIO-1.
 
 - [x] 2.0.31 Add a stable chase-view ground shadow so height and wheel contact are easier to judge, synchronized with live/Review state on the existing flat-ground scene. R-VIEW-1; no terrain/physics changes.
+
+- [x] 2.0.32 Deliver real public Hessen terrain around Egelsbach/Frankfurt/Taunus with shared native/render height data, explicit DHHN2016/GCG2016 conversion, slope-aware wheel/proxy contact, coverage guards, recorded/shadow alignment, source/rights metadata and a visible Taunus flight. Add a sharper public airport photograph with honest effective resolution. R-WORLD-2/R-DATA-1/R-SIM-3/R-VIEW-1; independent quality/actual-browser validation passed, see [review](reviews/2026-11-03-public-terrain.md). Peer pending.
+
+- [x] 2.0.33 Extend high-resolution texture coverage using a multiresolution tile pyramid/cache from public orthophotos; prioritize airport/circuit detail, pin source dates/rights and stream or prefetch only needed tiles. Bounded R-WORLD-4 delivery:723 tiles/67.2 MiB, actual GPUlevel15 and independent source/render validation pass; see [review](reviews/2026-11-03-regional-textures.md), peer pending; full EDDF/100 NM and native 20 cm detail remain scoped separately. R-WORLD-1/R-REGION-1/R-DATA-1.
+
+- [x] 2.0.34 Preserve the original yoke midpoint when a hold-drag camera look ends; leave release neutral until actual movement, retain outside-release/reentry authority and keep short-click recenter/toggle behavior. R-INPUT-1; independent quality/actual-browser validation passed, peer pending.
+
+- [x] 2.0.35 Make native engine coast-down/spin-up audible from actual recorded/live propeller speed, including ignition-off rotation and starter cranking; keep exhaust tied to actual combustion and preserve all mute/pause/Review/collision guards. R-AUDIO-1/R-ENG-1; independent quality/actual-browser validation passed, peer pending.
+
+- [ ] 2.0.36 Later: derive procedural terrain materials from traceable land-use masks, distinguishing cities, vegetation/green areas, streets and water bodies. Keep appearance separate from authoritative elevations, collision and navigational data. R-WORLD-3/R-DATA-1.
+
+- [ ] 2.0.37 Later: model buildings and other structures from reusable public geometry/data, with source dates/rights, coverage and explicit visual/obstacle/collision fidelity. R-WORLD-3/R-DATA-1.
+
+- [x] 2.0.38 Make keyboard/button wheel braking adjustable in Options (0–100% command, initially 25%), avoiding instant maximum-brake input during ordinary braking while retaining explicit full braking, native gear physics and actual-strike stops. Validate actual flat/public ground roll, controls while paused, recorded Review, release/reset and full-command collision. R-INPUT-1/R-SIM-8/R-REVIEW-1; independent quality and eight-group actual-browser validation passed, see [review](reviews/2026-11-03-ground-braking.md). Peer pending.
+
+- [ ] 2.0.39 Research source-applicable nose-strut travel/end-stop and ground-braking reference cases for the project-owned aircraft; validate full-command response and propeller clearance before changing generic-model coefficients. The input preference in 2.0.38 does not complete gear/brake fidelity. R-REUSE-1/R-SIM-8/R-DATA-1.
+
+- [x] 2.0.40 Deliver source-scoped KAP 140 two-axis/preselect operating controls, native VS/ALT and heading guidance, DG arming/capture/source-loss logic, altitude alerts, coherent paused/Review state and validated input boundaries. R-AP-1/R-INPUT-1/R-REVIEW-1; reference cases declare generic servo/capture tuning and current fictional NAV1 coverage. Independent quality/25-group browser validation and shared CI pass; see [review](reviews/2026-11-03-kap140.md). Deeper installed-aircraft fidelity remains in 2.0.14; physical sound delivery is unverified and peer pending.
+
+- [x] 2.0.41 Add a source-pinned historical Rhein-Main VOR/LOC/GS/DME inventory, dual-receiver station directory, common instrument/AP signals and an EDDF 25C geometric practice preset. R-NAV-4/R-NAV-1/R-NAV-2/R-DATA-1/R-REVIEW-1. Source edition 2013.10, approximate extent around a community EDDF coordinate; no current AIRAC/procedure or complete R-REGION-1 claim. Independent source/code/actual-browser validation and shared CI pass; see [review](reviews/2026-11-03-rhein-main-navigation.md). Peer pending.
+
+- [x] 2.0.42 Fit the radio stack to its shared column height and make Stations compact with outside-click/Escape dismissal, combined nearby/name filters and distance ordering. Preserve standby/swap, read-only Review and missing-position behavior. R-PANEL-1/R-NAV-4/R-REVIEW-1; independent actual-browser checks and shared CI pass; see [review](reviews/2026-11-03-regional-textures.md), peer pending.
+
+- [ ] 2.0.43 Add a separately sourced COM directory with airport/service identifiers (ATIS, Ground, Tower, Approach), nearby/name/service filters and explicit standby/swap. Declare dataset edition/rights/currentness; represent 8.33 kHz channels accurately or show them unavailable until tuner support is delivered. A directory alone does not implement ATC/voice or live ATIS. R-COMM-1/R-DATA-1.
 
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.

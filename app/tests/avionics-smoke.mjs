@@ -123,14 +123,13 @@ try {
   assert.equal(await page.locator('#flap-control').getAttribute('min'), '0');
   assert.equal(await page.locator('#flap-control').getAttribute('max'), '30');
   assert.equal(await page.locator('#flap-control').getAttribute('step'), '10');
-  assert.equal(await text('pitch-trim-up'), "'"); assert.equal(await text('pitch-trim-initial'), '/');
-  assert.equal(await text('pitch-trim-down'), String.fromCharCode(92));
-  for (const button of await page.locator('.autopilot-inop button').all()) { assert(await button.isDisabled()); assert.match(await button.textContent(), /INOP/); }
+  assert.equal(await page.locator('#pitch-trim-up kbd').textContent(), "'"); assert.equal(await page.locator('#pitch-trim-initial kbd').textContent(), '/');
+  assert.equal(await page.locator('#pitch-trim-down kbd').textContent(), String.fromCharCode(92));
   assert.match(await page.locator('.radio-limitations').textContent(), /8.33 kHz\/ATC unavailable/);
   for (const selector of ['.radio-limitations', '.nav-signal-note', '.navigation-gauge-note', '.autopilot-content > p', '#pitch-trim-note']) {
     for (const note of await page.locator(selector).all()) assert(await note.isHidden(), 'panel explanations stay in Options');
   }
-  checks.push('separate boxes, truthful NAV flags, explicit legacy-radio and INOP AP scope');
+  checks.push('separate boxes, truthful NAV flags and explicit legacy-radio scope');
 
   await startOrResume(page);
   await page.waitForFunction(() => window.__avionicsStates.at(-1).step > 400); // Leave the LAB passage ambiguity radius.
@@ -198,6 +197,8 @@ try {
     assert.equal(await page.locator(`#nav${receiver}-gauge .nav-cdi-needle`).getAttribute('hidden'), null);
   }
   checks.push('dual receivers tune and swap independently; round NAV gauges and OBS knobs use the selected receiver');
+  await page.locator('#ap-engage').click({ delay:350 });
+  await page.waitForFunction(() => window.__avionicsStates.at(-1).kap_engaged === 1 && window.__avionicsStates.at(-1).kap_lateral === 0);
   await page.locator('#ap-heading').click();
   await page.waitForFunction(() => window.__avionicsStates.at(-1).ap_mode === 2);
   const capturedHeading = (await state()).ap_heading_target_rad;
@@ -267,7 +268,7 @@ try {
 
   await page.screenshot({ path: `${output}/avionics-desktop.png` });
   await startOrResume(page); await page.waitForFunction(() => window.__avionicsStates.at(-1).step > 10);
-  await page.locator('#ap-level').click(); await page.waitForFunction(() => window.__avionicsStates.at(-1).ap_mode === 1);
+  await page.locator('#ap-engage').click({ delay:350 }); await page.waitForFunction(() => window.__avionicsStates.at(-1).ap_mode === 1);
   await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(150);
   observations.layouts.push(await measure()); console.log(`AVIONICS_LAYOUT ${JSON.stringify(observations.layouts.at(-1))}`);
   for (const name of ['engine', 'radio-nav', 'navigation']) {
@@ -345,7 +346,8 @@ try {
     for (const id of ['com1-standby', 'nav1-swap', 'nav-obs', 'nav-demo', 'mixture-control', 'ap-heading', 'pitch-trim-control']) {
       assert(await page.locator(`#${id}`).isDisabled(), `${id} is disabled while replacement engine is delayed`);
     }
-    assert.equal(await text('engine-rpm'), '—'); assert.equal(await text('ap-status'), 'UNAVAILABLE');
+    assert.equal(await text('engine-rpm'), '—'); assert.equal(await text('ap-engaged-label'), 'INOP');
+    assert.equal(await text('ap-lateral'), '—'); assert.equal(await text('ap-vertical'), '—');
     await page.locator('#com1-standby').evaluate(input => {
       input.value = '123.450'; input.dispatchEvent(new Event('change', { bubbles: true }));
     });

@@ -119,7 +119,11 @@ export function createPointerYoke(options: PointerYokeOptions): {
     const wasLooking = looking;
     clearPress(); looking = false;
     yokeActive = !pressLookOnly && (wasLooking ? previousYokeActive : !previousYokeActive);
-    anchorX = event.clientX; anchorY = event.clientY;
+    // A look gesture borrows the pointer, not the yoke's reference position.
+    // Only a short click establishes a new midpoint when toggling the yoke.
+    if (!wasLooking && !pressLookOnly) {
+      anchorX = event.clientX; anchorY = event.clientY;
+    }
     setYoke(0, 0);
     // Review look is an inspection camera: keep its last orientation between drags.
     if (!pressLookOnly) setLook(0, 0);

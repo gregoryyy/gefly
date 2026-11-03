@@ -65,7 +65,7 @@ test('configuration groups reject partial, non-finite and invalid recorded value
 test('demo is opt-in; unknown, ILS, out-of-radius and invalid positions remain flagged', () => {
   assert(!navigationIndication(DEFAULT_RADIO_NAV, north).valid);
   assert(!navigationIndication({ ...demo, radio_nav_active_khz: 114000 }, north).valid);
-  assert.match(navigationIndication({ ...demo, radio_nav_active_khz: 108100 }, north).reason, /ILS/);
+  assert.match(navigationIndication({ ...demo, radio_nav_active_khz: 108100 }, north).reason, /LAB/);
   assert(!navigationIndication(demo, { ...north, lat_rad: north.lat_rad + 2 * DEG }).valid);
   for (const value of [NaN, Infinity, 4]) assert(!navigationIndication(demo, { ...north, lat_rad: value }).valid);
   assert(!navigationIndication(demo, null).valid);

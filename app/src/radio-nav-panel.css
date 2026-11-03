@@ -44,3 +44,42 @@
 .radio-nav-dialog .nav-indication > span { font-size: 7px; }
 .radio-nav-dialog > .primary { margin-top: 12px; padding: 10px; font-size: 12px; }
 @media (max-width: 620px) { .radio-nav-panel { width: 100%; } }
+.nav-stations-open { margin-top: 6px; padding: 3px 7px; font-size: 9px; }
+.nav-stations-dialog { width: min(640px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow: auto; margin: auto; padding: 18px; background: #13232e; color: #e5eef1; border: 1px solid #a9bec64d; border-radius: 12px; }
+.nav-stations-dialog::backdrop { background: #06121ca8; }
+.nav-stations-dialog h2 { margin: 0 0 6px; font-size: 20px; }
+.nav-stations-dialog p { color: #b0c5d0; font-size: 11px; }
+.nav-station { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 5px; padding: 6px 0; border-top: 1px solid #83939f44; font-size: 11px; }
+.nav-station button { padding: 4px; font-size: 10px; }
+.nav-station button:disabled { opacity: .45; }
+.nav-stations-close { margin-top: 10px; }
+
+/* Keep the station directory controls visible while only the results scroll. */
+.nav-stations-dialog { box-sizing: border-box; height: min(580px, calc(100dvh - 40px)); overflow: hidden; }
+.nav-stations-dialog[open] { display: flex; flex-direction: column; }
+.nav-stations-header { display: flex; justify-content: space-between; align-items: center; }
+.nav-stations-close { margin: 0; padding: 2px 9px; font-size: 20px; line-height: 1; }
+.nav-stations-dialog p { margin: 4px 0 10px; line-height: 1.4; }
+.nav-stations-filters { display: grid; gap: 7px; margin-bottom: 10px; font-size: 12px; }
+.nav-stations-search { display: block; width: 100%; margin-top: 4px; padding: 6px; }
+.nav-stations-position { color: #b0c5d0; font-size: 10px; }
+.nav-stations-list { overflow-y: auto; min-height: 0; flex: 1; }
+
+/* The inline stack shares the fitted deck height. The dialog retains full sizing. */
+@media (min-width: 901px) {
+  body .cockpit-fitted #radio-nav-systems .radio-nav-content { padding: 4px; }
+  body .cockpit-fitted #radio-nav-systems .radio-heading { margin-bottom: 1px; }
+  body .cockpit-fitted #radio-nav-systems .radio-receiver { padding: 2px 0; }
+  body .cockpit-fitted #radio-nav-systems .radio-receiver-title { margin-bottom: 1px; }
+  body .cockpit-fitted #radio-nav-systems .radio-frequency-row { margin-bottom: 1px; }
+  body .cockpit-fitted #radio-nav-systems .radio-frequency-row label { margin-bottom: 0; }
+  body .cockpit-fitted #radio-nav-systems .radio-frequency-row output { padding: 1px 0; }
+  body .cockpit-fitted #radio-nav-systems .radio-frequency-row input { padding: 0 1px; }
+  body .cockpit-fitted #radio-nav-systems .radio-frequency-row button { padding: 1px; }
+  body .cockpit-fitted #radio-nav-systems .nav-course { margin-top: 1px; }
+  body .cockpit-fitted #radio-nav-systems .nav-indication { margin-top: 1px; }
+  body .cockpit-fitted #radio-nav-systems .nav-cdi { height: 10px; }
+  body .cockpit-fitted #radio-nav-systems .nav-demo { padding-top: 1px; }
+  body .cockpit-fitted #radio-nav-systems .nav-stations-open { margin-top: 2px; padding: 1px 5px; }
+  body .cockpit-fitted #radio-nav-systems .radio-limitations { margin-top: 2px; line-height: 1.1; }
+}

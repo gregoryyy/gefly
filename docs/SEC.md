@@ -111,9 +111,9 @@ usable simulator path when community or AI services are unavailable.
 
 ## Local browser flight prototype
 
-The experimental Vite server binds to 127.0.0.1 and allowlists only the study worker, three project-owned instrument modules and three generated runtime files. It does not expose the repository through that middleware. npm installation and the pinned study build download upstream dependencies; JSBSim and application assets remain local. The renderer uses a bundled, openly licensed Hessen starter photograph with versioned bounds and source metadata; no live imagery service is contacted during flight. No device geolocation, accounts, telemetry, persistence or AI/provider calls are used. Generated generic aircraft data stays local and is excluded from the production UI build. Browser checks cover missing runtime, WebGL failure, control release and focus-loss pause. The UI-only production build is not a published simulator deployment.
+The experimental Vite server binds to 127.0.0.1 and allowlists only twelve declared worker/runtime/module files. It does not expose the repository through that middleware. npm installation and the pinned study build download upstream dependencies; JSBSim and application assets remain local. The renderer uses bundled, openly licensed Hessen photographs and a bounded public elevation/quasigeoid package with versioned bounds, source hashes and rights metadata; no live imagery or elevation service is contacted during flight. Terrain paths, dimensions, bytes, SHA-256, finite heights and vertical datum are validated before starting physics. Missing/corrupt terrain or native coverage exit fails closed; an explicit flat study is the only legacy flat-ground path. Authoring GIS packages run separately from the application, consume hash-pinned source files and are not browser dependencies. No device geolocation, accounts, telemetry, persistence or AI/provider calls are used. Generated generic aircraft data stays local and is excluded from the production UI build. Browser checks cover missing runtime, WebGL failure, control release and focus-loss pause. The UI-only production build is not a published simulator deployment.
 
-Control sensitivity settings are bounded dimensionless gains held only in page memory. They have no persistence or network path, preserve throttle, and leave the declared study roll offset separate. Opening the settings dialog pauses flight and releases held inputs; closing it does not resume automatically. These input preferences do not calibrate or modify aircraft physics.
+Control sensitivity settings, including the 0–100% keyboard/button wheel-brake command gain, are bounded dimensionless gains held only in page memory. They have no persistence or network path, preserve throttle, and leave the declared study roll offset separate. Opening the settings dialog pauses flight and releases held inputs; closing it does not resume automatically. These input preferences do not calibrate or modify aircraft physics.
 
 In-session flight review keeps copied state samples and captured vertical speed only in page memory, capped at 36,000 samples and 600 simulation seconds. Reset/reload clears history. It has no storage, export, import or network path. Review pauses and neutralizes the real worker; historical state is sent only to the renderer/instruments and never restores physics. Unrecorded control positions are hidden, with explicit state-only trace labels.
 
@@ -139,8 +139,11 @@ mobile engine dialog releases held inputs and keeps flight running, as labeled.
 
 Cockpit/engine state groups are validated atomically before copying and display;
 missing old-engine capabilities remain unavailable rather than synthesized.
-Flap, brake and mixture commands are finite/bounded. AP messages accept only
-Off/Level/Heading with finite normalized true-heading targets. Raw manual pilot
+Flap, brake and mixture commands are finite/bounded. AP messages preserve the legacy roll interface and add a bounded, validated
+KAP operating-state command union. NAV1 configuration is an atomic validated
+worker snapshot; its fictional signal is computed at fixed steps. Source validity
+and controller outputs remain independent of UI repaint rate. Invalid targets
+are rejected without native integration. Raw manual pilot
 input disconnects AP, and its roll correction cannot silently compete with the
 controller. Review disables all these live controls and renders captured fields.
 Paused setting/mode changes replace only the final permitted instrument fields,
@@ -167,3 +170,21 @@ are session-only preferences, independent of flight input. Pause/hidden/failure/
 reset/paused Review silence the graph; page teardown closes it. Missing or denied
 audio leaves flight usable with a retry/unavailable indication. Test-only local
 WAV previews are disposable outputs, not runtime telemetry or recordings.
+
+Regional navigation loads a bounded same-origin manifest and hash-verified static
+JSON package before normal flight initialization; it rejects invalid sizes,
+redirects, asset paths, schema, duplicate IDs and corrupted bytes. The package is
+frozen per context and remains historical throughout a page session/Review.
+Directory source strings use textContent. No live AIS, network ATC, external URLs,
+executable scenario content or persistence is added. LAB remains explicit and
+isolated. Approximate reception ranges are not authoritative operational status.
+
+The regional imagery provider derives fixed same-origin XYZ paths from bounded,
+validated integer coordinates. It rejects redirects, invalid manifest metadata,
+duplicate/out-of-coverage entries, over-budget packages and invalid byte counts,
+hashes or JPEG dimensions. Fetch/stream operations have deadlines and scene
+cancellation also covers manifest loading before the provider exists. No source
+URL from provenance is executed at runtime. A bounded decode cache, deduplicated
+requests and ancestor fallback limit view loading; imagery failures do not write
+flight state. Offline public WMS ingestion runs separately with bounded requests,
+image decoding, tile budgets, atomic output and source/derivative notices.

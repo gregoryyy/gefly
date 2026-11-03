@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "id": "hessen-edfe-taunus-dgm32-gcg2016v2023-v1",
+  "asset": "edfe-taunus-v1.f32",
+  "sha256": "7123539a37bda7d7770d0f5e9662e5e48a350273bc68836ee34f1bf4b50ed7a9",
+  "bytes": 8405000,
+  "width": 1025,
+  "height": 1025,
+  "rows": "south-to-north",
+  "encoding": "float32-le-interleaved-H-zeta",
+  "physical_datum": "DHHN2016",
+  "geoid_model": "GCG2016v2023_W",
+  "horizontal_crs": "EPSG:4326 (ETRS89 treated as WGS84 for this research region)",
+  "west_rad": 0.14748032179352083,
+  "south_rad": 0.8700466321191733,
+  "east_rad": 0.15533430342749532,
+  "north_rad": 0.878773278379145,
+  "bounds_west_south_east_north_deg": [
+    8.45,
+    49.85,
+    8.9,
+    50.35
+  ],
+  "interpolation": "piecewise-linear-SW-NE",
+  "physical_range_m": [
+    84.04014990059683,
+    878.6448198150337
+  ],
+  "geoid_range_m": [
+    47.71911052856455,
+    48.35182070306735
+  ],
+  "max_float32_quantization_error_m": 3.0516984452333418e-05,
+  "notices": {
+    "BKG-SOURCES.pdf": {
+      "sha256": "c739ee2cb94d5d4c9092d2cefe572d7da10876b24e8c2d705135c89ac5216c31",
+      "bytes": 106102
+    },
+    "BKG-CC-BY-NOTICE.pdf": {
+      "sha256": "6bee4081a50a53a74c79d69fc15a405cf1543a8f795cb491eb714a3c34556585",
+      "bytes": 95536
+    }
+  },
+  "sources": [
+    {
+      "url": "https://inspire-hessen.de/raster/dgm1-2025H2/ows?SERVICE=WCS&VERSION=2.0.1&REQUEST=GetCoverage&COVERAGEID=he_dgm1_32&SUBSET=E(460000,500000)&SUBSET=N(5520000,5580000)&FORMAT=image/tiff",
+      "sha256": "2e37db3ef8b07ec2bb206f289d1200f5cfbf41c37a3413688244dea7c29df894",
+      "bytes": 9386714,
+      "crs": "EPSG:25832",
+      "transform": [
+        32.0,
+        0.0,
+        460024.0,
+        0.0,
+        -32.00101188970407,
+        5579995.446496332,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "width": 1250,
+      "height": 1875,
+      "physical_datum": "DHHN2016",
+      "coverage": "he_dgm1_32",
+      "edition": "2025H2",
+      "license": "DL-DE-Zero-2.0",
+      "license_url": "https://www.govdata.de/dl-de/zero-2-0"
+    },
+    {
+      "url": "https://daten.gdz.bkg.bund.de/produkte/sonstige/quasigeoid/aktuell/quasigeoid.geo89.w.zip",
+      "sha256": "16b2f09996aee74eaa647fde4b7724ade17e384be534f38d23d9d229f30520c3",
+      "ascii_path": "quasigeoid.geo89.w/quasigeoid/w/linux/ascii/GCG2016v2023_W.txt",
+      "ascii_sha256": "e463e02e55716afceef0e1ac327906104696055290ee49a09302840586a17a57",
+      "license": "CC-BY-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "\u00a9 Bundesamt f\u00fcr Kartographie und Geod\u00e4sie 2026",
+      "data_sources": "https://sgx.geodatenzentrum.de/web_public/gdz/datenquellen/Datenquellen_Quasigeoid.pdf",
+      "changes": "Regional bilinear sampling and conversion to float32 node offsets."
+    }
+  ],
+  "build": {
+    "script_sha256": "62e7cf49880db941172de86652789015a7fa6c6c811e583dd2be8448809eadbc",
+    "rasterio": "1.4.3",
+    "pyproj": "3.7.2",
+    "numpy": "1.26.4"
+  },
+  "limitations": [
+    "Regional prototype, not full EDDF/100 NM coverage.",
+    "32 m overview of DGM1, resampled to approximately 32\u201354 m geographic nodes.",
+    "No surveyed runway flattening, obstacles, buildings or current airport data.",
+    "ETRS89/WGS84 epoch difference is not resolved; not a navigation/survey reference.",
+    "DEM accuracy and coarse render-LOD residual are not aircraft training acceptance."
+  ]
+}

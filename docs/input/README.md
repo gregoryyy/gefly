@@ -64,3 +64,16 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-02 sound key and gauge follow-up](2026-11-02-sound-key-and-gauge-followup.md): S toggles sound, initially off; follow up on additional gauges and panel vertical layout.
 - [Engine toggle and wind noise](2026-11-02-engine-toggle-wind.md) — E for engine on/off; independent airflow sound.
 - [Panel and airflow refinement](2026-11-02-panel-followup.md) — compact panel follow-up and broader high-speed whistle.
+- [Public terrain request](2026-11-02-public-terrain.md) — public elevation data and real ground.
+- [Texture resolution question](2026-11-02-terrain-texture-question.md) — derive sharper source imagery.
+- [Look-drag midpoint correction](2026-11-03-look-drag-midpoint.md) — preserve yoke anchor on look release.
+- [Engine spool sound](2026-11-03-engine-spool-sound.md) — audible native RPM coast-down and spin-up.
+- [Later procedural landscape](2026-11-03-procedural-landscape-roadmap.md) — land-use textures, then buildings/structures.
+- [Imagery alternatives](2026-11-03-imagery-alternatives.md) — additional photography and land-cover/vector sources.
+- [Ground braking report](2026-11-03-ground-braking.md) — ground collision while braking.
+- [Original autopilot behavior](2026-11-03-autopilot-original.md) — match the original aircraft autopilot.
+- [Rhein-Main radio navigation](2026-11-03-rhein-main-navigation.md) — add regional VOR, DME, ILS and related sources.
+- [KAP 140 confirmation](2026-11-03-kap140-confirmation.md) — confirmed two-axis autopilot with altitude preselection.
+- [Continue regional textures](2026-11-03-regional-textures.md) — extend detailed orthophotography around Frankfurt and approaches.
+- [Radio panel and station picker](2026-11-03-radio-stations-ux.md) — fit panel height, outside dismissal, nearby and name filters.
+- [Online imagery and COM directory questions](2026-11-03-imagery-provider-com.md) — provider options and communication-station discovery.

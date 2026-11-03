@@ -93,7 +93,7 @@ test('leaving during a pending hold cancels only that gesture and retains the pr
   f.controller.dispose();
 });
 
-test('hold-drag looks without yoke input; release restores prior mode and a neutral anchor', async () => {
+test('hold-drag looks without yoke input; release preserves the original yoke midpoint', async () => {
   const f = fixture(); f.click();
   f.surface.dispatchEvent(pointer('pointermove',250,200));
   f.surface.dispatchEvent(pointer('pointerdown',250,200));
@@ -106,10 +106,24 @@ test('hold-drag looks without yoke input; release restores prior mode and a neut
   f.surface.dispatchEvent(pointer('pointermove',2000,-2000));
   assert.deepEqual(f.looks.at(-1),[Math.PI,70*Math.PI/180]);
   assert.deepEqual(f.yokes.at(-1),[0,0]);
+  const releaseCount = f.yokes.length;
   f.surface.dispatchEvent(pointer('pointerup',300,200));
   assert.equal(f.modes.at(-1),'yoke'); assert.deepEqual(f.looks.at(-1),[0,0]);
-  f.surface.dispatchEvent(pointer('pointermove',375,125));
+  assert.equal(f.yokes.length,releaseCount,'release does not introduce another control command');
+  f.surface.dispatchEvent(pointer('pointermove',275,125));
   assert.deepEqual(f.yokes.at(-1),[.5,.5]);
+  f.surface.dispatchEvent(pointer('pointermove',200,200));
+  assert.deepEqual(f.yokes.at(-1),[0,0],'the original midpoint still centers both axes');
+  // A second look, including release outside the scene, must preserve it too.
+  f.surface.dispatchEvent(pointer('pointerdown',200,200));
+  await sleep(280);
+  f.surface.dispatchEvent(pointer('pointermove',900,700));
+  f.surface.dispatchEvent(pointer('pointerup',900,700));
+  assert.equal(f.modes.at(-1),'yoke');
+  f.surface.dispatchEvent(pointer('pointerenter',125,275));
+  assert.deepEqual(f.yokes.at(-1),[-.5,-.5]);
+  f.surface.dispatchEvent(pointer('pointermove',200,200));
+  assert.deepEqual(f.yokes.at(-1),[0,0]);
   f.controller.dispose();
 });
 

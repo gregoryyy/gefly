@@ -37,12 +37,13 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
         ['pitch', 'Pitch', 'Nose up / down'],
         ['roll', 'Roll', 'Bank left / right'],
         ['rudder', 'Rudder', 'Yaw left / right'],
+        ['brake', 'Wheel brake command', 'B / brake button'],
       ] as const).map(([axis, title, hint]) => `
         <div class="control-settings-axis">
           <label for="sensitivity-${axis}">${title}<span>${hint}</span></label>
           <output for="sensitivity-${axis}" id="sensitivity-${axis}-value"></output>
-          <input type="range" id="sensitivity-${axis}" min="25" max="150" step="5"${axis === 'pitch' ? ' autofocus' : ''}>
-          <div class="control-settings-scale" aria-hidden="true"><span>Gentler · 25%</span><span>150% · Stronger</span></div>
+          <input type="range" id="sensitivity-${axis}" min="${axis === 'brake' ? 0 : 25}" max="${axis === 'brake' ? 100 : 150}" step="5"${axis === 'pitch' ? ' autofocus' : ''}>
+          <div class="control-settings-scale" aria-hidden="true"><span>${axis === 'brake' ? 'Released · 0%' : 'Gentler · 25%'}</span><span>${axis === 'brake' ? '100% · Full command' : '150% · Stronger'}</span></div>
         </div>
       `).join('')}
     </div>
@@ -56,7 +57,7 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
   `;
   options.container.append(dialog);
 
-  const axes = ['pitch', 'roll', 'rudder'] as const;
+  const axes = ['pitch', 'roll', 'rudder', 'brake'] as const;
   const sliders = axes.map(axis => ({
     axis,
     input: dialog.querySelector<HTMLInputElement>(`#sensitivity-${axis}`)!,
@@ -65,7 +66,8 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
 
   function render(): void {
     for (const { axis, input, output } of sliders) {
-      const percent = Math.round(settings[axis] * 100);
+      const gain = axis === 'brake' ? settings.brake ?? DEFAULT_CONTROL_SETTINGS.brake : settings[axis];
+      const percent = Math.round(gain * 100);
       input.value = String(percent);
       input.setAttribute('aria-valuetext', `${percent} percent`);
       output.value = `${percent}%`;

@@ -127,7 +127,7 @@ try {
   assert.equal(await page.evaluate(() => document.activeElement.id), 'scene');
   checks.push('slider sign, native keyboard focus, bounded holds and restore startup command');
 
-  await page.locator('#ap-level').click();
+  await page.locator('#ap-engage').click({ delay:350 });
   await page.waitForFunction(() => window.__trimStates.at(-1).ap_mode === 1);
   const apBefore = await state();
   const upButton = await page.locator('#pitch-trim-up').boundingBox();
@@ -135,12 +135,13 @@ try {
   await page.waitForFunction(before => window.__trimStates.at(-1).pitch_trim_norm < before - .01, apBefore.pitch_trim_norm);
   await page.mouse.move(1100, 180); await page.mouse.up(); await page.waitForTimeout(120);
   const released = await state();
-  assert.equal(released.ap_mode, 1, 'pitch trim does not disconnect roll-only autopilot');
+  assert.equal(released.ap_mode, 0, 'pitch trim disconnects the two-axis autopilot');
+  assert.equal(released.kap_engaged, 0);
   await page.waitForTimeout(160); assert.equal((await state()).pitch_trim_norm, released.pitch_trim_norm, 'outside release stops a held trim button');
   await page.locator('#scene').focus(); await page.keyboard.down('ArrowDown');
   await page.waitForFunction(() => window.__trimStates.at(-1).ap_mode === 0);
   await page.keyboard.up('ArrowDown');
-  checks.push('trim hold outside-release and independence from roll-only AP override');
+  checks.push('trim hold outside-release disconnects the two-axis AP');
 
   await page.locator('#scene').focus(); await page.keyboard.down('Quote'); await page.waitForTimeout(100);
   const paused = await pause(); await page.keyboard.up('Quote');

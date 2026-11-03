@@ -1,3 +1,4 @@
+import { createKap140 } from '../../studies/e1-browser/sim/kap140.js';
 import assert from 'node:assert/strict';
 import { test, type TestContext } from 'node:test';
 import { createSession } from './session.ts';
@@ -315,4 +316,43 @@ test('engine switch command waits for resume and actual running telemetry is ato
   assert.equal(states.at(-1).engine_running, 0, 'requested ON does not imply combustion');
   worker.emit({ ...state, engine_running: 0 });
   assert.match(errors.at(-1)!, /invalid state/);
+});
+
+test('public terrain is explicit at init and complete physical/ellipsoid fields survive the session boundary', t => {
+  const { session, states, errors } = fixture(t); session.reset();
+  const worker = MockWorker.instances[0]; assert.equal(worker.messages[0].terrain, true); worker.emit(ready);
+  const terrain = { terrain_profile: 1, terrain_height_msl_m: 115.25, terrain_geoid_m: 47.8, terrain_height_ellipsoid_m: 163.05 };
+  worker.emit({ ...state, ...terrain }); assert.equal(states.at(-1).terrain_geoid_m, 47.8);
+  worker.emit({ ...state, ...terrain, terrain_height_ellipsoid_m: 115.25 }); assert.match(errors.at(-1)!, /invalid state/);
+  session.reset('normal'); assert.equal(MockWorker.instances.at(-1)!.messages[0].terrain, false);
+});
+
+
+test('KAP commands and NAV1 snapshots have bounded atomic session contracts', t => {
+  const {session,states,errors}=fixture(t); session.start(); const worker=MockWorker.instances[0]; worker.emit(ready);
+  assert.equal(worker.messages[0].kap140,true);
+  const sensors={t_s:0,dt_s:1/120,heading_rad:1,physical_altitude_m:1000,pressure_altitude_m:1000,vertical_speed_mps:0,
+    nav:{valid:false,kind:0 as const,cdi_norm:0,course_rad:0,gs_valid:false,gs_norm:0}};
+  const fields=createKap140(sensors).snapshot(sensors);
+  worker.emit({...state,...fields,radio_nav_active_khz:113800,radio_obs_deg:90,radio_demo_enabled:1});
+  assert.equal((states.at(-1) as Record<string,number>).kap_profile,1);
+  const count=worker.messages.length;
+  session.setKap140({action:'heading',value:NaN}); session.setNavigation({radio_nav_active_khz:113801,radio_obs_deg:0,radio_demo_enabled:0});
+  assert.equal(worker.messages.length,count);
+  session.setKap140({action:'select-altitude',value:1200}); assert.deepEqual(worker.messages.at(-1),{type:'kap140',command:{action:'select-altitude',value:1200}});
+  session.setNavigation({radio_nav_active_khz:113800,radio_obs_deg:180,radio_demo_enabled:1});
+  assert.equal((worker.messages.at(-1)!.config as Record<string,number>).radio_obs_deg,180);
+  worker.emit({...state,...fields,radio_obs_deg:NaN}); assert.match(errors.at(-1)!,/invalid state/);
+});
+test('partial KAP data cannot be accepted as current autopilot state', t => {
+  const {session,errors}=fixture(t); session.start(); const worker=MockWorker.instances[0]; worker.emit(ready);
+  worker.emit({...state,kap_profile:1,kap_engaged:1}); assert.match(errors.at(-1)!,/invalid state/);
+});
+
+
+test('altitude alert extension is optional atomic data, not an invented zero event', t => {
+  const {session,states,errors}=fixture(t); session.start(); const worker=MockWorker.instances[0]; worker.emit(ready);
+  worker.emit({...state,kap_alert_state:1,kap_alert_sequence:2});
+  assert.equal((states.at(-1) as Record<string,number>).kap_alert_sequence,2);
+  worker.emit({...state,kap_alert_state:1}); assert.match(errors.at(-1)!,/invalid state/);
 });

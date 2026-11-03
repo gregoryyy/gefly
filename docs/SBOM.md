@@ -10,12 +10,12 @@ plan rather than assuming a single engine license covers all these materials.
 
 ## Experimental browser application
 
-The local [application](../app/README.md) pins three.js 0.187.0 (MIT) to generate the original generic aircraft visual, Vite 8.3.5 (MIT), TypeScript 5.9.3 (Apache-2.0), @types/three 0.187.0 (MIT) and Playwright 1.64.1 (Apache-2.0). Exact transitive versions/integrity hashes are in `app/package-lock.json`; installation audited with zero reported advisories on 2026-11-01. The three.js license is retained under [LICENSES](../LICENSES/three-MIT.txt). Fonts use local system fallbacks. Application, engine and the bundled Hessen starter image are local; there are no runtime imagery-service requests.
+The local [application](../app/README.md) pins three.js 0.187.0 (MIT) to generate the original generic aircraft visual, Vite 8.3.5 (MIT), TypeScript 7.0.2 (Apache-2.0), @types/three 0.187.0 (MIT) and Playwright 1.64.1 (Apache-2.0). Exact transitive versions/integrity hashes are in `app/package-lock.json`; installation audited with zero reported advisories on 2026-11-01. The three.js license is retained under [LICENSES](../LICENSES/three-MIT.txt). Fonts use local system fallbacks. Application, engine and the bundled Hessen starter image are local; there are no runtime imagery-service requests.
 
-JSBSim and c172x remain generated local research assets under the existing study recipe and rights limitations below. Vite serves only the seven named worker/runtime files (the worker, three project-owned instrument modules and three generated engine/build files) in development; the production UI build excludes all of them and is not a deployable flight simulator. No runtime model assets or source SDKs are committed or published.
+JSBSim and c172x remain generated local research assets under the existing study recipe and rights limitations below. Vite serves only the twelve named worker/runtime files in development. Shared project-owned helpers are bundled with the UI; the generated JSBSim files and worker endpoint remain outside the production UI build, which is not a deployable flight simulator. No runtime model assets or source SDKs are committed or published.
 
 
-CesiumJS 1.146.0 (Apache-2.0) now renders the actual geographic scene. Its workers, widgets, textures, license and third-party inventories come from the locked npm package, without Cesium ion or commercial base layers; see [license](../LICENSES/Cesium-Apache-2.0.txt). A fixed official Hessen ATKIS DOP20 starter photograph is bundled under `app/public/imagery/`: [source bounds, request URL, byte hash and license](../app/public/imagery/SOURCE.json). The 1024×1024 JPEG is an unmodified GetMap image from the `he_dop_rgb` layer, covering 8.62–8.66° E / 49.95–49.975° N (approximately 3 × 2.8 km). [Dataset terms](https://opendata.hessen.de/de/dataset/atkis-dop-20) specify [DL-DE Zero 2.0](https://www.govdata.de/dl-de/zero-2-0); voluntary source credit remains visible. No acquisition date or current airport conditions are claimed. The photograph is draped on the ellipsoid and establishes no terrain, accepted airport elevation, chart geometry or navigational authority. A bundled 512×512 coarse overview adds regional context at 8.4–8.9° E / 49.8–50.1° N; its separate byte hash and request are also recorded in SOURCE.json. The application labels overview-only coverage and reports missing coverage beyond it; EDDF/100 NM expansion remains future work.
+CesiumJS 1.146.0 (Apache-2.0) now renders the actual geographic scene. Its workers, widgets, textures, license and third-party inventories come from the locked npm package, without Cesium ion or commercial base layers; see [license](../LICENSES/Cesium-Apache-2.0.txt). A fixed official Hessen ATKIS DOP20 starter photograph is bundled under `app/public/imagery/`: [source bounds, request URL, byte hash and license](../app/public/imagery/SOURCE.json). The 1024×1024 JPEG is an unmodified GetMap image from the `he_dop_rgb` layer, covering 8.62–8.66° E / 49.95–49.975° N (approximately 3 × 2.8 km). [Dataset terms](https://opendata.hessen.de/de/dataset/atkis-dop-20) specify [DL-DE Zero 2.0](https://www.govdata.de/dl-de/zero-2-0); voluntary source credit remains visible. No acquisition date or current airport conditions are claimed. The photographs are now draped over the separately sourced regional terrain on normal flights, or the ellipsoid on explicit flat studies. Imagery alone establishes no accepted airport elevation, chart geometry or navigational authority. A bundled 512×512 coarse overview adds regional context at 8.4–8.9° E / 49.8–50.1° N; its separate byte hash and request are also recorded in SOURCE.json. The application labels overview-only coverage and reports missing coverage beyond it; EDDF/100 NM expansion remains future work.
 
 Live adaptive WMS requests were removed after excessive refinement and service timeouts. The tested source also rejects images over 3000 pixels with an HTTP 200 XML exception. Bundling the verified starter image avoids that runtime dependency; research-model runtime data remains excluded from distribution.
 
@@ -214,4 +214,64 @@ model bytes remain embedded only in the excluded local research runtime; this is
 not a distribution-rights or selected-172S fidelity acceptance. Engine telemetry
 and the modern roll autopilot reuse the already pinned source; no new numerical
 or browser dependencies were added. Python's standard library supports the
-adapter and its five tests. See [source mappings](research/2026-11-02-classic-controls.md).
+adapter and its six tests, including the pinned c172ap MSL/VS/output-gate wiring. See [source mappings](research/2026-11-02-classic-controls.md).
+
+## Public regional terrain data
+
+The local [public height package](../app/public/terrain/README.md) is a derived
+1,025²-node region from Hessen HVBG `he_dgm1_32` (approximately 32 m overview of
+DGM1, edition 2025H2, DHHN2016 physical heights, DL-DEZero 2.0) and BKG's
+GCG2016/2023 western quasigeoid (CCBY4.0, © Bundesamt für Kartographie und
+Geodäsie; retrieved 2026). [The manifest](../app/public/terrain/edfe-taunus-v1.json)
+pins raw source hashes, returned affine metadata, derived byte hash and tool
+versions. Source data are resampled, not replaced with generated heights; the
+native callback and renderer share SW–NE triangles while ellipsoid conversion
+remains outside dynamics. The combined binary is 8,405,000bytes; no external
+terrain service or GIS runtime is used in flight. BKG attribution and the full
+[license](../LICENSES/CC-BY-4.0.txt) are retained. The compiler's pinned
+numpy 1.26.4/pyproj3.7.2/rasterio1.4.3 dependencies are authoring-only; no installed
+GIS binaries or downloaded source archives are committed.
+
+A sharper 3000×1800airport photograph is bundled with its own
+[DL-DEZero source/request/hash record](../app/public/imagery/DETAIL-SOURCE.json).
+Its effective output pixels are approximately 0.74–0.76m, distinct from 20 cm source
+DOP20 resolution. Farther regional shading is explicitly derived from the DEM,
+not invented satellite photography. Full-resolution tiled imagery/terrain and
+complete 100 NM coverage remain later work.
+
+The KAP 140 operating model adds project-authored worker modules `kap140.js` and
+`navigation.js` (twelve allowlisted runtime files in total, including the independent altitude alerter). The prepared
+`c172ap.xml` preserves upstream gains/notices and records source/prepared hashes;
+generated aircraft/runtime files remain local and are not redistributed. Native
+VS/ALT output is separate from the legacy engine/AP group. Manufacturer manuals
+are source references only: no PDF, figure or extract is bundled. See
+[autopilot research](research/2026-11-03-kap140.md) for inspected editions/rights.
+
+## Historical Rhein-Main navigation snapshot
+
+`app/public/navdata/` adds local source-derived NAV810 data, not an npm dependency
+or live service. Source cycle 2013.10/build20131334, FlightGear fgdata commit
+`5371094f6cc81d39b5cc7d9052ba13ba4a8b8e95`, gzip SHA-256
+`24cfae74114d43586a5816029bb2ddeeeb1a0b6b4472b4ce775d7d748898b839`.
+Robin A. Peel copyright 2013/GPL-2.0-or-later is retained, with corresponding source
+subset and full license. Derived units/encoding/explicit component pairing and
+compiler hash are recorded in the JSON; manifest binds runtime bytes. This is a
+GPL-compatible copyleft data component, selected because the inspected permissive
+OurAirports inventory lacks ILS components. No proprietary AIS data is copied.
+The community OurAirports EDDF anchor is public domain and is not an official ARP.
+See [data provenance and reproduction](../app/public/navdata/README.md) and
+[independent source research](research/2026-11-03-rhein-main-navigation.md).
+
+## Regional orthophoto pyramid
+
+`app/public/imagery/rhein-main/` contains a bounded regional pyramid derived from
+Hessen HVBG `he_dop_rgb` orthophotography under DL-DE Zero 2.0. WMS EPSG:3857
+metatiles are resampled by the service, cropped and JPEG re-encoded; `SOURCES.json`
+records exact raw requests/hashes, and the manifest binds derived tile bytes.
+Capture dates remain unknown. Effective output is approximately 3.07 m at level 14
+and 1.54 m at level 15 near 50°N; the existing approximately 0.75 m EDFE overlay
+remains separate. No npm runtime dependency is added. The offline compiler uses
+Pillow 11.2.1 (MIT-CMU; authoring only), pinned in
+[requirements](../utils/imagery/requirements.txt), with the installed package's
+license retained. See [research/rights](research/2026-11-03-regional-textures.md)
+and [reproduction](../utils/imagery/README.md).
