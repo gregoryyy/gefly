@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { checkNavdata, workerNavdata } from './navdata-identity.ts';
+import { checkNavdata, eddfPracticeReady, workerNavdata } from './navdata-identity.ts';
 
 const a = 'a'.repeat(64), b = 'b'.repeat(64);
 const ui = (sha256: string | null, error: string | null = null) => ({ settled: true, sha256, error });
@@ -31,4 +31,13 @@ test('F55 malformed or missing worker reports never pass', () => {
 test('pending until both sides settle', () => {
   assert.deepEqual(checkNavdata({ settled: false, sha256: null, error: null }, workerNavdata({ navdata_sha256: a, navdata_error: null })), { status: 'pending' });
   assert.deepEqual(checkNavdata(ui(a), { settled: false, sha256: null, error: null }), { status: 'pending' });
+});
+
+test('EDDF practice setup runs only on a verified navdata match; otherwise ready degrades', () => {
+  assert.equal(eddfPracticeReady('eddf-ils', undefined, 'match'), 'apply');
+  assert.equal(eddfPracticeReady('eddf-ils', undefined, 'error'), 'degraded', 'restart with failing/changed navdata still reaches ready');
+  assert.equal(eddfPracticeReady('eddf-ils', undefined, 'pending'), 'degraded');
+  assert.equal(eddfPracticeReady('eddf-ils', 'normal', 'match'), 'none', 'landing presets never use the approach');
+  assert.equal(eddfPracticeReady('edfe', undefined, 'error'), 'none');
+  assert.equal(eddfPracticeReady('taunus', undefined, 'match'), 'none');
 });

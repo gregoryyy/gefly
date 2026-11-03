@@ -36,3 +36,14 @@ export function checkNavdata(ui: NavdataSide, worker: NavdataSide): NavdataCheck
   }
   return { status: 'match', sha256: ui.sha256 };
 }
+
+/**
+ * Ready-time EDDF practice decision. The historical approach configuration is
+ * applied only when both sides verifiably use the same package ('match');
+ * otherwise the flight starts without regional guidance and the navdata alert
+ * stays visible, so the session still reaches Paused.
+ */
+export function eddfPracticeReady(site: string, landingPreset: unknown, check: NavdataCheck['status']): 'apply' | 'degraded' | 'none' {
+  if (site !== 'eddf-ils' || landingPreset) return 'none';
+  return check === 'match' ? 'apply' : 'degraded';
+}

@@ -29,7 +29,8 @@ interface and tests) and housekeeping (records, licences, README) subagents.
     - navdata hashes are compared, with a visible fail-closed alert;
     - an imagery failure notice and a cancellable, bounded tile queue;
     - audio retry is bounded, and the sound-off hint is visible.
-  - **Cockpit CSS:** keycaps 10 px, labels at least 7 px, cascade cleanup.
+  - **Cockpit CSS:** keycap button text 10 px (key glyph 8 px, 18 px high at scale 1),
+    labels at least 7 px at scale 1 (about 5.6 px effective at 390 px), cascade cleanup.
   - **Tests:** the missing-engine smoke test derives the worker's static import graph.
   - **Rights labels:** the app source objects carry `rights: unresolved (GAPS Q24)`.
 - **housekeeping** (F4, F5, F19, F20, F32, F33, F34, F42–F44, F51–F53, F56):

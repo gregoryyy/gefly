@@ -27,7 +27,7 @@ import { createFlightReviewControls } from './flight-review-controls';
 import { applyControlSettings, DEFAULT_CONTROL_SETTINGS, type ControlSettings } from './control-settings';
 import { createControlSettingsPanel } from './control-settings-panel';
 import { reviewKeyAction, snapReviewTime } from './review-transport';
-import { checkNavdata, workerNavdata, type NavdataSide } from './navdata-identity';
+import { checkNavdata, eddfPracticeReady, workerNavdata, type NavdataCheck, type NavdataSide } from './navdata-identity';
 import { pilotAxes, recordedControlView, recordedHeldKeys } from './pilot-controls';
 import type { Controls, FlightState, FlightScene, LandingPreset, AirborneSite } from './types';
 import type { PracticeMap } from './practice-map';
@@ -227,15 +227,21 @@ const session = createSession({
   },
   onReady(trim, reply?: { navdata_sha256?: string | null; navdata_error?: string | null }) {
     // session.ts forwards the worker's ready {navdata_sha256, navdata_error}; undefined = older worker.
-    engineNavdata = workerNavdata(reply); applyNavdataCheck();
+    engineNavdata = workerNavdata(reply); const navdataStatus = applyNavdataCheck();
     ready = true; failed = false; throttle = trim.throttle;
     pitchTrimTarget = Math.abs(trim.pitch_trim) <= 1 ? trim.pitch_trim : null;
     el<HTMLInputElement>('throttle').value = String(throttle * 100);
     notice(!landingPreset && trim.status !== 1 ? 'Initial trim did not converge. Handling may be unstable; restart if needed.' : '');
-    if (airborneSite === 'eddf-ils' && !landingPreset) {
-      const approach = eddfApproachPractice(getNavigationCatalogue());
-      radioPanel.setConfiguration(approach.navigation);
-      session.setKap140({action:'heading', value: approach.ic.heading_rad});
+    const eddf = eddfPracticeReady(airborneSite, landingPreset, navdataStatus);
+    if (eddf === 'apply') {
+      try {
+        const approach = eddfApproachPractice(getNavigationCatalogue());
+        radioPanel.setConfiguration(approach.navigation);
+        session.setKap140({action:'heading', value: approach.ic.heading_rad});
+      } catch { notice('EDDF 25C practice guidance unavailable; flying without the historical approach setup.'); }
+    } else if (eddf === 'degraded') {
+      // The visible navdata alert explains why; the flight still becomes ready (Paused).
+      notice('EDDF 25C practice guidance disabled: navigation data is unavailable or does not match.');
     }
     publishInput();
     if (startWhenReady && !document.hidden && !sceneFailed) { startWhenReady = false; startFlight(); }
@@ -378,7 +384,7 @@ const radioPanel = createRadioNavPanel({
 let uiNavdata: NavdataSide = { settled: false, sha256: null, error: null };
 let engineNavdata: NavdataSide = { settled: false, sha256: null, error: null };
 let loadedCatalogue: ReturnType<typeof getNavigationCatalogue> = null;
-function applyNavdataCheck(): void {
+function applyNavdataCheck(): NavdataCheck['status'] {
   const check = checkNavdata(uiNavdata, engineNavdata);
   document.querySelector<HTMLElement>('.flight-app')!.dataset.navdata = check.status;
   // Fail closed on an error. While a restarted worker is pending, keep the UI
@@ -388,6 +394,7 @@ function applyNavdataCheck(): void {
   el('navdata-error').hidden = check.status !== 'error';
   el<HTMLButtonElement>('eddf-ils-practice').disabled = reviewing || check.status !== 'match';
   radioPanel.update(latest, reviewing, controlsAvailable(), running);
+  return check.status;
 }
 void loadNavigationPackage().then(pkg => {
   // loadNavigationPackage verifies the SHA-256 (crypto.subtle) of the exact bytes it fetched.
