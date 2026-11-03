@@ -26,7 +26,7 @@ data rights remain separate from the GPL project license.
 
 ## Current README capture
 
-`gefly-flight-map.png` was refreshed on 2026-11-03 using the actual application
+`gefly-systems-cockpit-flight-map.png` was refreshed on 2026-11-03 using the actual application
 in Chrome 156.0.8078.80 at 1920×1080. It shows the latest left systems panel,
 six-pack/NAV instruments, engine, KAP 140/flap/trim and radio columns, a visible
 horizon in chase view, and the public map centered around Egelsbach (EDFE).

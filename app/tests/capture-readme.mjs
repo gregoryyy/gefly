@@ -65,7 +65,7 @@ try {
     pathPoints: document.querySelector('#practice-map-panel').dataset.pathPoints,
     labels: [...document.querySelectorAll('.practice-map-airport-marker')].map(e => e.textContent),
     status: document.querySelector('#status').textContent }));
-  await page.screenshot({ path: fileURLToPath(new URL('../../docs/images/gefly-flight-map.png', import.meta.url)) });
+  await page.screenshot({ path: fileURLToPath(new URL('../../docs/images/gefly-systems-cockpit-flight-map.png', import.meta.url)) });
   await writeFile(new URL('../../output/flight/readme-latest-panel.json', import.meta.url), JSON.stringify({ ...evidence, failures, browser: browser.version(), viewport: '1920x1080', generated: new Date().toISOString() }, null, 2));
   console.log(JSON.stringify(evidence, null, 2));
 } finally { await browser?.close(); server.kill(); }

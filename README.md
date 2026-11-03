@@ -26,9 +26,10 @@ support commercial maps and charts, hosting and AI features.
 
 See the [vision and roadmap](docs/ROAD.md) for the full direction.
 
-![Gefly flying near Egelsbach with the latest cockpit panels, a visible horizon and a recorded flight path on the Egelsbach map](docs/images/gefly-flight-map.png)
+![Gefly flying near Egelsbach with the left-hand systems panel, latest cockpit controls, a visible horizon and a recorded flight path on the Egelsbach map](docs/images/gefly-systems-cockpit-flight-map.png)
 
-Live prototype flight near Egelsbach: the latest cockpit panels, horizon and
+Live prototype flight near Egelsbach: systems switches and electrical gauges on
+the far left, the latest cockpit panels, horizon and
 actual flown trajectory on the right-side map.
 [Screenshot provenance and credits](docs/images/README.md).
 
