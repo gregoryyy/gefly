@@ -55,6 +55,54 @@ change: selecting altitude while engaged auto-arms capture. Check ALT ARM and
 press ARM only if absent; pressing it again disarms. Correct the handbook and
 retain the original question plus explanation correction as separate input records.
 
+## 2026-11-03 09:20 — Expanded product vision and roadmap
+
+TODO: 0.22 complete for documentation capture and consistency only.
+Agent: Codex orchestrator integrates SPEC/licensing interpretation, decision
+history, task status and publication. `road_vision_product` refines ROAD;
+`road_vision_housekeeping` records the original input and updates IDEA in parallel;
+`road_vision_validate` independently reviews documentation quality and validates
+coverage. Cross-provider peer remains pending under the existing cadence.
+
+**Implementation notes**
+
+Record the full user roadmap and align ROAD, IDEA and confirmed direction:
+maximum practical browser realism with minimal prerequisites, just-fly through
+licence exercises, instruments/procedures and professional references. Cover
+community flying/contributions/forum; open-platform partnerships and candidate
+financing; coherent weather/traffic; navigation/planning/terrain-projected markers;
+COM1/COM2; HUD/transparent instruments/phone orientation/checklists; and regional
+Hessen-to-open-DACH-to-later-world expansion. Include the named source candidates,
+Google Earth discussion and procedural/semantic/geotypical scenery research.
+
+Keep the free version free and GPL-3.0-or-later. Record optional premium licensed
+map/navigation services and AI-cost support without selecting prices, providers,
+contracts or a closed-source variant. Distinguish separately licensed service
+access from the non-proprietary bundled-asset policy; no restricted dataset is
+copied or licensed by this note. Correct stale region/navigation/autopilot status
+while preserving the existing first-exercise, aircraft, phase and licence gates.
+
+Independent review finds all ten user themes covered and no blocking
+quality/consistency issue. Local link/index and whitespace checks pass; see
+[review](reviews/2026-11-03-road-vision.md). No application code, dependencies,
+service configuration, project licence file or runtime acceptance changes.
+
+**Deviations**
+
+This is a roadmap update. Capabilities, partnerships, premium subscriptions and
+providers remain planned/candidates until individually scoped and verified.
+Existing bounded regional prototypes do not complete EDDF/100 NM or DACH coverage;
+no weather/traffic/communication service, community deployment, commercial rights
+or new qualification/training approval is claimed.
+
+**Insights**
+
+The optional commercial-service direction needs an explicit boundary from the
+open/free distribution policy. Recording that distinction now avoids treating a
+provider name or a roadmap idea as a redistribution grant or selected agreement.
+The roadmap preserves demonstrable increments rather than turning the full vision
+into an immediate implementation checklist.
+
 ## 2026-11-03 09:09 — Optional centered touchpad and persistent view
 
 TODO: 2.0.50 complete for the bounded R-INPUT-1/R-REVIEW-1 increment.

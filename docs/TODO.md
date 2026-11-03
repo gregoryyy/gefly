@@ -30,6 +30,8 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 - [x] 0.20 Select model size and reasoning effort per task by difficulty and risk (Q20); recorded in AGENTS, BOOT and the agent workflow.
 - [ ] 0.21 Run the reciprocal Claude peer review of Codex-authored work (PRs #27–#30: 1.3.1, 1.5.2, 1.14, 1.15, 2.0) through the router with a frozen packet; required with 0.19 before milestone 1 acceptance. First run 2026-11-02: #27/#29 accept, #28a fixed after changes_required; #28b and #30 blocked on withheld material and need renewed packets ([report](reviews/2026-11-01-codex-prs-27-30-peer.md)).
 
+- [x] 0.22 Reconcile the expanded browser-realism vision, planned capability tracks, community/partnership/financing directions and open DACH/world strategy in ROAD, IDEA and SPEC. Preserve the permanently free/open baseline and scope optional commercial services separately; no new runtime acceptance. [Input](input/2026-11-03-road-vision.md). Independent documentation quality/coverage review and link/index checks pass. [Review](reviews/2026-11-03-road-vision.md). Future capability implementation remains in ROAD; cross-provider peer pending.
+
 ## 1. Foundation
 
 - [ ] 1.1 Add stack-appropriate quality gates and CI with reproducible local equivalents; extend the repository-tool gate for the selected TypeScript/browser stack as product implementation is added. Q6 publication is resolved.

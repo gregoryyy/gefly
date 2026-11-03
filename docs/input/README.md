@@ -90,3 +90,4 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [Stall, terrain and autopilot-disconnect warnings](2026-11-03-flight-warnings.md) — visual flight warnings and AP-off audio request.
 - [Autopilot altitude-selection clarification](2026-11-03-autopilot-altitude-clarification.md) — question about moving to a new selected altitude; document existing ALT/VS/ARM behavior.
 - [Autopilot capture-arming correction](2026-11-03-autopilot-altitude-correction.md) — source check corrects the explanation: selecting altitude auto-arms while engaged; ARM is a toggle.
+- [Expanded product vision and roadmap](2026-11-03-road-vision.md) — experience levels, community, open partnerships, free/premium financing, weather, traffic, navigation, COM, controls and open DACH/world expansion.
