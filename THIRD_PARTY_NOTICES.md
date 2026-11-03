@@ -38,8 +38,10 @@ Original Gefly material is licensed GPL-3.0-or-later (user decision,
 above remains applicable to the identified derived files. Separately licensed
 dependencies, data and assets keep their own terms.
 
-No aircraft manuals/models, charts, JSBSim/FlightGear code,
-community add-ons or LLM runtime libraries have been bundled. Public terrain, orthophotography and historical navigation data are the separately licensed geographic data described below. Research links are
+No aircraft manuals, aircraft model files, charts, JSBSim/FlightGear code,
+community add-ons or LLM runtime libraries have been bundled. Individual numerical
+values extracted from a manual and from JSBSim aircraft data do ship in the
+application source; their rights basis is unresolved, as described below. Public terrain, orthophotography and historical navigation data are the separately licensed geographic data described below. Research links are
 references, not grants to reuse those materials. Future additions retain their
 own source, applicability and rights review in [SBOM](docs/SBOM.md).
 
@@ -47,7 +49,7 @@ own source, applicability and rights review in [SBOM](docs/SBOM.md).
 
 The application bundles three.js 0.187.0, Copyright © 2010–2026 three.js authors, under the MIT license. The complete notice is retained in [LICENSES/three-MIT.txt](LICENSES/three-MIT.txt). Vite, TypeScript, type declarations and Playwright are development/test dependencies with their licenses retained in installed packages; see [SBOM](docs/SBOM.md) and the locked dependency inventory. JSBSim and its generic study aircraft data are built locally under the existing study terms and are excluded from tracked/public application artifacts.
 
-CesiumJS 1.146.0, Copyright 2011–2026 CesiumJS Contributors, is used under Apache-2.0; see [the full notice](LICENSES/Cesium-Apache-2.0.txt). UI builds retain its package-provided license and third-party inventories beside the copied static assets. The unmodified Hessen HVBG starter photograph is bundled under DL-DE Zero 2.0, with source bounds, license, request and byte hash in [its provenance record](app/public/imagery/SOURCE.json), plus visible attribution and ellipsoid-surface limitations. See [SBOM](docs/SBOM.md).
+CesiumJS 1.146.0, Copyright 2011–2026 CesiumJS Contributors, is used under Apache-2.0; see [the full notice](LICENSES/Cesium-Apache-2.0.txt). UI builds retain its package-provided license and third-party inventories beside the copied static assets. Two unmodified Hessen HVBG ATKIS DOP20 photographs are bundled under DL-DE Zero 2.0: the starter photograph `edfe-starter.jpg` and the coarse regional backdrop `edfe-overview.jpg`. [Their provenance record](app/public/imagery/SOURCE.json) gives source bounds, license, request and byte hash for each. Retrieval time and layer edition were not recorded; only an upper bound, the first commit time, is given. Visible attribution and ellipsoid-surface limitations accompany them. See [SBOM](docs/SBOM.md).
 
 MapLibre GL JS 6.16.0, Copyright (c) 2023 MapLibre contributors, is used under BSD-3-Clause. The [complete license](LICENSES/MapLibre-BSD-3-Clause.txt) is retained; UI builds copy the package notice to MapLibre-LICENSE.txt. MapLibre uses bundled HVBG photographs, the community airport inventory and the fixed-source live scenery endpoints inventoried below.
 
@@ -69,6 +71,8 @@ or surveyed aerodrome accuracy is implied.
 The additional 3000×1800 Hessen DOP20 airport JPEG is an unmodified public WMS
 GetMap response, under DL-DE Zero 2.0. Its [separate source record](app/public/imagery/DETAIL-SOURCE.json)
 retains bounds, request, byte hash and approximately 0.74–0.76 m output pixels.
+Its retrieval time and layer edition were not recorded; the record gives the
+first commit time as an upper bound.
 The original 20 cm source resolution is not a claim of 20 cm output detail.
 
 ## Historical radio navigation data
@@ -83,7 +87,45 @@ public data. Gefly selects regional rows, explicitly pairs components and conver
 units/encoding; it does not update their historical applicability. See the
 [data README](app/public/navdata/README.md) and
 [source research](docs/research/2026-11-03-rhein-main-navigation.md).
-The provisional EDDF extent anchor is from OurAirports' public-domain data.
+The provisional EDDF extent anchor (50.026706, 8.55835) is the EDDF row (id 2212)
+of OurAirports `airports.csv` at repository commit
+`72322ae9555947b969dda8effa793072159a9a1e`, SHA-256
+`e869f2a5c500aa0a5c74c680559c4e3ab7e65c7a442daa7c92b7f99fb51613ca`, retrieved
+2026-11-03. That data is released into the public domain (the repository uses the
+Unlicense). It is a community point, not a verified official ARP; the JSON
+`region.center_source_record` repeats these details.
+
+## Authoring-only Python packages
+
+The offline terrain and imagery compilers use packages pinned in
+`utils/terrain/requirements.txt` and `utils/imagery/requirements.txt`:
+numpy 1.26.4 (BSD-3-Clause), pyproj 3.7.2 (MIT), rasterio 1.4.3 (BSD-3-Clause)
+and Pillow 11.2.1 (MIT-CMU), per their PyPI metadata (read 2026-11-03).
+Binary wheels of pyproj and rasterio can include PROJ, GDAL and other native
+libraries under their own licenses. None of these packages or libraries is
+redistributed with Gefly; only their outputs are.
+
+## Aircraft reference values in the application (rights unresolved)
+
+The application source ships individual numerical values, not documents:
+
+- From the Cessna 1982 Model 172P POH, read from a third-party-hosted scan:
+  KCAS limits, stall speeds, CG limits, load factors and VA values, in
+  `app/src/aircraft-handbook-data.ts` and `app/src/airspeed-markings.ts`.
+  This manual is copyrighted. No text, table, figure or page image is copied.
+- From JSBSim `v1.3.3` aircraft and engine data: c172x contact coordinates,
+  span, AERORP, alpha limit and tank capacity, `eng_io320.xml` maximum RPM, and
+  the `FGTank.cpp` default fuel density. These are in
+  `app/src/aircraft-handbook-data.ts`, `app/src/spatial-stall.ts` and
+  `app/src/c172x-instrument-references.ts`. `c172x.xml` declares an unversioned
+  "GPL" license with "not to be sold" terms. `eng_io320.xml` has no notice, and
+  the JSBSim repository is LGPL-2.1.
+
+No recorded user decision, permission or rights analysis covers shipping these
+values yet. The facts-only allowances in GAPS Q5/Q7 name the selected 172S POH
+and other specific sources, not this C172P POH or JSBSim data. See [the handbook research](docs/research/2026-11-02-c172p-handbook-diagrams.md),
+[the airspeed research](docs/research/2026-11-02-c172p-airspeed-markings.md) and
+[SBOM](docs/SBOM.md). This is not a legal opinion.
 
 ## Regional orthophoto tiles
 

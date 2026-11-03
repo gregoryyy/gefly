@@ -7,11 +7,20 @@ import { NAVIGATION_FIELDS, validNavigation } from '../../studies/e1-browser/sim
 import { ALERT_FIELDS, validAlertState, KAP_FIELDS, validKapState, TERRAIN_FIELDS, validTerrainState, COLLISION_FIELDS, validCollisionState, STALL_FIELDS, validStallState, CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, ENGINE_SWITCH_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
 import type { Controls, FlightSession, FlightState, LandingPreset, AirborneSite } from './types';
 
+/** Worker navdata identity from `ready` (see studies/e1-browser/sim/README.md).
+ * `undefined` means an older worker that does not report it. */
+export interface NavdataIdentity {
+  /** Lowercase hex SHA-256 of the exact package bytes the worker loaded, or null. */
+  navdata_sha256: string | null | undefined;
+  /** Worker navdata load failure, or null. */
+  navdata_error: string | null | undefined;
+}
+
 interface SessionCallbacks {
   onState(state: FlightState): void;
   onTerrainTile?(grid: TerrainGrid & {slot:number}): void;
   onTerrainLoading?(loading: boolean): void;
-  onReady(trim: { throttle: number; pitch_trim: number; status: number }): void;
+  onReady(trim: { throttle: number; pitch_trim: number; status: number }, navdata: NavdataIdentity): void;
   onStatus(status: string): void;
   onError(message: string): void;
 }
@@ -160,12 +169,19 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
           fail('The aircraft returned invalid trim settings.');
           return;
         }
+        const sha = m.navdata_sha256, navError = m.navdata_error;
+        if (!(sha === undefined || sha === null || (typeof sha === 'string' && /^[0-9a-f]{64}$/.test(sha)))
+          || !(navError === undefined || navError === null || (typeof navError === 'string' && navError.length > 0 && navError.length <= 500))
+          || (typeof sha === 'string' && typeof navError === 'string')) {
+          fail('The flight worker returned an invalid navigation database identity.');
+          return;
+        }
         clearTimeout(loadTimer);
         loadTimer = undefined;
         ready = true;
         const result = { throttle: trim.throttle as number, pitch_trim: trim.pitch_trim as number, status: trim.status as number };
         if (!userControls) controls = { ...controls, throttle: result.throttle };
-        callbacks.onReady(result);
+        callbacks.onReady(result, { navdata_sha256: sha as string | null | undefined, navdata_error: navError as string | null | undefined });
         // Callbacks may pause, reset or dispose the session.
         if (disposed || worker !== current) return;
         if (wantedRunning) run();
@@ -193,6 +209,9 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
     let approach: ReturnType<typeof eddfApproachPractice> | null = null;
     try { if (airborneSite === 'eddf-ils' && !landingPreset) approach = eddfApproachPractice(getNavigationCatalogue()); }
     catch { fail('Historical approach source unavailable. Reload before selecting EDDF practice.'); return; }
+    // Every mode requests the regional database so tuned NAV sources match the
+    // instruments; a worker load failure degrades NAV and is reported in ready
+    // (navdata_error) instead of stopping the flight.
     current.postMessage({
       ...(approach ? { navigation: approach.navigation } : {}),
       type: 'init', kap140: true, regional_navigation: true, streaming_terrain: landingPreset === undefined, terrain: landingPreset === undefined, ...(landingPreset ? { landing_preset: landingPreset } : {}), ground_collision: true, dt_s: 1 / 120, aircraft: 'c172x', state_hz: 60,

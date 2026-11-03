@@ -2,6 +2,8 @@ import type { FlightState } from './types';
 import { bearingDistanceIndication, navigationIndication, validRadioNavSnapshot } from './radio-nav';
 import { C172X_MAX_RPM } from './c172x-instrument-references';
 import './navigation-gauges.css';
+import { flightNote } from './cockpit-views';
+import { obsDragDelta_deg, obsHoldStep_deg, OBS_DRAG_PX_PER_DEG } from './nav-input';
 
 interface NavigationGaugesOptions {
   container: HTMLElement;
@@ -14,7 +16,6 @@ const DEG = Math.PI / 180;
 // UI gesture rates only; these do not calibrate an installed aircraft OBS knob.
 const OBS_HOLD_DELAY_MS = 350;
 const OBS_REPEAT_MS = 100;
-const OBS_DRAG_PX_PER_DEG = 4;
 const svgPoint = (radius: number, degrees: number): [number, number] => [
   120 + radius * Math.sin(degrees * DEG), 120 - radius * Math.cos(degrees * DEG),
 ];
@@ -89,7 +90,7 @@ function rpmFace(): string {
 
 /** Four original displays over the shared signal model, not ADF/NDB reception. */
 export function createNavigationGauges(options: NavigationGaugesOptions): {
-  update(state: Readonly<FlightState> | null, reviewing: boolean, running: boolean): void;
+  update(state: Readonly<FlightState> | null, reviewing: boolean, running: boolean, flying?: boolean): void;
   dispose(): void;
 } {
   const { container } = options;
@@ -170,7 +171,7 @@ export function createNavigationGauges(options: NavigationGaugesOptions): {
     if (!canAdjust || disposed) { stopInteraction(); return; }
     if (interaction?.kind !== 'hold') return;
     const elapsed_ms = performance.now() - interaction.started_ms;
-    const degrees = elapsed_ms >= 2000 ? 5 : elapsed_ms >= 1000 ? 3 : 1;
+    const degrees = obsHoldStep_deg(elapsed_ms);
     options.onObs(interaction.receiver, interaction.direction * degrees);
     // A callback can synchronously pause, close or dispose the control.
     if (interaction?.kind === 'hold' && canAdjust && !disposed) repeatTimer = setTimeout(repeat, OBS_REPEAT_MS);
@@ -199,13 +200,11 @@ export function createNavigationGauges(options: NavigationGaugesOptions): {
     if (!canAdjust || disposed) { stopInteraction(); return; }
     if (interaction.kind !== 'drag' || !Number.isFinite(event.clientX)) return;
     event.preventDefault();
-    const total_deg = Math.trunc((event.clientX - interaction.startX) / OBS_DRAG_PX_PER_DEG);
-    if (!Number.isSafeInteger(total_deg)) return;
-    // Retain the entire pointer displacement, then send only its equivalent
-    // course change. A captured 390-degree move must turn 30 degrees whether
-    // the browser delivers one event or many; clamping loses that remainder.
-    const delta_deg = (total_deg % 360 - interaction.applied_deg % 360) % 360;
-    interaction.applied_deg = total_deg;
+    // Whole-displacement accounting lives in nav-input.ts (unit tested).
+    const drag = obsDragDelta_deg(interaction.startX, event.clientX, interaction.applied_deg, OBS_DRAG_PX_PER_DEG);
+    if (!drag) return;
+    const { delta_deg } = drag;
+    interaction.applied_deg = drag.total_deg;
     if (!delta_deg) return;
     options.onObs(interaction.receiver, delta_deg);
   }
@@ -248,7 +247,7 @@ export function createNavigationGauges(options: NavigationGaugesOptions): {
   dialog.addEventListener('close', close); media.addEventListener('change', layout);
   layout();
 
-  function update(state: Readonly<FlightState> | null, reviewing: boolean, running: boolean): void {
+  function update(state: Readonly<FlightState> | null, reviewing: boolean, running: boolean, flying = false): void {
     if (disposed) return;
     const config = state && validRadioNavSnapshot(state) ? state : null;
     canAdjust = !!config && running && !reviewing;
@@ -256,8 +255,7 @@ export function createNavigationGauges(options: NavigationGaugesOptions): {
     container.dataset.mode = reviewing ? 'recorded' : 'live';
     container.dataset.step = state ? String(state.step) : '';
     content.querySelectorAll<HTMLButtonElement>('button').forEach(button => { button.disabled = !canAdjust; });
-    dialog.querySelector('.navigation-dialog-note')!.textContent = reviewing ? 'Recorded NAV state · OBS controls are read-only.'
-      : running ? 'Flight continues while this panel is open.' : 'Flight is paused.';
+    dialog.querySelector('.navigation-dialog-note')!.textContent = flightNote(reviewing, flying, 'Recorded NAV state · OBS controls are read-only.');
     for (const gauge of gauges) {
       const { receiver } = gauge;
       const obs = config ? (receiver === 1 ? config.radio_obs_deg : config.radio_obs2_deg) : null;

@@ -78,3 +78,20 @@ export function collisionRecord(mask, step, t_s, previousGround) {
   return Object.freeze({ collision_mask: mask, collision_step: step, collision_t_s: t_s,
     collision_down_mps: previousGround.ground_down_mps, collision_groundspeed_mps: speed });
 }
+
+/** Published collision group. Contact telemetry that is disabled or unavailable
+ * is omitted, never reported as collision_mask 0 (a definitive "clear"). A
+ * latched first-contact record is always published. */
+export function collisionStateFields(enabled, available, latched) {
+  if (latched && latched.collision_mask) return latched;
+  return enabled === true && available === true ? EMPTY_COLLISION : {};
+}
+
+/** Outcome of one fixed-step sample. A detected contact is never dropped: with
+ * no valid record (missing/non-finite pre-step motion) the result is "fail". */
+export function contactOutcome(contact, record) {
+  // An unavailable proxy sample can still carry an actual native structure
+  // contact (for example with an invalid terrain plane); that contact counts.
+  if (contact && contact.mask) return record ? 'latch' : 'fail';
+  return contact && contact.available === true ? 'clear' : 'unavailable';
+}

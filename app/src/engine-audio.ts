@@ -1,5 +1,5 @@
 import type { FlightState } from './types';
-import { engineAudioParameters, type EngineAudioParameters } from './engine-audio-parameters';
+import { engineAudioParameters, type EngineAudioParameters } from './engine-audio-parameters.ts';
 
 export interface EngineAudioStatus {
   supported: boolean;
@@ -14,6 +14,19 @@ export interface EngineAudioGraph {
   hasAlertSound(): boolean;
   dispose(): void;
 }
+/**
+ * Visible sound status. The default state is muted and locked; it shows how to
+ * enable sound (S) instead of a bare "Muted" (R-AUDIO-1).
+ */
+export function audioStatusLabel(status: EngineAudioStatus): string {
+  if (!status.supported || status.state === 'disposed') return 'Unavailable';
+  if (status.state === 'unavailable') return 'Activation unavailable · retry sound button';
+  if (!status.unlocked) return status.muted ? 'Sound off · press S to enable' : 'Press S to enable';
+  if (status.muted) return 'Muted · press S to unmute';
+  if (status.volume === 0) return 'Volume 0%';
+  return status.state === 'playing' ? 'Playing' : 'Ready · paused';
+}
+
 const clampVolume = (value: number) => Math.min(1, Math.max(0, value));
 
 /** The same fixed original graph is used for playback and offline audio review. */
@@ -193,7 +206,15 @@ export function createEngineAudioGraph(context: BaseAudioContext): EngineAudioGr
 }
 
 /** No context, permission request or sound is created before explicit unlock(). */
-export function createEngineAudio(options: { onStatus?: (status: EngineAudioStatus) => void } = {}): {
+/** Bound for one resume() attempt. Browsers may leave resume() pending without activation. */
+export const AUDIO_RESUME_TIMEOUT_MS = 3000;
+
+export function createEngineAudio(options: {
+  onStatus?: (status: EngineAudioStatus) => void;
+  /** Test seam; defaults to the browser AudioContext. */
+  AudioContext?: typeof AudioContext | null;
+  resumeTimeout_ms?: number;
+} = {}): {
   unlock(): Promise<void>;
   update(state: Readonly<FlightState> | null, playing: boolean): void;
   setMuted(value: boolean): void;
@@ -201,8 +222,9 @@ export function createEngineAudio(options: { onStatus?: (status: EngineAudioStat
   getStatus(): EngineAudioStatus;
   dispose(): void;
 } {
-  const AudioContextConstructor = globalThis.AudioContext
+  const AudioContextConstructor = options.AudioContext !== undefined ? options.AudioContext ?? undefined : globalThis.AudioContext
     ?? (globalThis as typeof globalThis & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  const resumeTimeout_ms = Number.isFinite(options.resumeTimeout_ms) && options.resumeTimeout_ms! > 0 ? options.resumeTimeout_ms! : AUDIO_RESUME_TIMEOUT_MS;
   let context: AudioContext | null = null, graph: EngineAudioGraph | null = null;
   let unlocking: Promise<void> | null = null;
   let parameters = engineAudioParameters(null), playing = false, muted = true, volume = .3;
@@ -219,16 +241,29 @@ export function createEngineAudio(options: { onStatus?: (status: EngineAudioStat
     if (signature !== lastStatus) { lastStatus = signature; options.onStatus?.(current); }
   }
   function apply(): void { graph?.update(parameters, volume, playing && !muted && !failed && !disposed && context?.state === 'running'); notify(); }
-  function stateChanged(): void { apply(); }
+  // A late resume() that finally runs clears an earlier timeout/failure.
+  function stateChanged(): void { if (context?.state === 'running') failed = false; apply(); }
+  function resumeBounded(target: AudioContext): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('AudioContext.resume() did not settle')), resumeTimeout_ms);
+      target.resume().then(() => { clearTimeout(timer); resolve(); }, error => { clearTimeout(timer); reject(error); });
+    });
+  }
   notify();
   return {
     unlock() {
       if (disposed || !AudioContextConstructor) return Promise.resolve();
-      if (unlocking) return unlocking;
+      const Constructor = AudioContextConstructor;
+      if (unlocking) {
+        // Each trusted retry asks the existing context again; a pending first
+        // attempt is also bounded by resumeTimeout_ms, so retry never sticks.
+        if (context && context.state !== 'running') void context.resume().catch(() => {});
+        return unlocking;
+      }
       async function attempt(): Promise<void> {
         try {
           if (!context) {
-            const candidate = new AudioContextConstructor();
+            const candidate = new Constructor();
             try {
               graph = createEngineAudioGraph(candidate);
             } catch (error) {
@@ -240,7 +275,7 @@ export function createEngineAudio(options: { onStatus?: (status: EngineAudioStat
             context = candidate;
             context.addEventListener('statechange', stateChanged);
           }
-          await context.resume();
+          await resumeBounded(context);
           if (disposed) return;
           failed = context.state !== 'running';
         } catch { failed = true; }

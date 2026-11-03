@@ -1,4 +1,5 @@
 import type { FlightState } from './types';
+import { groundReactionView } from './cockpit-views';
 
 /** Actual generic-model ground reactions, with no invented damage thresholds. */
 export function createLandingFeedback(container: HTMLElement): {
@@ -14,23 +15,20 @@ export function createLandingFeedback(container: HTMLElement): {
   const element = (id: string) => container.querySelector<HTMLElement>(`#${id}`)!;
   return {
     update(state, recorded) {
-      const available = state?.ground_agl_m !== undefined;
-      container.hidden = !available || state.ground_agl_m! > 50;
-      if (!available) return;
-      element('ground-mode').textContent = recorded ? 'RECORDED' : 'LIVE';
-      element('ground-motion').textContent = `CG ${state.ground_agl_m!.toFixed(1)} m AGL · ↓ ${state.ground_down_mps!.toFixed(1)} m/s · side ${state.ground_side_mps!.toFixed(1)} m/s`;
-      for (const wheel of ['nose', 'left', 'right'] as const) {
-        const contact = state[`gear_${wheel}_wow`] === 1;
-        element(`gear-${wheel}-contact`).classList.toggle('contact', contact);
-        element(`gear-${wheel}-contact`).textContent = `${contact ? '●' : '○'} ${wheel.toUpperCase()}`;
-        element(`gear-${wheel}-load`).textContent = `${(state[`gear_${wheel}_load_n`]! / 1000).toFixed(1)} kN`;
-        element(`gear-${wheel}-compression`).textContent = `${(state[`gear_${wheel}_compression_m`]! * 1000).toFixed(0)} mm`;
-        element(`gear-${wheel}-slip`).textContent = `${(state[`gear_${wheel}_slip_rad`]! * 180 / Math.PI).toFixed(1)}°`;
+      const view = groundReactionView(state, recorded);
+      container.hidden = !view.visible;
+      if (!view.visible) return;
+      element('ground-mode').textContent = view.mode;
+      element('ground-motion').textContent = view.motion;
+      for (const wheel of view.wheels) {
+        element(`gear-${wheel.wheel}-contact`).classList.toggle('contact', wheel.contact);
+        element(`gear-${wheel.wheel}-contact`).textContent = wheel.label;
+        element(`gear-${wheel.wheel}-load`).textContent = wheel.load;
+        element(`gear-${wheel.wheel}-compression`).textContent = wheel.compression;
+        element(`gear-${wheel.wheel}-slip`).textContent = wheel.slip;
       }
-      const mask = state.structure_contact_mask!;
-      const contacts = [mask & 1 ? 'TAIL' : '', mask & 2 ? 'LEFT WINGTIP' : '', mask & 4 ? 'RIGHT WINGTIP' : ''].filter(Boolean);
-      element('ground-contact').textContent = contacts.length ? `STRUCTURE CONTACT: ${contacts.join(', ')}` : 'Wheels, tyre friction and spring/damper forces';
-      element('ground-contact').classList.toggle('structure-contact', !!mask);
+      element('ground-contact').textContent = view.contact;
+      element('ground-contact').classList.toggle('structure-contact', view.structureContact);
     },
     dispose() { container.replaceChildren(); },
   };

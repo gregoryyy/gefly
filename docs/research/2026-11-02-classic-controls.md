@@ -141,3 +141,14 @@ execution gating also freezes rather than resets filter history. These are
 integration reasons to keep the first AP roll-only, not to relabel it as a
 KAP 140, pressure-altitude hold or coupled navigation system. Throttle remains
 manual; reuse of existing gains does not establish aircraft-specific handling.
+
+## Rights and access addendum (2026-11-03 07:40 Europe/Berlin)
+
+Added by Claude Code housekeeping after Claude peer review F19 ([report](../reviews/2026-11-03-codex-prs-39-50-peer.md)). It does not change the findings above. "Not verified" means no licence or terms page was read for this note; it is not a claim that the source is restricted or free.
+
+| Source | Edition and access | Licence or rights | Use here |
+| --- | --- | --- | --- |
+| JSBSim source files (`FGKinemat`, `FGFCS`, `FGLGear`, `FGGroundReactions`, `FGAuxiliary`, `FGAccelerations`, `FGPiston`, `FGPropeller`, `FGEngine`, `FGPID`) | Tag `v1.3.3`; first recorded 2026-11-02 (commit `9a3bf01`); exact access time not recorded | JSBSim repository at tag `v1.3.3`: `COPYING` is the GNU LGPL version 2.1 (re-read 2026-11-03). Per-file headers were not re-read for this addendum. | Behaviour described in original words; no source code copied. |
+| `c172x.xml`, `systems/Autopilot.xml`, `c172x/c172ap.xml`, `engine/prop_75in2f.xml` | Tag `v1.3.3`; same dates | `aircraft/c172x/c172x.xml` (raw-byte SHA-256 `b736f4b7560d5aab4d2a69026798be1d369b2b2bb5ddcf627aebfd441ba71840`, re-fetched 2026-11-03) declares `GPL (General Public License)` with no version, "educational and entertainment purposes only" and "not to be sold"; the [E1 survey](2026-11-01-e1-engine-stack-candidates.md) rated it *not cleared, do not distribute*. `prop_75in2f.xml` (SHA-256 `6481edf1…7403`) carries no licence notice. | Model wiring is described. The study adapter edits a local copy only (see [SBOM](../SBOM.md)). Any value from these files that ships in the app falls under the open aircraft-data rights question (proposed GAPS entry, F34). |
+| FAA PHAK chapter 8 (web page and PDF) | Edition not recorded; access date not recorded | Not verified | Cite-only; concepts restated |
+| FAA Glider Flying Handbook, chapter 4, p. 4-19 | Edition not recorded; access date not recorded | Not verified | Cite-only; concepts restated |

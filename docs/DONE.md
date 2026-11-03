@@ -3,6 +3,47 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 10:21 — Resolve PR #52 against current main
+
+TODO: 0.21 integration follow-up; the batched peer findings remain open.
+Agent: Codex orchestrator owns the merge, package scripts and shared records.
+`resolve52_ui` and `resolve52_runtime` reconcile disjoint UI/runtime paths;
+`resolve52_records` preserves source documentation in parallel.
+`resolve52_quality` independently checks quality and specification behavior on
+the frozen source packet; this is not an external-provider peer acceptance.
+
+**Implementation notes**
+
+Merge main `a655bc9` into PR #52 head `eb7e5b7`. Preserve receiver-package
+attestation, degraded EDDF startup, missing-data handling and bounded retry fixes
+alongside streamed terrain, the flight map, parking/rudder controls, centered
+touchpad and flight assists. Contact sampling uses the streamed terrain gradient.
+Combine live imagery fallback and whole-pyramid failure disclosure. Retain both
+parents' package commands and every complete historical DONE entry/body.
+Record the existing direct demonstrable-increments instruction with its recording
+date, resolving Q25 without inventing an original timestamp or new approval.
+
+Shared CI passes: 280 app, 84 assurance and 11 assessment cases; nine of 23 native
+study cases remain explicitly skipped. Fresh native build, native bridge check,
+TypeScript and production build pass. Actual-browser smoke, flight-assists and
+centered-touchpad suites pass. Independent review passes 140 focused unit tests
+and browser checks for unavailable/mismatched worker navigation, streamed region,
+native approach capture and parking/rudder controls. See the bounded
+[review and frozen packet](reviews/2026-11-03-pr52-conflicts.md).
+
+**Deviations**
+
+No full peer batch acceptance, missing-property/name-reordering native fault
+injection, aircraft fidelity or training approval is claimed. Q24 source rights,
+TODO 0.19/0.21 and reopened 1.14.1 remain unresolved. Browser map/photo pixels use
+local deterministic fixtures; native physics and DEM integration are actual.
+
+**Insights**
+
+Resolving text markers alone misses integration faults: the auto-merged contact
+helper still selected the old fine-only gradient. Combined runtime checks and
+explicit parent-by-parent record/script comparisons preserve behavior and history.
+
 ## 2026-11-03 09:09 — Optional centered touchpad and persistent view
 
 TODO: 2.0.50 complete for the bounded R-INPUT-1/R-REVIEW-1 increment.
@@ -172,6 +213,164 @@ from operational completeness. Correct the two previous entries' headings from
 07:51/07:30 to 06:51/06:30: their original UTC clock values were converted using
 UTC+2, while Europe/Berlin on 3 November is UTC+1. Their complete bodies and raw
 inputs are preserved.
+
+## 2026-11-03 08:35 — Close the quality review of the peer fixes (TODO 0.21)
+
+TODO: 0.21 in progress. Agent: Claude Code orchestrator; code2 subagent (fixes);
+quality subagent (two rounds, final verdict accept).
+
+**Implementation notes**
+
+- **Quality review:** confirmed the fixes from the 08:05 entry.
+- **Medium F55 regression, fixed:** EDDF ILS practice restarted with failing or
+  mismatched navdata threw inside `onReady` and left the session half-ready. The
+  approach setup now runs only on a navdata match, through `eddfPracticeReady`;
+  otherwise the flight starts without it and shows a notice.
+- **Runtime evidence:** the [record](reviews/2026-11-03-runtime-evidence.md) was taken at
+  main `b3a7538`, before the fixes, as a headless Linux software-rendering run, not
+  reference-platform acceptance.
+  - JSBSim WASM built with pinned emsdk and JSBSim commits.
+  - All native and engine tests passed, including 23 of 23 e1-jsbsim tests.
+  - 2 of 26 browser suites passed; 22 timed out at about 1 frame per second and count
+    as not evaluated.
+- **avionics-smoke:** its GS INOP failure was a stale test after PR #49's live GS flag;
+  it is updated.
+
+Checks: 240 app tests passed; `npm run check` passed; `utils/ci/run.py --require-node`
+exit 0 (e1-jsbsim 9 of 23 skipped); assure 0 errors.
+
+**Deviations**
+
+- Part of code2's in-progress fix was swept into the orchestrator's docs commit
+  `1205774` by a shared-worktree `git add -A`. The history is kept; the full fix spans
+  `1205774`, `e7be2c2` and `27c3810`.
+- Open low items:
+  - in degraded EDDF mode the worker keeps the approach NAV settings while the radio
+    panel does not show them (both warnings are visible);
+  - `bridge-native.mjs` does not exercise the NaN or name-binding paths;
+  - the fitted control column has −4.5 px slack at 1440 px.
+- Browser rows stay blocked until a GPU or reference-Mac run. Peer pending (Codex,
+  TODO 0.19).
+
+## 2026-11-03 08:05 — Fix the Claude peer-review findings for Codex PRs #39–#50 (TODO 0.21)
+
+TODO: 0.21 in progress; 1.14.1 reopened (F66; 1.14 stays ticked with an open-child warning); GAPS Q24 and Q25 opened.
+Agent: Claude Code orchestrator; code1 (simulation, worker and KAP 140), code2 (app
+interface and tests) and housekeeping (records, licences, README) subagents.
+
+**Implementation notes**
+
+- **code1** (F16, F24, F25, F39, F45–F50, F54, worker side of F55):
+  - **KAP 140:** a selector entry uses the page that was showing when entry started, so
+    a BARO entry never becomes an altitude. HDG survives cancelling an armed NAV. Loss
+    alerts clear on disconnect. Invalid sensors latch a generic `kap_sensor_fault` and
+    disconnect, labelled generic.
+  - **Collision:** contacts are matched by c172x name. When contact data is
+    unavailable the collision fields are omitted, never sent as `collision_mask: 0`. A
+    detected contact is never dropped.
+  - **Bridge:** missing properties become NaN, and the JS layer drops the whole group.
+  - **Worker:** `ready` reports `navdata_sha256`/`navdata_error`.
+- **code2** (F3, F7–F10, F21, F22, F27–F29, F31, F32, F36, F37, F40, F41, UI side of
+  F55, F57–F65, F67; F2, F13, F14, F26 already resolved):
+  - **Interface:**
+    - the rudder sign convention is recorded and tested;
+    - Review shows NO DATA for missing recorded fields;
+    - navdata hashes are compared, with a visible fail-closed alert;
+    - an imagery failure notice and a cancellable, bounded tile queue;
+    - audio retry is bounded, and the sound-off hint is visible.
+  - **Cockpit CSS:** keycap button text 10 px (key glyph 8 px, 18 px high at scale 1),
+    labels at least 7 px at scale 1 (about 5.6 px effective at 390 px), cascade cleanup.
+  - **Tests:** the missing-engine smoke test derives the worker's static import graph.
+  - **Rights labels:** the app source objects carry `rights: unresolved (GAPS Q24)`.
+- **housekeeping** (F4, F5, F19, F20, F32, F33, F34, F42–F44, F51–F53, F56):
+  - **Provenance:** imagery editions are recorded as unknown, the overview photo is in
+    the notices, research-note source tables are added, and the C172P POH and JSBSim
+    values are labelled "rights unresolved".
+  - **Audit:** a fresh npm audit (0 vulnerabilities, 07:36).
+  - **Notices:** Python package licences added.
+  - **Navdata:** the EDDF centre is pinned to an OurAirports record, with the first
+    builder tests.
+  - **README and SEC:** match the current controls.
+- **Orchestrator:** GAPS Q24 (rights basis, user decision) and Q25 (confirm the
+  increments rule from F6), the TODO 1.14.1 rewording, the CI-claim correction below,
+  and README behaviour notes.
+
+Checks: see the integration entry's PR. code1 ran native engine tests against a local
+engine build (landing-physics, autopilot-native, kap140-worker, navigation-worker,
+bridge-native and kap140-panel.browser passed). The full-app browser suites time out
+on a click in this container, and do so on unmodified main too, so they count as not
+evaluated.
+
+**Deviations**
+
+- The F55 fail-closed rule also disables regional guidance for an older local runtime;
+  rebuild it.
+- F61 keycaps are 18 px high (the column limit), short of the reviewer's ~24 px target.
+- The fixes are Claude-authored, so they go to the Codex review (TODO 0.19).
+
+## 2026-11-03 08:05 — Correct hosted-CI claims for PRs #43–#45 (TODO 0.21)
+
+TODO: 0.21 in progress; corrects records for 2.0.9 through 2.0.27. Agent: Claude Code
+orchestrator; housekeeping subagent.
+
+**Implementation notes**
+
+The CI claims in these entries were local results only:
+- 2026-11-02 18:32 (#43);
+- 20:06, 20:28, 20:50, 21:07 and 21:22 (#44);
+- 21:40 (#45).
+
+Hosted Foundation runs on main failed in the Browser application unit job at
+`src/field-of-view.test.ts:74` (AssertionError true !== false):
+- 41493487096 at `4a98ed5` (#43);
+- 41520958345 at `f857801` (#44);
+- 41522096307 at `f151204` (#45).
+
+`7610edc` (#46) fixed the test, and 41573985279 at `c852694` was the first green run.
+Those PRs merged on red hosted CI. The earlier entries are kept unchanged, and their
+local claims cannot be checked because no raw local output is tracked. See peer
+findings F11, F15, F18, F23, F30, F35 and F38 in the
+[peer review](reviews/2026-11-03-codex-prs-39-50-peer.md).
+
+**Deviations**
+
+None.
+
+## 2026-11-03 07:26 — Claude peer review of Codex PRs #39–#50 (TODO 0.21)
+
+TODO: 0.21 in progress. Agent: Claude Code orchestrator; peer dispatcher subagent;
+external reviewer: fresh Claude CLI 2.1.317 processes (model evidence
+`claude-opus-5-5`, not backend attestation) via `utils/peer_review.py`.
+
+**Implementation notes**
+
+- **Packets:** 27, frozen at `b3a7538`. They cover every changed path of PRs #39, #40,
+  #43, #44, #45, #46, #49 and #50, the Codex merge resolutions `5c49da8` and `5ef7357`,
+  cumulative CSS, and renewals of the 2026-11-01 #28b and #30 blocked rows.
+- **Runs:** a dry run, then a real run for each, with a 900 s timeout. No timeouts.
+- **Result:** 26 blocked, 1 changes_required. There were 6 high and 61 medium findings.
+  The dispatcher checked them all: 53 verified, 7 already resolved or of limited impact,
+  4 partly refuted, 3 refuted.
+- **High findings:**
+  - hosted CI was red for #43–#45 until `7610edc`, while their DONE entries claim CI
+    passed;
+  - no rights basis is recorded for the POH-scan and JSBSim-derived app values;
+  - a KAP 140 selector entry is read using whichever page is showing when it is
+    committed;
+  - the fitted-cockpit keycap text is 4 px.
+- **#28b renewal:** the AS8 DONE restoration passes; the 1.14.1 ownership record fails.
+- **#30 renewal:** stays blocked without a recorded engine build and `test:browser`
+  run.
+- **Gate:** the local gate passed (202 app tests; e1-jsbsim 9 of 23 skipped). Hosted
+  run 41579252408 on `b3a7538` passed.
+- **Report:** [peer review](reviews/2026-11-03-codex-prs-39-50-peer.md) and
+  [JSON](reviews/2026-11-03-codex-prs-39-50-peer.json).
+
+**Deviations**
+
+No browser or native run evidence is recorded, so the runtime criteria stay blocked.
+No fixes yet. The Claude-authored #32–#37 are excluded and left for the Codex review
+(TODO 0.19).
 
 ## 2026-11-03 06:51 — Streamed regional flights, quiet overlays and flight assists
 

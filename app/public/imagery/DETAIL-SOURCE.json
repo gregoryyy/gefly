@@ -18,6 +18,10 @@
   "height_px": 1800,
   "requestUrl": "https://www.gds-srv.hessen.de/cgi-bin/lika-services/ogc-free-images.ows?SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=he_dop_rgb&FORMAT=image%2Fjpeg&SRS=EPSG%3A4326&BBOX=8.628%2C49.954%2C8.660%2C49.966&WIDTH=3000&HEIGHT=1800",
   "sourceImageDate": null,
+  "sourceEdition": null,
+  "retrievedAt": null,
+  "retrievedNotLaterThan": "2026-11-03T00:32:34+01:00",
+  "revisionNote": "Retrieval time and layer edition were not recorded when the bytes were fetched. The live he_dop_rgb WMS layer has no time dimension, so the request URL does not identify an edition; repeating it may return different bytes. The sha256 identifies the bundled bytes only. Upper bound: first commit 0577dc4.",
   "source_ground_resolution_m": 0.2,
   "output_approx_ground_resolution_m": [
     0.76,

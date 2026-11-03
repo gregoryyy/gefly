@@ -297,6 +297,9 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     if (frame.path.length) start!.setLngLat(frame.path[0]).addTo(map);
     else start!.remove();
     if (following) map.jumpTo({ center: frame.position });
+    // Observable paint result for actual-browser checks; not navigation data.
+    container.dataset.pathPoints = String(frame.path.length);
+    container.dataset.markerHeadingDeg = frame.heading_deg.toFixed(1);
   }
 
   listen(zoomOut, () => { if (map) map.jumpTo({ zoom: Math.max(map.getMinZoom(), map.getZoom() - 1) }); });
@@ -318,17 +321,25 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   const controller: PracticeMap = {
     update(state, path, mode) {
       if (disposed) return;
+      modeLabel.textContent = mode === 'review' ? 'Recorded review' : 'Live';
       try {
         frame = makePracticeMapFrame(state, path);
-        modeLabel.textContent = mode === 'review' ? 'Recorded review' : 'Live';
-        const [longitude_deg, latitude_deg] = frame.position;
-        readout.textContent = `${Math.abs(latitude_deg).toFixed(4)}° ${latitude_deg < 0 ? 'S' : 'N'}  ${Math.abs(longitude_deg).toFixed(4)}° ${longitude_deg < 0 ? 'W' : 'E'}  ·  ${(Math.round(frame.heading_deg) % 360).toString().padStart(3, '0')}° true`;
-        if (ready && !failed) status.hidden = true;
-        paint();
       } catch {
+        // Invalid flight state: never keep a stale marker, path or readout on screen.
+        frame = undefined;
+        aircraft?.remove(); start?.remove();
+        if (ready && map) (map.getSource('recorded-path') as GeoJSONSource | undefined)?.setData({ type: 'FeatureCollection', features: [] });
+        readout.textContent = 'Aircraft position unavailable';
+        container.dataset.pathPoints = '0'; delete container.dataset.markerHeadingDeg;
         status.hidden = false;
         status.textContent = 'Map position unavailable: invalid flight state.';
+        return;
       }
+      const [longitude_deg, latitude_deg] = frame.position;
+      readout.textContent = `${Math.abs(latitude_deg).toFixed(4)}° ${latitude_deg < 0 ? 'S' : 'N'}  ${Math.abs(longitude_deg).toFixed(4)}° ${longitude_deg < 0 ? 'W' : 'E'}  ·  ${(Math.round(frame.heading_deg) % 360).toString().padStart(3, '0')}° true`;
+      if (ready && !failed) status.hidden = true;
+      // Render failures propagate so the host can dispose and offer a retry.
+      paint();
     },
     setVisible(value) {
       if (disposed) return;

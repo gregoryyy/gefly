@@ -85,3 +85,19 @@ An original top-view diagram uses X longitudinally and Y laterally, with Z in an
 accessible coordinate table. The origin is the model datum, not the CG. Modeled
 strut reaction is not structural stress or an accepted safe-load limit; this
 diagram adds no damage model or aircraft-geometry validation.
+
+## Rights basis addendum (2026-11-03 07:40 Europe/Berlin)
+
+Added by Claude Code housekeeping after Claude peer review F34 (high) and F32 ([report](../reviews/2026-11-03-codex-prs-39-50-peer.md)). It records the current rights position. It is not a legal opinion.
+
+**POH values: rights basis unresolved.** The values listed above ship as individual numbers in `app/src/aircraft-handbook-data.ts` and `app/src/airspeed-markings.ts`. They come from a Cessna-authored, copyrighted 1982 Model 172P handbook, read from a third-party-hosted scan of one airframe's POH (`cessna-n54829-poh.pdf`). They are shipped in the `facts_only` form of [CONTRACTS §10.5](../design/CONTRACTS.md): cited values with page references, and no copied text, tables, figures or page images.
+
+The recorded user allowances do not cover this document:
+- GAPS Q7 (2026-11-01 13:59) allows POH values to be extracted as cited facts.
+- GAPS Q5 (2026-11-02 07:36) accepts whole lists from the selected 172S POH (S17).
+
+Both decisions concern the selected 172S handbook. No recorded decision, publisher permission or rights analysis (factual-data copyright, EU database right) extends them to this C172P POH. Public hosting is not permission (R-DATA-1). Until the user decides, the values are labelled **rights unresolved**. A GAPS entry is proposed to the orchestrator.
+
+**JSBSim c172x values: rights basis unresolved.** The six contact coordinates ship in `app/src/aircraft-handbook-data.ts` (`C172P_GEAR_LAYOUT`). Their source, `c172x.xml` at tag `v1.3.3`, has SHA-256 `b736f4b7560d5aab4d2a69026798be1d369b2b2bb5ddcf627aebfd441ba71840`. Re-fetched on 2026-11-03, this hash matches the raw file bytes, not GitHub's HTML `blob` page. The file header declares `GPL (General Public License)` with no version, "educational and entertainment purposes only" and "not to be sold". The repository `COPYING` is LGPL-2.1.
+
+The [E1 survey](2026-11-01-e1-engine-stack-candidates.md) rated the file *not cleared, do not distribute*. GAPS Q17 says JSBSim's bundled aircraft data is not shipped. Shipping extracted values was not considered in either record. No analysis states whether individual coordinates carry the file's terms. The values are labelled **rights unresolved** and are part of the same proposed GAPS entry.

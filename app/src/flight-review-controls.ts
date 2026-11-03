@@ -1,14 +1,7 @@
 import './flight-review-controls.css';
+import { reviewTransportView, type ReviewTransportInput } from './review-transport';
 
-export interface ReviewTransportState {
-  available: boolean;
-  active: boolean;
-  playing: boolean;
-  start_s: number;
-  end_s: number;
-  current_s: number;
-  clipped: boolean;
-}
+export type ReviewTransportState = ReviewTransportInput;
 
 interface FlightReviewControlsOptions {
   buttonContainer: HTMLElement;
@@ -17,11 +10,6 @@ interface FlightReviewControlsOptions {
   onExit: () => void;
   onSeek: (t_s: number) => void;
   onTogglePlay: () => void;
-}
-
-function elapsedTime(seconds: number): string {
-  const whole = Math.floor(Math.max(0, seconds));
-  return `${String(Math.floor(whole / 60)).padStart(2, '0')}:${String(whole % 60).padStart(2, '0')}`;
 }
 
 /** Transport for recorded states. The caller owns time, frame selection and flight pause. */
@@ -93,18 +81,15 @@ export function createFlightReviewControls(options: FlightReviewControlsOptions)
       if (disposed) return;
       active = state.active;
       available = state.available;
-      button.disabled = !available;
+      const view = reviewTransportView(state);
+      button.disabled = view.triggerDisabled;
       button.classList.toggle('selected', active);
-      button.setAttribute('aria-pressed', String(active));
-      bar.hidden = !active;
-      play.textContent = state.playing ? 'Pause' : 'Play';
-      play.setAttribute('aria-label', state.playing ? 'Pause recorded flight' : 'Play recorded flight');
+      button.setAttribute('aria-pressed', String(view.pressed));
+      bar.hidden = view.barHidden;
+      play.textContent = view.playLabel;
+      play.setAttribute('aria-label', view.playAria);
       clipped.hidden = !state.clipped;
-
-      const start_s = Number.isFinite(state.start_s) ? state.start_s : 0;
-      const end_s = Number.isFinite(state.end_s) ? Math.max(start_s, state.end_s) : start_s;
-      const current_s = Number.isFinite(state.current_s)
-        ? Math.min(end_s, Math.max(start_s, state.current_s)) : start_s;
+      const { start_s, end_s, current_s } = view;
       const boundsChanged = slider.min !== String(start_s) || slider.max !== String(end_s);
       if (boundsChanged) {
         slider.min = String(start_s);
@@ -113,13 +98,9 @@ export function createFlightReviewControls(options: FlightReviewControlsOptions)
       // Leave the native range untouched when the selected time has not changed.
       if (boundsChanged || current_s !== lastCurrent_s) slider.value = String(current_s);
       lastCurrent_s = current_s;
-      slider.disabled = end_s <= start_s;
-      play.disabled = end_s <= start_s;
-      const elapsed = elapsedTime(current_s - start_s);
-      const duration = elapsedTime(end_s - start_s);
-      const text = `${elapsed} / ${duration}`;
-      if (progress.value !== text) progress.value = text;
-      slider.setAttribute('aria-valuetext', `${elapsed} of ${duration} recorded`);
+      slider.disabled = play.disabled = view.seekDisabled;
+      if (progress.value !== view.progress) progress.value = view.progress;
+      slider.setAttribute('aria-valuetext', view.valueText);
     },
     dispose() {
       if (disposed) return;
