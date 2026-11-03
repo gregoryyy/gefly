@@ -420,7 +420,7 @@ function collisionFields() {
 
 function sampleContact() {
   const ground = readGroundFields(), state = readState();
-  return groundCollisionContact(ground.ground_agl_m, state[4], state[5], ground.structure_contact_mask, terrainGrid ? { ...terrainGradient(state[1], state[2]), heading_rad: state[6] } : undefined);
+  return groundCollisionContact(ground.ground_agl_m, state[4], state[5], ground.structure_contact_mask, terrainGrid ? { ...terrainGradient(state[1], state[2]), heading_rad: state[6] } : undefined, ground);
 }
 
 function stateMessage() {

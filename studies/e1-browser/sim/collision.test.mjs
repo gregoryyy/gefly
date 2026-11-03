@@ -100,3 +100,19 @@ test('F39: a detected contact without a valid record fails explicitly instead of
   assert.equal(nativeOnly.available, false); assert.equal(nativeOnly.mask, 2);
   assert.equal(contactOutcome(nativeOnly, null), 'fail', 'native structure contact with an unavailable proxy still counts');
 });
+
+test('near-rest wheel-supported prop proxy tolerates settling, not impacts or deeper strikes', () => {
+  const supported = { ground_forward_mps: .7, ground_side_mps: 0, ground_down_mps: .05,
+    gear_nose_wow: 1, gear_left_wow: 1, gear_right_wow: 1 };
+  const contact = (motion, agl = 1.02, native = 0) => groundCollisionContact(agl, 0, 0, native, undefined, motion);
+  assert.equal(contact(supported).mask, 0, '3 cm proxy overlap while settling is not a crash');
+  assert(contact(supported).clearance_m < 0, 'raw geometric clearance remains truthful');
+  assert(contact(supported, .99).mask & 16, '6 cm prop strike still counts');
+  for (const change of [{ ground_forward_mps: 1.01 }, { ground_down_mps: .21 }, { ground_down_mps: -.21 },
+    { gear_nose_wow: 0 }, { gear_left_wow: 0 }, { gear_right_wow: 0 }, { ground_forward_mps: NaN }]) {
+    assert(contact({ ...supported, ...change }).mask & 16);
+  }
+  assert(contact(undefined).mask & 16, 'missing motion never hides contact');
+  assert.equal(contact(supported, 1.02, 2).mask, 18, 'native wing contact remains authoritative');
+  assert(contact(supported, .5).mask & 8, 'body collision is unchanged');
+});

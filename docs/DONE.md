@@ -3,6 +3,30 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 12:03 — Near-rest parking-brake contact
+
+TODO: 2.0.57; R-SIM-8/R-INPUT-1. Agent: Codex, direct implementation.
+
+**Implementation notes**
+
+Reproduced full braking applied near 2 m/s: the illustrative propeller proxy
+penetrates the ground plane by up to 3.6 cm as the nose strut compresses, below
+1 m/s and without native structural contact. Allow up to 5 cm prop-proxy settling
+only with all wheels supported, horizontal speed ≤1 m/s and |vertical speed|
+≤0.2 m/s. Keep raw clearance, native dynamics and other contact checks intact.
+Build, 11 contact cases and actual native/worker braking regression pass, including
+near-rest full braking, unchanged state/digest and retained high-speed/impact stops.
+
+**Deviations**
+
+This is an illustrative collision-proxy tolerance, not aircraft propeller clearance
+or structural-damage validation. Cross-provider peer remains pending.
+
+**Insights**
+
+Distinguish low-energy settling of approximate visual geometry from native
+structure contact; avoid masking every collision merely because braking is active.
+
 ## 2026-11-03 11:59 — Pointer-centered cockpit zoom
 
 TODO: 2.0.56; R-PANEL-1/R-INPUT-1. Agent: Codex, direct implementation.
