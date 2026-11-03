@@ -86,6 +86,31 @@ try {
   const paused = await stats();
   assert.equal(await page.evaluate(() => document.elementFromPoint(1000, 180)?.closest('#scene')?.id), 'scene',
     'native scroll point must lie in the unobstructed scene');
+  // Panel scrolling magnifies instruments around the pointer, independently of scene FOV.
+  await page.waitForTimeout(150);
+  const ap = page.locator('#ap-engage');
+  const box = await ap.boundingBox();
+  const anchor = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  await page.mouse.move(anchor.x, anchor.y);
+  await page.mouse.wheel(0, -180);
+  await page.waitForTimeout(100);
+  const enlarged = await ap.boundingBox();
+  assert(enlarged.width > box.width * 1.3, 'AP control visibly enlarges');
+  assert(Math.abs(enlarged.x + enlarged.width / 2 - anchor.x) < 1, 'horizontal pointer anchor stays fixed');
+  assert(Math.abs(enlarged.y + enlarged.height / 2 - anchor.y) < 1, 'vertical pointer anchor stays fixed');
+  assert.equal(await fov(), 60, 'panel zoom does not change camera FOV');
+  const wasEngaged = await ap.getAttribute('aria-pressed');
+  await page.mouse.click(anchor.x, anchor.y);
+  await page.waitForFunction(previous => document.querySelector('#ap-engage').getAttribute('aria-pressed') !== previous, wasEngaged);
+  await page.mouse.click(anchor.x, anchor.y);
+  await page.waitForFunction(previous => document.querySelector('#ap-engage').getAttribute('aria-pressed') === previous, wasEngaged);
+  await page.mouse.wheel(0, 200);
+  await page.waitForTimeout(100);
+  const restored = await ap.boundingBox();
+  assert(Math.abs(restored.width - box.width) < 1);
+  assert(Math.abs(restored.x - box.x) < 1 && Math.abs(restored.y - box.y) < 1, 'zooming out restores fitted panel');
+  frozen(paused, await stats());
+  checks.push('pointer-centered panel zoom, working enlarged AP clicks, exact fit restoration and unchanged camera/native physics');
   await scroll(-120);
   const narrowed = await fov(); assert(narrowed < 60 && narrowed > 20);
   await scroll(120); await waitFov(60);

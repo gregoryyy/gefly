@@ -5,6 +5,34 @@ import { DEFAULT_RADIO_NAV } from './radio-nav.ts';
 import { FlightTrace } from './flight-trace.ts';
 import { COLLISION_FIELDS, STALL_FIELDS, type FlightState } from './types.ts';
 
+test('JSON recordings round-trip immutable states, controls, VSI and retained bounds', () => {
+  const trace = new FlightTrace({ maxSamples: 3 });
+  for (let step = 0; step < 5; step++) assert(trace.record(state(step), step - 2));
+  const loaded = FlightTrace.fromJSON(trace.exportJSON());
+  assert.deepEqual(loaded.bounds(), trace.bounds());
+  assert.deepEqual([...loaded.recordedStates()], [...trace.recordedStates()]);
+  assert.deepEqual(loaded.atTime(3), trace.atTime(3));
+  assert(Object.isFrozen(loaded.atTime(3)!.state));
+});
+
+test('JSON import rejects malformed, unsupported, non-finite and unordered data without changing live trace', () => {
+  const live = new FlightTrace(); live.record(state(0), 0); live.record(state(1), 1);
+  const original = live.exportJSON(), valid = JSON.parse(original);
+  for (const mutate of [
+    data => { data.version = 999; }, data => { data.samples = []; },
+    data => { data.samples[1].state.step = 0; }, data => { data.samples[1].state.t_s = 0; },
+    data => { data.samples[1].state.lat_rad = 2; }, data => { data.samples[1].vertical_speed_mps = null; },
+    data => { data.samples[1].state.alt_msl_m = 1e100; },
+    data => { data.samples[1].state.t_s = 601; },
+  ]) {
+    const changed = structuredClone(valid); mutate(changed);
+    assert.throws(() => FlightTrace.fromJSON(JSON.stringify(changed)));
+    assert.equal(live.exportJSON(), original);
+  }
+  assert.throws(() => FlightTrace.fromJSON('{bad json'));
+  assert.throws(() => FlightTrace.fromJSON(original.replace(/"alt_msl_m":[^,}]+/, '"alt_msl_m":1e999')));
+});
+
 test('recorded collision preserves the final event and rejects malformed or same-clock rewrites', () => {
   const trace = new FlightTrace();
   const zero = { collision_mask: 0, collision_step: 0, collision_t_s: 0,

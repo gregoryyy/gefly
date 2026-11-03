@@ -37,13 +37,14 @@ try {
   const clear = () => page.evaluate(() => { window.commands.length = 0; });
   const state = (patch, reviewing = false, available = true, locked = false) => page.evaluate(({ patch, reviewing, available, locked }) => setState(patch, reviewing, available, locked), { patch, reviewing, available, locked });
   const hold = async (id, milliseconds) => { await page.locator(`#${id}`).hover(); await page.mouse.down(); await page.waitForTimeout(milliseconds); await page.mouse.up(); };
-  await page.locator('#ap-engage').click(); assert.deepEqual(await commands(), [], 'short AP press cannot engage later-firmware profile');
+  await page.locator('#ap-engage').click(); assert.deepEqual(await commands(), [{ action: 'ap' }], 'normal browser click represents the physical AP press');
+  await clear();
   await hold('ap-engage', 310); assert.deepEqual(await commands(), [{ action: 'ap' }]);
   assert.equal(await page.locator('#ap-engaged-label').textContent(), 'OFF', 'command alone never invents accepted AP state');
   await state({ kap_engaged: 1 }); await clear(); await page.locator('#ap-engage').click(); assert.deepEqual(await commands(), [{ action: 'disconnect' }]);
   await state({ kap_engaged: 0 }); await clear(); await page.locator('#ap-engage').focus(); await page.keyboard.down('Enter'); await page.waitForTimeout(310); await page.keyboard.down('Enter'); await page.keyboard.up('Enter');
   assert.deepEqual(await commands(), [{ action: 'ap' }], 'held keyboard activation engages once despite repeat');
-  checks.push('AP needs a trusted quarter-second pointer/keyboard hold, short presses do not engage, accepted state comes from snapshots, disconnect is immediate');
+  checks.push('AP accepts a trusted normal click or held pointer/keyboard activation exactly once, accepted state comes from snapshots, disconnect is immediate');
 
   await clear(); await page.evaluate(() => { document.querySelector('#ap-heading').click(); document.querySelector('#ap-engage').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 })); });
   await page.waitForTimeout(300); assert.deepEqual(await commands(), [], 'synthetic actions cannot command the unit');

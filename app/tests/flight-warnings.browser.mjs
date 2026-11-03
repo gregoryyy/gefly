@@ -61,9 +61,11 @@ try {
   const frozen = async before => { const after = await stats(); assert.equal(after.step, before.step); assert.equal(after.digest, before.digest); assert.deepEqual(after.final_state, before.final_state); };
   assert.equal(await status('stall'), 'clear'); assert.equal(await status('terrain'), 'clear');
   assert.equal(await panel.evaluate(e => getComputedStyle(e).pointerEvents), 'none');
-  assert((await panel.boundingBox()).y >= (await page.locator('.topbar').boundingBox()).height);
+  assert(await panel.isHidden());
+  assert(await panel.locator('[data-warning=stall]').isHidden());
+  assert(await panel.locator('[data-warning=terrain]').isHidden());
   const initial = await stats(); await page.locator('#controls-settings').click(); await page.locator('#settings-close').click(); await frozen(initial);
-  checks.push('native clear states feed visible non-interactive warning lights; topbar clearance and paused Options preserve physics');
+  checks.push('clear warnings leave no fixed labels or empty panel; paused Options preserve physics');
 
   await startOrResume(page); await page.waitForFunction(() => window.warningStates.at(-1).step >= 60);
   await page.locator('#pause').click(); await page.waitForTimeout(80);
@@ -71,6 +73,7 @@ try {
   await scene.focus(); await page.keyboard.press('r'); await page.locator('#flight-review').waitFor({ state: 'visible' });
   await page.waitForFunction(() => document.querySelector('#flight-warnings').dataset.review === 'true');
   assert.equal(await panel.getAttribute('data-review'), 'true'); assert.match(await panel.textContent(), /REVIEW/);
+  assert(await panel.isHidden(), 'clear replay cues leave no fixed REVIEW label');
   assert.match(await panel.getAttribute('aria-label'), /recomputed/);
   await page.locator('#review-time').focus(); await page.keyboard.press('End'); await frozen(paused);
   await scene.focus(); await page.keyboard.press('r'); await frozen(paused);
@@ -86,10 +89,14 @@ try {
   const hard = await page.evaluate(() => window.warningStates.at(-1));
   assert(hard.ground_agl_m > 0 && hard.ground_agl_m < 4 && hard.ground_down_mps >= 3);
   await page.waitForFunction(() => document.querySelector('[data-warning=terrain]').dataset.status === 'active');
+  assert(await panel.locator('[data-warning=terrain]').isVisible());
+  assert(await panel.locator('[data-warning=stall]').isHidden());
+  assert((await panel.boundingBox()).y >= (await page.locator('.topbar').boundingBox()).height);
   assert.match(await panel.textContent(), /TERRAIN !/); await frozen(await stats());
   await preset('normal');
   await page.waitForFunction(() => document.querySelector('[data-warning=terrain]').dataset.status === 'clear');
   assert.equal(await status('terrain'), 'clear', 'normal shallow native descent is not labeled as a terrain warning');
+  assert(await panel.isHidden(), 'terrain cue disappears again when clear');
   await startOrResume(page);
   await page.waitForFunction(() => window.warningStates.at(-1).on_ground === 1 || window.warningStates.at(-1).collision_mask > 0, null, { timeout: 10000 });
   await page.waitForFunction(() => [...document.querySelectorAll('#flight-warnings [data-warning]')].every(e => e.dataset.status === 'clear'));

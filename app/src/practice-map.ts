@@ -12,6 +12,7 @@ import type { FlightMapNavigation, FlightMapNavigationFeature } from './flight-m
 export interface PracticeMap {
   update(state: Readonly<FlightState>, path: readonly Readonly<FlightState>[], mode: 'live' | 'review'): void;
   setVisible(visible: boolean): void;
+  toggleOverlap(): void;
   dispose(): void;
 }
 
@@ -57,6 +58,11 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     return button;
   });
   const [zoomOut, zoomIn, fit, fitRegion, follow] = buttons;
+  const overlap = document.createElement('button');
+  overlap.type = 'button'; overlap.id = 'map-overlap'; overlap.textContent = 'Overlap cockpit · ,';
+  overlap.setAttribute('aria-pressed', 'false'); overlap.setAttribute('aria-keyshortcuts', ',');
+  overlap.title = 'Let the map extend over the cockpit; comma toggles this view';
+  toolbar.append(overlap);
   const layers = document.createElement('div');
   layers.className = 'practice-map-layers';
   layers.setAttribute('role', 'group');
@@ -315,10 +321,17 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   });
   listen(fitRegion, () => { if (map) { setFollowing(false); map.fitBounds([[AIRFIELD_BOUNDS[0], AIRFIELD_BOUNDS[1]], [AIRFIELD_BOUNDS[2], AIRFIELD_BOUNDS[3]]], { padding: 24, duration: 0 }); } });
   listen(follow, () => { setFollowing(true); paint(); });
+  listen(overlap, () => controller.toggleOverlap());
   const observer = new ResizeObserver(() => { if (visible && !disposed) map?.resize(); });
   observer.observe(viewport);
 
   const controller: PracticeMap = {
+    toggleOverlap() {
+      if (disposed) return;
+      const enabled = container.dataset.overlapCockpit !== 'true';
+      container.dataset.overlapCockpit = String(enabled);
+      overlap.setAttribute('aria-pressed', String(enabled));
+    },
     update(state, path, mode) {
       if (disposed) return;
       modeLabel.textContent = mode === 'review' ? 'Recorded review' : 'Live';

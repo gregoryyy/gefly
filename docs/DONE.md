@@ -3,6 +3,83 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 11:59 — Pointer-centered cockpit zoom
+
+TODO: 2.0.56; R-PANEL-1/R-INPUT-1. Agent: Codex, direct implementation.
+
+**Implementation notes**
+
+Two-finger up/down over the cockpit magnifies/restores the panel around the
+pointer, bounded to 1–3× fitted size. Keep enlarged controls interactive, clip
+within the deck, restore fit on resize and leave scenery FOV independent.
+Build and actual Chrome pointer-anchor, enlarged AP click, fit restoration,
+scene FOV and paused native-state regression checks pass.
+
+**Deviations**
+
+No physics changes. Cross-provider peer review remains pending.
+
+**Insights**
+
+Use one panel transform so instruments, hit targets and labels scale together.
+
+## 2026-11-03 11:52 — Recording files, live return and map overlap
+
+TODO: 2.0.55; R-REVIEW-1/R-VIEW-1. Agent: Codex, direct implementation.
+
+**Implementation notes**
+
+Save/load versioned SI JSON traces from Flight or replay controls. Validate frame
+values, order, count and duration before switching to a separate read-only loaded
+trace; keep the live recording and native worker intact. Back to live restores
+prior flying/paused intent. Load required bundled, hash-checked regional terrain
+for recorded views. Comma toggles map overlap; M and N retain map/parking roles.
+
+Build and 30 focused trace/transport cases pass. Actual-browser download/import,
+invalid-file rejection, seek/live return, frozen native-state preservation and
+map-overlap/parking-brake isolation pass.
+
+**Deviations**
+
+JSON stores recorded samples, not a native physics checkpoint. Retain the existing
+ten-minute/36,000-frame bounds and a 256 MB file limit. Peer review remains pending.
+
+**Insights**
+
+Keep loaded review data separate from the current flight so returning live never
+rewinds or replaces native physics.
+
+## 2026-11-03 11:30 — Moving chase controls and normal AP clicks
+
+TODO: 2.0.54; R-VIEW-1/R-REVIEW-1/R-AP-1. Agent: Codex, direct implementation
+and focused checks under the user's request for proportionate small-change work.
+
+**Implementation notes**
+
+Split the original visual into fixed sections and seven hinged surface nodes.
+Actual native left/right aileron, elevator, rudder and flap radians drive their
+local rotations in live flight and selected replay; no control input or dynamics
+is synthesized. Missing older values reset the visual pose rather than retaining
+live deflections. Normal AP clicks now represent the physical engagement press;
+long presses still fire once, with immediate disconnect and read-only guards.
+
+Production build passes. Focused browser checks verify each surface changes
+visible pixels and neutral restores identical pixels at frozen physics/world
+state; native controls, replay seeking and ordinary live AP engagement/disconnect
+pass. The maintained KAP panel gesture/availability suite passes. Screenshots are
+under ignored output/flight/control-surfaces-{neutral,deflected}.png.
+
+**Deviations**
+
+Hinge locations and exterior shapes are illustrative visual geometry, not a new
+calibrated aircraft model. Browser AP click behavior is an explicit interaction
+convenience. Cross-provider peer review remains pending.
+
+**Insights**
+
+Use the existing recorded actuator telemetry and a focused rendered check. Keep
+this small interaction increment separate from broader physics or process work.
+
 ## 2026-11-03 11:13 — Refresh PR #56 and lead ROAD with the product vision
 
 TODO: 0.22 and 2.0.51 integration follow-up; no additional runtime feature scope.

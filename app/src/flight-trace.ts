@@ -17,6 +17,7 @@ export interface TraceBounds {
 
 const MAX_SAMPLES = 36_000;
 const MAX_DURATION_S = 600;
+export const MAX_RECORDING_BYTES = 256 * 1024 * 1024;
 
 /** Bounded, session-only recorded states. Seeking never re-simulates physics. */
 export class FlightTrace {
@@ -94,6 +95,43 @@ export class FlightTrace {
       start_s: this.sample(0).state.t_s, end_s: this.sample(this.count - 1).state.t_s,
       count: this.count, clipped: this.clipped,
     });
+  }
+
+  /** Portable SI state trace, for viewing only; not a native physics checkpoint. */
+  exportJSON(): string {
+    if (this.count < 2) throw new Error('Record a flight before saving it.');
+    return JSON.stringify({ format: 'gefly-flight-recording', version: 1, units: 'SI',
+      clipped: this.clipped, samples: Array.from({ length: this.count }, (_, index) => this.sample(index)) });
+  }
+
+  static fromJSON(text: string): FlightTrace {
+    if (text.length > MAX_RECORDING_BYTES) throw new Error('Recording exceeds the 256 MB limit.');
+    const data = JSON.parse(text);
+    if (!data || data.format !== 'gefly-flight-recording' || data.version !== 1 || data.units !== 'SI'
+      || typeof data.clipped !== 'boolean' || !Array.isArray(data.samples)
+      || data.samples.length < 2 || data.samples.length > MAX_SAMPLES) {
+      throw new Error('Unsupported recording. Expected a Gefly version 1 JSON flight recording.');
+    }
+    const trace = new FlightTrace();
+    let previousStep = -1, previousTime = -1;
+    for (const sample of data.samples) {
+      const state = sample?.state;
+      if (!state || typeof state !== 'object' || Array.isArray(state)
+        || state.step <= previousStep || state.t_s <= previousTime
+        || Math.abs(state.alt_msl_m) > 1e6 || Math.abs(state.ground_height_ellipsoid_m ?? 0) > 1e6
+        || (state.terrain_profile === 1 && !Number.isFinite(state.ground_height_ellipsoid_m))
+        || !trace.record(state, sample.vertical_speed_mps)) {
+        throw new Error('Recording contains an invalid or out-of-order flight frame.');
+      }
+      previousStep = state.step; previousTime = state.t_s;
+    }
+    if (trace.count !== data.samples.length) throw new Error('Recording exceeds the ten-minute trace limit.');
+    trace.clipped = data.clipped;
+    return trace;
+  }
+
+  *recordedStates(): IterableIterator<Readonly<FlightState>> {
+    for (let index = 0; index < this.count; index++) yield this.sample(index).state;
   }
 
   /** Floor seek, allowing only floating-point serialization noise at a stored timestamp. */

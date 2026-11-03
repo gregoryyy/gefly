@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { VISUAL_AIRFRAME } from '../../studies/e1-browser/sim/collision.js';
+import { AIRCRAFT_CONTROL_SURFACES } from './aircraft-control-surfaces';
 
 /** Original generic high-wing visual, deliberately independent of dynamics data.
  * glTF axes: +x forward, +y up, +z right. Dimensions are illustrative only.
@@ -58,10 +59,14 @@ export async function createAircraftVisual(): Promise<string> {
   const r = VISUAL_AIRFRAME.roof;
   const roof = mesh(new THREE.SphereGeometry(1, 24, 12), white, r.center[0], r.center[1], r.center[2]);
   roof.scale.set(r.scale[0], r.scale[1], r.scale[2]);
-  wing(10.7, 1.48, 0.25, 0.87, white);
+  // Fixed leading sections stop at the hinges; moving panels occupy real gaps,
+  // rather than overlapping a complete static wing and causing flicker.
+  wing(10.7, 1.03, .475, .87, white);
+  mesh(new THREE.BoxGeometry(.41, .08, 1.24), white, -.275, .825, 0);
   for (const side of [-1, 1]) {
-    const tip = mesh(new THREE.BoxGeometry(1.3, 0.11, 0.72), red, 0.25, 0.83, side * 4.93);
+    const tip = mesh(new THREE.BoxGeometry(1.03, 0.11, 0.72), red, .475, .83, side * 4.93);
     tip.rotation.x = side * 0.025;
+    mesh(new THREE.BoxGeometry(.41, .08, .42), red, -.275, .825, side * 5.13);
     strut(new THREE.Vector3(-0.22, -0.43, side * 0.42), new THREE.Vector3(0.1, 0.81, side * 3.6), 0.045, white);
     const stripe = mesh(new THREE.BoxGeometry(4.9, 0.075, 0.025), red, -0.1, -0.05, side * 0.55);
     stripe.rotation.z = -0.035;
@@ -71,15 +76,41 @@ export async function createAircraftVisual(): Promise<string> {
     const hub = mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.14, 12), metal, -0.1, -1.15, side * 1.15);
     hub.rotation.x = Math.PI / 2;
   }
-  wing(3.7, 0.86, -2.85, 0.18, white);
-  for (const side of [-1, 1]) mesh(new THREE.BoxGeometry(0.76, 0.1, 0.4), red, -2.85, 0.14, side * 1.6);
+  wing(3.7, .53, -2.685, .18, white);
+  mesh(new THREE.BoxGeometry(.30, .07, .54), white, -3.125, .135, 0);
+  for (const side of [-1, 1]) {
+    mesh(new THREE.BoxGeometry(.53, .1, .35), red, -2.685, .14, side * 1.665);
+    mesh(new THREE.BoxGeometry(.30, .07, .20), red, -3.125, .135, side * 1.75);
+  }
   const finShape = new THREE.Shape();
   const fin = VISUAL_AIRFRAME.fin;
-  fin.outline.forEach(([x, y], index) => { if (index === 0) finShape.moveTo(x, y); else finShape.lineTo(x, y); });
+  const fixedFin = [[-3.11, .17], [-2.99, 1.67], ...fin.outline.slice(2)];
+  fixedFin.forEach(([x, y], index) => { if (index === 0) finShape.moveTo(x, y); else finShape.lineTo(x, y); });
   finShape.closePath();
   const finGeometry = new THREE.ExtrudeGeometry(finShape, { depth: fin.extrusionDepth, bevelEnabled: true,
     bevelSize: fin.bevel, bevelThickness: fin.bevelThickness, bevelSegments: 1 });
   mesh(finGeometry, red, 0, 0, -fin.extrusionDepth / 2);
+  for (const surface of AIRCRAFT_CONTROL_SURFACES) {
+    const hinge = new THREE.Group();
+    hinge.name = surface.name;
+    hinge.position.set(surface.hinge[0], surface.hinge[1], surface.hinge[2]);
+    aircraft.add(hinge);
+    if (surface.name === 'rudder') {
+      const outline = new THREE.Shape();
+      outline.moveTo(-.37, 0); outline.lineTo(-.22, 1.58);
+      outline.lineTo(.12, 1.50); outline.lineTo(0, 0); outline.closePath();
+      const geometry = new THREE.ExtrudeGeometry(outline, { depth: .08, bevelEnabled: false });
+      geometry.translate(0, 0, -.04);
+      hinge.add(new THREE.Mesh(geometry, red));
+    } else {
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(surface.chord, .065, surface.span), white);
+      panel.position.x = -surface.chord / 2 - .01;
+      hinge.add(panel);
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(.07, .068, surface.span - .04), red);
+      stripe.position.x = -surface.chord + .03;
+      hinge.add(stripe);
+    }
+  }
   strut(new THREE.Vector3(2.05, -0.26, 0), new THREE.Vector3(2.05, -1.1, 0), 0.045, metal);
   const noseWheel = mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.11, 16), dark, 2.05, -1.15, 0);
   noseWheel.rotation.x = Math.PI / 2;

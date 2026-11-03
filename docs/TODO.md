@@ -177,6 +177,12 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
   - Partial generic windmilling correction: sourced Aero-Matic tables retain drag in the verified nominal cases; lower-speed idle-throttle flight can still stop the propeller and lose its drag. The full gate remains open; do not extrapolate unverified high-advance coefficients or count that fixture as a pass. See [bounded review](reviews/2026-11-03-engine-off-glide.md).
 - [x] 2.0.53 Compact oil pressure/temperature, fuel flow and exhaust-gas readouts onto individual single-line rows; add mirrored lower-quarter model-fuel reference marks and independent LOW indicators with missing-data and read-only Review handling. R-PANEL-1/R-REVIEW-1. Independent desktop/mobile geometry, fuel boundaries and Review checks pass ([review](reviews/2026-11-03-engine-panel-labels.md)); generic display references, not aircraft reserve limits. Peer pending.
 
+- [x] 2.0.54 Animate hinged chase-view rudder, differential ailerons, elevators and flaps from actual live/recorded actuator angles. Make ordinary panel AP clicks engage once. Build and focused native/browser, visible-pixel and replay checks pass. R-VIEW-1/R-REVIEW-1/R-AP-1; original illustrative visual geometry, peer pending.
+
+- [x] 2.0.55 Add JSON recording save/load, read-only imported replay and Back to live restoring prior flying/paused intent. Add comma-key map overlap; retain M map visibility and N parking brake. Build, 30 focused trace/transport cases and end-to-end file/map/native-isolation browser checks pass. R-REVIEW-1/R-VIEW-1; peer pending.
+
+- [x] 2.0.56 Add pointer-centered two-finger cockpit-panel zoom (1–3×), with fitted reset on zoom-out/resize and usable enlarged controls. Build and actual-browser pointer anchoring, AP clicks, camera isolation and paused-state checks pass. R-PANEL-1/R-INPUT-1; peer pending.
+
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.
 - [ ] 2.3 code2 implements the corresponding browser controls, instruments and exercise feedback against frozen contracts **in parallel with 2.2**.
