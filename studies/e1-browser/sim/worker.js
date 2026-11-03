@@ -623,7 +623,7 @@ async function onInit(msg) {
                loaded_tiles: Array.from(terrainStream.tiles.values(), grid => ({ id: grid.id, sha256: grid.sha256 })) } } : {}),
              jsbsim_tag: build.jsbsim_tag, emsdk: build.emsdk, wasm_bytes: build.wasm_bytes,
              jsbsim_commit: build.jsbsim_commit, wasm_sha256: build.wasm_sha256, flags: build.flags,
-             aircraft_adapter: build.aircraft_adapter },
+             aircraft_adapter: build.aircraft_adapter, propeller_adapter: build.propeller_adapter },
     trim: { status: M._gf_trim_status(), throttle: M._gf_trim_throttle(), pitch_trim: M._gf_trim_pitch() },
   });
   postState();

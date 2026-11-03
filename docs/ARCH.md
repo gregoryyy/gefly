@@ -39,6 +39,18 @@ is applied, and the correction is suspended while AP owns roll. These are generi
 research-model controls, not the installed 172S avionics or full v1.1 run contract.
 See [sources and limits](research/2026-11-02-classic-controls.md).
 
+Engine-off flight uses a separately hash-recorded, local-only generic fixed-pitch
+propeller derived from the pinned Aero-Matic generator. Its negative power
+region lets airflow drive native shaft rotation and negative thrust, including
+engine friction/pumping losses. The original propeller's positive-only power
+table let rotation and propeller drag vanish after shutdown. Direct-drive design
+RPM replaces the generator's gearing estimate; this changes powered propeller
+forces too. Aircraft airframe coefficients and native force integration remain
+in JSBSim. At low RPM/outside the finite coefficient tables, propeller rotation
+and drag can still collapse; this case remains unaccepted under TODO 2.0.51.
+This is a partial generic model correction, not accepted 172S performance;
+see [sources and diagnostic limits](research/2026-11-03-engine-off-glide.md).
+
 Additional user decisions: a **free/open-source flight-school community site**,
 **LLM-assisted flight-experience authoring and AI interaction**, an initial
 **EDDF/100 NM regional model from real source material**, and **reuse of open

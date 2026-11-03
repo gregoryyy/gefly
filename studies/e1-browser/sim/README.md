@@ -36,6 +36,18 @@ A full build from scratch takes a few minutes (library about 50 s on 4 vCPU);
 relinking the bridge takes about 20 s. Interactive use: serve the directory with
 any static server (COOP/COEP recommended) and open `sim.html?seconds=30&live=10`.
 
+The local build now prepares a generic windmilling-capable fixed-pitch propeller
+from the pinned Aero-Matic source. It records source/input/output hashes under
+`propeller_adapter` in `dist/build-info.json` and the worker's ready metadata.
+After rebuilding, run `node studies/e1-browser/sim/engine-off-glide-native.mjs`
+from the repository root. It compares powered, ignition-off and mixture-cutoff
+flight with retained/idle throttle, reports settled specific energy and glide
+geometry, and repeats an exact native reset/digest case. Seven nominal cases
+pass; the lower-speed idle case is explicitly **not accepted**, because rotation
+and propeller drag still collapse outside the finite coefficient-table envelope.
+An exit-zero regression result does not accept that known model limitation or
+calibrate C172 performance. See [research](../../../docs/research/2026-11-03-engine-off-glide.md).
+
 ## Contract interpretation
 
 - `state.step` = completed fixed steps since init; `t_s` is JSBSim's simulation time.

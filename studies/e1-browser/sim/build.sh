@@ -57,11 +57,14 @@ if [ ! -f "$BUILD/src/libJSBSim.a" ]; then
    && emmake make -j"$(ncpu)" libJSBSim)
 fi
 
-# Prepare a local-only copy with mixture gating and generic pitch AP wiring.
-# The pinned source tree and every coefficient stay unchanged.
+# Prepare local-only aircraft wiring and a generic windmilling-capable propeller.
+# The pinned source tree stays unchanged; model adaptations are hash-recorded.
 PREPARED_AIRCRAFT="$WORK/prepared-aircraft/c172x"
 AIRCRAFT_ADAPTER_META="$WORK/aircraft-adapter.json"
 python3 "$HERE/prepare-aircraft.py" "$SRC/aircraft/c172x" "$PREPARED_AIRCRAFT" "$AIRCRAFT_ADAPTER_META"
+PREPARED_PROPELLER="$WORK/prepared-engine/prop_75in2f.xml"
+PROPELLER_ADAPTER_META="$WORK/propeller-adapter.json"
+python3 "$HERE/prepare-propeller.py" "$SRC" "$PREPARED_PROPELLER" "$PROPELLER_ADAPTER_META"
 
 # 4. Bridge + only the c172x data it loads, embedded under /jsbsim in MEMFS.
 #    Study use only: this data is not shipped (see README licence notes).
@@ -77,6 +80,7 @@ EMBED=()
 for f in "${DATA[@]}"; do
   case "$f" in
     aircraft/c172x/*) source_file="$PREPARED_AIRCRAFT/${f#aircraft/c172x/}" ;;
+    engine/prop_75in2f.xml) source_file="$PREPARED_PROPELLER" ;;
     *) source_file="$SRC/$f" ;;
   esac
   EMBED+=(--embed-file "$source_file@/jsbsim/$f")
@@ -86,7 +90,7 @@ em++ -O2 -std=c++17 $EXC_FLAGS -I"$SRC/src" -I"$BUILD/src" "$HERE/bridge.cpp" \
   "$BUILD/src/libJSBSim.a" -o "$DIST/jsbsim.mjs" \
   -sMODULARIZE=1 -sEXPORT_ES6=1 -sEXPORT_NAME=createJSBSim -sENVIRONMENT=worker,web,node \
   -sALLOW_MEMORY_GROWTH=1 -sEXPORTED_RUNTIME_METHODS=HEAPF64,UTF8ToString \
-  -sEXPORTED_FUNCTIONS=_malloc,_free,_gf_configure_terrain_grid,_gf_set_terrain_tile,_gf_remove_terrain_tile,_gf_clear_terrain_grid,_gf_terrain_available,_gf_terrain_height_m,_gf_terrain_sample,_gf_init,_gf_init_landing,_gf_ground_state,_gf_set_inputs,_gf_step,_gf_state,_gf_state_len,_gf_step_index,_gf_digest_hex,_gf_trim_status,_gf_trim_throttle,_gf_trim_pitch,_gf_flap_command_norm,_gf_static_pressure_pa,_gf_sealevel_pressure_pa,_gf_set_secondary_inputs,_gf_cockpit_state,_gf_control_state,_gf_stall_state,_gf_set_pitch_trim,_gf_pitch_trim_state,_gf_set_engine_controls,_gf_set_engine_running,_gf_engine_switch_state,_gf_set_autopilot,_gf_set_autopilot_vertical,_gf_autopilot_vertical_state,_gf_engine_state \
+  -sEXPORTED_FUNCTIONS=_malloc,_free,_gf_configure_terrain_grid,_gf_set_terrain_tile,_gf_remove_terrain_tile,_gf_clear_terrain_grid,_gf_terrain_available,_gf_terrain_height_m,_gf_terrain_sample,_gf_init,_gf_init_landing,_gf_ground_state,_gf_set_inputs,_gf_step,_gf_state,_gf_state_len,_gf_step_index,_gf_digest_hex,_gf_trim_status,_gf_trim_throttle,_gf_trim_pitch,_gf_flap_command_norm,_gf_static_pressure_pa,_gf_sealevel_pressure_pa,_gf_set_secondary_inputs,_gf_cockpit_state,_gf_control_state,_gf_stall_state,_gf_set_pitch_trim,_gf_pitch_trim_state,_gf_set_engine_controls,_gf_set_engine_running,_gf_engine_switch_state,_gf_propeller_state,_gf_set_autopilot,_gf_set_autopilot_vertical,_gf_autopilot_vertical_state,_gf_engine_state \
   "${EMBED[@]}"
 
 # 5. Build record read by worker.js ("ready" message)
@@ -94,9 +98,10 @@ WASM_BYTES=$(wc -c < "$DIST/jsbsim.wasm" | tr -d " ")
 WASM_SHA=$(sha256 "$DIST/jsbsim.wasm")
 EMSDK_REV=$(git -C "$E1_EMSDK" rev-parse HEAD)
 AIRCRAFT_ADAPTER=$(cat "$AIRCRAFT_ADAPTER_META")
+PROPELLER_ADAPTER=$(cat "$PROPELLER_ADAPTER_META")
 cat > "$DIST/build-info.json" <<EOF
 {"jsbsim_tag": "$JSBSIM_TAG", "jsbsim_commit": "$JSBSIM_COMMIT", "emsdk": "$EMSDK_VERSION",
  "emsdk_rev": "$EMSDK_REV", "emcc": "${EMCC_VERSION//\"/}", "flags": "-O2 $EXC_FLAGS",
- "wasm_bytes": $WASM_BYTES, "wasm_sha256": "$WASM_SHA", "aircraft_adapter": $AIRCRAFT_ADAPTER}
+ "wasm_bytes": $WASM_BYTES, "wasm_sha256": "$WASM_SHA", "aircraft_adapter": $AIRCRAFT_ADAPTER, "propeller_adapter": $PROPELLER_ADAPTER}
 EOF
 cat "$DIST/build-info.json"

@@ -438,6 +438,24 @@ EMSCRIPTEN_KEEPALIVE double* gf_engine_switch_state() {
   return values;
 }
 
+// Read-only propulsion diagnostics for native energy/glide regressions. Positive
+// thrust drives the aircraft forward; negative shaft power means engine braking.
+// N, W (engine shaft), dimensionless advance ratio, propeller rad/s. A missing
+// native property remains unavailable instead of masquerading as zero drag.
+EMSCRIPTEN_KEEPALIVE double* gf_propeller_state() {
+  static double values[4];
+  const char* properties[] = {"propulsion/engine[0]/thrust-lbs",
+    "propulsion/engine[0]/power-hp", "propulsion/engine[0]/advance-ratio",
+    "propulsion/engine[0]/propeller-rpm"};
+  const double conversions[] = {kLbfToN, 550.0 * kLbfToN * kFtToM, 1.0, 2.0 * kPi / 60.0};
+  for (int i = 0; i < 4; ++i) {
+    values[i] = g_fdm && g_fdm->GetPropertyManager()->HasNode(properties[i])
+      ? g_fdm->GetPropertyValue(properties[i]) * conversions[i]
+      : std::numeric_limits<double>::quiet_NaN();
+  }
+  return values;
+}
+
 EMSCRIPTEN_KEEPALIVE int gf_set_autopilot(double mode, double target_true_rad) {
   if (!g_fdm) return kErrNotInit;
   if (!finite_all({mode, target_true_rad})) return kErrNonFinite;

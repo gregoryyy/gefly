@@ -222,6 +222,18 @@ and the modern roll autopilot reuse the already pinned source; no new numerical
 or browser dependencies were added. Python's standard library supports the
 adapter and its six tests, including the pinned c172ap MSL/VS/output-gate wiring. See [source mappings](research/2026-11-02-classic-controls.md).
 
+`studies/e1-browser/sim/prepare-propeller.py` additionally reads the pinned
+JSBSim `utils/aeromatic/prop2.php` (David P. Culp, Aero-Matic v1.1) to derive a
+generic fixed-pitch propeller with a windmilling power region. The generator is
+covered by the JSBSim source repository's LGPL-2.1-or-later licence; no PHP
+runtime, package dependency or copied coefficient asset is added. Source hash
+guards cover the generator and existing engine/propeller; the output keeps the
+existing geometry/inertia/Mach corrections and uses direct-drive engine design
+RPM instead of the generator's estimated gearbox. Build metadata records input,
+script and generated-output hashes. Generated XML and WASM remain ignored local
+research assets with the existing model/data distribution restrictions. This
+does not resolve source rights or validate an installed C172 propeller.
+
 ## Public regional terrain data
 
 The local [public height package](../app/public/terrain/README.md) is a derived

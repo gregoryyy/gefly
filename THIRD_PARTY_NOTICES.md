@@ -202,3 +202,15 @@ retained in that directory. Modifications: bounded geographic/country selection,
 component pairing, feet-to-metres conversion, source frequency labels and GeoJSON
 serialization. See its [provenance and changes](app/public/mapdata/README.md).
 Community beacons and historical ILS do not establish current operational service.
+
+## Local generic propeller preparation
+
+The local research build reads fixed-pitch multiplier formulas from David P.
+Culp's Aero-Matic v1.1 (July 2003), `utils/aeromatic/prop2.php` in the pinned
+[JSBSim source](https://github.com/JSBSim-Team/jsbsim/blob/66f7fafc07fe13e7ede9db20873030fed2881713/utils/aeromatic/prop2.php).
+JSBSim is LGPL-2.1-or-later; see [upstream licence](https://github.com/JSBSim-Team/jsbsim/blob/66f7fafc07fe13e7ede9db20873030fed2881713/COPYING).
+The preparation script parses the verified source locally and substitutes the
+existing engine's direct-drive design RPM for the generator's gearing estimate,
+retaining the existing propeller geometry/inertia/Mach correction data. Generated
+model bytes are excluded from source distribution and do not establish aircraft
+performance or broader model-data redistribution rights.
