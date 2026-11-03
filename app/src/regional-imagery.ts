@@ -1,4 +1,4 @@
-import { Credit, Event, Rectangle, WebMercatorTilingScheme, type ImageryProvider } from 'cesium';
+import { Credit, Event, Rectangle, RequestState, WebMercatorTilingScheme, type ImageryProvider, type Request } from 'cesium';
 
 const ROOT = '/imagery/rhein-main';
 const BOUNDS = [8.48, 49.93, 8.80, 50.12] as const;
@@ -7,10 +7,13 @@ const MAX_TILE_BYTES = 1024 * 1024;
 const MAX_MANIFEST_BYTES = 512 * 1024;
 const CACHE_LIMIT = 64;
 const CONCURRENCY = 6;
+/** Queued (not yet fetching) tile loads beyond this are dropped oldest-first. */
+export const MAX_QUEUED_TILES = 48;
+const CANCELLED = Symbol('cancelled');
 
 type Tile = Readonly<{ z: number; x: number; y: number; bytes: number; sha256: string }>;
 type Manifest = Readonly<{ tiles: readonly Tile[] }>;
-export type RegionalImageryStats = { loadedTiles: number; cacheSize: number; inflight: number; failedTiles: number; resolutionAt: (latitudeDegrees: number, longitudeDegrees: number) => number | null; loadedLevelAt: (latitudeDegrees: number, longitudeDegrees: number) => number | null };
+export type RegionalImageryStats = { loadedTiles: number; cacheSize: number; inflight: number; failedTiles: number; queuedTiles: number; cancelledTiles: number; resolutionAt: (latitudeDegrees: number, longitudeDegrees: number) => number | null; loadedLevelAt: (latitudeDegrees: number, longitudeDegrees: number) => number | null };
 
 /** XYZ coordinates, with y increasing southwards in Web Mercator. */
 export function regionalTileAt(latitudeDegrees: number, longitudeDegrees: number, level: number): { x: number; y: number } {
@@ -81,6 +84,8 @@ async function boundedBytes(response: Response, maximum: number): Promise<Uint8A
 
 export async function createRegionalImageryProvider(options: { onStatus?: (message: string) => void; signal?: AbortSignal } = {}): Promise<{
   provider: ImageryProvider; dispose: () => void; getStats: () => RegionalImageryStats;
+  /** Drop queued tile loads for the previous view; Cesium re-requests tiles it still needs. */
+  cancelQueued: () => number;
 }> {
   const controller = new AbortController();
   const requestSignal = () => AbortSignal.any([controller.signal, AbortSignal.timeout(12000), ...(options.signal ? [options.signal] : [])]);
@@ -88,12 +93,14 @@ export async function createRegionalImageryProvider(options: { onStatus?: (messa
   const manifest = validateRegionalManifest(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(manifestBytes)));
   const records = new Map(manifest.tiles.map(t => [`${t.z}/${t.x}/${t.y}`, t]));
   const cache = new Map<string, ImageBitmap>();
-  const pending = new Map<string, Promise<ImageBitmap | null>>();
+  const pending = new Map<string, Promise<ImageBitmap | null | typeof CANCELLED>>();
   const failed = new Set<string>();
+  // Newest-first: the most recent requests belong to the current view.
   const waiters: ((granted: boolean) => void)[] = [];
-  let active = 0, loadedTiles = 0, disposed = false;
+  let active = 0, loadedTiles = 0, cancelledTiles = 0, disposed = false;
+  const drop = (count: number) => { for (const wake of waiters.splice(0, count)) { cancelledTiles++; wake(false); } };
   const notify = (message: string) => { try { options.onStatus?.(message); } catch { /* UI callback cannot break loading. */ } };
-  const load = (tile: Tile): Promise<ImageBitmap | null> => {
+  const load = (tile: Tile): Promise<ImageBitmap | null | typeof CANCELLED> => {
     const key = `${tile.z}/${tile.x}/${tile.y}`;
     const cached = cache.get(key);
     if (cached) { cache.delete(key); cache.set(key, cached); return Promise.resolve(cached); }
@@ -101,7 +108,12 @@ export async function createRegionalImageryProvider(options: { onStatus?: (messa
     if (failed.has(key) || disposed) return Promise.resolve(null);
     const promise = (async () => {
       if (active >= CONCURRENCY) {
-        if (!await new Promise<boolean>(resolve => waiters.push(resolve))) return null;
+        const granted = await new Promise<boolean>(resolve => {
+          waiters.push(resolve);
+          if (waiters.length > MAX_QUEUED_TILES) drop(waiters.length - MAX_QUEUED_TILES);
+        });
+        // A dropped load is not a tile failure; it may be requested again.
+        if (!granted) return disposed ? null : CANCELLED;
       } else active++;
       if (disposed) { active--; return null; }
       try {
@@ -117,7 +129,7 @@ export async function createRegionalImageryProvider(options: { onStatus?: (messa
       } catch (error) {
         if (!disposed) { failed.add(key); notify(`Regional imagery tile unavailable: ${key}`); console.warn('Regional imagery tile unavailable', key, error); }
         return null;
-      } finally { const next = waiters.shift(); if (next) next(true); else active--; }
+      } finally { const next = waiters.pop(); if (next) next(true); else active--; }
     })();
     pending.set(key, promise); void promise.finally(() => pending.delete(key));
     return promise;
@@ -130,7 +142,7 @@ export async function createRegionalImageryProvider(options: { onStatus?: (messa
     }
     return null;
   };
-  const getStats = (): RegionalImageryStats => ({ loadedTiles, cacheSize: cache.size, inflight: active, failedTiles: failed.size,
+  const getStats = (): RegionalImageryStats => ({ loadedTiles, cacheSize: cache.size, inflight: active, failedTiles: failed.size, queuedTiles: waiters.length, cancelledTiles,
     resolutionAt: (latitudeDegrees, longitudeDegrees) => levelAt(latitudeDegrees, longitudeDegrees, false),
     loadedLevelAt: (latitudeDegrees, longitudeDegrees) => levelAt(latitudeDegrees, longitudeDegrees, true),
   });
@@ -139,15 +151,21 @@ export async function createRegionalImageryProvider(options: { onStatus?: (messa
     minimumLevel: 10, maximumLevel: 15, hasAlphaChannel: true, errorEvent: new Event(), tileDiscardPolicy: undefined, proxy: undefined,
     credit: new Credit('Hessen HVBG · DL-DE-Zero-2.0 · imagery resampled and tiled', true),
     getTileCredits: () => undefined,
-    requestImage(x: number, y: number, level: number) {
+    requestImage(x: number, y: number, level: number, request?: Request) {
       if (disposed || !Number.isInteger(x) || !Number.isInteger(y) || !Number.isInteger(level) || level < 10 || level > 15 || x < 0 || y < 0 || x >= 2 ** level || y >= 2 ** level) return undefined;
+      // Cesium treats a rejected CANCELLED request as "try again later", not as a failed tile.
+      // Cesium's public typings mark state read-only; ImageryLayer reads it on rejection.
+      const mutable = request as unknown as { state: RequestState; cancelled?: boolean } | undefined;
+      const cancelled = () => { if (mutable) mutable.state = RequestState.CANCELLED; return new Error('Regional imagery request cancelled'); };
       return (async () => {
+        if (mutable?.cancelled) throw cancelled();
         const canvas = document.createElement('canvas'); canvas.width = SIZE; canvas.height = SIZE;
         const context = canvas.getContext('2d'); if (!context) throw new Error('Canvas unavailable');
         for (let z = level; z >= 10 && !disposed; z--) {
           const factor = 2 ** (level - z), tile = records.get(`${z}/${Math.floor(x / factor)}/${Math.floor(y / factor)}`);
           if (!tile) continue;
           const image = await load(tile);
+          if (image === CANCELLED) throw cancelled();
           if (image && !disposed) { const crop = ancestorCrop(x, y, level, z); context.drawImage(image, crop.sx, crop.sy, crop.size, crop.size, 0, 0, SIZE, SIZE); break; }
         }
         return canvas;
@@ -156,5 +174,6 @@ export async function createRegionalImageryProvider(options: { onStatus?: (messa
     pickFeatures: () => undefined,
   } as unknown as ImageryProvider;
   const dispose = () => { if (disposed) return; disposed = true; controller.abort(); for (const image of cache.values()) image.close(); cache.clear(); for (const wake of waiters.splice(0)) wake(false); };
-  return { provider, dispose, getStats };
+  const cancelQueued = () => { if (disposed) return 0; const count = waiters.length; drop(count); return count; };
+  return { provider, dispose, getStats, cancelQueued };
 }
