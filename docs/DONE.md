@@ -3,6 +3,53 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 10:43 — Generic propeller windmilling; glide gap remains
+
+TODO: 2.0.52 **partial, still open**; R-SIM-10 is not fully accepted.
+Agent: Codex orchestrator owns native diagnostics/build metadata, integration,
+requirements and shared records. `glide_native`/code1 creates actual native glide
+and repeat/reset regressions; `glide_controls`/code2 audits controls and implements
+source-pinned propeller preparation/tests. `glide_research_records` researches
+sources and records the input in parallel. `glide_quality` independently reviews
+quality and validates the bounded increment. Cross-provider peer remains pending.
+
+**Implementation notes**
+
+Confirm the original generic propeller stops after engine shutdown and loses its
+drag. Reuse fixed-pitch CP/CT formulas from pinned Aero-Matic source in an ignored
+local propeller copy; retain geometry/inertia/Mach corrections and record the
+direct-drive design-RPM adaptation. Native shaft dynamics now sustain windmilling
+and negative thrust in the verified nominal cases. Add guarded read-only N/W/J/
+rad/s diagnostics and exact-reset checks. Keep the remaining stopped/low-RPM
+drag limitation visible, with no invented high-advance data or imposed sink rate.
+
+Integrate newly merged main `9960c6a`, retaining both package test sets, complete
+DONE records and source-rights disclosures. Fresh native and production builds
+pass. Shared CI passes 280 app, 84 assurance and 11 assessment cases plus both
+six-case Python adapter suites; nine of 23 native-study cases remain skipped.
+Independent native and actual-browser checks cover shutdown/restart, read-only
+diagnostics, deterministic reset, engine controls and native approach capture.
+The glide suite reports seven nominal cases and one explicitly unaccepted
+low-speed idle case. See [review](reviews/2026-11-03-engine-off-glide.md) and
+[sources](research/2026-11-03-engine-off-glide.md).
+
+**Deviations**
+
+This is a partial generic-model improvement, not a calibrated C172 glide polar.
+In matched 60–120 s diagnostics at initial 2,500 m/35 m/s TAS, retained-throttle
+shutdown improves from 13.986:1 to 12.560:1; at 45 m/s, 12.118:1 to 10.532:1.
+These finite windows include speed/phugoid transients. Initial 35 m/s with idle
+throttle still loses useful propeller drag outside the coefficient-table envelope
+and remains unaccepted. Aircraft-specific fidelity, full R-SIM-10, broader source
+rights and peer gates remain open; generated runtime/model assets are not shipped.
+
+**Insights**
+
+Positive-only propeller power coefficients can erase drag even when ignition
+commands are correct. RPM/force sign checks alone falsely accepted tiny numerical
+remnants; native algorithm/table-envelope checks expose the remaining case.
+An isolated original-propeller negative control fails the intended regression.
+
 ## 2026-11-03 10:21 — Resolve PR #52 against current main
 
 TODO: 0.21 integration follow-up; the batched peer findings remain open.

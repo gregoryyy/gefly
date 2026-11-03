@@ -602,6 +602,13 @@ an equivalent endpoint service remain undecided.
 - The local study model is JSBSim's generic `c172x` (172P research configuration),
   **not the selected project-owned 172S**. Its model/data rights and applicability
   remain as documented in the study; it is not redistributed here.
+- A local-only, source-derived **generic fixed-pitch windmilling propeller**
+  replaces the original positive-only power table. Verified nominal engine-off
+  cases retain native propeller drag and shaft losses. Lower-speed idle-throttle
+  flight can still stop the propeller and lose its drag: the full correction
+  remains open. Powered forces also change; this is not a calibrated 172S glide
+  polar. The build records the source, inputs
+  and output hashes. See [investigation and limits](../docs/research/2026-11-03-engine-off-glide.md).
 - Normal flights use public DGM/GCG terrain; explicit landing studies retain the flat ellipsoid. There is no accepted surveyed runway-elevation
   model or accepted EDFE airport-height alignment. Imagery does not establish
   authoritative runway geometry, navigation data or chart material.

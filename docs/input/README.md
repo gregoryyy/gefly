@@ -87,4 +87,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [Southern Germany map data](2026-11-03-southern-germany-map.md) — all source airfields and navigation data; confirmed Bavaria, Baden-Württemberg, Hesse, Rhineland-Palatinate and Saarland.
 - [Parking brake and rudder controls](2026-11-03-parking-rudder.md) — N toggled parking brake beside wheel brakes, optional aileron/rudder link and rudder wheel steering.
 - [Centered touchpad control option](2026-11-03-centered-touchpad.md) — fixed steering midpoint, drag view without automatic recentering; browser-coordinate interpretation recorded.
+- [Engine-off glide report](2026-11-03-engine-off-glide.md) — user reports excessive glide performance after engine shutdown.
 - [Existing demonstrable-increments instruction](2026-11-03-demonstrable-increments-record.md) — preserved from the available conversation on this recording date; original send time not reconstructed (Q25).
