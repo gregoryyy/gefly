@@ -131,9 +131,12 @@ Review uses captured settings and disables adjustment. No pressure data is store
 or sent externally, and launch QFE never substitutes for accepted airport data.
 
 Scene pointing gestures do not request pointer lock or device permissions. Their
-inputs are bounded and neutralize on cancellation, focus loss and yoke exit;
-captured look can continue beyond the scene until release, with pilot pointer
-axes neutral. Camera offsets never enter dynamics. Numeric throttle shortcuts and
+inputs are bounded. Cancellation (Escape on the scene, window blur, a hidden page or
+disabled controls) clears yoke mode, look and axes. When the pointer leaves the scene, the
+yoke axes go neutral but the selected yoke mode and anchor are kept; on return, the
+pointer position relative to that anchor is authoritative again (R-INPUT-1).
+A captured look gesture can continue beyond the scene until release, with pilot
+pointer axes neutral. Camera offsets never enter dynamics. Numeric throttle shortcuts and
 AP shortcuts are suppressed inside open dialogs and editable controls. The live
 mobile engine dialog releases held inputs and keeps flight running, as labeled.
 
