@@ -3,6 +3,45 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 11:01 — Compact engine readings and low-fuel reference marks
+
+TODO: 2.0.53 complete for this R-PANEL-1/R-REVIEW-1 increment.
+Agent: Codex orchestrator owns shared requirements/status and integration.
+`engine_labels_style`/code1 implements layout and gauge styling;
+`engine_labels_markup`/code2 implements markup, fuel presentation and browser
+regressions. `engine_labels_records` records input in parallel.
+`engine_labels_quality` independently reviews quality and validates the result.
+Cross-provider peer remains pending under the existing batched cadence.
+
+**Implementation notes**
+
+OIL PRESS, OIL TEMP, FUEL FLOW and EXHST GAS now each keep label, value and unit
+on one compact line. Move fuel quantities beside the dial, retain 88px fuel
+geometry and equal 100px throttle/mixture travel, and keep controls within the
+existing panel height. Add mirrored amber lower-quarter arcs/markers, a central
+LOW reference and independent per-tank LOW badges. Selected Review quantities
+drive the same display; unavailable data hides the badges instead of inventing
+low fuel. No flight dynamics, fuel state or recorded controls change.
+
+Shared CI passes 280 app, 84 assurance and 11 assessment cases; nine of 23 native
+study cases remain explicitly skipped. TypeScript/production build pass. After
+the compact-layout repair, renew the build and independent actual-browser fuel
+suite (four groups) and panel layout (ten viewports plus mobile portal lifecycle).
+Desktop/mobile screenshots and controlled low-quantity fixtures are inspected.
+See [review](reviews/2026-11-03-engine-panel-labels.md).
+
+**Deviations**
+
+The lower quarter is an explicitly declared generic model display reference,
+not an installed aircraft low-fuel annunciator threshold or fuel reserve.
+Native fuel consumption and existing model/source limitations remain unchanged.
+
+**Insights**
+
+Single-line rows alone did not guarantee panel containment: viewport checks found
+overflow below the engine column. Moving quantities beside the dial and fixing
+the effective heading height reclaimed space without shrinking lever travel.
+
 ## 2026-11-03 10:21 — Resolve PR #52 against current main
 
 TODO: 0.21 integration follow-up; the batched peer findings remain open.

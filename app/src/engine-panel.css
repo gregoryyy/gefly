@@ -69,6 +69,9 @@
 .engine-fuel-gauge .fuel-bezel { fill: #101b23; stroke: #718087; stroke-width: 1.2; }
 .engine-fuel-gauge .fuel-face { fill: #17272d; stroke: #35464e; }
 .engine-fuel-gauge .fuel-scale { fill: none; stroke: #c6d3d6; stroke-width: 1; }
+.engine-fuel-gauge .fuel-low-zone { fill: none; stroke: #e7b36b; stroke-width: 3; stroke-linecap: round; }
+.engine-fuel-gauge .fuel-low-marker { fill: #e7b36b; stroke: #17272d; stroke-width: .5; }
+.engine-fuel-gauge .fuel-low-label { fill: #e7b36b; font: 8px system-ui, sans-serif; font-weight: 650; text-anchor: middle; }
 /* SVG user units; the 100-unit face renders about 70 px wide, so 9 units ≈ 6.3 px. */
 .engine-fuel-gauge .fuel-labels { fill: #c6d3d6; font: 9px system-ui, sans-serif; text-anchor: middle; }
 .engine-fuel-gauge .fuel-needle { fill: none; stroke-width: 1.7; stroke-linecap: round; }
@@ -79,22 +82,44 @@
 .engine-fuel-gauge .fuel-flag { fill: #f1c49a; font: 10px system-ui, sans-serif; text-anchor: middle; paint-order: stroke; stroke: #17272d; stroke-width: 2px; }
 .engine-fuel-gauge .fuel-screws circle { fill: #15232a; stroke: #738087; stroke-width: .6; }
 .engine-fuel-gauge .fuel-screws path { fill: none; stroke: #738087; stroke-width: .5; }
-.engine-instrument-row .engine-readouts { gap: 5px 4px; }
-.engine-instrument-row .engine-readouts > div { display: block; min-width: 0; padding-bottom: 3px; }
+.engine-top-readouts { min-width: 0; }
+.engine-instrument-row .engine-readouts { grid-template-columns: minmax(0, 1fr); gap: 3px; }
+.engine-instrument-row .engine-readouts > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 3px; align-items: baseline; min-width: 0; padding-bottom: 2px; }
 .engine-instrument-row .engine-readouts span { display: block; font-size: var(--cockpit-label-min, 7px); letter-spacing: 0; white-space: nowrap; }
 .engine-content .engine-instrument-row .engine-readouts b { display: block; font-size: 14px; line-height: 1.15; }
 .engine-instrument-row .engine-readouts small { display: block; font-size: var(--cockpit-label-min, 7px); line-height: 1.2; }
-.engine-fuel-instrument .engine-fuel { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; padding: 4px 0 0; text-align: center; }
-.engine-fuel-instrument .engine-fuel > span { grid-column: 1 / -1; font-size: var(--cockpit-label-min, 7px); letter-spacing: 0; white-space: nowrap; }
-.engine-fuel-instrument .engine-fuel b { font-size: 8px; }
+.engine-instrument-row .engine-fuel { display: grid; grid-template-columns: 1fr 1fr; gap: 1px 2px; padding: 3px 0 0; text-align: center; }
+.engine-instrument-row .engine-fuel > span { grid-column: 1 / -1; font-size: var(--cockpit-label-min, 7px); line-height: 1.2; letter-spacing: 0; white-space: nowrap; }
+.engine-instrument-row .engine-fuel b { font-size: 8px; line-height: 1.2; white-space: nowrap; }
+.engine-fuel .fuel-low-indicator { margin-left: 2px; color: #f2bf7c; font-size: 7px; font-weight: 650; white-space: nowrap; }
+.engine-fuel .fuel-low-indicator[hidden] { display: none; }
+.engine-secondary-readouts { display: grid; gap: 0; margin-top: 4px; }
+.engine-secondary-readouts > div { display: grid; grid-template-columns: minmax(0, 1fr) auto 42px; gap: 5px; align-items: baseline; padding: 0; border-bottom: 1px solid #8ca6b91f; }
+.engine-secondary-readouts span, .engine-secondary-readouts small { min-width: 0; white-space: nowrap; font-size: var(--cockpit-label-min, 7px); line-height: 1.2; }
+.engine-secondary-readouts span { color: #98aebb; letter-spacing: 0; }
+.engine-secondary-readouts b { color: #ecd2aa; font-size: 10px; font-weight: 450; font-variant-numeric: tabular-nums; line-height: 1.1; text-align: right; white-space: nowrap; }
+.engine-secondary-readouts small { color: #93a9b5; }
 .engine-content .engine-power-controls { margin-top: auto; padding-top: 7px; gap: 6px; }
 .engine-content .engine-power-controls #throttle, .engine-content .engine-power-controls #mixture-control { height: 100px; margin-top: 5px; margin-bottom: 0; }
-.engine-content .engine-power-controls .engine-control-heading { gap: 2px; }
+.engine-content .engine-power-controls .engine-control-heading,
+.engine-content .engine-power-controls .throttle-control label { min-height: 32px; gap: 2px; }
+/* Match the fitted cockpit selector so the shared 44px heading height cannot
+   reintroduce overflow. Keep both native power-lever tracks at 100px. */
+.cockpit-fitted .engine-content .engine-power-controls .engine-control-heading,
+.cockpit-fitted .engine-content .engine-power-controls .throttle-control label { min-height: 32px; height: 32px; }
+.cockpit-fitted .engine-content .engine-power-controls .engine-control-heading { display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto; align-content: start; align-items: center; justify-content: center; gap: 2px 3px; }
+.cockpit-fitted .engine-content .engine-control-heading label { letter-spacing: .3px; }
+.cockpit-fitted .engine-content .engine-control-heading output { font-size: 7px; white-space: nowrap; }
+.cockpit-fitted .engine-content .engine-control-heading button { grid-column: 1 / -1; justify-self: center; }
 .engine-dialog .engine-content { min-height: 330px; }
 .engine-dialog .engine-instrument-row { grid-template-columns: 112px minmax(0, 1fr); gap: 12px; }
 .engine-dialog .engine-fuel-gauge { width: 112px; height: 112px; }
 .engine-dialog .engine-instrument-row .engine-readouts span { font-size: 7px; }
 .engine-dialog .engine-instrument-row .engine-readouts b { font-size: 19px; }
 .engine-dialog .engine-instrument-row .engine-readouts small { font-size: 7px; }
-.engine-dialog .engine-fuel-instrument .engine-fuel > span { font-size: var(--cockpit-label-min, 7px); }
-.engine-dialog .engine-fuel-instrument .engine-fuel b { font-size: 10px; }
+.engine-dialog .engine-instrument-row .engine-fuel > span { font-size: var(--cockpit-label-min, 7px); }
+.engine-dialog .engine-instrument-row .engine-fuel b { font-size: 10px; }
+.engine-dialog .engine-secondary-readouts { margin-top: 7px; }
+.engine-dialog .engine-secondary-readouts > div { grid-template-columns: minmax(0, 1fr) auto 50px; gap: 8px; padding: 3px 0; }
+.engine-dialog .engine-secondary-readouts span, .engine-dialog .engine-secondary-readouts small { font-size: 9px; }
+.engine-dialog .engine-secondary-readouts b { font-size: 14px; }

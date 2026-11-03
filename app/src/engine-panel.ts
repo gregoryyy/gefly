@@ -32,6 +32,8 @@ const PA_PER_INHG = 3386.389;
 const PA_PER_PSI = 6894.757293168;
 const M3_PER_US_GALLON = 0.003785411784;
 const TWO_PI = 2 * Math.PI;
+// Presentation reference only: not an aircraft low-fuel or reserve threshold.
+const LOW_MODEL_TANK_FRACTION = .25;
 function fuelScale(left: boolean): string {
   const pivotX = left ? 44 : 56;
   return [0, .25, .5, .75, 1].map(fraction => {
@@ -40,6 +42,16 @@ function fuelScale(left: boolean): string {
     const y = (radius: number) => 50 - Math.sin(angle) * radius;
     return `<path d="M${x(25)} ${y(25)} L${x(29)} ${y(29)}"/>`;
   }).join('');
+}
+
+function lowFuelReference(left: boolean): string {
+  const pivotX = left ? 44 : 56;
+  const point = (fraction: number, radius: number) => {
+    const angle = (-70 + 140 * fraction) * Math.PI / 180;
+    return `${pivotX + (left ? -1 : 1) * Math.cos(angle) * radius} ${50 - Math.sin(angle) * radius}`;
+  };
+  return `<path class="fuel-low-zone" d="M${point(0, 27)} A27 27 0 0 ${left ? 1 : 0} ${point(LOW_MODEL_TANK_FRACTION, 27)}"/>
+    <path class="fuel-low-marker" d="M${point(LOW_MODEL_TANK_FRACTION, 29)} L${point(.22, 34)} L${point(.28, 34)} Z"/>`;
 }
 
 function engineState(state: Readonly<FlightState> | null): EngineState | null {
@@ -66,24 +78,27 @@ export function createEnginePanel(options: EnginePanelOptions): {
     <div class="engine-heading"><strong>ENGINE</strong><span id="engine-state-label">LIVE</span></div>
     <div class="engine-instrument-row"><div class="engine-fuel-instrument">
       <svg id="engine-fuel-gauge" class="engine-fuel-gauge" viewBox="0 0 100 100" role="img" aria-labelledby="engine-fuel-title engine-fuel-description" data-available="false">
-        <title id="engine-fuel-title">Model tank contents unavailable</title><desc id="engine-fuel-description">Left and right model tank contents, empty to full. Each tank model capacity is 19.70 US gallons. No usable fuel, reserve or aircraft operating arcs are inferred.</desc>
+        <title id="engine-fuel-title">Model tank contents unavailable</title><desc id="engine-fuel-description">Left and right model tank contents, empty to full. Each tank model capacity is 19.70 US gallons. Amber LOW marks show the lower quarter of each model tank. This is a display reference, not an aircraft low-fuel warning, usable-fuel quantity or reserve limit.</desc>
         <circle class="fuel-bezel" cx="50" cy="50" r="48"/><circle class="fuel-face" cx="50" cy="50" r="44"/>
-        <g class="fuel-dial"><g class="fuel-scale fuel-left-scale">${fuelScale(true)}</g><g class="fuel-scale fuel-right-scale">${fuelScale(false)}</g>
+        <g class="fuel-dial">${lowFuelReference(true)}${lowFuelReference(false)}<text class="fuel-low-label" x="50" y="90">LOW</text><g class="fuel-scale fuel-left-scale">${fuelScale(true)}</g><g class="fuel-scale fuel-right-scale">${fuelScale(false)}</g>
         <g class="fuel-labels"><text x="11" y="52">L</text><text x="89" y="52">R</text><text x="34" y="83">E</text><text x="34" y="20">F</text><text x="66" y="83">E</text><text x="66" y="20">F</text></g>
         <path id="engine-fuel-left-needle" class="fuel-needle fuel-left-needle" d="M44 50 L18 50"/><path id="engine-fuel-right-needle" class="fuel-needle fuel-right-needle" d="M56 50 L82 50"/>
         <circle class="fuel-hub" cx="44" cy="50" r="2"/><circle class="fuel-hub" cx="56" cy="50" r="2"/>
         <text id="engine-fuel-flag" class="fuel-flag" x="50" y="64">INOP</text></g>
         <g class="fuel-screws"><circle cx="16" cy="16" r="2"/><circle cx="84" cy="16" r="2"/><circle cx="16" cy="84" r="2"/><circle cx="84" cy="84" r="2"/><path d="m15 17 2-2m66 2 2-2m-70 70 2-2m66 2 2-2"/></g>
       </svg>
-      <div class="engine-fuel"><span>MODEL TANKS · US GAL</span><b>L <output id="engine-fuel-left">—</output></b><b>R <output id="engine-fuel-right">—</output></b></div>
-    </div><div class="engine-readouts">
+    </div><div class="engine-top-readouts"><div class="engine-readouts">
       <div><span>RPM</span><b id="engine-rpm">—</b><small>PROP RPM</small></div>
       <div title="Manifold pressure"><span>MANIFOLD</span><b id="engine-map">—</b><small>inHg</small></div>
+    </div>
+      <div class="engine-fuel"><span>MODEL · US GAL</span><b>L <output id="engine-fuel-left">—</output><span id="engine-fuel-left-low" class="fuel-low-indicator" hidden>LOW</span></b><b>R <output id="engine-fuel-right">—</output><span id="engine-fuel-right-low" class="fuel-low-indicator" hidden>LOW</span></b></div>
+    </div></div>
+    <div class="engine-secondary-readouts">
       <div title="Oil pressure"><span>OIL PRESS</span><b id="engine-oil-press">—</b><small>psi</small></div>
       <div title="Oil temperature"><span>OIL TEMP</span><b id="engine-oil-temp">—</b><small>°C</small></div>
-      <div title="Exhaust gas temperature"><span>EGT</span><b id="engine-egt">—</b><small>°C</small></div>
-      <div><span>FUEL FLOW</span><b id="engine-fuel-flow">—</b><small>US gal/h</small></div>
-    </div></div>
+      <div title="Fuel flow"><span>FUEL FLOW</span><b id="engine-fuel-flow">—</b><small>US gal/h</small></div>
+      <div title="Exhaust gas temperature"><span>EXHST GAS</span><b id="engine-egt">—</b><small>°C</small></div>
+    </div>
     <p id="engine-unavailable" class="engine-unavailable" role="status" title="Engine data unavailable · rebuild flight engine">INOP</p>
     <div class="engine-power-controls"><div class="engine-mixture">
       <div class="engine-control-heading"><label for="mixture-control">MIXTURE</label><output id="mixture-applied">—</output><button type="button" id="mixture-auto" aria-pressed="false">Model auto</button></div>
@@ -146,11 +161,17 @@ export function createEnginePanel(options: EnginePanelOptions): {
       needle.setAttribute('transform', `rotate(${fraction === null ? 0 : (side === 'left' ? -70 + 140 * fraction : 70 - 140 * fraction)} ${side === 'left' ? 44 : 56} 50)`);
       needle.dataset.fraction = fraction === null ? '' : String(fraction);
       needle.dataset.quantityM3 = fuelAvailable ? String(quantity) : '';
+      const low = fuelAvailable && quantity! <= C172X_TANK_CAPACITY_M3 * LOW_MODEL_TANK_FRACTION;
+      const lowIndicator = element(`engine-fuel-${side}-low`);
+      lowIndicator.hidden = !low;
+      lowIndicator.title = `${side === 'left' ? 'Left' : 'Right'} model tank at or below one quarter; display reference, not an aircraft reserve limit`;
+      fuelGauge.dataset[`${side}Low`] = fuelAvailable ? String(low) : '';
+
     }
     const beyondScale = fuelAvailable && (latest!.fuel_left_m3 > C172X_TANK_CAPACITY_M3 || latest!.fuel_right_m3 > C172X_TANK_CAPACITY_M3);
     element('engine-fuel-flag').textContent = !fuelAvailable ? 'INOP' : beyondScale ? 'OVR' : '';
     element('engine-fuel-title').textContent = fuelAvailable
-      ? `${reviewing ? 'Recorded' : 'Live'} model tank contents: left ${readings['engine-fuel-left']} US gallons, right ${readings['engine-fuel-right']} US gallons${beyondScale ? ', above gauge scale' : ''}`
+      ? `${reviewing ? 'Recorded' : 'Live'} model tank contents: left ${readings['engine-fuel-left']} US gallons, right ${readings['engine-fuel-right']} US gallons${beyondScale ? ', above gauge scale' : ''}${fuelGauge.dataset.leftLow === 'true' ? ', left LOW (model lower-quarter reference)' : ''}${fuelGauge.dataset.rightLow === 'true' ? ', right LOW (model lower-quarter reference)' : ''}`
       : 'Model tank contents unavailable';
     element('mixture-applied').textContent = latest ? `${Math.round(latest.mixture_norm * 100)}%${latest.mixture_auto ? ' · AUTO' : ''}` : '—';
     if (latest) {

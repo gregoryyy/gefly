@@ -259,8 +259,9 @@ filtered geometric-height derivative, not a calibrated pitot-static VSI. Review
 shows the captured instrument values while the live engine remains paused.
 
 The fitted cockpit keeps labels at least 7 CSS px and keycap text at 10 px at scale 1;
-smaller viewports scale the whole surface down. The engine face reads OIL PRESS,
-OIL TEMP and EGT, with the full names as tooltips.
+smaller viewports scale the whole surface down. OIL PRESS, OIL TEMP, FUEL FLOW
+and EXHST GAS each keep their label, reading and unit on one compact line, with
+the full names as tooltips.
 
 ## Classic panel layout
 
@@ -671,8 +672,9 @@ distance minus source bias; a LOC can provide DME without a bearing pointer. RPM
 2700 RPM marker, without invented operating arcs.
 
 The engine column precedes autopilot/flaps/trim and includes a distinct round
-left/right fuel gauge plus vertical throttle and mixture. Fuel follows actual
-model tank contents; its full-scale capacity uses the pinned model's default
+left/right fuel gauge plus vertical throttle and mixture. Amber lower-quarter
+marks and per-tank LOW labels are generic model display references, not aircraft
+low-fuel thresholds or reserve limits. Fuel follows actual model tank contents; its full-scale capacity uses the pinned model's default
 fuel density, rather than a C172S usable-fuel or reserve figure. Desktop columns
 share their top/bottom edges on a shorter panel. All inline controls keep the same
 scale; engine and radio move to dialogs on narrow views, while all four secondary
