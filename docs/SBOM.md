@@ -10,12 +10,12 @@ plan rather than assuming a single engine license covers all these materials.
 
 ## Experimental browser application
 
-The local [application](../app/README.md) pins three.js 0.187.0 (MIT) to generate the original generic aircraft visual, Vite 8.3.5 (MIT), TypeScript 7.0.2 (Apache-2.0), @types/three 0.187.0 (MIT) and Playwright 1.64.1 (Apache-2.0). Exact transitive versions/integrity hashes are in `app/package-lock.json`; installation audited with zero reported advisories on 2026-11-01. The three.js license is retained under [LICENSES](../LICENSES/three-MIT.txt). Fonts use local system fallbacks. Application, engine and the bundled Hessen starter image are local; there are no runtime imagery-service requests.
+The local [application](../app/README.md) pins three.js 0.187.0 (MIT) to generate the original generic aircraft visual, Vite 8.3.5 (MIT), TypeScript 7.0.2 (Apache-2.0), @types/three 0.187.0 (MIT) and Playwright 1.64.1 (Apache-2.0). Runtime dependencies are CesiumJS 1.146.0 and MapLibre GL JS 6.16.0, described below, and three.js. Exact transitive versions/integrity hashes are in `app/package-lock.json`. **Audit, 2026-11-03 07:36 Europe/Berlin:** the lockfile was last changed in `3e8fc63` (SHA-256 `33d24625cb9849f2dc6ff594229f2464befa83db318f04a652e3efa5dca39342`; 125 packages: 55 prod, 70 dev, 48 optional). It was audited with npm 11.19.1 on Node v24.22.1 against the public registry advisory database. `npm audit --omit=dev` and the full `npm audit` each reported 0 vulnerabilities and exited 0. The earlier 2026-11-01 zero-advisory audit came before the TypeScript 7, Vite 8, Cesium and MapLibre changes and does not cover them. An audit is a dated advisory lookup, not a security review. The three.js license is retained under [LICENSES](../LICENSES/three-MIT.txt). Fonts use local system fallbacks. Application, engine and the bundled Hessen starter image are local; there are no runtime imagery-service requests.
 
 JSBSim and c172x remain generated local research assets under the existing study recipe and rights limitations below. Vite serves only the twelve named worker/runtime files in development. Shared project-owned helpers are bundled with the UI; the generated JSBSim files and worker endpoint remain outside the production UI build, which is not a deployable flight simulator. No runtime model assets or source SDKs are committed or published.
 
 
-CesiumJS 1.146.0 (Apache-2.0) now renders the actual geographic scene. Its workers, widgets, textures, license and third-party inventories come from the locked npm package, without Cesium ion or commercial base layers; see [license](../LICENSES/Cesium-Apache-2.0.txt). A fixed official Hessen ATKIS DOP20 starter photograph is bundled under `app/public/imagery/`: [source bounds, request URL, byte hash and license](../app/public/imagery/SOURCE.json). The 1024×1024 JPEG is an unmodified GetMap image from the `he_dop_rgb` layer, covering 8.62–8.66° E / 49.95–49.975° N (approximately 3 × 2.8 km). [Dataset terms](https://opendata.hessen.de/de/dataset/atkis-dop-20) specify [DL-DE Zero 2.0](https://www.govdata.de/dl-de/zero-2-0); voluntary source credit remains visible. No acquisition date or current airport conditions are claimed. The photographs are now draped over the separately sourced regional terrain on normal flights, or the ellipsoid on explicit flat studies. Imagery alone establishes no accepted airport elevation, chart geometry or navigational authority. A bundled 512×512 coarse overview adds regional context at 8.4–8.9° E / 49.8–50.1° N; its separate byte hash and request are also recorded in SOURCE.json. The application labels overview-only coverage and reports missing coverage beyond it; EDDF/100 NM expansion remains future work.
+CesiumJS 1.146.0 (Apache-2.0) now renders the actual geographic scene. Its workers, widgets, textures, license and third-party inventories come from the locked npm package, without Cesium ion or commercial base layers; see [license](../LICENSES/Cesium-Apache-2.0.txt). A fixed official Hessen ATKIS DOP20 starter photograph is bundled under `app/public/imagery/`: [source bounds, request URL, byte hash and license](../app/public/imagery/SOURCE.json). The 1024×1024 JPEG is an unmodified GetMap image from the `he_dop_rgb` layer, covering 8.62–8.66° E / 49.95–49.975° N (approximately 3 × 2.8 km). [Dataset terms](https://opendata.hessen.de/de/dataset/atkis-dop-20) specify [DL-DE Zero 2.0](https://www.govdata.de/dl-de/zero-2-0); voluntary source credit remains visible. No acquisition date or current airport conditions are claimed. Retrieval time and layer edition were also not recorded. The live `he_dop_rgb` layer has no time dimension, so the request URL does not pin an edition. SOURCE.json therefore records `retrievedAt`/`sourceEdition` as null and gives the first commit time as `retrievedNotLaterThan`. The photographs are now draped over the separately sourced regional terrain on normal flights, or the ellipsoid on explicit flat studies. Imagery alone establishes no accepted airport elevation, chart geometry or navigational authority. A bundled 512×512 coarse overview adds regional context at 8.4–8.9° E / 49.8–50.1° N; its separate byte hash and request are also recorded in SOURCE.json. The application labels overview-only coverage and reports missing coverage beyond it; EDDF/100 NM expansion remains future work.
 
 Live adaptive WMS requests were removed after excessive refinement and service timeouts. The tested source also rejects images over 3000 pixels with an HTTP 200 XML exception. Bundling the verified starter image avoids that runtime dependency; research-model runtime data remains excluded from distribution.
 
@@ -216,6 +216,19 @@ and the modern roll autopilot reuse the already pinned source; no new numerical
 or browser dependencies were added. Python's standard library supports the
 adapter and its six tests, including the pinned c172ap MSL/VS/output-gate wiring. See [source mappings](research/2026-11-02-classic-controls.md).
 
+## Aircraft reference values in application source
+
+The application ships individual numerical aircraft values, not documents or model
+files. The **rights basis is unresolved** for both groups:
+
+| Values and files | Source and integrity | Rights position |
+| --- | --- | --- |
+| 1982 C172P POH KCAS limits, stall speeds, CG limits, load factors and VA (`app/src/aircraft-handbook-data.ts`, `airspeed-markings.ts`) | Third-party-hosted scan of one airframe's POH, SHA-256 `5c63c4b4…306c`; page citations in [research](research/2026-11-02-c172p-handbook-diagrams.md) | Cessna copyright; shipped as `facts_only` values without text or figures. The GAPS Q5/Q7 allowances name the 172S POH, not this document. |
+| JSBSim `v1.3.3` c172x contacts, span, AERORP, alpha limit, tank capacity; `eng_io320` maximum RPM; `FGTank` default density (`aircraft-handbook-data.ts`, `spatial-stall.ts`, `c172x-instrument-references.ts`) | `c172x.xml` raw SHA-256 `b736f4b7…1840`, `eng_io320.xml` `0cedc1e3…d8c6`, re-fetched 2026-11-03 | `c172x.xml` declares an unversioned "GPL" license and "not to be sold"; the E1 survey rated it *not cleared*. `eng_io320.xml` has no notice; the repository is LGPL-2.1. GAPS Q17 excludes shipping the data files and did not consider extracted values. |
+
+A user decision or documented rights analysis is needed before these values can be
+called cleared (R-DATA-1). See [notices](../THIRD_PARTY_NOTICES.md).
+
 ## Public regional terrain data
 
 The local [public height package](../app/public/terrain/README.md) is a derived
@@ -229,13 +242,16 @@ native callback and renderer share SW–NE triangles while ellipsoid conversion
 remains outside dynamics. The combined binary is 8,405,000bytes; no external
 terrain service or GIS runtime is used in flight. BKG attribution and the full
 [license](../LICENSES/CC-BY-4.0.txt) are retained. The compiler's pinned
-numpy 1.26.4/pyproj3.7.2/rasterio1.4.3 dependencies are authoring-only; no installed
-GIS binaries or downloaded source archives are committed.
+numpy 1.26.4 (BSD-3-Clause), pyproj 3.7.2 (MIT) and rasterio 1.4.3 (BSD-3-Clause)
+dependencies (licenses per PyPI metadata, read 2026-11-03) are authoring-only. Their
+binary wheels can carry PROJ/GDAL native libraries under those libraries' own licenses. No installed
+GIS binaries, wheels or downloaded source archives are committed or redistributed.
 
 A sharper 3000×1800airport photograph is bundled with its own
 [DL-DEZero source/request/hash record](../app/public/imagery/DETAIL-SOURCE.json).
 Its effective output pixels are approximately 0.74–0.76m, distinct from 20 cm source
-DOP20 resolution. Farther regional shading is explicitly derived from the DEM,
+DOP20 resolution. Its retrieval time and layer edition were not recorded either; the
+first commit time is given as an upper bound. Farther regional shading is explicitly derived from the DEM,
 not invented satellite photography. Full-resolution tiled imagery/terrain and
 complete 100 NM coverage remain later work.
 
@@ -258,7 +274,11 @@ subset and full license. Derived units/encoding/explicit component pairing and
 compiler hash are recorded in the JSON; manifest binds runtime bytes. This is a
 GPL-compatible copyleft data component, selected because the inspected permissive
 OurAirports inventory lacks ILS components. No proprietary AIS data is copied.
-The community OurAirports EDDF anchor is public domain and is not an official ARP.
+The community OurAirports EDDF anchor is public domain (Unlicense repository) and is
+not an official ARP. Its source is pinned in the package `region.center_source_record`:
+`airports.csv` at commit `72322ae9555947b969dda8effa793072159a9a1e`, SHA-256
+`e869f2a5c500aa0a5c74c680559c4e3ab7e65c7a442daa7c92b7f99fb51613ca`, row id 2212,
+retrieved 2026-11-03. This replaces the earlier URL-only reference.
 See [data provenance and reproduction](../app/public/navdata/README.md) and
 [independent source research](research/2026-11-03-rhein-main-navigation.md).
 
