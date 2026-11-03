@@ -170,3 +170,11 @@ are session-only preferences, independent of flight input. Pause/hidden/failure/
 reset/paused Review silence the graph; page teardown closes it. Missing or denied
 audio leaves flight usable with a retry/unavailable indication. Test-only local
 WAV previews are disposable outputs, not runtime telemetry or recordings.
+
+Regional navigation loads a bounded same-origin manifest and hash-verified static
+JSON package before normal flight initialization; it rejects invalid sizes,
+redirects, asset paths, schema, duplicate IDs and corrupted bytes. The package is
+frozen per context and remains historical throughout a page session/Review.
+Directory source strings use textContent. No live AIS, network ATC, external URLs,
+executable scenario content or persistence is added. LAB remains explicit and
+isolated. Approximate reception ranges are not authoritative operational status.

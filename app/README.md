@@ -232,13 +232,19 @@ respect the sound preference (**S**, initially off), volume, pause and Review.
 Warning timbre is original sound design. Selector/BARO edits establish a silent
 baseline; replay seeks discard old warning events instead of replaying a backlog.
 
-**NAV/APR** use worker-confirmed NAV1 validity. Enable fictional LAB and tune
-113.800 for the current VOR teaching signal; set OBS and the DG bug to the
-intended course. DG arming prompts HDG for 5 s. **REV is active only with LOC
-tuning**, and inhibits GS. Valid-source LOC/GS transitions are covered by
-reference fixtures, including GS capture from above or below. Current flight
-assets do not supply real LOC/GS/GPS services: selecting an invalid source
-produces source-loss/fallback indications, never a fictitious approach capture.
+**NAV/APR** use worker-confirmed NAV1 validity from the historical regional
+package or isolated opt-in LAB. Select an actual source in **Radio → Stations**,
+load standby and swap active. Set the DG TRUE bug to the intended true course;
+VOR OBS uses historical station magnetic calibration, while LOC course is fixed
+TRUE. DG arming prompts HDG for 5 s. **REV is active only with LOC tuning** and
+inhibits GS. APR uses explicitly paired GS only. Missing components, ambiguous
+co-channel sources and source loss remain flagged; no current service is inferred.
+
+Try **Flight → EDDF 25C ILS practice · historical**: the aircraft starts five NM
+from the historical glideslope antenna, below the beam at 90 kt, with NAV1 IFCW
+111.55, NAV2 FFM 114.20 and the DG bug set to the LOC true course. Hold AP at least
+a quarter second, select APR and start flight. This demonstrates geometric capture
+over the existing public terrain; it is not a published procedure or clearance.
 
 This is an operating-logic model over reused generic JSBSim controllers, not a
 validated installed C172S KAP 140. Capture anticipation, normalized CDI capture
@@ -274,13 +280,20 @@ limits, selected-172S fidelity or a validated landing exercise.
 The gray instrument panel places two round **NAV1 / NAV2** gauges beside the
 six-pack, with a separate vertical radio stack to the right. Each NAV gauge has
 an independent OBS course, CDI needle, TO/FROM indication and NAV flag.
-Glideslope is explicitly **INOP**. The radio stack provides **COM1 / NAV1** and
+NAV1 has an independent glideslope cross-needle and GS flag; NAV2 has lateral guidance only. The radio stack provides **COM1 / NAV1** and
 **COM2 / NAV2** amber active/standby displays, tuning and swap controls. COM uses an
 explicitly labeled **25 kHz subset**; it does not implement the full European
 8.33 kHz channel set. COM tuning does not provide ATC or voice communication.
 
-Opt in to the fictional **LAB** navigation demonstration to explore the NAV
-controls. Its demonstration frequency is **113.8 MHz**, at **49.96° N, 8.643° E**.
+Normal receivers use the bundled **2013.10 historical** Rhein-Main snapshot:
+31 VOR-family records, 39 localizers and 16 standalone DMEs, with only explicitly
+paired GS/DME components. **Stations** lists identifiers, frequencies, runways and
+capabilities and loads either standby receiver without silently activating it.
+The approximate 100 NM extent uses a community EDDF coordinate, not a verified
+official ARP. This is not current AIRAC/NOTAM, a chart or real-flight information.
+See [source, rights, coverage and reproduction](public/navdata/README.md).
+
+Opt in to **Fictional LAB only** to isolate the synthetic NAV demonstration. Its demonstration frequency is **113.8 MHz**, at **49.96° N, 8.643° E**.
 These are synthetic exercise settings, not a real published station, frequency
 assignment or accepted navaid database. The demonstration does not implement
 an ILS receiver or establish usable real-world navigation coverage.
@@ -288,8 +301,8 @@ an ILS receiver or establish usable real-world navigation coverage.
 To try it, start flight, enable **LAB**, tune NAV1 standby to **113.80**, then swap
 it active. Adjust NAV1's OBS and watch its matching gauge. Give NAV2 a different
 OBS course or active frequency to compare the two receivers independently. LAB
-off, an unmatched active channel or unavailable geometry leaves the NAV flag
-visible and the needle unavailable. Review uses captured tuning and position;
+only mode excludes the regional records. Unmatched channels, unavailable components,
+invalid geometry or ambiguous co-channel service remain flagged. Review uses captured tuning and position;
 its radio and OBS controls are read-only.
 
 The user's C172 cockpit poster guides the arrangement and interaction; the
@@ -528,10 +541,10 @@ acoustics or simulated weather gusts; it uses no microphone or downloaded audio.
 ### Compact classic panel
 
 The separate six-pack housing sits beside a 2×2 secondary block: NAV1/NAV2
-above **BRG/DME** and **PROP RPM**. BRG points to the opt-in fictional LAB station
+above **BRG/DME** and **PROP RPM**. BRG points to a received VOR (including opt-in LAB)
 using true heading and direct spherical bearing; it is independent of the VOR OBS
-setting and is not an installed ADF/NDB receiver. DME remains geometric slant
-distance. RPM follows actual propeller rotation, with a sourced generic model
+setting and is not an installed ADF/NDB receiver. DME uses its independently sourced antenna and geometric slant
+distance minus source bias; a LOC can provide DME without a bearing pointer. RPM follows actual propeller rotation, with a sourced generic model
 2700 RPM marker, without invented operating arcs.
 
 The engine column precedes autopilot/flaps/trim and includes a distinct round

@@ -33,7 +33,7 @@ import { autopilotCommand, engineFields, engineSwitchFields } from './engine.js'
 import { groundCollisionContact, collisionRecord, EMPTY_COLLISION } from './collision.js';
 import { createKap140, validKapCommand, validKapState } from './kap140.js';
 import { createAltitudeAlert } from './altitude-alert.js';
-import { DEFAULT_NAVIGATION, NAVIGATION_FIELDS, validNavigation, navigationSignal } from './navigation.js';
+import { DEFAULT_NAVIGATION, NAVIGATION_FIELDS, validNavigation, navigationSignal, loadNavigationPackage } from './navigation.js';
 
 const MAX_CATCHUP = 12;          // steps per tick (100 ms at 1/120 s)
 const TIMER_SLACK_MS = 0.1;     // wake margin after a step's due time
@@ -87,6 +87,7 @@ let kap = null;
 let altitudeAlert = null;
 let pilotOverrideActive = false;
 let navigation = { ...DEFAULT_NAVIGATION };
+let navigationPackage = null;
 // Ideal pressure instrument only. Its setting never changes the atmosphere,
 // dynamics state, integration step or original study digest.
 let altimeterSettingPa = 101325;
@@ -207,7 +208,7 @@ function kapSensors() {
   return { t_s: state[0], dt_s: dtS, heading_rad: state[6], physical_altitude_m: state[3],
     pressure_altitude_m: pressureAltitude,
     vertical_speed_mps: -ground.ground_down_mps, elevator_norm: M.HEAPF64[pointer + 2],
-    nav: navigationSignal(navigation, { lat_rad: state[1], lon_rad: state[2] }) };
+    nav: navigationSignal(navigation, { lat_rad: state[1], lon_rad: state[2], alt_msl_m: state[3] }, navigationPackage?.records, navigationPackage?.source_label) };
 }
 function applyKapGuidance(sensors = kapSensors()) {
   if (!kap) return true;
@@ -252,7 +253,8 @@ function onNavigation(msg) {
   if (!validNavigation(msg.config)) {
     postMessage({ type: 'navigation-rejected', message: 'NAV1 configuration invalid.' }); return;
   }
-  navigation = Object.fromEntries(NAVIGATION_FIELDS.map(k => [k, msg.config[k]]));
+  const merged = { ...navigation, ...msg.config };
+  navigation = Object.fromEntries(NAVIGATION_FIELDS.map(k => [k, merged[k]]));
   // Source-loss fallback is immediate even while paused; dynamics stay frozen.
   if (kap) { const sensors = kapSensors(); kap.step(sensors); if (!applyKapGuidance(sensors)) return; }
   postState();
@@ -306,7 +308,7 @@ function stateMessage() {
     type: 'state', step: stepIndex, t_s: s[0], lat_rad: s[1], lon_rad: s[2],
     alt_msl_m: s[3], roll_rad: s[4], pitch_rad: s[5], heading_rad: s[6], tas_mps: s[7],
     last_input_wall_ms: lastInputWallMs, step_cost_us: lastStepCostUs, ...altimeterFields,
-    ...readStallFields(), ...readControlFields(), ...readCockpitFields(), ...readPitchTrimFields(), ...readGroundFields(), ...readEngineFields(), ...readEngineSwitchFields(), ...terrainFields(), ...kapFields(), ...(kap ? navigation : {}), ...collision,
+    ...readStallFields(), ...readControlFields(), ...readCockpitFields(), ...readPitchTrimFields(), ...readGroundFields(), ...readEngineFields(), ...readEngineSwitchFields(), ...terrainFields(), ...kapFields(), ...((kap || navigationPackage) ? navigation : {}), ...collision,
   };
 }
 
@@ -447,7 +449,7 @@ function stats() {
 }
 
 async function onInit(msg) {
-  initialized = false; terrainFault = false; kap = null; altitudeAlert = null; pilotOverrideActive = false; navigation = { ...DEFAULT_NAVIGATION };
+  initialized = false; terrainFault = false; kap = null; altitudeAlert = null; pilotOverrideActive = false; navigation = { ...DEFAULT_NAVIGATION }; navigationPackage = null;
   await modulePromise;
   const ic = msg.ic || {};
   const dt = msg.dt_s;
@@ -456,6 +458,13 @@ async function onInit(msg) {
   if (msg.aircraft !== 'c172x') { fail(`init: unsupported aircraft ${msg.aircraft}`); return; }
   if (msg.ground_collision !== undefined && typeof msg.ground_collision !== 'boolean') { fail('init: ground_collision must be boolean'); return; }
   if (msg.terrain !== undefined && typeof msg.terrain !== 'boolean') { fail('init: terrain must be boolean'); return; }
+  if (msg.regional_navigation !== undefined && typeof msg.regional_navigation !== 'boolean') { fail('init: invalid regional_navigation flag'); return; }
+  if (msg.navigation !== undefined) {
+    if (!validNavigation(msg.navigation)) { fail('init: invalid navigation configuration'); return; }
+    const merged = { ...DEFAULT_NAVIGATION, ...msg.navigation };
+    navigation = Object.fromEntries(NAVIGATION_FIELDS.map(k => [k, merged[k]]));
+  }
+  if (msg.regional_navigation === true) navigationPackage = await loadNavigationPackage();
   if (msg.kap140 !== undefined && typeof msg.kap140 !== 'boolean') { fail('init: invalid kap140 capability flag'); return; }
   const presets = { normal: 1, hard: 2, side: 3, banked: 4 };
   const preset = msg.landing_preset;
@@ -497,7 +506,7 @@ async function onInit(msg) {
   initialized = true;
   postMessage({
     type: 'ready',
-    build: { ...(terrainGrid ? { terrain: { id: terrainGrid.id, sha256: terrainGrid.sha256, physical_datum: terrainGrid.physical_datum, geoid_model: terrainGrid.geoid_model } } : {}), jsbsim_tag: build.jsbsim_tag, emsdk: build.emsdk, wasm_bytes: build.wasm_bytes,
+    build: { ...(navigationPackage ? { navigation: { id: navigationPackage.id, edition: navigationPackage.edition, sha256: navigationPackage.sha256, historical: navigationPackage.historical } } : {}), ...(terrainGrid ? { terrain: { id: terrainGrid.id, sha256: terrainGrid.sha256, physical_datum: terrainGrid.physical_datum, geoid_model: terrainGrid.geoid_model } } : {}), jsbsim_tag: build.jsbsim_tag, emsdk: build.emsdk, wasm_bytes: build.wasm_bytes,
              jsbsim_commit: build.jsbsim_commit, wasm_sha256: build.wasm_sha256, flags: build.flags,
              aircraft_adapter: build.aircraft_adapter },
     trim: { status: M._gf_trim_status(), throttle: M._gf_trim_throttle(), pitch_trim: M._gf_trim_pitch() },

@@ -44,3 +44,12 @@
 .radio-nav-dialog .nav-indication > span { font-size: 7px; }
 .radio-nav-dialog > .primary { margin-top: 12px; padding: 10px; font-size: 12px; }
 @media (max-width: 620px) { .radio-nav-panel { width: 100%; } }
+.nav-stations-open { margin-top: 6px; padding: 3px 7px; font-size: 9px; }
+.nav-stations-dialog { width: min(640px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow: auto; margin: auto; padding: 18px; background: #13232e; color: #e5eef1; border: 1px solid #a9bec64d; border-radius: 12px; }
+.nav-stations-dialog::backdrop { background: #06121ca8; }
+.nav-stations-dialog h2 { margin: 0 0 6px; font-size: 20px; }
+.nav-stations-dialog p { color: #b0c5d0; font-size: 11px; }
+.nav-station { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 5px; padding: 6px 0; border-top: 1px solid #83939f44; font-size: 11px; }
+.nav-station button { padding: 4px; font-size: 10px; }
+.nav-station button:disabled { opacity: .45; }
+.nav-stations-close { margin-top: 10px; }

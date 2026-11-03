@@ -1,5 +1,5 @@
 import type { FlightState } from './types';
-import { DEFAULT_RADIO_NAV, DEMO_NAV, navigationIndication, radioFrequencyKeys, setObs, swapRadio, tuneStandby,
+import { DEFAULT_RADIO_NAV, getNavigationCatalogue, navigationIndication, radioFrequencyKeys, setObs, swapRadio, tuneStandby,
   validRadioNavSnapshot, type RadioKind, type RadioNavSnapshot, type RadioReceiver } from './radio-nav';
 import './radio-nav-panel.css';
 
@@ -17,6 +17,7 @@ export function createRadioNavPanel(options: RadioNavOptions): {
   snapshot(): RadioNavSnapshot;
   update(state: Readonly<FlightState> | null, reviewing: boolean, running: boolean): void;
   adjustObs(receiver: RadioReceiver, delta_deg: number): void;
+  setConfiguration(config: RadioNavSnapshot): void;
   reset(): void;
   dispose(): void;
 } {
@@ -37,17 +38,24 @@ export function createRadioNavPanel(options: RadioNavOptions): {
         <div><label for="${kind}${receiver}-standby">STANDBY MHz</label><input id="${kind}${receiver}-standby" type="number" min="${kind === 'com' ? '118' : '108'}" max="${kind === 'com' ? '136.975' : '117.95'}" step="${kind === 'com' ? '.025' : '.05'}" aria-label="${kind.toUpperCase()}${receiver} standby frequency MHz"></div>
         <div class="radio-tune-buttons"><button type="button" id="${kind}${receiver}-down" aria-label="Decrease ${kind.toUpperCase()}${receiver} standby channel">−</button><button type="button" id="${kind}${receiver}-up" aria-label="Increase ${kind.toUpperCase()}${receiver} standby channel">+</button></div>
       </div>`).join('')}
-      <div class="nav-course"><label for="${navId(receiver, 'obs')}">OBS ${receiver} TRUE</label><button type="button" id="${navId(receiver, 'obs-down')}" aria-label="Decrease NAV${receiver} OBS course">−</button><input id="${navId(receiver, 'obs')}" type="number" min="0" max="359" step="1" value="0" aria-label="NAV${receiver} OBS true course degrees"><button type="button" id="${navId(receiver, 'obs-up')}" aria-label="Increase NAV${receiver} OBS course">+</button></div>
-      <div class="nav-indication"><b id="${navId(receiver, 'flag')}">NAV</b><output id="${navId(receiver, 'to-from')}">OFF</output><span>LAB DME <output id="${navId(receiver, 'dme')}">—</output> NM · <output id="${navId(receiver, 'radial')}">—</output> TRUE</span></div>
+      <div class="nav-course"><label id="${navId(receiver, 'obs-label')}" for="${navId(receiver, 'obs')}">OBS ${receiver}</label><button type="button" id="${navId(receiver, 'obs-down')}" aria-label="Decrease NAV${receiver} OBS course">−</button><input id="${navId(receiver, 'obs')}" type="number" min="0" max="359" step="1" value="0" aria-label="NAV${receiver} OBS true course degrees"><button type="button" id="${navId(receiver, 'obs-up')}" aria-label="Increase NAV${receiver} OBS course">+</button></div>
+      <div class="nav-indication"><b id="${navId(receiver, 'flag')}">NAV</b><output id="${navId(receiver, 'to-from')}">OFF</output><span>DME <output id="${navId(receiver, 'dme')}">—</output> NM · RAD <output id="${navId(receiver, 'radial')}">—</output></span></div>
       <div id="${navId(receiver, 'cdi')}" class="nav-cdi" role="img" aria-label="CDI unavailable">${'<i></i>'.repeat(11)}<b id="${navId(receiver, 'cdi-needle')}" hidden></b></div>
       <p id="${navId(receiver, 'signal-note')}" class="nav-signal-note">LAB off · no real station database</p>
     </section>`).join('')}
-    <label class="nav-demo"><input id="nav-demo" type="checkbox"> Fictional LAB ${(DEMO_NAV.frequency_khz / 1000).toFixed(2)} · both NAVs</label>
-    <p class="radio-limitations">Legacy COM 25 kHz subset · 8.33 kHz/ATC unavailable.<br>LAB: true OBS/radials, geometric DME, 60 NM demo radius. No propagation/terrain, magnetic VOR or ILS.</p>
+    <label class="nav-demo"><input id="nav-demo" type="checkbox"> Fictional LAB only</label>
+    <button type="button" id="nav-stations-open" class="nav-stations-open">Stations</button><p class="radio-limitations">Historical 2013.10 data · NOT CURRENT · teaching only. Simplified signals; no terrain or propagation. COM 25 kHz subset; no ATC.</p>
   `;
   const dialog = document.createElement('dialog');
   dialog.id = 'radio-nav-dialog'; dialog.className = 'radio-nav-dialog'; dialog.setAttribute('aria-labelledby', 'radio-nav-title');
   dialog.innerHTML = '<h2 id="radio-nav-title">Dual radio / NAV</h2><p class="radio-dialog-note">Flight continues while this panel is open.</p><div class="radio-dialog-slot"></div><button type="button" id="radio-nav-close" class="primary">Done</button>';
+  const stations = document.createElement('dialog');
+  stations.className = 'nav-stations-dialog'; stations.setAttribute('aria-labelledby', 'nav-stations-title');
+  stations.innerHTML = '<h2 id="nav-stations-title">Stations</h2><p>2013.10 · HISTORICAL, NOT CURRENT · teaching only</p><p>Load a frequency to standby; use the receiver swap button to activate it.</p><div class="nav-stations-list"></div><button type="button" class="nav-stations-close">Done</button>';
+  document.body.append(stations);
+  const stationList = stations.querySelector<HTMLElement>('.nav-stations-list')!;
+  const stationsOpen = content.querySelector<HTMLButtonElement>('#nav-stations-open')!;
+  const stationsClose = stations.querySelector<HTMLButtonElement>('.nav-stations-close')!;
   const slot = dialog.querySelector<HTMLElement>('.radio-dialog-slot')!;
   const done = dialog.querySelector<HTMLButtonElement>('#radio-nav-close')!;
   const media = window.matchMedia('(max-width: 900px)');
@@ -61,7 +69,8 @@ export function createRadioNavPanel(options: RadioNavOptions): {
   function render(): void {
     const shown = reviewing ? state && validRadioNavSnapshot(state) ? state : null : config;
     const enabled = canControl();
-    content.querySelectorAll<HTMLInputElement | HTMLButtonElement>('input,button').forEach(control => { control.disabled = !enabled; });
+    content.querySelectorAll<HTMLInputElement | HTMLButtonElement>('input,button').forEach(control => { control.disabled = control !== stationsOpen && !enabled; });
+    renderStations(enabled);
     element('radio-state-label').textContent = reviewing ? 'RECORDED' : 'LIVE';
     dialog.querySelector('.radio-dialog-note')!.textContent = reviewing ? 'Recorded radio state · controls are read-only.'
       : running ? 'Flight continues while this panel is open.' : 'Flight is paused.';
@@ -81,19 +90,52 @@ export function createRadioNavPanel(options: RadioNavOptions): {
       }
       const indication = shown ? navigationIndication(shown, state, receiver) : null;
       const get = (suffix: string) => element(navId(receiver, suffix));
-      get('flag').textContent = indication?.valid ? 'LAB' : 'NAV'; get('flag').dataset.valid = String(!!indication?.valid);
-      get('to-from').textContent = indication?.to_from ?? 'OFF';
-      const frequency = shown?.[radioFrequencyKeys('nav', receiver).active];
-      get('ident').textContent = shown?.radio_demo_enabled && frequency === DEMO_NAV.frequency_khz ? 'LAB · FICTIONAL' : 'NO SIGNAL';
+      const valid = indication?.valid === true && indication.cdi_norm !== null && Number.isFinite(indication.cdi_norm);
+      const localizer = indication?.station_kind === 'LOC';
+      const reference = indication?.course_reference === 'MAG' ? 'MAG' : indication?.course_reference === 'TRUE' ? 'TRUE' : 'REF';
+      get('obs-label').textContent = localizer ? `OBS ${receiver} REF ONLY` : `OBS ${receiver} ${reference}`;
+      obs.setAttribute('aria-label', `NAV${receiver} OBS ${localizer ? 'reference only, localizer course fixed' : reference + ' course'} degrees`);
+      get('flag').textContent = valid ? (localizer ? 'LOC' : 'VOR') : 'NAV'; get('flag').dataset.valid = String(valid);
+      get('to-from').textContent = localizer ? 'FIXED' : indication?.to_from ?? 'OFF';
+      get('ident').textContent = indication?.station_id ?? 'NO SIGNAL';
       get('signal-note').textContent = indication?.reason ?? 'Recorded radio configuration unavailable';
-      get('dme').textContent = indication?.dme_nm === null || indication?.dme_nm === undefined ? '—' : indication.dme_nm.toFixed(1);
-      get('radial').textContent = indication?.radial_true_deg === null || indication?.radial_true_deg === undefined ? '—' : `${String(Math.round(indication.radial_true_deg) % 360).padStart(3, '0')}°`;
-      const needle = get('cdi-needle'); needle.hidden = !indication?.valid;
-      if (indication?.valid) needle.style.left = `${50 + indication.cdi_norm! * 40}%`;
-      get('cdi').setAttribute('aria-label', indication?.valid ? `LAB CDI ${(indication.cdi_norm! * 5).toFixed(1)} dots, positive right; ${indication.to_from}` : 'CDI unavailable · NAV flag');
+      get('dme').textContent = indication?.dme_valid && indication.dme_nm !== null ? indication.dme_nm.toFixed(1) : '—';
+      const radial = reference === 'MAG' ? indication?.radial_magnetic_deg : indication?.radial_true_deg;
+      get('radial').textContent = !localizer && radial !== null && radial !== undefined ? `${String(Math.round(radial) % 360).padStart(3, '0')}° ${reference}` : '—';
+      const needle = get('cdi-needle'); needle.hidden = !valid;
+      if (valid) needle.style.left = `${50 + indication.cdi_norm! * 40}%`;
+      get('cdi').setAttribute('aria-label', valid ? `${localizer ? 'Localizer' : 'VOR'} CDI ${(indication.cdi_norm! * 5).toFixed(1)} dots, positive right${localizer ? '' : `; ${indication.to_from}`}` : 'CDI unavailable · NAV flag');
     }
     demo.checked = shown?.radio_demo_enabled === 1;
   }
+  let displayedCatalogue: ReturnType<typeof getNavigationCatalogue> | undefined;
+  let displayedEnabled: boolean | undefined;
+  function renderStations(enabled: boolean): void {
+    const catalogue = getNavigationCatalogue();
+    if (catalogue === displayedCatalogue && enabled === displayedEnabled) return;
+    displayedCatalogue = catalogue; displayedEnabled = enabled;
+    stationList.replaceChildren();
+    if (!catalogue) { stationList.textContent = 'Station directory loading or unavailable.'; return; }
+    for (const record of catalogue.records) {
+      const row = document.createElement('div'); row.className = 'nav-station';
+      const description = document.createElement('span');
+      const place = [record.airport, record.runway && `RWY ${record.runway}`].filter(Boolean).join(' ');
+      const capabilities = [record.kind, record.kind !== 'DME' && record.dme && 'DME', record.gs && 'GS'].filter(Boolean).join(' / ');
+      description.textContent = `${record.id} · ${record.name}${place ? ` · ${place}` : ''} · ${(record.frequency_khz / 1000).toFixed(2)} MHz · ${capabilities}`;
+      row.append(description);
+      for (const receiver of RECEIVERS) {
+        const button = document.createElement('button'); button.type = 'button';
+        button.textContent = `NAV${receiver}`; button.disabled = !enabled;
+        button.setAttribute('aria-label', `Load ${record.id} ${(record.frequency_khz / 1000).toFixed(2)} MHz to NAV${receiver} standby`);
+        button.addEventListener('click', () => change(tuneStandby(config, 'nav', record.frequency_khz, receiver)));
+        row.append(button);
+      }
+      stationList.append(row);
+    }
+  }
+  function openStations(): void { if (!disposed && !stations.open) { renderStations(canControl()); stations.showModal(); } }
+  function closeStations(): void { stations.close(); }
+  stationsOpen.addEventListener('click', openStations); stationsClose.addEventListener('click', closeStations);
   function change(next: RadioNavSnapshot): void {
     if (!canControl()) return;
     config = next; options.onChange({ ...config }); render();
@@ -152,12 +194,17 @@ export function createRadioNavPanel(options: RadioNavOptions): {
   media.addEventListener('change', layout); layout(); render();
   return {
     snapshot: () => ({ ...config }), adjustObs,
+    // Establish an explicit flight preset before the first worker state arrives.
+    // The worker receives this configuration atomically in init; no live tuning event.
+    setConfiguration(next) { if (!disposed && !reviewing && validRadioNavSnapshot(next)) { config = { ...next }; render(); } },
     update(next, inReview, isRunning) { if (!disposed) { state = next; reviewing = inReview; running = isRunning; render(); } },
     reset() { if (!disposed) { config = { ...DEFAULT_RADIO_NAV }; render(); } },
     dispose() {
       if (disposed) return; disposed = true;
       opener.removeEventListener('click', open); done.removeEventListener('click', finish); dialog.removeEventListener('close', close);
       content.removeEventListener('click', click); content.removeEventListener('input', clearValidity); content.removeEventListener('change', inputChange);
+      stationsOpen.removeEventListener('click', openStations); stationsClose.removeEventListener('click', closeStations);
+      if (stations.open) stations.close(); stations.remove();
       media.removeEventListener('change', layout); if (dialog.open) dialog.close(); dialog.remove(); container.replaceChildren();
     },
   };

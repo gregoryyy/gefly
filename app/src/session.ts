@@ -1,7 +1,9 @@
+import { eddfApproachPractice } from './navigation-approach.ts';
+import { getNavigationCatalogue } from './radio-nav.ts';
 import { validKapCommand } from '../../studies/e1-browser/sim/kap140.js';
 import { NAVIGATION_FIELDS, validNavigation } from '../../studies/e1-browser/sim/navigation.js';
 import { ALERT_FIELDS, validAlertState, KAP_FIELDS, validKapState, TERRAIN_FIELDS, validTerrainState, COLLISION_FIELDS, validCollisionState, STALL_FIELDS, validStallState, CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, ENGINE_SWITCH_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
-import type { Controls, FlightSession, FlightState, LandingPreset } from './types';
+import type { Controls, FlightSession, FlightState, LandingPreset, AirborneSite } from './types';
 
 interface SessionCallbacks {
   onState(state: FlightState): void;
@@ -54,7 +56,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
   let controlsChanged = false;
   let userControls = false;
   let landingPreset: LandingPreset | undefined;
-  let airborneSite: 'edfe' | 'taunus' = 'edfe';
+  let airborneSite: AirborneSite = 'edfe';
   let inputTimer: ReturnType<typeof setInterval> | undefined;
   let loadTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -165,9 +167,13 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
         fail(`JSBSim stopped: ${typeof m.message === 'string' ? m.message : 'unknown worker failure'}`);
       }
     };
+    let approach: ReturnType<typeof eddfApproachPractice> | null = null;
+    try { if (airborneSite === 'eddf-ils' && !landingPreset) approach = eddfApproachPractice(getNavigationCatalogue()); }
+    catch { fail('Historical approach source unavailable. Reload before selecting EDDF practice.'); return; }
     current.postMessage({
-      type: 'init', kap140: true, terrain: landingPreset === undefined, ...(landingPreset ? { landing_preset: landingPreset } : {}), ground_collision: true, dt_s: 1 / 120, aircraft: 'c172x', state_hz: 60,
-      ic: {
+      ...(approach ? { navigation: approach.navigation } : {}),
+      type: 'init', kap140: true, regional_navigation: true, terrain: landingPreset === undefined, ...(landingPreset ? { landing_preset: landingPreset } : {}), ground_collision: true, dt_s: 1 / 120, aircraft: 'c172x', state_hz: 60,
+      ic: approach?.ic ?? {
         lat_rad: (airborneSite === 'taunus' ? 50.20 : 49.96) * DEG_RAD, lon_rad: (airborneSite === 'taunus' ? 8.52 : 8.643) * DEG_RAD,
         alt_msl_m: airborneSite === 'taunus' ? 1100 : 1300 * 0.3048, heading_rad: (airborneSite === 'taunus' ? 300 : 82) * DEG_RAD,
         tas_mps: 90 * 1852 / 3600,
@@ -194,7 +200,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
     reset(preset, site) {
       if (disposed) return;
       if (preset !== undefined && !['normal', 'hard', 'side', 'banked'].includes(preset)) return;
-      if (site !== undefined && !['edfe', 'taunus'].includes(site)) return;
+      if (site !== undefined && !['edfe', 'taunus', 'eddf-ils'].includes(site)) return;
       airborneSite = site ?? airborneSite;
       landingPreset = preset;
       controls = { elevator: 0, aileron: 0, rudder: 0, throttle: 0.7 };
@@ -208,7 +214,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
     },
     setNavigation(config) {
       if (disposed || collided || !ready || !worker || !validNavigation(config)) return;
-      worker.postMessage({ type: 'navigation', config: Object.fromEntries(NAVIGATION_FIELDS.map(k => [k, config[k]])) });
+      worker.postMessage({ type: 'navigation', config: Object.fromEntries(NAVIGATION_FIELDS.filter(k => config[k] !== undefined).map(k => [k, config[k]])) });
     },
     setAutopilot(mode, target_heading_rad) {
       if (disposed || collided || !ready || !worker || ![0,1,2].includes(mode)) return;
