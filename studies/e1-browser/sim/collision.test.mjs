@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { VISUAL_AIRFRAME, EMPTY_COLLISION, groundCollisionContact, collisionRecord } from './collision.js';
+import { VISUAL_AIRFRAME, EMPTY_COLLISION, groundCollisionContact, collisionRecord, collisionStateFields, contactOutcome } from './collision.js';
 
 test('ordinary wheel-supported clearance is not a crash and shared visual dimensions are immutable', () => {
   assert.equal(groundCollisionContact(1.4, 0, 0, 0).mask, 0);
@@ -76,4 +76,27 @@ test('local terrain grade moves proxy contact with actual heading without changi
   assert(groundCollisionContact(1.2, 0, 0, 0, { north_slope: 0, east_slope: .2, heading_rad: Math.PI / 2 }).mask & 16);
   const level = groundCollisionContact(1.2, 0, 0, 0, { north_slope: 0, east_slope: 0, heading_rad: .7 });
   assert.equal(level.clearance_m, flat.clearance_m);
+});
+
+test('F39: unavailable contact telemetry is omitted, never published as a definitive clear', () => {
+  assert.deepEqual(collisionStateFields(true, false, EMPTY_COLLISION), {});
+  assert.deepEqual(collisionStateFields(false, true, EMPTY_COLLISION), {}, 'disabled detection publishes no clear claim');
+  assert.equal(collisionStateFields(true, true, EMPTY_COLLISION), EMPTY_COLLISION);
+  const latched = collisionRecord(8, 3, .025, { ground_down_mps: 1, ground_forward_mps: 2, ground_side_mps: 0 });
+  assert.equal(collisionStateFields(true, false, latched), latched, 'a latched record survives later unavailability');
+  const missing = groundCollisionContact(1, 0, 0, undefined);
+  assert.equal(contactOutcome(missing, null), 'unavailable');
+  assert.deepEqual(collisionStateFields(true, missing.available, EMPTY_COLLISION), {});
+});
+
+test('F39: a detected contact without a valid record fails explicitly instead of being dropped', () => {
+  const contact = groundCollisionContact(.5, 0, 0, 0);
+  assert(contact.mask);
+  assert.equal(contactOutcome(contact, collisionRecord(contact.mask, 2, .02, null)), 'fail');
+  assert.equal(contactOutcome(contact, collisionRecord(contact.mask, 2, .02, { ground_down_mps: NaN, ground_forward_mps: 0, ground_side_mps: 0 })), 'fail');
+  assert.equal(contactOutcome(contact, collisionRecord(contact.mask, 2, .02, { ground_down_mps: 1, ground_forward_mps: 0, ground_side_mps: 0 })), 'latch');
+  assert.equal(contactOutcome(groundCollisionContact(3, 0, 0, 0), null), 'clear');
+  const nativeOnly = groundCollisionContact(3, 0, 0, 2, { north_slope: NaN, east_slope: 0, heading_rad: 0 });
+  assert.equal(nativeOnly.available, false); assert.equal(nativeOnly.mask, 2);
+  assert.equal(contactOutcome(nativeOnly, null), 'fail', 'native structure contact with an unavailable proxy still counts');
 });
