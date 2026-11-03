@@ -381,8 +381,9 @@ let loadedCatalogue: ReturnType<typeof getNavigationCatalogue> = null;
 function applyNavdataCheck(): void {
   const check = checkNavdata(uiNavdata, engineNavdata);
   document.querySelector<HTMLElement>('.flight-app')!.dataset.navdata = check.status;
-  // Fail closed: instruments only use the catalogue once both sides agree.
-  setNavigationCatalogue(check.status === 'match' ? loadedCatalogue : null);
+  // Fail closed on an error. While a restarted worker is pending, keep the UI
+  // catalogue: session init needs it for the EDDF practice preset.
+  setNavigationCatalogue(check.status === 'error' ? null : loadedCatalogue);
   el('navdata-error').textContent = check.status === 'error' ? check.message : '';
   el('navdata-error').hidden = check.status !== 'error';
   el<HTMLButtonElement>('eddf-ils-practice').disabled = reviewing || check.status !== 'match';
