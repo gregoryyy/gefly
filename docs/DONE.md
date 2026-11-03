@@ -3,6 +3,32 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 11:52 — Recording files, live return and map overlap
+
+TODO: 2.0.55; R-REVIEW-1/R-VIEW-1. Agent: Codex, direct implementation.
+
+**Implementation notes**
+
+Save/load versioned SI JSON traces from Flight or replay controls. Validate frame
+values, order, count and duration before switching to a separate read-only loaded
+trace; keep the live recording and native worker intact. Back to live restores
+prior flying/paused intent. Load required bundled, hash-checked regional terrain
+for recorded views. Comma toggles map overlap; M and N retain map/parking roles.
+
+Build and 30 focused trace/transport cases pass. Actual-browser download/import,
+invalid-file rejection, seek/live return, frozen native-state preservation and
+map-overlap/parking-brake isolation pass.
+
+**Deviations**
+
+JSON stores recorded samples, not a native physics checkpoint. Retain the existing
+ten-minute/36,000-frame bounds and a 256 MB file limit. Peer review remains pending.
+
+**Insights**
+
+Keep loaded review data separate from the current flight so returning live never
+rewinds or replaces native physics.
+
 ## 2026-11-03 11:30 — Moving chase controls and normal AP clicks
 
 TODO: 2.0.54; R-VIEW-1/R-REVIEW-1/R-AP-1. Agent: Codex, direct implementation

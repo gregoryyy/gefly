@@ -152,6 +152,10 @@ let latest: FlightState | null = null, previous: FlightState | null = null;
 let collisionUnavailableNoticed = false;
 let verticalSpeedFpm = 0, throttle = 0.69, stickX = 0, stickY = 0;
 const flightTrace = new FlightTrace();
+let loadedTrace: FlightTrace | null = null;
+let resumeAfterReview = false;
+let recordingLoadVersion = 0;
+const recordedTrace = () => loadedTrace ?? flightTrace;
 let reviewing = false, reviewPlaying = false, reviewTime_s = 0;
 let liveStatus = 'Loading flight…';
 let practiceMap: PracticeMap | null = null;
@@ -507,8 +511,12 @@ el('toggle-map').onclick = () => {
   setFlightDataVisible(false); void setMapVisible(!mapVisible); closeViewMenu(); focusFlight();
 };
 function flightMapShortcut(event: KeyboardEvent): void {
-  if (event.code !== 'KeyM' || event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
+  if (!['KeyM', 'Comma'].includes(event.code) || event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
     || editing(event.target) || menuOpen() || document.querySelector('dialog[open]')) return;
+  if (event.code === 'Comma') {
+    if (mapVisible && practiceMap) { event.preventDefault(); event.stopPropagation(); practiceMap.toggleOverlap(); }
+    return;
+  }
   event.preventDefault(); event.stopPropagation(); el<HTMLButtonElement>('toggle-map').click();
 }
 document.addEventListener('keydown', flightMapShortcut, true);
@@ -551,10 +559,26 @@ async function setMapVisible(visible: boolean) {
 const reviewControls = createFlightReviewControls({
   buttonContainer: el('review-button-slot'),
   barContainer: document.querySelector<HTMLElement>('.flight-app')!,
+  fileContainer: el('flight-menu').querySelector<HTMLElement>('nav')!,
   onEnter: enterReview,
   onExit: exitReview,
+  onSave: () => recordedTrace().exportJSON(),
+  async onLoad(text) {
+    const version = ++recordingLoadVersion;
+    if (!ready || failed || sceneFailed) throw new Error('Wait for the flight to be ready before loading a recording.');
+    const recording = FlightTrace.fromJSON(text);
+    await scene?.prepareRecording?.(recording.recordedStates());
+    if (mapDisposed || version !== recordingLoadVersion) return;
+    if (!ready || failed || sceneFailed) throw new Error('The live flight is unavailable. Please restart before loading a recording.');
+    loadedTrace = recording;
+    if (!reviewing) enterReview();
+    else { reviewPlaying = false; reviewTime_s = recording.bounds()!.start_s; reviewWarningMonitor.reset(); }
+    lastMapUpdate_ms = -Infinity; updateReviewControls(); closeViewMenu(); focusFlight();
+    notice('Loaded recording · replay only. Back to live returns to your current flight.');
+  },
+  onFileError: message => notice(`Recording: ${message}`),
   onSeek(time_s) {
-    const selected_s = snapReviewTime(time_s, flightTrace.bounds());
+    const selected_s = snapReviewTime(time_s, recordedTrace().bounds());
     if (!reviewing || selected_s === null) return;
     reviewPlaying = false; engineAudio.update(null, false); reviewTime_s = selected_s;
     lastMapUpdate_ms = -Infinity;
@@ -563,7 +587,7 @@ const reviewControls = createFlightReviewControls({
   onTogglePlay: toggleReviewPlayback,
 });
 function updateReviewControls() {
-  const bounds = flightTrace.bounds();
+  const bounds = recordedTrace().bounds();
   reviewControls.update({
     available: !!bounds && bounds.count >= 2 && ready && !failed && !sceneFailed,
     active: reviewing, playing: reviewPlaying,
@@ -572,17 +596,20 @@ function updateReviewControls() {
   });
 }
 function enterReview() {
-  const bounds = flightTrace.bounds();
+  const bounds = recordedTrace().bounds();
   if (reviewing || !bounds || bounds.count < 2 || !ready || failed || sceneFailed) return;
   pointerYoke?.cancel();
   reviewWarningMonitor.reset();
+  resumeAfterReview = running;
   reviewing = true; reviewTime_s = bounds.start_s; lastMapUpdate_ms = -Infinity;
   pauseFlight(); el('status').textContent = 'Review'; focusFlight();
 }
 function exitReview() {
   if (!reviewing) return;
+  recordingLoadVersion++;
   engineAudio.update(null, false);
   reviewing = reviewPlaying = false; lastMapUpdate_ms = -Infinity;
+  loadedTrace = null;
   reviewWarningMonitor.reset();
   el('status').textContent = liveStatus;
   neutralize(); updateSessionUI();
@@ -592,9 +619,11 @@ function exitReview() {
   pitchTrimControl.update(latest, false, controlsAvailable(), pitchTrimTarget);
   updateConfiguration(latest, false);
   focusFlight();
+  const resume = resumeAfterReview; resumeAfterReview = false;
+  if (resume && !document.hidden) startFlight();
 }
 function toggleReviewPlayback() {
-  const bounds = flightTrace.bounds();
+  const bounds = recordedTrace().bounds();
   if (!reviewing || !bounds) return;
   if (!reviewPlaying && reviewTime_s >= bounds.end_s) reviewTime_s = bounds.start_s;
   reviewPlaying = !reviewPlaying;
@@ -663,6 +692,7 @@ function reset(preset = landingPreset) {
   document.querySelector('.location strong')!.textContent = ['darmstadt','odenwald','spessart'].includes(airborneSite) ? airborneSite.toUpperCase() : airborneSite === 'eddf-ils' ? 'FRANKFURT 25C' : airborneSite === 'taunus' ? 'TAUNUS' : 'EGELSBACH';
   collisionUnavailableNoticed = false;
   radioPanel.reset();
+  recordingLoadVersion++; loadedTrace = null; resumeAfterReview = false;
   flightTrace.clear(); parkingBrake = false; pitchTrimTarget = null; flapTarget_deg = 0; mixtureCommand = 1; mixtureAutomatic = true; engineCommand = null; apDisconnectPending = false;
   if (practiceMap && latest) { try { practiceMap.update(latest, [], 'live'); } catch { mapUnavailable(); } }
   lastMapUpdate_ms = -Infinity;
@@ -909,14 +939,14 @@ function animate(now: number) {
     publishInput();
   }
   if (reviewing && reviewPlaying) {
-    const bounds = flightTrace.bounds();
+    const bounds = recordedTrace().bounds();
     if (bounds) {
       reviewTime_s = Math.min(bounds.end_s, reviewTime_s + dt);
       if (reviewTime_s >= bounds.end_s) reviewPlaying = false;
       updateReviewControls();
     }
   }
-  const reviewSample = reviewing ? flightTrace.atTime(reviewTime_s) : null;
+  const reviewSample = reviewing ? recordedTrace().atTime(reviewTime_s) : null;
   const shownWarnings = ready && !failed && !sceneFailed && !terrainLoading && latest
     ? reviewSample ? reviewWarningMonitor.update(reviewSample.state) : liveWarnings : unavailableWarnings;
   flightWarningsPanel.update(shownWarnings, reviewing);
@@ -926,7 +956,7 @@ function animate(now: number) {
     const shownVsiFpm = reviewSample ? reviewSample.vertical_speed_mps / 0.3048 * 60 : verticalSpeedFpm;
     if (practiceMap && mapVisible && practiceMapUpdateDue({ reviewing, now_ms: now, lastUpdate_ms: lastMapUpdate_ms, sample: reviewSample, lastSample: lastMapSample })) {
       try {
-        practiceMap.update(state, flightTrace.sampledStates(600), reviewing ? 'review' : 'live');
+        practiceMap.update(state, recordedTrace().sampledStates(600), reviewing ? 'review' : 'live');
         lastMapUpdate_ms = now; lastMapSample = reviewSample;
       } catch {
         mapUnavailable();

@@ -11,7 +11,7 @@ import { AIRCRAFT_CONTROL_SURFACES, controlSurfaceAngle } from './aircraft-contr
 import { createAircraftShadow } from './aircraft-shadow';
 import { createPublicTerrainProvider } from './terrain-provider';
 import { createStreamedTerrainProvider } from './streamed-terrain-provider';
-import { sampleAtlas, type RegionalTile } from '../../studies/e1-browser/sim/terrain-stream.js';
+import { loadRegionalManifest, TerrainStream, sampleAtlas, type RegionalTile } from '../../studies/e1-browser/sim/terrain-stream.js';
 import { createRegionalImageryProvider } from './regional-imagery';
 import { imageryStatusText } from './imagery-status';
 import { loadTerrainPackage, sampleTerrain, type TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
@@ -73,6 +73,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   const terrainGrid = await loadTerrainPackage();
   const publicTerrain = createPublicTerrainProvider(terrainGrid);
   let activeTerrain = publicTerrain;
+  const recordingTiles = new Map<string, TerrainGrid>();
   let streamedTiles: TerrainGrid[] = [], atlasTiles = new Map<string,RegionalTile>();
   let terrainRevision = 0, providerKey = '';
   let liveLayers = false;
@@ -427,10 +428,27 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   });
   observer.observe(container);
   update(initialVisual, 'cockpit');
-  return {
+  const flightScene: FlightScene = {
     update,
+    async prepareRecording(states) {
+      const needed = new Map<string, Readonly<FlightState>>();
+      for (const state of states) if (state.terrain_profile === 1 && !atlasSample(state.lat_rad, state.lon_rad)) {
+        needed.set(`${Math.floor(state.lat_rad / DEG_RAD * 4)},${Math.floor(state.lon_rad / DEG_RAD * 4)}`, state);
+      }
+      if (!needed.size) return;
+      const tiles = new Map(streamedTiles.map(grid => [grid.id, grid]));
+      const loader = new TerrainStream(await loadRegionalManifest(), grid => { tiles.set(grid.id, grid); }, () => {});
+      try {
+        for (const state of needed.values()) await loader.move(state.lat_rad, state.lon_rad);
+        if (!disposed) {
+          for (const [id, grid] of tiles) recordingTiles.set(id, grid);
+          flightScene.setTerrainTiles?.(streamedTiles);
+        }
+      } finally { loader.cancel(); }
+    },
     setTerrainTiles(tiles) {
-      streamedTiles=Array.from(tiles); atlasTiles=new Map(tiles.map(grid=>[grid.id,grid as RegionalTile]));terrainRevision++;
+      streamedTiles=Array.from(new Map([...tiles, ...recordingTiles.values()].map(grid => [grid.id, grid])).values());
+      atlasTiles=new Map(streamedTiles.map(grid=>[grid.id,grid as RegionalTile]));terrainRevision++;
       if(tiles.length && !liveLayers) {
         liveLayers=true;
         const rectangle=Rectangle.fromDegrees(8.25,49.25,10,50.75);
@@ -462,4 +480,5 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       if (modelUrl) URL.revokeObjectURL(modelUrl);
     },
   };
+  return flightScene;
 }

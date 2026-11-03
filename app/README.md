@@ -813,3 +813,7 @@ move the aircraft or provide current airspace/NOTAM/procedure information.
 Failures while loading optional map layers are disclosed independently. The
 separate required flight-startup packages retain their fail-closed behavior. See
 [source research](../docs/research/2026-11-03-flight-map.md).
+
+Recordings can be saved and loaded as version 1 JSON using **Flight → Save/Load recording JSON** or the replay bar. Loading opens a validated, read-only state trace and preserves the current live flight; **Back to live** restores its previous flying/paused state. Files retain at most ten minutes/36,000 samples (256 MB import limit), in SI units; they are not native physics checkpoints.
+
+With the flight map open, **comma (,)** toggles whether it overlaps the cockpit. **M** still opens/closes the map and **N** remains the parking brake.
