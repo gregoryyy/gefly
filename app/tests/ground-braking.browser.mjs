@@ -42,7 +42,7 @@ try {
     const grid = await loadTerrainPackage(), d = Math.PI / 180;
     const ic = { lat_rad: 49.96 * d, lon_rad: 8.643 * d, heading_rad: 82 * d };
     const rc = value => { if (value !== 0) throw new Error(`Native braking fixture rejected: ${value}`); };
-    async function native(terrain, brake = .25) {
+    async function native(terrain, brake = .25, parking = false) {
       const M = await createModule();
       if (terrain) {
         const pointer = M._malloc(grid.physical_m.byteLength);
@@ -52,9 +52,15 @@ try {
       rc(M._gf_init_landing(1 / 120, ic.lat_rad, ic.lon_rad, ic.heading_rad, 1));
       rc(M._gf_set_inputs(0, -.109375, 0, 0)); rc(M._gf_set_secondary_inputs(0, 0));
       const frames = [];
-      let maxNoseCompression = 0, minimumPitch = Infinity, nativeStructure = 0;
+      let maxNoseCompression = 0, minimumPitch = Infinity, nativeStructure = 0, parkingSpeed = null;
       for (let step = 1; step <= 3600; step++) {
         if (step === 241) rc(M._gf_set_secondary_inputs(0, brake));
+        if (parking && step === 2567) {
+          const gp = M._gf_ground_state() / 8;
+          const g = groundFields(Array.from(M.HEAPF64.subarray(gp, gp + 18)));
+          parkingSpeed = Math.hypot(g.ground_forward_mps, g.ground_side_mps);
+          rc(M._gf_set_secondary_inputs(0, 1));
+        }
         rc(M._gf_step());
         const sp = M._gf_state() / 8, gp = M._gf_ground_state() / 8;
         const s = Array.from(M.HEAPF64.subarray(sp, sp + 14));
@@ -65,10 +71,10 @@ try {
         if (step % 12 === 0 || step === 1) frames.push({ step, t_s: s[0], pitch_rad: s[5], roll_rad: s[4], ...ground });
       }
       const pointer = M._gf_state() / 8;
-      return { frames, max_nose_compression_m: maxNoseCompression, min_pitch_rad: minimumPitch, native_structure_mask: nativeStructure,
+      return { frames, parking_apply_speed_mps: parkingSpeed, max_nose_compression_m: maxNoseCompression, min_pitch_rad: minimumPitch, native_structure_mask: nativeStructure,
         final_state: Array.from(M.HEAPF64.subarray(pointer, pointer + 14)), digest: M.UTF8ToString(M._gf_digest_hex()) };
     }
-    async function worker(terrain, impact = false, brake = .25) {
+    async function worker(terrain, impact = false, brake = .25, parking = false) {
       const w = new Worker('/studies/e1-browser/sim/worker.js', { type: 'module' });
       const frames = [], messages = [];
       try {
@@ -80,7 +86,12 @@ try {
             messages.push(data.type);
             if (data.type === 'error') { clearTimeout(timer); reject(new Error(data.message)); }
             if (data.type === 'state') frames.push(data);
-            if (data.type === 'ready') { input(0, 0); w.postMessage({ type: 'burst', steps: impact ? 1200 : 240, blocks: 1 }); }
+            if (data.type === 'ready') {
+              input(0, 0);
+              if (parking) { input(240, .25); input(2566, 1); }
+              w.postMessage({ type: 'burst', steps: parking ? 3600 : impact ? 1200 : 240, blocks: 1 });
+            }
+            if (data.type === 'burst' && data.steps === 3600) w.postMessage({ type: 'stats' });
             if (data.type === 'burst' && data.steps === 240) { input(240, brake); w.postMessage({ type: 'burst', steps: 3360, blocks: 1 }); }
             if (data.type === 'burst' && data.steps === 3360) w.postMessage({ type: 'stats' });
             if (data.type === 'burst' && data.steps === 1200) w.postMessage({ type: 'stats' });
@@ -93,7 +104,7 @@ try {
     }
     const result = [];
     for (const terrain of [false, true]) result.push({ terrain, native: await native(terrain), worker: await worker(terrain) });
-    return { normal: result, full_brake: await worker(false, false, 1), impact: await worker(false, true),
+    return { normal: result, parking: { native: await native(false, .25, true), worker: await worker(false, false, .25, true) }, full_brake: await worker(false, false, 1), impact: await worker(false, true),
       // Synthetic public-terrain full-command case, compared with unchanged native dynamics.
       full_brake_public: { native: await native(true, 1), worker: await worker(true, false, 1) } };
   });
@@ -109,6 +120,17 @@ try {
     assert.equal(worker.stats.digest, native.digest, 'collision checks leave actual native braking dynamics unchanged');
     assert.deepEqual(worker.stats.final_state, native.final_state);
     checks.push(`${terrain ? 'synthetic public-terrain landing-preset fixture (not a production init)' : 'flat ground'}: actual selected 25% braking compresses nose gear and pitches down, reaches rest with no collision, and matches unchanged native dynamics`);
+  }
+  {
+    const { native, worker } = observations.braking.parking;
+    assert(native.parking_apply_speed_mps > 1.8 && native.parking_apply_speed_mps < 2.1);
+    assert.equal(worker.stats.collision_mask, 0, 'parking near rest must not latch proxy contact');
+    assert.equal(worker.stats.step, 3600);
+    assert.equal(native.native_structure_mask, 0);
+    assert.equal(worker.stats.digest, native.digest, 'settling tolerance never alters dynamics');
+    assert.deepEqual(worker.stats.final_state, native.final_state);
+    assert(Math.hypot(native.frames.at(-1).ground_forward_mps, native.frames.at(-1).ground_side_mps) < .1);
+    checks.push('full parking braking near rest settles without false contact and matches native dynamics');
   }
   assert(observations.braking.full_brake.stats.collision_mask & 16, 'explicit full braking still permits the native geometry/illustrative prop contact; physics and collision are not weakened');
   checks.push('explicit full brake command retains propeller-contact detection');

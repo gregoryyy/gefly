@@ -20,7 +20,7 @@ export const EMPTY_COLLISION = Object.freeze({ collision_mask: 0, collision_step
  * Wheel WOW/compression/load are deliberately absent: JSBSim owns wheel response.
  * Native structure bits are tail/left wing/right wing, then proxy body/prop/fin.
  */
-export function groundCollisionContact(ground_agl_m, roll_rad, pitch_rad, structure_contact_mask, terrainPlane) {
+export function groundCollisionContact(ground_agl_m, roll_rad, pitch_rad, structure_contact_mask, terrainPlane, groundMotion) {
   if (!Number.isFinite(ground_agl_m) || !Number.isInteger(structure_contact_mask)
     || structure_contact_mask < 0 || structure_contact_mask > 7) return { available: false, mask: 0, clearance_m: null };
   let mask = structure_contact_mask;
@@ -60,7 +60,15 @@ export function groundCollisionContact(ground_agl_m, roll_rad, pitch_rad, struct
       // Its miter can therefore extend farther than bevelSize at sharp corners.
       + Math.SQRT2 * fin.bevel * Math.hypot(dx, dy) + (fin.extrusionDepth / 2 + fin.bevelThickness) * Math.abs(dz);
     if (ground_agl_m <= body) mask |= 8;
-    if (ground_agl_m <= prop) mask |= 16;
+    // The illustrative prop disc can graze the plane as the nose strut settles
+    // under braking. Allow at most 5 cm only near rest with all wheels supported.
+    // This is a proxy tolerance, not a real-aircraft prop clearance or damage limit.
+    const settled = groundMotion && structure_contact_mask === 0
+      && [groundMotion.ground_forward_mps, groundMotion.ground_side_mps, groundMotion.ground_down_mps].every(Number.isFinite)
+      && Math.hypot(groundMotion.ground_forward_mps, groundMotion.ground_side_mps) <= 1
+      && Math.abs(groundMotion.ground_down_mps) <= .2
+      && ['nose', 'left', 'right'].every(name => groundMotion[`gear_${name}_wow`] === 1);
+    if (ground_agl_m <= prop - (settled ? .05 : 0)) mask |= 16;
     if (ground_agl_m <= finSupport) mask |= 32;
     clearance = ground_agl_m - Math.max(body, prop, finSupport);
   }
