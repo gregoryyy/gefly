@@ -128,6 +128,18 @@ UI-only production build is not a published simulator deployment.
 
 Control sensitivity settings, including the 0–100% keyboard/button wheel-brake command gain, are bounded dimensionless gains held only in page memory. They have no persistence or network path, preserve throttle, and leave the declared study roll offset separate. Opening the settings dialog pauses flight and releases held inputs; closing it does not resume automatically. These input preferences do not calibrate or modify aircraft physics.
 
+The parking-brake latch is separate page-session input state. A guarded N/button
+toggle requests full bounded wheel braking independently of the momentary brake
+gain; it does not freeze aircraft state or bypass native contact/collision logic.
+Pause, focus loss and input neutralization clear held commands while retaining
+this explicit latch; restart clears it. Paused changes do not integrate physics.
+Review disables mutation and does not infer an unrecorded latch from captured
+left/right brake values. The optional aileron-to-rudder input assist defaults off,
+accepts only a boolean preference and mixes bounded deliberate pilot input before
+the study roll offset; explicit rudder input takes priority. It does not mix
+native autopilot output or change the existing rudder/nosewheel coupling. Both
+features add no persistence, device permission, telemetry or external traffic.
+
 In-session flight review keeps copied state samples and captured vertical speed only in page memory, capped at 36,000 samples and 600 simulation seconds. Reset/reload clears history. It has no storage, export, import or network path. Review pauses and neutralizes the real worker; historical state is sent only to the renderer/instruments and never restores physics. Unrecorded control positions are hidden, with explicit state-only trace labels.
 
 The lazy practice map loads its bundled MapLibre worker, images and bounded,
@@ -156,6 +168,19 @@ captured look can continue beyond the scene until release, with pilot pointer
 axes neutral. Camera offsets never enter dynamics. Numeric throttle shortcuts and
 AP shortcuts are suppressed inside open dialogs and editable controls. The live
 mobile engine dialog releases held inputs and keeps flight running, as labeled.
+
+The optional centered-touchpad preference is a session-only boolean, initially
+off. It uses the current scene element's visible rectangle to define neutral,
+not hardware coordinates, device calibration or a stored click position. Resizing
+therefore changes the visible reference without installing a new pointer anchor.
+Captured hold-drag changes bounded camera offsets while pilot pointer axes remain
+neutral. Releasing does not issue a new yoke command or auto-center the camera;
+only subsequent real pointer movement/re-entry produces center-relative input.
+Ordinary cancellation, pause, focus loss and Options retain that camera offset
+while neutralizing controls; Escape and flight restart explicitly reset it.
+Review can inspect the view without changing live or recorded aircraft state.
+The preference adds no persistence, pointer lock, device permission, network
+request or telemetry, and does not alter sensitivity gains or native physics.
 
 Cockpit/engine state groups are validated atomically before copying and display;
 missing old-engine capabilities remain unavailable rather than synthesized.
@@ -231,7 +256,8 @@ to these hard-coded HTTPS sources:
 
 Requests accept only GET/HEAD and canonical bounded integer XYZ paths, rejecting
 query strings, arbitrary destinations and redirects. Endpoint coverage is
-8–10°E / 49–50.75°N; map z5–16 and photo z7–15. Image responses are capped at
+6–14°E / 47–51.75°N for map tiles (z5–16), and
+8–10°E / 49–50.75°N for photography (z7–15). Image responses are capped at
 2 MiB and checked as PNG with expected 256/512 px dimensions. The proxy limits
 eight active jobs, four upstream fetches, two compositors and 128 pending keys;
 deduplicated memory LRU is capped at 32 MiB with map/photo TTLs of 1 h/15 min.
@@ -261,6 +287,24 @@ This service exists in Vite development only. Static production output needs an
 equivalent endpoint service and the separate research-engine deployment; hosting
 and production privacy/availability decisions remain open. Global provider
 research did not activate a commercial service or add remote runtime endpoints.
+
+## Right-side flight map
+
+The right-side map adds no provider or storage flow: its base layers use the
+already bounded public scenery proxy, and aviation overlays use the existing
+local hash-verified airport/navigation packages. Marker details use textContent;
+no source field becomes HTML, code or an external request URL. Position and path
+come from the simulator, not device geolocation. M is guarded during typing,
+dialogs, menus, modifiers and repeats; map keyboard gestures stay isolated from
+flight controls. Visibility changes release held UI input before resizing the
+scene. This is a map-specific control hand-off, not aircraft retuning or a
+resolution of the separate general touchpad handling report. Community NAV snapshots, historical ILS and
+missing tile/source conditions remain explicit; no current chart claim is added.
+
+The map-only southern NAV and airfield packages use fixed same-origin paths,
+bounded streamed reads, schema/coordinate/source checks and SHA-256 integrity.
+They cannot retune the radio model. Five-state airport selection retains closed
+facilities with explicit labels; beacon context is a declared larger envelope.
 
 ## Convenience autopilot and simulation rate
 

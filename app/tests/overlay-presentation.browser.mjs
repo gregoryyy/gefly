@@ -52,7 +52,7 @@ try {
   assert(await page.locator('.topbar').isVisible());
   await page.keyboard.press('Alt+Shift+KeyM');
   assert(await page.evaluate(() => window.hits.includes('toggle-map')));
-  assert.equal(await page.locator('#toggle-map').getAttribute('aria-keyshortcuts'), 'Alt+Shift+M');
+  assert.equal(await page.locator('#toggle-map').getAttribute('aria-keyshortcuts'), 'M Alt+Shift+M');
   await page.keyboard.press('Alt+Shift+KeyR');
   assert(!await page.evaluate(() => window.hits.includes('reset')));
   await page.locator('#typing').focus();

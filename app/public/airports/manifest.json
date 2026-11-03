@@ -1,15 +1,38 @@
 {
-  "schema": 1,
+  "schema": 2,
+  "id": "southern-germany-airports-v1",
   "bounds": [
-    8,
-    49,
-    10,
-    50.75
+    6,
+    47,
+    14,
+    51.75
   ],
-  "count": 103,
-  "bytes": 14629,
-  "sha256": "2c12970b49a71709445254d9f46ee9f7ef0c640c92c8c3fb31c564fc4e035e35",
+  "regions": [
+    "DE-BW",
+    "DE-BY",
+    "DE-HE",
+    "DE-RP",
+    "DE-SL"
+  ],
+  "count": 731,
+  "counts_by_type": {
+    "closed": 41,
+    "heliport": 244,
+    "large_airport": 9,
+    "medium_airport": 26,
+    "small_airport": 411
+  },
+  "counts_by_region": {
+    "DE-BW": 200,
+    "DE-BY": 314,
+    "DE-HE": 126,
+    "DE-RP": 81,
+    "DE-SL": 10
+  },
+  "bytes": 121497,
+  "sha256": "dab6325f2948d4e93b36e3bb6b754ecb12c5f4b01127a82706dc521309fee6ad",
   "source": "OurAirports community data, public domain; not a navigation chart",
+  "scope": "All source entries in DE-BW, DE-BY, DE-HE, DE-RP and DE-SL; all source types retained, including heliports and closed facilities. Not an official or operationally complete inventory.",
   "source_url": "https://raw.githubusercontent.com/davidmegginson/ourairports-data/e86a650a968ba239a1288f96c05fcb80688e77a6/airports.csv",
   "source_commit": "e86a650a968ba239a1288f96c05fcb80688e77a6",
   "source_sha256": "6852f06007ec1154256faff98edb8bbfbbce93fdb279525940864f07e9d90b32",

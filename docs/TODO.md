@@ -162,6 +162,12 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.47 Add A current-heading/altitude autopilot capture and = requested pacing 1×/1.5×/2×/5×/10× with a worker-confirmed overlay and captured Review metadata. R-AP-2/R-SIM-9; independent 65-unit/eight-WASM-group/actual-browser checks and shared CI pass, see [review](reviews/2026-11-03-flight-assists.md). README includes an actual live cockpit/terrain screenshot. Aircraft/control gains are unchanged; achievable pacing is best effort and peer remains pending.
 
+- [x] 2.0.48 Research and implement the right-side public-data flight map with M/marked menu access, desktop split view, actual position/retained path, Map/Aerial choice, nautical scale, 731 five-state airfield entries, 144 community beacons plus 66 historical LOC/ILS sources and source/currentness labels. R-WORLD-6/R-NAV-3/R-REVIEW-1. [Source research](research/2026-11-03-flight-map.md); independent source/runtime/browser quality and validation pass, including cold tile/optional-layer failures. [Review](reviews/2026-11-03-right-flight-map.md). Cross-provider peer pending under the existing cadence.
+
+- [x] 2.0.49 Add N-toggle parking brake beside wheel brakes, optional deliberate aileron/rudder link and verified rudder/nosewheel steering. R-INPUT-1/R-REVIEW-1. Local CI/build/typecheck and independent quality/specification checks pass, including compact-label repair and legacy braking regression. [Review](reviews/2026-11-03-parking-rudder.md). Cross-provider peer pending under the existing cadence.
+
+- [x] 2.0.50 Add optional current-scene-centered touchpad yoke with persistent hold-drag view, explicit Escape/new-flight reset and preserved default relative behavior. R-INPUT-1/R-REVIEW-1. Local CI/build/typecheck and independent new/legacy browser, rendered-camera and live-native checks pass. [Review](reviews/2026-11-03-centered-touchpad.md). Cross-provider peer pending under the existing cadence.
+
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.
 - [ ] 2.3 code2 implements the corresponding browser controls, instruments and exercise feedback against frozen contracts **in parallel with 2.2**.

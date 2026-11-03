@@ -10,8 +10,9 @@ function pointer(type: string, x = 200, y = 200, button = 0): Event {
 class Surface extends EventTarget {
   ownerDocument = Object.assign(new EventTarget(), { hidden: false, defaultView: new EventTarget() });
   captures = new Set<number>();
+  rect = { left: 0, right: 800, top: 0, bottom: 600 };
   focus() {}
-  getBoundingClientRect() { return { left: 0, right: 800, top: 0, bottom: 600 }; }
+  getBoundingClientRect() { return this.rect; }
   setPointerCapture(id: number) { this.captures.add(id); }
   hasPointerCapture(id: number) { return this.captures.has(id); }
   releasePointerCapture(id: number) {
@@ -19,12 +20,12 @@ class Surface extends EventTarget {
     this.dispatchEvent(Object.assign(new Event('lostpointercapture'), { pointerId: id }));
   }
 }
-function fixture() {
+function fixture(centered = false) {
   const surface = new Surface();
   const yokes: number[][] = [], looks: number[][] = [], modes: PointerYokeMode[] = [];
   let enabled = true, lookOnly = false;
   const controller = createPointerYoke({ element: surface as unknown as HTMLElement,
-    enabled: () => enabled, lookOnly: () => lookOnly, onYoke: (x,y) => yokes.push([x,y]),
+    centered: () => centered, enabled: () => enabled, lookOnly: () => lookOnly, onYoke: (x,y) => yokes.push([x,y]),
     onLook: (yaw,pitch) => looks.push([yaw,pitch]), onMode: mode => modes.push(mode) });
   const click = (x = 200, y = 200) => { surface.dispatchEvent(pointer('pointerdown',x,y)); surface.dispatchEvent(pointer('pointerup',x,y)); };
   return { surface, controller, yokes, looks, modes, click,
@@ -172,5 +173,130 @@ test('review hold-drag retains camera orientation and accumulates later drags wi
   assert.deepEqual(f.yokes,[]);
   f.surface.dispatchEvent(Object.assign(new Event('keydown',{cancelable:true}),{code:'Escape'}));
   assert.deepEqual(f.looks.at(-1),[0,0]);
+  f.controller.dispose();
+});
+
+test('centered yoke always uses the current scene midpoint, never click or release coordinates', () => {
+  const f = fixture(true);
+  f.click(100, 100);
+  f.surface.dispatchEvent(pointer('pointermove', 475, 225));
+  assert.deepEqual(f.yokes.at(-1), [.5, .5]);
+  f.click(700, 500); assert.equal(f.modes.at(-1), 'off');
+  f.click(100, 500); assert.equal(f.modes.at(-1), 'yoke');
+  f.surface.dispatchEvent(pointer('pointermove', 400, 300));
+  assert.deepEqual(f.yokes.at(-1), [0, 0]);
+  // A resized/repositioned scene moves the neutral point without a new click.
+  f.surface.rect = { left: 100, right: 1100, top: 50, bottom: 650 };
+  f.surface.dispatchEvent(pointer('pointermove', 675, 275));
+  assert.deepEqual(f.yokes.at(-1), [.5, .5]);
+  f.surface.dispatchEvent(pointer('pointermove', 600, 350));
+  assert.deepEqual(f.yokes.at(-1), [0, 0]);
+  f.surface.dispatchEvent(pointer('pointermove', 1050, 100));
+  assert.deepEqual(f.yokes.at(-1), [1, 1]);
+  f.controller.dispose();
+});
+
+test('centered hold-drag accumulates retained view, keeps release neutral and never moves the midpoint', async () => {
+  const f = fixture(true); f.click(100, 100);
+  f.surface.dispatchEvent(pointer('pointermove', 450, 300));
+  f.surface.dispatchEvent(pointer('pointerdown', 450, 300));
+  await sleep(280);
+  f.surface.dispatchEvent(pointer('pointermove', 500, 250));
+  assert.deepEqual(f.looks.at(-1), [.2, .2]);
+  assert.deepEqual(f.yokes.at(-1), [0, 0]);
+  f.surface.dispatchEvent(pointer('pointerup', 500, 250));
+  assert.deepEqual(f.looks.at(-1), [.2, .2]);
+  assert.equal(f.modes.at(-1), 'yoke');
+  const releaseCount = f.yokes.length;
+  f.surface.dispatchEvent(pointer('pointermove', 500, 250));
+  assert.equal(f.yokes.length, releaseCount, 'unchanged release coordinates must stay neutral');
+  f.surface.dispatchEvent(pointer('pointermove', 475, 225));
+  assert.deepEqual(f.yokes.at(-1), [.5, .5]);
+  f.surface.dispatchEvent(pointer('pointerdown', 475, 225));
+  await sleep(280);
+  f.surface.dispatchEvent(pointer('pointermove', 500, 250));
+  assert(Math.abs(f.looks.at(-1)![0] - .3) < 1e-12);
+  assert(Math.abs(f.looks.at(-1)![1] - .1) < 1e-12);
+  f.surface.dispatchEvent(pointer('pointerup', 500, 250));
+  const retained = [...f.looks.at(-1)!];
+  f.click(700, 500); assert.equal(f.modes.at(-1), 'off');
+  f.click(100, 100); assert.equal(f.modes.at(-1), 'yoke');
+  assert.deepEqual(f.looks.at(-1), retained, 'click toggles do not recenter the view');
+  f.surface.dispatchEvent(pointer('pointermove', 400, 300));
+  assert.deepEqual(f.yokes.at(-1), [0, 0]);
+  f.controller.dispose();
+});
+
+test('centered re-entry is authoritative from the fixed midpoint after leave or outside look release', async () => {
+  const f = fixture(true); f.click(100, 100);
+  f.surface.dispatchEvent(pointer('pointermove', 475, 225));
+  f.surface.dispatchEvent(new Event('pointerleave'));
+  assert.deepEqual(f.yokes.at(-1), [0, 0]); assert.equal(f.modes.at(-1), 'yoke');
+  f.surface.dispatchEvent(pointer('pointerenter', 325, 375));
+  assert.deepEqual(f.yokes.at(-1), [-.5, -.5]);
+  f.surface.dispatchEvent(pointer('pointerdown', 325, 375));
+  await sleep(280);
+  f.surface.dispatchEvent(pointer('pointermove', 900, 700));
+  f.surface.dispatchEvent(pointer('pointerup', 900, 700));
+  const retained = [...f.looks.at(-1)!];
+  assert.deepEqual(f.yokes.at(-1), [0, 0]);
+  f.surface.dispatchEvent(pointer('pointerenter', 400, 300));
+  assert.deepEqual(f.yokes.at(-1), [0, 0]);
+  f.surface.dispatchEvent(pointer('pointermove', 475, 225));
+  assert.deepEqual(f.yokes.at(-1), [.5, .5]);
+  assert.deepEqual(f.looks.at(-1), retained);
+  f.controller.dispose();
+});
+
+test('centered cancellation, focus/visibility and pointer interruption retain view; Escape and reset center explicitly', async () => {
+  const f = fixture(true); f.click();
+  f.surface.dispatchEvent(pointer('pointerdown', 200, 200));
+  await sleep(280);
+  f.surface.dispatchEvent(pointer('pointermove', 250, 150));
+  f.surface.dispatchEvent(pointer('pointerup', 250, 150));
+  f.controller.cancel();
+  for (const interrupt of [
+    () => f.controller.cancel(),
+    () => f.surface.ownerDocument.defaultView.dispatchEvent(new Event('blur')),
+    () => { f.surface.ownerDocument.hidden = true; f.surface.ownerDocument.dispatchEvent(new Event('visibilitychange')); f.surface.ownerDocument.hidden = false; },
+  ]) {
+    f.click(); f.surface.dispatchEvent(pointer('pointermove', 475, 225)); interrupt();
+    assert.equal(f.modes.at(-1), 'off');
+    assert.deepEqual(f.yokes.at(-1), [0, 0]);
+    assert.deepEqual(f.looks.at(-1), [.2, .2]);
+  }
+  for (const type of ['pointercancel', 'lostpointercapture']) {
+    f.click(); f.surface.dispatchEvent(pointer('pointerdown', 200, 200));
+    f.surface.dispatchEvent(Object.assign(new Event(type), { pointerId: 1 }));
+    assert.equal(f.modes.at(-1), 'off'); assert.equal(f.surface.captures.size, 0);
+    assert.deepEqual(f.looks.at(-1), [.2, .2]);
+  }
+  f.surface.dispatchEvent(Object.assign(new Event('keydown', { cancelable: true }), { code: 'Escape' }));
+  assert.deepEqual(f.looks.at(-1), [0, 0]); assert.equal(f.modes.at(-1), 'off');
+  f.surface.dispatchEvent(pointer('pointerdown', 200, 200));
+  await sleep(280);
+  f.surface.dispatchEvent(pointer('pointermove', 250, 150));
+  f.surface.dispatchEvent(pointer('pointerup', 250, 150));
+  assert.deepEqual(f.looks.at(-1), [.2, .2]);
+  f.controller.reset();
+  assert.deepEqual(f.looks.at(-1), [0, 0]); assert.equal(f.modes.at(-1), 'off');
+  f.controller.dispose();
+});
+
+test('centered Review look stays cumulative and read only across cancellation, then explicit reset clears it', async () => {
+  const f = fixture(true); f.review(); f.click();
+  f.surface.dispatchEvent(pointer('pointermove', 475, 225));
+  assert.deepEqual(f.yokes, []);
+  f.surface.dispatchEvent(pointer('pointerdown', 200, 200));
+  await sleep(280);
+  f.surface.dispatchEvent(pointer('pointermove', 250, 150));
+  f.surface.dispatchEvent(pointer('pointerup', 250, 150));
+  f.controller.cancel(); assert.deepEqual(f.looks.at(-1), [.2, .2]);
+  f.surface.dispatchEvent(pointer('pointerdown', 250, 150));
+  await sleep(280);
+  f.surface.dispatchEvent(pointer('pointermove', 300, 200));
+  f.surface.dispatchEvent(pointer('pointerup', 300, 200));
+  assert.deepEqual(f.looks.at(-1), [.4, 0]); assert.deepEqual(f.yokes, []);
+  f.controller.reset(); assert.deepEqual(f.looks.at(-1), [0, 0]);
   f.controller.dispose();
 });

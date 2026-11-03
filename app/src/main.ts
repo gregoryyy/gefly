@@ -41,7 +41,7 @@ root.innerHTML = `
     <a class="brand" href="https://github.com/gregoryyy/gefly" target="_blank" rel="noreferrer">gefly<span>FLIGHT LAB</span></a>
     <div class="location"><strong>EGELSBACH</strong><span>C172 research aircraft · airborne practice</span></div>
     <div class="session-status"><i id="status-dot"></i><span id="status" role="status">Loading flight…</span><span id="clock">00:00</span><span id="audio-button-slot"></span></div>
-    <details id="view-menu" class="top-menu"><summary>View</summary><nav class="menu-content view-controls" aria-label="Flight views"><button id="cockpit" class="selected" aria-pressed="true">Cockpit</button><button id="chase" aria-pressed="false">Chase <kbd>V</kbd></button><button id="toggle-map" aria-pressed="false" aria-controls="practice-map-panel">Map</button><button id="toggle-flight-data" aria-pressed="false" aria-controls="flight-data-panel">Flight data</button><button id="toggle-stall-awareness" aria-pressed="false" aria-controls="stall-awareness-panel">Stall awareness</button><button id="toggle-controls" aria-pressed="true" aria-controls="flight-controls-panel">Flight controls</button></nav></details>
+    <details id="view-menu" class="top-menu"><summary>View</summary><nav class="menu-content view-controls" aria-label="Flight views"><button id="cockpit" class="selected" aria-pressed="true">Cockpit</button><button id="chase" aria-pressed="false">Chase <kbd>V</kbd></button><button id="toggle-map" aria-pressed="false" aria-controls="practice-map-panel">Flight map <kbd>M</kbd></button><button id="toggle-flight-data" aria-pressed="false" aria-controls="flight-data-panel">Flight data</button><button id="toggle-stall-awareness" aria-pressed="false" aria-controls="stall-awareness-panel">Stall awareness</button><button id="toggle-controls" aria-pressed="true" aria-controls="flight-controls-panel">Flight controls</button></nav></details>
     <span id="review-button-slot"></span>
     <button id="controls-settings" class="settings-trigger" aria-haspopup="dialog">Options</button>
     <details id="flight-menu" class="top-menu"><summary>Flight</summary><nav class="menu-content" aria-label="Flight session"><button id="reset">Restart flight</button><span class="menu-label">FLAT-GROUND LANDING STUDY</span><button data-landing="normal">Baseline touchdown</button><button data-landing="hard">Fast descent</button><button data-landing="side">Sideways touchdown</button><button data-landing="banked">Banked touchdown</button><span class="menu-label">PUBLIC TERRAIN FLIGHTS</span><button id="airborne-practice">Egelsbach airborne practice</button><button id="taunus-practice">Taunus ridge flight</button><button data-region="darmstadt">Darmstadt flight</button><button data-region="odenwald">Odenwald ridge flight</button><button data-region="spessart">Spessart flight</button><button id="eddf-ils-practice" disabled>EDDF 25C ILS practice · historical</button></nav></details>
@@ -77,10 +77,10 @@ root.innerHTML = `
       <div class="axis-display"><span>FLAP CMD <b id="recorded-flap-command">—</b></span><span>ACTUAL <b id="recorded-flap-actual">—</b></span><span>TRIM <b id="recorded-trim">—</b></span></div>
       <div class="axis-display"><span>THROTTLE <b id="recorded-throttle">—</b></span><span>MIXTURE <b id="recorded-mixture">—</b></span><span>MODE <b id="recorded-mixture-mode">—</b></span><span>ENGINE <b id="recorded-engine">—</b></span></div>
     </div>
-    <details class="control-options"><summary>Keyboard & assistance</summary><p>↑ Push nose down · ↓ Pull nose up<br>← / → Bank · Q / W Rudder<br>1–9 Throttle: 10–90% · 0: idle<br>[ / ] Retract / extend flaps · B Hold wheel brakes at Options command<br>&#39; / &#92; Trim nose up / down<br>P Autopilot on / off<br>E Engine on/off · S Sound on/off<br>Space Pause · R Review</p><label for="roll-offset">Roll correction <output id="offset-value">−0.109</output></label><input id="roll-offset" type="range" min="-0.25" max="0.25" step="0.001" value="-0.109375" aria-label="Experimental roll correction for the generic model"><small>The generic model tends to roll right with centered controls. This adds a small constant left-aileron command. Zero removes the correction; it is not aircraft trim.</small><div class="roll-correction-presets"><button id="roll-correction-off" type="button">Off · 0%</button><button id="roll-correction-default" type="button">Study default</button></div></details>
+    <details class="control-options"><summary>Keyboard & assistance</summary><p>↑ Push nose down · ↓ Pull nose up<br>← / → Bank · Q / W Rudder<br>1–9 Throttle: 10–90% · 0: idle<br>[ / ] Retract / extend flaps · B Hold wheel brakes · N Toggle parking brake<br>&#39; / &#92; Trim nose up / down<br>P Autopilot on / off<br>E Engine on/off · S Sound on/off<br>Space Pause · R Review</p><label for="roll-offset">Roll correction <output id="offset-value">−0.109</output></label><input id="roll-offset" type="range" min="-0.25" max="0.25" step="0.001" value="-0.109375" aria-label="Experimental roll correction for the generic model"><small>The generic model tends to roll right with centered controls. This adds a small constant left-aileron command. Zero removes the correction; it is not aircraft trim.</small><div class="roll-correction-presets"><button id="roll-correction-off" type="button">Off · 0%</button><button id="roll-correction-default" type="button">Study default</button></div></details>
   </aside>
   <div class="scenery-label">Hessen public terrain · Egelsbach–Frankfurt–Taunus</div>
-  <aside id="practice-map-panel" class="practice-map-panel" aria-label="Practice map" hidden></aside>
+  <aside id="practice-map-panel" class="practice-map-panel" aria-label="Flight map" hidden></aside>
   <section class="flight-deck" aria-label="Flight instruments">
     <div class="deck-heading"><span class="eyebrow">CLASSIC INSTRUMENTS <b>EXPERIMENTAL</b></span><span id="view-label">COCKPIT VIEW</span></div>
     <div class="instruments">
@@ -90,12 +90,12 @@ root.innerHTML = `
         <div class="throttle-control"><label for="throttle">THROTTLE <b id="power">—</b></label><input id="throttle" type="range" aria-orientation="vertical" min="0" max="100" value="69" aria-label="Throttle percentage"><span>IDLE <i></i> FULL</span><p><kbd>1–9</kbd> 10–90% <kbd>0</kbd> Idle</p></div>
         <div class="vertical-config-controls"><div class="flap-controls"><div class="config-heading"><label for="flap-control">FLAPS</label><b id="flaps-actual">—</b></div><div class="flap-slider"><input id="flap-control" type="range" min="0" max="30" step="10" value="0" list="flap-stops" aria-label="Flap lever angle degrees" aria-orientation="vertical"><datalist id="flap-stops"><option value="0"></option><option value="10"></option><option value="20"></option><option value="30"></option></datalist><div class="flap-stop-labels" aria-hidden="true"><span>UP</span><span>10</span><span>20</span><span>30</span></div></div><div class="flap-keycaps"><button id="flaps-retract" type="button" aria-label="Retract flaps one detent, left bracket key" aria-keyshortcuts="[" title="[ · Retract flaps">↑ <kbd>[</kbd></button><button id="flaps-extend" type="button" aria-label="Extend flaps one detent, right bracket key" aria-keyshortcuts="]" title="] · Extend flaps">↓ <kbd>]</kbd></button></div></div>
         <div id="pitch-trim"></div></div>
-        <div class="brake-controls"><button id="wheel-brakes" data-code="KeyB" class="control-key" aria-label="Hold wheel brakes">WHEEL BRAKES <kbd>B</kbd></button><small id="brake-state">Wheel brakes · ground contact only</small></div>
+        <div class="brake-controls"><div class="brake-buttons"><button id="wheel-brakes" data-code="KeyB" class="control-key" aria-label="Hold wheel brakes">WHEEL <kbd>B</kbd></button><button id="parking-brake" type="button" class="control-key" aria-label="Toggle parking brake" aria-keyshortcuts="N" aria-pressed="false" disabled>PARK OFF <kbd>N</kbd></button></div><small id="brake-state">Wheel brakes · ground contact only</small></div>
       </aside>
       <div class="avionics-units cockpit-radio"><div id="radio-nav-systems"></div></div>
     </div>
     <footer><span>LOCAL RESEARCH PROTOTYPE · NOT VALIDATED FOR TRAINING</span><span>Imagery: HVBG · DL-DE Zero 2.0</span></footer>
-    <div id="limitations" hidden>Generic JSBSim 172P research data, not the planned C172S. Official Hessen DGM terrain is active on normal flights, with DHHN2016 heights in dynamics and GCG2016/2023 ellipsoid conversion for rendering. A 42-tile DGM200 region extends to Darmstadt, Odenwald and Spessart within 8.25–10°E, 49.25–50.75°N. Its 200 m source is blended into the fine Hessen patch near the edge; fine source nodes are approximately 32–54 m. This is not full EDDF/100 NM coverage or surveyed runway/obstacle fidelity. Photography and map tiles load from official public services; acquisition dates and coverage vary. Flat-ground landing-study presets remain separate. The map shows 103 community airport points with source elevations; these are not current operational airport information. Bundled radio navigation uses a historical 2013.10 FlightGear NAV810 snapshot within approximately 100 NM of a community EDDF point; it is not current AIRAC or operational flight information. Airspeed shows ideal engine CAS, not installation-calibrated IAS; older engines explicitly fall back to TAS. Heading is true, and the ideal turn-rate aid is not a full gyro turn-coordinator model. The pressure altimeter uses an ideal ISA scale-offset model driven by JSBSim static pressure; launch-point QFE is a practice datum, not airport elevation. Installed C172S instrument errors and limits are not modeled. No validated landing, circuit assessment, weather, radio or checklists yet. The adjustable study roll offset adds a constant aileron input to counter the generic model’s initial roll-off; this is an experimental assist, not an aircraft trim specification. Local research runtime assets are excluded from distribution. Radio controls use a legacy 25 kHz COM subset, with no 8.33 kHz or communication service. LAB is an opt-in fictional teaching station, using true OBS/radials and spherical geometric slant distance. Historical real VOR/LOC/GS/DME sources are modeled with spherical geometry and approximate service sectors; no RF propagation or terrain masking. VOR OBS uses sourced station magnetic calibration; LOC courses and the DG remain TRUE. Missing components stay unavailable. Autopilot operating logic follows the KAP 140 two-axis altitude-preselect reference, over reused generic JSBSim servos. AP engages ROL/current VS; ALT captures current pressure altitude, separate from the selector. Native controller response and capture anticipation are uncalibrated. TRUE DG reference and opt-in fictional LAB VOR remain teaching substitutions. NAV/APR/REV can use historical NAV1 VOR/LOC and APR uses paired GS where available. Current LOC/GS/GPS service data, hardware PFT timing and installed trim-servo/electrical/fault dynamics are not supplied. AP and altimeter BARO settings are separate. Raw manual input or trim change disconnects AP as a simulator safety substitution. Supported pressure-sensor height is −2 km to 11 km; incompatible selector/BARO combinations are rejected. A is a simulator convenience that captures current heading and pressure altitude in HDG/ALT; it is not an original KAP 140 button. Throttle remains manual; no automatic stall or overspeed protection is claimed. The = shortcut cycles requested simulation pacing through 1×, 1.5×, 2×, 5× and 10× without enlarging the physics step; achievable speed depends on the computer and loading. Landing contact studies use a flat zero-height ellipsoid, upstream generic gear forces and illustrative fixed-wheel visuals; they do not establish aircraft damage or safe load limits. Airspeed colored arcs use fixed 1982 C172P CAS references (2400 lb, forward CG, power off and zero bank for stalls), not installed IAS arcs, current-weight stall predictions or validated model bounds. The TAS fallback hides those arcs.</div>
+    <div id="limitations" hidden>Generic JSBSim 172P research data, not the planned C172S. Official Hessen DGM terrain is active on normal flights, with DHHN2016 heights in dynamics and GCG2016/2023 ellipsoid conversion for rendering. A 42-tile DGM200 region extends to Darmstadt, Odenwald and Spessart within 8.25–10°E, 49.25–50.75°N. Its 200 m source is blended into the fine Hessen patch near the edge; fine source nodes are approximately 32–54 m. This is not full EDDF/100 NM coverage or surveyed runway/obstacle fidelity. Photography and map tiles load from official public services; acquisition dates and coverage vary. Flat-ground landing-study presets remain separate. The map shows 731 community airfield and heliport entries across five southern German states, with source elevations and closed facilities distinguished; these are not current operational airport information. Bundled radio navigation uses a historical 2013.10 FlightGear NAV810 snapshot within approximately 100 NM of a community EDDF point; it is not current AIRAC or operational flight information. Airspeed shows ideal engine CAS, not installation-calibrated IAS; older engines explicitly fall back to TAS. Heading is true, and the ideal turn-rate aid is not a full gyro turn-coordinator model. The pressure altimeter uses an ideal ISA scale-offset model driven by JSBSim static pressure; launch-point QFE is a practice datum, not airport elevation. Installed C172S instrument errors and limits are not modeled. No validated landing, circuit assessment, weather, radio or checklists yet. The adjustable study roll offset adds a constant aileron input to counter the generic model’s initial roll-off; this is an experimental assist, not an aircraft trim specification. Local research runtime assets are excluded from distribution. Radio controls use a legacy 25 kHz COM subset, with no 8.33 kHz or communication service. LAB is an opt-in fictional teaching station, using true OBS/radials and spherical geometric slant distance. Historical real VOR/LOC/GS/DME sources are modeled with spherical geometry and approximate service sectors; no RF propagation or terrain masking. VOR OBS uses sourced station magnetic calibration; LOC courses and the DG remain TRUE. Missing components stay unavailable. Autopilot operating logic follows the KAP 140 two-axis altitude-preselect reference, over reused generic JSBSim servos. AP engages ROL/current VS; ALT captures current pressure altitude, separate from the selector. Native controller response and capture anticipation are uncalibrated. TRUE DG reference and opt-in fictional LAB VOR remain teaching substitutions. NAV/APR/REV can use historical NAV1 VOR/LOC and APR uses paired GS where available. Current LOC/GS/GPS service data, hardware PFT timing and installed trim-servo/electrical/fault dynamics are not supplied. AP and altimeter BARO settings are separate. Raw manual input or trim change disconnects AP as a simulator safety substitution. Supported pressure-sensor height is −2 km to 11 km; incompatible selector/BARO combinations are rejected. A is a simulator convenience that captures current heading and pressure altitude in HDG/ALT; it is not an original KAP 140 button. Throttle remains manual; no automatic stall or overspeed protection is claimed. The = shortcut cycles requested simulation pacing through 1×, 1.5×, 2×, 5× and 10× without enlarging the physics step; achievable speed depends on the computer and loading. Landing contact studies use a flat zero-height ellipsoid, upstream generic gear forces and illustrative fixed-wheel visuals; they do not establish aircraft damage or safe load limits. Airspeed colored arcs use fixed 1982 C172P CAS references (2400 lb, forward CG, power off and zero bank for stalls), not installed IAS arcs, current-weight stall predictions or validated model bounds. The TAS fallback hides those arcs.</div>
   </section>
 </main>`;
 
@@ -131,6 +131,7 @@ const regionalTiles = new Map<string,TerrainGrid>();
 let terrainLoading = false;
 let mixtureCommand = 1, mixtureAutomatic = true, apDisconnectPending = false;
 let engineCommand: boolean | null = null;
+let parkingBrake = false;
 let scene: FlightScene | null = null;
 let sceneFailed = false, ready = false, running = false, failed = false;
 let hasFlown = false, startWhenReady = false;
@@ -172,6 +173,7 @@ function updateSessionUI() {
   document.querySelectorAll<HTMLButtonElement>('[data-landing]').forEach(button => { button.disabled = reviewing; });
   el<HTMLButtonElement>('controls-settings').disabled = reviewing;
   el<HTMLInputElement>('throttle').disabled = !controlsAvailable();
+  renderParkingBrake(latest, reviewing);
   document.querySelector<HTMLElement>('.control-panel')!.hidden = !reviewing && !controlsVisible;
   document.querySelector<HTMLElement>('.throttle-control')!.hidden = false;
   el('recorded-control-details').hidden = !reviewing;
@@ -183,9 +185,7 @@ function updateSessionUI() {
   el('control-state').textContent = reviewing ? 'RECORDED · READ ONLY' : collided ? 'COLLISION · CONTROLS LOCKED' : running ? (latest?.ap_mode ? 'AUTOPILOT · ROLL' : 'CONTROLS ACTIVE') : (controlsAvailable() ? 'PAUSED · CONTROLS READY' : 'LOADING CONTROLS');
   for (const [id, live, recorded] of [['roll-control-label', 'ROLL', 'AIL CMD'], ['pitch-control-label', 'PITCH', 'ELEV CMD'], ['rudder-control-label', 'RUDDER', 'RUD CMD']] as const) el(id).textContent = reviewing ? recorded : live;
   el('control-state').classList.toggle('active', running);
-  if (reviewing) el('pointer-mode').textContent = 'REVIEW · hold-drag to set view · Escape to center';
-  else if (collided) el('pointer-mode').textContent = 'COLLISION VIEW · hold-drag to inspect';
-  else if (sceneContainer.dataset.pointerMode === 'off') el('pointer-mode').textContent = 'Click scene: yoke · Hold-drag: look';
+  updatePointerHint();
   el('joystick').setAttribute('aria-disabled', String(!controlsAvailable()));
   document.querySelectorAll<HTMLButtonElement>('[data-code]').forEach(button => { button.disabled = !controlsAvailable(); });
   if (failed || sceneFailed) {
@@ -254,7 +254,7 @@ const controlSettingsPanel = createControlSettingsPanel({
   container: root, initial: controlSettings,
   onOpen: pauseFlight,
   onClose: focusFlight,
-  onChange(settings) { controlSettings = { ...settings }; neutralize(); updateConfiguration(latest, reviewing); },
+  onChange(settings) { controlSettings = { ...settings }; neutralize(); updateConfiguration(latest, reviewing); updatePointerHint(); },
 });
 // Options belong to the top menu; preserve the existing controls and their IDs.
 const optionsDialog = el<HTMLDialogElement>('control-settings');
@@ -309,6 +309,29 @@ function engineShortcut(event: KeyboardEvent): void {
   event.preventDefault(); event.stopPropagation(); toggleEngine();
 }
 document.addEventListener('keydown', engineShortcut, true);
+function parkingBrakeShortcut(event: KeyboardEvent): void {
+  if (event.code !== 'KeyN' || !event.isTrusted || event.repeat || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey
+    || editing(event.target) || menuOpen() || document.querySelector('dialog[open]')
+    || (event.target instanceof Element && event.target.closest('.practice-map-panel'))) return;
+  if (!controlsAvailable() || latest?.brake_left_norm === undefined) return;
+  event.preventDefault(); event.stopPropagation(); toggleParkingBrake();
+}
+document.addEventListener('keydown', parkingBrakeShortcut, true);
+function toggleParkingBrake(): void {
+  if (!controlsAvailable() || latest?.brake_left_norm === undefined) return;
+  parkingBrake = !parkingBrake;
+  publishInput();
+}
+el('parking-brake').onclick = () => { toggleParkingBrake(); focusFlight(); };
+function renderParkingBrake(state: Readonly<FlightState> | null, recorded: boolean): void {
+  const button = el<HTMLButtonElement>('parking-brake');
+  button.disabled = recorded || !controlsAvailable() || state?.brake_left_norm === undefined;
+  button.setAttribute('aria-pressed', recorded ? 'mixed' : String(parkingBrake));
+  button.classList.toggle('held', !recorded && parkingBrake);
+  button.firstChild!.textContent = recorded ? 'PARK — ' : `PARK ${parkingBrake ? 'ON' : 'OFF'} `;
+  button.setAttribute('aria-label', recorded ? 'Parking brake latch not recorded; Review is read only'
+    : `Toggle parking brake, ${parkingBrake ? 'set' : 'released'}; full wheel brake command`);
+}
 function toggleEngine(): void {
   if (!controlsAvailable() || latest?.engine_command_on === undefined) return;
   engineCommand = !(engineCommand ?? latest.engine_command_on === 1);
@@ -440,12 +463,21 @@ el('toggle-stall-awareness').onclick = () => setStallAwarenessVisible(el('stall-
 el('toggle-map').onclick = () => {
   setFlightDataVisible(false); void setMapVisible(!mapVisible); closeViewMenu(); focusFlight();
 };
+function flightMapShortcut(event: KeyboardEvent): void {
+  if (event.code !== 'KeyM' || event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
+    || editing(event.target) || menuOpen() || document.querySelector('dialog[open]')) return;
+  event.preventDefault(); event.stopPropagation(); el<HTMLButtonElement>('toggle-map').click();
+}
+document.addEventListener('keydown', flightMapShortcut, true);
+
 function mapUnavailable() {
   practiceMap?.dispose(); practiceMap = null;
   el('practice-map-panel').textContent = 'Practice map unavailable. Close and reopen to retry; flight controls still work.';
 }
 async function setMapVisible(visible: boolean) {
+  if (visible !== mapVisible) neutralize();
   mapVisible = visible;
+  document.querySelector<HTMLElement>('.flight-app')!.dataset.flightMap = String(visible);
   if (visible) {
     el('flight-data-panel').hidden = el('stall-awareness-panel').hidden = true;
     el('toggle-flight-data').setAttribute('aria-pressed', 'false');
@@ -547,10 +579,11 @@ function publishInput() {
     apDisconnectPending = true; session.setKap140({action: 'disconnect'});
   }
   raw.pilot_override = raw.elevator !== 0 || raw.aileron !== 0 || raw.rudder !== 0;
-  const controls = applyControlSettings(raw, controlSettings, latest?.ap_mode ? 0 : rollOffset);
+  const controls = applyControlSettings(raw, controlSettings, latest?.ap_mode ? 0 : rollOffset, parkingBrake);
   const direction = rollOffset < 0 ? 'left' : rollOffset > 0 ? 'right' : 'off';
   el('offset-value').textContent = `${Math.abs(rollOffset * 100).toFixed(1)}% ${direction}${latest?.ap_mode ? ' · suspended by AP' : ''}`;
   session.input(controls);
+  renderParkingBrake(latest, false);
   el('roll-control').textContent = controls.aileron.toFixed(2);
   el('pitch-control').textContent = controls.elevator.toFixed(2);
   el('rudder-control').textContent = controls.rudder.toFixed(2);
@@ -588,13 +621,13 @@ function reset(preset = landingPreset) {
   document.querySelector('.location strong')!.textContent = ['darmstadt','odenwald','spessart'].includes(airborneSite) ? airborneSite.toUpperCase() : airborneSite === 'eddf-ils' ? 'FRANKFURT 25C' : airborneSite === 'taunus' ? 'TAUNUS' : 'EGELSBACH';
   collisionUnavailableNoticed = false;
   radioPanel.reset();
-  flightTrace.clear(); pitchTrimTarget = null; flapTarget_deg = 0; mixtureCommand = 1; mixtureAutomatic = true; engineCommand = null; apDisconnectPending = false;
+  flightTrace.clear(); parkingBrake = false; pitchTrimTarget = null; flapTarget_deg = 0; mixtureCommand = 1; mixtureAutomatic = true; engineCommand = null; apDisconnectPending = false;
   if (practiceMap && latest) { try { practiceMap.update(latest, [], 'live'); } catch { mapUnavailable(); } }
   lastMapUpdate_ms = -Infinity;
   pressureAltimeter.update(null, false);
   startWhenReady = running; running = false; ready = false; failed = false;
   engineAudio.update(null, false);
-  neutralize(); session.pause(); latest = previous = null; verticalSpeedFpm = 0;
+  pointerYoke?.reset(); neutralize(); session.pause(); latest = previous = null; verticalSpeedFpm = 0;
   pitchTrimControl.update(null, false, false, null);
   flightData.update(null, false); stallAwareness.update(null, false); groundCollisionPanel.update(null, false, false);
   enginePanel.update(null, false, false); autopilotPanel.update(null, false, false);
@@ -637,11 +670,12 @@ el('limits').onclick = () => {
 // Pointer capture keeps a drag usable when it crosses the pad edge. Release,
 // cancellation, lost capture and focus loss all clear user axes immediately.
 function updateConfiguration(state: Readonly<FlightState> | null, recorded: boolean): void {
+  renderParkingBrake(state, recorded);
   const available = state?.flap_rad !== undefined && state.brake_left_norm !== undefined;
   const capturedBrake = Number.isFinite(state?.brake_left_norm) && Number.isFinite(state?.brake_right_norm)
     ? Math.max(state!.brake_left_norm!, state!.brake_right_norm!) : null;
   const brakePercent = recorded ? capturedBrake === null ? null : Math.round(capturedBrake * 100) : Math.round((controlSettings.brake ?? .25) * 100);
-  el('wheel-brakes').firstChild!.textContent = `WHEEL BRAKES ${brakePercent === null ? '—' : `${brakePercent}%`} `;
+  el('wheel-brakes').firstChild!.textContent = `WHEEL ${brakePercent === null ? '—' : `${brakePercent}%`} `;
   el('wheel-brakes').setAttribute('aria-label', recorded ? brakePercent === null ? 'Recorded wheel brakes unavailable' : `Recorded wheel brakes, ${brakePercent} percent command` : `Hold wheel brakes, ${brakePercent} percent command; adjustable in Options`);
   const flapLever = el<HTMLInputElement>('flap-control');
   flapLever.disabled = !available || !controlsAvailable() || recorded;
@@ -691,14 +725,23 @@ function setFlaps(degrees: number) {
 el<HTMLInputElement>('flap-control').oninput = event => setFlaps((event.target as HTMLInputElement).valueAsNumber);
 el('flaps-retract').onclick = () => { setFlaps(flapTarget_deg - 10); focusFlight(); };
 el('flaps-extend').onclick = () => { setFlaps(flapTarget_deg + 10); focusFlight(); };
+function updatePointerHint(mode = sceneContainer.dataset.pointerMode ?? 'off'): void {
+  const centered = controlSettings.centeredTouchpad === true;
+  el('pointer-mode').textContent = groundCollisionStopped() && !reviewing ? 'COLLISION VIEW · hold-drag to inspect'
+    : reviewing ? (mode === 'look' ? 'REVIEW LOOK · release to keep view' : 'REVIEW · hold-drag to set view · Escape to center')
+    : mode === 'look' ? (centered ? 'LOOKING · release keeps view · Escape to center' : 'LOOKING · release to return')
+    : centered ? (mode === 'yoke' ? 'CENTERED YOKE · click off · hold-drag to look' : 'CENTERED YOKE · click on · hold-drag to look')
+    : mode === 'yoke' ? 'YOKE ACTIVE · click to release · hold-drag to look' : 'Click scene: yoke · Hold-drag: look';
+}
 pointerYoke = createPointerYoke({
   element: sceneContainer,
   lookOnly: () => reviewing || groundCollisionStopped(),
+  centered: () => controlSettings.centeredTouchpad === true,
   enabled: () => (controlsAvailable() || reviewing || groundCollisionStopped()) && !menuOpen() && !controlSettingsPanel.isOpen() && !document.querySelector('dialog[open]'),
   onYoke(x, y) { stickX = x; stickY = y; publishInput(); },
   onLook(yaw_rad, pitch_rad) { cameraLook = { yaw_rad, pitch_rad }; },
   onMode(mode) {
-    el('pointer-mode').textContent = groundCollisionStopped() && !reviewing ? 'COLLISION VIEW · hold-drag to inspect' : reviewing ? (mode === 'look' ? 'REVIEW LOOK · release to keep view' : 'REVIEW · hold-drag to set view · Escape to center') : mode === 'yoke' ? 'YOKE ACTIVE · click to release · hold-drag to look' : mode === 'look' ? 'LOOKING · release to return' : 'Click scene: yoke · Hold-drag: look';
+    updatePointerHint(mode);
     sceneContainer.dataset.pointerMode = mode;
   },
 });
@@ -876,5 +919,5 @@ function animate(now: number) {
   requestAnimationFrame(animate);
 }
 publishInput(); updateSessionUI(); requestAnimationFrame(animate);
-addEventListener('pagehide', () => { flightAssists.dispose(); overlayPresentation.dispose();disposeMenuShortcuts(); mapDisposed = true; engineAudio.dispose(); audioControls?.dispose(); document.removeEventListener('click', activateEngineAudio, true); document.removeEventListener('keydown', activateEngineAudio, true); document.removeEventListener('keydown', soundShortcut, true); document.removeEventListener('keydown', engineShortcut, true); groundCollisionPanel.dispose(); aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
+addEventListener('pagehide', () => { document.removeEventListener('keydown', flightMapShortcut, true); flightAssists.dispose(); overlayPresentation.dispose();disposeMenuShortcuts(); mapDisposed = true; engineAudio.dispose(); audioControls?.dispose(); document.removeEventListener('click', activateEngineAudio, true); document.removeEventListener('keydown', activateEngineAudio, true); document.removeEventListener('keydown', soundShortcut, true); document.removeEventListener('keydown', engineShortcut, true); document.removeEventListener('keydown', parkingBrakeShortcut, true); groundCollisionPanel.dispose(); aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
 void sceneReady;

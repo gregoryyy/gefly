@@ -1,33 +1,98 @@
-.practice-map-panel { position: absolute; top: 87px; right: 18px; width: 360px; max-width: calc(100% - 36px); z-index: 4; border: 1px solid #bdced04d; border-radius: 9px; background: #101c27f5; box-shadow: 0 8px 35px #06132266; overflow: hidden; }
-.practice-map-heading { display: flex; align-items: center; gap: 10px; padding: 8px 10px; }
+/* Keep the chart alongside the outside view, above the unchanged cockpit. */
+.flight-app { --flight-map-width: clamp(360px, 38vw, 640px); --flight-map-top: 12px; }
+.flight-app:has(.topbar:not([hidden])) { --flight-map-top: 88px; }
+.practice-map-panel {
+  position: absolute;
+  top: var(--flight-map-top);
+  right: 12px;
+  bottom: calc(var(--deck-height) + 12px);
+  width: var(--flight-map-width);
+  max-width: calc(100% - 24px);
+  min-height: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #bdced04d;
+  border-radius: 9px;
+  background: #101c27f5;
+  box-shadow: 0 8px 35px #06132266;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.practice-map-panel[hidden] { display: none; }
+.practice-map-panel > :not(.practice-map-viewport) { flex: 0 0 auto; }
+.practice-map-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #101c27;
+}
 .practice-map-heading strong { font-size: 9px; letter-spacing: 1px; }
 .practice-map-mode { margin-left: auto; color: #f2ce94; font-size: 10px; }
 .practice-map-heading > button { padding: 0 6px; border: 0; background: transparent; font-size: 21px; line-height: 24px; }
-.practice-map-viewport { height: 170px; width: 100%; background: #162530; }
+.practice-map-viewport { flex: 1 1 240px; min-height: 180px; width: 100%; background: #162530; }
 .practice-map-panel .maplibregl-canvas { outline: none; }
-.practice-map-status { margin: 0; padding: 8px 10px; font-size: 11px; line-height: 1.5; background: #30291f; color: #ffe0b1; }
-.practice-map-toolbar { display: flex; gap: 6px; padding: 8px 10px 3px; }
-.practice-map-toolbar button { font-size: 10px; padding: 5px 9px; }
+.practice-map-status { margin: 0; padding: 6px 10px; font-size: 10px; line-height: 1.4; background: #30291f; color: #ffe0b1; }
+.practice-map-toolbar { display: flex; flex-wrap: wrap; gap: 5px; padding: 7px 10px 2px; }
+.practice-map-toolbar button { font-size: 10px; padding: 5px 8px; }
 .practice-map-toolbar button:nth-child(-n+2) { font-size: 15px; min-width: 30px; padding: 2px 8px; }
 .practice-map-toolbar button[aria-pressed=true] { color: #15232e; border-color: #e4bb79; background: #e4bb79; }
 .practice-map-readout { margin: 5px 10px; font-size: 10px; font-variant-numeric: tabular-nums; color: #e7eff3; }
-.practice-map-legend { margin: 4px 10px; font-size: 9px; line-height: 1.5; color: #edcb91; }
-.practice-map-credit { margin: 5px 10px 3px; font-size: 8px; color: #92aab9; }
-.practice-map-caption { margin: 0; padding: 7px 10px; font-size: 9px; color: #c1d0da; background: #07162280; }
+.practice-map-legend { margin: 3px 10px; font-size: 9px; line-height: 1.4; color: #edcb91; }
+.practice-map-credit { margin: 4px 10px 3px; font-size: 8px; line-height: 1.4; color: #92aab9; overflow-wrap: anywhere; }
+.practice-map-credit a { text-decoration: underline; text-underline-offset: 2px; }
+.practice-map-caption { margin: 0; padding: 6px 10px; font-size: 9px; line-height: 1.4; color: #c1d0da; background: #07162280; }
 .practice-map-aircraft { color: white; font-size: 25px; line-height: 27px; width: 27px; height: 27px; text-align: center; text-shadow: 0 1px 2px #000, 0 0 5px #000; pointer-events: none; }
 .practice-map-start { color: #fff0ca; background: #14242dea; padding: 3px 5px; border-radius: 3px; font-size: 9px; border-left: 3px solid #f3c676; white-space: nowrap; pointer-events: none; }
-@media (max-width: 880px) { .practice-map-panel { right: 10px; width: 310px; max-width: calc(100% - 20px); top: 78px; } .practice-map-viewport { height: 170px; } }
-@media (max-width: 620px) { .practice-map-panel { width: 280px; top: 76px; } .practice-map-viewport { height: 150px; } .practice-map-legend { font-size: 8px; } }
-/* Expanded map retains a bounded, scrollable airport directory on small screens. */
-.practice-map-panel { width: 600px; max-height: calc(100vh - 100px); overflow-y: auto; }
-.practice-map-viewport { height: min(40vh, 360px); min-height: 180px; }
-.practice-map-toolbar { flex-wrap: wrap; }
-.practice-map-airports { padding: 4px 10px; font-size: 11px; }
+.practice-map-airports { padding: 4px 10px; font-size: 11px; max-height: 210px; overflow-y: auto; }
 .practice-map-airports summary { cursor: pointer; font-weight: bold; }
 .practice-map-airports input { width: 100%; margin-top: 6px; padding: 6px; color: #fff; background: #172b39; border: 1px solid #8196a3; }
+.practice-map-airports select { width: 100%; margin-top: 5px; padding: 5px 6px; color: #eef3f5; background: #172b39; border: 1px solid #8196a3; border-radius: 4px; font: inherit; }
 .practice-map-airports p { margin: 5px 0; }
-.practice-map-airport-list { display: flex; flex-direction: column; max-height: 150px; overflow-y: auto; }
+.practice-map-airport-list { display: flex; flex-direction: column; max-height: 100px; overflow-y: auto; }
 .practice-map-airport-list button { text-align: left; font-size: 10px; padding: 5px; }
-.practice-map-airport-detail { color: #f2ce94; line-height: 1.5; }
+.practice-map-airport-detail { color: #f2ce94; line-height: 1.4; }
 .practice-map-airport-marker { border: 1px solid #fff; border-radius: 9px; color: #fff; background: #285f87; font-size: 9px; padding: 2px 4px; white-space: nowrap; }
-@media (max-width: 620px) { .practice-map-panel { width: calc(100% - 20px); } .practice-map-viewport { height: min(35vh, 250px); } }
+.practice-map-airport-marker[data-type=heliport] { color: #ffe1ab; border-color: #e8b35d; background: #56391fe8; }
+.practice-map-airport-marker[data-type=closed] { color: #d0cdd1; border-color: #c4bdc7; border-style: dashed; background: #39333de8; text-decoration: line-through; }
+@media (min-width: 1000px) {
+  .flight-app[data-flight-map="true"] #scene { right: calc(var(--flight-map-width) + 24px); }
+}
+@media (max-width: 999px) {
+  .flight-app { --flight-map-width: min(460px, calc(100% - 20px)); --flight-map-top: 10px; }
+  .flight-app:has(.topbar:not([hidden])) { --flight-map-top: 88px; }
+  .practice-map-panel { right: 10px; max-width: calc(100% - 20px); }
+  .practice-map-viewport { flex-basis: 210px; min-height: 160px; }
+}
+@media (max-width: 620px) {
+  .flight-app { --flight-map-width: calc(100% - 20px); }
+  .flight-app:has(.topbar:not([hidden])) { --flight-map-top: 104px; }
+  .practice-map-panel { bottom: calc(var(--deck-height) + 10px); }
+  .practice-map-heading { padding: 6px 8px; }
+  .practice-map-toolbar { gap: 4px; padding: 5px 8px 2px; }
+  .practice-map-toolbar button { padding: 4px 7px; }
+  .practice-map-readout, .practice-map-legend { margin-left: 8px; margin-right: 8px; font-size: 9px; }
+  .practice-map-airports { padding: 4px 8px; }
+}
+/* Layer controls and historical aviation references use a compact chart legend. */
+.practice-map-layers { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; padding: 4px 10px; }
+.practice-map-layers button { font-size: 10px; padding: 4px 8px; }
+.practice-map-layers button[aria-pressed=true] { color: #15232e; border-color: #c8dadd; background: #c8dadd; }
+.practice-map-navigation-status, .practice-map-navigation-key { margin: 3px 10px; color: #cbb1e2; font-size: 9px; line-height: 1.35; }
+.practice-map-navigation-detail { margin: 3px 10px; color: #ead6fc; font-size: 10px; line-height: 1.4; }
+.practice-map-navigation-detail:empty { display: none; }
+.practice-map-navigation-marker { display: flex; align-items: center; gap: 3px; max-width: 190px; padding: 2px 4px; border: 1px solid #d5b4f0; border-radius: 3px; background: #261b3ae8; color: #f0d6ff; white-space: nowrap; font-size: 9px; line-height: 13px; }
+.practice-map-navigation-marker:hover { background: #4b3165; }
+.practice-map-navigation-symbol { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 13px; width: 13px; height: 13px; font-size: 12px; }
+.practice-map-navigation-label { overflow: hidden; text-overflow: ellipsis; }
+.practice-map-panel[data-nav-labels=false] .practice-map-navigation-label { display: none; }
+@media (max-width: 620px) {
+  .practice-map-layers { padding: 4px 8px; gap: 4px; }
+  .practice-map-layers button { padding: 4px 6px; font-size: 9px; }
+  .practice-map-navigation-status, .practice-map-navigation-detail, .practice-map-navigation-key { margin-left: 8px; margin-right: 8px; }
+}

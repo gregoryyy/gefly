@@ -1,8 +1,9 @@
+// Real airport inventory and MapLibre interactions; deterministic scenery pixels.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
-import { prepareFlightUI } from './flight-actions.mjs';
+import { prepareFlightUI, installSceneryFixture } from './flight-actions.mjs';
 
 const app = fileURLToPath(new URL('..', import.meta.url));
 const origin = 'http://127.0.0.1:5198';
@@ -15,6 +16,12 @@ try {
   assert(output.includes('Local:'), output);
   browser = await chromium.launch({ headless: true, ...(process.env.CHROME ? { executablePath: process.env.CHROME } : { channel: 'chrome' }) });
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.route('**/src/practice-map.ts*', async route => {
+    const response = await route.fetch(), source = await response.text();
+    assert(source.includes('map = new LibreMap({'), 'read-only MapLibre observer marker exists');
+    await route.fulfill({ response, body: source.replace('map = new LibreMap({', 'map = window.__airportMap = new LibreMap({') });
+  });
+  await installSceneryFixture(page);
   await page.goto(origin);
   await prepareFlightUI(page, { controls: false });
   await page.locator('#view-menu > summary').click();
@@ -22,19 +29,51 @@ try {
   const panel = page.locator('#practice-map-panel');
   await panel.locator('.practice-map-heading').click();
   assert.equal(await panel.evaluate(element => element.classList.contains('overlay-active')), true);
-  await panel.locator('summary').click();
-  await panel.getByRole('status').filter({ hasText: '103 of 103' }).waitFor();
-  assert.equal(await panel.locator('.practice-map-airport-marker').count(), 103);
-  await panel.getByLabel('Search airports').fill('EDFE');
+  await panel.locator('.practice-map-airports summary').click();
+  await panel.getByRole('status').filter({ hasText: '731 airfields' }).waitFor();
+  await page.waitForFunction(() => window.__airportMap?.getSource('airfields'));
+  const points = await page.evaluate(async () => await window.__airportMap.getSource('airfields').getData());
+  assert.equal(points.features.length, 731, 'all airfields remain in the GeoJSON source');
+  assert((await panel.locator('.practice-map-airport-marker').count()) <= 80, 'DOM labels stay bounded');
+  assert((await panel.locator('.practice-map-airport-list button').count()) <= 100, 'directory DOM stays bounded');
+  const search = panel.getByLabel('Search airports');
+  const type = panel.getByLabel('Airfield type');
+  await type.selectOption('closed');
+  let filtered = await page.evaluate(async () => await window.__airportMap.getSource('airfields').getData());
+  assert.equal(filtered.features.length, 41);
+  assert(filtered.features.every(feature => feature.properties.type === 'closed'));
+  await type.selectOption('heliport');
+  filtered = await page.evaluate(async () => await window.__airportMap.getSource('airfields').getData());
+  assert.equal(filtered.features.length, 244);
+  assert(filtered.features.every(feature => feature.properties.type === 'heliport'));
+  await type.selectOption('airfields');
+  filtered = await page.evaluate(async () => await window.__airportMap.getSource('airfields').getData());
+  assert.equal(filtered.features.length, 446);
+  assert(filtered.features.every(feature => feature.properties.type.endsWith('_airport')));
+  await type.selectOption('all');
+  await search.fill('EDFE');
   await panel.getByRole('button', { name: /EDFE ·/ }).click();
   const detail = await panel.locator('.practice-map-airport-detail').textContent();
   assert.match(detail, /EDFE/); assert.match(detail, /Elevation/); assert.match(detail, /OurAirports/);
   assert.equal(await panel.getByRole('button', { name: 'Follow' }).getAttribute('aria-pressed'), 'false');
-  await panel.getByLabel('Search airports').fill('DE-0274');
+  for (const [query, id] of [['Munich', 'EDDM'], ['Saarbrücken', 'EDDR'], ['Kassel', 'EDVK']]) {
+    await search.fill(query);
+    await panel.getByRole('button', {name:new RegExp(`${id} ·`)}).click();
+    assert.match(await panel.locator('.practice-map-airport-detail').textContent(),new RegExp(id));
+  }
+  await search.fill('glider');
+  assert((await panel.locator('.practice-map-airport-list button').count()) > 0, 'glider fields are searchable');
+  assert.match(await panel.locator('.practice-map-airport-list').textContent(), /glider/i);
+  await search.fill('closed');
+  assert((await panel.locator('.practice-map-airport-list button').count()) > 0, 'closed records are explicit and searchable');
+  await panel.locator('.practice-map-airport-list button').first().click();
+  assert.match(await panel.locator('.practice-map-airport-detail').textContent(), /closed/i);
+  await search.fill('DE-0274');
   await panel.getByRole('button', { name: /DE-0274 ·/ }).click();
   assert.match(await panel.locator('.practice-map-airport-detail').textContent(), /Elevation unavailable/);
-  await panel.getByLabel('Search airports').fill('no such field');
-  assert.match(await panel.getByRole('status').filter({ hasText: '0 of 103' }).textContent(), /0 of 103/);
+  await search.fill('no such field');
+  assert.equal(await panel.locator('.practice-map-airport-list button').count(), 0);
+  assert.match(await panel.locator('.practice-map-airports [role="status"]').textContent(), /0/);
   const canvas = panel.locator('.maplibregl-canvas');
   const box = await canvas.boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
@@ -42,5 +81,5 @@ try {
   assert.equal(await panel.getByRole('button', { name: 'Follow' }).getAttribute('aria-pressed'), 'false');
   await page.setViewportSize({ width: 390, height: 844 });
   assert((await panel.boundingBox()).width <= 390);
-  console.log('Airport map browser checks passed');
+  console.log('Airport map browser checks passed: 731 source points, bounded labels/directory, named states/cities, glider/closed/missing-elevation search and pan/mobile');
 } finally { await browser?.close(); server.kill(); }

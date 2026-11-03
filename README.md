@@ -2,7 +2,7 @@
 
 Gefly is a flight simulator that starts with approachable exercises and progressively adds realistic flight dynamics, aircraft controls and avionics. The first target is a **Cessna 172 for EASA PPL learning**, delivered as a **web application**, with GeoFS as an interaction reference. CPL exercises follow later. The first configuration is a classic-panel Cessna 172S (serials 172S9491–172S9809); the radio/avionics fit remains open. The selected stack is TypeScript, CesiumJS (three.js fallback), MapLibre 2D maps and JSBSim in a module Web Worker at a fixed 1/120 s step.
 
-![Gefly flying near Egelsbach with classic cockpit panels and real terrain imagery](docs/images/gefly-flight.png)
+![Gefly flying near Egelsbach with classic cockpit panels, real terrain imagery and the right-side flight map](docs/images/gefly-flight-map.png)
 
 Live prototype flight in chase view, with the cockpit instruments and controls.
 The aircraft model remains experimental. [Screenshot provenance and credits](docs/images/README.md).
@@ -66,8 +66,17 @@ Hessen, Bavarian and Baden-Württemberg photography and a map fallback. The gene
 research aircraft remains experimental; see
 [setup, controls and limitations](app/README.md).
 
-**Map** shows the aircraft, whole retained flight path and **103 searchable
-community airport points**, including available airport elevations. Pan/zoom,
+**N** toggles the parking brake beside the **B** wheel-brake button.
+Options → **Link rudder to aileron** adds optional yaw/steering assistance;
+Q/W manual rudder takes priority. Rudder also steers the nosewheel on the ground.
+Options → **Centered touchpad controls** fixes neutral at the flight-view center
+and retains the camera angle after hold-drag; Escape resets the view.
+
+**M** or **View → Flight map** opens a right-side map beside the 3D view,
+showing the aircraft, whole retained flight path and **731 searchable
+community airfield and heliport entries across five southern German states**, including available airport elevations. Choose the
+public map or aerial imagery; a nautical scale and **community radio beacons and historical LOC/ILS
+references (2013.10)** provide source-marked practice context. Pan/zoom,
 select an airport and use Follow to return to the aircraft; selection does not
 move the aircraft. During **Review**, the marker follows the selected historical
 state. The map is practice context, not a navigation chart or current airport reference.

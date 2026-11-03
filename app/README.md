@@ -74,10 +74,11 @@ unavailable. Returning to live restores pending control settings.
 | E | Request engine ignition/starter on or off |
 | / | Restore initial trim |
 | [ / ] | Retract / extend flaps one 10° detent |
-| B (hold) | Apply both wheel brakes; release to let go |
+| B (hold) | Apply both wheel brakes at the Options command; release to let go |
+| N | Toggle the parking brake on / off |
 | ' / \\ (hold) | Elevator trim nose up / nose down |
 | Two-finger vertical scroll over the scene | Up: zoom in; down: zoom out |
-| Escape | Release scene yoke/look control |
+| Escape | Release scene yoke control and reset the view |
 
 Press and hold the on-screen flight buttons, or drag the virtual joystick to
 control pitch and roll; releasing returns the stick to neutral. The flight deck
@@ -86,9 +87,9 @@ retain focus for accessible adjustment. Losing window focus pauses the flight
 and releases held inputs. Optional flight hardware and phone orientation are
 later work.
 
-For touchpad yoke control, start flight and **short-click the unobstructed
-scene**. That click sets a neutral pointer anchor and toggles yoke control on;
-moving the pointer relative to the anchor controls pitch and roll. Short-click
+The default touchpad yoke mode uses a relative anchor. **Short-click the
+unobstructed scene** to set that anchor and toggle yoke control on. Moving the
+pointer relative to the anchor controls pitch and roll. Short-click
 again to disengage. To look around, hold the click for about a quarter-second,
 then drag. During live flight, releasing returns to the prior yoke mode and
 centers the temporary look. Leaving the scene or window neutralizes the yoke
@@ -97,6 +98,23 @@ uses the pointer position relative to that anchor as the authoritative input;
 no new click is needed. An actual window focus loss still pauses flight and
 clears transient controls, as do Escape, a modal or entering Review.
 Header buttons, instrument controls and the joystick do not toggle scene yoke.
+
+Enable **Options → Centered touchpad controls** for a fixed neutral reference:
+the **center of the currently visible flight view**, including after a resize
+or opening the docked map. A short click still toggles yoke control, but neither
+its position nor a drag-release position moves that reference. The browser sees
+pointer positions in the view, not the physical center of the touchpad.
+
+In this optional mode, hold for about a quarter-second and drag to steer the
+view. Releasing keeps the chosen camera angle; the next drag starts from that
+angle. Yoke input stays neutral while looking and on release, then the next real
+pointer movement or re-entry controls the aircraft relative to the view center.
+Pause, Options and focus loss still clear transient flight input, but retain the
+camera angle. **Escape** or starting a new flight resets the view. Review remains
+read-only camera inspection. The option starts off, lasts only for the page
+session and survives Default/Gentle sensitivity presets; switching it off restores
+the existing relative-anchor behavior. It does not change aircraft gains or
+physics.
 
 Use **two fingers to scroll vertically over the flight scene** to adjust the
 camera field of view (FOV): scroll up to zoom in with a narrower perspective, or
@@ -130,6 +148,18 @@ enabled, with no brake-triggered exemption. Brakes act through
 wheel contact, not as an airbrake, so they do not directly slow the initial
 airborne flight. Ready flight controls remain available while paused; commands are staged until
 Resume without advancing physics. Recorded Review remains read-only.
+
+The **parking brake** button sits beside the wheel-brake button. Click it or
+press **N** to toggle full commanded braking on both main wheels; its pressed
+state shows the live latch. This is independent of the Options wheel-brake
+percentage. Releasing B, pausing, opening Options, hiding controls or losing
+focus clears held inputs but keeps the parking brake latched. Press N again to
+release it; restarting the flight or reloading starts with it off. Parking brake
+changes made while paused are staged until Resume. It uses existing wheel-contact
+braking, with native braking forces and collision limits; it does not freeze
+the aircraft. Review disables the toggle and shows its latch as unavailable: recorded
+applied brake values do not identify which live control requested them.
+
 These controls use the research aircraft's existing model, not accepted 172S
 performance data. See [control sources](../docs/research/2026-11-02-classic-controls.md).
 
@@ -151,6 +181,18 @@ then **Done** and **Resume flight**. Try a small stick movement or a brief held
 button input. Repeat with **Default** to compare. Sensitivity settings last for
 the current page session; restarting through Flight preserves them. They
 change input response, not the aircraft's physics or calibration.
+
+**Options → Link rudder to aileron** adds a session-only input assist, off by
+default. Deliberate left/right aileron input also commands rudder for the same
+turning direction; explicit Q/W rudder input takes priority. The mix uses the
+pilot's roll input before the experimental roll correction, so centered controls
+do not acquire a rudder command from that offset. It does not mix autopilot
+outputs or represent a mechanical linkage in the aircraft. Default/Gentle
+sensitivity changes preserve the checkbox; reloading the page returns it to
+off. The research model already couples rudder input to nosewheel steering, so
+Q/W—and linked roll input when enabled—also steer on the ground through the
+existing gear model. No new steering coefficients or aircraft calibration are
+introduced.
 
 The **roll correction** is a constant left aileron command: its default −0.109375
 means about **10.9% of full left command**. It counters roll drift observed in the
@@ -393,7 +435,8 @@ and flight reset are unavailable during review. The throttle, pilot-axis command
 actual left/right ailerons, elevator/rudder angles, flap lever/position, brakes,
 trim, mixture and avionics show the selected recorded sample as read-only. Older
 engines without the new control telemetry show those fields as unavailable.
-Pending live throttle/mixture/flap/trim selections return when leaving Review.
+Pending live throttle/mixture/flap/trim selections and the parking-brake latch
+return when leaving Review.
 
 This is a **recorded trace, not resimulated replay**. The current flight's recent
 state history stays in page memory, bounded to 600 simulation seconds and 36,000
@@ -484,12 +527,13 @@ controls to inspect it. First click the half-opacity panel to activate it; map
 interaction keeps keyboard focus in the map and releases held flight controls.
 Return focus to the scene before using ordinary flight keys.
 
-The map has **103 searchable community airport points** from a pinned OurAirports
+The map has **731 searchable community airfield and heliport entries** from a pinned OurAirports
 snapshot, with name/identifier/type and elevation in feet/metres when present.
 Select a marker or directory result to inspect it; this moves the map only,
 never the aircraft. Missing elevations remain unavailable and do not replace
 the physical DEM. **Follow** returns the map to the aircraft. The airport
-inventory's bounds are 8–10°E / 49–50.75°N, slightly wider than physical terrain
+inventory covers Bavaria, Baden-Württemberg, Hesse, Rhineland-Palatinate and
+Saarland inside 6–14°E / 47–51.75°N, substantially wider than physical terrain
 coverage; a map point is not permission to fly/land beyond the terrain boundary.
 It is geographic practice context, not a navigation chart, operational airport
 directory or the complete EDDF/100 NM model.
@@ -668,3 +712,29 @@ The **Stations** picker supports a 50 NM nearby filter, name/identifier/airport/
 frequency search and distance ordering. Click outside or press Escape to close;
 the header filters remain visible while only the results scroll. Review uses its
 selected recorded position and leaves loading frequencies read-only.
+
+
+## Right-side flight map
+
+Press **M**, **Alt+Shift+M**, or choose **View → Flight map**. On desktop the
+map opens beside the outside view while the cockpit keeps its full width; smaller
+viewports use a bounded floating map. Its first click activates the panel.
+The default **Map** uses BKG TopPlusOpen; **Aerial** shows the existing public
+photography. **NAV aids** toggles community NDB/VOR/DME/TACAN beacons and historical LOC/ILS reference points,
+with separate antenna dots where sourced, station details and visible source age.
+The nautical scale, aircraft heading/position and contrasted flown path support
+orientation. Pan/zoom, **Fit path** and **Follow** change the view only. The
+airfield directory contains 731 source entries, including heliports and closed
+facilities, with type/state search and available elevations. All points remain
+in the map layer; at most 80 nearby labels and 100 directory results are shown.
+Refine the search to reach every entry. Closed facilities have distinct grey dots.
+Community NAV covers German beacons within the declared map envelope, including
+adjoining states; ILS references remain historical 2013.10. This map-only inventory
+does not replace the aircraft’s separately validated radio-navigation package.
+
+During Review the aircraft marker follows the selected historical frame while
+the whole retained flight path remains visible. These layers do not tune radios,
+move the aircraft or provide current airspace/NOTAM/procedure information.
+Failures while loading optional map layers are disclosed independently. The
+separate required flight-startup packages retain their fail-closed behavior. See
+[source research](../docs/research/2026-11-03-flight-map.md).

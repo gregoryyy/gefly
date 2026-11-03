@@ -20,6 +20,7 @@ Research clarifies gaps and requirements; it does not decide the product or sile
 | [Paired-iPhone control sources, 2026-11-01](2026-11-01-phone-control-sources.md) | R-INPUT-3/TODO 1.13: DeviceOrientation secure-context, permission and visibility rules, iOS WebKit, WebRTC data channels vs WebSocket on a LAN (ICE/mDNS, no STUN/TURN), QR/short-code pairing patterns, wake lock | Specifications and RFCs read; nothing run on devices; sensor rate, latency, private-CA and mDNS behaviour on iOS unverified |
 | [Dynamic region sources, 2026-11-03](2026-11-03-dynamic-region.md) | Bounded DGM200, cross-state photography and airport inventory evidence | Source research and small public-service probes; regional implementation acceptance is separate |
 | [Global scenery, local detail and Google Earth, 2026-11-03](2026-11-03-global-scenery.md) | Global streaming, local reconstruction/materials, Google Earth/Maps routes, EEA availability, rights and costs | Primary-source investigation and small actual terrain-service probes; no global implementation or training-fidelity acceptance |
+| [Public-data flight map, 2026-11-03](2026-11-03-flight-map.md) | BKG context maps, airport/navigation overlays, OpenFlightMaps, openAIP and DFS reuse paths | Official-source review supports the bounded existing-data map increment; current chart/airspace services and third-party tile rights remain separately gated |
 
 ## Method and note format
 

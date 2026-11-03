@@ -125,3 +125,83 @@ test('engine ignition selection survives control settings without a fabricated d
   assert.equal(applyControlSettings({ ...raw, engine_running: true }, DEFAULT_CONTROL_SETTINGS, 0).engine_running, true);
   assert.equal('engine_running' in applyControlSettings(raw, DEFAULT_CONTROL_SETTINGS, 0), false);
 });
+
+test('R-INPUT-1 linked rudder follows deliberate bank direction, sensitivity and manual priority', () => {
+  assert.equal(DEFAULT_CONTROL_SETTINGS.coordinatedRudder, false);
+  assert.equal(GENTLE_CONTROL_SETTINGS.coordinatedRudder, false);
+  const settings = Object.freeze({ ...DEFAULT_CONTROL_SETTINGS, roll: .5, rudder: .7, coordinatedRudder: true });
+  const rightBank = Object.freeze({ ...neutral, aileron: .8 });
+  const right = applyControlSettings(rightBank, settings, -.2);
+  assert(Math.abs(right.rudder - (-.28)) < 1e-12, 'negative rudder turns right in the pinned model');
+  assert.equal(right.aileron, .2, 'only aileron receives the study offset');
+  assert(Math.abs(applyControlSettings({ ...neutral, aileron: -.8 }, settings, .2).rudder - .28) < 1e-12);
+  assert(Math.abs(applyControlSettings({ ...rightBank, rudder: .1 }, settings, 0).rudder - .07) < 1e-12,
+    'even a smaller explicit opposite rudder command overrides the link');
+  assert.equal(rightBank.rudder, 0, 'mapping does not mutate the raw input');
+  assert.equal(settings.coordinatedRudder, true);
+});
+
+test('R-INPUT-1 rudder link excludes study correction and clamps combined sensitivity', () => {
+  const linked = { ...DEFAULT_CONTROL_SETTINGS, coordinatedRudder: true };
+  for (const offset of [-1, -.109375, 0, 1]) {
+    assert.equal(Math.abs(applyControlSettings(neutral, linked, offset).rudder), 0,
+      'a centered yoke and study roll correction must not steer the wheels');
+  }
+  const strong = { ...linked, roll: 1.5, rudder: 1.5 };
+  assert.equal(applyControlSettings({ ...neutral, aileron: 1 }, strong, 0).rudder, -1);
+  assert.equal(applyControlSettings({ ...neutral, aileron: -1 }, strong, 0).rudder, 1);
+  assert.equal(applyControlSettings({ ...neutral, aileron: 1 }, DEFAULT_CONTROL_SETTINGS, 0).rudder, 0,
+    'linking stays opt-in');
+  assert.equal(applyControlSettings({ ...neutral, aileron: 1 }, { pitch: 1, roll: 1, rudder: 1 }, 0).rudder, 0,
+    'older settings retain independent rudder');
+});
+
+test('R-INPUT-1 parking brake holds full native braking independently of wheel-brake gain', () => {
+  const heldWheelBrake = Object.freeze({ ...neutral, brake_norm: 1 });
+  for (const brake of [0, .25, 1]) {
+    const settings = { ...DEFAULT_CONTROL_SETTINGS, brake };
+    assert.deepEqual(applyControlSettings(neutral, settings, 0, true), { ...neutral, brake_norm: 1 });
+    assert.equal(applyControlSettings(heldWheelBrake, settings, 0, true).brake_norm, 1);
+    assert.equal(applyControlSettings(heldWheelBrake, settings, 0, false).brake_norm, brake,
+      'releasing parking brake restores an independently held wheel command');
+    assert.equal(applyControlSettings({ ...neutral, brake_norm: 0 }, settings, 0, false).brake_norm, 0);
+    assert.equal('brake_norm' in applyControlSettings(neutral, settings, 0, false), false,
+      'off does not fabricate a new command for older callers');
+  }
+  assert.equal(heldWheelBrake.brake_norm, 1);
+  assert.throws(() => applyControlSettings({ ...neutral, brake_norm: 2 }, DEFAULT_CONTROL_SETTINGS, 0, true), /wheel brake/);
+});
+
+test('R-INPUT-1 brake latch and rudder-link flags reject nonboolean values', () => {
+  for (const bad of [null, 0, 1, '', 'true', {}, []]) {
+    assert.throws(() => applyControlSettings(neutral, DEFAULT_CONTROL_SETTINGS, 0, bad as unknown as boolean), /Parking brake/);
+    assert.throws(() => applyControlSettings(neutral, { ...DEFAULT_CONTROL_SETTINGS, coordinatedRudder: bad as unknown as boolean }, 0), /Rudder link/);
+  }
+});
+
+
+test('R-INPUT-1 centered touchpad preference defaults off and never remaps commands', () => {
+  assert.equal(DEFAULT_CONTROL_SETTINGS.centeredTouchpad, false);
+  assert.equal(GENTLE_CONTROL_SETTINGS.centeredTouchpad, false);
+  const raw = Object.freeze({ ...neutral, aileron: .4, elevator: -.2, rudder: .1, brake_norm: .5,
+    flap_norm: 1 / 3, pitch_trim_norm: .2, mixture_norm: .8, mixture_auto: false, engine_running: true });
+  for (const coordinatedRudder of [false, true]) {
+    for (const parkingBrake of [false, true]) {
+      const settings = Object.freeze({ ...GENTLE_CONTROL_SETTINGS, coordinatedRudder });
+      const centered = Object.freeze({ ...settings, centeredTouchpad: true });
+      assert.deepEqual(applyControlSettings(raw, centered, -.109375, parkingBrake),
+        applyControlSettings(raw, settings, -.109375, parkingBrake));
+      assert.equal(centered.centeredTouchpad, true);
+    }
+  }
+  const legacySettings = { pitch: 1, roll: 1, rudder: 1 };
+  assert.deepEqual(applyControlSettings(raw, legacySettings, 0),
+    applyControlSettings(raw, { ...legacySettings, centeredTouchpad: false }, 0));
+});
+
+test('R-INPUT-1 centered touchpad preference rejects nonboolean values', () => {
+  for (const bad of [null, 0, 1, '', 'true', {}, []]) {
+    assert.throws(() => applyControlSettings(neutral,
+      { ...DEFAULT_CONTROL_SETTINGS, centeredTouchpad: bad as unknown as boolean }, 0), /Centered touchpad/);
+  }
+});

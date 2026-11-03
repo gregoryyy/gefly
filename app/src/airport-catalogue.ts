@@ -1,9 +1,11 @@
 export interface Airport {
   id: string; name: string; type: string; icao: string; local: string;
-  lat: number; lon: number; elevation_ft: number | null;
+  lat: number; lon: number; elevation_ft: number | null; iso_region: string;
 }
 
-const bounds = [8, 49, 10, 50.75];
+export const AIRFIELD_BOUNDS = [6, 47, 14, 51.75] as const;
+export const AIRFIELD_REGIONS = ['DE-BW', 'DE-BY', 'DE-HE', 'DE-RP', 'DE-SL'] as const;
+export const AIRFIELD_TYPES = ['small_airport', 'medium_airport', 'large_airport', 'heliport', 'seaplane_base', 'balloonport', 'closed'] as const;
 const text = (value: unknown): value is string => typeof value === 'string' && value.length <= 200;
 
 async function boundedBytes(response: Response, limit: number): Promise<ArrayBuffer> {
@@ -28,18 +30,21 @@ async function boundedBytes(response: Response, limit: number): Promise<ArrayBuf
 
 /** The fixed local package is bounded and verified before its untrusted text is displayed. */
 export async function loadAirportCatalogue(signal?: AbortSignal): Promise<Airport[]> {
-  const manifestResponse = await fetch('/airports/manifest.json', { signal, redirect: 'error' });
+  const requestSignal = signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000);
+  const manifestResponse = await fetch('/airports/manifest.json', { signal: requestSignal, redirect: 'error' });
   if (!manifestResponse.ok) throw new Error('Airport manifest unavailable');
   const manifestBytes = await boundedBytes(manifestResponse, 4096);
   if (manifestBytes.byteLength > 4096) throw new Error('Airport manifest too large');
   const manifest: unknown = JSON.parse(new TextDecoder().decode(manifestBytes));
   if (!manifest || typeof manifest !== 'object') throw new Error('Invalid airport manifest');
   const m = manifest as Record<string, unknown>;
-  if (m.schema !== 1 || !Array.isArray(m.bounds) || m.bounds.join(',') !== bounds.join(',') ||
+  if (m.schema !== 2 || m.id !== 'southern-germany-airports-v1' ||
+      !Array.isArray(m.bounds) || m.bounds.join(',') !== AIRFIELD_BOUNDS.join(',') ||
+      !Array.isArray(m.regions) || m.regions.join(',') !== AIRFIELD_REGIONS.join(',') ||
       !Number.isInteger(m.bytes) || (m.bytes as number) < 2 || (m.bytes as number) > 200000 ||
       !Number.isInteger(m.count) || (m.count as number) < 0 || (m.count as number) > 1000 ||
       typeof m.sha256 !== 'string' || !/^[a-f0-9]{64}$/.test(m.sha256)) throw new Error('Invalid airport manifest');
-  const response = await fetch('/airports/regional.json', { signal, redirect: 'error' });
+  const response = await fetch('/airports/regional.json', { signal: requestSignal, redirect: 'error' });
   if (!response.ok || Number(response.headers.get('content-length') || 0) > 200000) throw new Error('Airport catalogue unavailable');
   const bytes = await boundedBytes(response, 200000);
   if (bytes.byteLength !== m.bytes) throw new Error('Airport catalogue size mismatch');
@@ -52,9 +57,10 @@ export async function loadAirportCatalogue(signal?: AbortSignal): Promise<Airpor
     if (!item || typeof item !== 'object') throw new Error('Invalid airport');
     const a = item as Record<string, unknown>;
     if (!text(a.id) || !a.id || ids.has(a.id) || !text(a.name) || !a.name || !text(a.icao) || !text(a.local) ||
-        !['small_airport', 'medium_airport', 'large_airport'].includes(a.type as string) ||
-        typeof a.lat !== 'number' || !Number.isFinite(a.lat) || a.lat < 49 || a.lat > 50.75 ||
-        typeof a.lon !== 'number' || !Number.isFinite(a.lon) || a.lon < 8 || a.lon > 10 ||
+        !AIRFIELD_TYPES.includes(a.type as typeof AIRFIELD_TYPES[number]) ||
+        !AIRFIELD_REGIONS.includes(a.iso_region as typeof AIRFIELD_REGIONS[number]) ||
+        typeof a.lat !== 'number' || !Number.isFinite(a.lat) || a.lat < AIRFIELD_BOUNDS[1] || a.lat > AIRFIELD_BOUNDS[3] ||
+        typeof a.lon !== 'number' || !Number.isFinite(a.lon) || a.lon < AIRFIELD_BOUNDS[0] || a.lon > AIRFIELD_BOUNDS[2] ||
         !(a.elevation_ft === null || (typeof a.elevation_ft === 'number' && Number.isFinite(a.elevation_ft) && Math.abs(a.elevation_ft) < 30000))) throw new Error('Invalid airport');
     ids.add(a.id);
     return a as unknown as Airport;

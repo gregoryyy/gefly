@@ -32,6 +32,38 @@ test('fixed paths, region bounds, cache, HEAD and upstream validation', async ()
   assert.equal((await call(wrongType, path)).status, 502);
 });
 
+test('R-WORLD-6 public map covers southern Germany while imagery stays regional', async () => {
+  const seen: URL[] = [];
+  const handler = sceneryMiddleware({ fetcher: async (input, init) => {
+    const url = new URL(String(input));
+    seen.push(url);
+    assert.equal(url.origin, 'https://sgx.geodatenzentrum.de');
+    assert.equal(url.pathname, '/wms_topplus_open');
+    assert.equal(url.searchParams.get('LAYERS'), 'web');
+    assert.equal(url.searchParams.get('SRS'), 'EPSG:3857');
+    assert.equal(url.searchParams.get('WIDTH'), '256');
+    assert.equal(init?.redirect, 'error');
+    assert.ok(init?.signal);
+    return new Response(mapPng, { headers: { 'content-type': 'image/png' } });
+  } });
+  // Munich, Saarbrücken and Kassel are outside the old photography rectangle.
+  for (const [lat, lon] of [[48.137, 11.576], [49.2346, 6.9969], [51.315, 9.493]]) {
+    const [x, y] = tile(lat, lon, 12);
+    const result = await call(handler, `/scenery/map/12/${x}/${y}.png`);
+    assert.equal(result.status, 200);
+    assert.equal(result.headers['X-Scenery-Sources'], 'BKG');
+    assert.deepEqual(result.data, mapPng);
+    assert.equal((await call(handler, `/scenery/imagery/12/${x}/${y}.png`)).status, 404);
+  }
+  assert.equal(seen.length, 3, 'rejected imagery does not request new source coverage');
+  // At this zoom these complete tiles lie beyond each boundary, without overlap.
+  for (const [lat, lon] of [[46.7, 10], [52, 10], [49, 5.5], [49, 14.5]]) {
+    const [x, y] = tile(lat, lon, 12);
+    assert.equal((await call(handler, `/scenery/map/12/${x}/${y}.png`)).status, 404);
+  }
+  assert.equal(seen.length, 3, 'out-of-bounds map tiles make no upstream requests');
+});
+
 test('imagery accepts Cesium level 7 parent tiles', async () => {
   const handler = sceneryMiddleware({ fetcher: async () => new Response(photoPng, { headers: { 'content-type': 'image/png' } }) });
   const [x, y] = tile(49.96, 8.64, 7);
