@@ -7,6 +7,7 @@ export function createAirportPlayControls(onStart?: (runway: string) => void, on
   start.onclick = () => { if (!readOnly && airport === 'EDFE') onStart?.(runway.value); };
   stop.onclick = () => { if (!readOnly) onStop?.(); };
   return { element,
+    selectedRunway(): '08' | '26' { return runway.value === '08' ? '08' : '26'; },
     setAirport(id: string) { airport = id; },
     update(active: boolean, reviewing: boolean) {
       readOnly = reviewing; start.disabled = reviewing || airport !== 'EDFE' || !onStart;

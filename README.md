@@ -55,6 +55,12 @@ set. Press **N** to release the brake, add power with **1–9**, and fly the cir
 manually. **Stop exercise** on the map pauses the flight and keeps Review available.
 Other airports can be inspected, but their runway starts are not prepared yet.
 
+Expand the runway's **north circuit** card for the practice objective and start
+configuration. It logs sensed lift-off, touchdown, ground stop and collision
+events, with available ground speed and contact vertical speed. **R** opens Review;
+the card follows the selected recording time. These are observations, not a
+landing grade or a validated C172S lesson.
+
 Sharp runway markings, taxiways and apron overlays sit on the public terrain.
 In **Options**, select **Vector map and terrain** for the bounded OSM airport
 surroundings, or enable **Practice PAPI / runway lights**. These light aids are

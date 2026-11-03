@@ -3,6 +3,40 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 16:45 — Runway practice briefing and sensed flight events
+
+TODO: 2.1.1; R-PLAY-1/R-TRAIN-2/R-REVIEW-1. Agent: Codex orchestrator
+integration; glide_cases implemented the pure monitor/tests, glide_model the
+card, and glide_housekeeping independently reviewed the integrated feature.
+
+**Implementation notes**
+
+Add a compact EDFE north-circuit briefing and actual wheel-contact event log.
+Confirm lift-off/contact, distinguish initial parking from a post-landing stop,
+retain collision priority, and handle missing/sparse telemetry without invented
+transitions. Review reconstructs only the retained sample prefix; imported JSON
+without runway context hides the card. Reset clears events. Native takeoffs in
+both directions, nine monitor groups and seven browser integration groups pass;
+production build passes. Independent bounded review is in
+[the review report](reviews/2026-11-03-runway-practice.md).
+Register pinned airport-play and new practice observations plus a separate scoped
+review in assurance; unavailable embedded-model closure and acceptance remain
+explicit. No criterion is promoted merely by registering passing observations.
+
+**Deviations**
+
+TODO 2.0.52 remains open: an exact FlightGear propeller candidate worsened actual
+native cases and was withdrawn, with the original WASM restored byte-for-byte.
+The maintained shutdown/restart/read-only/reset regression was strengthened.
+This increment does not deliver a full circuit assessment, checklist, official
+route/altitude, native landing validation or portable exercise metadata. Peer pending.
+
+**Insights**
+
+An open-source candidate still needs native behavior checks before reuse. Keep
+observed contact events separate from a landing grade; reconstruct Review from
+confirmed sample prefixes, and invalidate caches when retained live history changes.
+
 ## 2026-11-03 14:12 — Airport surfaces, runway play, COM and vector scenery
 
 TODO: 2.0.43, 2.0.62, 2.0.64–66 delivered for EDFE; 2.0.63 partially delivered.

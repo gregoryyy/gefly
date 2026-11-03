@@ -31,3 +31,5 @@ Use available deep research skills when the task and environment support them; d
 Frame a note around one question with affected GAPS/requirement/task references, search strategy and queries, primary sources and alternatives, exact versions/dates/sections, access time, applicability, data rights, disagreements, verified findings, inferences, confidence and unresolved issues. Follow source links and evaluate the documents rather than relying on snippets. Aircraft facts require applicable aircraft/avionics configurations and units; curriculum facts require current authority documents. Record source metadata and provenance before creating data fixtures.
 
 End with proposed implications, limitations and a handoff to product/orchestrator. Prefer linked documents and permitted extracts; do not check in copyrighted manuals without authorization. Reference notes by stable relative links; maintain this index when integrating them.
+
+- [Engine-off follow-up, 2026-11-03](2026-11-03-engine-off-followup.md): rejected FlightGear propeller candidate; actual native failures retained, no physics change accepted.

@@ -33,6 +33,7 @@ import { createPressureAltimeterPanel } from './pressure-altimeter-panel';
 import { createScene } from './scene';
 import { createSession } from './session';
 import { FlightTrace } from './flight-trace';
+import { createRunwayPracticeMonitor, type PracticeProgress } from './runway-practice';
 import { createFlightReviewControls } from './flight-review-controls';
 import { applyControlSettings, DEFAULT_CONTROL_SETTINGS, type ControlSettings } from './control-settings';
 import { createControlSettingsPanel } from './control-settings-panel';
@@ -152,6 +153,8 @@ let engineCommand: boolean | null = null;
 let parkingBrake = false;
 let runwayStart: RunwayStart | null = null;
 let exerciseActive = false;
+const runwayPractice = createRunwayPracticeMonitor();
+let practiceReviewCache: { time: number; count: number; progress: PracticeProgress } | null = null;
 let scene: FlightScene | null = null;
 let sceneFailed = false, ready = false, running = false, failed = false;
 let hasFlown = false, startWhenReady = false;
@@ -246,7 +249,11 @@ const session = createSession({
     }
     previous = state; latest = state;
     liveWarnings = liveWarningMonitor.update(state);
-    if (!reviewing) flightTrace.record(state, verticalSpeedFpm * 0.3048 / 60);
+    if (!reviewing) {
+      flightTrace.record(state, verticalSpeedFpm * 0.3048 / 60);
+      practiceReviewCache = null;
+    }
+    if (!reviewing && runwayStart) runwayPractice.update(state);
     if (state.collision_mask && !wasCollided) pauseFlight();
     if (!collisionUnavailableNoticed && ready && (state.collision_mask === undefined || state.ground_agl_m === undefined)) {
       collisionUnavailableNoticed = true;
@@ -578,6 +585,21 @@ async function setMapVisible(visible: boolean) {
       },
       onStopExercise() { pauseFlight(); exerciseActive = false; notice('Exercise stopped. Review remains available; Start at runway begins a new flight.'); },
       isExerciseActive: () => exerciseActive,
+      getRunwayPractice() {
+        const runway = runwayStart?.runway;
+        if ((runway !== '08' && runway !== '26') || (reviewing && loadedTrace)) return null;
+        if (!reviewing) return { runway, progress: runwayPractice.snapshot() };
+        const count = flightTrace.bounds()?.count ?? 0;
+        if (!practiceReviewCache || practiceReviewCache.time !== reviewTime_s || practiceReviewCache.count !== count) {
+          const monitor = createRunwayPracticeMonitor();
+          for (const state of flightTrace.recordedStates()) {
+            if (state.t_s > reviewTime_s) break;
+            monitor.update(state);
+          }
+          practiceReviewCache = { time: reviewTime_s, count, progress: monitor.snapshot() };
+        }
+        return { runway, progress: practiceReviewCache.progress };
+      },
       canTuneCom: controlsAvailable,
       onTuneCom(receiver, channel) {
         if (!controlsAvailable()) return;
@@ -738,6 +760,7 @@ function reset(preset = landingPreset, start: RunwayStart | null = runwayStart) 
   closeViewMenu();
   if (reviewing) return;
   runwayStart = start;
+  runwayPractice.reset(); practiceReviewCache = null;
   if (sceneFailed) { notice('The 3D scene is unavailable. Reload with WebGL enabled.'); return; }
   landingPreset = preset;
   flightAssists.reset();

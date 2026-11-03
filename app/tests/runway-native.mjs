@@ -6,6 +6,7 @@ import { loadTerrainPackage } from '../../studies/e1-browser/sim/terrain.js';
 import { groundCollisionContact } from '../../studies/e1-browser/sim/collision.js';
 import { groundFields } from '../../studies/e1-browser/sim/cockpit.js';
 import { EDFE_RUNWAYS, airportOffset } from '../src/airport-geometry.ts';
+import { createRunwayPracticeMonitor } from '../src/runway-practice.ts';
 const grid = await loadTerrainPackage(async url => new Response(await readFile(new URL('../public' + url, import.meta.url))));
 const results=[];
 for (const runway of EDFE_RUNWAYS) {
@@ -15,7 +16,9 @@ for (const runway of EDFE_RUNWAYS) {
   const start=airportOffset(runway,Math.sin(runway.heading_true_rad)*20,Math.cos(runway.heading_true_rad)*20);
   assert(m._gf_init_runway(.1,start.lat_rad,start.lon_rad,runway.heading_true_rad)<0,'unsupported coarse timestep rejected');
   assert.equal(m._gf_init_runway(1/120,start.lat_rad,start.lon_rad,runway.heading_true_rad),0);
-  const read=()=>{const s=m._gf_state()/8,g=m._gf_ground_state()/8;return {s:Array.from(m.HEAPF64.subarray(s,s+14)),g:groundFields(Array.from(m.HEAPF64.subarray(g,g+18)))};};
+  const monitor = createRunwayPracticeMonitor();
+  const read=()=>{const s=m._gf_state()/8,g=m._gf_ground_state()/8;const frame={s:Array.from(m.HEAPF64.subarray(s,s+14)),g:groundFields(Array.from(m.HEAPF64.subarray(g,g+18)))};
+    monitor.update({...frame.g,step:m._gf_step_index(),t_s:frame.s[0]}); return frame;};
   let {s,g}=read();assert.equal(s[0],0);assert(Math.hypot(g.ground_forward_mps,g.ground_side_mps)<.05);
   assert.equal(g.gear_nose_wow+g.gear_left_wow+g.gear_right_wow,3);
   for(let step=0;step<1200;step++)assert.equal(m._gf_step(),0);
@@ -34,5 +37,7 @@ for (const runway of EDFE_RUNWAYS) {
     if(g.ground_agl_m>20){airborne=true;results.push({runway:runway.id,takeoff_time_s:s[0]-10,agl_m:g.ground_agl_m});break;}
   }
   assert(airborne,'released brakes, power and rotation achieve actual native takeoff');
+  assert.equal(monitor.snapshot().phase,'airborne');
+  assert.deepEqual(monitor.snapshot().events.map(e=>e.kind),['liftoff'],'native takeoff emits one confirmed lift-off and no parking/landing/collision event');
 }
 console.log(JSON.stringify({result:'pass',results},null,2));

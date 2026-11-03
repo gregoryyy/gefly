@@ -1,5 +1,7 @@
 /// <reference types="vite/client" />
 import { createAirportPlayControls } from './airport-play-controls';
+import { createRunwayPracticePanel } from './runway-practice-panel';
+import type { PracticeProgress } from './runway-practice';
 import { loadAirportComDirectory } from './airport-com';
 import { createAirportComPanel } from './airport-com-panel';
 import { LngLatBounds, Map as LibreMap, Marker, ScaleControl, setWorkerUrl, type GeoJSONSource, type StyleSpecification } from 'maplibre-gl';
@@ -26,6 +28,7 @@ interface MapOptions {
   onInteraction: () => void;
   onVectorChange?: (enabled: boolean) => void;
   onStartRunway?: (runway: string) => void;
+  getRunwayPractice?: () => { runway: '08' | '26'; progress: PracticeProgress } | null;
   onStopExercise?: () => void;
   isExerciseActive?: () => boolean;
   canTuneCom?: () => boolean;
@@ -179,6 +182,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   let reviewing = false;
   const playControls = createAirportPlayControls(options.onStartRunway, options.onStopExercise);
   airportsSection.before(playControls.element);
+  const practiceCard = createRunwayPracticePanel();
+  playControls.element.after(practiceCard.element);
 
   const selectAirport = (airport: Airport) => {
     selectedAirport = airport.id; playControls.setAirport(airport.id);
@@ -391,6 +396,9 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     update(state, path, mode) {
       reviewing = mode === 'review';
       playControls.update(options.isExerciseActive?.() ?? false, reviewing);
+      const practice = options.getRunwayPractice?.();
+      practiceCard.update(practice?.progress ?? null,
+        selectedAirport !== 'EDFE' || (reviewing && !practice) ? null : practice?.runway ?? playControls.selectedRunway(), reviewing);
       comPanel?.setEnabled(!reviewing && !!options.onTuneCom && (options.canTuneCom?.() ?? true));
       comPanel?.updatePosition(state.lat_rad * 180 / Math.PI, state.lon_rad * 180 / Math.PI);
       if (disposed) return;

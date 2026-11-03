@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "record_kind": "preserved_run_observations",
+  "source_revision": "755d7f2e3e557d11c7dfd23937a6fb040b5ff31d",
+  "scope": "PR65 bounded EDFE airport-play native and Chrome integration observations; no selected C172S fidelity, surveyed runway or installed-lighting acceptance.",
+  "capture": {
+    "date": "2026-11-03",
+    "procedure": "Preserve the existing JSON stdout from the completed commands without rerunning them. Verify current source files against the recorded revision and verify the still-present local WASM SHA-256 against its build-info metadata."
+  },
+  "environment_observed_at_capture": {
+    "node": "v26.13.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "os_product": "macOS",
+    "os_version": "26.2",
+    "os_build": "25C56",
+    "browser_version_from_run_stdout": "156.0.8078.80",
+    "limitation": "Node/OS/architecture values were read when this observation record was captured, not independently attested by the original command stdout."
+  },
+  "build_info": {
+    "jsbsim_tag": "v1.3.3",
+    "jsbsim_commit": "66f7fafc07fe13e7ede9db20873030fed2881713",
+    "emsdk": "6.0.13",
+    "emsdk_rev": "d7b4130688bfa348392b921ab04015aa15c4f154",
+    "emcc": "emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 6.0.13 (e13ee988ce3d87a738dd8f3661d02223308c412a)",
+    "flags": "-O2 -fwasm-exceptions",
+    "wasm_bytes": 1758848,
+    "wasm_sha256": "06f044fd1176c52e3f0d2da38a542cc69c0d312ffa296db6e0d0d96cc13a4ddf",
+    "aircraft_adapter": {
+      "adapter_id": "gefly-c172x-mixture-pitch-ap-v2",
+      "adapter_script_sha256": "5f9dcf09a1d004351bb5faf165c037f9f3b3433ba10f52f7957374b2ab745487",
+      "ap_prepared_sha256": "e128be7673cd6fd29e8a0bab4ff7392e62974ff236e44a23861d3f4ffc8ebd9c",
+      "ap_source_sha256": "1e83fec37beabf33e1a1bdd7a30fb5d4aeca79ddb52a2dca58a7bcfc1d20e570",
+      "prepared_sha256": "f0dad1b5a4c17f8ac607da1709d38f2de77119aeb82c272dd7cedefccad69219",
+      "source_path": "aircraft/c172x/c172x.xml",
+      "source_sha256": "b736f4b7560d5aab4d2a69026798be1d369b2b2bb5ddcf627aebfd441ba71840"
+    },
+    "propeller_adapter": {
+      "adaptations": [
+        "Direct-drive design RPM replaces Aero-Matic tip-speed/gearbox heuristic",
+        "Retain pinned propeller geometry, inertia and Mach corrections; replace only fixed-pitch CP/CT tables",
+        "No tuning to a C172 glide ratio or aircraft-specific reference curve"
+      ],
+      "adapter_id": "gefly-generic-fixed-pitch-windmilling-v1",
+      "adapter_script_sha256": "d0b185544637898b9478fc00b810cc3bbebdf1d2ce445a95854f9b56d6a9318d",
+      "inputs": {
+        "blades": 2,
+        "cp0": 0.04258269989766735,
+        "ct0": 0.05961577985673429,
+        "design_density_slug_ft3": 0.002378,
+        "diameter_in": 75.0,
+        "engine_design_rpm": 2700.0,
+        "engine_max_power_hp": 160.0,
+        "fixed_pitch_deg": 22,
+        "gear_ratio": 1,
+        "inertia_slug_ft2": 1.67,
+        "propeller_design_rpm": 2700.0,
+        "table_decimal_places": 4
+      },
+      "prepared_sha256": "fc3163d3a8ee885af513aa80950f1b4ef6c85a00e7ebeafd4d31b0c5dc6d4e40",
+      "scope": "generic research fixed-pitch windmilling; not accepted aircraft data",
+      "source_jsbsim_commit": "66f7fafc07fe13e7ede9db20873030fed2881713",
+      "sources": [
+        {
+          "path": "engine/eng_io320.xml",
+          "sha256": "0cedc1e356a7a572a175f351a4abb952ba91081219a37dc7192bce3a2181d8c6"
+        },
+        {
+          "path": "engine/prop_75in2f.xml",
+          "sha256": "6481edf1da940fdea5358913d226c3e25d3e6b8209b4805370258a9a65ca7403"
+        },
+        {
+          "path": "utils/aeromatic/prop2.php",
+          "sha256": "658eb2c7a409fe7793514a6e0add07ff6b693b0161ee205379d3606f0117dab6"
+        }
+      ]
+    }
+  },
+  "source_pins": [
+    {
+      "path": "app/tests/airport-play.browser.mjs",
+      "sha256": "6508112ddb75c87fc6789c3894de69015696c39167658813b8e3c4a45d7e075e"
+    },
+    {
+      "path": "app/tests/runway-native.mjs",
+      "sha256": "9703f210f044f918ae8c4860a6e91522a9561d52798f5482c2bf2ead5b187a04"
+    },
+    {
+      "path": "app/tests/flight-actions.mjs",
+      "sha256": "8fe1a4614f5849c4449d3aebcc0bec08d9a218103a5ad025fc86c9027f33820d"
+    },
+    {
+      "path": "studies/e1-browser/sim/build.sh",
+      "sha256": "4bf49adc54d47cab8fcae2f22d59e73186acf4ef7209ffe196a241d62b61f80d"
+    },
+    {
+      "path": "studies/e1-browser/sim/bridge.cpp",
+      "sha256": "b8e0fa442cedde7bcac1510254d8fd7960abe1cc28c4c2f58c220255736a185e"
+    },
+    {
+      "path": "studies/e1-browser/sim/prepare-aircraft.py",
+      "sha256": "5f9dcf09a1d004351bb5faf165c037f9f3b3433ba10f52f7957374b2ab745487"
+    },
+    {
+      "path": "studies/e1-browser/sim/prepare-propeller.py",
+      "sha256": "d0b185544637898b9478fc00b810cc3bbebdf1d2ce445a95854f9b56d6a9318d"
+    }
+  ],
+  "observations": {
+    "browser": {
+      "command": "node app/tests/airport-play.browser.mjs",
+      "source_log": "output/ci/airport-play-browser.log",
+      "source_stdout_sha256": "9b8a4278c4de938d6fc14f3ccc63cffa93ff61a5876213e7a5b446edf0061412",
+      "stdout": "{\n  \"checks\": [\n    \"EDFE26 and08 start stationary with all gear supported; full parking hold does not collide\",\n    \"COM8.33 selection loads standby, explicit swap changes active\",\n    \"Options select vector terrain/map and practice lights\",\n    \"release brake and power produces actual native ground acceleration\",\n    \"map Stop preserves Review and locks start/COM during Review\"\n  ],\n  \"browser\": \"156.0.8078.80\"\n}\n",
+      "result": {
+        "checks": [
+          "EDFE26 and08 start stationary with all gear supported; full parking hold does not collide",
+          "COM8.33 selection loads standby, explicit swap changes active",
+          "Options select vector terrain/map and practice lights",
+          "release brake and power produces actual native ground acceleration",
+          "map Stop preserves Review and locks start/COM during Review"
+        ],
+        "browser": "156.0.8078.80"
+      }
+    },
+    "native": {
+      "command": "node app/tests/runway-native.mjs",
+      "source_log": "output/ci/runway-native.log",
+      "source_stdout_sha256": "241931a8326db060af1eeee38fc8942868e41761b6ca64760b71562da41baec3",
+      "stdout": "{\n  \"result\": \"pass\",\n  \"results\": [\n    {\n      \"runway\": \"08\",\n      \"takeoff_time_s\": 29.041666666665094,\n      \"agl_m\": 20.023154944884922\n    },\n    {\n      \"runway\": \"26\",\n      \"takeoff_time_s\": 27.674999999998505,\n      \"agl_m\": 20.01956605886249\n    }\n  ]\n}\n",
+      "result": {
+        "result": "pass",
+        "results": [
+          {
+            "runway": "08",
+            "takeoff_time_s": 29.041666666665094,
+            "agl_m": 20.023154944884922
+          },
+          {
+            "runway": "26",
+            "takeoff_time_s": 27.674999999998505,
+            "agl_m": 20.01956605886249
+          }
+        ]
+      }
+    }
+  },
+  "limitations": [
+    "This record preserves observed stdout; it does not rerun the commands or independently validate their assertions.",
+    "Browser map and imagery pixels use local fixtures. Native worker, public DEM packages, bundled vector data and COM records are exercised by the test.",
+    "Native takeoffs use a scripted pilot over public terrain; timings are integration observations, not calibrated C172 performance.",
+    "The generic c172x research aircraft/model and generated WASM/runtime closure are deliberately not redistributed in the repository. Build metadata and hashes identify the observed binary without preserving its complete executable/model closure.",
+    "Runway geometry is approximate and prepared only for EDFE. Practice PAPI/lighting is illustrative; installed-equipment layout and obstacle clearance remain unverified.",
+    "No independent acceptance or cross-provider peer review is conferred by this observation record."
+  ]
+}

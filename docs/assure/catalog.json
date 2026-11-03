@@ -380,6 +380,299 @@
           }
         ]
       }
+    },
+    {
+      "id": "airport-play-observation",
+      "mode": "recorded_run",
+      "revision": "755d7f2e3e557d11c7dfd23937a6fb040b5ff31d",
+      "procedure": "Preserve actual successful command stdout and build identity from the recorded local runs; this catalog does not execute them. Commands and byte inventory are in the result.",
+      "scope": "Named EDFE prototype assertions only; no selected-aircraft, installed-lighting, procedure or milestone acceptance.",
+      "limitations": [
+        "Passing run observations are distinct from independent acceptance. Embedded model closure is unavailable; external peer remains pending.",
+        "Archived observations retain original revision/context; newer source does not retroactively renew that run."
+      ],
+      "outcome": "pass",
+      "requirements": [
+        "R-AIRPORT-1",
+        "R-AIRPORT-2",
+        "R-PLAY-1",
+        "R-COMM-2"
+      ],
+      "inputs": [
+        {
+          "role": "fixture",
+          "path": "studies/e1-browser/results/2026-11-03-airport-play.json",
+          "sha256": "fde6e2253b24928e0bdb4dfe317c2f14c25dda41cbcb63d431fa512c2257d816",
+          "pointer": "/observations"
+        },
+        {
+          "role": "build",
+          "path": "studies/e1-browser/results/2026-11-03-airport-play.json",
+          "sha256": "fde6e2253b24928e0bdb4dfe317c2f14c25dda41cbcb63d431fa512c2257d816",
+          "pointer": "/build_info"
+        },
+        {
+          "role": "environment",
+          "path": "studies/e1-browser/results/2026-11-03-airport-play.json",
+          "sha256": "fde6e2253b24928e0bdb4dfe317c2f14c25dda41cbcb63d431fa512c2257d816",
+          "pointer": "/environment_observed_at_capture"
+        },
+        {
+          "role": "source",
+          "path": "studies/e1-browser/results/2026-11-03-airport-play.json",
+          "sha256": "fde6e2253b24928e0bdb4dfe317c2f14c25dda41cbcb63d431fa512c2257d816"
+        }
+      ],
+      "unavailableRoles": [
+        {
+          "role": "model",
+          "reason": "Undistributed embedded research aircraft/runtime and transitive model closure are not preserved; this is a bounded run observation, ineligible for aircraft or milestone acceptance."
+        },
+        {
+          "role": "evaluator",
+          "reason": "Original evaluator hashes are preserved in the observation, but current test files have since changed; no reconstructed original run is claimed."
+        },
+        {
+          "role": "criteria",
+          "reason": "Original test assertions belong to the recorded revision; no current full requirement acceptance is claimed."
+        }
+      ],
+      "notApplicableRoles": [],
+      "dependsOn": [],
+      "result": {
+        "path": "studies/e1-browser/results/2026-11-03-airport-play.json",
+        "sha256": "fde6e2253b24928e0bdb4dfe317c2f14c25dda41cbcb63d431fa512c2257d816",
+        "assertions": [
+          {
+            "pointer": "/observations/native/result/result",
+            "equals": "pass"
+          },
+          {
+            "pointer": "/observations/browser/result/checks",
+            "equals": [
+              "EDFE26 and08 start stationary with all gear supported; full parking hold does not collide",
+              "COM8.33 selection loads standby, explicit swap changes active",
+              "Options select vector terrain/map and practice lights",
+              "release brake and power produces actual native ground acceleration",
+              "map Stop preserves Review and locks start/COM during Review"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "runway-practice-observation",
+      "mode": "recorded_run",
+      "revision": "8cfa4fad6da6ce98730b565c2a954cc61893415d + recorded working-tree source pins",
+      "procedure": "Preserve actual successful command stdout and build identity from the recorded local runs; this catalog does not execute them. Commands and byte inventory are in the result.",
+      "scope": "Named EDFE prototype assertions only; no selected-aircraft, installed-lighting, procedure or milestone acceptance.",
+      "limitations": [
+        "Passing run observations are distinct from independent acceptance. Embedded model closure is unavailable; external peer remains pending.",
+        "Archived observations retain original revision/context; newer source does not retroactively renew that run."
+      ],
+      "outcome": "pass",
+      "requirements": [
+        "R-PLAY-1",
+        "R-TRAIN-2",
+        "R-REVIEW-1"
+      ],
+      "inputs": [
+        {
+          "role": "fixture",
+          "path": "studies/e1-browser/results/2026-11-03-runway-practice.json",
+          "sha256": "cf99aab5cec8bb0fe45da235b5760e13f7b27667fe4971bedc17168d004604c8",
+          "pointer": "/observations"
+        },
+        {
+          "role": "build",
+          "path": "studies/e1-browser/results/2026-11-03-runway-practice.json",
+          "sha256": "cf99aab5cec8bb0fe45da235b5760e13f7b27667fe4971bedc17168d004604c8",
+          "pointer": "/build_info"
+        },
+        {
+          "role": "environment",
+          "path": "studies/e1-browser/results/2026-11-03-runway-practice.json",
+          "sha256": "cf99aab5cec8bb0fe45da235b5760e13f7b27667fe4971bedc17168d004604c8",
+          "pointer": "/environment"
+        },
+        {
+          "role": "source",
+          "path": "studies/e1-browser/results/2026-11-03-runway-practice.json",
+          "sha256": "cf99aab5cec8bb0fe45da235b5760e13f7b27667fe4971bedc17168d004604c8"
+        },
+        {
+          "role": "evaluator",
+          "path": "app/tests/runway-native.mjs",
+          "sha256": "d9a7540d0d33c372d4d571b157f4c49afc7ae4b85cdbc2d9275d46f4744a12e3"
+        },
+        {
+          "role": "evaluator",
+          "path": "app/tests/airport-play.browser.mjs",
+          "sha256": "bbf08c4ab4d8e03791969468e0d8f22411983ff0831b66cbab00d34bcead6035"
+        },
+        {
+          "role": "criteria",
+          "path": "app/src/runway-practice.test.ts",
+          "sha256": "4dec3c3f5058a1f8f10356404ba56a74c62ee85e205aea66707e3c1a02c69572"
+        },
+        {
+          "role": "source",
+          "path": "app/src/runway-practice.ts",
+          "sha256": "a6c5a57a92ad811e8d37b34f6dfe0a975f52b27493c64f5a78a6fbba51b1d104"
+        },
+        {
+          "role": "source",
+          "path": "app/src/main.ts",
+          "sha256": "e4b66e35ba662f768ac6b4b6e7073dfa872e731f05879b2ebb9d881ebcf9436c"
+        },
+        {
+          "role": "source",
+          "path": "app/src/practice-map.ts",
+          "sha256": "19943ed3698352f39ad4d08d6af178e59c32d4959c55e38077a8c1e2808fc636"
+        },
+        {
+          "role": "source",
+          "path": "app/src/runway-practice-panel.ts",
+          "sha256": "9160f6ae66aaf284f51ceb27fc4018b946c447a2fa2f75d71a2c097c4e4eb11e"
+        },
+        {
+          "role": "source",
+          "path": "app/src/runway-practice-panel.css",
+          "sha256": "f4e248c826469e1f21a7b4ab15a0010cf90a3bd127701371a6dd5398f0efe6cb"
+        }
+      ],
+      "unavailableRoles": [
+        {
+          "role": "model",
+          "reason": "Undistributed embedded research aircraft/runtime and transitive model closure are not preserved; this is a bounded run observation, ineligible for aircraft or milestone acceptance."
+        }
+      ],
+      "notApplicableRoles": [],
+      "dependsOn": [],
+      "result": {
+        "path": "studies/e1-browser/results/2026-11-03-runway-practice.json",
+        "sha256": "cf99aab5cec8bb0fe45da235b5760e13f7b27667fe4971bedc17168d004604c8",
+        "assertions": [
+          {
+            "pointer": "/observations/native/result/result",
+            "equals": "pass"
+          },
+          {
+            "pointer": "/observations/browser/result/checks",
+            "equals": [
+              "EDFE26 and08 start stationary with all gear supported; full parking hold does not collide",
+              "COM8.33 selection loads standby, explicit swap changes active",
+              "Options select vector terrain/map and practice lights",
+              "release brake and power produces actual native ground acceleration",
+              "map Stop preserves Review and locks start/COM during Review",
+              "source-scoped runway briefing, actual ground state, runway change and recorded Review card",
+              "imported recording cannot inherit session runway context; Back to live restores it"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "runway-practice-scoped-review",
+      "mode": "manual_review",
+      "revision": "8cfa4fad6da6ce98730b565c2a954cc61893415d + recorded working-tree source pins",
+      "procedure": "Independent same-provider source review and unit/native execution; bounded browser/build stdout inspection. Frozen source packet and exact commands are recorded in the report.",
+      "scope": "Quality and scoped R-PLAY-1/R-TRAIN-2/R-REVIEW-1 criteria only. No full circuit, native landing, C172S fidelity or cross-provider acceptance.",
+      "limitations": [
+        "Reviewer did not independently launch the browser; actual browser observations were inspected.",
+        "The undistributed model closure and external peer remain unavailable; no milestone acceptance."
+      ],
+      "outcome": "pass",
+      "requirements": [
+        "R-PLAY-1",
+        "R-TRAIN-2",
+        "R-REVIEW-1"
+      ],
+      "inputs": [
+        {
+          "role": "fixture",
+          "path": "studies/e1-browser/results/2026-11-03-runway-practice.json",
+          "sha256": "cf99aab5cec8bb0fe45da235b5760e13f7b27667fe4971bedc17168d004604c8",
+          "pointer": "/observations"
+        },
+        {
+          "role": "build",
+          "path": "studies/e1-browser/results/2026-11-03-runway-practice.json",
+          "sha256": "cf99aab5cec8bb0fe45da235b5760e13f7b27667fe4971bedc17168d004604c8",
+          "pointer": "/build_info"
+        },
+        {
+          "role": "environment",
+          "path": "studies/e1-browser/results/2026-11-03-runway-practice.json",
+          "sha256": "cf99aab5cec8bb0fe45da235b5760e13f7b27667fe4971bedc17168d004604c8",
+          "pointer": "/environment"
+        },
+        {
+          "role": "source",
+          "path": "studies/e1-browser/results/2026-11-03-runway-practice.json",
+          "sha256": "cf99aab5cec8bb0fe45da235b5760e13f7b27667fe4971bedc17168d004604c8"
+        },
+        {
+          "role": "evaluator",
+          "path": "app/tests/runway-native.mjs",
+          "sha256": "d9a7540d0d33c372d4d571b157f4c49afc7ae4b85cdbc2d9275d46f4744a12e3"
+        },
+        {
+          "role": "evaluator",
+          "path": "app/tests/airport-play.browser.mjs",
+          "sha256": "bbf08c4ab4d8e03791969468e0d8f22411983ff0831b66cbab00d34bcead6035"
+        },
+        {
+          "role": "criteria",
+          "path": "app/src/runway-practice.test.ts",
+          "sha256": "4dec3c3f5058a1f8f10356404ba56a74c62ee85e205aea66707e3c1a02c69572"
+        },
+        {
+          "role": "source",
+          "path": "app/src/runway-practice.ts",
+          "sha256": "a6c5a57a92ad811e8d37b34f6dfe0a975f52b27493c64f5a78a6fbba51b1d104"
+        },
+        {
+          "role": "source",
+          "path": "app/src/main.ts",
+          "sha256": "e4b66e35ba662f768ac6b4b6e7073dfa872e731f05879b2ebb9d881ebcf9436c"
+        },
+        {
+          "role": "source",
+          "path": "app/src/practice-map.ts",
+          "sha256": "19943ed3698352f39ad4d08d6af178e59c32d4959c55e38077a8c1e2808fc636"
+        },
+        {
+          "role": "source",
+          "path": "app/src/runway-practice-panel.ts",
+          "sha256": "9160f6ae66aaf284f51ceb27fc4018b946c447a2fa2f75d71a2c097c4e4eb11e"
+        },
+        {
+          "role": "source",
+          "path": "app/src/runway-practice-panel.css",
+          "sha256": "f4e248c826469e1f21a7b4ab15a0010cf90a3bd127701371a6dd5398f0efe6cb"
+        }
+      ],
+      "unavailableRoles": [
+        {
+          "role": "model",
+          "reason": "Undistributed embedded research aircraft/runtime and transitive model closure are not preserved; this is a bounded run observation, ineligible for aircraft or milestone acceptance."
+        }
+      ],
+      "notApplicableRoles": [],
+      "dependsOn": [
+        "runway-practice-observation"
+      ],
+      "result": {
+        "path": "docs/reviews/2026-11-03-runway-practice.md",
+        "sha256": "98979c1dde10ee82f2158afa88b23e70b2485485a8f256cbc48b9a87d4599ad1",
+        "assertions": []
+      },
+      "review": {
+        "author": "Codex root, glide_cases and glide_model",
+        "reviewer": "Codex glide_housekeeping (independent of implementation)",
+        "independent": true
+      }
     }
   ],
   "criteria": [
