@@ -28,7 +28,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 - [x] 0.18 Scope the cross-provider peer gate per Q15; superseded 2026-11-01 11:54 by proclens's batched cadence (every few PRs, *peer pending* in between, coverage required before milestone acceptance/release).
 - [ ] 0.19 Run the first batched Codex peer review of Claude-authored work since `3faf9c8` (PRs #4–#6 and later) on a machine with the Codex CLI. Deferred by the user (2026-11-02 08:01); peer pending continues for the Claude-authored batch #32–#36.
 - [x] 0.20 Select model size and reasoning effort per task by difficulty and risk (Q20); recorded in AGENTS, BOOT and the agent workflow.
-- [ ] 0.21 Run the reciprocal Claude peer review of Codex-authored work (PRs #27–#30: 1.3.1, 1.5.2, 1.14, 1.15, 2.0) through the router with a frozen packet; required with 0.19 before milestone 1 acceptance. First run 2026-11-02: #27/#29 accept, #28a fixed after changes_required; #28b and #30 blocked on withheld material and need renewed packets ([report](reviews/2026-11-01-codex-prs-27-30-peer.md)).
+- [ ] 0.21 Run the reciprocal Claude peer review of Codex-authored work (PRs #27–#30: 1.3.1, 1.5.2, 1.14, 1.15, 2.0) through the router with a frozen packet; required with 0.19 before milestone 1 acceptance. First run 2026-11-02: #27/#29 accept, #28a fixed after changes_required; #28b and #30 blocked on withheld material and need renewed packets ([report](reviews/2026-11-01-codex-prs-27-30-peer.md)). Second run 2026-11-03 at `b3a7538` (Codex #39–#50 and the #28b/#30 renewals): not accepted; 26 packets blocked, r28b changes_required; findings F4–F67 to fix ([report](reviews/2026-11-03-codex-prs-39-50-peer.md)).
 
 ## 1. Foundation
 

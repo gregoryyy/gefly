@@ -3,6 +3,42 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 07:26 — Claude peer review of Codex PRs #39–#50 (TODO 0.21)
+
+TODO: 0.21 in progress. Agent: Claude Code orchestrator; peer dispatcher subagent;
+external reviewer: fresh Claude CLI 2.1.317 processes (model evidence
+`claude-opus-5-5`, not backend attestation) via `utils/peer_review.py`.
+
+**Implementation notes**
+
+- **Packets:** 27, frozen at `b3a7538`. They cover every changed path of PRs #39, #40,
+  #43, #44, #45, #46, #49 and #50, the Codex merge resolutions `5c49da8` and `5ef7357`,
+  cumulative CSS, and renewals of the 2026-11-01 #28b and #30 blocked rows.
+- **Runs:** a dry run, then a real run for each, with a 900 s timeout. No timeouts.
+- **Result:** 26 blocked, 1 changes_required. There were 6 high and 61 medium findings.
+  The dispatcher checked them all: 53 verified, 7 already resolved or of limited impact,
+  4 partly refuted, 3 refuted.
+- **High findings:**
+  - hosted CI was red for #43–#45 until `7610edc`, while their DONE entries claim CI
+    passed;
+  - no rights basis is recorded for the POH-scan and JSBSim-derived app values;
+  - a KAP 140 selector entry is read using whichever page is showing when it is
+    committed;
+  - the fitted-cockpit keycap text is 4 px.
+- **#28b renewal:** the AS8 DONE restoration passes; the 1.14.1 ownership record fails.
+- **#30 renewal:** stays blocked without a recorded engine build and `test:browser`
+  run.
+- **Gate:** the local gate passed (202 app tests; e1-jsbsim 9 of 23 skipped). Hosted
+  run 41579252408 on `b3a7538` passed.
+- **Report:** [peer review](reviews/2026-11-03-codex-prs-39-50-peer.md) and
+  [JSON](reviews/2026-11-03-codex-prs-39-50-peer.json).
+
+**Deviations**
+
+No browser or native run evidence is recorded, so the runtime criteria stay blocked.
+No fixes yet. The Claude-authored #32–#37 are excluded and left for the Codex review
+(TODO 0.19).
+
 ## 2026-11-03 05:33 — Detailed regional textures and compact radio station discovery
 
 TODO: 2.0.33 and 2.0.42 complete for bounded R-WORLD-4/R-NAV-4/R-PANEL-1/
