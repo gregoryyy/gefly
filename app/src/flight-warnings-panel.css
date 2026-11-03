@@ -1,0 +1,31 @@
+.flight-warnings-panel {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  pointer-events: none;
+}
+.flight-app:has(.topbar:not([hidden])) .flight-warnings-panel { top: 88px; }
+.flight-warning-light {
+  padding: 4px 7px;
+  border: 1px solid #a7b5b844;
+  border-radius: 4px;
+  background: #111e29d9;
+  color: #718593;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: .7px;
+}
+.flight-warning-light[data-status=unavailable] { color: #aab6bd; }
+.flight-warning-light[data-status=active] { color: #fff1df; border-color: #ff8462; background: #942f22ed; }
+.flight-warning-recorded { color: #d4c3a4; font-size: 8px; letter-spacing: .5px; }
+.flight-warning-recorded[hidden] { display: none; }
+@media (max-width: 620px) {
+  .flight-app:has(.topbar:not([hidden])) .flight-warnings-panel { top: 104px; }
+  .flight-warning-light { font-size: 9px; padding: 3px 5px; }
+}

@@ -219,6 +219,23 @@ reset/paused Review silence the graph; page teardown closes it. Missing or denie
 audio leaves flight usable with a retry/unavailable indication. Test-only local
 WAV previews are disposable outputs, not runtime telemetry or recordings.
 
+Stall/terrain annunciation and autopilot-disconnect audio consume existing native
+telemetry without writing flight state or issuing control commands. Non-finite,
+missing or discontinuous samples cannot establish a derivative history or imply
+an available warning from absent data. The native software stall signal is not
+an installed-aircraft calibration; the terrain cue uses current local CG
+clearance/closure, with no forward terrain or obstacle scan and no TAWS/EGPWS
+claim. Its generic thresholds can warn on a steep landing approach.
+
+The added tones reuse the same bounded synthesis graph, trusted-gesture unlock,
+default-off mute and volume controls. They add no sample downloads, permissions,
+network traffic or recording. They run only during live running flight, with
+pause, hidden/loading/reset/failure, missing data and all Review modes suppressing
+them. Disconnect detection requires an actual continuous engaged-to-disengaged
+transition; first samples, mute/unmute, resume and replay seeks do not queue or
+manufacture disconnect beeps. Sound design is original, not validated installed
+warning-system acoustics.
+
 Regional navigation loads a bounded same-origin manifest and hash-verified static
 JSON package before normal flight initialization; it rejects invalid sizes,
 redirects, asset paths, schema, duplicate IDs and corrupted bytes. The package is

@@ -87,5 +87,10 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [Southern Germany map data](2026-11-03-southern-germany-map.md) — all source airfields and navigation data; confirmed Bavaria, Baden-Württemberg, Hesse, Rhineland-Palatinate and Saarland.
 - [Parking brake and rudder controls](2026-11-03-parking-rudder.md) — N toggled parking brake beside wheel brakes, optional aileron/rudder link and rudder wheel steering.
 - [Centered touchpad control option](2026-11-03-centered-touchpad.md) — fixed steering midpoint, drag view without automatic recentering; browser-coordinate interpretation recorded.
+- [Stall, terrain and autopilot-disconnect warnings](2026-11-03-flight-warnings.md) — visual flight warnings and AP-off audio request.
+- [Autopilot altitude-selection clarification](2026-11-03-autopilot-altitude-clarification.md) — question about moving to a new selected altitude; document existing ALT/VS/ARM behavior.
+- [Autopilot capture-arming correction](2026-11-03-autopilot-altitude-correction.md) — source check corrects the explanation: selecting altitude auto-arms while engaged; ARM is a toggle.
+- [Expanded product vision and roadmap](2026-11-03-road-vision.md) — experience levels, community, open partnerships, free/premium financing, weather, traffic, navigation, COM, controls and open DACH/world expansion.
 - [Engine-off glide report](2026-11-03-engine-off-glide.md) — user reports excessive glide performance after engine shutdown.
 - [Existing demonstrable-increments instruction](2026-11-03-demonstrable-increments-record.md) — preserved from the available conversation on this recording date; original send time not reconstructed (Q25).
+- [Compact engine readouts and fuel references](2026-11-03-engine-panel-labels.md) — single-line engine readings and lower-quarter model tank markers; presentation reference only.

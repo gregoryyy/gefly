@@ -12,6 +12,25 @@ const server = spawn(process.execPath, ['--input-type=module', '-e', `import{cre
 let serverOutput = '', browser;
 server.stdout.on('data', chunk => { serverOutput += chunk; }); server.stderr.on('data', chunk => { serverOutput += chunk; });
 const checks = [];
+const assertReadoutRows = async (page, context) => {
+  const rows = await page.locator('.engine-secondary-readouts > div').evaluateAll(elements => elements.map(row => {
+    const box = row.getBoundingClientRect();
+    const parts = [...row.children].map(part => {
+      const range = document.createRange(); range.selectNodeContents(part);
+      const rect = part.getBoundingClientRect();
+      return { text: part.textContent, lines: range.getClientRects().length, left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
+    });
+    return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, parts, overflow: row.scrollWidth > row.clientWidth + 1 };
+  }));
+  assert.deepEqual(rows.map(row => row.parts[0].text), ['OIL PRESS', 'OIL TEMP', 'FUEL FLOW', 'EXHST GAS'], `${context}: complete single-line labels`);
+  for (const row of rows) {
+    assert(row.parts.every(part => part.lines === 1), `${context}: each label, reading and unit stays on one line`);
+    assert(Math.min(...row.parts.map(part => part.bottom)) > Math.max(...row.parts.map(part => part.top)), `${context}: label, reading and unit occupy the same row`);
+    assert(row.parts[0].right <= row.parts[1].left + 1 && row.parts[1].right <= row.parts[2].left + 1, `${context}: label, value and unit do not overlap`);
+    assert(!row.overflow && row.parts.every(part => part.left >= row.left - 1 && part.right <= row.right + 1), `${context}: readouts fit their row`);
+  }
+  return rows;
+};
 try {
   let ready = false;
   for (let i = 0; i < 100; i++) {
@@ -56,6 +75,8 @@ try {
   await page.locator('#engine-switch').click();
   await page.waitForFunction(() => document.querySelector('#engine-switch').textContent.includes('ON'));
   assert.equal(await page.locator('#engine-running').textContent(), 'RUN');
+  await assertReadoutRows(page, 'desktop cockpit');
+  await page.screenshot({ path: `${output}/engine-panel-reference.png` });
   checks.push('actual native L/R quantities and model capacity drive both needles and US-gallon readouts; equal power travel and paused E remain operable');
 
   const fixture = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -74,9 +95,25 @@ try {
       flag: document.querySelector('#engine-fuel-flag').textContent, left: document.querySelector('#engine-fuel-left-needle').dataset.fraction,
       right: document.querySelector('#engine-fuel-right-needle').dataset.fraction,
       leftTransform: document.querySelector('#engine-fuel-left-needle').getAttribute('transform'),
-      rightTransform: document.querySelector('#engine-fuel-right-needle').getAttribute('transform') };
+      rightTransform: document.querySelector('#engine-fuel-right-needle').getAttribute('transform'),
+      leftLow: !document.querySelector('#engine-fuel-left-low').hidden,
+      rightLow: !document.querySelector('#engine-fuel-right-low').hidden };
+
   }, { left, right, recorded });
   const full = await present(capacity, capacity); assert.equal(full.left, '1'); assert.equal(full.right, '1'); assert.equal(full.flag, '');
+  assert.equal(full.leftLow, false); assert.equal(full.rightLow, false);
+  assert.equal(await fixture.locator('.fuel-low-zone').count(), 2);
+  assert.equal(await fixture.locator('.fuel-low-marker').count(), 2);
+  assert.equal(await fixture.locator('.fuel-low-label').allTextContents().then(text => text.join(',')), 'LOW');
+  const boundary = await present(capacity * .25, capacity * .250001);
+  assert.equal(boundary.leftLow, true, 'lower-quarter boundary includes the exact quarter-tank quantity');
+  assert.equal(boundary.rightLow, false, 'quantity immediately above the reference is not marked low');
+  const below = await present(capacity * .249999, capacity * .1);
+  assert.equal(below.leftLow, true); assert.equal(below.rightLow, true);
+  assert.match(below.title, /left LOW.*right LOW/);
+  assert.match(await fixture.locator('#engine-fuel-description').textContent(), /display reference, not an aircraft low-fuel warning/);
+  await fixture.screenshot({ path: `${output}/engine-panel-low-reference.png` });
+
   const unequal = await present(capacity / 4, capacity * .75); assert.equal(unequal.left, '0.25'); assert.equal(unequal.right, '0.75');
   assert.equal(unequal.leftTransform, 'rotate(-35 44 50)'); assert.equal(unequal.rightTransform, 'rotate(-35 56 50)');
   const orientation = await fixture.evaluate(() => {
@@ -93,11 +130,14 @@ try {
   assert(Math.abs(leftScale.x - (100 - rightScale.x - rightScale.width)) < 1e-5 && Math.abs(leftScale.y - rightScale.y) < 1e-5
     && Math.abs(leftScale.width - rightScale.width) < 1e-5 && Math.abs(leftScale.height - rightScale.height) < 1e-5, 'fuel scales are exactly mirrored around the dial center');
   assert(orientation.bounds.every(box => box.x >= 0 && box.y >= 0 && box.right <= 100 && box.bottom <= 100), 'fuel scale, labels and base needle geometry stay inside the SVG');
+  assert(orientation.bounds.filter(box => box.right > box.x && box.bottom > box.y).every(box =>
+    [[box.x, box.y], [box.right, box.y], [box.x, box.bottom], [box.right, box.bottom]].every(([x, y]) => Math.hypot(x - 50, y - 50) <= 48)),
+  'fuel marker and label bounding-box corners stay inside the circular bezel');
   assert(orientation.labels[0].x < orientation.labels[1].x, 'L is left and R is right');
   assert(orientation.labels.every(label => Math.abs(label.b) < 1e-6 && Math.abs(label.c) < 1e-6 && label.a > 0 && label.d > 0), 'rotated fuel labels remain upright');
   assert(await fixture.locator('.engine-switch-row').evaluate(row => row.previousElementSibling.classList.contains('engine-power-controls')), 'engine switch and actual RUN are below the power levers');
-  const empty = await present(0, 0); assert.equal(empty.left, '0'); assert.equal(empty.right, '0');
-  const recorded = await present(capacity * .75, capacity / 4, true); assert.equal(recorded.recorded, 'true'); assert.match(recorded.title, /Recorded model tank contents/);
+  const empty = await present(0, 0); assert.equal(empty.left, '0'); assert.equal(empty.right, '0'); assert.equal(empty.leftLow, true); assert.equal(empty.rightLow, true);
+  const recorded = await present(capacity * .75, capacity / 4, true); assert.equal(recorded.recorded, 'true'); assert.match(recorded.title, /Recorded model tank contents/); assert.equal(recorded.leftLow, false); assert.equal(recorded.rightLow, true);
   assert(await fixture.locator('#engine-switch').isDisabled()); assert(await fixture.locator('#mixture-control').isDisabled());
   await fixture.locator('#engine-switch').evaluate(button => button.click()); assert.deepEqual(await fixture.evaluate(() => window.fuelCallbacks), { engine: 0, mixture: 0 });
   const over = await present(capacity * 1.2, capacity / 2); assert.equal(over.flag, 'OVR'); assert.equal(over.left, '1');
@@ -105,6 +145,14 @@ try {
   assert.equal(await fixture.locator('#engine-fuel-gauge').getAttribute('data-available'), 'false');
   assert.equal(await fixture.locator('#engine-fuel-flag').textContent(), 'INOP');
   assert.equal(await fixture.locator('#engine-fuel-left').textContent(), '—');
+  assert(await fixture.locator('#engine-fuel-left-low').evaluate(element => element.hidden));
+  assert(await fixture.locator('#engine-fuel-right-low').evaluate(element => element.hidden));
+  assert.equal(await fixture.locator('#engine-fuel-gauge').getAttribute('data-left-low'), '');
+  assert.equal(await fixture.locator('#engine-fuel-gauge').getAttribute('data-right-low'), '');
+  await present(capacity * .5, capacity * .5);
+  await assertReadoutRows(fixture, 'standalone engine panel');
+  checks.push('mirrored lower-quarter reference arcs and markers; independent LOW badges handle exact boundary, above/below, empty, recorded and unavailable quantities without claiming reserves');
+
   checks.push('controlled full/empty/unequal quantities give independent reference angles; recorded controls are read-only, overrange is marked and missing fuel is INOP');
   await fixture.evaluate(() => window.fuelPanel.dispose());
   assert.equal(await fixture.locator('#fixture').evaluate(element => element.childElementCount), 0); assert.equal(await fixture.locator('#engine-dialog').count(), 0); await fixture.close();
@@ -112,8 +160,9 @@ try {
   await page.setViewportSize({ width: 390, height: 568 }); await page.locator('#engine-open').click();
   await page.locator('#engine-dialog').waitFor({ state: 'visible' });
   assert(await page.locator('#engine-fuel-gauge').isVisible());
+  await assertReadoutRows(page, 'mobile engine dialog');
   const box = await page.locator('#engine-fuel-gauge').boundingBox(); assert(box.x >= 0 && box.x + box.width <= 390);
-  await page.screenshot({ path: `${output}/fuel-gauge-mobile.png` }); await page.locator('#engine-close').click();
+  await page.screenshot({ path: `${output}/fuel-gauge-mobile.png` }); await page.screenshot({ path: `${output}/engine-panel-mobile.png` }); await page.locator('#engine-close').click();
   const after = await stats(); assert.equal(after.step, before.step); assert.equal(after.digest, before.digest); assert.deepEqual(after.final_state, before.final_state);
   assert.deepEqual(errors, []);
   checks.push('mobile engine dialog retains the round fuel display and clean disposal; presentation and staged controls leave native physics unchanged');

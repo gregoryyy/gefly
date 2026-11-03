@@ -3,6 +3,106 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 11:13 — Refresh PR #56 and lead ROAD with the product vision
+
+TODO: 0.22 and 2.0.51 integration follow-up; no additional runtime feature scope.
+Agent: Codex subagent `engine_labels_markup` resolves PR #56 in an isolated
+worktree and owns integration records/checks. `engine_labels_style` rewrites ROAD
+as a product vision in parallel. Codex orchestrator owns the user conversation,
+review and publication. Existing cross-provider peer findings remain open.
+
+**Implementation notes**
+
+Merge main `9e12eb4` into PR #56 head `18084f6`. Reconcile the three conflicts:
+retain warning documentation alongside the sound-activation retry explanation;
+union both parents' complete test commands; keep warning-frame/one-shot audio
+alongside bounded resume, late-recovery and native test seams. Use explicit runtime
+TypeScript imports so main's direct Node audio tests can load the combined module.
+Preserve all 96 PR-parent and 100 main-parent DONE sections with unchanged bodies.
+Order the whole warning task before the distinct, still-open glide task.
+
+ROAD now leads with the accessible browser flying experience, progressively
+realistic aircraft/procedures, professional material and the open flight-school
+community. Its visible increments retain weather, traffic, navigation, COM, world
+reconstruction, AI authoring, partnerships, financing and distinct licence tracks.
+Tooling and gates are confined to a brief supporting closing section.
+
+Focused warning/audio tests pass 31 cases; TypeScript/production build and
+assurance integrity pass. The shared run passes 293 Node, 84 assurance and 11
+assessment cases; nine of 23 existing native-study cases remain skipped. Its
+application phase initially fails because this worktree selects a broken local
+Homebrew Python 3.15/Expat installation. Renewing that phase with the existing
+working Python 3.11 passes all 293 Node and both six-case Python adapter suites.
+The initial full command's exit 1 is retained in the log, not called a passing run.
+The orchestrator independently passes 19 focused Node cases, the maintained
+warning browser groups with an actual native STALL indication, and both warning
+audio groups using Web Audio and live-worker autopilot disconnects. Independent
+inspection of all three conflict resolutions and ROAD against the user brief
+finds no blocking merge defect; this is bounded integration acceptance only.
+
+**Deviations**
+
+Native bridge/build/model-preparation bytes match main exactly. Reuse the existing
+actual generated WASM after checking its SHA-256 rather than rebuild unchanged
+native code. No new aircraft physics, warning thresholds, sound calibration,
+provider permission, training acceptance or source-rights clearance is claimed.
+The existing low-RPM/stopped-prop glide limitation and Q24 remain unresolved.
+
+**Insights**
+
+**Scope drift:** Small product requests expanded into unnecessary workflow,
+documentation and branch-management work, delaying the queued improvements.
+
+**Preference for meaningless process:** I treated extra handoffs, bookkeeping
+and repeated checks of unaffected behavior as progress. They consumed time
+without advancing the requested result. Deliver small runnable changes, batch
+minor edits and keep verification proportional to the behavior changed.
+
+The audio conflict needs both state paths: taking one side loses either warning
+frames or bounded activation recovery. A new isolated worktree can select a
+different Python runtime than the normal workspace; record environmental failures
+and renew the affected phase explicitly. A vision should describe the pilot and
+community experience before its supporting development discipline.
+
+## 2026-11-03 11:01 — Compact engine readings and low-fuel reference marks
+
+TODO: 2.0.53 complete for this R-PANEL-1/R-REVIEW-1 increment.
+Agent: Codex orchestrator owns shared requirements/status and integration.
+`engine_labels_style`/code1 implements layout and gauge styling;
+`engine_labels_markup`/code2 implements markup, fuel presentation and browser
+regressions. `engine_labels_records` records input in parallel.
+`engine_labels_quality` independently reviews quality and validates the result.
+Cross-provider peer remains pending under the existing batched cadence.
+
+**Implementation notes**
+
+OIL PRESS, OIL TEMP, FUEL FLOW and EXHST GAS now each keep label, value and unit
+on one compact line. Move fuel quantities beside the dial, retain 88px fuel
+geometry and equal 100px throttle/mixture travel, and keep controls within the
+existing panel height. Add mirrored amber lower-quarter arcs/markers, a central
+LOW reference and independent per-tank LOW badges. Selected Review quantities
+drive the same display; unavailable data hides the badges instead of inventing
+low fuel. No flight dynamics, fuel state or recorded controls change.
+
+Shared CI passes 280 app, 84 assurance and 11 assessment cases; nine of 23 native
+study cases remain explicitly skipped. TypeScript/production build pass. After
+the compact-layout repair, renew the build and independent actual-browser fuel
+suite (four groups) and panel layout (ten viewports plus mobile portal lifecycle).
+Desktop/mobile screenshots and controlled low-quantity fixtures are inspected.
+See [review](reviews/2026-11-03-engine-panel-labels.md).
+
+**Deviations**
+
+The lower quarter is an explicitly declared generic model display reference,
+not an installed aircraft low-fuel annunciator threshold or fuel reserve.
+Native fuel consumption and existing model/source limitations remain unchanged.
+
+**Insights**
+
+Single-line rows alone did not guarantee panel containment: viewport checks found
+overflow below the engine column. Moving quantities beside the dial and fixing
+the effective heading height reclaimed space without shrinking lever travel.
+
 ## 2026-11-03 10:43 — Generic propeller windmilling; glide gap remains
 
 TODO: 2.0.52 **partial, still open**; R-SIM-10 is not fully accepted.
@@ -90,6 +190,106 @@ local deterministic fixtures; native physics and DEM integration are actual.
 Resolving text markers alone misses integration faults: the auto-merged contact
 helper still selected the old fine-only gradient. Combined runtime checks and
 explicit parent-by-parent record/script comparisons preserve behavior and history.
+
+## 2026-11-03 10:01 — Stall/terrain warnings and autopilot-disconnect audio
+
+TODO: 2.0.51 complete for bounded R-ALERT-1 simulator cues.
+Agent: Codex orchestrator integrates actual-state monitors, display/audio, native
+UI tests, shared records and publication. `flight_warning_signals`/code1 builds
+monitor/panel/tests; `flight_warning_audio`/code2 implements same-context sounds,
+edge tracking and waveform/native tests in parallel. `flight_warning_housekeeping`
+updates input/control/security docs. `flight_warning_quality` independently
+reviews quality and validates runtime/source correspondence. Cross-provider peer
+remains pending under the existing batched cadence.
+
+**Implementation notes**
+
+Add compact STALL/TERRAIN annunciators with non-color active/unavailable states.
+Stall follows the native model's software warning; terrain is a declared generic
+local CG-AGL closure cue with hysteresis, not a terrain-ahead/obstacle scan.
+Keep native inputs/physics unchanged, reset derivatives at discontinuities and
+use independent live/Review monitors. Review recomputes recorded telemetry cues,
+not recorded annunciator history. New steady stall/pulsed terrain/descending AP
+sounds share the existing Web Audio context, S/default-off and volume. Observe
+actual KAP engagement 1→0 once, with no initial/off/seek/reset/unmute backlog;
+new sounds are suppressed for pause, hidden/loading and all Review states.
+
+Shared CI passes 253 app/84 assurance/11 assessment tests; nine of 23 existing native
+study cases remain skipped. TypeScript/build and authored UI/audio checks pass.
+Independent checks pass 13 pure warning tests, four actual native/UI groups,
+20 offline waveform/lifecycle cases plus real P/manual and Q/automatic disconnect,
+12 legacy engine/wind/rolling/contact/audio lifecycle groups and 8 KAP tests. Source
+and cue limits are explicit; see [review](reviews/2026-11-03-flight-warnings.md).
+Final 11-path runtime/test/package packet:
+`94d392ca5a81090e665b35a1cc602d9ac5e31a7f3ce37e9178628d3ee4bc20e8`.
+
+**Deviations**
+
+These are generic simulator awareness cues, not installed stall-switch/TAWS/KAP
+acoustics or aircraft-safe envelopes. Terrain does not distinguish a planned
+landing or include obstacles. A stress fixture uses existing nose-up trim and
+combined pilot inputs to trigger the native stall signal; it is not a flight
+procedure. Earlier insufficient-input and menu-overlap harness attempts were
+corrected without changing physics or warning thresholds. DOM transition history
+reliably captures a brief actual warning instead of requiring it to remain active
+in a later snapshot. No physical-speaker listening or training acceptance claimed.
+
+**Insights**
+
+Missing stall data initially disturbed repeated valid terrain frames in the
+hysteresis band; independent terrain caching and new regressions fix this.
+The user's altitude question exposed an incorrect explanation, not a KAP logic
+change: selecting altitude while engaged auto-arms capture. Check ALT ARM and
+press ARM only if absent; pressing it again disarms. Correct the handbook and
+retain the original question plus explanation correction as separate input records.
+
+## 2026-11-03 09:20 — Expanded product vision and roadmap
+
+TODO: 0.22 complete for documentation capture and consistency only.
+Agent: Codex orchestrator integrates SPEC/licensing interpretation, decision
+history, task status and publication. `road_vision_product` refines ROAD;
+`road_vision_housekeeping` records the original input and updates IDEA in parallel;
+`road_vision_validate` independently reviews documentation quality and validates
+coverage. Cross-provider peer remains pending under the existing cadence.
+
+**Implementation notes**
+
+Record the full user roadmap and align ROAD, IDEA and confirmed direction:
+maximum practical browser realism with minimal prerequisites, just-fly through
+licence exercises, instruments/procedures and professional references. Cover
+community flying/contributions/forum; open-platform partnerships and candidate
+financing; coherent weather/traffic; navigation/planning/terrain-projected markers;
+COM1/COM2; HUD/transparent instruments/phone orientation/checklists; and regional
+Hessen-to-open-DACH-to-later-world expansion. Include the named source candidates,
+Google Earth discussion and procedural/semantic/geotypical scenery research.
+
+Keep the free version free and GPL-3.0-or-later. Record optional premium licensed
+map/navigation services and AI-cost support without selecting prices, providers,
+contracts or a closed-source variant. Distinguish separately licensed service
+access from the non-proprietary bundled-asset policy; no restricted dataset is
+copied or licensed by this note. Correct stale region/navigation/autopilot status
+while preserving the existing first-exercise, aircraft, phase and licence gates.
+
+Independent review finds all ten user themes covered and no blocking
+quality/consistency issue. Local link/index and whitespace checks pass; see
+[review](reviews/2026-11-03-road-vision.md). No application code, dependencies,
+service configuration, project licence file or runtime acceptance changes.
+
+**Deviations**
+
+This is a roadmap update. Capabilities, partnerships, premium subscriptions and
+providers remain planned/candidates until individually scoped and verified.
+Existing bounded regional prototypes do not complete EDDF/100 NM or DACH coverage;
+no weather/traffic/communication service, community deployment, commercial rights
+or new qualification/training approval is claimed.
+
+**Insights**
+
+The optional commercial-service direction needs an explicit boundary from the
+open/free distribution policy. Recording that distinction now avoids treating a
+provider name or a roadmap idea as a redistribution grant or selected agreement.
+The roadmap preserves demonstrable increments rather than turning the full vision
+into an immediate implementation checklist.
 
 ## 2026-11-03 09:09 — Optional centered touchpad and persistent view
 

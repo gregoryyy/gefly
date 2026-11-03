@@ -1,107 +1,156 @@
-# Roadmap
+# Product vision and roadmap
 
-Phase 1 technical foundation is underway: native/browser studies, source-data
-extractions and shared-contract work have been implemented alongside the phase 0
-project records. The stack is selected; the project-owned 172S model and first
-complete learner exercise remain unimplemented. [TODO](TODO.md) owns current task
-status. Later phases become numbered milestones when scoped; the roadmap does
-not authorize an unbounded implementation run.
+**Open a browser and fly—with the most realistic flying experience practical and
+minimum prerequisites.** Gefly grows from the pleasure of “just fly” into a place
+to learn instruments, navigation and procedures, practise for PPL and other
+small-plane qualifications, and later work towards CPL objectives.
 
-The product direction is a **free, open-source flight-school community around the
-web simulator**. The first regional model is **EDDF and a 100 NM radius** using
-real available geographic/navigation/chart material. **Reuse open physics engines
-and models** where suitable. **LLM-assisted flight-experience creation and AI
-interaction** are explicit roadmap goals. These directions come from the
-[user's roadmap/architecture update](input/2026-10-31-community-region-reuse.md);
-The project license is GPL-3.0-or-later (GAPS Q5); provider, deployment and
-detailed phase order remain to be selected.
+This is a **free, open-source flight-school community built around a simulator**,
+not just a collection of aircraft and scenery. A newcomer can enjoy a first
+flight; a learner can rehearse a complete pilot experience; instructors and the
+community can contribute aircraft, places, exercises and practical knowledge.
+Professional manuals, charts and procedure material belong inside that experience.
+The [user's vision](input/2026-11-03-road-vision.md) drives the directions below.
 
-| Phase | Goal | Measured gate |
-| --- | --- | --- |
-| 0. Project foundation | Traceable brief, questions, specification, roles and document/check tooling | E0 scaffold checks and a usable document-build path; unresolved decisions explicit |
-| 1. Technical foundation | Integrate the selected TypeScript/CesiumJS (three.js fallback)/MapLibre stack with JSBSim in a fixed-1/120 s worker; complete project-owned classic 172S model/data preparation, contracts, device/input matrix and EDDF-region source strategy | Preserve E1 study limits; pass real terrain/device-resolution/load checks and independently frozen E2 cases; engine/model/adapter rights reviewed separately; exact EDDF ARP and source coverage resolved before accepted geometry |
-| 2. First useful PPL exercise | One accessible Mac desktop keyboard/touchpad circuit exercise at Frankfurt-Egelsbach (EDFE): engine-running holding point, runway 26 north/right-hand circuit, take-off and landing; optional yoke/joystick/pedals, classic cockpit subset, declared geography, views, assists and flight review | Freeze source-based/experimental criteria and remaining aerodrome/model inputs; repeatable replay, reference Mac/browser and controller E5 checks, independent quality/validation. Q7 permits research-based prototype work with no instructor reviewer yet; stronger instructional/training claims need their own review. |
-| 3. Classic C172 practice loop | Deepen source-backed controls/systems/physics; add QNH/QFE/standard, coherent elevation/maps, checklists, briefing, text radio, circuit variations and the second (FR172) engine configuration for performance comparison, in separate slices; scope community publication rules and roles | E2/E6/E7 cases pass for selected data/configuration; missing/stale input and unsupported regimes explicit; objective reviewed |
-| 4. Navigation depth and later glass | Working cockpit VOR/DME and applicable navigation controls; real identifiers/fixes, chart/path support, separately scoped ILS drills, then selected glass configuration | Applicable manuals and data mapped to tested indications/actions; E6/E7 pass; E3 evaluates learner benefit separately |
-| 5. CPL and advanced equipment | Add explicitly scoped CPL objectives and applicable traffic-awareness/advisory equipment; assess any additional aircraft separately | Separate aircraft/equipment/learning specification and source-based cases before ACAS/TCAS or expanded training claims |
-| Community / open release track | GPL-3.0-or-later source; publication rules, roles and moderation scoped in phase 3 (GAPS Q12). A free, open-source site for flight-school practice, proposed exercise library, questions, groups and reviewed debriefs; grow alongside useful simulator slices | E11: selected license, reproducible authorized-data build, contributor/content rules, scoped user roles and moderation; actual hosting/free access verified before deployment claims |
-| AI experience-authoring track | Describe territory, objectives and interaction; assemble source-backed navigation assets/chart material and a validated experience package, beginning with EDDF/100 NM | E9/E10: real identifiers/geometry resolved, missing data exposed, package/source rights reviewed, scenario checks pass and accepted package replays independently of generation |
-| Licence-specific training extensions | Add distinct sailplane and ultralight training profiles, with their own aircraft, controls/physics, exercises and pilot-qualification requirements | R-TRAIN-6 / E12: selected jurisdiction/authority/category, current source-mapped syllabus and privileges, applicable model/reference cases and qualified review; no automatic transfer of airplane requirements or training credit |
+## Fewer aircraft, deeper flying
 
-## Licence-specific training extensions
+Start with the **Cessna 172 and EASA PPL**, classic instruments first. Make the
+controls, indications, avionics, physics and procedures work together instead of
+adding many shallow aircraft. The selected first configuration is the classic
+172S, followed by a separately modeled Reims FR172. Glass cockpits come later;
+the A320 remains an interaction reference rather than a second initial aircraft.
+Reuse open physics engines and models wherever they can support this depth.
 
-The [user's extension](input/2026-10-31-license-specific-roadmap.md) adds pilot
-qualification tracks beyond the initial C172/EASA PPL and later CPL direction.
-These are training qualifications, separate from software licensing. Keep the
-first aircraft/foundation unchanged and scope each extension independently;
-the user has not specified an order relative to CPL.
+Keep entry easy: Mac desktop keyboard and touchpad first, optional yoke/joystick
+and rudder pedals, with GeoFS-inspired control settings. Add adjustable key
+bindings, connected iPhone/Android orientation controls, avionics as a HUD and a
+no-panel view with transparent main instruments. Later fullscreen/glass overlays
+include ILS markers driven by modeled navigation. The same flight should work
+through cockpit, chase and inspection views, with useful flight review and later
+video export.
 
-| Track | Proposed training/model scope | Qualification boundary and gate |
-| --- | --- | --- |
-| Sailplanes | One identified aircraft/configuration; glide/energy management, soaring, applicable launch methods and landing planning. Reuse shared geography, weather, controls and review where appropriate. | EASA Part-SFCL/Sailplane Pilot Licence is a reference profile. Distinguish applicable launch-method and TMG privileges before claiming coverage; source the selected syllabus and aircraft behavior. |
-| Ultralight aircraft | One selected national category and aircraft first, with its actual controls, handling/performance, procedures and exercises. Category differences may require different models and control mappings. | Select the country/authority and qualification explicitly. German national ultralight training is an initial research reference, not a universal EASA licence or a confirmed country/category decision. |
+## The complete pilot experience
 
-Each future profile identifies jurisdiction, issuing framework, full qualification
-name, aircraft/category, privileges/ratings/launch methods where applicable,
-curriculum source/version, prerequisites and scoped assessment criteria. Reuse
-common simulator infrastructure while keeping category-specific aircraft, physics
-and lessons separately validated. An abbreviation such as “SPL” alone must not
-determine the profile. Shared lessons or simulator functionality do not establish
-cross-credit or certification eligibility.
+| Experience | What the pilot should be able to do |
+| --- | --- |
+| Plan and navigate | Open maps with airports, controlled airspace, restricted areas and no-fly zones from real data. Select navigation aids from the map, create personal GPS markers, look up published fixes and build a flight plan with altitude and glide-path planning. See towns, landmarks, streets, rivers and air fixes projected onto the terrain. |
+| Fly the aircraft | Use authentic controls and meaningful instrument indications: magnetic references, QNH/QFE/standard pressure, realistic engine and flight dynamics, VOR tuning and deviation, DME slant distance and ILS localizer/glideslope geometry. Deepen landing reactions, stalls and structural-force behavior as the aircraft model improves. |
+| Prepare and follow procedures | Look up and run through aircraft-specific checklists. Connect instrument practice, circuit patterns, approaches and other drills to applicable professional manuals, chart material and reviewed learning sources. |
+| Read and experience the weather | Use real-source or AI-authored scenario weather and reports, with cloud cover, wind, rain, fog, visibility and temperature reflected coherently in the flight. Begin with versioned historical/generated scenario briefings, then add optional live feeds. |
+| Share real airspace | Encounter AI traffic and real-time community aircraft, NOTAM and operational restrictions. Practise realistic situations such as arriving at a busy international airport, including sequencing, communication and occupied-runway consequences. |
+| Communicate | Tune COM1/COM2, discover airport COM stations through lists comparable to NAV1/NAV2, and exchange realistic text messages with airport/ATC scenario roles through AI interaction. Voice is a later extension. |
+| Review and improve | Replay the flight with its controls, instruments and path; inspect approaches, energy, navigation and decisions, then try the exercise again. Grow towards instructor feedback and shared debriefs. |
 
-The [licence-track source note](research/2026-10-31-license-training-tracks.md)
-records authoritative references and amendment/source limits. Q14 retains country,
-category and first-aircraft decisions. E12 defines the future coverage/equipment
-checks; no sailplane/ultralight model or curriculum has been implemented yet.
+Real identifiers, editions and source material should make the experience
+recognizable to pilots. Generated weather, teaching aids and model limitations
+must be identifiable; they must not be presented as real-world operational data.
 
-## Sequence and dependencies
+## A community that builds the simulator
 
-Phase ordering after the first exercise is **proposed**, refined from user feedback;
-it is not an approval to ship the whole wishlist at once. Mobile orientation is a
-later requested capability; the first platform is now user-selected Mac desktop
-keyboard/touchpad, optionally yoke/joystick and rudder pedals. Exact versions and
-controller models remain to be tested. GeoFS-inspired settings are the reference.
-Q11 fixes versioned historical/generated scenario briefings before an optional
-live adapter; later provider choice and rollout remain open. The
-user selected classic instruments first and glass later; fewer/deeper aircraft
-takes priority over a broad catalog. The A320 remains an interaction reference.
-See [training design](design/TRAINING.md), SPEC and GAPS for exact distinctions.
+See other pilots flying in real time. Fly together, exchange suggestions and
+questions in a forum, and share exercises and debriefs. Make contributions useful
+across the whole product: aircraft models, flight systems, terrain, buildings,
+landmarks, maps, navigation data and learning material.
 
-The community and authoring tracks may develop in parallel with simulator fidelity;
-they do not have to wait for CPL. Start bounded prototypes once their contracts,
-source and privacy dependencies are resolved. EDDF is the center of the first
-reference region (100 NM = 185.2 km), not a mandate to conduct every drill at EDDF.
-Select suitable training airfields/runways and source editions within that region.
-The [regional/open-engine study](research/2026-10-31-eddf-open-foundation.md) maps
-available candidates and unresolved official-center/data rights.
+Flight schools and instructors should be able to help shape exercises and give
+feedback. Community contributions should carry their authorship, source/version
+and modeled scope so a useful upload is distinguishable from a reviewed model.
+The community, multiplayer and contribution experience can grow alongside useful
+simulator increments; it does not need to wait for CPL features.
 
-Unscheduled options: video export beyond flight replay, global high-detail coverage,
-live briefing feed rollout, voice radio, a live instructor console, expanded hardware,
-VR, real-time multiplayer, additional aircraft and any approved-device pathway. Weather/
-NOTAM briefing and text radio are now requested product capabilities above, while
-provider, coverage, timing and actual implementation remain undecided.
+## A convincing world, beginning around Frankfurt
 
+Build useful coverage in **Hessen and the surrounding federal states**, with
+**EDDF and a 100 NM radius** as the first learning/reference region. Use suitable
+training airfields inside that area; the first circuit is at Frankfurt-Egelsbach
+(EDFE), not a requirement to conduct every exercise at EDDF.
 
-## Requested cockpit refinements
+Expand towards **open DACH data: Germany, Austria and Switzerland**, then select
+interesting regions elsewhere with good open sources. Evaluate OurAirports,
+OpenFlightMaps, potentially Navigraph and Eurocontrol/EAD, and later FAA sources
+and other regions. Physical terrain, visual scenery, airports, airspace and radio
+navigation should grow into a coherent region rather than disconnected layers.
 
-The [2026-11-02 input](input/2026-11-02-landing-radio-and-control-refinements.md)
-adds a separate radio/radio-navigation box and classical autopilot unit beside
-the flight controls. The current prototype's experimental roll/heading modes and
-fictional LAB geometry do not complete classical coupled autopilot or real-radio
-navigation acceptance. Altitude, NAV/APR/REV coupling requires source-scoped
-barometric/nav receiver behavior and independent reference cases first.
+Aim for the geographic detail and ease of exploration associated with Google
+Earth and Google Maps. Use public elevation and map information, imagery where
+available, and **procedural reconstruction, semantic reconstruction and geotypical
+scenery generation** to distinguish settlements, green areas, roads and water,
+then add buildings and other structures. Keep generated scenery distinguishable
+from surveyed features.
 
-Later work explicitly includes adjustable key bindings and a fullscreen modern
-instrument overlay with ILS markers. Glass presentation must consume the same
-accepted flight/navigation state as classic instruments; decorative markers must
-not imply a modeled localizer/glideslope. The landing contact demonstrations
-reuse real model forces; structural damage, calibrated suspension visuals and
-accepted airport terrain/landing envelopes remain separately gated work.
+Also explore **flying through Google Earth** as an alternative experience or
+integration route. It remains a study, not a selected map provider or permission
+to import Google imagery. The [global scenery research](research/2026-11-03-global-scenery.md)
+compares those routes with an open-data world.
 
-## Regional stall visualization
+## Create a flight experience by describing it
 
-Use the first spatial airflow-angle diagnostic (TODO 2.0.25) to inspect local
-kinematic differences without changing dynamics. Actual region-by-region stall
-needs source-applicable sectional aerodynamic data and induced-flow/tail modeling
-(TODO 2.0.26); a global AoA warning or fixed speed arc cannot establish local
-separation. Prefer reuse of open models and keep estimated regions explicit.
+Use an LLM to describe a territory, a learning objective and the interactions a
+pilot should encounter. Assemble a realistic experience from real navigation
+assets, map/chart material, weather and traffic scenarios, with AI interaction
+where it helps. Start with the EDDF/100 NM region.
+
+The result should be a reviewable, replayable scenario package, linked to its
+actual sources. Aircraft motion and avionics stay in the simulator; generated
+prose does not invent a real fix, procedure, clearance or accepted flight state.
+This extends the [original community and authoring direction](input/2026-10-31-community-region-reuse.md).
+
+## Open platform, partners and sustainable financing
+
+**The free version stays free.** Keep a useful open foundation under the selected
+GPL-3.0-or-later project licence. Explore an optional premium offering for
+commercial map/chart subscriptions such as Navigraph and AI extensions priced to
+cover token/service costs. Partner support is another route to sustaining the
+platform; paid services should add value without becoming prerequisites for the
+free experience.
+
+Build partnerships from the ecosystem **as long as the platform stays open**:
+map/data providers and publishers for content; ATC organizations and aircraft
+manufacturers for awareness and expertise; flight schools for use and feedback.
+These are product and funding directions, not announced partners, selected
+subscriptions, prices or service contracts.
+
+## Deliver experiences in visible increments
+
+| Increment | A demonstrable result |
+| --- | --- |
+| A coherent first flight | Open the browser, understand the controls, fly a recognizable region, use the classic cockpit and review what happened. Keep this enjoyable as deeper realism is added. |
+| The first complete PPL practice loop | Start engine-running at the EDFE runway 26 holding point, use a briefing/checklist, take off, fly the north/right-hand circuit, land and review the flight. Keyboard/touchpad remains a complete baseline. |
+| A believable regional pilot experience | Deepen source-backed aircraft handling and systems, pressure/elevation references, navigation aids, maps and charts. Add circuit variations, text radio after the first complete circuit loop, coherent weather reports and bounded traffic situations in separately runnable slices. |
+| Shared flying and contributed experiences | Fly with others, publish and try exercises, discuss improvements and contribute a first aircraft/world/data package. Grow community features alongside simulator depth. |
+| Wider places and deeper practice | Expand coherent DACH regions, flight planning, procedures, weather and traffic; compare the separate FR172 configuration and introduce selected glass avionics after the classic cockpit. |
+| More licence-specific journeys | Add scoped CPL objectives and distinct sailplane/ultralight experiences, with appropriate aircraft, controls, exercises and professional material. Their order relative to CPL is still open. |
+
+Consider advanced traffic-awareness/advisory equipment such as ACAS/TCAS only for
+applicable aircraft and installations, as separately scoped later capabilities.
+
+These are product directions, not a claim that every row is implemented or a fixed
+release schedule. Choose each next slice for a visible improvement a user can try.
+Source, model and community work can proceed in parallel where they support it.
+
+## Distinct pilot qualifications
+
+Sailplanes and ultralights have their own aircraft, handling, procedures and
+qualification requirements. Share geography, weather, controls and review where
+useful, while developing each learning profile independently.
+
+For sailplanes, EASA Part-SFCL/Sailplane Pilot Licence is a reference profile;
+launch methods and TMG privileges need explicit scope. For ultralights, select a
+national authority/category and aircraft first: German national training is a
+research reference, not a universal EASA licence or a confirmed category choice.
+The [licence-track note](research/2026-10-31-license-training-tracks.md) records
+sources and open decisions. Shared simulator features do not imply cross-credit
+or certified training.
+
+## Current position and delivery discipline
+
+Today's runnable prototype combines generic JSBSim flight, a classic cockpit,
+KAP 140-style autopilot, historical radio navigation, bounded public terrain and
+imagery, maps and review. The project-owned 172S model and first complete learner
+exercise are still unfinished. Hosting remains undecided. This roadmap does not
+claim approved training, current operational data or validated aircraft fidelity.
+
+[TODO](TODO.md) owns current progress. [SPEC](SPEC.md) defines requirements and
+[EVAL](EVAL.md) defines evidence for the realism and learning claims. Keep source
+rights, model versions and limitations clear; apply independent checks to each
+integrated increment. Tooling supports that work—it is not the product roadmap.

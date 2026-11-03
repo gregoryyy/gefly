@@ -41,6 +41,7 @@ npm --prefix app ci
 python3 -m pip install -r utils/scenery/requirements.txt  # live photo compositing
 just build-flight-engine   # first run: builds the local research runtime
 just fly                  # http://127.0.0.1:5173
+just stop                 # stop this checkout's flight server
 ```
 
 Select **Start flight**, then click the scene for touchpad yoke control or use the keyboard.
