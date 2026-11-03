@@ -3,6 +3,26 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 11:59 — Pointer-centered cockpit zoom
+
+TODO: 2.0.56; R-PANEL-1/R-INPUT-1. Agent: Codex, direct implementation.
+
+**Implementation notes**
+
+Two-finger up/down over the cockpit magnifies/restores the panel around the
+pointer, bounded to 1–3× fitted size. Keep enlarged controls interactive, clip
+within the deck, restore fit on resize and leave scenery FOV independent.
+Build and actual Chrome pointer-anchor, enlarged AP click, fit restoration,
+scene FOV and paused native-state regression checks pass.
+
+**Deviations**
+
+No physics changes. Cross-provider peer review remains pending.
+
+**Insights**
+
+Use one panel transform so instruments, hit targets and labels scale together.
+
 ## 2026-11-03 11:52 — Recording files, live return and map overlap
 
 TODO: 2.0.55; R-REVIEW-1/R-VIEW-1. Agent: Codex, direct implementation.

@@ -6,6 +6,38 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
   container.classList.add('cockpit-fitted');
   let frame = 0;
   let disposed = false;
+  let zoom = 1;
+  let panX = 0;
+  let panY = 0;
+
+  function paintZoom(): void {
+    if (!deck || !instruments) return;
+    const fitted = Number(container.dataset.cockpitScale) || 1;
+    instruments.style.transformOrigin = '0 0';
+    instruments.style.transform = `translate(${panX / fitted}px, ${panY / fitted}px) scale(${zoom})`;
+    deck.dataset.zoomed = String(zoom > 1);
+    deck.dataset.panelZoom = String(zoom);
+  }
+
+  function wheel(event: WheelEvent): void {
+    if (!deck || !instruments || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey
+      || container.ownerDocument.querySelector('dialog[open]')
+      || !Number.isFinite(event.deltaY) || !Number.isFinite(event.deltaX)
+      || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+    const unit = event.deltaMode === 0 ? 1 : event.deltaMode === 1 ? 16
+      : event.deltaMode === 2 ? deck.clientHeight : 0;
+    if (!unit) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const next = Math.max(1, Math.min(3, zoom * Math.exp(-Math.max(-200, Math.min(200, event.deltaY * unit)) * .002)));
+    const rect = instruments.getBoundingClientRect();
+    // Keep the instrument point under the pointer fixed in screen coordinates.
+    panX += (event.clientX - rect.left) * (1 - next / zoom);
+    panY += (event.clientY - rect.top) * (1 - next / zoom);
+    zoom = next;
+    if (zoom === 1) { panX = 0; panY = 0; }
+    paintZoom();
+  }
 
   function fit(): void {
     frame = 0;
@@ -38,6 +70,9 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
       container.style.setProperty('--deck-height', `${height}px`);
     }
     container.dataset.cockpitScale = String(scale);
+    // A viewport/layout change restores the full, fitted panel.
+    zoom = 1; panX = 0; panY = 0;
+    paintZoom();
   }
   function schedule(): void {
     if (!disposed && !frame) frame = requestAnimationFrame(fit);
@@ -50,6 +85,7 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
   const reviewObserver = new MutationObserver(schedule);
   reviewObserver.observe(container, { attributes: true, attributeFilter: ['data-review'] });
   window.addEventListener('resize', schedule);
+  deck.addEventListener('wheel', wheel, { passive: false, capture: true });
   fit();
 
   return {
@@ -59,6 +95,11 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
       observer.disconnect();
       reviewObserver.disconnect();
       window.removeEventListener('resize', schedule);
+      deck.removeEventListener('wheel', wheel, { capture: true });
+      instruments.style.removeProperty('transform');
+      instruments.style.removeProperty('transform-origin');
+      delete deck.dataset.zoomed;
+      delete deck.dataset.panelZoom;
       container.classList.remove('cockpit-fitted');
       container.style.removeProperty('--cockpit-scale');
       container.style.removeProperty('--deck-height');

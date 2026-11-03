@@ -57,7 +57,9 @@ These are simulator conveniences; acceleration preserves the fixed physics step
 and the achieved rate depends on available CPU/rendering capacity.
 Restart is in Flight. Click toggles touchpad yoke control;
 hold-drag looks around while retaining the yoke midpoint, and two-finger vertical
-scroll changes field of view.
+scroll over the scenery changes field of view. Over the cockpit panel, scroll up
+to enlarge the instruments around the pointer (up to 3×); scroll down to restore
+the fitted panel. Resizing the window also restores the fit.
 Public terrain now streams across **8.25–10.00°E / 49.25–50.75°N**, including
 Darmstadt, Odenwald and Spessart, with named Flight-menu demonstrations. The
 bounded 200 m BKG relief surrounds the finer Egelsbach–Frankfurt–Taunus package;
@@ -95,7 +97,8 @@ practice reference, not airport elevation. Review retains the recorded setting.
 The classic **six-pack** now shows airspeed, attitude, pressure altitude, ideal
 turn/slip, true heading and vertical speed. Click the scene to toggle touchpad
 yoke control; hold-drag to look around. Two-finger vertical scrolling
-adjusts camera FOV. **[ / ]** selects flaps, **B** holds
+over the scenery adjusts camera FOV; over the cockpit it zooms the panel around
+the pointer. **[ / ]** selects flaps, **B** holds
 wheel brakes, and **1–9** selects 10–90% throttle (**0** idle). The engine panel
 adds mixture, RPM, manifold pressure, oil and fuel readouts. **P** toggles the two-axis autopilot. Its KAP 140 operating controls include VS,
 current-altitude hold, selected-altitude capture and source-aware navigation;
