@@ -174,4 +174,29 @@ build-flight-engine:
 
 # Fly the experimental browser prototype on localhost:5173
 fly:
-    npm --prefix "{{justfile_directory()}}/app" run dev
+    npm --prefix "{{justfile_directory()}}/app" run dev -- --port 5173 --strictPort
+
+# Stop only this checkout's Vite listener; leave other processes untouched.
+stop:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    command -v lsof >/dev/null || { echo "lsof is required to identify the flight server." >&2; exit 1; }
+    app_dir="$(cd "{{justfile_directory()}}/app" && pwd -P)"
+    pids="$(lsof -nP -t -iTCP:5173 -sTCP:LISTEN 2>/dev/null | sort -u || true)"
+    if [ -z "$pids" ]; then echo "No flight server is listening on port 5173."; exit 0; fi
+    foreign=0
+    for pid in $pids; do
+        cwd="$(lsof -a -p "$pid" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' || true)"
+        executable="$(ps -p "$pid" -o comm= 2>/dev/null || true)"
+        args="$(ps -p "$pid" -o args= 2>/dev/null || true)"
+        case "$executable" in node|*/node) is_node=1 ;; *) is_node=0 ;; esac
+        if [ "$cwd" = "$app_dir" ] && [ "$is_node" = 1 ] && \
+            [[ "$args" == *"$app_dir/node_modules/.bin/vite "* || "$args" == *"$app_dir/node_modules/vite/bin/vite.js "* ]]; then
+            kill "$pid"
+            echo "Stopped this checkout's flight server (PID $pid)."
+        else
+            echo "Port 5173 belongs to another process (PID $pid); left untouched." >&2
+            foreign=1
+        fi
+    done
+    exit "$foreign"

@@ -74,3 +74,24 @@ docs/input/2026-11-03-engine-panel-labels.md
 Covered byte changes require affected review renewal. Shared status and this
 review prose are outside the source packet. External-provider peer review remains
 pending; no external CLI/model identity or acceptance is asserted here.
+
+## Bounded refresh after PR #57 merged
+
+At 2026-11-03 11:05 Europe/Berlin, reviewed the integration of main `9e12eb4`.
+The panel TS/CSS, both maintained tests and raw input retain the initial packet's
+bytes; README/SPEC add the separately reviewed physics scope without changing
+the panel criteria. TODO keeps 2.0.52 open and 2.0.53 complete. All 100 whole DONE
+entries from each parent are preserved. No unresolved merge markers remain.
+
+Renewed only `node app/tests/fuel-gauge.browser.mjs`: **four groups pass** on
+rebuilt WASM `b2dcf7a3056d60867db41d94cb468fbbe77f46ed4327b101eb1535ef3d65a6d6`
+(1,756,399 bytes), including native paused-state isolation. The earlier ten-case
+layout/visual evidence remains applicable to unchanged layout source; it was not
+rerun for this numeric model update. No broader physics acceptance is inferred.
+Renewal log: `output/flight/engine-labels-fuel-browser-integrated.log`.
+
+The initial packet above is historical. Current seven-path packet SHA-256:
+`5fc1639e9d705372be5a3bcfcf1e1a6087d737be45586c0d0920b07c68b98e3a`.
+Inventory: `output/flight/engine-labels-quality-packet-integrated.json`; same
+algorithm and paths as above. Scoped quality/validation remain **pass**, with the
+generic display-reference limits and external peer pending unchanged.
