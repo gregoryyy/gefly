@@ -10,6 +10,7 @@
   pointer-events: none;
 }
 .flight-app:has(.topbar:not([hidden])) .flight-warnings-panel { top: 88px; }
+.flight-warnings-panel[hidden], .flight-warning-light[hidden] { display: none; }
 .flight-warning-light {
   padding: 4px 7px;
   border: 1px solid #a7b5b844;
