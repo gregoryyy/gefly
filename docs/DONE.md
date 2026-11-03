@@ -3,6 +3,61 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 09:09 — Optional centered touchpad and persistent view
+
+TODO: 2.0.50 complete for the bounded R-INPUT-1/R-REVIEW-1 increment.
+Agent: Codex orchestrator owns main wiring, contextual hint, explicit new-flight
+reset, shared requirements/status and publication. `centered_pointer_core`/code1
+implements pointer mode/lifecycle and tests; `centered_pointer_options`/code2
+implements Options/settings and the actual-app browser suite.
+`centered_pointer_housekeeping` updates raw input/control/security documentation
+in parallel. `centered_pointer_quality` independently reviews quality and
+validates the integrated criteria. Cross-provider peer remains pending under the
+existing batched cadence; no external provider acceptance is claimed.
+
+**Implementation notes**
+
+Options adds the initially off, session-only Centered touchpad controls mode.
+Neutral is the current visible scene midpoint, independent of activation/drop
+positions and recalculated from current bounds on movement/re-entry. Click still
+toggles yoke control. Hold-drag borrows the pointer with neutral axes and accumulates
+camera look. Release, pause, focus loss, Options and ordinary cancellations keep
+the angle; Escape in the scene and new-flight reset explicitly center it. Release
+stays neutral until actual motion or authoritative re-entry. Preserve default
+relative control, Review read-only behavior, sensitivity presets and the existing
+150 px input travel/gains. No physical trackpad-contact reading is claimed.
+
+Shared CI passes 240 app, 84 assurance and 11 assessment tests; nine of 23 existing
+native-study cases remain explicitly skipped. TypeScript/build pass. The six
+new authored browser groups pass after test-only observer/readiness repairs.
+Independent review passes 32 focused tests, all six new browser groups, three
+legacy relative-pointer groups and four additional rendered-camera/live-native
+cases. Live center produces native aileron −0.109375 (the existing study offset)
+and elevator zero; a +75/−75 px displacement produces .140625/.2. Camera checks
+retain the changed actual forward-marker projection through release/Options/blur,
+and Escape restores baseline. Paused step/digest/final state stay identical.
+See [review](reviews/2026-11-03-centered-touchpad.md).
+Final nine-path source/test/package packet:
+`4f9ddb1df233553af7584c30e60116be42c0e97beb934dbc2de02f3b0436db72`.
+
+**Deviations**
+
+The browser supplies viewport pointer positions, not the physical center of a
+trackpad: the implementation interpretation is recorded in the input note.
+Default behavior remains unchanged. No general sensitivity retuning, aircraft
+physics change, hardware calibration or training approval is accepted.
+Earlier map/parking PRs merged into feature branches after their prerequisite
+merged to main; this publication brings those already-reviewed increments and
+this option onto current main together.
+
+**Insights**
+
+Paused sessions deliberately stage commands without posting them to the worker.
+Tests distinguish observed staged commands from actual frozen native state and
+renew live native application separately. Vite formatting and lazy-map readiness
+needed observer repairs, not product changes. Independent rendered-marker checks
+cover the actual camera in addition to its requested look metadata.
+
 ## 2026-11-03 08:53 — Parking brake and optional linked rudder
 
 TODO: 2.0.49 complete for the bounded R-INPUT-1/R-REVIEW-1 increment.

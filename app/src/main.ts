@@ -185,9 +185,7 @@ function updateSessionUI() {
   el('control-state').textContent = reviewing ? 'RECORDED · READ ONLY' : collided ? 'COLLISION · CONTROLS LOCKED' : running ? (latest?.ap_mode ? 'AUTOPILOT · ROLL' : 'CONTROLS ACTIVE') : (controlsAvailable() ? 'PAUSED · CONTROLS READY' : 'LOADING CONTROLS');
   for (const [id, live, recorded] of [['roll-control-label', 'ROLL', 'AIL CMD'], ['pitch-control-label', 'PITCH', 'ELEV CMD'], ['rudder-control-label', 'RUDDER', 'RUD CMD']] as const) el(id).textContent = reviewing ? recorded : live;
   el('control-state').classList.toggle('active', running);
-  if (reviewing) el('pointer-mode').textContent = 'REVIEW · hold-drag to set view · Escape to center';
-  else if (collided) el('pointer-mode').textContent = 'COLLISION VIEW · hold-drag to inspect';
-  else if (sceneContainer.dataset.pointerMode === 'off') el('pointer-mode').textContent = 'Click scene: yoke · Hold-drag: look';
+  updatePointerHint();
   el('joystick').setAttribute('aria-disabled', String(!controlsAvailable()));
   document.querySelectorAll<HTMLButtonElement>('[data-code]').forEach(button => { button.disabled = !controlsAvailable(); });
   if (failed || sceneFailed) {
@@ -256,7 +254,7 @@ const controlSettingsPanel = createControlSettingsPanel({
   container: root, initial: controlSettings,
   onOpen: pauseFlight,
   onClose: focusFlight,
-  onChange(settings) { controlSettings = { ...settings }; neutralize(); updateConfiguration(latest, reviewing); },
+  onChange(settings) { controlSettings = { ...settings }; neutralize(); updateConfiguration(latest, reviewing); updatePointerHint(); },
 });
 // Options belong to the top menu; preserve the existing controls and their IDs.
 const optionsDialog = el<HTMLDialogElement>('control-settings');
@@ -629,7 +627,7 @@ function reset(preset = landingPreset) {
   pressureAltimeter.update(null, false);
   startWhenReady = running; running = false; ready = false; failed = false;
   engineAudio.update(null, false);
-  neutralize(); session.pause(); latest = previous = null; verticalSpeedFpm = 0;
+  pointerYoke?.reset(); neutralize(); session.pause(); latest = previous = null; verticalSpeedFpm = 0;
   pitchTrimControl.update(null, false, false, null);
   flightData.update(null, false); stallAwareness.update(null, false); groundCollisionPanel.update(null, false, false);
   enginePanel.update(null, false, false); autopilotPanel.update(null, false, false);
@@ -727,14 +725,23 @@ function setFlaps(degrees: number) {
 el<HTMLInputElement>('flap-control').oninput = event => setFlaps((event.target as HTMLInputElement).valueAsNumber);
 el('flaps-retract').onclick = () => { setFlaps(flapTarget_deg - 10); focusFlight(); };
 el('flaps-extend').onclick = () => { setFlaps(flapTarget_deg + 10); focusFlight(); };
+function updatePointerHint(mode = sceneContainer.dataset.pointerMode ?? 'off'): void {
+  const centered = controlSettings.centeredTouchpad === true;
+  el('pointer-mode').textContent = groundCollisionStopped() && !reviewing ? 'COLLISION VIEW · hold-drag to inspect'
+    : reviewing ? (mode === 'look' ? 'REVIEW LOOK · release to keep view' : 'REVIEW · hold-drag to set view · Escape to center')
+    : mode === 'look' ? (centered ? 'LOOKING · release keeps view · Escape to center' : 'LOOKING · release to return')
+    : centered ? (mode === 'yoke' ? 'CENTERED YOKE · click off · hold-drag to look' : 'CENTERED YOKE · click on · hold-drag to look')
+    : mode === 'yoke' ? 'YOKE ACTIVE · click to release · hold-drag to look' : 'Click scene: yoke · Hold-drag: look';
+}
 pointerYoke = createPointerYoke({
   element: sceneContainer,
   lookOnly: () => reviewing || groundCollisionStopped(),
+  centered: () => controlSettings.centeredTouchpad === true,
   enabled: () => (controlsAvailable() || reviewing || groundCollisionStopped()) && !menuOpen() && !controlSettingsPanel.isOpen() && !document.querySelector('dialog[open]'),
   onYoke(x, y) { stickX = x; stickY = y; publishInput(); },
   onLook(yaw_rad, pitch_rad) { cameraLook = { yaw_rad, pitch_rad }; },
   onMode(mode) {
-    el('pointer-mode').textContent = groundCollisionStopped() && !reviewing ? 'COLLISION VIEW · hold-drag to inspect' : reviewing ? (mode === 'look' ? 'REVIEW LOOK · release to keep view' : 'REVIEW · hold-drag to set view · Escape to center') : mode === 'yoke' ? 'YOKE ACTIVE · click to release · hold-drag to look' : mode === 'look' ? 'LOOKING · release to return' : 'Click scene: yoke · Hold-drag: look';
+    updatePointerHint(mode);
     sceneContainer.dataset.pointerMode = mode;
   },
 });

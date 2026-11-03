@@ -78,7 +78,7 @@ unavailable. Returning to live restores pending control settings.
 | N | Toggle the parking brake on / off |
 | ' / \\ (hold) | Elevator trim nose up / nose down |
 | Two-finger vertical scroll over the scene | Up: zoom in; down: zoom out |
-| Escape | Release scene yoke/look control |
+| Escape | Release scene yoke control and reset the view |
 
 Press and hold the on-screen flight buttons, or drag the virtual joystick to
 control pitch and roll; releasing returns the stick to neutral. The flight deck
@@ -87,9 +87,9 @@ retain focus for accessible adjustment. Losing window focus pauses the flight
 and releases held inputs. Optional flight hardware and phone orientation are
 later work.
 
-For touchpad yoke control, start flight and **short-click the unobstructed
-scene**. That click sets a neutral pointer anchor and toggles yoke control on;
-moving the pointer relative to the anchor controls pitch and roll. Short-click
+The default touchpad yoke mode uses a relative anchor. **Short-click the
+unobstructed scene** to set that anchor and toggle yoke control on. Moving the
+pointer relative to the anchor controls pitch and roll. Short-click
 again to disengage. To look around, hold the click for about a quarter-second,
 then drag. During live flight, releasing returns to the prior yoke mode and
 centers the temporary look. Leaving the scene or window neutralizes the yoke
@@ -98,6 +98,23 @@ uses the pointer position relative to that anchor as the authoritative input;
 no new click is needed. An actual window focus loss still pauses flight and
 clears transient controls, as do Escape, a modal or entering Review.
 Header buttons, instrument controls and the joystick do not toggle scene yoke.
+
+Enable **Options → Centered touchpad controls** for a fixed neutral reference:
+the **center of the currently visible flight view**, including after a resize
+or opening the docked map. A short click still toggles yoke control, but neither
+its position nor a drag-release position moves that reference. The browser sees
+pointer positions in the view, not the physical center of the touchpad.
+
+In this optional mode, hold for about a quarter-second and drag to steer the
+view. Releasing keeps the chosen camera angle; the next drag starts from that
+angle. Yoke input stays neutral while looking and on release, then the next real
+pointer movement or re-entry controls the aircraft relative to the view center.
+Pause, Options and focus loss still clear transient flight input, but retain the
+camera angle. **Escape** or starting a new flight resets the view. Review remains
+read-only camera inspection. The option starts off, lasts only for the page
+session and survives Default/Gentle sensitivity presets; switching it off restores
+the existing relative-anchor behavior. It does not change aircraft gains or
+physics.
 
 Use **two fingers to scroll vertically over the flight scene** to adjust the
 camera field of view (FOV): scroll up to zoom in with a narrower perspective, or

@@ -178,3 +178,30 @@ test('R-INPUT-1 brake latch and rudder-link flags reject nonboolean values', () 
     assert.throws(() => applyControlSettings(neutral, { ...DEFAULT_CONTROL_SETTINGS, coordinatedRudder: bad as unknown as boolean }, 0), /Rudder link/);
   }
 });
+
+
+test('R-INPUT-1 centered touchpad preference defaults off and never remaps commands', () => {
+  assert.equal(DEFAULT_CONTROL_SETTINGS.centeredTouchpad, false);
+  assert.equal(GENTLE_CONTROL_SETTINGS.centeredTouchpad, false);
+  const raw = Object.freeze({ ...neutral, aileron: .4, elevator: -.2, rudder: .1, brake_norm: .5,
+    flap_norm: 1 / 3, pitch_trim_norm: .2, mixture_norm: .8, mixture_auto: false, engine_running: true });
+  for (const coordinatedRudder of [false, true]) {
+    for (const parkingBrake of [false, true]) {
+      const settings = Object.freeze({ ...GENTLE_CONTROL_SETTINGS, coordinatedRudder });
+      const centered = Object.freeze({ ...settings, centeredTouchpad: true });
+      assert.deepEqual(applyControlSettings(raw, centered, -.109375, parkingBrake),
+        applyControlSettings(raw, settings, -.109375, parkingBrake));
+      assert.equal(centered.centeredTouchpad, true);
+    }
+  }
+  const legacySettings = { pitch: 1, roll: 1, rudder: 1 };
+  assert.deepEqual(applyControlSettings(raw, legacySettings, 0),
+    applyControlSettings(raw, { ...legacySettings, centeredTouchpad: false }, 0));
+});
+
+test('R-INPUT-1 centered touchpad preference rejects nonboolean values', () => {
+  for (const bad of [null, 0, 1, '', 'true', {}, []]) {
+    assert.throws(() => applyControlSettings(neutral,
+      { ...DEFAULT_CONTROL_SETTINGS, centeredTouchpad: bad as unknown as boolean }, 0), /Centered touchpad/);
+  }
+});

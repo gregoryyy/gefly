@@ -69,6 +69,8 @@ research aircraft remains experimental; see
 **N** toggles the parking brake beside the **B** wheel-brake button.
 Options → **Link rudder to aileron** adds optional yaw/steering assistance;
 Q/W manual rudder takes priority. Rudder also steers the nosewheel on the ground.
+Options → **Centered touchpad controls** fixes neutral at the flight-view center
+and retains the camera angle after hold-drag; Escape resets the view.
 
 **M** or **View → Flight map** opens a right-side map beside the 3D view,
 showing the aircraft, whole retained flight path and **731 searchable

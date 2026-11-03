@@ -169,6 +169,19 @@ axes neutral. Camera offsets never enter dynamics. Numeric throttle shortcuts an
 AP shortcuts are suppressed inside open dialogs and editable controls. The live
 mobile engine dialog releases held inputs and keeps flight running, as labeled.
 
+The optional centered-touchpad preference is a session-only boolean, initially
+off. It uses the current scene element's visible rectangle to define neutral,
+not hardware coordinates, device calibration or a stored click position. Resizing
+therefore changes the visible reference without installing a new pointer anchor.
+Captured hold-drag changes bounded camera offsets while pilot pointer axes remain
+neutral. Releasing does not issue a new yoke command or auto-center the camera;
+only subsequent real pointer movement/re-entry produces center-relative input.
+Ordinary cancellation, pause, focus loss and Options retain that camera offset
+while neutralizing controls; Escape and flight restart explicitly reset it.
+Review can inspect the view without changing live or recorded aircraft state.
+The preference adds no persistence, pointer lock, device permission, network
+request or telemetry, and does not alter sensitivity gains or native physics.
+
 Cockpit/engine state groups are validated atomically before copying and display;
 missing old-engine capabilities remain unavailable rather than synthesized.
 Flap, brake and mixture commands are finite/bounded. AP messages preserve the legacy roll interface and add a bounded, validated
