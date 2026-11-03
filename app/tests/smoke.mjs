@@ -228,7 +228,7 @@ try {
   await page.screenshot({path:fileURLToPath(new URL('../../output/flight/cockpit.png',import.meta.url))});
   await page.screenshot({path:fileURLToPath(new URL('../../output/flight/practice-map.png',import.meta.url))});
   await page.locator('.practice-map-heading').click();
-  await page.getByRole('button',{name:'Close practice map',exact:true}).click();
+  await page.getByRole('button',{name:'Close flight map',exact:true}).click();
   assert.equal(await page.locator('#toggle-map').getAttribute('aria-pressed'),'false');
   await page.locator('#view-menu > summary').click(); await page.locator('#chase').click();
   await page.waitForFunction(()=>document.querySelector('#scene').dataset.imagery==='ready',null,{timeout:45000});

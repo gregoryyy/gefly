@@ -16,7 +16,7 @@ export function installMenuShortcuts(root: HTMLElement): () => void {
       const button = root.querySelector<HTMLButtonElement>(selector);
       if (!button || button.dataset.menuShortcut === key) continue;
       button.dataset.menuShortcut = key;
-      button.setAttribute('aria-keyshortcuts', `${key === 'V' ? 'V ' : ''}Alt+Shift+${key}`);
+      button.setAttribute('aria-keyshortcuts', `${key === 'V' ? 'V ' : key === 'M' ? 'M ' : ''}Alt+Shift+${key}`);
       const label = document.createElement('kbd');
       label.textContent = /Mac|iPhone|iPad/.test(navigator.platform) ? `⌥⇧${key}` : `Alt+Shift+${key}`;
       label.className = 'menu-shortcut';

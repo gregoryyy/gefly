@@ -172,7 +172,7 @@ validated aircraft/region model.
 | three.js 0.187.0 | Studied in [studies/e1-browser/render](../studies/e1-browser/render/README.md) via CDN; MIT (permissive). Adopted through the application lockfile for the local prototype; the older study still uses CDN loading without SRI. |
 | emsdk 6.0.13 | Build tool for the JSBSim WASM study ([sim](../studies/e1-browser/sim/README.md)); not bundled; build outputs not committed. |
 | OpenStreetMap data | Assess relevant basemap/coverage and ODbL obligations; public tile service access is a separate policy and hosting decision. |
-| OurAirports data | Adopted as a bounded, hash-pinned 103-point community map directory, with public-domain terms and accuracy limitations; not an accepted substitute for EDDF's official ARP, surveyed ground or authoritative procedures. |
+| OurAirports data | Adopted as a bounded, hash-pinned 731-entry five-state community map directory, with public-domain terms and accuracy limitations; not an accepted substitute for EDDF's official ARP, surveyed ground or authoritative procedures. |
 | Copernicus elevation/surface products | Select product/edition, distinguish surface from terrain, review vertical reference/accuracy, attribution and actual download/service access. |
 | DFS/AIP and EAD reference material | Verify viewing, extraction and redistribution permissions; public consultation is not an open chart/navigation-data grant or proof of current operational coverage. |
 
@@ -302,13 +302,14 @@ compiler hash, source URLs and modifications are in the manifest; see
 [package/reproduction](../app/public/terrain/region/README.md). No source ZIP or
 GIS library is needed by the browser while flying.
 
-`app/public/airports/` adds 103 small/medium/large airport points within
-8–10°E / 49–50.75°N, from the
+`app/public/airports/` contains 731 entries from Bavaria, Baden-Württemberg,
+Hesse, Rhineland-Palatinate and Saarland, preserving all source types, including
+244 heliports and 41 closed facilities, from the
 [OurAirports public-domain inventory](https://ourairports.com/data/). Pinned
 commit `e86a650a968ba239a1288f96c05fcb80688e77a6`, CSV SHA-256
 `6852f06007ec1154256faff98edb8bbfbbce93fdb279525940864f07e9d90b32`;
-the 14,629-byte selected JSON has SHA-256
-`2c12970b49a71709445254d9f46ee9f7ef0c640c92c8c3fb31c564fc4e035e35`.
+the 121,497-byte selected JSON has SHA-256
+`dab6325f2948d4e93b36e3bb6b754ecb12c5f4b01127a82706dc521309fee6ad`.
 The compiler keeps identifiers, coordinates, type and optional elevation, with
 edition/rights in its manifest. Community positions/elevations do not establish
 runway, navigation or current operational applicability.
@@ -338,3 +339,21 @@ process/JSON/base64 modules wrap it. No Pillow code is vendored into the project
 [THIRD_PARTY_NOTICES](../THIRD_PARTY_NOTICES.md) retains the core license notice.
 Static UI output does not include the Vite proxy; a production service and its
 packaged dependency inventory remain hosting decisions.
+
+## Southern Germany map-only navigation
+
+`app/public/mapdata/` adds 144 German OurAirports radio-beacon records from the
+same pinned commit as the five-state airport catalogue. The full navaids CSV hash
+is `d7292380662c33a95214945023ec0a5b13189599305fd18be739e167a97a9bd1`.
+OurAirports releases these data as public domain/Unlicense, without an accuracy
+guarantee. The snapshot is dated 2026-11-02 and was retrieved 2026-11-03.
+The declared 6–14°E / 47–51.75°N envelope includes adjoining states; navaids lack
+state membership fields. No official completeness/current-AIS claim is made.
+
+The package also derives 66 German LOC/ILS parent records and their explicit
+components from the existing GPL-2.0-or-later NAV810 2013.10 source, before
+FlightGear scenery-height calibration. It retains consumed raw rows, source
+notice and full license. The final 277-point, 175,504-byte GeoJSON SHA-256 is
+`f485303ecf944d874a7cc7154a6ff0aa0f3de75c9c305372a9bd34bf1d2439d5`.
+This is a separate map-only package; the receiver/worker inventory is unchanged.
+See [source and rebuild instructions](../app/public/mapdata/README.md).

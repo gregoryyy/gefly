@@ -4,6 +4,10 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 
 const LIMIT = 2 * 1024 * 1024;
 const WORLD = 20037508.342789244;
+// WGS84 [west, south, east, north]. Public cartography covers the five-state
+// inventory; photography remains within its separately reviewed regional area.
+const MAP_BOUNDS = [6, 47, 14, 51.75] as const;
+const IMAGERY_BOUNDS = [8, 49, 10, 50.75] as const;
 const SOURCES = {
   map: ['https://sgx.geodatenzentrum.de/wms_topplus_open', 'web'],
   hessen: ['https://www.gds-srv.hessen.de/cgi-bin/lika-services/ogc-free-images.ows', 'he_dop_rgb'],
@@ -112,7 +116,8 @@ export function sceneryMiddleware(options: SceneryOptions = {}) {
     const [, kind, zs, xs, ys] = match; const z = Number(zs), x = Number(xs), y = Number(ys), n = 2 ** z;
     if (z < (kind === 'map' ? 5 : 7) || z > (kind === 'map' ? 16 : 15) || x >= n || y >= n || String(z) !== zs || String(x) !== xs || String(y) !== ys) { res.writeHead(404).end(); return; }
     const box = bbox(z, x, y);
-    if (longitude(box[2]) < 8 || longitude(box[0]) > 10 || latitude(box[3]) < 49 || latitude(box[1]) > 50.75) { res.writeHead(404).end(); return; }
+    const [west, south, east, north] = kind === 'map' ? MAP_BOUNDS : IMAGERY_BOUNDS;
+    if (longitude(box[2]) < west || longitude(box[0]) > east || latitude(box[3]) < south || latitude(box[1]) > north) { res.writeHead(404).end(); return; }
     const key = `${kind}/${z}/${x}/${y}`;
     let result = cache.get(key);
     if (result && result.expires <= Date.now()) { cache.delete(key); cacheSize -= result.bytes.length; result = undefined; }

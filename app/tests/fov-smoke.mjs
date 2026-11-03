@@ -129,7 +129,7 @@ try {
   await page.mouse.move(mapBox.x + mapBox.width / 2, mapBox.y + mapBox.height / 2);
   await page.mouse.wheel(0, -120); await page.waitForTimeout(100);
   assert.equal(await fov(), chosen, 'map scrolling cannot change the flight camera');
-  await page.getByRole('button', { name: 'Close practice map', exact: true }).click();
+  await page.getByRole('button', { name: 'Close flight map', exact: true }).click();
   await page.locator('#altimeter-open').click();
   await page.locator('#altimeter-dialog').waitFor({ state: 'visible' });
   await page.locator('#altimeter-title').hover(); await page.mouse.wheel(0, -120);

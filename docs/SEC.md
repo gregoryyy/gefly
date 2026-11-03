@@ -231,7 +231,8 @@ to these hard-coded HTTPS sources:
 
 Requests accept only GET/HEAD and canonical bounded integer XYZ paths, rejecting
 query strings, arbitrary destinations and redirects. Endpoint coverage is
-8–10°E / 49–50.75°N; map z5–16 and photo z7–15. Image responses are capped at
+6–14°E / 47–51.75°N for map tiles (z5–16), and
+8–10°E / 49–50.75°N for photography (z7–15). Image responses are capped at
 2 MiB and checked as PNG with expected 256/512 px dimensions. The proxy limits
 eight active jobs, four upstream fetches, two compositors and 128 pending keys;
 deduplicated memory LRU is capped at 32 MiB with map/photo TTLs of 1 h/15 min.
@@ -261,6 +262,24 @@ This service exists in Vite development only. Static production output needs an
 equivalent endpoint service and the separate research-engine deployment; hosting
 and production privacy/availability decisions remain open. Global provider
 research did not activate a commercial service or add remote runtime endpoints.
+
+## Right-side flight map
+
+The right-side map adds no provider or storage flow: its base layers use the
+already bounded public scenery proxy, and aviation overlays use the existing
+local hash-verified airport/navigation packages. Marker details use textContent;
+no source field becomes HTML, code or an external request URL. Position and path
+come from the simulator, not device geolocation. M is guarded during typing,
+dialogs, menus, modifiers and repeats; map keyboard gestures stay isolated from
+flight controls. Visibility changes release held UI input before resizing the
+scene. This is a map-specific control hand-off, not aircraft retuning or a
+resolution of the separate general touchpad handling report. Community NAV snapshots, historical ILS and
+missing tile/source conditions remain explicit; no current chart claim is added.
+
+The map-only southern NAV and airfield packages use fixed same-origin paths,
+bounded streamed reads, schema/coordinate/source checks and SHA-256 integrity.
+They cannot retune the radio model. Five-state airport selection retains closed
+facilities with explicit labels; beacon context is a declared larger envelope.
 
 ## Convenience autopilot and simulation rate
 

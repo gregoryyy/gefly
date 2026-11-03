@@ -120,11 +120,11 @@ surveyed airport accuracy or accepted training fidelity is implied.
 
 ## Community airport points
 
-`app/public/airports/` selects 103 points from
+`app/public/airports/` selects 731 entries across five southern German states from
 [OurAirports' public-domain data](https://ourairports.com/data/), commit
 `e86a650a968ba239a1288f96c05fcb80688e77a6`, retrieved 2026-11-03. Source and
 derived byte hashes, bounds and provenance are in its manifest. Modifications:
-regional/type filtering, field selection, sorting and JSON conversion. This
+five-state selection retaining all source types, field selection, sorting and JSON conversion. This
 community inventory has no accuracy/fitness guarantee and is not a navigation
 chart, official ARP, surveyed ground or current operational directory.
 
@@ -191,3 +191,14 @@ Pillow is licensed under the open source MIT-CMU License:
 > LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
 > OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 > PERFORMANCE OF THIS SOFTWARE.
+
+## Southern Germany map navigation
+
+`app/public/mapdata/` combines 144 German OurAirports community beacons from the
+same public-domain snapshot with 66 historical German LOC/ILS parents and their
+explicit antennas from Robin A. Peel / FlightGear NAV810 2013.10, GPL-2.0-or-later.
+The original source notice, consumed historical rows and complete GPL license are
+retained in that directory. Modifications: bounded geographic/country selection,
+component pairing, feet-to-metres conversion, source frequency labels and GeoJSON
+serialization. See its [provenance and changes](app/public/mapdata/README.md).
+Community beacons and historical ILS do not establish current operational service.

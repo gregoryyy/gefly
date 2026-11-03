@@ -23,3 +23,19 @@ their displayed source/license credits. See the complete
 [terrain package](../../app/public/terrain/region/README.md). The original
 aircraft visual, cockpit and application code are project-authored; third-party
 data rights remain separate from the GPL project license.
+
+## Right-side flight map capture
+
+`gefly-flight-map.png`, now used in README, was captured on 2026-11-03 from the
+same actual application and Chrome/viewport, at simulation time 27.63 s / step
+3316, with Chase view, HDG/ALT, classic panels and the activated right-side map.
+The BKG map, aircraft/path and source-dated NAV controls are visible. No imagery
+fixtures, source rewrite, generated pixels or image editing were used. The first
+capture exposed a startup dependency on raster loading; the accepted capture
+follows the style-ready repair and was visually inspected.
+
+Actual public BKG map and bundled/live imagery requests retain their on-screen
+source credits. The screenshot is one observed view, not complete service or
+photography coverage. Disposable worker/network evidence is in
+`output/flight/flight-map-screenshot.json`; all third-party rights above still
+apply, including BKG map DL-DE-BY-2.0 and its linked source inventory.

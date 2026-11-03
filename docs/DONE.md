@@ -3,7 +3,68 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
-## 2026-11-03 07:51 — Streamed regional flights, quiet overlays and flight assists
+## 2026-11-03 08:36 — Right-side flight map and southern Germany source inventory
+
+TODO: 2.0.48 complete for the bounded R-WORLD-6/R-NAV-3/R-NAV-4/
+R-REVIEW-1 increment. Agent: Codex orchestrator owns integration, shared status,
+airfield loader, map rendering, keyboard routing, screenshot and publication.
+`flight_map_data`/code2 implements the map-only NAV compiler/assets/loader and
+expanded map proxy; `flight_map_layout`/code1 implements responsive docking,
+bounded-label styles and browser checks. `flight_map_research` investigates public
+sources; `flight_map_quality` provides parallel source housekeeping and independent
+quality/specification validation. Cross-provider peer remains pending under the
+existing batched cadence; this entry does not claim an external peer review.
+
+**Implementation notes**
+
+M/marked View menu opens a public-data map on the right of the flying view,
+with the whole retained flight path, actual position/true heading, nautical scale,
+Follow/Fit/pan controls and Review marker. Preserve the full-width cockpit and
+bounded narrow-screen controls. README includes a visually inspected actual
+flight/map screenshot with public BKG tiles and source credits. Optional layers and initial background tile
+failures do not block local aircraft/path overlays; initialize on style readiness.
+
+Select all 731 OurAirports source entries in the five user-confirmed states,
+including 244 heliports and 41 closed facilities, with type/state-code search,
+reported elevations and distinct closed labels. Keep all points in the GPU layer,
+bounding nearby DOM labels to 80 and directory results to 100. Add 144 source-dated
+community radio beacons and 66 historical German LOC/ILS parents with 61 GS/six
+separate DME points. Preserve source positions, kHz/MHz, dates, notices and licenses.
+These map-only references do not replace the radio receiver/worker package.
+
+Shared CI passes with 229 app tests, 84 assurance tests and 11 assessment tests;
+nine of 23 existing native-study cases remain explicitly skipped. TypeScript,
+build, six proxy checks and the two authored browser suites pass. Independent
+quality/validation passes 16 focused checks, three maintained browser suites,
+full-source airport/NAV comparisons and four actual-app optional-data/cold-tile/
+held-tile failure cases. Affected lifecycle checks and build were renewed after
+the style-ready repair. See [review](reviews/2026-11-03-right-flight-map.md).
+The reviewed 24-path runtime/test/source packet is
+`b840f38479d7c2d452878e046f893ca350a071f7e9e3c00db341f0592ae80849`.
+
+**Deviations**
+
+The NAV source has no state membership field: its declared German geographic
+envelope includes adjoining-state context, while airport selection is exactly
+the five states. Community snapshots are not current AIS or an official operating
+inventory; LOC/ILS data remains historical 2013.10. Broader map bounds do not
+expand physical terrain or photography. No current chart, procedure, NOTAM,
+installed-aircraft fidelity or general touchpad handling acceptance is implied.
+The initial sandbox CI attempt failed only because local runtime tests could not
+bind loopback; the authorized loopback-capable rerun passed.
+
+**Insights**
+
+Real public-service screenshot capture exposed a dependency on initial tile
+loading that immediate raster fixtures missed; cold failed and indefinitely held
+tile tests now independently verify overlay availability. Full-source comparison
+establishes completeness relative to the pinned community selection, separately
+from operational completeness. Correct the two previous entries' headings from
+07:51/07:30 to 06:51/06:30: their original UTC clock values were converted using
+UTC+2, while Europe/Berlin on 3 November is UTC+1. Their complete bodies and raw
+inputs are preserved.
+
+## 2026-11-03 06:51 — Streamed regional flights, quiet overlays and flight assists
 
 TODO: 2.0.44, 2.0.45 and 2.0.47 complete for the bounded R-WORLD-5/R-UX-2/
 R-AP-2/R-SIM-9 increment. Agent: Codex orchestrator integrates and owns status,
@@ -75,7 +136,7 @@ the same default airborne native fixture remains unchanged. Rate changes must
 alter scheduling rather than enlarge integration steps; convenience AP capture
 must sample the worker and remain distinct from original avionics semantics.
 
-## 2026-11-03 07:30 — Global scenery and Google Earth research
+## 2026-11-03 06:30 — Global scenery and Google Earth research
 
 TODO: 2.0.46 complete for research only. Agent: Codex orchestrator integrates;
 `global_sources` researches open/commercial world data, terms and pipelines;

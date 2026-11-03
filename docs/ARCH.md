@@ -4,7 +4,7 @@ Status: selected stack with proposed product component boundaries. **Web applica
 
 An experimental [local browser application](../app/README.md) integrates the existing study worker with a TypeScript flight deck and Cesium scene. npm/Vite owns this bounded application; reusable package boundaries below remain the target for extraction. Its generic study aircraft is built only for local research. Normal flights combine the finer public Hessen DEM with 42 lazy-loaded BKG DGM200 tiles over 8.25–10.00°E / 49.25–50.75°N, sharing physical DHHN2016 heights and GCG2016/2023 offsets between native ground contact and the Cesium ellipsoid-height surface. Explicit flat landing studies remain separate. This is not surveyed airport/runway or full EDDF/100 NM fidelity. The project-owned 172S model, real EDFE circuit and production runtime distribution remain incomplete.
 
-A lazy-loaded MapLibre map shows selected flight position, true heading, the bounded whole retained path and 103 searchable OurAirports community points with optional reported elevation. Review uses the historical marker state, while the full retained line remains visible. Airport selection moves only the map. The community inventory is not accepted airport/runway, chart, fix or procedure data; reported elevation never overwrites contact terrain. Both 2D and 3D views use bundled imagery plus fixed-source live map/photo endpoints.
+A lazy-loaded MapLibre map shows selected flight position, true heading, the bounded whole retained path and 731 searchable five-state OurAirports community airfield/heliport entries with optional reported elevation. Review uses the historical marker state, while the full retained line remains visible. Airport selection moves only the map. The community inventory is not accepted airport/runway, chart, fix or procedure data; reported elevation never overwrites contact terrain. Both 2D and 3D views use bundled imagery plus fixed-source live map/photo endpoints.
 
 The research worker also computes an ideal ISA scale-offset pressure altimeter
 from actual JSBSim static pressure at each fixed step. Read-only pressure exports
@@ -102,6 +102,23 @@ The versioned state includes simulation time, aircraft identity/configuration, p
 Record initial conditions, scenario/model versions, fixed step, seed, control events and fidelity/assist settings for repeatable replay. Determinism is claimed only for specified engine/runtime versions and tolerances established by EVAL. Presentation and teaching never become a second source of aircraft state. Training feedback consumes recorded state/events; any AI explanation stays outside the authoritative physics/control loop.
 
 ## Geography, navigation and pressure references
+
+The right-side flight map reuses the existing MapLibre instance, bounded
+same-origin BKG/public-photo endpoints, airport catalogue and hash-verified
+map-only community/historical navigation package. This is separate from the
+radio model’s regional 2013.10 inventory. All 731 airfield points are GPU-rendered;
+directory results and nearby DOM labels are bounded to 100 and 80 respectively.
+The map endpoint covers 6–14°E / 47–51.75°N; photo and physics bounds stay regional.
+Desktop opening reserves space in the Cesium
+viewport; the cockpit remains full width, and ResizeObserver updates rendering
+dimensions without resetting flight. M/marked menu controls visibility. A public
+map is the initial base; aerial imagery and source-dated NAV visibility are
+presentation choices. The independent path/marker consume actual live or selected
+recorded state at the existing bounded map refresh rate. Full retained history
+remains visible in Review; the historical marker does not restore the worker.
+All airport/NAV interactions are read-only and do not tune radios. No new data
+provider, font server, geolocation permission or simulation integration is added.
+See R-WORLD-6 and the [source assessment](research/2026-11-03-flight-map.md).
 
 The first reference region is the geodesic disk **100 NM (185.2 km)** around
 EDDF's sourced official airport reference point. Do not substitute a city center,

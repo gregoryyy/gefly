@@ -484,12 +484,13 @@ controls to inspect it. First click the half-opacity panel to activate it; map
 interaction keeps keyboard focus in the map and releases held flight controls.
 Return focus to the scene before using ordinary flight keys.
 
-The map has **103 searchable community airport points** from a pinned OurAirports
+The map has **731 searchable community airfield and heliport entries** from a pinned OurAirports
 snapshot, with name/identifier/type and elevation in feet/metres when present.
 Select a marker or directory result to inspect it; this moves the map only,
 never the aircraft. Missing elevations remain unavailable and do not replace
 the physical DEM. **Follow** returns the map to the aircraft. The airport
-inventory's bounds are 8–10°E / 49–50.75°N, slightly wider than physical terrain
+inventory covers Bavaria, Baden-Württemberg, Hesse, Rhineland-Palatinate and
+Saarland inside 6–14°E / 47–51.75°N, substantially wider than physical terrain
 coverage; a map point is not permission to fly/land beyond the terrain boundary.
 It is geographic practice context, not a navigation chart, operational airport
 directory or the complete EDDF/100 NM model.
@@ -668,3 +669,29 @@ The **Stations** picker supports a 50 NM nearby filter, name/identifier/airport/
 frequency search and distance ordering. Click outside or press Escape to close;
 the header filters remain visible while only the results scroll. Review uses its
 selected recorded position and leaves loading frequencies read-only.
+
+
+## Right-side flight map
+
+Press **M**, **Alt+Shift+M**, or choose **View → Flight map**. On desktop the
+map opens beside the outside view while the cockpit keeps its full width; smaller
+viewports use a bounded floating map. Its first click activates the panel.
+The default **Map** uses BKG TopPlusOpen; **Aerial** shows the existing public
+photography. **NAV aids** toggles community NDB/VOR/DME/TACAN beacons and historical LOC/ILS reference points,
+with separate antenna dots where sourced, station details and visible source age.
+The nautical scale, aircraft heading/position and contrasted flown path support
+orientation. Pan/zoom, **Fit path** and **Follow** change the view only. The
+airfield directory contains 731 source entries, including heliports and closed
+facilities, with type/state search and available elevations. All points remain
+in the map layer; at most 80 nearby labels and 100 directory results are shown.
+Refine the search to reach every entry. Closed facilities have distinct grey dots.
+Community NAV covers German beacons within the declared map envelope, including
+adjoining states; ILS references remain historical 2013.10. This map-only inventory
+does not replace the aircraft’s separately validated radio-navigation package.
+
+During Review the aircraft marker follows the selected historical frame while
+the whole retained flight path remains visible. These layers do not tune radios,
+move the aircraft or provide current airspace/NOTAM/procedure information.
+Failures while loading optional map layers are disclosed independently. The
+separate required flight-startup packages retain their fail-closed behavior. See
+[source research](../docs/research/2026-11-03-flight-map.md).
