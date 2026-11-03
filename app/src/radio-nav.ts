@@ -68,7 +68,7 @@ export function setObs(config: Readonly<RadioNavSnapshot>, degrees: number, rece
 export interface NavPosition { lat_rad: number; lon_rad: number; alt_msl_m: number }
 /** A single validated page-local snapshot is shared by live and recorded UI. */
 let catalogue: NavigationPackage | null = null;
-export function setNavigationCatalogue(value: NavigationPackage): void { catalogue = value; }
+export function setNavigationCatalogue(value: NavigationPackage | null): void { catalogue = value; }
 export function getNavigationCatalogue(): NavigationPackage | null { return catalogue; }
 export interface NavigationIndication extends Omit<NavigationSignal, 'cdi_norm' | 'gs_norm'> {
   cdi_norm: number | null; gs_norm: number | null;

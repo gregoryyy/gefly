@@ -676,3 +676,16 @@ body .engine-dialog, body .autopilot-dialog, body .radio-nav-dialog, body .navig
 .cockpit-fitted #radio-nav-systems .radio-receiver-title { margin-bottom: 3px; }
 .cockpit-fitted #radio-nav-systems .radio-frequency-row { margin-bottom: 4px; }
 .cockpit-fitted #radio-nav-systems .nav-course { margin-top: 3px; }
+
+/* Review: a missing recorded control position is shown as unavailable, never idle/UP/centred (R-REVIEW-1). */
+input[type=range][data-unavailable=true] { opacity: .35; }
+input[type=range][data-unavailable=true]::-webkit-slider-thumb { visibility: hidden; }
+input[type=range][data-unavailable=true]::-moz-range-thumb { visibility: hidden; }
+.flap-slider:has(input[data-unavailable=true]), .throttle-control:has(input[data-unavailable=true]), .joystick[data-unavailable=true] { position: relative; }
+.flap-slider:has(input[data-unavailable=true])::after, .throttle-control:has(input[data-unavailable=true])::after, .joystick[data-unavailable=true]::after {
+  content: 'NO DATA'; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 1px 3px; border: 1px solid #e4bb7988; border-radius: 3px;
+  background: var(--instrument-housing, #172831); color: #f0cc95; font-size: 9px; letter-spacing: .5px; white-space: nowrap; pointer-events: none;
+}
+/* Navigation-data identity errors stay visible below the general notice (R-NAV-4). */
+.notice.navdata-error { top: 150px; border-color: #ff9a8a88; background: #3a1f1ced; color: #ffd2c8; }
+@media (max-width: 620px) { .notice.navdata-error { top: 180px; } }
