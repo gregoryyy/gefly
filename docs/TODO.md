@@ -187,6 +187,8 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.58 Route replay Left/Right arrows to bounded one-second seeks regardless of widget focus; add independent playback rate cycling with = and the replay-bar button. R-REVIEW-1/R-SIM-9. Build, focused transport cases and actual-browser seek/speed/native-isolation checks pass; peer pending.
 
+- [x] 2.0.59 Fill the radio stack with equally spaced receiver units and a bottom Stations control; remove the fictional LAB selector from the cockpit. Preserve legacy-recording compatibility and historical NAV controls. Build/typecheck, desktop/mobile layout and historical station/replay checks pass. R-PANEL-1/R-NAV-4; peer pending.
+
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.
 - [ ] 2.3 code2 implements the corresponding browser controls, instruments and exercise feedback against frozen contracts **in parallel with 2.2**.

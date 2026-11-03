@@ -14,7 +14,7 @@ interface RadioNavOptions {
 const RECEIVERS = [1, 2] as const;
 const KINDS = ['com', 'nav'] as const;
 const navId = (receiver: RadioReceiver, suffix: string) => `${receiver === 1 ? 'nav' : 'nav2'}-${suffix}`;
-/** Dual session-only tuning units. LAB is fictional teaching geometry, never flight dynamics. */
+/** Dual session-only tuning units backed by the historical regional station catalogue. */
 export function createRadioNavPanel(options: RadioNavOptions): {
   snapshot(): RadioNavSnapshot;
   update(state: Readonly<FlightState> | null, reviewing: boolean, running: boolean, flying?: boolean): void;
@@ -43,9 +43,8 @@ export function createRadioNavPanel(options: RadioNavOptions): {
       <div class="nav-course"><label id="${navId(receiver, 'obs-label')}" for="${navId(receiver, 'obs')}">OBS ${receiver}</label><button type="button" id="${navId(receiver, 'obs-down')}" aria-label="Decrease NAV${receiver} OBS course">−</button><input id="${navId(receiver, 'obs')}" type="number" min="0" max="359" step="1" value="0" aria-label="NAV${receiver} OBS true course degrees"><button type="button" id="${navId(receiver, 'obs-up')}" aria-label="Increase NAV${receiver} OBS course">+</button></div>
       <div class="nav-indication"><b id="${navId(receiver, 'flag')}">NAV</b><output id="${navId(receiver, 'to-from')}">OFF</output><span>DME <output id="${navId(receiver, 'dme')}">—</output> NM · RAD <output id="${navId(receiver, 'radial')}">—</output></span></div>
       <div id="${navId(receiver, 'cdi')}" class="nav-cdi" role="img" aria-label="CDI unavailable">${'<i></i>'.repeat(11)}<b id="${navId(receiver, 'cdi-needle')}" hidden></b></div>
-      <p id="${navId(receiver, 'signal-note')}" class="nav-signal-note">LAB off · no real station database</p>
+      <p id="${navId(receiver, 'signal-note')}" class="nav-signal-note">No historical signal in modeled range</p>
     </section>`).join('')}
-    <label class="nav-demo"><input id="nav-demo" type="checkbox"> Fictional LAB only</label>
     <button type="button" id="nav-stations-open" class="nav-stations-open">Stations</button><p class="radio-limitations">Historical 2013.10 data · NOT CURRENT · teaching only. Simplified signals; no terrain or propagation. COM 25 kHz subset; no ATC.</p>
   `;
   const dialog = document.createElement('dialog');
@@ -81,7 +80,6 @@ export function createRadioNavPanel(options: RadioNavOptions): {
   const media = window.matchMedia('(max-width: 900px)');
   container.replaceChildren(opener, content); document.body.append(dialog);
   const element = <T extends HTMLElement = HTMLElement>(id: string) => content.querySelector<T>(`#${id}`)!;
-  const demo = element<HTMLInputElement>('nav-demo');
   let config: RadioNavSnapshot = { ...DEFAULT_RADIO_NAV };
   let state: Readonly<FlightState> | null = null;
   let reviewing = false, running = false, flying = false, disposed = false;
@@ -126,7 +124,6 @@ export function createRadioNavPanel(options: RadioNavOptions): {
       if (valid) needle.style.left = `${50 + indication.cdi_norm! * 40}%`;
       get('cdi').setAttribute('aria-label', valid ? `${localizer ? 'Localizer' : 'VOR'} CDI ${(indication.cdi_norm! * 5).toFixed(1)} dots, positive right${localizer ? '' : `; ${indication.to_from}`}` : 'CDI unavailable · NAV flag');
     }
-    demo.checked = shown?.radio_demo_enabled === 1;
   }
   // Great-circle distance on a spherical Earth, displayed in nautical miles.
   function stationDistance(lat_deg: number, lon_deg: number): number | null {
@@ -206,7 +203,6 @@ export function createRadioNavPanel(options: RadioNavOptions): {
   function inputChange(event: Event): void {
     if (!canControl() || !(event.target instanceof HTMLInputElement)) return;
     const input = event.target;
-    if (input === demo) { change({ ...config, radio_demo_enabled: demo.checked ? 1 : 0 }); return; }
     for (const receiver of RECEIVERS) {
       for (const kind of KINDS) {
         if (input.id !== `${kind}${receiver}-standby`) continue;

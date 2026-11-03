@@ -1,3 +1,4 @@
+import { installLegacyLabFixture, setLegacyLab, legacyLabEnabled } from './legacy-lab-fixture.mjs';
 // Actual native aircraft + worker KAP controls. Generic servo behavior evidence,
 // not installed KAP140 response calibration or real VOR/ILS validation.
 import assert from 'node:assert/strict';
@@ -56,7 +57,7 @@ try {
       }
     };
   });
-  await installSceneryFixture(page); await page.goto(origin);
+  await installLegacyLabFixture(page); await installSceneryFixture(page); await page.goto(origin);
   await page.waitForFunction(() => !document.querySelector('#start').disabled && window.kapStates.at(-1)?.kap_profile === 1, null, { timeout: 60000 });
   await prepareFlightUI(page);
   const state = () => page.evaluate(() => window.kapStates.at(-1));
@@ -135,7 +136,7 @@ try {
 
   // The existing fictional LAB is the only live navigation service. Native
   // coupling uses its acknowledged worker configuration, not rendered CDI pixels.
-  await page.locator('#nav-demo').check(); await page.waitForFunction(() => window.kapStates.at(-1)?.kap_nav_valid === 1);
+  await setLegacyLab(page, true); await page.waitForFunction(() => window.kapStates.at(-1)?.kap_nav_valid === 1);
   const radial = await page.evaluate(async () => {
     const { navigationIndication, DEFAULT_RADIO_NAV } = await import('/src/radio-nav.ts');
     return navigationIndication({ ...DEFAULT_RADIO_NAV, radio_demo_enabled: 1 }, window.kapStates.at(-1)).radial_true_deg;
@@ -147,7 +148,7 @@ try {
   await page.locator('#ap-apr').click(); await page.waitForFunction(() => window.kapStates.at(-1)?.kap_lateral === 3);
   assert.equal((await state()).kap_vertical, 1); assert.equal((await state()).kap_gs_arm, 0);
   await page.locator('#ap-nav').click(); await page.waitForFunction(() => window.kapStates.at(-1)?.kap_lateral === 2);
-  await page.locator('#nav-demo').uncheck(); await page.waitForFunction(() => window.kapStates.at(-1)?.kap_lateral === 0 && window.kapStates.at(-1)?.kap_lateral_alert === 2);
+  await setLegacyLab(page, false); await page.waitForFunction(() => window.kapStates.at(-1)?.kap_lateral === 0 && window.kapStates.at(-1)?.kap_lateral_alert === 2);
   assert.equal(await page.locator('#ap-lateral').textContent(), 'ROL'); assert.equal(await page.locator('#ap-lateral-alert').textContent(), 'NAV');
   assert.equal((await state()).kap_vertical, 1); observations.navigation = { vor, lost: await state() };
   checks.push('acknowledged fictional VOR configuration couples NAV/APR while ALT stays independent; unavailable GS is never captured, REV stays unavailable for VOR, signal loss confirms ROL with NAV flash');

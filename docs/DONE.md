@@ -3,6 +3,31 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 12:15 — Radio stack spacing and LAB removal
+
+TODO: 2.0.59; R-PANEL-1/R-NAV-4. Agent: Codex, direct implementation.
+
+**Implementation notes**
+
+Give both inline receivers equal flexible height and distribute their controls
+through each unit; keep Stations at the bottom. Remove the LAB checkbox and its
+obsolete cockpit description. Retain legacy trace semantics, with old synthetic
+browser regressions using an explicit test-only fixture instead of a shipped control.
+Build/typecheck and actual Chrome layout checks at 1440/1200/1024 px plus a mobile
+dialog pass. Visually inspect the panel screenshot; COM tuning/swap and the real
+historical station directory, receiver flags and read-only Review checks pass.
+
+**Deviations**
+
+The extra KAP flight regression hit a Chrome runtime/display failure; no claim of
+that suite passing. An auxiliary screenshot write also hit temporary disk exhaustion.
+Legacy navigation semantics remain for archived recordings/tests. Peer pending.
+
+**Insights**
+
+Distribute spare height within receiver units, keeping controls grouped, rather
+than leaving the whole stack compressed at the top.
+
 ## 2026-11-03 12:08 — Replay arrows and playback speed
 
 TODO: 2.0.58; R-REVIEW-1/R-SIM-9. Agent: Codex, direct implementation.
