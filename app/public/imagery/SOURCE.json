@@ -18,6 +18,10 @@
   "width_px": 1024,
   "height_px": 1024,
   "sourceImageDate": null,
+  "sourceEdition": null,
+  "retrievedAt": null,
+  "retrievedNotLaterThan": "2026-11-02T10:05:47+01:00",
+  "revisionNote": "Retrieval time and layer edition were not recorded when the bytes were fetched. The live he_dop_rgb WMS layer has no time dimension, so the request URL does not identify an edition; repeating it may return different bytes. The sha256 identifies the bundled bytes only. Upper bound: first commit 8f9cd6a.",
   "limitations": [
     "Capture date not established.",
     "Draped on WGS84 ellipsoid; no terrain or airport-elevation acceptance.",
@@ -37,6 +41,10 @@
     "width_px": 512,
     "height_px": 512,
     "sourceImageDate": null,
+    "sourceEdition": null,
+    "retrievedAt": null,
+    "retrievedNotLaterThan": "2026-11-02T10:05:47+01:00",
+    "revisionNote": "Retrieval time and layer edition were not recorded when the bytes were fetched. The live he_dop_rgb WMS layer has no time dimension, so the request URL does not identify an edition; repeating it may return different bytes. The sha256 identifies the bundled bytes only. Upper bound: first commit 8f9cd6a.",
     "requestUrl": "https://www.gds-srv.hessen.de/cgi-bin/lika-services/ogc-free-images.ows?SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=he_dop_rgb&FORMAT=image%2Fjpeg&SRS=EPSG%3A4326&BBOX=8.4%2C49.8%2C8.9%2C50.1&WIDTH=512&HEIGHT=512",
     "limitations": [
       "Coarse regional context only, not detailed terrain or current airport information."

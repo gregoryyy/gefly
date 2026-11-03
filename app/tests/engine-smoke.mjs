@@ -5,6 +5,8 @@ import { spawn } from 'node:child_process';
 import { access, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { engineFields, ENGINE_FIELDS } from '../../studies/e1-browser/sim/engine.js';
+import { cockpitFields } from '../../studies/e1-browser/sim/cockpit.js';
 
 const app = fileURLToPath(new URL('..', import.meta.url));
 const origin = 'http://127.0.0.1:5178';
@@ -108,7 +110,19 @@ try {
   assert.equal(await page.locator('#engine-fuel-left').textContent(), (initial.fuel_left_m3/.003785411784).toFixed(1));
   assert.equal(await page.locator('#engine-fuel-right').textContent(), (initial.fuel_right_m3/.003785411784).toFixed(1));
   assert.match(await page.locator('#offset-value').textContent(), /[0-9.]+% left/);
+  // F16: the bridge now reports a missing engine/cockpit property as NaN and the JS
+  // layer drops the whole group, so no plausible zero/255 K reading reaches the UI.
+  const liveEngine = ENGINE_FIELDS.map(key => initial[key]);
+  assert.equal(Object.keys(engineFields(liveEngine)).length, ENGINE_FIELDS.length, 'live engine group is complete');
+  for (let index = 0; index < ENGINE_FIELDS.length; index++) {
+    const missing = liveEngine.slice(); missing[index] = Number.NaN;
+    assert.deepEqual(engineFields(missing), {}, `missing ${ENGINE_FIELDS[index]} drops the whole engine group`);
+  }
+  assert.deepEqual(cockpitFields([50, 0, 0, 1, 0, 0, 0, Number.NaN]), {}, 'missing cockpit property drops the cockpit group');
+  const ZERO_F_K = (0 - 32) * 5 / 9 + 273.15;
+  for (const key of ['oil_temp_k', 'egt_k']) assert(Math.abs(initial[key] - ZERO_F_K) > 1, `${key} is not the missing-property 0 °F signature`);
   checks.push('engine telemetry, display units and explicit roll-offset wording');
+  checks.push('F16 missing engine/cockpit properties drop their whole group (no plausible zero readings)');
 
   assert.equal(initial.engine_running, 1); assert.equal(initial.engine_command_on, 1);
   // Select a stopped-engine command while paused: neither state nor time advances.

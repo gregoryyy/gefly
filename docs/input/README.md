@@ -91,3 +91,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [Autopilot altitude-selection clarification](2026-11-03-autopilot-altitude-clarification.md) — question about moving to a new selected altitude; document existing ALT/VS/ARM behavior.
 - [Autopilot capture-arming correction](2026-11-03-autopilot-altitude-correction.md) — source check corrects the explanation: selecting altitude auto-arms while engaged; ARM is a toggle.
 - [Expanded product vision and roadmap](2026-11-03-road-vision.md) — experience levels, community, open partnerships, free/premium financing, weather, traffic, navigation, COM, controls and open DACH/world expansion.
+- [Engine-off glide report](2026-11-03-engine-off-glide.md) — user reports excessive glide performance after engine shutdown.
+- [Existing demonstrable-increments instruction](2026-11-03-demonstrable-increments-record.md) — preserved from the available conversation on this recording date; original send time not reconstructed (Q25).

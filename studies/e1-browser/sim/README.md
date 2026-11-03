@@ -36,6 +36,18 @@ A full build from scratch takes a few minutes (library about 50 s on 4 vCPU);
 relinking the bridge takes about 20 s. Interactive use: serve the directory with
 any static server (COOP/COEP recommended) and open `sim.html?seconds=30&live=10`.
 
+The local build now prepares a generic windmilling-capable fixed-pitch propeller
+from the pinned Aero-Matic source. It records source/input/output hashes under
+`propeller_adapter` in `dist/build-info.json` and the worker's ready metadata.
+After rebuilding, run `node studies/e1-browser/sim/engine-off-glide-native.mjs`
+from the repository root. It compares powered, ignition-off and mixture-cutoff
+flight with retained/idle throttle, reports settled specific energy and glide
+geometry, and repeats an exact native reset/digest case. Seven nominal cases
+pass; the lower-speed idle case is explicitly **not accepted**, because rotation
+and propeller drag still collapse outside the finite coefficient-table envelope.
+An exit-zero regression result does not accept that known model limitation or
+calibrate C172 performance. See [research](../../../docs/research/2026-11-03-engine-off-glide.md).
+
 ## Contract interpretation
 
 - `state.step` = completed fixed steps since init; `t_s` is JSBSim's simulation time.
@@ -190,3 +202,56 @@ The worker emits the optional group atomically; old engines leave it unavailable
 No section-specific stall state, tail critical angle or airflow separation is
 exported or inferred by this getter. Sampling geometry belongs to the labeled
 read-only browser diagnostic, not a new flight-dynamics model.
+
+## Navigation database identity (ready)
+
+With `init.regional_navigation: true` the worker fetches `/navdata/manifest.json`
+and the declared package, and verifies the package length and SHA-256 against the
+manifest before parsing. The `ready` reply always carries two top-level fields:
+
+- `navdata_sha256`: the lowercase hex SHA-256 of the exact package bytes this
+  worker loaded and verified, or `null` when no package was loaded (not requested
+  or failed).
+- `navdata_error`: the load failure as a string of at most 500 characters
+  (prefixed `Navigation database unavailable:`), or `null`. Both are never
+  non-null together. `app/src/session.ts` validates them and passes them to
+  `onReady(trim, navdata)`; `undefined` there means an older worker.
+
+A failed load no longer stops initialization: every flight mode stays usable and
+the worker's NAV1/NAV2 sources have no historical records, so KAP 140 NAV/APR/REV
+see an invalid source and annunciate it. `build.navigation` is present only when a
+package loaded. The UI thread loads the package separately; it must compare its
+own catalogue hash with `navdata_sha256` and disable regional guidance on a
+mismatch or a missing catalogue (R-NAV-4 "same source data").
+
+## Ground-contact availability
+
+With `init.ground_collision: true` the collision group (`collision_mask`,
+`collision_step`, `collision_t_s`, `collision_down_mps`,
+`collision_groundspeed_mps`) is published only while the latest fixed-step sample
+had contact telemetry. When the native AGL or structure mask is missing or
+invalid, the group is omitted: it is never reported as `collision_mask: 0`,
+which would read as a definitive clear. A latched first-contact record is always
+published. Without `ground_collision` the group is omitted too. A contact detected
+without valid pre-step motion stops the flight with an explicit `error` instead
+of being dropped.
+
+Native contact identities are bound to the c172x `<contact name>` entries
+(`Nose Gear`, `Left Main Gear`, `Right Main Gear`, `TAIL_SKID`, `LEFT_TIP`,
+`RIGHT_TIP`), not to their order; a missing or duplicated name leaves the whole
+ground group unavailable. Engine and cockpit getters check each property with
+`HasNode`, so a missing property becomes NaN and the group is omitted instead of
+a plausible zero reading.
+
+## KAP 140 sensor validity
+
+An invalid autopilot sensor sample (non-finite value, pressure altitude outside
+the supported range or servo output beyond ±1) is never skipped silently. An
+engaged autopilot disconnects, every following state carries
+`kap_sensor_fault: 1` (latched until the next AP or disconnect press) with NAV/GS
+reported invalid, and the worker posts one `{type:"autopilot-fault"}` message per
+fault. This is a generic simulator safety substitution, not sourced KAP 140
+failure logic. In the prepared c172x adapter, `ap/elevator_cmd` comes from the
+upstream altitude-hold PID clipped to ±1, so ordinary flight does not trigger it.
+Disconnect also clears the NAV/GS source-loss annunciations, and GS recapture
+ends the GS alert; that scoping is generic, not sourced timing.

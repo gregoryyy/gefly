@@ -22,6 +22,8 @@ Research clarifies gaps and requirements; it does not decide the product or sile
 | [Global scenery, local detail and Google Earth, 2026-11-03](2026-11-03-global-scenery.md) | Global streaming, local reconstruction/materials, Google Earth/Maps routes, EEA availability, rights and costs | Primary-source investigation and small actual terrain-service probes; no global implementation or training-fidelity acceptance |
 | [Public-data flight map, 2026-11-03](2026-11-03-flight-map.md) | BKG context maps, airport/navigation overlays, OpenFlightMaps, openAIP and DFS reuse paths | Official-source review supports the bounded existing-data map increment; current chart/airspace services and third-party tile rights remain separately gated |
 
+| [Engine-off glide sources, 2026-11-03](2026-11-03-engine-off-glide.md) | Native propeller drag and settled-glide diagnostic boundaries | Generic C172P source limitation; exact selected-aircraft fidelity remains unaccepted |
+
 ## Method and note format
 
 Use available deep research skills when the task and environment support them; discover and read their instructions first. If unavailable, disclose the fallback and use a structured multi-source web investigation. Never claim a skill, tool, source access or verification that did not run. No dedicated deep research skill is installed in the current session.

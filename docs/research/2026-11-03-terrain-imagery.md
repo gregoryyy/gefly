@@ -16,3 +16,19 @@ Recommendation: keep official local orthophotography for near-ground detail,
 use broader imagery farther away, and add source-driven procedural materials
 and structures in the already recorded later stages. Any future ingestion still
 needs exact product/date/coverage/rights metadata and a hosting/cache decision.
+
+## Rights and access addendum (2026-11-03 07:40 Europe/Berlin)
+
+Added by Claude Code housekeeping after Claude peer review F53 ([report](../reviews/2026-11-03-codex-prs-39-50-peer.md)). It does not change the findings above. "Not verified" means no licence or terms page was read for this note; it is not a claim that the source is restricted or free.
+
+This table is an **unverified pointer list**, as checked on 2026-11-03 (no time recorded). It is not a source register. Only the Hessen row describes data that ships, and that row's rights, requests, hashes and retrieval records are in [SOURCE.json](../../app/public/imagery/SOURCE.json), [DETAIL-SOURCE.json](../../app/public/imagery/DETAIL-SOURCE.json) and the regional [manifest](../../app/public/imagery/rhein-main/manifest.json) (DL-DE Zero 2.0).
+
+| Source | Licence or terms identifier | Status |
+| --- | --- | --- |
+| Copernicus Sentinel-2 | The [Copernicus Data Space Ecosystem terms](https://dataspace.copernicus.eu/terms-and-conditions), read 2026-11-03, say Sentinel data are "free, full and open" and governed by the [Legal Notice on the use of Copernicus Sentinel Data and Service](https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice). The legal notice itself was not read. | Not ingested; no product or edition selected |
+| ESA WorldCover | CC BY 4.0, as stated on the access page (not re-read) | Not ingested |
+| OpenAerialMap | CC BY 4.0 per dataset, as stated on the about page (not re-read) | Not ingested; coverage not established |
+| Cesium ion | Provider-specific commercial terms | Not used |
+| OpenStreetMap | ODbL 1.0 | Not ingested |
+
+Any later ingestion needs its own dated source record with edition, licence and hashes.

@@ -4,6 +4,13 @@
 import { C172P_CAS_SPEEDS } from './airspeed-markings.ts';
 const point = (arm_in: number, weight_lb: number) => Object.freeze({ arm_in, weight_lb });
 const POH_URL = 'https://www.glasscockpitaviation.com/wp-content/uploads/2022/07/cessna-n54829-poh.pdf';
+/** Redistribution/derivation rights are not yet established for these sources (GAPS Q24). */
+export const SOURCE_RIGHTS = 'unresolved (GAPS Q24)';
+const POH_REVISION = '1982 Model 172P POH scan, third-party hosted; identified by the SHA-256 of the downloaded PDF bytes; publisher revision not recorded';
+/** Raw c172x.xml at JSBSim tag v1.3.3; sha256 covers these raw file bytes. */
+export const C172X_RAW_URL = 'https://raw.githubusercontent.com/JSBSim-Team/jsbsim/v1.3.3/aircraft/c172x/c172x.xml';
+export const C172X_SHA256 = 'b736f4b7560d5aab4d2a69026798be1d369b2b2bb5ddcf627aebfd441ba71840';
+export const C172X_REVISION = 'JSBSim tag v1.3.3; sha256 of the raw file bytes at that tag';
 
 export const C172P_CG_ENVELOPE = Object.freeze({
   label: '1982 C172P reference loading limits',
@@ -11,7 +18,7 @@ export const C172P_CG_ENVELOPE = Object.freeze({
   utility: Object.freeze([point(35, 1500), point(40.5, 1500), point(40.5, 2100), point(36.5, 2100), point(35, 1950)]),
   source: Object.freeze({ url: POH_URL, figure: 'Figure 6-8; Section 2 CG limits',
     pdf_page: 105, printed_page: '6-14', text_pdf_page: 22, text_printed_page: '2-7',
-    sha256: '5c63c4b45c2527ce1ed300c3340e78993f01605fc1366c2e403ea7547c72306c' }),
+    sha256: '5c63c4b45c2527ce1ed300c3340e78993f01605fc1366c2e403ea7547c72306c', revision: POH_REVISION, rights: SOURCE_RIGHTS }),
   limitations: 'Manufacturer reference only, not current model loading or selected-172S calibration. Normal maximum takeoff/landing weight is 2400 lb; utility is 2100 lb and requires unoccupied rear seats and baggage compartment. Other loading limits also apply. The 1500 lb chart floor is a display crop, not a certified minimum weight. Datum: lower front face of firewall. No live mass/CG point is available.',
 });
 
@@ -33,7 +40,7 @@ export const C172P_FLIGHT_ENVELOPE_REFERENCES = Object.freeze({
   speeds: C172P_CAS_SPEEDS,
   source: Object.freeze({ url: POH_URL, loadfactor_pdf_page: 23, loadfactor_printed_page: '2-8',
     speed_pdf_page: 19, speed_printed_page: '2-4',
-    sha256: '5c63c4b45c2527ce1ed300c3340e78993f01605fc1366c2e403ea7547c72306c' }),
+    sha256: '5c63c4b45c2527ce1ed300c3340e78993f01605fc1366c2e403ea7547c72306c', revision: POH_REVISION, rights: SOURCE_RIGHTS }),
   limitations: 'Published fixed load-factor limits and separate speed-reference guides only, not a complete approved V-n operating envelope or current model operating point. Normal factors apply at 2400 lb; utility factors at 2100 lb. A negative flaps-down limit is not stated. Stall, negative-stall and gust boundaries are not modeled; do not join guides into an approved region or infer damage thresholds/design-margin allowances. Normal VA values are listed only at their published weights; utility VA is given only in KIAS, with no KCAS value inferred.',
 });
 
@@ -52,6 +59,6 @@ export const C172P_GEAR_LAYOUT = Object.freeze({
   ]),
   frame: 'Structural frame in inches: +X aft, +Y right, +Z up; model datum, not aircraft CG.',
   source: Object.freeze({ url: 'https://github.com/JSBSim-Team/jsbsim/blob/v1.3.3/aircraft/c172x/c172x.xml',
-    sha256: 'b736f4b7560d5aab4d2a69026798be1d369b2b2bb5ddcf627aebfd441ba71840' }),
+    raw_url: C172X_RAW_URL, sha256: C172X_SHA256, revision: C172X_REVISION, rights: SOURCE_RIGHTS }),
   limitations: 'Generic research-model geometry, not accepted C172S geometry or a damage envelope. Wheels use spring/damper and friction reactions; tail/tip points are structure contacts. Shown loads are modeled strut reactions, not component stress or safe-load limits.',
 });

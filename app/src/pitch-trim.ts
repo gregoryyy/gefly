@@ -1,4 +1,5 @@
 import type { FlightState } from './types';
+import { pitchTrimView, trimCommandFromSlider } from './cockpit-views';
 
 interface PitchTrimOptions {
   container: HTMLElement;
@@ -7,9 +8,6 @@ interface PitchTrimOptions {
   onFocusFlight?: () => void;
 }
 
-const validTrim = (value: unknown): value is number => typeof value === 'number'
-  && Number.isFinite(value) && value >= -1 && value <= 1;
-const direction = (norm: number) => norm === 0 ? 'neutral' : `${Math.abs(norm * 100).toFixed(1)}% nose ${norm < 0 ? 'up' : 'down'}`;
 
 /** Generic normalized trim command, not an installed aircraft wheel/tab position. */
 export function createPitchTrimControl(options: PitchTrimOptions): {
@@ -36,8 +34,8 @@ export function createPitchTrimControl(options: PitchTrimOptions): {
 
   function change(): void {
     if (disposed || !canControl) return;
-    const norm = -slider.valueAsNumber / 100;
-    if (validTrim(norm)) options.onChange(norm);
+    const norm = trimCommandFromSlider(slider.valueAsNumber);
+    if (norm !== null) options.onChange(norm);
     // Leave focus on the native slider so arrow keys continue to adjust trim.
   }
   function restore(): void {
@@ -50,19 +48,13 @@ export function createPitchTrimControl(options: PitchTrimOptions): {
   return {
     update(state, recorded, running, target) {
       if (disposed) return;
-      const available = validTrim(state?.pitch_trim_norm);
-      const hasInitial = validTrim(state?.pitch_trim_initial_norm);
-      canControl = available && running && !recorded;
-      canRestore = canControl && hasInitial;
+      const view = pitchTrimView(state, recorded, running, target);
+      canControl = view.canControl; canRestore = view.canRestore;
       slider.disabled = up.disabled = down.disabled = !canControl;
       initial.disabled = !canRestore;
-      actual.textContent = available ? `${direction(state!.pitch_trim_norm!)} · ${recorded ? 'recorded' : 'actual'}` : 'Unavailable';
-      note.textContent = !available ? 'Trim unavailable · rebuild flight engine'
-        : 'Normalized command · not wheel/tab position';
-      initial.title = hasInitial ? `Restore startup ${direction(state!.pitch_trim_initial_norm!)}` : 'Startup trim unavailable';
-      const command = !recorded && validTrim(target) ? target : available ? state!.pitch_trim_norm! : 0;
-      if (recorded || !canControl || panel.ownerDocument.activeElement !== slider) slider.value = String(-command * 100);
-      slider.setAttribute('aria-valuetext', `${direction(command)} command`);
+      actual.textContent = view.actual; note.textContent = view.note; initial.title = view.initialTitle;
+      if (recorded || !canControl || panel.ownerDocument.activeElement !== slider) slider.value = String(view.slider_percent);
+      slider.setAttribute('aria-valuetext', view.valueText);
     },
     dispose() {
       if (disposed) return;

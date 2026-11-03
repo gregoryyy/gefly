@@ -44,3 +44,15 @@ export function imageryCorners(
   }
   return [[west, north], [east, north], [east, south], [west, south]];
 }
+
+/**
+ * Map update scheduling. Live flight is limited to four updates per second.
+ * Review updates whenever the selected recorded sample changes, so the marker
+ * stays synchronized with the instruments during playback (R-REVIEW-1).
+ */
+export function practiceMapUpdateDue(options: {
+  reviewing: boolean; now_ms: number; lastUpdate_ms: number; sample: unknown; lastSample: unknown;
+}): boolean {
+  if (options.reviewing) return options.sample !== options.lastSample || options.lastUpdate_ms === -Infinity;
+  return options.now_ms - options.lastUpdate_ms >= 250;
+}

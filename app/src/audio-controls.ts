@@ -1,4 +1,4 @@
-import type { EngineAudioStatus } from './engine-audio';
+import { audioStatusLabel, type EngineAudioStatus } from './engine-audio';
 import './audio-controls.css';
 
 interface AudioControlsOptions {
@@ -27,7 +27,7 @@ export function createAudioControls(options: AudioControlsOptions): {
   const settings = document.createElement('section');
   settings.id = 'audio-settings'; settings.className = 'audio-settings';
   settings.setAttribute('aria-labelledby', 'audio-settings-title');
-  settings.innerHTML = `<div class="audio-settings-heading"><h3 id="audio-settings-title">Engine, wind and alerts</h3><span id="audio-status" role="status">Press S to enable</span></div>
+  settings.innerHTML = `<div class="audio-settings-heading"><h3 id="audio-settings-title">Engine, wind and alerts</h3><span id="audio-status" role="status">Sound off · press S to enable</span></div>
     <label for="audio-volume">Volume <output id="audio-volume-value" for="audio-volume">30%</output></label>
     <input id="audio-volume" type="range" min="0" max="100" step="1" value="30" aria-label="Engine, wind and alerts volume percentage">
     <p>Synthesized engine, airflow and warning tones. No recording or microphone access.</p>`;
@@ -67,9 +67,7 @@ export function createAudioControls(options: AudioControlsOptions): {
       const percent = Math.round(status.volume * 100);
       volume.value = String(percent); output.value = `${percent}%`;
       volume.setAttribute('aria-valuetext', `${percent} percent`);
-      stateLabel.textContent = unavailable ? 'Unavailable' : retry ? 'Activation unavailable · retry sound button'
-        : status.muted || status.volume === 0 ? 'Muted' : !status.unlocked ? 'Press S to enable'
-          : status.state === 'playing' ? 'Playing' : 'Ready · paused';
+      stateLabel.textContent = audioStatusLabel(status);
     },
     dispose() {
       if (disposed) return;
