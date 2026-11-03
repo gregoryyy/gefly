@@ -168,6 +168,8 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.50 Add optional current-scene-centered touchpad yoke with persistent hold-drag view, explicit Escape/new-flight reset and preserved default relative behavior. R-INPUT-1/R-REVIEW-1. Local CI/build/typecheck and independent new/legacy browser, rendered-camera and live-native checks pass. [Review](reviews/2026-11-03-centered-touchpad.md). Cross-provider peer pending under the existing cadence.
 
+- [x] 2.0.51 Add source-driven stall and generic local terrain warnings plus S-controlled stall/terrain and autopilot-disconnect sounds. R-ALERT-1. Local CI/build and independent native/UI, waveform/AP-disconnect and legacy-audio checks pass. [Review](reviews/2026-11-03-flight-warnings.md). Altitude-selection instructions corrected without KAP logic changes; cross-provider peer pending.
+
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.
 - [ ] 2.3 code2 implements the corresponding browser controls, instruments and exercise feedback against frozen contracts **in parallel with 2.2**.

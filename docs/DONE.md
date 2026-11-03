@@ -3,6 +3,58 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 10:01 — Stall/terrain warnings and autopilot-disconnect audio
+
+TODO: 2.0.51 complete for bounded R-ALERT-1 simulator cues.
+Agent: Codex orchestrator integrates actual-state monitors, display/audio, native
+UI tests, shared records and publication. `flight_warning_signals`/code1 builds
+monitor/panel/tests; `flight_warning_audio`/code2 implements same-context sounds,
+edge tracking and waveform/native tests in parallel. `flight_warning_housekeeping`
+updates input/control/security docs. `flight_warning_quality` independently
+reviews quality and validates runtime/source correspondence. Cross-provider peer
+remains pending under the existing batched cadence.
+
+**Implementation notes**
+
+Add compact STALL/TERRAIN annunciators with non-color active/unavailable states.
+Stall follows the native model's software warning; terrain is a declared generic
+local CG-AGL closure cue with hysteresis, not a terrain-ahead/obstacle scan.
+Keep native inputs/physics unchanged, reset derivatives at discontinuities and
+use independent live/Review monitors. Review recomputes recorded telemetry cues,
+not recorded annunciator history. New steady stall/pulsed terrain/descending AP
+sounds share the existing Web Audio context, S/default-off and volume. Observe
+actual KAP engagement 1→0 once, with no initial/off/seek/reset/unmute backlog;
+new sounds are suppressed for pause, hidden/loading and all Review states.
+
+Shared CI passes 253 app/84 assurance/11 assessment tests; nine of 23 existing native
+study cases remain skipped. TypeScript/build and authored UI/audio checks pass.
+Independent checks pass 13 pure warning tests, four actual native/UI groups,
+20 offline waveform/lifecycle cases plus real P/manual and Q/automatic disconnect,
+12 legacy engine/wind/rolling/contact/audio lifecycle groups and 8 KAP tests. Source
+and cue limits are explicit; see [review](reviews/2026-11-03-flight-warnings.md).
+Final 11-path runtime/test/package packet:
+`94d392ca5a81090e665b35a1cc602d9ac5e31a7f3ce37e9178628d3ee4bc20e8`.
+
+**Deviations**
+
+These are generic simulator awareness cues, not installed stall-switch/TAWS/KAP
+acoustics or aircraft-safe envelopes. Terrain does not distinguish a planned
+landing or include obstacles. A stress fixture uses existing nose-up trim and
+combined pilot inputs to trigger the native stall signal; it is not a flight
+procedure. Earlier insufficient-input and menu-overlap harness attempts were
+corrected without changing physics or warning thresholds. DOM transition history
+reliably captures a brief actual warning instead of requiring it to remain active
+in a later snapshot. No physical-speaker listening or training acceptance claimed.
+
+**Insights**
+
+Missing stall data initially disturbed repeated valid terrain frames in the
+hysteresis band; independent terrain caching and new regressions fix this.
+The user's altitude question exposed an incorrect explanation, not a KAP logic
+change: selecting altitude while engaged auto-arms capture. Check ALT ARM and
+press ARM only if absent; pressing it again disarms. Correct the handbook and
+retain the original question plus explanation correction as separate input records.
+
 ## 2026-11-03 09:09 — Optional centered touchpad and persistent view
 
 TODO: 2.0.50 complete for the bounded R-INPUT-1/R-REVIEW-1 increment.

@@ -11,6 +11,8 @@ import { createLandingFeedback } from './landing-feedback';
 import { createGroundCollisionPanel } from './ground-collision-panel';
 import { createFlightPathGroundPanel } from './flight-path-ground';
 import { createStallAwarenessPanel } from './stall-awareness-panel';
+import { createFlightWarningMonitor } from './flight-warnings';
+import { createFlightWarningsPanel } from './flight-warnings-panel';
 import { createAircraftHandbook } from './aircraft-handbook';
 import { createSixPack } from './six-pack';
 import { createAutopilotPanel } from './autopilot-panel';
@@ -59,6 +61,7 @@ root.innerHTML = `
   <aside id="ground-collision-panel" hidden></aside>
   <aside id="flight-data-panel" aria-label="Flight path and ground reactions" hidden></aside>
   <aside id="stall-awareness-panel" aria-label="Spatial stall awareness estimates" hidden></aside>
+  <aside id="flight-warnings" aria-label="Flight warnings, simulator cues"></aside>
   <div id="camera-fov" class="camera-fov">60° FOV · two-finger scroll</div>
   <div id="pointer-mode" class="pointer-mode">Click scene: yoke · Hold-drag: look</div>
   <aside id="flight-controls-panel" class="control-panel" aria-label="Flight controls">
@@ -115,6 +118,11 @@ const groundCollisionPanel = createGroundCollisionPanel({
 });
 const flightData = createFlightPathGroundPanel({ container: el('flight-data-panel'), onClose: () => setFlightDataVisible(false) });
 const stallAwareness = createStallAwarenessPanel({ container: el('stall-awareness-panel'), onClose: () => setStallAwarenessVisible(false) });
+const liveWarningMonitor = createFlightWarningMonitor();
+const reviewWarningMonitor = createFlightWarningMonitor();
+const unavailableWarnings = liveWarningMonitor.update(null);
+let liveWarnings = unavailableWarnings;
+const flightWarningsPanel = createFlightWarningsPanel({ container: el('flight-warnings') });
 const sceneContainer = el('scene');
 const focusFlight = () => sceneContainer.focus({ preventScroll: true });
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
@@ -219,6 +227,7 @@ const session = createSession({
       verticalSpeedFpm += (1 - Math.exp(-dt / 0.5)) * (raw - verticalSpeedFpm);
     }
     previous = state; latest = state;
+    liveWarnings = liveWarningMonitor.update(state);
     if (!reviewing) flightTrace.record(state, verticalSpeedFpm * 0.3048 / 60);
     if (state.collision_mask && !wasCollided) pauseFlight();
     if (!collisionUnavailableNoticed && ready && (state.collision_mask === undefined || state.ground_agl_m === undefined)) {
@@ -537,6 +546,7 @@ function enterReview() {
   const bounds = flightTrace.bounds();
   if (reviewing || !bounds || bounds.count < 2 || !ready || failed || sceneFailed) return;
   pointerYoke?.cancel();
+  reviewWarningMonitor.reset();
   reviewing = true; reviewTime_s = bounds.start_s; lastMapUpdate_ms = -Infinity;
   pauseFlight(); el('status').textContent = 'Review'; focusFlight();
 }
@@ -544,6 +554,7 @@ function exitReview() {
   if (!reviewing) return;
   engineAudio.update(null, false);
   reviewing = reviewPlaying = false; lastMapUpdate_ms = -Infinity;
+  reviewWarningMonitor.reset();
   el('status').textContent = liveStatus;
   neutralize(); updateSessionUI();
   el<HTMLInputElement>('throttle').value = String(throttle * 100);
@@ -617,6 +628,8 @@ function reset(preset = landingPreset) {
   if (sceneFailed) { notice('The 3D scene is unavailable. Reload with WebGL enabled.'); return; }
   landingPreset = preset;
   flightAssists.reset();
+  liveWarningMonitor.reset(); reviewWarningMonitor.reset(); liveWarnings = unavailableWarnings;
+  flightWarningsPanel.update(unavailableWarnings, false);
   regionalTiles.clear(); terrainLoading=false; scene?.setTerrainTiles?.([]);
   document.querySelector('.location strong')!.textContent = ['darmstadt','odenwald','spessart'].includes(airborneSite) ? airborneSite.toUpperCase() : airborneSite === 'eddf-ils' ? 'FRANKFURT 25C' : airborneSite === 'taunus' ? 'TAUNUS' : 'EGELSBACH';
   collisionUnavailableNoticed = false;
@@ -872,6 +885,9 @@ function animate(now: number) {
     }
   }
   const reviewSample = reviewing ? flightTrace.atTime(reviewTime_s) : null;
+  const shownWarnings = ready && !failed && !sceneFailed && !terrainLoading && latest
+    ? reviewSample ? reviewWarningMonitor.update(reviewSample.state) : liveWarnings : unavailableWarnings;
+  flightWarningsPanel.update(shownWarnings, reviewing);
   if (latest) {
     const state = reviewSample?.state ?? latest;
     flightAssists.update(state.simulation_rate ?? 1, reviewing);
@@ -891,7 +907,7 @@ function animate(now: number) {
       }
     }
     engineAudio.update(state, ready && !failed && !sceneFailed && !terrainLoading && !document.hidden
-      && (reviewing ? reviewPlaying : running));
+      && (reviewing ? reviewPlaying : running), { warnings: shownWarnings, live: !reviewing });
     pressureAltimeter.update(state, reviewing, groundCollisionStopped());
     const sceneryLabel = state.terrain_profile === 1 ? 'Streamed terrain · Darmstadt–Odenwald–Spessart' : 'Flat-ground contact study · zero-height ellipsoid';
     const scenery = document.querySelector<HTMLElement>('.scenery-label')!;
@@ -919,5 +935,5 @@ function animate(now: number) {
   requestAnimationFrame(animate);
 }
 publishInput(); updateSessionUI(); requestAnimationFrame(animate);
-addEventListener('pagehide', () => { document.removeEventListener('keydown', flightMapShortcut, true); flightAssists.dispose(); overlayPresentation.dispose();disposeMenuShortcuts(); mapDisposed = true; engineAudio.dispose(); audioControls?.dispose(); document.removeEventListener('click', activateEngineAudio, true); document.removeEventListener('keydown', activateEngineAudio, true); document.removeEventListener('keydown', soundShortcut, true); document.removeEventListener('keydown', engineShortcut, true); document.removeEventListener('keydown', parkingBrakeShortcut, true); groundCollisionPanel.dispose(); aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
+addEventListener('pagehide', () => { document.removeEventListener('keydown', flightMapShortcut, true); flightAssists.dispose(); overlayPresentation.dispose();disposeMenuShortcuts(); mapDisposed = true; engineAudio.dispose(); audioControls?.dispose(); document.removeEventListener('click', activateEngineAudio, true); document.removeEventListener('keydown', activateEngineAudio, true); document.removeEventListener('keydown', soundShortcut, true); document.removeEventListener('keydown', engineShortcut, true); document.removeEventListener('keydown', parkingBrakeShortcut, true); groundCollisionPanel.dispose(); aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); flightWarningsPanel.dispose(); liveWarningMonitor.reset(); reviewWarningMonitor.reset(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
 void sceneReady;

@@ -1,5 +1,12 @@
 import type { FlightState } from './types';
 import { engineAudioParameters, type EngineAudioParameters } from './engine-audio-parameters';
+import type { FlightWarnings } from './flight-warnings';
+import { createFlightWarningAudioEvents, type FlightWarningAudioFrame } from './flight-warning-audio-events';
+
+export interface FlightWarningAudioOptions {
+  warnings: Readonly<FlightWarnings>;
+  live: boolean;
+}
 
 export interface EngineAudioStatus {
   supported: boolean;
@@ -9,7 +16,7 @@ export interface EngineAudioStatus {
   state: 'locked' | 'ready' | 'playing' | 'muted' | 'unavailable' | 'disposed';
 }
 export interface EngineAudioGraph {
-  update(parameters: EngineAudioParameters, volume: number, active: boolean): void;
+  update(parameters: EngineAudioParameters, volume: number, active: boolean, warnings?: FlightWarningAudioFrame): void;
   hasContactSound(): boolean;
   hasAlertSound(): boolean;
   dispose(): void;
@@ -32,6 +39,8 @@ export function createEngineAudioGraph(context: BaseAudioContext): EngineAudioGr
   const rollingGain = gain(), contactGain = gain();
   const rotationWhirrGain = gain();
   const alertGain = gain();
+  const stallTone = oscillator(), terrainTone = oscillator(), disconnectTone = oscillator();
+  const stallGain = gain(), terrainGain = gain(), disconnectGain = gain();
   const compressor = remember(context.createDynamicsCompressor());
   const noise = remember(context.createBufferSource()), windNoise = remember(context.createBufferSource());
   const exhaustWave = new Float32Array(33), exhaustPhase = new Float32Array(33);
@@ -43,6 +52,10 @@ export function createEngineAudioGraph(context: BaseAudioContext): EngineAudioGr
   mechanical.type = 'triangle'; bladePulse.type = 'sine'; rotationWhirr.type = 'sine';
   // Original warning timbre/timing, not a calibrated installed KAP140 sound.
   alertTone.type = 'sine'; alertTone.frequency.value = 880;
+  // Original, distinguishable simulator cues; no installed horn/TAWS calibration.
+  stallTone.type = 'triangle'; stallTone.frequency.value = 450;
+  terrainTone.type = 'sine'; terrainTone.frequency.value = 650;
+  disconnectTone.type = 'sine'; disconnectTone.frequency.value = 1200;
   windWhistle.type = 'bandpass'; windWhistle.Q.value = 2.5;
   exhaustFilter.type = 'lowpass'; exhaustFilter.Q.value = .65;
   propFilter.type = 'lowpass'; propFilter.Q.value = .65;
@@ -71,6 +84,9 @@ export function createEngineAudioGraph(context: BaseAudioContext): EngineAudioGr
   mechanical.connect(mechanicalGain);
   rotationWhirr.connect(rotationWhirrGain); rotationWhirrGain.connect(compressor);
   alertTone.connect(alertGain); alertGain.connect(compressor);
+  stallTone.connect(stallGain); stallGain.connect(compressor);
+  terrainTone.connect(terrainGain); terrainGain.connect(compressor);
+  disconnectTone.connect(disconnectGain); disconnectGain.connect(compressor);
   // Airflow is independent of engine rotation/fuel and propeller modulation.
   windNoise.connect(windHighpass); windHighpass.connect(windFilter); windFilter.connect(windGain);
   windNoise.connect(windWhistle); windWhistle.connect(whistleGain); whistleGain.connect(compressor);
@@ -83,13 +99,34 @@ export function createEngineAudioGraph(context: BaseAudioContext): EngineAudioGr
   compressor.connect(master); master.connect(context.destination);
   exhaustGain.gain.value = mechanicalGain.gain.value = rotationWhirrGain.gain.value = propellerGain.gain.value = windGain.gain.value = whistleGain.gain.value = rollingGain.gain.value = contactGain.gain.value = alertGain.gain.value = master.gain.value = 0;
   exhaust.frequency.value = mechanical.frequency.value = rotationWhirr.frequency.value = bladePulse.frequency.value = windWhistle.frequency.value = 0;
+  stallGain.gain.value = terrainGain.gain.value = disconnectGain.gain.value = 0;
   exhaust.start(); mechanical.start(); rotationWhirr.start(); bladePulse.start(); alertTone.start(); noise.start(); windNoise.start();
+  stallTone.start(); terrainTone.start(); disconnectTone.start();
   const targets = new Map<AudioParam, number>();
   let disposed = false;
   let previousGround: { step: number; time_s: number; mask: number } | null = null;
   let contactEnd_s = 0;
   let previousAlert: { step: number; time_s: number; sequence: number } | null = null;
   let alertEnd_s = 0;
+  const warningEvents = createFlightWarningAudioEvents();
+  let stallSound = false, terrainEnd_s = 0, terrainNext_s = 0, disconnectEnd_s = 0;
+  function silenceWarning(parameter: AudioParam): void {
+    parameter.cancelScheduledValues(context.currentTime); parameter.setValueAtTime(0, context.currentTime);
+  }
+  function resetWarnings(): void {
+    if (stallSound) silenceWarning(stallGain.gain);
+    if (terrainNext_s > 0) silenceWarning(terrainGain.gain);
+    if (disconnectEnd_s > 0) {
+      silenceWarning(disconnectGain.gain); disconnectTone.frequency.cancelScheduledValues(context.currentTime);
+    }
+    stallSound = false; terrainEnd_s = terrainNext_s = disconnectEnd_s = 0;
+  }
+  function pulse(parameter: AudioParam, start_s: number, duration_s: number, level: number): void {
+    parameter.setValueAtTime(0, start_s);
+    parameter.linearRampToValueAtTime(level, start_s + .005);
+    parameter.setValueAtTime(level, start_s + duration_s - .01);
+    parameter.linearRampToValueAtTime(0, start_s + duration_s);
+  }
   function resetAlert(): void {
     if (previousAlert || alertEnd_s > 0) {
       alertGain.gain.cancelScheduledValues(context.currentTime); alertGain.gain.setValueAtTime(0, context.currentTime);
@@ -109,11 +146,38 @@ export function createEngineAudioGraph(context: BaseAudioContext): EngineAudioGr
     parameter.setTargetAtTime(value, context.currentTime, .015);
   }
   return {
-    update(parameters, volume, active) {
+    update(parameters, volume, active, warningFrame) {
       if (disposed) return;
       const finite = Object.values(parameters).every(value => typeof value !== 'number' || Number.isFinite(value));
       const audible = active && parameters.valid && finite && Number.isFinite(volume);
       smooth(master.gain, audible ? clampVolume(volume) * .8 : 0);
+      const warning = warningEvents.update(warningFrame, audible && volume > 0);
+      if (!warning.continuous) resetWarnings();
+      if (warning.stall !== stallSound) {
+        stallSound = warning.stall;
+        stallGain.gain.cancelScheduledValues(context.currentTime);
+        if (stallSound) stallGain.gain.setTargetAtTime(.075, context.currentTime, .005);
+        else stallGain.gain.setValueAtTime(0, context.currentTime);
+      }
+      if (!warning.terrain && terrainNext_s > 0) {
+        silenceWarning(terrainGain.gain); terrainEnd_s = terrainNext_s = 0;
+      }
+      if (warning.terrain && context.currentTime >= terrainNext_s) {
+        // At most one short pulse per update, no future repeating queue/backlog.
+        silenceWarning(terrainGain.gain);
+        pulse(terrainGain.gain, context.currentTime, .18, .10);
+        terrainEnd_s = context.currentTime + .18; terrainNext_s = context.currentTime + .75;
+      }
+      if (warning.disconnected) {
+        const now = context.currentTime;
+        silenceWarning(disconnectGain.gain); disconnectTone.frequency.cancelScheduledValues(now);
+        for (let i = 0; i < 3; i++) {
+          const start = now + i * .16;
+          disconnectTone.frequency.setValueAtTime(1200 - i * 300, start);
+          pulse(disconnectGain.gain, start, .12, .09);
+        }
+        disconnectEnd_s = now + .44;
+      }
       if (!audible || volume <= 0 || !parameters.alert_available) resetAlert();
       else {
         const previous = previousAlert;
@@ -181,12 +245,12 @@ export function createEngineAudioGraph(context: BaseAudioContext): EngineAudioGr
       smooth(rollingFilter.frequency, Math.min(2000, Math.max(300, parameters.rolling_cutoff_hz)));
     },
     hasContactSound() { return !disposed && context.currentTime < contactEnd_s; },
-    hasAlertSound() { return !disposed && context.currentTime < alertEnd_s; },
+    hasAlertSound() { return !disposed && (stallSound || context.currentTime < Math.max(alertEnd_s, terrainEnd_s, disconnectEnd_s)); },
     dispose() {
       if (disposed) return;
       disposed = true;
       master.gain.cancelScheduledValues(context.currentTime); master.gain.setValueAtTime(0, context.currentTime);
-      for (const source of [exhaust, mechanical, rotationWhirr, bladePulse, alertTone, noise, windNoise]) source.stop();
+      for (const source of [exhaust, mechanical, rotationWhirr, bladePulse, alertTone, stallTone, terrainTone, disconnectTone, noise, windNoise]) source.stop();
       for (const node of nodes) node.disconnect();
     },
   };
@@ -195,7 +259,7 @@ export function createEngineAudioGraph(context: BaseAudioContext): EngineAudioGr
 /** No context, permission request or sound is created before explicit unlock(). */
 export function createEngineAudio(options: { onStatus?: (status: EngineAudioStatus) => void } = {}): {
   unlock(): Promise<void>;
-  update(state: Readonly<FlightState> | null, playing: boolean): void;
+  update(state: Readonly<FlightState> | null, playing: boolean, warnings?: FlightWarningAudioOptions): void;
   setMuted(value: boolean): void;
   setVolume(value: number): void;
   getStatus(): EngineAudioStatus;
@@ -206,6 +270,7 @@ export function createEngineAudio(options: { onStatus?: (status: EngineAudioStat
   let context: AudioContext | null = null, graph: EngineAudioGraph | null = null;
   let unlocking: Promise<void> | null = null;
   let parameters = engineAudioParameters(null), playing = false, muted = true, volume = .3;
+  let warningFrame: FlightWarningAudioFrame | undefined;
   let disposed = false, failed = false, lastStatus = '';
   const status = (): EngineAudioStatus => {
     const unlocked = context?.state === 'running';
@@ -218,7 +283,7 @@ export function createEngineAudio(options: { onStatus?: (status: EngineAudioStat
     const current = status(), signature = JSON.stringify(current);
     if (signature !== lastStatus) { lastStatus = signature; options.onStatus?.(current); }
   }
-  function apply(): void { graph?.update(parameters, volume, playing && !muted && !failed && !disposed && context?.state === 'running'); notify(); }
+  function apply(): void { graph?.update(parameters, volume, playing && !muted && !failed && !disposed && context?.state === 'running', warningFrame); notify(); }
   function stateChanged(): void { apply(); }
   notify();
   return {
@@ -249,7 +314,13 @@ export function createEngineAudio(options: { onStatus?: (status: EngineAudioStat
       unlocking = attempt().finally(() => { unlocking = null; });
       return unlocking;
     },
-    update(state, active) { if (disposed) return; parameters = engineAudioParameters(state); playing = active; apply(); },
+    update(state, active, warnings) {
+      if (disposed) return;
+      parameters = engineAudioParameters(state); playing = active;
+      warningFrame = state && warnings ? { ...warnings, step: state.step, time_s: state.t_s,
+        kapEngaged: state.kap_engaged === 0 || state.kap_engaged === 1 ? state.kap_engaged : null } : undefined;
+      apply();
+    },
     setMuted(value) { if (disposed) return; muted = value; apply(); },
     setVolume(value) { if (disposed || !Number.isFinite(value)) return; volume = clampVolume(value); apply(); },
     getStatus: status,

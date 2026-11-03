@@ -70,7 +70,7 @@ unavailable. Returning to live restores pending control settings.
 | Space | Start / pause / resume |
 | R | Enter / leave recorded Review |
 | V | Switch cockpit / chase view |
-| S | Toggle engine and airflow sound (off by default) |
+| S | Toggle sound, including flight-warning cues (off by default) |
 | E | Request engine ignition/starter on or off |
 | / | Restore initial trim |
 | [ / ] | Retract / extend flaps one 10° detent |
@@ -289,12 +289,24 @@ than disconnecting. This is not a physical KAP 140 button. **HDG** follows the s
 control; HDG alone does not engage a disconnected unit.
 
 **ALT captures the current pressure altitude**, independent of the altitude
-selector. Press it again for VS. Change the selected altitude, set a VS toward
-it, and **ARM** enables automatic altitude capture. **UP/DN** adjust VS in
+selector. Press it again for VS. Change the selected altitude and set a VS toward
+it. Selecting a target while AP is engaged automatically arms capture; check
+**ALT ARM**. **ARM** toggles arming, so press it only if capture is not already armed. **UP/DN** adjust VS in
 100 ft/min steps while VS is visible; the first press displays a hidden VS
 without changing it. Holding changes VS at 300 ft/min/s. In ALT, taps change the
 hold reference by 20 ft; holding requests 500 ft/min, then release captures the
 actual altitude. VS commands use the source-scoped −2000 to +1500 ft/min range.
+
+Example in this simulator: to move from a 1,300 ft hold to 2,000 ft, enter
+**2,000 FT**, press **ALT** to switch from ALT to VS, use **UP** to select a
+positive rate such as **+500 FPM**, then check **ALT ARM**. Press **ARM** only
+if that annunciation is absent; pressing it when already armed cancels capture.
+The first UP/DN press may only reveal the VS display; subsequent presses change
+its value. The autopilot captures the selected altitude and returns to ALT.
+Changing the selected number alone does not start a climb. **A** holds the
+current altitude/heading; it does not command flight to the selected number.
+Throttle remains manual; this example describes control logic, not calibrated
+climb performance or a flight procedure.
 
 **BARO** displays the AP's separate pressure setting for 3 s; hold it 2 s to
 change hPa/inHg. It changes indicated/preselected altitude conversion, preserving
@@ -473,6 +485,33 @@ airflow noise follows valid actual TAS. Fuel cutoff or actual stopped-engine
 state removes combustion while a rotating propeller can retain mechanical sound. This is a procedural
 approximation, not a calibrated recording of an installed aircraft. It uses no
 microphone, downloaded sample, provider service or extra runtime dependency.
+
+## Stall, terrain and disconnect warnings
+
+Compact **STALL** and **TERRAIN** annunciators show current warning state. STALL
+uses the native research model's software stall-warning signal, not a fixed
+airspeed threshold. TERRAIN is a generic local proximity cue using CG height
+above the current surface and closure from descent or consecutive clearance
+loss. Ground contact suppresses both warnings. Missing or invalid telemetry is
+shown as unavailable, rather than clear.
+
+These cues do not scan terrain ahead, detect obstacles, recognize a landing
+approach or reproduce an installed TAWS/EGPWS. A steep approach can trigger
+TERRAIN; its thresholds are simulator design choices, not aircraft operating
+limits. Neither cue changes the controls or physics. See the
+[warning specification](../docs/SPEC.md) for the bounded policy.
+
+Enable sound with **S** to hear the stall horn, pulsed terrain cue and a distinct
+tone when the actual autopilot engagement state changes from on to off. For a
+simple demonstration, engage the autopilot while flying, then disconnect with
+**P**. The tones share the existing speaker mute and Options volume; sound
+remains off by default. They are original synthesized cues, not calibrated
+aircraft sounds or a recreation of the installed KAP 140 disconnect tone.
+
+New warning sounds are silent while paused, hidden, loading, reset, unavailable
+or in Review, including Review playback. Returning to live flight or enabling
+sound does not replay queued disconnect events. Paused warning lights can remain visible. **REVIEW** marks cues recomputed from
+recorded telemetry, not recorded annunciator history. Existing engine/airflow sound during Review playback is unchanged.
 
 ## Spatial stall awareness
 
