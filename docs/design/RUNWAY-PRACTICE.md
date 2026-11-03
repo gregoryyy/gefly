@@ -43,7 +43,15 @@ the selected time, so later observations cannot appear early. The existing
 ten-minute recording window and sample continuity limit apply; clipped or sparse
 history cannot establish unseen transitions. Live observations remain separate.
 
-Runway context currently belongs to the page session, not the JSON recording
-format. Imported recordings therefore hide this card instead of inheriting the
-live flight's airport/runway. Back to live restores the actual session context.
-Extending portable exercise metadata and the full scenario briefing remains open.
+Version 1 JSON recordings may include optional `context` with exactly
+`{kind: 'runway-practice', version: 1, airport: 'EDFE', runway: '08' | '26'}`.
+The trace copies and freezes this small declaration; a new flight resets it.
+Malformed or unsupported declared context rejects the recording. Legacy files
+without context remain compatible and show unknown runway context, so their card
+stays hidden. A contextual import reconstructs observations from that recording's
+own retained prefix and identifies its declared runway; it never borrows the live
+flight's context or changes native flight state. Review caching distinguishes
+recordings by identity even when their timestamps and sample counts match.
+Back to live restores the actual session context. Declared context does not verify
+that the recorded trajectory was flown at that airport or establish a validated
+procedure. Full scenario packages and the full scenario briefing remain open.

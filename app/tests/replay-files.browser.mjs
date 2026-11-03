@@ -62,12 +62,16 @@ try {
   const json = await readFile(await download.path(), 'utf8'), saved = JSON.parse(json);
   assert.equal(saved.format, 'gefly-flight-recording'); assert.equal(saved.units, 'SI');
   assert(saved.samples.length > 2);
+  assert(!Object.hasOwn(saved,'context'),'ordinary airborne recording does not invent runway context');
   await page.locator('#flight-menu > summary').click();
   await page.setInputFiles('#recording-file', { name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('{bad') });
   await page.waitForFunction(() => document.querySelector('#notice').textContent.includes('Recording:'));
   assert.equal(await page.locator('#status').textContent(), 'Paused');
   await page.setInputFiles('#recording-file', { name: 'flight.json', mimeType: 'application/json', buffer: Buffer.from(json) });
   await page.waitForFunction(() => document.querySelector('#status').textContent === 'Review');
+  await page.locator('#scene').focus(); await page.keyboard.press('m');
+  await page.waitForFunction(() => document.querySelector('.runway-practice')?.hidden === true);
+  await page.locator('#scene').focus(); await page.keyboard.press('m');
   assert.equal(await page.locator('#review-time').getAttribute('max'), String(saved.samples.at(-1).state.t_s));
   await page.locator('#review-time').evaluate(input => { input.value = input.max; input.dispatchEvent(new Event('input', { bubbles: true })); });
   await page.locator('#review-exit').click();

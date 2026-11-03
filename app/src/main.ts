@@ -154,7 +154,7 @@ let parkingBrake = false;
 let runwayStart: RunwayStart | null = null;
 let exerciseActive = false;
 const runwayPractice = createRunwayPracticeMonitor();
-let practiceReviewCache: { time: number; count: number; progress: PracticeProgress } | null = null;
+let practiceReviewCache: { trace: FlightTrace; time: number; count: number; progress: PracticeProgress } | null = null;
 let scene: FlightScene | null = null;
 let sceneFailed = false, ready = false, running = false, failed = false;
 let hasFlown = false, startWhenReady = false;
@@ -586,17 +586,18 @@ async function setMapVisible(visible: boolean) {
       onStopExercise() { pauseFlight(); exerciseActive = false; notice('Exercise stopped. Review remains available; Start at runway begins a new flight.'); },
       isExerciseActive: () => exerciseActive,
       getRunwayPractice() {
-        const runway = runwayStart?.runway;
-        if ((runway !== '08' && runway !== '26') || (reviewing && loadedTrace)) return null;
+        const trace = reviewing ? recordedTrace() : flightTrace;
+        const runway = trace.getContext()?.runway;
+        if (!runway) return null;
         if (!reviewing) return { runway, progress: runwayPractice.snapshot() };
-        const count = flightTrace.bounds()?.count ?? 0;
-        if (!practiceReviewCache || practiceReviewCache.time !== reviewTime_s || practiceReviewCache.count !== count) {
+        const count = trace.bounds()?.count ?? 0;
+        if (!practiceReviewCache || practiceReviewCache.trace !== trace || practiceReviewCache.time !== reviewTime_s || practiceReviewCache.count !== count) {
           const monitor = createRunwayPracticeMonitor();
-          for (const state of flightTrace.recordedStates()) {
+          for (const state of trace.recordedStates()) {
             if (state.t_s > reviewTime_s) break;
             monitor.update(state);
           }
-          practiceReviewCache = { time: reviewTime_s, count, progress: monitor.snapshot() };
+          practiceReviewCache = { trace, time: reviewTime_s, count, progress: monitor.snapshot() };
         }
         return { runway, progress: practiceReviewCache.progress };
       },
@@ -634,7 +635,7 @@ const reviewControls = createFlightReviewControls({
     if (!reviewing) enterReview();
     else { reviewPlaying = false; reviewTime_s = recording.bounds()!.start_s; reviewWarningMonitor.reset(); }
     lastMapUpdate_ms = -Infinity; updateReviewControls(); closeViewMenu(); focusFlight();
-    notice('Loaded recording · replay only. Back to live returns to your current flight.');
+    notice(`Loaded recording · replay only${recording.getContext() ? ' · runway context declared by recording' : ' · runway context unknown'}. Back to live returns to your current flight.`);
   },
   onFileError: message => notice(`Recording: ${message}`),
   onSeek(time_s) {
@@ -772,7 +773,10 @@ function reset(preset = landingPreset, start: RunwayStart | null = runwayStart) 
   collisionUnavailableNoticed = false;
   systemsPanel.reset(); radioPanel.reset();
   recordingLoadVersion++; loadedTrace = null; resumeAfterReview = false;
-  flightTrace.clear(); parkingBrake = false; pitchTrimTarget = null; flapTarget_deg = 0; mixtureCommand = 1; mixtureAutomatic = true; engineCommand = null; apDisconnectPending = false;
+  const runway = runwayStart?.runway;
+  flightTrace.clear(runwayStart?.airport === 'EDFE' && (runway === '08' || runway === '26')
+    ? { kind: 'runway-practice', version: 1, airport: 'EDFE', runway } : undefined);
+  parkingBrake = false; pitchTrimTarget = null; flapTarget_deg = 0; mixtureCommand = 1; mixtureAutomatic = true; engineCommand = null; apDisconnectPending = false;
   if (practiceMap && latest) { try { practiceMap.update(latest, [], 'live'); } catch { mapUnavailable(); } }
   lastMapUpdate_ms = -Infinity;
   pressureAltimeter.update(null, false);

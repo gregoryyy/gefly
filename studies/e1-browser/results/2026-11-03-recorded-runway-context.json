@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "source_revision": "05ec1ca515548436ba81f7b86da432ddbf693fd0 + recorded working-tree source pins",
+  "scope": "Portable declared EDFE recording context and read-only replay isolation; no verified flight, aircraft or procedure claim.",
+  "environment": {
+    "node": "v26.13.0",
+    "platform": "macOS-26.2-arm64-arm-64bit",
+    "browser": "156.0.8078.80"
+  },
+  "build_info": {
+    "jsbsim_tag": "v1.3.3",
+    "jsbsim_commit": "66f7fafc07fe13e7ede9db20873030fed2881713",
+    "emsdk": "6.0.13",
+    "emsdk_rev": "d7b4130688bfa348392b921ab04015aa15c4f154",
+    "emcc": "emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 6.0.13 (e13ee988ce3d87a738dd8f3661d02223308c412a)",
+    "flags": "-O2 -fwasm-exceptions",
+    "wasm_bytes": 1758848,
+    "wasm_sha256": "06f044fd1176c52e3f0d2da38a542cc69c0d312ffa296db6e0d0d96cc13a4ddf",
+    "aircraft_adapter": {
+      "adapter_id": "gefly-c172x-mixture-pitch-ap-v2",
+      "adapter_script_sha256": "5f9dcf09a1d004351bb5faf165c037f9f3b3433ba10f52f7957374b2ab745487",
+      "ap_prepared_sha256": "e128be7673cd6fd29e8a0bab4ff7392e62974ff236e44a23861d3f4ffc8ebd9c",
+      "ap_source_sha256": "1e83fec37beabf33e1a1bdd7a30fb5d4aeca79ddb52a2dca58a7bcfc1d20e570",
+      "prepared_sha256": "f0dad1b5a4c17f8ac607da1709d38f2de77119aeb82c272dd7cedefccad69219",
+      "source_path": "aircraft/c172x/c172x.xml",
+      "source_sha256": "b736f4b7560d5aab4d2a69026798be1d369b2b2bb5ddcf627aebfd441ba71840"
+    },
+    "propeller_adapter": {
+      "adaptations": [
+        "Direct-drive design RPM replaces Aero-Matic tip-speed/gearbox heuristic",
+        "Retain pinned propeller geometry, inertia and Mach corrections; replace only fixed-pitch CP/CT tables",
+        "No tuning to a C172 glide ratio or aircraft-specific reference curve"
+      ],
+      "adapter_id": "gefly-generic-fixed-pitch-windmilling-v1",
+      "adapter_script_sha256": "d0b185544637898b9478fc00b810cc3bbebdf1d2ce445a95854f9b56d6a9318d",
+      "inputs": {
+        "blades": 2,
+        "cp0": 0.04258269989766735,
+        "ct0": 0.05961577985673429,
+        "design_density_slug_ft3": 0.002378,
+        "diameter_in": 75.0,
+        "engine_design_rpm": 2700.0,
+        "engine_max_power_hp": 160.0,
+        "fixed_pitch_deg": 22,
+        "gear_ratio": 1,
+        "inertia_slug_ft2": 1.67,
+        "propeller_design_rpm": 2700.0,
+        "table_decimal_places": 4
+      },
+      "prepared_sha256": "fc3163d3a8ee885af513aa80950f1b4ef6c85a00e7ebeafd4d31b0c5dc6d4e40",
+      "scope": "generic research fixed-pitch windmilling; not accepted aircraft data",
+      "source_jsbsim_commit": "66f7fafc07fe13e7ede9db20873030fed2881713",
+      "sources": [
+        {
+          "path": "engine/eng_io320.xml",
+          "sha256": "0cedc1e356a7a572a175f351a4abb952ba91081219a37dc7192bce3a2181d8c6"
+        },
+        {
+          "path": "engine/prop_75in2f.xml",
+          "sha256": "6481edf1da940fdea5358913d226c3e25d3e6b8209b4805370258a9a65ca7403"
+        },
+        {
+          "path": "utils/aeromatic/prop2.php",
+          "sha256": "658eb2c7a409fe7793514a6e0add07ff6b693b0161ee205379d3606f0117dab6"
+        }
+      ]
+    }
+  },
+  "source_pins": [
+    {
+      "path": "app/src/flight-trace.ts",
+      "sha256": "62c2c3bff79e4bb46ca5335fc3c848c595f84f2b4d0b2da3f130320849e29e60"
+    },
+    {
+      "path": "app/src/flight-trace.test.ts",
+      "sha256": "af880d3df6ea3a58d22a72e82b13eb6f5be0c3ba124d77e30c80125c61bee670"
+    },
+    {
+      "path": "app/src/main.ts",
+      "sha256": "b21902ae56760e0990ed7f6fbba387323282e9961d8495c02b28008be9368da5"
+    },
+    {
+      "path": "app/src/runway-practice-panel.ts",
+      "sha256": "78149adc6033acb0c7fa9e5c865866331626f2ca7b99d268f92eac85f55c5b4f"
+    },
+    {
+      "path": "app/tests/airport-play.browser.mjs",
+      "sha256": "111be5649f36a2823fa1a296b9435f07c60e99dbbd3039f75065e147ebac26f9"
+    },
+    {
+      "path": "app/tests/replay-files.browser.mjs",
+      "sha256": "a6e9931d8e85b233adf76efc2c962bcf1f7c5d0bd80f8b92d0b514f964782954"
+    },
+    {
+      "path": "docs/design/RUNWAY-PRACTICE.md",
+      "sha256": "c211b103caa90b69a879cbd50f72033ca929e84c2c352da4504685c7a0a15c3b"
+    }
+  ],
+  "runs": {
+    "airport": {
+      "command": "node app/tests/airport-play.browser.mjs",
+      "exit_code": 0,
+      "stdout": "{\n  \"checks\": [\n    \"EDFE26 and08 start stationary with all gear supported; full parking hold does not collide\",\n    \"COM8.33 selection loads standby, explicit swap changes active\",\n    \"Options select vector terrain/map and practice lights\",\n    \"release brake and power produces actual native ground acceleration\",\n    \"map Stop preserves Review and locks start/COM during Review\",\n    \"source-scoped runway briefing, actual ground state, runway change and recorded Review card\",\n    \"portable runway context survives save/load, rejects malformed metadata and restores live context; legacy files remain unknown\"\n  ],\n  \"browser\": \"156.0.8078.80\"\n}\n",
+      "result": {
+        "checks": [
+          "EDFE26 and08 start stationary with all gear supported; full parking hold does not collide",
+          "COM8.33 selection loads standby, explicit swap changes active",
+          "Options select vector terrain/map and practice lights",
+          "release brake and power produces actual native ground acceleration",
+          "map Stop preserves Review and locks start/COM during Review",
+          "source-scoped runway briefing, actual ground state, runway change and recorded Review card",
+          "portable runway context survives save/load, rejects malformed metadata and restores live context; legacy files remain unknown"
+        ],
+        "browser": "156.0.8078.80"
+      }
+    },
+    "replay": {
+      "command": "node app/tests/replay-files.browser.mjs",
+      "exit_code": 0,
+      "stdout": "{\n  \"result\": \"pass\",\n  \"checks\": [\n    \"real flight JSON download/import/seek preserves frozen native state\",\n    \"invalid JSON leaves the live flight unchanged\",\n    \"Back to live restores flying or paused intent using the same worker\",\n    \"comma toggles map overlap while N retains parking brake\"\n  ],\n  \"samples\": 55\n}\n",
+      "result": {
+        "result": "pass",
+        "checks": [
+          "real flight JSON download/import/seek preserves frozen native state",
+          "invalid JSON leaves the live flight unchanged",
+          "Back to live restores flying or paused intent using the same worker",
+          "comma toggles map overlap while N retains parking brake"
+        ],
+        "samples": 55
+      }
+    },
+    "unit": {
+      "command": "node --test app/src/flight-trace.test.ts",
+      "executed_by": "Independent Codex glide_housekeeping",
+      "exit_code": 0,
+      "passed": 33,
+      "stdout": "\u2714 JSON recordings round-trip immutable states, controls, VSI and retained bounds (2.45625ms)\n\u2714 JSON import rejects malformed, unsupported, non-finite and unordered data without changing live trace (1.558791ms)\n\u2714 R-REVIEW-1 runway recording declarations round-trip for both directions without changing state or frames (0.54625ms)\n\u2714 R-REVIEW-1 old version-1 recordings have unknown context and export no invented declaration (0.456958ms)\n\u2714 R-REVIEW-1 malformed or extended declared context rejects import while leaving live history/context intact (1.609625ms)\n\u2714 R-REVIEW-1 context is copied/frozen and only an atomic clear can change the declaration (0.304791ms)\n\u2714 R-REVIEW-1 declarations remain intact through clipping and exact context keys reject non-JSON extension mechanisms (0.881125ms)\n\u2714 recorded collision preserves the final event and rejects malformed or same-clock rewrites (0.368167ms)\n\u2714 airflow snapshots preserve actual motion and CG without paused rewrites or partial groups (0.327875ms)\n\u2714 Review retains immutable applied controls, rejects partial groups and paused rewrites (0.258958ms)\n\u2714 recorded pacing survives seeking and paused rate-only changes preserve physics and prior samples (0.667125ms)\n\u2714 empty trace and finite floor seeks clamp to the retained boundaries (0.211542ms)\n\u2714 capacity eviction retains chronological floor seeks through repeated ring wraps (0.227ms)\n\u2714 age eviction keeps the exact duration boundary and handles a large time gap (0.153375ms)\n\u2714 record copies and freezes state while preserving caller-provided SI vertical speed (0.159167ms)\n\u2714 invalid numbers, ranges, duplicates and either clock regression leave history unchanged (0.64775ms)\n\u2714 clear releases history, resets clipped and accepts a fresh simulation clock (0.094625ms)\n\u2714 constructor rejects caps outside the supported memory and duration bounds (0.232041ms)\n\u2714 plot samples handle empty, one-frame and uncapped histories with immutable existing states (0.630667ms)\n\u2714 plot sampling preserves endpoints and evenly spaced existing states through ring wraps (0.570333ms)\n\u2714 plot sampling caps large histories and rejects unsupported sample budgets (197.365875ms)\n\u2714 paused pressure setting changes replace only the last instrument snapshot and preserve prior objects (0.379834ms)\n\u2714 six-pack and applied secondary-control values remain captured on the selected frame (0.1875ms)\n\u2714 paused AP mode changes preserve physical/engine state and prior immutable review frames (0.264ms)\n\u2714 review freezes actual trim and elevator, rejecting partial or paused trim rewrites (0.163375ms)\n\u2714 radio configuration is captured atomically rather than read from live tuning (0.266958ms)\n\u2714 paused radio edits replace only last avionics snapshot without changing physics or prior frames (0.179ms)\n\u2714 engine actual running and ignition request stay recorded and cannot rewrite a paused physical state (0.173042ms)\n\u2714 decimal range serialization selects the stored interior frame while real earlier times still floor (0.136417ms)\n\u2714 review retains the terrain height convention and rejects partial groups or same-clock ground rewrites (0.187125ms)\n\u2714 KAP Review snapshots preserve original mode/targets and permit only instrument changes while paused (0.636209ms)\n\u2714 Review retains altitude-alert events without accepting partial or noninteger counters (0.149375ms)\n\u2714 systems switches round-trip, paused edits replace only latest snapshot, old traces stay unavailable (0.467708ms)\n\u2139 tests 33\n\u2139 suites 0\n\u2139 pass 33\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 389.407333\n"
+    }
+  },
+  "limitations": [
+    "The same-clock different-contact recording is an explicitly synthetic import fixture; it is not a native airborne-flight observation.",
+    "Metadata is a declared context only, not verification of geography, actual runway use, model/aircraft or weather provenance.",
+    "Browser tests use fixture map/photo pixels with actual native worker and public terrain; import/seek leaves the native step, digest and state unchanged.",
+    "Undistributed embedded model/runtime closure remains unavailable; build metadata identifies the local binary but is not complete reconstructible evidence.",
+    "No aircraft fidelity, full circuit lesson, regulatory approval or cross-provider acceptance is claimed."
+  ]
+}

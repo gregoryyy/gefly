@@ -673,6 +673,209 @@
         "reviewer": "Codex glide_housekeeping (independent of implementation)",
         "independent": true
       }
+    },
+    {
+      "id": "recorded-runway-context-observation",
+      "mode": "recorded_run",
+      "revision": "05ec1ca515548436ba81f7b86da432ddbf693fd0 + recorded working-tree source pins",
+      "procedure": "Actual sequential airport and legacy replay Chrome tests plus independent trace unit tests; commands, observed stdout, environment and frozen source hashes are preserved in the result. The catalog does not rerun them.",
+      "scope": "Portable declared EDFE recording context and read-only replay isolation; no verified flight, aircraft or procedure claim.",
+      "limitations": [
+        "The same-clock different-contact recording is an explicitly synthetic import fixture; it is not a native airborne-flight observation.",
+        "Metadata is a declared context only, not verification of geography, actual runway use, model/aircraft or weather provenance.",
+        "Browser tests use fixture map/photo pixels with actual native worker and public terrain; import/seek leaves the native step, digest and state unchanged.",
+        "Undistributed embedded model/runtime closure remains unavailable; build metadata identifies the local binary but is not complete reconstructible evidence.",
+        "No aircraft fidelity, full circuit lesson, regulatory approval or cross-provider acceptance is claimed."
+      ],
+      "outcome": "pass",
+      "requirements": [
+        "R-PLAY-1",
+        "R-REVIEW-1"
+      ],
+      "inputs": [
+        {
+          "role": "fixture",
+          "path": "studies/e1-browser/results/2026-11-03-recorded-runway-context.json",
+          "sha256": "be60b5a4a247242ae2d5b7a2fb066e5c8cd0df7f2fca58c52945716ecb9e4565",
+          "pointer": "/runs"
+        },
+        {
+          "role": "build",
+          "path": "studies/e1-browser/results/2026-11-03-recorded-runway-context.json",
+          "sha256": "be60b5a4a247242ae2d5b7a2fb066e5c8cd0df7f2fca58c52945716ecb9e4565",
+          "pointer": "/build_info"
+        },
+        {
+          "role": "environment",
+          "path": "studies/e1-browser/results/2026-11-03-recorded-runway-context.json",
+          "sha256": "be60b5a4a247242ae2d5b7a2fb066e5c8cd0df7f2fca58c52945716ecb9e4565",
+          "pointer": "/environment"
+        },
+        {
+          "role": "evaluator",
+          "path": "app/tests/airport-play.browser.mjs",
+          "sha256": "111be5649f36a2823fa1a296b9435f07c60e99dbbd3039f75065e147ebac26f9"
+        },
+        {
+          "role": "evaluator",
+          "path": "app/tests/replay-files.browser.mjs",
+          "sha256": "a6e9931d8e85b233adf76efc2c962bcf1f7c5d0bd80f8b92d0b514f964782954"
+        },
+        {
+          "role": "criteria",
+          "path": "app/src/flight-trace.test.ts",
+          "sha256": "af880d3df6ea3a58d22a72e82b13eb6f5be0c3ba124d77e30c80125c61bee670"
+        },
+        {
+          "role": "criteria",
+          "path": "docs/design/RUNWAY-PRACTICE.md",
+          "sha256": "c211b103caa90b69a879cbd50f72033ca929e84c2c352da4504685c7a0a15c3b"
+        },
+        {
+          "role": "source",
+          "path": "app/src/flight-trace.ts",
+          "sha256": "62c2c3bff79e4bb46ca5335fc3c848c595f84f2b4d0b2da3f130320849e29e60"
+        },
+        {
+          "role": "source",
+          "path": "app/src/main.ts",
+          "sha256": "b21902ae56760e0990ed7f6fbba387323282e9961d8495c02b28008be9368da5"
+        },
+        {
+          "role": "source",
+          "path": "app/src/runway-practice-panel.ts",
+          "sha256": "78149adc6033acb0c7fa9e5c865866331626f2ca7b99d268f92eac85f55c5b4f"
+        }
+      ],
+      "unavailableRoles": [
+        {
+          "role": "model",
+          "reason": "Embedded research aircraft/runtime and its transitive closure are not redistributed. Metadata identifies the observed binary; it does not establish aircraft fidelity or complete reconstructibility."
+        }
+      ],
+      "notApplicableRoles": [],
+      "dependsOn": [],
+      "result": {
+        "path": "studies/e1-browser/results/2026-11-03-recorded-runway-context.json",
+        "sha256": "be60b5a4a247242ae2d5b7a2fb066e5c8cd0df7f2fca58c52945716ecb9e4565",
+        "assertions": [
+          {
+            "pointer": "/runs/airport/exit_code",
+            "equals": 0
+          },
+          {
+            "pointer": "/runs/airport/result/checks",
+            "equals": [
+              "EDFE26 and08 start stationary with all gear supported; full parking hold does not collide",
+              "COM8.33 selection loads standby, explicit swap changes active",
+              "Options select vector terrain/map and practice lights",
+              "release brake and power produces actual native ground acceleration",
+              "map Stop preserves Review and locks start/COM during Review",
+              "source-scoped runway briefing, actual ground state, runway change and recorded Review card",
+              "portable runway context survives save/load, rejects malformed metadata and restores live context; legacy files remain unknown"
+            ]
+          },
+          {
+            "pointer": "/runs/replay/result/result",
+            "equals": "pass"
+          },
+          {
+            "pointer": "/runs/unit/passed",
+            "equals": 33
+          }
+        ]
+      }
+    },
+    {
+      "id": "recorded-runway-context-scoped-review",
+      "mode": "manual_review",
+      "revision": "05ec1ca515548436ba81f7b86da432ddbf693fd0 + recorded working-tree source pins",
+      "procedure": "Independent same-provider code/schema/security review and unit execution, with final actual browser evidence inspection; report records a frozen source packet and separate quality/validation outcomes.",
+      "scope": "Portable context and read-only replay isolation only. Reviewer-authored design paragraph and root-authored catalog/evidence recording are excluded from independent implementation acceptance.",
+      "limitations": [
+        "Browser suites were executed by the test author, then inspected by the independent reviewer.",
+        "Full scenario metadata, aircraft/weather fidelity and external peer acceptance remain unavailable."
+      ],
+      "outcome": "pass",
+      "requirements": [
+        "R-PLAY-1",
+        "R-REVIEW-1"
+      ],
+      "inputs": [
+        {
+          "role": "fixture",
+          "path": "studies/e1-browser/results/2026-11-03-recorded-runway-context.json",
+          "sha256": "be60b5a4a247242ae2d5b7a2fb066e5c8cd0df7f2fca58c52945716ecb9e4565",
+          "pointer": "/runs"
+        },
+        {
+          "role": "build",
+          "path": "studies/e1-browser/results/2026-11-03-recorded-runway-context.json",
+          "sha256": "be60b5a4a247242ae2d5b7a2fb066e5c8cd0df7f2fca58c52945716ecb9e4565",
+          "pointer": "/build_info"
+        },
+        {
+          "role": "environment",
+          "path": "studies/e1-browser/results/2026-11-03-recorded-runway-context.json",
+          "sha256": "be60b5a4a247242ae2d5b7a2fb066e5c8cd0df7f2fca58c52945716ecb9e4565",
+          "pointer": "/environment"
+        },
+        {
+          "role": "evaluator",
+          "path": "app/tests/airport-play.browser.mjs",
+          "sha256": "111be5649f36a2823fa1a296b9435f07c60e99dbbd3039f75065e147ebac26f9"
+        },
+        {
+          "role": "evaluator",
+          "path": "app/tests/replay-files.browser.mjs",
+          "sha256": "a6e9931d8e85b233adf76efc2c962bcf1f7c5d0bd80f8b92d0b514f964782954"
+        },
+        {
+          "role": "criteria",
+          "path": "app/src/flight-trace.test.ts",
+          "sha256": "af880d3df6ea3a58d22a72e82b13eb6f5be0c3ba124d77e30c80125c61bee670"
+        },
+        {
+          "role": "criteria",
+          "path": "docs/design/RUNWAY-PRACTICE.md",
+          "sha256": "c211b103caa90b69a879cbd50f72033ca929e84c2c352da4504685c7a0a15c3b"
+        },
+        {
+          "role": "source",
+          "path": "app/src/flight-trace.ts",
+          "sha256": "62c2c3bff79e4bb46ca5335fc3c848c595f84f2b4d0b2da3f130320849e29e60"
+        },
+        {
+          "role": "source",
+          "path": "app/src/main.ts",
+          "sha256": "b21902ae56760e0990ed7f6fbba387323282e9961d8495c02b28008be9368da5"
+        },
+        {
+          "role": "source",
+          "path": "app/src/runway-practice-panel.ts",
+          "sha256": "78149adc6033acb0c7fa9e5c865866331626f2ca7b99d268f92eac85f55c5b4f"
+        }
+      ],
+      "unavailableRoles": [
+        {
+          "role": "model",
+          "reason": "Embedded research aircraft/runtime and its transitive closure are not redistributed. Metadata identifies the observed binary; it does not establish aircraft fidelity or complete reconstructibility."
+        }
+      ],
+      "notApplicableRoles": [],
+      "dependsOn": [
+        "recorded-runway-context-observation"
+      ],
+      "result": {
+        "path": "docs/reviews/2026-11-03-recorded-runway-context.md",
+        "sha256": "41b64b438359a0c05a04934796cbf273c80e9133f8e0a01b34b2355b9208a62f",
+        "assertions": []
+      },
+      "review": {
+        "author": "Codex root, glide_cases and glide_model",
+        "reviewer": "Codex glide_housekeeping (independent of implementation)",
+        "independent": true
+      }
     }
   ],
   "criteria": [

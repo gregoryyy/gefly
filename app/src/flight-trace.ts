@@ -16,6 +16,31 @@ export interface TraceBounds {
   readonly clipped: boolean;
 }
 
+/** Declared recording origin, not a verified procedure or aircraft-fidelity claim. */
+export interface RunwayPracticeContext {
+  readonly kind: 'runway-practice';
+  readonly version: 1;
+  readonly airport: 'EDFE';
+  readonly runway: '08' | '26';
+}
+
+function copyRunwayContext(value: unknown): Readonly<RunwayPracticeContext> {
+  const invalid = () => new Error('Unsupported runway practice context. Expected EDFE runway 08 or 26, version 1.');
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw invalid();
+  const keys = Reflect.ownKeys(value);
+  const allowed = ['kind', 'version', 'airport', 'runway'];
+  if (keys.length !== allowed.length || !keys.every(key => typeof key === 'string' && allowed.includes(key))) throw invalid();
+  // Context is a small declarative value; accessors and inherited objects do not
+  // become commands or an extension mechanism during construction or import.
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null
+      || !Object.values(Object.getOwnPropertyDescriptors(value)).every(property => 'value' in property)) throw invalid();
+  const context = value as RunwayPracticeContext;
+  if (context.kind !== 'runway-practice' || context.version !== 1 || context.airport !== 'EDFE'
+      || context.runway !== '08' && context.runway !== '26') throw invalid();
+  return Object.freeze({ kind: 'runway-practice', version: 1, airport: 'EDFE', runway: context.runway });
+}
+
 const MAX_SAMPLES = 36_000;
 const MAX_DURATION_S = 600;
 export const MAX_RECORDING_BYTES = 256 * 1024 * 1024;
@@ -27,8 +52,9 @@ export class FlightTrace {
   private head = 0;
   private count = 0;
   private clipped = false;
+  private context: Readonly<RunwayPracticeContext> | null;
 
-  constructor(options: { maxSamples?: number; maxDuration_s?: number } = {}) {
+  constructor(options: { maxSamples?: number; maxDuration_s?: number; context?: RunwayPracticeContext } = {}) {
     const maxSamples = options.maxSamples ?? MAX_SAMPLES;
     const maxDuration_s = options.maxDuration_s ?? MAX_DURATION_S;
     if (!Number.isInteger(maxSamples) || maxSamples < 2 || maxSamples > MAX_SAMPLES) {
@@ -39,6 +65,7 @@ export class FlightTrace {
     }
     this.samples = new Array(maxSamples);
     this.maxDuration_s = maxDuration_s;
+    this.context = options.context === undefined ? null : copyRunwayContext(options.context);
   }
 
   record(state: FlightState, vertical_speed_mps: number): boolean {
@@ -84,12 +111,16 @@ export class FlightTrace {
     return true;
   }
 
-  clear(): void {
+  clear(context?: RunwayPracticeContext): void {
+    const nextContext = context === undefined ? null : copyRunwayContext(context);
     this.samples.fill(undefined);
     this.head = 0;
     this.count = 0;
     this.clipped = false;
+    this.context = nextContext;
   }
+
+  getContext(): Readonly<RunwayPracticeContext> | null { return this.context; }
 
   bounds(): TraceBounds | null {
     if (this.count === 0) return null;
@@ -103,6 +134,7 @@ export class FlightTrace {
   exportJSON(): string {
     if (this.count < 2) throw new Error('Record a flight before saving it.');
     return JSON.stringify({ format: 'gefly-flight-recording', version: 1, units: 'SI',
+      ...(this.context ? { context: this.context } : {}),
       clipped: this.clipped, samples: Array.from({ length: this.count }, (_, index) => this.sample(index)) });
   }
 
@@ -114,7 +146,7 @@ export class FlightTrace {
       || data.samples.length < 2 || data.samples.length > MAX_SAMPLES) {
       throw new Error('Unsupported recording. Expected a Gefly version 1 JSON flight recording.');
     }
-    const trace = new FlightTrace();
+    const trace = new FlightTrace({ context: Object.hasOwn(data, 'context') ? copyRunwayContext(data.context) : undefined });
     let previousStep = -1, previousTime = -1;
     for (const sample of data.samples) {
       const state = sample?.state;

@@ -3,6 +3,35 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 23:26 — Portable runway context in flight recordings
+
+TODO: 2.1.2; R-PLAY-1/R-REVIEW-1. Agent: Codex orchestrator integration;
+glide_cases implemented trace schema/tests, glide_model browser cases, and
+glide_housekeeping independent source/quality/validation review.
+
+**Implementation notes**
+
+Version-1 JSON optionally retains a copied, immutable EDFE 08/26 declaration.
+Contextual imports restore their own briefing/event log; legacy files remain
+unknown. Strict metadata validation rejects malformed extensions before import.
+Review caching includes recording identity, and Back to live restores the original
+session context. Build, 33 trace tests and both actual browser suites pass,
+including same-clock synthetic contact changes and frozen native state checks.
+Current bounded run/review records are registered in assurance; previous pinned
+observations retain their original source hashes and historical freshness status.
+
+**Deviations**
+
+The declaration does not establish actual runway use, aircraft/weather provenance,
+a complete scenario package or training acceptance. Full circuit and engine-off
+glide correction remain open. Cross-provider peer pending.
+
+**Insights**
+
+A replay cache needs recording identity alongside timestamps and sample count.
+Portable context belongs to the recording, while native state stays owned by the
+live session. Legacy data must remain unknown rather than borrow current settings.
+
 ## 2026-11-03 16:45 — Runway practice briefing and sensed flight events
 
 TODO: 2.1.1; R-PLAY-1/R-TRAIN-2/R-REVIEW-1. Agent: Codex orchestrator

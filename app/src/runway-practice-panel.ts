@@ -66,6 +66,9 @@ export function createRunwayPracticePanel(): {
       if (runway === null) return;
       title.textContent = `EDFE ${runway} · ${runway === '26' ? 'Right' : 'Left'}-hand north circuit`;
       badge.textContent = reviewing ? 'REVIEW · read only' : 'PRACTICE';
+      environment.textContent = reviewing
+        ? 'Declared recording context; aircraft and weather provenance are not captured.'
+        : 'Native no-wind baseline; no live weather or wet-runway simulation.';
       const phase = progress?.phase ?? 'waiting';
       status.dataset.phase = phase;
       const statusText = `${PHASE_LABELS[phase]} · ${reviewing ? 'recorded observations' : 'sensed, not assessed'}`;

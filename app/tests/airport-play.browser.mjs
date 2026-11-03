@@ -73,12 +73,79 @@ try {
   const downloadEvent = page.waitForEvent('download');
   await page.locator('#review-save').click();
   const download = await downloadEvent;
-  await page.locator('#recording-file').setInputFiles({name:'practice.json',mimeType:'application/json',buffer:await readFile(await download.path())});
+  const saved = JSON.parse(await readFile(await download.path(),'utf8'));
+  assert.deepEqual(saved.context,{kind:'runway-practice',version:1,airport:'EDFE',runway:'08'},'runway context travels in the recording');
+  const stats = async () => {
+    const count = await page.evaluate(()=>window.airportStats.length);
+    await page.evaluate(()=>window.airportWorker.postMessage({type:'stats'}));
+    await page.waitForFunction(n=>window.airportStats.length>n,count);
+    return page.evaluate(()=>window.airportStats.at(-1));
+  };
+  const frozen = await stats();
+  const assertNativeUnchanged = async () => {
+    const current = await stats();
+    assert.equal(current.step,frozen.step,'import and seek cannot advance the live native worker');
+    assert.equal(current.digest,frozen.digest);
+    assert.deepEqual(current.final_state,frozen.final_state);
+  };
+  const load = async (name,recording) => {
+    await page.locator('#recording-file').setInputFiles({name,mimeType:'application/json',buffer:Buffer.from(JSON.stringify(recording))});
+    await page.waitForFunction(()=>document.querySelector('#recording-file').value==='');
+  };
+  await load('practice08.json',saved);
   await page.waitForFunction(()=>document.querySelector('#notice').textContent.startsWith('Loaded recording'));
-  await page.waitForFunction(()=>document.querySelector('.runway-practice').hidden);
-  await page.locator('#review-exit').click();
   await page.waitForFunction(()=>!document.querySelector('.runway-practice').hidden);
-  assert.match(await practiceCard.locator('summary').textContent(),/08.*Left-hand north circuit/,'Back to live restores session runway context');
+  assert.match(await practiceCard.locator('summary').textContent(),/08.*Left-hand north circuit/);
+  assert.match(await practiceCard.locator('.runway-practice-badge').textContent(),/REVIEW.*read only/);
+  assert(await page.locator('#airport-play-start').isDisabled());
+  await page.waitForFunction(()=>document.querySelector('.runway-practice-status').dataset.phase==='ground');
+  await assertNativeUnchanged();
+  // Synthetic imported contact data, not an actual native takeoff: identical
+  // count/timestamps with all wheels airborne must invalidate the prior ground
+  // observation cache as well as change the declared runway label.
+  const otherRunway = {...saved,context:{...saved.context,runway:'26'},samples:saved.samples.map(sample=>({
+    ...sample,state:{...sample.state,gear_nose_wow:0,gear_left_wow:0,gear_right_wow:0,
+      gear_nose_compression_m:0,gear_left_compression_m:0,gear_right_compression_m:0,
+      gear_nose_load_n:0,gear_left_load_n:0,gear_right_load_n:0,
+      ...(Object.hasOwn(sample.state,'on_ground')?{on_ground:0}:{})},
+  }))};
+  await load('practice26.json',otherRunway);
+  await page.waitForFunction(()=>document.querySelector('.runway-practice summary').textContent.includes('EDFE 26'));
+  assert.match(await practiceCard.locator('summary').textContent(),/26.*Right-hand north circuit/);
+  await page.waitForFunction(()=>document.querySelector('.runway-practice-status').dataset.phase==='airborne');
+  const selectedTime = await page.locator('#review-time').inputValue();
+  for(const context of [
+    {...saved.context,airport:'XXXX'},
+    {...saved.context,runway:'09'},
+    {...saved.context,execute:'window.contextExecuted=true'},
+  ]) {
+    await load('bad-context.json',{...saved,context});
+    assert.match(await page.locator('#notice').textContent(),/^Recording:/,'malformed runway context is rejected');
+    assert.equal(await page.locator('#status').textContent(),'Review');
+    assert.equal(await page.locator('#review-time').inputValue(),selectedTime,'rejection preserves selected review time');
+    assert.match(await practiceCard.locator('summary').textContent(),/26.*Right-hand north circuit/,'rejection preserves the prior recording context');
+    assert.equal(await page.evaluate(()=>window.contextExecuted),undefined);
+    await assertNativeUnchanged();
+  }
+  await load('practice08-again.json',saved);
+  await page.waitForFunction(()=>document.querySelector('.runway-practice-status').dataset.phase==='ground');
+  await load('practice26-again.json',otherRunway);
+  await page.waitForFunction(()=>document.querySelector('.runway-practice-status').dataset.phase==='airborne');
+  await page.locator('#review-time').evaluate(input=>{input.value=input.max;input.dispatchEvent(new Event('input',{bubbles:true}));});
+  await assertNativeUnchanged();
+  await page.locator('#review-exit').click();
+  await page.waitForFunction(()=>document.querySelector('#status').textContent==='Paused');
+  await page.waitForFunction(()=>document.querySelector('.runway-practice summary').textContent.includes('EDFE 08'));
+  assert.match(await practiceCard.locator('summary').textContent(),/08.*Left-hand north circuit/,'Back to live restores08 after imported26');
+  await assertNativeUnchanged();
+  const legacy = {...saved};delete legacy.context;
+  await load('legacy-practice.json',legacy);
+  await page.waitForFunction(()=>document.querySelector('#status').textContent==='Review'&&document.querySelector('.runway-practice').hidden);
+  await assertNativeUnchanged();
+  await page.locator('#review-exit').click();
+  await page.waitForFunction(()=>document.querySelector('#status').textContent==='Paused'&&!document.querySelector('.runway-practice').hidden);
+  assert.match(await practiceCard.locator('summary').textContent(),/08.*Left-hand north circuit/,'legacy Back to live restores session runway context');
+  await assertNativeUnchanged();
   assert.deepEqual(errors,[]);
-  console.log(JSON.stringify({checks:['EDFE26 and08 start stationary with all gear supported; full parking hold does not collide','COM8.33 selection loads standby, explicit swap changes active','Options select vector terrain/map and practice lights','release brake and power produces actual native ground acceleration','map Stop preserves Review and locks start/COM during Review','source-scoped runway briefing, actual ground state, runway change and recorded Review card','imported recording cannot inherit session runway context; Back to live restores it'],browser:browser.version()},null,2));
+  console.log(JSON.stringify({checks:['EDFE26 and08 start stationary with all gear supported; full parking hold does not collide','COM8.33 selection loads standby, explicit swap changes active','Options select vector terrain/map and practice lights','release brake and power produces actual native ground acceleration','map Stop preserves Review and locks start/COM during Review','source-scoped runway briefing, actual ground state, runway change and recorded Review card','portable runway context survives save/load, rejects malformed metadata and restores live context; legacy files remain unknown'],browser:browser.version()},null,2));
 }finally{await browser?.close();server.kill();}
