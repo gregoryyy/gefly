@@ -3,6 +3,28 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 12:08 — Replay arrows and playback speed
+
+TODO: 2.0.58; R-REVIEW-1/R-SIM-9. Agent: Codex, direct implementation.
+
+**Implementation notes**
+
+Capture replay Left/Right before focused widgets, seek one second backward/forward,
+allow key repeats and clamp at trace bounds. Preserve play/pause intent while
+seeking. Add independent replay speed at 1×/1.5×/2×/5×/10× through =, Flight and
+the replay bar; label the overlay REPLAY. Keep live pacing and worker inputs intact.
+Build, focused transport cases and actual Chrome seeking, rate cycling, 5× clock
+progression and frozen native-state checks pass.
+
+**Deviations**
+
+Playback speed changes the recorded-state clock, not the native physics step or
+renderer frame rate. Modifier shortcuts retain their normal routing. Peer pending.
+
+**Insights**
+
+Replay transport must own arrows before native slider/map keyboard handling.
+
 ## 2026-11-03 12:03 — Near-rest parking-brake contact
 
 TODO: 2.0.57; R-SIM-8/R-INPUT-1. Agent: Codex, direct implementation.

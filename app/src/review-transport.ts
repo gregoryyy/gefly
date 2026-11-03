@@ -32,10 +32,12 @@ export function snapReviewTime(time_s: number, bounds: { start_s: number; end_s:
 
 /**
  * Keyboard routing while Review is active. Flight keys never reach live
- * controls; only Space (play/pause), V (view) and R (exit) act.
+ * controls. Arrows always seek, regardless of which replay widget has focus.
  */
 export function reviewKeyAction(code: string, target: { editing: boolean; timeline: boolean; nativeButton: boolean }, repeat: boolean):
-  'toggle-play' | 'toggle-view' | 'exit' | 'ignore' | 'swallow' {
+  'seek-back' | 'seek-forward' | 'toggle-play' | 'toggle-view' | 'exit' | 'ignore' | 'swallow' {
+  if (code === 'ArrowLeft') return 'seek-back';
+  if (code === 'ArrowRight') return 'seek-forward';
   if (code === 'KeyR') return target.editing ? 'ignore' : repeat ? 'swallow' : 'exit';
   if (target.editing && !target.timeline) return 'ignore';
   if (code === 'Space' && !target.nativeButton) return repeat ? 'swallow' : 'toggle-play';

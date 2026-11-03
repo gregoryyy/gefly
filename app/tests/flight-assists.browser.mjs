@@ -147,19 +147,47 @@ try {
   await scene.focus(); await page.keyboard.press('Space');
   await page.waitForTimeout(100);
   const paused = await stats();
+  const liveRateBeforeReview = await page.evaluate(() => window.assistStates.at(-1).simulation_rate);
   await page.keyboard.press('r');
   await page.waitForFunction(() => document.querySelector('.flight-app').dataset.review === 'true'
-    && document.querySelector('#simulation-rate-overlay').textContent.startsWith('RECORDED RATE '));
-  assert((await overlay.textContent()).startsWith('RECORDED RATE '));
+    && document.querySelector('#simulation-rate-overlay').textContent.startsWith('REPLAY '));
+  assert((await overlay.textContent()).startsWith('REPLAY '));
   assert(await page.locator('#capture-autopilot').isDisabled());
-  assert(await page.locator('#simulation-rate').isDisabled());
+  assert.equal(await page.locator('#simulation-rate').isDisabled(), false);
   const reviewCount = await commandCount();
+  const timeline = page.locator('#review-time');
+  const time = () => timeline.evaluate(input => Number(input.value));
+  const startTime = Number(await timeline.getAttribute('min'));
+  const endTime = Number(await timeline.getAttribute('max'));
+  await timeline.focus(); await page.keyboard.press('ArrowRight');
+  assert(Math.abs(await time() - Math.min(endTime, startTime + 1)) < 1e-6, 'timeline arrows seek one second rather than native range steps');
+  await page.locator('#review-play').focus(); await page.keyboard.press('ArrowLeft');
+  assert(Math.abs(await time() - startTime) < 1e-6, 'arrow seek works with transport button focused');
+  await page.keyboard.press('ArrowLeft'); assert(Math.abs(await time() - startTime) < 1e-6, 'seek clamps at start');
+  await scene.focus();
   await page.keyboard.press('a'); await page.keyboard.press('Equal');
+  await page.waitForFunction(() => document.querySelector('#simulation-rate-overlay').textContent === 'REPLAY 1.5×');
+  await page.locator('#review-rate').click();
+  await page.waitForFunction(() => document.querySelector('#simulation-rate-overlay').textContent === 'REPLAY 2×');
+  await page.locator('#review-rate').click();
+  await page.waitForFunction(() => document.querySelector('#simulation-rate-overlay').textContent === 'REPLAY 5×');
+  await page.locator('#review-play').click();
+  const timing = await page.evaluate(() => ({ wall: performance.now(), time: Number(document.querySelector('#review-time').value) }));
+  await page.waitForTimeout(250);
+  const progressed = await page.evaluate(() => ({ wall: performance.now(), time: Number(document.querySelector('#review-time').value) }));
+  const expected = Math.min(endTime - timing.time, (progressed.wall - timing.wall) / 1000 * 5);
+  assert(Math.abs(progressed.time - timing.time - expected) < .35, 'replay clock advances at the selected 5× rate');
+  if (await page.locator('#review-play').textContent() === 'Pause') await page.locator('#review-play').click();
+  for (const rate of [10, 1]) {
+    await page.locator('#review-rate').click();
+    await page.waitForFunction(rate => document.querySelector('#simulation-rate-overlay').textContent === `REPLAY ${rate}×`, rate);
+  }
   assert.equal(await commandCount(), reviewCount);
   unchanged(paused, await stats());
   await page.keyboard.press('r');
   await page.waitForFunction(() => document.querySelector('.flight-app').dataset.review !== 'true');
-  checks.push('Review labels recorded rate distinctly, disables both commands and leaves native physics unchanged');
+  await page.waitForFunction(rate => document.querySelector('#simulation-rate-overlay').textContent === `SIM ${rate}×`, liveRateBeforeReview);
+  checks.push('Replay arrows seek with timeline/button focus, clamp at bounds; = and playback button cycle all rates, 5× advances the replay clock and native physics stays frozen');
 
   await page.keyboard.press('Alt+Shift+KeyR');
   await page.waitForFunction(() => !document.querySelector('#start').disabled && window.assistStates.at(-1)?.step === 0 && window.assistStates.at(-1)?.simulation_rate === 1 && document.querySelector('#simulation-rate-overlay').textContent === 'SIM 1×', null, { timeout: 60000 });

@@ -2,7 +2,7 @@ import './flight-review-controls.css';
 import { reviewTransportView, type ReviewTransportInput } from './review-transport';
 import { MAX_RECORDING_BYTES } from './flight-trace';
 
-export type ReviewTransportState = ReviewTransportInput;
+export type ReviewTransportState = ReviewTransportInput & { playbackRate: number };
 
 interface FlightReviewControlsOptions {
   buttonContainer: HTMLElement;
@@ -11,6 +11,7 @@ interface FlightReviewControlsOptions {
   onExit: () => void;
   onSeek: (t_s: number) => void;
   onTogglePlay: () => void;
+  onCycleRate: () => void;
   fileContainer: HTMLElement;
   onSave: () => string;
   onLoad: (text: string) => void | Promise<void>;
@@ -55,8 +56,8 @@ export function createFlightReviewControls(options: FlightReviewControlsOptions)
       <output id="review-progress" for="review-time">00:00 / 00:00</output>
       <button type="button" id="review-exit">Back to live</button>
     </div>
-    <p id="review-note">Recorded commands and actuator state · no input-event replay</p>
-    <div class="review-files"><button type="button" id="review-save">Save JSON</button><button type="button" id="review-load">Load JSON</button></div>
+    <p id="review-note">Recorded actuator state, not input-event replay · ← / → Seek 1 s · Space Play/Pause</p>
+    <div class="review-files"><button type="button" id="review-rate" aria-keyshortcuts="=">Speed 1× · =</button><button type="button" id="review-save">Save JSON</button><button type="button" id="review-load">Load JSON</button></div>
   `;
   options.barContainer.append(bar);
   const play = bar.querySelector<HTMLButtonElement>('#review-play')!;
@@ -66,6 +67,7 @@ export function createFlightReviewControls(options: FlightReviewControlsOptions)
   const clipped = bar.querySelector<HTMLElement>('#review-clipped')!;
   const save = bar.querySelector<HTMLButtonElement>('#review-save')!;
   const load = bar.querySelector<HTMLButtonElement>('#review-load')!;
+  const rate = bar.querySelector<HTMLButtonElement>('#review-rate')!;
   const saveMenu = document.createElement('button'), loadMenu = document.createElement('button');
   saveMenu.type = loadMenu.type = 'button';
   saveMenu.id = 'save-recording'; loadMenu.id = 'load-recording';
@@ -112,6 +114,7 @@ export function createFlightReviewControls(options: FlightReviewControlsOptions)
   button.addEventListener('click', enter);
   exit.addEventListener('click', leave);
   play.addEventListener('click', togglePlay);
+  rate.addEventListener('click', options.onCycleRate);
   slider.addEventListener('input', seek);
   save.addEventListener('click', saveRecording); saveMenu.addEventListener('click', saveRecording);
   load.addEventListener('click', chooseRecording); loadMenu.addEventListener('click', chooseRecording);
@@ -121,6 +124,7 @@ export function createFlightReviewControls(options: FlightReviewControlsOptions)
     update(state) {
       if (disposed) return;
       active = state.active;
+      rate.textContent = `Speed ${state.playbackRate}× · =`;
       available = state.available;
       const view = reviewTransportView(state);
       button.disabled = view.triggerDisabled;
@@ -151,6 +155,7 @@ export function createFlightReviewControls(options: FlightReviewControlsOptions)
       button.removeEventListener('click', enter);
       exit.removeEventListener('click', leave);
       play.removeEventListener('click', togglePlay);
+      rate.removeEventListener('click', options.onCycleRate);
       slider.removeEventListener('input', seek);
       save.removeEventListener('click', saveRecording); saveMenu.removeEventListener('click', saveRecording);
       load.removeEventListener('click', chooseRecording); loadMenu.removeEventListener('click', chooseRecording);

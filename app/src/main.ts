@@ -157,6 +157,7 @@ let resumeAfterReview = false;
 let recordingLoadVersion = 0;
 const recordedTrace = () => loadedTrace ?? flightTrace;
 let reviewing = false, reviewPlaying = false, reviewTime_s = 0;
+let reviewRate = 1;
 let liveStatus = 'Loading flight…';
 let practiceMap: PracticeMap | null = null;
 let mapVisible = false, mapLoading = false, mapDisposed = false;
@@ -585,12 +586,13 @@ const reviewControls = createFlightReviewControls({
     updateReviewControls();
   },
   onTogglePlay: toggleReviewPlayback,
+  onCycleRate() { flightAssists.cycleRate(); },
 });
 function updateReviewControls() {
   const bounds = recordedTrace().bounds();
   reviewControls.update({
     available: !!bounds && bounds.count >= 2 && ready && !failed && !sceneFailed,
-    active: reviewing, playing: reviewPlaying,
+    active: reviewing, playing: reviewPlaying, playbackRate: reviewRate,
     start_s: bounds?.start_s ?? 0, end_s: bounds?.end_s ?? 0,
     current_s: reviewing ? reviewTime_s : (bounds?.end_s ?? 0), clipped: bounds?.clipped ?? false,
   });
@@ -630,6 +632,20 @@ function toggleReviewPlayback() {
   if (!reviewPlaying) engineAudio.update(null, false);
   updateReviewControls();
 }
+
+// Capture before range/map/menu widgets consume arrow keys. No live inputs change.
+function reviewSeekShortcut(event: KeyboardEvent): void {
+  if (!reviewing || event.ctrlKey || event.metaKey || event.altKey) return;
+  const action = reviewKeyAction(event.code, { editing: false, timeline: false, nativeButton: false }, event.repeat);
+  if (action !== 'seek-back' && action !== 'seek-forward') return;
+  event.preventDefault(); event.stopImmediatePropagation();
+  const selected = snapReviewTime(reviewTime_s + (action === 'seek-back' ? -1 : 1), recordedTrace().bounds());
+  if (selected === null) return;
+  reviewTime_s = selected;
+  lastMapUpdate_ms = -Infinity;
+  updateReviewControls();
+}
+document.addEventListener('keydown', reviewSeekShortcut, true);
 
 
 function held(code: string) { return keys.has(code) || keyboardControls.has(code) || [...pointerControls.values()].includes(code); }
@@ -915,9 +931,14 @@ const disposeMenuShortcuts=installMenuShortcuts(root);
 const flightAssists = createFlightAssists({
   root,
   canCapture: () => controlsAvailable() && latest?.kap_profile === 1,
-  canChangeRate: () => controlsAvailable(),
+  canChangeRate: () => reviewing || controlsAvailable(),
   onCapture() { closeViewMenu(); neutralize(); session.captureAutopilot(); focusFlight(); },
-  onRate(rate) { closeViewMenu(); session.setSimulationRate(rate); focusFlight(); },
+  onRate(rate) {
+    closeViewMenu();
+    if (reviewing) { reviewRate = rate; flightAssists.update(reviewRate, true); updateReviewControls(); }
+    else session.setSimulationRate(rate);
+    focusFlight();
+  },
 });
 sceneContainer.setAttribute('aria-description','Press O for the menu. Alt Shift F shows flight controls.');
 
@@ -941,7 +962,7 @@ function animate(now: number) {
   if (reviewing && reviewPlaying) {
     const bounds = recordedTrace().bounds();
     if (bounds) {
-      reviewTime_s = Math.min(bounds.end_s, reviewTime_s + dt);
+      reviewTime_s = Math.min(bounds.end_s, reviewTime_s + dt * reviewRate);
       if (reviewTime_s >= bounds.end_s) reviewPlaying = false;
       updateReviewControls();
     }
@@ -952,7 +973,7 @@ function animate(now: number) {
   flightWarningsPanel.update(shownWarnings, reviewing);
   if (latest) {
     const state = reviewSample?.state ?? latest;
-    flightAssists.update(state.simulation_rate ?? 1, reviewing);
+    flightAssists.update(reviewing ? reviewRate : (state.simulation_rate ?? 1), reviewing);
     const shownVsiFpm = reviewSample ? reviewSample.vertical_speed_mps / 0.3048 * 60 : verticalSpeedFpm;
     if (practiceMap && mapVisible && practiceMapUpdateDue({ reviewing, now_ms: now, lastUpdate_ms: lastMapUpdate_ms, sample: reviewSample, lastSample: lastMapSample })) {
       try {
@@ -998,5 +1019,5 @@ function animate(now: number) {
   requestAnimationFrame(animate);
 }
 publishInput(); updateSessionUI(); requestAnimationFrame(animate);
-addEventListener('pagehide', () => { document.removeEventListener('keydown', flightMapShortcut, true); flightAssists.dispose(); overlayPresentation.dispose();disposeMenuShortcuts(); mapDisposed = true; engineAudio.dispose(); audioControls?.dispose(); document.removeEventListener('click', activateEngineAudio, true); document.removeEventListener('keydown', activateEngineAudio, true); document.removeEventListener('keydown', soundShortcut, true); document.removeEventListener('keydown', engineShortcut, true); document.removeEventListener('keydown', parkingBrakeShortcut, true); groundCollisionPanel.dispose(); aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); flightWarningsPanel.dispose(); liveWarningMonitor.reset(); reviewWarningMonitor.reset(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
+addEventListener('pagehide', () => { document.removeEventListener('keydown', reviewSeekShortcut, true); document.removeEventListener('keydown', flightMapShortcut, true); flightAssists.dispose(); overlayPresentation.dispose();disposeMenuShortcuts(); mapDisposed = true; engineAudio.dispose(); audioControls?.dispose(); document.removeEventListener('click', activateEngineAudio, true); document.removeEventListener('keydown', activateEngineAudio, true); document.removeEventListener('keydown', soundShortcut, true); document.removeEventListener('keydown', engineShortcut, true); document.removeEventListener('keydown', parkingBrakeShortcut, true); groundCollisionPanel.dispose(); aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); flightWarningsPanel.dispose(); liveWarningMonitor.reset(); reviewWarningMonitor.reset(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
 void sceneReady;

@@ -14,6 +14,7 @@ interface FlightAssistsOptions {
 /** Keyboard/menu conveniences; the worker remains authoritative for flight and pacing. */
 export function createFlightAssists(options: FlightAssistsOptions): {
   update(rate: number, reviewing: boolean): void;
+  cycleRate(): void;
   reset(): void;
   dispose(): void;
 } {
@@ -48,24 +49,27 @@ export function createFlightAssists(options: FlightAssistsOptions): {
   }
   function render(): void {
     const label = `${confirmedRate}×`;
-    const text = `${reviewing ? 'RECORDED RATE' : 'SIM'} ${label}`;
+    const text = `${reviewing ? 'REPLAY' : 'SIM'} ${label}`;
     if (overlay.textContent !== text) overlay.textContent = text;
     if (overlay.dataset.rate !== String(confirmedRate)) overlay.dataset.rate = String(confirmedRate);
     if (overlay.dataset.review !== String(reviewing)) overlay.dataset.review = String(reviewing);
-    const title = reviewing ? 'Recorded simulation speed; Review playback uses its own clock'
+    const ariaLabel = reviewing ? 'Replay speed' : 'Simulation speed';
+    if (overlay.getAttribute('aria-label') !== ariaLabel) overlay.setAttribute('aria-label', ariaLabel);
+    const title = reviewing ? 'Replay speed; = cycles 1×, 1.5×, 2×, 5×, 10×'
       : 'Simulation speed; = cycles 1×, 1.5×, 2×, 5×, 10×';
     if (overlay.title !== title) overlay.title = title;
     const span = speed.querySelector('span')!;
-    if (span.textContent !== `Simulation speed: ${label}`) span.textContent = `Simulation speed: ${label}`;
+    const menuLabel = `${reviewing ? 'Replay' : 'Simulation'} speed: ${label}`;
+    if (span.textContent !== menuLabel) span.textContent = menuLabel;
     capture.disabled = reviewing || !options.canCapture();
-    speed.disabled = reviewing || !options.canChangeRate();
+    speed.disabled = !options.canChangeRate();
   }
   function captureCurrent(): void {
     if (disposed || reviewing || !options.canCapture()) return;
     options.onCapture();
   }
   function cycleRate(): void {
-    if (disposed || reviewing || !options.canChangeRate()) return;
+    if (disposed || !options.canChangeRate()) return;
     // Queue intent without presenting it as acknowledged worker state. An older
     // acknowledgment must not rewind a rapidly repeated user's cycle position.
     const current = requestedRate ?? confirmedRate;
@@ -88,7 +92,7 @@ export function createFlightAssists(options: FlightAssistsOptions): {
     } else if (event.key === '=') {
       // Match the character: German keyboards produce '=' with Shift+Digit0.
       // Consume it before the global digit/throttle handler sees that code.
-      if (reviewing || !options.canChangeRate()) return;
+      if (!options.canChangeRate()) return;
       event.preventDefault(); event.stopPropagation(); cycleRate();
     }
   }
@@ -98,9 +102,11 @@ export function createFlightAssists(options: FlightAssistsOptions): {
   render();
 
   return {
+    cycleRate,
     update(rate, inReview) {
       if (disposed) return;
       if (!RATES.includes(rate)) throw new RangeError('Unsupported simulation speed');
+      if (reviewing !== inReview) requestedRate = null;
       confirmedRate = rate; reviewing = inReview;
       if (requestedRate === rate) requestedRate = null;
       render();

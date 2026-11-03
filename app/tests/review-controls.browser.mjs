@@ -72,7 +72,7 @@ try {
   }, value);
   await page.locator('#scene').focus(); await page.keyboard.press('r');
   assert.equal(await text('status'), 'Paused'); assert.equal(await page.evaluate(() => window.__reviewWorkerId), workerId);
-  assert.equal(await page.locator('#reset kbd').count(), 0);
+  assert.equal(await page.locator('#reset').getAttribute('aria-keyshortcuts'), 'Alt+Shift+R');
   await startOrResume(page); await page.waitForFunction(() => window.__reviewStates.at(-1).step > 10);
   await page.locator('#view-menu > summary').click(); await page.keyboard.press('r');
   assert.equal(await text('status'), 'Flying'); await page.keyboard.press('Escape');
@@ -154,7 +154,7 @@ try {
   assert.equal(await text('recorded-throttle'), '25.0%'); assert.equal(await text('recorded-mixture'), '60.0%');
   await page.screenshot({ path: `${output}/review-controls-mobile.png` });
   await page.locator('#scene').focus(); await page.keyboard.press('r');
-  await page.waitForFunction(() => document.querySelector('#status').textContent === 'Paused');
+  await page.waitForFunction(() => document.querySelector('#status').textContent === 'Flying');
   await page.locator('#view-menu > summary').click(); await page.locator('#toggle-controls').click();
   assert.equal(await page.locator('.control-panel').isVisible(), false);
   await page.locator('#scene').focus(); await page.keyboard.press('r'); assert(await page.locator('.control-panel').isVisible());

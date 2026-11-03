@@ -27,7 +27,7 @@ test('F3 seek snaps only floating-point-close endpoints', () => {
   assert.equal(snapReviewTime(1.5, null), null);
 });
 
-test('F3 Review keyboard suppression: only Space, V and R act', () => {
+test('F3 Review keyboard suppression: transport keys stay separate from flight controls', () => {
   const scene = { editing: false, timeline: false, nativeButton: false };
   const timeline = { editing: true, timeline: true, nativeButton: false };
   assert.equal(reviewKeyAction('Space', scene, false), 'toggle-play');
@@ -38,6 +38,16 @@ test('F3 Review keyboard suppression: only Space, V and R act', () => {
   assert.equal(reviewKeyAction('KeyR', scene, false), 'exit');
   assert.equal(reviewKeyAction('KeyR', scene, true), 'swallow');
   assert.equal(reviewKeyAction('KeyR', { editing: true, timeline: false, nativeButton: false }, false), 'ignore');
-  for (const code of ['ArrowUp', 'ArrowLeft', 'KeyQ', 'KeyW', 'KeyB', 'Digit5', 'KeyP', 'BracketRight', 'KeyE'])
+  for (const code of ['ArrowUp', 'KeyQ', 'KeyW', 'KeyB', 'Digit5', 'KeyP', 'BracketRight', 'KeyE'])
     assert.equal(reviewKeyAction(code, scene, false), 'ignore', `${code} does not reach live controls in Review`);
+});
+
+ test('replay arrows seek with any widget focus, including repeated keys', () => {
+  for (const editing of [false, true]) for (const timeline of [false, true]) for (const nativeButton of [false, true]) {
+    for (const repeat of [false, true]) {
+      const target = { editing, timeline, nativeButton };
+      assert.equal(reviewKeyAction('ArrowLeft', target, repeat), 'seek-back');
+      assert.equal(reviewKeyAction('ArrowRight', target, repeat), 'seek-forward');
+    }
+  }
 });
