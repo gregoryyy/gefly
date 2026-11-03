@@ -46,14 +46,30 @@ references. The first regional reference is **EDDF and a 100 NM radius around
 its official airport reference point**. Reuse open physics engines and aircraft
 models as far as practical before writing replacements. These are user directions;
 original project material is licensed **GPL-3.0-or-later**; third-party material
-must carry non-proprietary licenses, preferring permissive ones so the project
-license can be relaxed later. Community publication rules and roles are scoped
+bundled with the free/open baseline must carry non-proprietary licenses,
+preferring permissive ones. Separately licensed commercial data/services may be
+evaluated for an optional premium variant; that direction grants no redistribution
+rights and does not change the project license or free baseline. Community publication rules and roles are scoped
 in roadmap phase 3. The dynamics engine is **JSBSim** (GAPS Q17, LGPL-2.1 accepted as a copyleft
 exception) and the web stack is CesiumJS (three.js fallback), MapLibre and TypeScript
 (GAPS Q17); the project-owned 172S model data, hosting/cost model, regional datasets,
 LLM provider and detailed milestone sequence remain decisions. A local experimental
-free-flight prototype exists (TODO 2.0, generic study model); no region, community
-service, authoring system or validated 172S model is implemented yet.
+free-flight prototype exists (TODO 2.0, generic study model), including bounded
+Hessen/surrounding terrain and source-dated regional maps/navigation. This does
+not complete EDDF/100 NM or DACH coverage; a community service, authoring system
+and validated 172S model remain unimplemented.
+
+The [expanded vision](input/2026-11-03-road-vision.md) keeps browser access and
+minimum prerequisites central, with levels from just flying to licence-specific
+practice, including instruments, procedures and professional reference material.
+The free version stays free. Optional premium commercial-data/subscription and
+AI-cost recovery, open-platform partnerships and the requested community,
+weather, traffic, navigation, communications, controls and world expansion are
+planned directions in [ROAD](ROAD.md). They do not select providers, partners,
+pricing, schedules or new runtime acceptance; each implementation slice must be
+scoped here before it starts. Open DACH data is the next geographic focus beyond
+the current bounded regional prototypes, while EDDF/100 NM remains a distinct
+reference/acceptance region.
 
 Requirements marked **mandate** express this user direction. **Proposed** marks
 implementation and acceptance details that can be refined before the affected
@@ -208,7 +224,7 @@ data rights, complete regional coverage or a validated aircraft model.
 | Requirement | Status | Acceptance evidence |
 | --- | --- | --- |
 | Create a flight-school-oriented community site around the simulator. [R-COMMUNITY-1] | Mandate; publication rules/roles scoped in roadmap phase 3 (GAPS Q12) | The site connects discoverable learning experiences, objectives, aircraft/fidelity requirements, reference material, review/debrief and community feedback. Contributors can propose and share versioned experiences with visible author/source information and reviewed/experimental status. Public submission, identity, privacy and moderation rules are agreed before those workflows are enabled. A multiplayer lobby or general social feed alone does not satisfy the flight-school focus. |
-| Make the project free and open source. [R-OPEN-1] | Mandate; GPL-3.0-or-later selected; operating model pending | Release the project source and reproducible build/run instructions under GPL-3.0-or-later (GAPS Q5), permitting use, modification and redistribution, and provide the declared core learning/community baseline without a usage fee. Inventory the separate licenses/rights of dependencies, aircraft models, data and assets; a code license does not grant their reuse rights. Admit only non-proprietary third-party licenses and prefer permissive ones (user decision); recording a justification for each copyleft component, since it constrains later relicensing, is a proposal (GAPS Q5). The free baseline can run published experiences without requiring a paid live LLM or a paid imagery subscription. Select and document sustainable hosting/AI/data costs, capacity limits and any optional services before promising an unlimited public service. |
+| Make the project free and open source. [R-OPEN-1] | Mandate; GPL-3.0-or-later selected; operating model pending | Release the project source and reproducible build/run instructions under GPL-3.0-or-later (GAPS Q5), permitting use, modification and redistribution, and provide the declared core learning/community baseline without a usage fee. Inventory the separate licenses/rights of dependencies, aircraft models, data and assets; a code license does not grant their reuse rights. For the distributable free/open baseline, admit only non-proprietary third-party licenses and prefer permissive ones (user decision); recording a justification for each copyleft component, since it constrains later relicensing, is a proposal (GAPS Q5). The free version stays free and can run published experiences without requiring a paid live LLM or a paid imagery subscription. Optional premium access to separately licensed commercial maps/navigation subscriptions and AI extensions that cover usage costs may be evaluated; verify access, display, caching and distribution rights before integration, and keep commercial data/service entitlements separate from the open-source baseline. This does not select a provider, price or closed-source variant. Select and document sustainable hosting/AI/data costs, capacity limits and any optional services before promising an unlimited public service. |
 | Let an LLM assist in creating realistic, source-backed flight experiences with bounded AI interaction. [R-AUTHOR-1] | Mandate; staged authoring and interaction scope proposed | Given a territory and learning intent, authoring produces a reviewable declarative package identifying extent/datum, aircraft/objective, initial conditions, navigation records, chart/procedure references, interaction roles/allowed actions and source versions/rights. Schema and cross-reference checks reject unresolved real identifiers, unsupported procedure references, inconsistent coordinates/units and executable payloads; source comparison and human review reject unsubstantiated real-world claims. Generated narrative or teaching charts are labeled and derived from accepted source records; an LLM is not a source of real navaids or chart geometry. Review precedes publication. Published versions freeze relevant datasets, prompts/model metadata and accepted interaction events for reproducibility; replay uses recorded events rather than fresh generations. AI acts within the package's scenario context and validated actions, not as authority over physics, aircraft limits or clearances. |
 | Model EDDF and a 100 NM surrounding reference region from applicable real material. [R-REGION-1] | Mandate; coverage sequence proposed | Define the region using EDDF's sourced official airport reference point, a 100 nautical mile radius and declared geodesic/datum conventions. Preserve the reference publication and verify boundary fixtures. Inventory terrain, airports/runways/elevations, navaids/fixes and chart/procedure material with applicable versions/rights, plus a coverage map distinguishing validated, approximate and unavailable areas/features. Test selected real-data navigation and chart/ground alignment fixtures under the agreed tolerances. The complete extent is a regional target, not a claim that every feature is already modeled; learner departure airports and first drills within it remain separate choices. |
 | Prefer reuse of open physics engines and aircraft models before custom replacements. [R-REUSE-1] | Mandate; dynamics engine selected (JSBSim, GAPS Q17); aircraft model and real-scene integration pending | Before engine/model selection, compare existing open candidates for license compatibility, aircraft applicability, browser integration, maintainability, numerical behavior and independent reference-case agreement. Record the selected versions and adaptation boundaries. Reuse a suitable candidate where it meets the agreed criteria; justify each custom dynamics/model replacement by an evidenced gap and bounded scope. Open availability, included C172 data and engine reputation do not substitute for model-data rights or the independent validation required by R-SIM-5. |
@@ -256,7 +272,7 @@ revision reviewed. Any later integration change invalidates affected evidence.
 
 This document refinement does not include a product-ready simulator (only the local
 experimental prototype of TODO 2.0 on a generic study model), a validated 172S model, licensed aircraft manuals, validated aircraft performance,
-an implemented EDDF region, community hosting, LLM runtime, instructor endorsement
+complete accepted EDDF/100 NM or DACH coverage, community hosting, LLM runtime, instructor endorsement
 or regulatory qualification. Worldwide scenery, a live
 human ATC network, multiplayer, encoded video export, VR, motion platforms and
 commercial training approval remain separately scoped decisions. Procedural

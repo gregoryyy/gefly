@@ -280,6 +280,18 @@ coverage, rights and live rollout remain future implementation selections.
 
 Why: affects code reuse, distribution, aircraft manuals, avionics depictions, maps and navigation data. The user's direction is now free/open source; select a compatible open-source license and review separately licensed assets/data. Blocking: license-dependent distribution and restricted asset ingestion.
 
+Answer (roadmap financing/data direction): **2026-11-03 09:16, user**
+(recorded by orchestrator; [input](input/2026-11-03-road-vision.md)):
+“free version stays free”; “potentially premium variant that uses commercial
+maps / subscriptions (eg, Navigraph)”; “AI-based extensions in premium to cover
+tokens”. This adds candidate optional commercial service/data access while the
+free, open-source baseline and its non-proprietary bundled-asset policy remain.
+It does not authorize copying proprietary datasets into the repository, alter
+GPL-3.0-or-later, or select a subscription/provider/pricing arrangement. Confirm
+runtime access/display/cache/distribution rights before any such integration.
+ROAD records partnerships and financing as planned, not existing agreements.
+
+
 Answer (S17 whole lists): **2026-11-02 07:36, user** ([input](input/2026-11-02-s17-lists-electrical-tach.md)):
 "Accept both". The complete S17 Fig. 2-3 instrument-marking list (p. 2-6) and the
 Fig. 6-3 loading-station arms (p. 6-9) may be extracted as cited facts. This is an
@@ -665,5 +677,5 @@ Q3 retains the unresolved exact C172 configuration.
 | A6 | Replay/debrief is the initial interpretation of “video review”; exported video remains a separate option. | User likes GeoFS flight review; orchestrator proposal, 2026-10-31 15:09. | Pending user correction. |
 | A7 | A320 is an interaction reference; fewer/deeper aircraft means no second initial type. | Existing C172-first decision and user feedback; orchestrator interpretation, 2026-10-31 15:09. | Pending user correction. |
 | A8 | ILS and advanced traffic systems get separate later equipment/objective scopes. | EASA PPL first plus expanded wishlist; orchestrator proposal, 2026-10-31 15:09. | Ordering pending user correction and syllabus/equipment research. |
-| A9 | Free access and open-source release are product directions; exact license/hosting and third-party rights need separate selections. | User's free/open-source community direction, 2026-10-31 15:15. | License selected 2026-11-01 07:04 (Q5: GPL-3.0-or-later); hosting and per-asset rights pending. |
+| A9 | Free access and open-source release are product directions; exact license/hosting and third-party rights need separate selections. | User's free/open-source community direction, 2026-10-31 15:15. | License selected 2026-11-01 07:04 (Q5: GPL-3.0-or-later); 2026-11-03 roadmap retains a permanently free baseline and candidate optional premium data/AI services. Hosting, operating model and per-asset/service rights remain pending. |
 | A10 | AI-assisted authoring assembles validated declarative packages rather than executing arbitrary generated code or inventing navigation data. | Source-backed realism and reuse direction; orchestrator architecture proposal, 2026-10-31 15:15. | Provider/interface and review scope pending. |
