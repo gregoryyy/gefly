@@ -1,3 +1,4 @@
+import { createAirportScenery, AIRPORT_VECTOR_CREDIT } from './airport-scenery';
 import {
   Axis, Cartesian3, CesiumWidget, Color, Credit, Ellipsoid, EllipsoidTerrainProvider,
   ImageryLayer, Ion, JulianDate, UrlTemplateImageryProvider,
@@ -109,6 +110,9 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   widget.canvas.setAttribute('aria-label', 'Hessen aerial imagery and public terrain flight scene');
   widget.canvas.setAttribute('tabindex', '-1');
   const scene = widget.scene;
+  let vectorScenery = false;
+  const airportScenery = createAirportScenery(scene, (lat, lon) => atlasSample(lat, lon)?.ellipsoid_m ?? null);
+  widget.creditDisplay.addStaticCredit(new Credit(AIRPORT_VECTOR_CREDIT + ' · <a href="https://www.openstreetmap.org/copyright">Source / licence</a>', true));
   const aircraftShadow = createAircraftShadow(scene, container);
   const forwardMarker = createForwardMarker(container);
   const header = container.parentElement?.querySelector<HTMLElement>('.topbar');
@@ -314,6 +318,14 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       throw new RangeError('Cannot render a non-finite aircraft state');
     }
     const useTerrain = state.terrain_profile === 1;
+    airportScenery.setVisible(useTerrain);
+    airportScenery.setVectorVisible(vectorScenery && useTerrain);
+    airportScenery.update(state);
+    container.dataset.airportScenery = airportScenery.status;
+    for (let i = 0; i < scene.imageryLayers.length; i++) {
+      const layer = scene.imageryLayers.get(i);
+      layer.show = layer === reliefLayer ? useTerrain : !vectorScenery || i === 0;
+    }
     const terrainSample = useTerrain ? atlasSample(state.lat_rad, state.lon_rad) : null;
     if (useTerrain && (!terrainSample || !Number.isFinite(state.ground_height_ellipsoid_m))) {
       container.dataset.terrain = terrainSample ? 'height-unavailable' : 'outside-coverage';
@@ -429,6 +441,8 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   observer.observe(container);
   update(initialVisual, 'cockpit');
   const flightScene: FlightScene = {
+    setSceneryMode(vector) { vectorScenery = vector; airportScenery.setVectorVisible(vector); container.dataset.sceneryMode = vector ? 'vector' : 'imagery'; },
+    setPracticePapi(enabled) { airportScenery.setPracticePapi(enabled); container.dataset.practicePapi = String(enabled); },
     update,
     async prepareRecording(states) {
       const needed = new Map<string, Readonly<FlightState>>();
@@ -473,7 +487,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       creditObserver.disconnect();
       clearTimeout(loadTimeout);
       forwardMarker.dispose();
-      aircraftShadow.dispose();
+      aircraftShadow.dispose(); airportScenery.dispose();
       status.remove();
       widget.destroy();
       credits.remove();

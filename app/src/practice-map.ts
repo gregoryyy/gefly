@@ -1,4 +1,7 @@
 /// <reference types="vite/client" />
+import { createAirportPlayControls } from './airport-play-controls';
+import { loadAirportComDirectory } from './airport-com';
+import { createAirportComPanel } from './airport-com-panel';
 import { LngLatBounds, Map as LibreMap, Marker, ScaleControl, setWorkerUrl, type GeoJSONSource, type StyleSpecification } from 'maplibre-gl';
 import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -12,6 +15,7 @@ import type { FlightMapNavigation, FlightMapNavigationFeature } from './flight-m
 export interface PracticeMap {
   update(state: Readonly<FlightState>, path: readonly Readonly<FlightState>[], mode: 'live' | 'review'): void;
   setVisible(visible: boolean): void;
+  setVector(enabled: boolean): void;
   toggleOverlap(): void;
   dispose(): void;
 }
@@ -20,6 +24,12 @@ interface MapOptions {
   container: HTMLElement;
   onClose: () => void;
   onInteraction: () => void;
+  onVectorChange?: (enabled: boolean) => void;
+  onStartRunway?: (runway: string) => void;
+  onStopExercise?: () => void;
+  isExerciseActive?: () => boolean;
+  canTuneCom?: () => boolean;
+  onTuneCom?: (receiver: 1 | 2, channel_khz: number) => void;
 }
 
 /** A visual aid only; airport data is community maintained and not a chart. */
@@ -67,17 +77,17 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   layers.className = 'practice-map-layers';
   layers.setAttribute('role', 'group');
   layers.setAttribute('aria-label', 'Map layers');
-  const layerButtons = ['Map', 'Aerial', 'NAV aids'].map((label, index) => {
+  const layerButtons = ['Map', 'Aerial', 'NAV aids', 'Vector'].map((label, index) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.textContent = label;
     button.disabled = true;
-    button.setAttribute('aria-label', ['Show public map', 'Show aerial imagery', 'Show navigation aids'][index]);
-    button.setAttribute('aria-pressed', String(index !== 1));
+    button.setAttribute('aria-label', ['Show public map', 'Show aerial imagery', 'Show navigation aids', 'Show vector map and terrain'][index]);
+    button.setAttribute('aria-pressed', String(index === 0 || index === 2));
     layers.append(button);
     return button;
   });
-  const [mapLayer, aerialLayer, navigationLayer] = layerButtons;
+  const [mapLayer, aerialLayer, navigationLayer, vectorLayer] = layerButtons;
   const navigationStatus = document.createElement('p');
   navigationStatus.className = 'practice-map-navigation-status';
   navigationStatus.setAttribute('role', 'status');
@@ -161,10 +171,20 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   let navigationMarkerKey = '';
   let paintedNavigationData: FlightMapNavigation | undefined;
   let navigationData: FlightMapNavigation = { type: 'FeatureCollection', features: [] };
-  let aerial = false;
+  let aerial = false, vector = false;
   let navigationVisible = true;
   let airports: Airport[] = [];
+  let selectedAirport = 'EDFE';
+  let comPanel: ReturnType<typeof createAirportComPanel> | undefined;
+  let reviewing = false;
+  const playControls = createAirportPlayControls(options.onStartRunway, options.onStopExercise);
+  airportsSection.before(playControls.element);
+
   const selectAirport = (airport: Airport) => {
+    selectedAirport = airport.id; playControls.setAirport(airport.id);
+    playControls.update(options.isExerciseActive?.() ?? false, reviewing);
+    comPanel?.selectAirport(airport.id);
+    if (comPanel) comPanel.element.open = false;
     setFollowing(false);
     map?.jumpTo({ center: [airport.lon, airport.lat], zoom: Math.max(map.getZoom(), 11) });
     const elevation = airport.elevation_ft === null ? 'Elevation unavailable' : `Elevation ${airport.elevation_ft} ft (${(airport.elevation_ft * 0.3048).toFixed(0)} m)`;
@@ -215,11 +235,27 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   }
 
   function setAerial(value: boolean): void {
+    caption.textContent = value ? 'Public aerial imagery · capture dates vary · terrain and navigation unchanged.' : 'Southern Germany public map · community snapshot, not a navigation chart.';
+    vector = false; vectorLayer.setAttribute("aria-pressed", "false");
+    if (ready) for (const id of ["vector-land", "vector-lines"]) map?.setLayoutProperty(id, "visibility", "none");
+    if (ready) map?.setLayoutProperty("basemap", "visibility", "visible");
     aerial = value;
     mapLayer.setAttribute('aria-pressed', String(!value));
     aerialLayer.setAttribute('aria-pressed', String(value));
     viewport.setAttribute('aria-label', `North-up ${value ? 'aerial imagery' : 'public map'} and recorded flight path`);
     if (ready) map?.setLayoutProperty('imagery', 'visibility', value ? 'visible' : 'none');
+  }
+
+  function setVector(enabled: boolean): void {
+    vector = enabled;
+    vectorLayer.setAttribute('aria-pressed', String(enabled));
+    caption.textContent = enabled ? 'Vector coverage: EDFE immediate surroundings only · © OpenStreetMap contributors · ODbL · terrain and navigation unchanged.' : 'Southern Germany public map · community snapshot, not a navigation chart.';
+    if (!ready || !map) return;
+    if (!enabled) { setAerial(aerial); return; }
+    mapLayer.setAttribute('aria-pressed', 'false'); aerialLayer.setAttribute('aria-pressed', 'false');
+    map.setLayoutProperty('basemap', 'visibility', 'none'); map.setLayoutProperty('imagery', 'visibility', 'none');
+    for (const id of ['vector-land', 'vector-lines']) map.setLayoutProperty(id, 'visibility', 'visible');
+    viewport.setAttribute('aria-label', 'OpenStreetMap vector scenery · EDFE region only · public physical terrain independent');
   }
 
   // All points remain in GPU layers; only a bounded set of nearby labels uses DOM.
@@ -297,8 +333,9 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     navigationDetail.hidden = false;
   };
 
-  listen(mapLayer, () => setAerial(false));
-  listen(aerialLayer, () => setAerial(true));
+  listen(vectorLayer, () => { const enabled = !vector; setVector(enabled); options.onVectorChange?.(enabled); });
+  listen(mapLayer, () => { setAerial(false); options.onVectorChange?.(false); });
+  listen(aerialLayer, () => { setAerial(true); options.onVectorChange?.(false); });
   listen(navigationLayer, () => {
     navigationVisible = !navigationVisible;
     navigationLayer.setAttribute('aria-pressed', String(navigationVisible));
@@ -352,6 +389,10 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       overlap.setAttribute('aria-pressed', String(enabled));
     },
     update(state, path, mode) {
+      reviewing = mode === 'review';
+      playControls.update(options.isExerciseActive?.() ?? false, reviewing);
+      comPanel?.setEnabled(!reviewing && !!options.onTuneCom && (options.canTuneCom?.() ?? true));
+      comPanel?.updatePosition(state.lat_rad * 180 / Math.PI, state.lon_rad * 180 / Math.PI);
       if (disposed) return;
       modeLabel.textContent = mode === 'review' ? 'Recorded review' : 'Live';
       try {
@@ -373,6 +414,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       // Render failures propagate so the host can dispose and offer a retry.
       paint();
     },
+    setVector,
     setVisible(value) {
       if (disposed) return;
       visible = value;
@@ -382,7 +424,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     dispose() {
       if (disposed) return;
       disposed = true;
-      abort.abort();
+      abort.abort(); comPanel?.dispose();
       observer.disconnect();
       removers.forEach((remove) => remove());
       container.removeEventListener('pointerdown', onInteraction);
@@ -404,6 +446,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       sources: {
         basemap: { type: 'raster', tiles: ['/scenery/map/{z}/{x}/{y}.png'], tileSize: 256, minzoom: 5, maxzoom: 16, bounds: [...AIRFIELD_BOUNDS] },
         imagery: { type: 'raster', tiles: ['/scenery/imagery/{z}/{x}/{y}.png'], tileSize: 512, minzoom: 7, maxzoom: 15, bounds: [8, 49, 10, 50.75] },
+        'airport-vector': { type: 'geojson', data: '/airports/scenery/edfe-vector.geojson' },
         'recorded-path': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
         airfields: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
         'navigation-aids': { type: 'geojson', data: navigationData },
@@ -412,6 +455,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
         { id: 'background', type: 'background', paint: { 'background-color': '#162530' } },
         { id: 'basemap', type: 'raster', source: 'basemap', paint: { 'raster-fade-duration': 0 } },
         { id: 'imagery', type: 'raster', source: 'imagery', layout: { visibility: 'none' }, paint: { 'raster-fade-duration': 0 } },
+        { id: 'vector-land', type: 'fill', source: 'airport-vector', filter: ['==', ['geometry-type'], 'Polygon'], layout: { visibility: 'none' }, paint: { 'fill-color': ['match', ['get', 'kind'], 'water', '#5488a1', 'forest', '#426d4b', 'building', '#b7a89b', 'runway', '#34383b', 'apron', '#858789', 'residential', '#c7b9a7', '#8d9e6f'], 'fill-outline-color': '#68765b' } },
+        { id: 'vector-lines', type: 'line', source: 'airport-vector', filter: ['==', ['geometry-type'], 'LineString'], layout: { visibility: 'none' }, paint: { 'line-color': ['match', ['get', 'kind'], 'water', '#5488a1', 'taxiway', '#9b9b92', 'runway', '#34383b', '#ded5be'], 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1, 16, 5] } },
         { id: 'airfields', type: 'circle', source: 'airfields', paint: {
           'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 2, 13, 5],
           'circle-color': ['match', ['get', 'type'], 'closed', '#858b91', 'heliport', '#e3bc75', '#89cfff'],
@@ -465,6 +510,15 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       if (disposed || !map) return;
       airports = data;
       renderAirports();
+      void loadAirportComDirectory(abort.signal).then(directory => {
+        if (disposed) return;
+        comPanel = createAirportComPanel({ airports, directory,
+          onTune(receiver, channel) { if (!reviewing) options.onTuneCom?.(receiver, channel); },
+          onSelectAirport(id) { const airport = airports.find(a => a.id === id); if (airport) selectAirport(airport); },
+        });
+        airportsSection.after(comPanel.element); comPanel.selectAirport(selectedAirport); comPanel.element.open = false;
+        comPanel.setEnabled(!reviewing && !!options.onTuneCom);
+      }).catch(() => { if (!disposed) { const notice = document.createElement('p'); notice.textContent = 'COM directory unavailable'; airportsSection.after(notice); } });
     }).catch(() => { if (!disposed) airportStatus.textContent = 'Airport catalogue unavailable.'; });
     const arrow = document.createElement('div');
     arrow.className = 'practice-map-aircraft';
@@ -487,7 +541,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       ready = true;
       status.hidden = !failed;
       [...buttons, ...layerButtons].forEach((button) => { button.disabled = false; });
-      setAerial(aerial);
+      const savedVector = vector; setAerial(aerial); if (savedVector) setVector(true);
       paintAirports();
       paintNavigation();
       paint();

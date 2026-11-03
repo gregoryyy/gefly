@@ -35,5 +35,5 @@ export async function installSceneryFixture(page) {
   const chunk=(name,data)=>{const type=Buffer.from(name),head=Buffer.alloc(4),tail=Buffer.alloc(4);head.writeUInt32BE(data.length);tail.writeUInt32BE(crc32(Buffer.concat([type,data])));return Buffer.concat([head,type,data,tail]);};
   const png=size=>{const h=Buffer.alloc(13);h.writeUInt32BE(size);h.writeUInt32BE(size,4);h[8]=8;h[9]=6;const raw=Buffer.alloc((size*4+1)*size);for(let y=0;y<size;y++)for(let x=0;x<size;x++){const p=y*(size*4+1)+1+x*4;raw[p]=70;raw[p+1]=100;raw[p+2]=65;raw[p+3]=255;}return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),chunk('IHDR',h),chunk('IDAT',deflateSync(raw)),chunk('IEND',Buffer.alloc(0))]);};
   const map=png(256),photo=png(512);
-  await page.route('**/scenery/**',route=>route.fulfill({contentType:'image/png',body:route.request().url().includes('/imagery/')?photo:map}));
+  await page.route('**/scenery/**',route=>new URL(route.request().url()).pathname.startsWith('/scenery/') ? route.fulfill({contentType:'image/png',body:route.request().url().includes('/imagery/')?photo:map}) : route.fallback());
 }

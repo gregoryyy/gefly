@@ -37,7 +37,7 @@ export function createRadioNavPanel(options: RadioNavOptions): {
       ${KINDS.map(kind => `<div class="radio-frequency-row">
         <div><label>${kind.toUpperCase()}${receiver} ACTIVE</label><output id="${kind}${receiver}-active">—</output></div>
         <button type="button" id="${kind}${receiver}-swap" aria-label="Swap ${kind.toUpperCase()}${receiver} active and standby">⇄</button>
-        <div><label for="${kind}${receiver}-standby">STANDBY MHz</label><input id="${kind}${receiver}-standby" type="number" min="${kind === 'com' ? '118' : '108'}" max="${kind === 'com' ? '136.975' : '117.95'}" step="${kind === 'com' ? '.025' : '.05'}" aria-label="${kind.toUpperCase()}${receiver} standby frequency MHz"></div>
+        <div><label for="${kind}${receiver}-standby">STANDBY MHz</label><input id="${kind}${receiver}-standby" type="number" min="${kind === 'com' ? '118' : '108'}" max="${kind === 'com' ? '136.990' : '117.95'}" step="${kind === 'com' ? '.005' : '.05'}" aria-label="${kind.toUpperCase()}${receiver} standby frequency MHz"></div>
         <div class="radio-tune-buttons"><button type="button" id="${kind}${receiver}-down" aria-label="Decrease ${kind.toUpperCase()}${receiver} standby channel">−</button><button type="button" id="${kind}${receiver}-up" aria-label="Increase ${kind.toUpperCase()}${receiver} standby channel">+</button></div>
       </div>`).join('')}
       <div class="nav-course"><label id="${navId(receiver, 'obs-label')}" for="${navId(receiver, 'obs')}">OBS ${receiver}</label><button type="button" id="${navId(receiver, 'obs-down')}" aria-label="Decrease NAV${receiver} OBS course">−</button><input id="${navId(receiver, 'obs')}" type="number" min="0" max="359" step="1" value="0" aria-label="NAV${receiver} OBS true course degrees"><button type="button" id="${navId(receiver, 'obs-up')}" aria-label="Increase NAV${receiver} OBS course">+</button></div>
@@ -45,7 +45,7 @@ export function createRadioNavPanel(options: RadioNavOptions): {
       <div id="${navId(receiver, 'cdi')}" class="nav-cdi" role="img" aria-label="CDI unavailable">${'<i></i>'.repeat(11)}<b id="${navId(receiver, 'cdi-needle')}" hidden></b></div>
       <p id="${navId(receiver, 'signal-note')}" class="nav-signal-note">No historical signal in modeled range</p>
     </section>`).join('')}
-    <button type="button" id="nav-stations-open" class="nav-stations-open">Stations</button><p class="radio-limitations">Historical 2013.10 data · NOT CURRENT · teaching only. Simplified signals; no terrain or propagation. COM 25 kHz subset; no ATC.</p>
+    <button type="button" id="nav-stations-open" class="nav-stations-open">Stations</button><p class="radio-limitations">Historical 2013.10 data · NOT CURRENT · teaching only. Simplified signals; no terrain or propagation. COM channel names incl. 8.33; no ATC.</p>
   `;
   const dialog = document.createElement('dialog');
   dialog.id = 'radio-nav-dialog'; dialog.className = 'radio-nav-dialog'; dialog.setAttribute('aria-labelledby', 'radio-nav-title');
@@ -210,7 +210,7 @@ export function createRadioNavPanel(options: RadioNavOptions): {
         try {
           if (!Number.isFinite(khz) || Math.abs(khz - Math.round(khz)) > 1e-6) throw new RangeError();
           change(tuneStandby(config, kind, Math.round(khz), receiver)); input.setCustomValidity('');
-        } catch { input.setCustomValidity(`Use a supported ${kind.toUpperCase()} channel (${kind === 'com' ? '25' : '50'} kHz steps).`); input.reportValidity(); }
+        } catch { input.setCustomValidity(`Use a supported ${kind.toUpperCase()} channel (${kind === 'com' ? '5 (excluding unused 8.33 channel names)' : '50'} kHz steps).`); input.reportValidity(); }
         return;
       }
       if (input.id === navId(receiver, 'obs')) {

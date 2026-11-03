@@ -381,6 +381,41 @@ EMSCRIPTEN_KEEPALIVE int gf_init_landing(double dt_s, double lat_rad, double lon
   return 0;
 }
 
+// Stationary runway exercise. Settle the existing native gear under full brakes
+// before publishing time zero; no invented gear spring/friction coefficients.
+EMSCRIPTEN_KEEPALIVE int gf_init_runway(double dt_s, double lat_rad, double lon_rad,
+                                       double heading_rad) {
+  if (!finite_all({dt_s, lat_rad, lon_rad, heading_rad})) return kErrNonFinite;
+  if (!(dt_s > 0.0 && dt_s <= 1.0 / 60.0) || std::fabs(lat_rad) > kPi/2 || std::fabs(lon_rad) > kPi) return kErrRange;
+  if (g_pending_terrain && !g_pending_terrain->contains(lon_rad, lat_rad)) return kErrTerrainCoverage;
+  const int rc = load_model(dt_s, lat_rad, lon_rad, heading_rad);
+  if (rc != 0) return rc;
+  auto& f = *g_fdm;
+  f.SetPropertyValue("ic/h-agl-ft", 1.7 / kFtToM);
+  f.SetPropertyValue("ic/psi-true-rad", heading_rad);
+  f.SetPropertyValue("ic/vn-fps", 0); f.SetPropertyValue("ic/ve-fps", 0); f.SetPropertyValue("ic/vd-fps", 0);
+  f.SetPropertyValue("fcs/throttle-cmd-norm", 0); f.SetPropertyValue("fcs/mixture-cmd-norm", 1);
+  f.SetPropertyValue("fcs/left-brake-cmd-norm", 1); f.SetPropertyValue("fcs/right-brake-cmd-norm", 1);
+  f.SetPropertyValue("propulsion/magneto_cmd", 3);
+  if (!f.RunIC()) return kErrRunIc;
+  f.SetPropertyValue("propulsion/set-running", -1);
+  for (int i = 0; i < static_cast<int>(6.0 / dt_s); ++i) {
+    if (!f.Run()) return kErrRun;
+    if (g_terrain_query_failed) return kErrTerrainCoverage;
+  }
+  if (g_active_terrain && !terrain_support_available()) return kErrTerrainCoverage;
+  unsigned contact[6];
+  if (!resolve_contacts(contact)) return kErrRunIc;
+  const auto gear = f.GetGroundReactions();
+  for (unsigned i = 0; i < 3; ++i)
+    if (!gear->GetGearUnit(contact[i])->GetWOW() || gear->GetGearUnit(contact[i+3])->GetWOW()) return kErrRunIc;
+  if (std::hypot(f.GetPropertyValue("velocities/v-north-fps"), f.GetPropertyValue("velocities/v-east-fps")) * kFtToM > 0.05) return kErrRunIc;
+  f.Setsim_time(0);
+  g_trim_ok = 0; g_trim_throttle = 0; g_trim_pitch = 0;
+  reset_study_state();
+  return 0;
+}
+
 // Normalized JSBSim command properties (fcs/*-cmd-norm); sign conventions are
 // JSBSim's, not verified against a specific aircraft control rig.
 EMSCRIPTEN_KEEPALIVE int gf_set_inputs(double elevator, double aileron, double rudder,

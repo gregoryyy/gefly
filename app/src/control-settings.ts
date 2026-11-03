@@ -1,7 +1,7 @@
 import type { Controls } from './types';
 
 /** Dimensionless command gains; these do not change the aircraft model. */
-export interface ControlSettings { pitch: number; roll: number; rudder: number; brake?: number; coordinatedRudder?: boolean; centeredTouchpad?: boolean }
+export interface ControlSettings { pitch: number; roll: number; rudder: number; brake?: number; coordinatedRudder?: boolean; centeredTouchpad?: boolean; vectorScenery?: boolean; practicePapi?: boolean }
 
 export const DEFAULT_CONTROL_SETTINGS = Object.freeze({ pitch: 1, roll: 1, rudder: 1, brake: 0.25, coordinatedRudder: false, centeredTouchpad: false });
 export const GENTLE_CONTROL_SETTINGS = Object.freeze({ pitch: 0.5, roll: 0.5, rudder: 0.7, brake: 0.25, coordinatedRudder: false, centeredTouchpad: false });
@@ -31,6 +31,8 @@ export function applyControlSettings(
   if (raw.engine_running !== undefined && typeof raw.engine_running !== 'boolean') throw new TypeError('Engine command must be boolean');
   if (typeof parkingBrake !== 'boolean') throw new TypeError('Parking brake must be boolean');
   if (settings.coordinatedRudder !== undefined && typeof settings.coordinatedRudder !== 'boolean') throw new TypeError('Rudder link must be boolean');
+  if (settings.vectorScenery !== undefined && typeof settings.vectorScenery !== 'boolean') throw new TypeError('Vector scenery must be boolean');
+  if (settings.practicePapi !== undefined && typeof settings.practicePapi !== 'boolean') throw new TypeError('Practice PAPI must be boolean');
   if (settings.centeredTouchpad !== undefined && typeof settings.centeredTouchpad !== 'boolean') throw new TypeError('Centered touchpad mode must be boolean');
   requireRange('pitch gain', settings.pitch, 0.25, 1.5);
   requireRange('roll gain', settings.roll, 0.25, 1.5);

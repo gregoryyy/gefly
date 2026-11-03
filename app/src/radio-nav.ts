@@ -32,8 +32,8 @@ export function radioFrequencyKeys(kind: RadioKind, receiver: RadioReceiver = 1)
     : { active: 'radio_nav2_active_khz', standby: 'radio_nav2_standby_khz' } as const;
 }
 export function validFrequency(kind: RadioKind, value: number): boolean {
-  const [min, max, step] = kind === 'com' ? [118000, 136975, 25] : [108000, 117950, 50];
-  return Number.isInteger(value) && value >= min && value <= max && (value - min) % step === 0;
+  const [min, max, step] = kind === 'com' ? [118000, 136990, 5] : [108000, 117950, 50];
+  return Number.isInteger(value) && value >= min && value <= max && (value - min) % step === 0 && (kind !== 'com' || value % 25 !== 20);
 }
 export function validRadioNavSnapshot(input: object): input is RadioNavSnapshot {
   const value = input as Partial<RadioNavSnapshot>;

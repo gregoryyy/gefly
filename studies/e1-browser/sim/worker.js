@@ -602,6 +602,9 @@ async function onInit(msg) {
   if (msg.kap140 !== undefined && typeof msg.kap140 !== 'boolean') { fail('init: invalid kap140 capability flag'); return; }
   const presets = { normal: 1, hard: 2, side: 3, banked: 4 };
   const preset = msg.landing_preset;
+  if (msg.runway_start !== undefined && typeof msg.runway_start !== 'boolean') { fail('init: invalid runway_start'); return; }
+  if (msg.runway_start && (preset !== undefined || typeof M._gf_init_runway !== 'function')) { fail('Runway start unavailable. Rebuild the native engine.'); return; }
+
   if (preset !== undefined && (typeof preset !== 'string' || !Object.hasOwn(presets, preset)
     || typeof M._gf_init_landing !== 'function')) { fail('init: landing preset unavailable or invalid'); return; }
   if (msg.regional_navigation === true) {
@@ -636,7 +639,7 @@ async function onInit(msg) {
       grid => { if (generation === terrainGeneration) removeTile(grid); });
     await terrainStream.move(ic.lat_rad, ic.lon_rad);
   }
-  const rc = preset === undefined
+  const rc = msg.runway_start ? M._gf_init_runway(dt, ic.lat_rad, ic.lon_rad, ic.heading_rad) : preset === undefined
     ? M._gf_init(dt, ic.lat_rad, ic.lon_rad, ic.alt_msl_m, ic.heading_rad, ic.tas_mps)
     : M._gf_init_landing(dt, ic.lat_rad, ic.lon_rad, ic.heading_rad, presets[preset]);
   if (rc !== 0) { fail(`init rc=${rc}`); return; }

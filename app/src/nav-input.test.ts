@@ -19,10 +19,12 @@ test('R-NAV-4 OBS drag keeps the whole displacement modulo 360°', () => {
   assert.equal(obsDragDelta_deg(0, 1e300, 0), null, 'non-safe totals are ignored');
 });
 
-test('standby − / + steps 25 kHz COM and 50 kHz NAV channels within band', () => {
+test('standby − / + steps COM channel names and 50 kHz NAV channels within band', () => {
   assert.equal(stepStandby_khz('com', 118000, -1), 118000);
-  assert.equal(stepStandby_khz('com', 121500, 1), 121525);
-  assert.equal(stepStandby_khz('com', 136975, 1), 136975);
+  assert.equal(stepStandby_khz('com', 118015, 1), 118025);
+  assert.equal(stepStandby_khz('com', 118025, -1), 118015);
+  assert.equal(stepStandby_khz('com', 121500, 1), 121505);
+  assert.equal(stepStandby_khz('com', 136990, 1), 136990);
   assert.equal(stepStandby_khz('nav', 108000, -1), 108000);
   assert.equal(stepStandby_khz('nav', 110300, 1), 110350);
   assert.equal(stepStandby_khz('nav', 117950, 1), 117950);
