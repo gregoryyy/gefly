@@ -24,18 +24,24 @@ their displayed source/license credits. See the complete
 aircraft visual, cockpit and application code are project-authored; third-party
 data rights remain separate from the GPL project license.
 
-## Right-side flight map capture
+## Current README capture
 
-`gefly-flight-map.png`, now used in README, was captured on 2026-11-03 from the
-same actual application and Chrome/viewport, at simulation time 27.63 s / step
-3316, with Chase view, HDG/ALT, classic panels and the activated right-side map.
-The BKG map, aircraft/path and source-dated NAV controls are visible. No imagery
-fixtures, source rewrite, generated pixels or image editing were used. The first
-capture exposed a startup dependency on raster loading; the accepted capture
-follows the style-ready repair and was visually inspected.
+`gefly-flight-map.png` was refreshed on 2026-11-03 using the actual application
+in Chrome 156.0.8078.80 at 1920×1080. It shows the latest left systems panel,
+six-pack/NAV instruments, engine, KAP 140/flap/trim and radio columns, a visible
+horizon in chase view, and the public map centered around Egelsbach (EDFE).
+The cyan trajectory contains 447 sampled points from the real JSBSim
+flight; no route or aircraft states were fabricated. At capture the flight was
+running at 1×, time 61.68 s / step 7402, with HDG/ALT engaged.
 
-Actual public BKG map and bundled/live imagery requests retain their on-screen
-source credits. The screenshot is one observed view, not complete service or
-photography coverage. Disposable worker/network evidence is in
-`output/flight/flight-map-screenshot.json`; all third-party rights above still
-apply, including BKG map DL-DE-BY-2.0 and its linked source inventory.
+Reproduce manually with `node app/tests/capture-readme.mjs` after building the
+local native runtime. It uses normal UI controls and public services, with no
+imagery fixtures, source rewriting, generated backdrop or image editing.
+The flight is briefly paused while public tiles settle, then resumed before
+capture. The screenshot retains source credits and any live detail-loading
+notice; it is not proof of complete upstream imagery availability or fidelity.
+Disposable state/network evidence is in `output/flight/readme-latest-panel.json`.
+
+The BKG public map uses DL-DE-BY-2.0. The photography, terrain and geoid source
+rights described above and in the third-party inventory still apply. Aircraft
+visuals and cockpit code are project-authored; data rights remain separate.

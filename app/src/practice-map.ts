@@ -135,6 +135,20 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   let aircraft: Marker | undefined;
   let start: Marker | undefined;
   let frame: PracticeMapFrame | undefined;
+  // Project the bounded trace directly so it remains visible while worker tiles load.
+  const trajectory = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  trajectory.classList.add('practice-map-trajectory');
+  trajectory.setAttribute('aria-hidden', 'true');
+  const track = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  trajectory.append(track);
+  function paintTrajectory(): void {
+    const points = ready && map && frame && frame.path.length > 1
+      ? frame.path.map(coordinate => { const p = map!.project(coordinate); return `${p.x.toFixed(2)},${p.y.toFixed(2)}`; }).join(' ')
+      : '';
+    if (track.getAttribute('points') !== points) track.setAttribute('points', points);
+  }
+
+  let paintedPath = '';
   let visible = !container.hidden;
   let ready = false;
   let disposed = false;
@@ -294,11 +308,16 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
 
   function paint(): void {
     if (!visible || !ready || !map || !frame || disposed) return;
-    (map.getSource('recorded-path') as GeoJSONSource).setData({
-      type: 'FeatureCollection', features: frame.path.length < 2 ? [] : [{
-        type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: frame.path },
-      }],
-    });
+    paintTrajectory();
+    const pathKey = JSON.stringify(frame.path);
+    if (pathKey !== paintedPath) {
+      (map.getSource('recorded-path') as GeoJSONSource).setData({
+        type: 'FeatureCollection', features: frame.path.length < 2 ? [] : [{
+          type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: frame.path },
+        }],
+      });
+      paintedPath = pathKey;
+    }
     aircraft!.setLngLat(frame.position).setRotation(frame.heading_deg).addTo(map);
     if (frame.path.length) start!.setLngLat(frame.path[0]).addTo(map);
     else start!.remove();
@@ -339,7 +358,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
         frame = makePracticeMapFrame(state, path);
       } catch {
         // Invalid flight state: never keep a stale marker, path or readout on screen.
-        frame = undefined;
+        frame = undefined; paintedPath = ''; paintTrajectory();
         aircraft?.remove(); start?.remove();
         if (ready && map) (map.getSource('recorded-path') as GeoJSONSource | undefined)?.setData({ type: 'FeatureCollection', features: [] });
         readout.textContent = 'Aircraft position unavailable';
@@ -417,6 +436,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       renderWorldCopies: false, maxPitch: 0, pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
     });
     map.addControl(new ScaleControl({ unit: 'nautical', maxWidth: 100 }), 'bottom-left');
+    viewport.append(trajectory);
+    map.on('move', paintTrajectory); map.on('resize', paintTrajectory);
     map.dragRotate.disable();
     map.touchZoomRotate.disableRotation();
     map.on('moveend', () => { paintAirports(); paintNavigation(); });

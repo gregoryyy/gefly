@@ -97,3 +97,7 @@
   .practice-map-layers button { padding: 4px 6px; font-size: 9px; }
   .practice-map-navigation-status, .practice-map-navigation-detail, .practice-map-navigation-key { margin-left: 8px; margin-right: 8px; }
 }
+
+.practice-map-trajectory { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; z-index: 1; }
+.practice-map-trajectory polyline { fill: none; stroke: #54e8fa; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 1px 1px #10212c); }
+.practice-map-aircraft, .practice-map-start, .practice-map-airport-marker, .practice-map-navigation-marker { z-index: 2; }

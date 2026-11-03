@@ -3,6 +3,33 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 12:45 — Bounded panel zoom and refreshed flight image
+
+TODO: 2.0.61; R-PANEL-1/R-VIEW-1. Agent: Codex, direct implementation.
+
+**Implementation notes**
+
+Grow the deck upward during zoom so both instrument rows stay vertically inside
+it, cap magnification by viewport height and preserve scenery space above. Bound
+horizontal two-finger panning to the instrument edges and restore the fitted
+layout on zoom-out/resize. Build and actual Chrome maximum zoom, repeated pan,
+AP interaction, fit restoration, camera isolation and paused native-state checks
+pass. Keep a directly projected SVG trace visible independently of map-worker
+updates, and avoid rebuilding unchanged path data. Map interaction, projection
+and selected-recording/native-isolation checks also pass. Capture the actual browser flight for the README; image-specific evidence
+and credits are in docs/images/README.md.
+
+**Deviations**
+
+Enlarged columns can require horizontal scrolling. Public imagery coverage and
+capture-time availability remain limited; this image is not a scenery benchmark.
+Peer pending.
+
+**Insights**
+
+Keep the vertical instrument rows visible by changing the deck viewport together
+with magnification; clamping translation alone still clips gauge faces.
+
 ## 2026-11-03 12:23 — Left-hand aircraft systems panel
 
 TODO: 2.0.60; R-SYS-1/R-PANEL-1/R-REVIEW-1. Agent: Codex, direct implementation.
