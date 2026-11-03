@@ -2,6 +2,14 @@ import { STALL_FIELDS, validStallState } from './types.ts';
 import type { FlightState } from './types';
 
 export const SPATIAL_STALL_SOURCE_URL = 'https://github.com/JSBSim-Team/jsbsim/blob/v1.3.3/aircraft/c172x/c172x.xml';
+/** Provenance of the span/AERORP/alpha-max reference values (raw file bytes at tag v1.3.3). */
+export const SPATIAL_STALL_SOURCE = Object.freeze({
+  url: SPATIAL_STALL_SOURCE_URL,
+  raw_url: 'https://raw.githubusercontent.com/JSBSim-Team/jsbsim/v1.3.3/aircraft/c172x/c172x.xml',
+  sha256: 'b736f4b7560d5aab4d2a69026798be1d369b2b2bb5ddcf627aebfd441ba71840',
+  revision: 'JSBSim tag v1.3.3; sha256 of the raw file bytes at that tag',
+  rights: 'unresolved (GAPS Q24)',
+});
 export const SPATIAL_STALL_LIMITATIONS = 'Kinematic AoA proxy on a reference span line, not measured flow separation or part-specific stall. Stations use the pinned c172x 36 ft span and AERORP X/Z, with actual CG and air-relative body motion. All stations share the model positive global alpha-max reference and its 85% warning transition; these are not local stall thresholds. Negative-angle stall boundaries are not established; below the positive reference does not mean safe or attached flow. No wing twist, induced flow, downwash, local wind gradient or flap-dependent local boundary is resolved. Tail and fuselage are unknown. No physics or damage threshold is added.';
 /** Presentation floor in the local longitudinal airflow plane, not an aircraft limit. */
 export const MIN_LOCAL_AIRFLOW_MPS = 1;
