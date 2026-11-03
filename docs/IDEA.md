@@ -4,12 +4,27 @@
 
 Help student pilots practice aircraft control, instrument interpretation and procedures through increasingly realistic simulation. Begin with a Cessna 172 and EASA PPL learning in a web application; extend to CPL objectives once the foundation is validated. Instructors are proposed review partners, not yet recruited users. The original brief is in [input](input/2026-10-31-project-brief.md); user choices are recorded in [GAPS](GAPS.md).
 
+The [expanded vision](input/2026-11-03-road-vision.md) aims for the most realistic
+credible flight experience with minimal prerequisites: open a browser and choose
+anything from “just fly” to structured PPL and other light-aircraft qualification
+exercises. Instruments and procedures belong in that experience, connected to
+applicable professional reference material. [ROAD](ROAD.md) stages these directions;
+recording them does not establish aircraft fidelity or training credit.
+
 The user also wants a **free, open-source community site oriented toward flight
 schools**, and LLM-assisted creation of realistic flight experiences. Start the
 regional model around **EDDF within a 100 NM radius**, using real available source
 material for territory, navigation assets and charts. Prefer open physics engines
 and aircraft models instead of recreating established simulation components. These
-are roadmap/architecture directions, not features delivered by the current scaffold.
+remain roadmap/architecture directions to scope and validate; [TODO](TODO.md)
+records current implementation status.
+
+The free version should remain free, with the platform open under
+GPL-3.0-or-later. Optional premium services are a financing direction: commercial
+map/chart subscriptions, such as a potential Navigraph integration, and AI
+extensions that cover token usage costs. Partnerships are another candidate
+source of support. No provider, price, financing arrangement or partner is selected
+by this vision, and optional paid services do not replace the useful free baseline.
 
 The [GeoFS feedback](input/2026-10-31-geofs-feedback.md) sharpens this direction:
 preserve quick browser entry, recognizable geography, accessible desktop/mobile
@@ -28,7 +43,8 @@ path and actions. [The training design](design/TRAINING.md) maps these interests
 proposed stages; the full set is not an initial-release checklist.
 
 A flight-school community can organize shareable exercises, practice questions and
-debriefs around learning goals. The experience-authoring workflow should assemble
+debriefs around learning goals, with contributions to aircraft models, world/model
+data and suggestions through a forum. The experience-authoring workflow should assemble
 real regional data and validated scenario instructions from a user's description,
 with AI-assisted interaction inside the resulting experience. Source-backed assets,
 repeatable scenarios and a reviewable output package distinguish useful authoring
