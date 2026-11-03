@@ -154,6 +154,14 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [ ] 2.0.43 Add a separately sourced COM directory with airport/service identifiers (ATIS, Ground, Tower, Approach), nearby/name/service filters and explicit standby/swap. Declare dataset edition/rights/currentness; represent 8.33 kHz channels accurately or show them unavailable until tuner support is delivered. A directory alone does not implement ATC/voice or live ATIS. R-COMM-1/R-DATA-1.
 
+- [x] 2.0.44 Integrate larger dynamic terrain around Darmstadt, Odenwald and Spessart, cross-state imagery and 103 community airport map points. Bounded R-WORLD-5/R-WORLD-2/R-WORLD-1/R-DATA-1 delivery: source/native/browser evidence, exact shared edges, bounded caches/failures, shared CI and final independent affected-scope review pass. See [regional review](reviews/2026-11-03-streamed-region.md). Not full EDDF/100 NM, surveyed runway or global landing acceptance; peer pending.
+
+- [x] 2.0.45 Integrate initially hidden flight controls/title bar, O to toggle the top bar, half-opacity floating overlays with deliberate activation, and marked menu shortcuts. R-UX-2/R-INPUT-1/R-VIEW-1; independent actual-browser checks and shared CI pass, see [integration review](reviews/2026-11-03-flight-assists.md). Central Start/Pause card remains separate. The reported touchpad overshoot/jumps are not resolved by this increment; peer pending.
+
+- [x] 2.0.46 Research global dynamic map/terrain/imagery loading, local reconstruction/procedural detail and Google Earth/Maps alternatives. [Research note](research/2026-11-03-global-scenery.md) includes current primary sources and small actual terrain-service probes; [independent research review](reviews/2026-11-03-global-scenery-research.md) passes. No provider activation, global implementation, cost-per-flight or fidelity acceptance; peer pending.
+
+- [x] 2.0.47 Add A current-heading/altitude autopilot capture and = requested pacing 1×/1.5×/2×/5×/10× with a worker-confirmed overlay and captured Review metadata. R-AP-2/R-SIM-9; independent 65-unit/eight-WASM-group/actual-browser checks and shared CI pass, see [review](reviews/2026-11-03-flight-assists.md). README includes an actual live cockpit/terrain screenshot. Aircraft/control gains are unchanged; achievable pacing is best effort and peer remains pending.
+
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.
 - [ ] 2.3 code2 implements the corresponding browser controls, instruments and exercise feedback against frozen contracts **in parallel with 2.2**.

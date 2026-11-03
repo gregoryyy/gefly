@@ -1,3 +1,4 @@
+import type { TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
 import { ALERT_FIELDS, validAlertState } from '../../studies/e1-browser/sim/altitude-alert.js';
 import type { AltitudeAlertSnapshot } from '../../studies/e1-browser/sim/altitude-alert.js';
 export { ALERT_FIELDS, validAlertState };
@@ -145,14 +146,19 @@ export function validCollisionState(input: object): boolean {
 export interface FlightState extends Partial<Record<keyof AltitudeAlertSnapshot, number>>, Partial<KapSnapshot>, TerrainState, AltimeterState, CockpitState, EngineState, PitchTrimState, GroundState, ControlState, StallState, CollisionState, Partial<RadioNavSnapshot> {
   step: number; t_s: number; lat_rad: number; lon_rad: number;
   alt_msl_m: number; roll_rad: number; pitch_rad: number; heading_rad: number; tas_mps: number;
+  /** Requested wall-clock pacing; fixed simulation dt is unchanged. */
+  simulation_rate?: number;
 }
 export interface Controls { elevator: number; aileron: number; rudder: number; throttle: number; flap_norm?: number; brake_norm?: number; mixture_norm?: number; mixture_auto?: boolean; pitch_trim_norm?: number; engine_running?: boolean; pilot_override?: boolean }
 export interface FlightScene {
+  setTerrainTiles?(tiles: readonly TerrainGrid[]): void;
   update(state: FlightState, view: 'cockpit' | 'chase', look?: { yaw_rad: number; pitch_rad: number; fov_rad?: number }): void;
   dispose(): void;
 }
-export type AirborneSite = 'edfe' | 'taunus' | 'eddf-ils';
+export type AirborneSite = 'edfe' | 'taunus' | 'eddf-ils' | 'darmstadt' | 'odenwald' | 'spessart';
 export interface FlightSession {
+  captureAutopilot(): void;
+  setSimulationRate(rate: number): void;
   setKap140(command: KapCommand): void;
   setNavigation(config: Pick<RadioNavSnapshot, "radio_nav_active_khz" | "radio_obs_deg" | "radio_demo_enabled"> & Partial<Pick<RadioNavSnapshot, "radio_nav2_active_khz" | "radio_obs2_deg">>): void;
   start(): void; pause(): void; reset(landingPreset?: LandingPreset, site?: AirborneSite): void; input(controls: Controls): void; setAltimeter(setting_pa: number): void; setAutopilot(mode: 0|1|2, target_heading_rad?: number): void; dispose(): void;

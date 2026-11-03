@@ -5,7 +5,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
-import { startOrResume } from './flight-actions.mjs';
+import { installSceneryFixture, prepareFlightUI, startOrResume } from './flight-actions.mjs';
 import { COCKPIT_FIELDS } from '../src/types.ts';
 
 const app = fileURLToPath(new URL('..', import.meta.url));
@@ -133,8 +133,9 @@ try {
       }
     };
   });
-  await ui.goto(origin);
+  await installSceneryFixture(ui); await ui.goto(origin);
   await ui.waitForFunction(() => !document.querySelector('#start').disabled && window.brakeStates.length > 0, null, { timeout: 60000 });
+  await prepareFlightUI(ui);
   const stats = async () => {
     const n = await ui.evaluate(() => window.brakeStats.length);
     await ui.evaluate(() => window.brakeWorker.postMessage({ type: 'stats' }));
@@ -227,8 +228,9 @@ try {
       get onmessage() { return super.onmessage; }
     };
   }, [...COCKPIT_FIELDS]);
-  await legacy.goto(origin);
+  await installSceneryFixture(legacy); await legacy.goto(origin);
   await legacy.waitForFunction(() => !document.querySelector('#start').disabled && window.legacyDeliveredStates.length > 0, null, { timeout: 60000 });
+  await prepareFlightUI(legacy);
   await startOrResume(legacy); await legacy.waitForFunction(() => window.legacyDeliveredStates.at(-1)?.step > 20);
   await legacy.locator('#pause').click(); await legacy.waitForTimeout(150);
   const legacyStats = async () => {

@@ -1,3 +1,4 @@
+import { installSceneryFixture, prepareFlightUI } from './flight-actions.mjs';
 // Actual Cesium projection and fixed-step physics invariance for the body-forward cue.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -34,7 +35,8 @@ try {
       }
     };
   });
-  await page.goto(origin); await page.waitForFunction(()=>!document.querySelector('#start').disabled);
+  await installSceneryFixture(page); await page.goto(origin); await page.waitForFunction(()=>!document.querySelector('#start').disabled);
+  await prepareFlightUI(page);
   await page.locator('#start').click(); await page.waitForFunction(()=>window.__forwardStates.at(-1)?.step>10);
   await page.locator('#pause').click(); await page.waitForFunction(()=>document.querySelector('#status').textContent==='Paused');
   const stats=async()=>{const count=await page.evaluate(()=>window.__forwardStats.length);await page.evaluate(()=>window.__forwardWorker.postMessage({type:'stats'}));await page.waitForFunction(n=>window.__forwardStats.length>n,count);return page.evaluate(()=>window.__forwardStats.at(-1));};

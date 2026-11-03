@@ -71,6 +71,18 @@ function state(step: number, t_s = step): FlightState {
   };
 }
 
+test('recorded pacing survives seeking and paused rate-only changes preserve physics and prior samples', () => {
+  const trace = new FlightTrace();
+  assert(trace.record({ ...state(1), simulation_rate: 1 }, 2));
+  assert(trace.record({ ...state(2), simulation_rate: 2 }, 3));
+  assert(trace.record({ ...state(2), simulation_rate: 5 }, 99));
+  assert.equal(trace.atTime(1)!.state.simulation_rate, 1);
+  assert.equal(trace.atTime(2)!.state.simulation_rate, 5);
+  assert.equal(trace.atTime(2)!.vertical_speed_mps, 3);
+  assert.equal(trace.record({ ...state(2), roll_rad: .1, simulation_rate: 10 }, 0), false);
+  assert.equal(trace.record({ ...state(3), simulation_rate: 3 }, 0), false);
+});
+
 test('empty trace and finite floor seeks clamp to the retained boundaries', () => {
   const trace = new FlightTrace();
   assert.equal(trace.bounds(), null);

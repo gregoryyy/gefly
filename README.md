@@ -2,6 +2,11 @@
 
 Gefly is a flight simulator that starts with approachable exercises and progressively adds realistic flight dynamics, aircraft controls and avionics. The first target is a **Cessna 172 for EASA PPL learning**, delivered as a **web application**, with GeoFS as an interaction reference. CPL exercises follow later. The first configuration is a classic-panel Cessna 172S (serials 172S9491–172S9809); the radio/avionics fit remains open. The selected stack is TypeScript, CesiumJS (three.js fallback), MapLibre 2D maps and JSBSim in a module Web Worker at a fixed 1/120 s step.
 
+![Gefly flying near Egelsbach with classic cockpit panels and real terrain imagery](docs/images/gefly-flight.png)
+
+Live prototype flight in chase view, with the cockpit instruments and controls.
+The aircraft model remains experimental. [Screenshot provenance and credits](docs/images/README.md).
+
 The intended product is **free and open source**, with a community site organized
 around flight-school practice. The first regional model is **EDDF plus a 100 NM
 radius**, using real source material. Later experience authoring should use LLMs
@@ -33,25 +38,44 @@ a later supported-device capability.
 
 ```sh
 npm --prefix app ci
+python3 -m pip install -r utils/scenery/requirements.txt  # live photo compositing
 just build-flight-engine   # first run: builds the local research runtime
 just fly                  # http://127.0.0.1:5173
 ```
 
-Select **Start flight**, then use the visible on-screen controls or a draggable stick.
+Select **Start flight**, then click the scene for touchpad yoke control or use the keyboard.
+The top menu/title bar and floating flight controls start hidden: **O** toggles
+the menu, and **Alt+Shift+F** shows the flight controls. Floating controls, map,
+flight-data and stall-awareness panels are half opaque until clicked; their
+first click activates the panel, and subsequent gestures operate it.
 Arrow keys control pitch/roll, Q/W rudder, 0 throttle idle and 1–9 throttle.
 Space pauses, R opens Review, V changes view, E toggles the engine and S toggles
-sound (initially off). Restart is in Flight. Click toggles touchpad yoke control;
+sound (initially off). **A** captures current heading/altitude with the autopilot;
+**=** cycles **1×, 1.5×, 2×, 5×, 10×**, with an on-screen simulation-rate indicator.
+These are simulator conveniences; acceleration preserves the fixed physics step
+and the achieved rate depends on available CPU/rendering capacity.
+Restart is in Flight. Click toggles touchpad yoke control;
 hold-drag looks around while retaining the yoke midpoint, and two-finger vertical
 scroll changes field of view.
-A bundled official Hessen photograph shows a small starter area around Egelsbach
-over public Hessen terrain around Egelsbach, Frankfurt and the Taunus. A Flight-menu Taunus demonstration shows the hills; full regional coverage and accepted airport/runway elevations remain incomplete. Regional orthophoto tiles now add approximately 1.5–3 m detail around Frankfurt and
-the eastern approaches, loaded by view. The generic
+Public terrain now streams across **8.25–10.00°E / 49.25–50.75°N**, including
+Darmstadt, Odenwald and Spessart, with named Flight-menu demonstrations. The
+bounded 200 m BKG relief surrounds the finer Egelsbach–Frankfurt–Taunus package;
+it is not surveyed runway terrain or the full EDDF/100 NM region. Bundled
+approximately 1.5–3 m imagery around Frankfurt is complemented by live public
+Hessen, Bavarian and Baden-Württemberg photography and a map fallback. The generic
 research aircraft remains experimental; see
 [setup, controls and limitations](app/README.md).
 
-**Map** shows a north-up practice view with the aircraft and whole retained flight
-path over local imagery. During **Review**, its marker follows the selected
-historical state. It is a practice aid with limited coverage, not a navigation chart.
+**Map** shows the aircraft, whole retained flight path and **103 searchable
+community airport points**, including available airport elevations. Pan/zoom,
+select an airport and use Follow to return to the aircraft; selection does not
+move the aircraft. During **Review**, the marker follows the selected historical
+state. The map is practice context, not a navigation chart or current airport reference.
+
+The local development server fetches live map/photo tiles from fixed public
+WMS services. Pillow is needed for photo compositing; provider failure leaves
+map/other scenery fallback. Hosting remains undecided: a static UI build alone
+does not supply the development scenery proxy or local research engine.
 
 The altimeter's **pressure window** opens paused pressure practice. Compare QNH,
 launch-point QFE and standard pressure, or adjust the setting manually in hPa or
@@ -61,7 +85,7 @@ practice reference, not airport elevation. Review retains the recorded setting.
 The classic **six-pack** now shows airspeed, attitude, pressure altitude, ideal
 turn/slip, true heading and vertical speed. Click the scene to toggle touchpad
 yoke control; hold-drag to look around. Two-finger vertical scrolling
-adjusts camera FOV. **F / Shift+F** selects flaps, **B** holds
+adjusts camera FOV. **[ / ]** selects flaps, **B** holds
 wheel brakes, and **1–9** selects 10–90% throttle (**0** idle). The engine panel
 adds mixture, RPM, manifold pressure, oil and fuel readouts. **P** toggles the two-axis autopilot. Its KAP 140 operating controls include VS,
 current-altitude hold, selected-altitude capture and source-aware navigation;

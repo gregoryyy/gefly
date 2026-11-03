@@ -38,6 +38,38 @@ const state = {
 };
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+test('rate changes are bounded worker messages and autopilot capture flushes deliberate neutral handoff while paused', t => {
+  const { session, errors } = fixture(t);
+  session.reset(); const worker = MockWorker.instances[0]; worker.emit(ready);
+  for (const rate of [1, 1.5, 2, 5, 10]) session.setSimulationRate(rate);
+  assert.deepEqual(worker.messages.filter(m => m.type === 'simulation-rate').map(m => m.rate), [1, 1.5, 2, 5, 10]);
+  const count = worker.messages.length;
+  for (const rate of [0, -1, 3, NaN, Infinity]) session.setSimulationRate(rate);
+  assert.equal(worker.messages.length, count);
+  session.input({ elevator: .2, aileron: .3, rudder: 0, throttle: .7, pilot_override: true });
+  session.captureAutopilot(); assert.equal(worker.messages.length, count);
+  session.input({ elevator: 0, aileron: -.109375, rudder: 0, throttle: .7, pilot_override: false });
+  session.captureAutopilot();
+  assert.equal(worker.messages.at(-2)!.type, 'input');
+  assert.equal(worker.messages.at(-2)!.aileron, 0);
+  assert.equal(worker.messages.at(-1)!.type, 'autopilot-capture');
+  worker.emit({ ...state, simulation_rate: 5 });
+  worker.emit({ ...state, simulation_rate: 3 });
+  assert.equal(errors.length, 1);
+});
+
+test('regional worker messages reject a valid-shaped grid with inconsistent slot identity', t => {
+  const { session, errors } = fixture(t);
+  session.reset(); const worker = MockWorker.instances[0];
+  const r = Math.PI / 180;
+  worker.emit({ type: 'terrain-tile', grid: {
+    version: 1, id: 'e850-n4925', slot: 0, width: 129, height: 129,
+    west_rad: 8.25 * r, south_rad: 49.25 * r, east_rad: 8.5 * r, north_rad: 49.5 * r,
+    physical_m: new Float64Array(129 * 129).fill(100), geoid_m: new Float64Array(129 * 129).fill(48),
+  } });
+  assert.equal(errors.length, 1); assert(worker.terminated);
+});
+
 test('ground collision latches the exact stopped frame and blocks controls/resume until fresh restart', t => {
   const { session, states, errors, statuses } = fixture(t);
   session.start(); const worker = MockWorker.instances[0]; worker.emit(ready);

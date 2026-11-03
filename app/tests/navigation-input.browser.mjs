@@ -1,4 +1,4 @@
-import { startOrResume } from './flight-actions.mjs';
+import { installSceneryFixture, prepareFlightUI, startOrResume } from './flight-actions.mjs';
 // Actual pointer/keyboard gestures against the application and research worker.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -56,8 +56,9 @@ try {
       }
     };
   });
-  await page.goto(origin);
+  await installSceneryFixture(page); await page.goto(origin);
   await page.waitForFunction(() => !document.querySelector('#start').disabled);
+  await prepareFlightUI(page);
   await startOrResume(page);
   await page.waitForFunction(() => document.querySelector('#status').textContent === 'Flying');
   const field = receiver => page.locator(receiver === 1 ? '#nav-obs' : '#nav2-obs');

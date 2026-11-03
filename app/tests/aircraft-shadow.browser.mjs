@@ -1,3 +1,4 @@
+import { installSceneryFixture, prepareFlightUI } from './flight-actions.mjs';
 // Real paused JSBSim state and Cesium caster/receiver pixels. The comparison
 // disables only native shadow rendering; it never changes aircraft/camera state.
 import assert from 'node:assert/strict';
@@ -36,7 +37,8 @@ try {
       });
     } };
   });
-  await page.goto(origin); await page.waitForFunction(() => !document.querySelector('#start').disabled);
+  await installSceneryFixture(page); await page.goto(origin); await page.waitForFunction(() => !document.querySelector('#start').disabled);
+  await prepareFlightUI(page);
   const stats = async () => { const count = await page.evaluate(() => window.__shadowStats.length);
     await page.evaluate(() => window.__shadowWorker.postMessage({ type: 'stats' }));
     await page.waitForFunction(count => window.__shadowStats.length > count, count);

@@ -3,7 +3,8 @@ import { LngLatBounds, Map as LibreMap, Marker, setWorkerUrl, type GeoJSONSource
 import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './practice-map.css';
-import { imageryCorners, makePracticeMapFrame, type PracticeMapFrame } from './practice-map-data';
+import { makePracticeMapFrame, type PracticeMapFrame } from './practice-map-data';
+import { loadAirportCatalogue, type Airport } from './airport-catalogue';
 import type { FlightState } from './types';
 
 export interface PracticeMap {
@@ -18,7 +19,7 @@ interface MapOptions {
   onInteraction: () => void;
 }
 
-/** A local imagery aid only: it contains no airport, airspace or procedure data. */
+/** A visual aid only; airport data is community maintained and not a chart. */
 export async function createPracticeMap(options: MapOptions): Promise<PracticeMap> {
   const { container, onClose, onInteraction } = options;
   container.classList.add('practice-map-panel');
@@ -42,10 +43,10 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   const status = document.createElement('p');
   status.className = 'practice-map-status';
   status.setAttribute('role', 'status');
-  status.textContent = 'Loading local imagery…';
+  status.textContent = 'Loading map…';
   const toolbar = document.createElement('div');
   toolbar.className = 'practice-map-toolbar';
-  const buttons = ['−', '+', 'Fit path', 'Follow'].map((label) => {
+  const buttons = ['−', '+', 'Fit path', 'Fit region', 'Follow'].map((label) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.textContent = label;
@@ -53,7 +54,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     toolbar.append(button);
     return button;
   });
-  const [zoomOut, zoomIn, fit, follow] = buttons;
+  const [zoomOut, zoomIn, fit, fitRegion, follow] = buttons;
   zoomOut.setAttribute('aria-label', 'Zoom map out');
   zoomIn.setAttribute('aria-label', 'Zoom map in');
   follow.setAttribute('aria-pressed', 'true');
@@ -65,11 +66,28 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   legend.textContent = 'Whole retained path · Following aircraft · North up';
   const credit = document.createElement('p');
   credit.className = 'practice-map-credit';
-  credit.textContent = 'HVBG · DL-DE Zero 2.0 · Limited imagery coverage';
+  credit.innerHTML = 'Map: © <a href="https://www.bkg.bund.de" target="_blank" rel="noopener noreferrer">BKG</a> (2026), <a href="https://www.govdata.de/dl-de/by-2-0" target="_blank" rel="noopener noreferrer">dl-de/by-2-0</a>, <a href="https://sgx.geodatenzentrum.de/web_public/gdz/datenquellen/datenquellen_topplusopen.html" target="_blank" rel="noopener noreferrer">Sources</a> · Imagery: HVBG (DL-DE Zero 2.0), © Bayerische Vermessungsverwaltung (2026, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>), Datenquelle: <a href="https://www.lgl-bw.de" target="_blank" rel="noopener noreferrer">LGL-BW</a> (2026, <a href="https://www.govdata.de/dl-de/by-2-0" target="_blank" rel="noopener noreferrer">dl-de/by-2-0</a>) · Airports: OurAirports, public domain';
   const caption = document.createElement('p');
   caption.className = 'practice-map-caption';
   caption.textContent = 'Practice map · not a navigation chart';
-  container.replaceChildren(header, viewport, status, toolbar, readout, legend, credit, caption);
+  const airportsSection = document.createElement('details');
+  airportsSection.className = 'practice-map-airports';
+  const summary = document.createElement('summary');
+  summary.textContent = 'Airports';
+  const search = document.createElement('input');
+  search.type = 'search';
+  search.placeholder = 'Search name, code or type';
+  search.setAttribute('aria-label', 'Search airports');
+  const airportStatus = document.createElement('p');
+  airportStatus.textContent = 'Loading airport catalogue…';
+  airportStatus.setAttribute('role', 'status');
+  const airportList = document.createElement('div');
+  airportList.className = 'practice-map-airport-list';
+  const airportDetail = document.createElement('p');
+  airportDetail.className = 'practice-map-airport-detail';
+  airportDetail.setAttribute('aria-live', 'polite');
+  airportsSection.append(summary, search, airportStatus, airportList, airportDetail);
+  container.replaceChildren(header, viewport, status, toolbar, readout, legend, airportsSection, credit, caption);
 
   let map: LibreMap | undefined;
   let aircraft: Marker | undefined;
@@ -80,6 +98,36 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   let disposed = false;
   let following = true;
   let failed = false;
+  const airportMarkers: Marker[] = [];
+  let airports: Airport[] = [];
+  const selectAirport = (airport: Airport) => {
+    setFollowing(false);
+    map?.jumpTo({ center: [airport.lon, airport.lat], zoom: Math.max(map.getZoom(), 11) });
+    const elevation = airport.elevation_ft === null ? 'Elevation unavailable' : `Elevation ${airport.elevation_ft} ft (${(airport.elevation_ft * 0.3048).toFixed(0)} m)`;
+    airportDetail.textContent = `${airport.name} · ${airport.id}${airport.icao ? ` · ICAO ${airport.icao}` : ''}${airport.local ? ` · local ${airport.local}` : ''} · ${airport.type.replace('_', ' ')} · ${airport.lat.toFixed(5)}° N, ${airport.lon.toFixed(5)}° E · ${elevation}. OurAirports community data; not a navigation chart.`;
+    airportsSection.open = true;
+    onInteraction();
+  };
+  const renderAirports = () => {
+    const query = search.value.trim().toLocaleLowerCase();
+    const matches = airports.filter((a) => `${a.name} ${a.id} ${a.icao} ${a.local} ${a.type.replace('_', ' ')}`.toLocaleLowerCase().includes(query));
+    airportList.replaceChildren();
+    matches.forEach((airport) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = `${airport.id} · ${airport.name}`;
+      button.addEventListener('click', () => selectAirport(airport));
+      airportList.append(button);
+    });
+    airportStatus.textContent = `${matches.length} of ${airports.length} airports · community data, not a chart`;
+  };
+  search.addEventListener('input', renderAirports);
+  // Keep map and search keyboard gestures away from flight-control shortcuts.
+  const stopKey = (event: KeyboardEvent) => event.stopPropagation();
+  container.addEventListener('pointerdown', onInteraction);
+  container.addEventListener('focusin', onInteraction);
+  container.addEventListener('keydown', stopKey);
+  container.addEventListener('keyup', stopKey);
   const abort = new AbortController();
   const removers: Array<() => void> = [];
   const listen = (button: HTMLButtonElement, callback: () => void) => {
@@ -119,6 +167,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     setFollowing(false);
     map.fitBounds(bounds, { padding: 34, maxZoom: 15, duration: 0 });
   });
+  listen(fitRegion, () => { if (map) { setFollowing(false); map.fitBounds([[8, 49], [10, 50.75]], { padding: 24, duration: 0 }); } });
   listen(follow, () => { setFollowing(true); paint(); });
   const observer = new ResizeObserver(() => { if (visible && !disposed) map?.resize(); });
   observer.observe(viewport);
@@ -150,6 +199,11 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       abort.abort();
       observer.disconnect();
       removers.forEach((remove) => remove());
+      container.removeEventListener('pointerdown', onInteraction);
+      container.removeEventListener('focusin', onInteraction);
+      container.removeEventListener('keydown', stopKey);
+      container.removeEventListener('keyup', stopKey);
+      airportMarkers.forEach((marker) => marker.remove());
       aircraft?.remove();
       start?.remove();
       map?.remove();
@@ -158,26 +212,17 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   };
 
   try {
-    const response = await fetch('/imagery/SOURCE.json', { signal: abort.signal });
-    if (!response.ok) throw new Error('Imagery metadata unavailable');
-    const source: unknown = await response.json();
-    if (!source || typeof source !== 'object') throw new Error('Invalid imagery metadata');
-    const metadata = source as { bounds_west_south_east_north?: unknown; overview?: { bounds_west_south_east_north?: unknown } };
-    const detailBounds = metadata.bounds_west_south_east_north;
-    const overviewBounds = metadata.overview?.bounds_west_south_east_north;
-    if (!Array.isArray(detailBounds) || !Array.isArray(overviewBounds)) throw new Error('Imagery bounds unavailable');
-    // Resource URLs are fixed; metadata source/request URLs never enter the renderer.
     const style: StyleSpecification = {
       version: 8,
       sources: {
-        overview: { type: 'image', url: '/imagery/edfe-overview.jpg', coordinates: imageryCorners(overviewBounds) },
-        detail: { type: 'image', url: '/imagery/edfe-starter.jpg', coordinates: imageryCorners(detailBounds) },
+        basemap: { type: 'raster', tiles: ['/scenery/map/{z}/{x}/{y}.png'], tileSize: 256, minzoom: 5, maxzoom: 16 },
+        imagery: { type: 'raster', tiles: ['/scenery/imagery/{z}/{x}/{y}.png'], tileSize: 512, minzoom: 7, maxzoom: 15, bounds: [8, 49, 10, 50.75] },
         'recorded-path': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
       },
       layers: [
         { id: 'background', type: 'background', paint: { 'background-color': '#162530' } },
-        { id: 'overview', type: 'raster', source: 'overview', paint: { 'raster-fade-duration': 0 } },
-        { id: 'detail', type: 'raster', source: 'detail', paint: { 'raster-fade-duration': 0 } },
+        { id: 'basemap', type: 'raster', source: 'basemap', paint: { 'raster-fade-duration': 0 } },
+        { id: 'imagery', type: 'raster', source: 'imagery', paint: { 'raster-fade-duration': 0 } },
         { id: 'path-shadow', type: 'line', source: 'recorded-path', paint: { 'line-color': '#10212c', 'line-width': 5 } },
         { id: 'path', type: 'line', source: 'recorded-path', paint: { 'line-color': '#f3c676', 'line-width': 2.5 } },
       ],
@@ -188,9 +233,27 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     setWorkerUrl(mapWorkerUrl);
     map = new LibreMap({
       container: viewport, style, center: [8.64, 49.9625], zoom: 13,
-      minZoom: 7, maxZoom: 17, interactive: false, attributionControl: false,
+      minZoom: 7, maxZoom: 17, interactive: true, attributionControl: false,
       renderWorldCopies: false, maxPitch: 0, pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
     });
+    map.dragRotate.disable();
+    map.touchZoomRotate.disableRotation();
+    map.on('dragstart', () => { setFollowing(false); onInteraction(); });
+    map.on('zoomstart', (event) => { if (event.originalEvent) { setFollowing(false); onInteraction(); } });
+    void loadAirportCatalogue(abort.signal).then((data) => {
+      if (disposed || !map) return;
+      airports = data;
+      renderAirports();
+      for (const airport of airports) {
+        const marker = document.createElement('button');
+        marker.type = 'button';
+        marker.className = 'practice-map-airport-marker';
+        marker.textContent = airport.icao || airport.id;
+        marker.setAttribute('aria-label', `Select ${airport.name}`);
+        marker.addEventListener('click', (event) => { event.stopPropagation(); selectAirport(airport); });
+        airportMarkers.push(new Marker({ element: marker }).setLngLat([airport.lon, airport.lat]).addTo(map));
+      }
+    }).catch(() => { if (!disposed) airportStatus.textContent = 'Airport catalogue unavailable.'; });
     const arrow = document.createElement('div');
     arrow.className = 'practice-map-aircraft';
     arrow.textContent = '▲';

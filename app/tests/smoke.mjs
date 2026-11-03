@@ -1,4 +1,4 @@
-import { startOrResume } from './flight-actions.mjs';
+import { installSceneryFixture, prepareFlightUI, startOrResume } from './flight-actions.mjs';
 // Actual browser/JSBSim integration, not a dynamics-fidelity test.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -53,8 +53,9 @@ try {
     };
   });
   await mkdir(new URL('../../output/flight/',import.meta.url),{recursive:true});
-  await page.goto('http://127.0.0.1:5174');
+  await installSceneryFixture(page); await page.goto('http://127.0.0.1:5174');
   await page.waitForFunction(()=>!document.querySelector('#start').disabled);
+  await prepareFlightUI(page);
   assert.equal(await page.locator('#status').textContent(),'Paused','initial scene waits for explicit start');
   await startOrResume(page);
   await page.waitForFunction(()=>document.querySelector('#status').textContent==='Flying'&&window.__flightStates.length>5);
@@ -75,8 +76,9 @@ try {
   const mapState=await state();const mapText=await page.locator('.practice-map-readout').textContent();
   const mapLatitude=Number(mapText.match(/([0-9.]+)° N/)[1]);
   assert(Math.abs(mapLatitude-mapState.lat_rad*180/Math.PI)<0.00025,'map latitude tracks live state within display rounding and update interval');
+  await page.locator('.practice-map-heading').click();
   await page.getByRole('button',{name:'Fit path',exact:true}).click();
-  assert.equal(await page.evaluate(()=>document.activeElement.id),'scene','map buttons preserve flight keyboard focus');
+  assert.equal(await page.evaluate(()=>document.activeElement.textContent),'Fit path','map interaction retains focus within the active panel');
   await page.getByRole('button',{name:'Follow',exact:true}).click();
 
   const canvasBox=await page.locator('#scene canvas').boundingBox(), sceneBox=await page.locator('#scene').boundingBox();
@@ -126,11 +128,13 @@ try {
   await page.waitForTimeout(100);const before=await state();
   await page.keyboard.down('ArrowRight');await page.waitForTimeout(650);await page.keyboard.up('ArrowRight');
   const after=await state();assert(after.roll_rad>before.roll_rad+0.08,'right input banks right in actual engine');
+  await prepareFlightUI(page);
   const hold=await page.locator('#roll-left').boundingBox();
   await page.mouse.move(hold.x+hold.width/2,hold.y+hold.height/2);await page.mouse.down();
   await page.waitForTimeout(100);assert(Number(await page.locator('#roll-control').textContent()) < -0.5,'on-screen left button sends control');
   await page.mouse.move(900,200);await page.mouse.up();
   assert(Math.abs(Number(await page.locator('#roll-control').textContent())+0.109375)<0.01,'button release outside clears held input');
+  await prepareFlightUI(page);
   const stick=await page.locator('#joystick').boundingBox();
   await page.mouse.move(stick.x+stick.width/2,stick.y+stick.height/2);await page.mouse.down();
   await page.mouse.move(stick.x+stick.width*0.8,stick.y+stick.height*0.2);await page.waitForTimeout(100);
@@ -223,6 +227,7 @@ try {
   await mkdir(new URL('../../output/flight/',import.meta.url),{recursive:true});
   await page.screenshot({path:fileURLToPath(new URL('../../output/flight/cockpit.png',import.meta.url))});
   await page.screenshot({path:fileURLToPath(new URL('../../output/flight/practice-map.png',import.meta.url))});
+  await page.locator('.practice-map-heading').click();
   await page.getByRole('button',{name:'Close practice map',exact:true}).click();
   assert.equal(await page.locator('#toggle-map').getAttribute('aria-pressed'),'false');
   await page.locator('#view-menu > summary').click(); await page.locator('#chase').click();
@@ -233,14 +238,14 @@ try {
   assert.deepEqual(errors,[]);assert.deepEqual([...hosts],['127.0.0.1'],'runtime should be local only');
   const missing=await browser.newPage();const engineResponses=[];
   missing.on('response',response=>{if(new URL(response.url()).pathname.endsWith('/dist/jsbsim.mjs'))engineResponses.push(response.status());});
-  await missing.goto('http://127.0.0.1:5175');await missing.waitForFunction(()=>document.querySelector('#status').textContent==='Error');
+  await installSceneryFixture(missing); await missing.goto('http://127.0.0.1:5175');await missing.waitForFunction(()=>document.querySelector('#status').textContent==='Error');
   assert.match(await missing.locator('#notice').textContent(),/build-flight-engine/);
   assert(engineResponses.length>0&&engineResponses.every(status=>status===404),'absent dist/jsbsim.mjs is requested and not served');await missing.close();
   const noGL=await browser.newPage();const noGLErrors=[];noGL.on('pageerror',e=>noGLErrors.push(String(e)));
   await noGL.addInitScript(()=>{const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(kind,...args){return kind.startsWith('webgl')?null:original.call(this,kind,...args);};});
-  await noGL.goto('http://127.0.0.1:5174');await noGL.waitForFunction(()=>document.querySelector('#notice').textContent.includes('Scene unavailable'));
+  await installSceneryFixture(noGL); await noGL.goto('http://127.0.0.1:5174');await noGL.waitForFunction(()=>document.querySelector('#notice').textContent.includes('Scene unavailable'));
   await noGL.waitForTimeout(400);assert.equal(await noGL.locator('#pause').isDisabled(),true);assert.deepEqual(noGLErrors,[]);await noGL.close();
-  console.log(JSON.stringify({result:'pass',browser:browser.version(),initial:{step:initial.step,tas_mps:initial.tas_mps},right_bank_delta_rad:after.roll_rad-before.roll_rad,checks:['static-pressure altimeter and launch QFE','pressure units and bounds','paused pressure and modal isolation','recorded pressure review','explicit start','live JSBSim','full-width canvas','loaded aerial imagery','local practice map and true heading','map focus and history selection','pause','view invariance','reset keyboard focus','right bank','on-screen hold and outside release','draggable stick and outside release','blur pause','state review and seeking','review playback without engine advancement','review return and reset','settings pause and focus','gain presets and defaults','custom gain and reset preservation','local runtime and bundled imagery only','missing engine','WebGL failure'],screenshots:'output/flight/{cockpit,chase}.png'},null,2));
+  console.log(JSON.stringify({result:'pass',browser:browser.version(),initial:{step:initial.step,tas_mps:initial.tas_mps},right_bank_delta_rad:after.roll_rad-before.roll_rad,checks:['static-pressure altimeter and launch QFE','pressure units and bounds','paused pressure and modal isolation','recorded pressure review','explicit start','live JSBSim','full-width canvas','loaded deterministic scenery fixture','local practice map and true heading','map focus and history selection','pause','view invariance','reset keyboard focus','right bank','on-screen hold and outside release','draggable stick and outside release','blur pause','state review and seeking','review playback without engine advancement','review return and reset','settings pause and focus','gain presets and defaults','custom gain and reset preservation','local runtime and deterministic imagery fixtures only','missing engine','WebGL failure'],screenshots:'output/flight/{cockpit,chase}.png'},null,2));
 } finally {
   await browser?.close();for(const server of servers)server.kill('SIGTERM');
   await rm(missingRoot,{recursive:true,force:true});

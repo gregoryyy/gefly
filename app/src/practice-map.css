@@ -18,3 +18,16 @@
 .practice-map-start { color: #fff0ca; background: #14242dea; padding: 3px 5px; border-radius: 3px; font-size: 9px; border-left: 3px solid #f3c676; white-space: nowrap; pointer-events: none; }
 @media (max-width: 880px) { .practice-map-panel { right: 10px; width: 310px; max-width: calc(100% - 20px); top: 78px; } .practice-map-viewport { height: 170px; } }
 @media (max-width: 620px) { .practice-map-panel { width: 280px; top: 76px; } .practice-map-viewport { height: 150px; } .practice-map-legend { font-size: 8px; } }
+/* Expanded map retains a bounded, scrollable airport directory on small screens. */
+.practice-map-panel { width: 600px; max-height: calc(100vh - 100px); overflow-y: auto; }
+.practice-map-viewport { height: min(40vh, 360px); min-height: 180px; }
+.practice-map-toolbar { flex-wrap: wrap; }
+.practice-map-airports { padding: 4px 10px; font-size: 11px; }
+.practice-map-airports summary { cursor: pointer; font-weight: bold; }
+.practice-map-airports input { width: 100%; margin-top: 6px; padding: 6px; color: #fff; background: #172b39; border: 1px solid #8196a3; }
+.practice-map-airports p { margin: 5px 0; }
+.practice-map-airport-list { display: flex; flex-direction: column; max-height: 150px; overflow-y: auto; }
+.practice-map-airport-list button { text-align: left; font-size: 10px; padding: 5px; }
+.practice-map-airport-detail { color: #f2ce94; line-height: 1.5; }
+.practice-map-airport-marker { border: 1px solid #fff; border-radius: 9px; color: #fff; background: #285f87; font-size: 9px; padding: 2px 4px; white-space: nowrap; }
+@media (max-width: 620px) { .practice-map-panel { width: calc(100% - 20px); } .practice-map-viewport { height: min(35vh, 250px); } }

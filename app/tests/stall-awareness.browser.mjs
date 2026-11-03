@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
-import { startOrResume } from './flight-actions.mjs';
+import { installSceneryFixture, prepareFlightUI, startOrResume } from './flight-actions.mjs';
 import { STALL_FIELDS } from '../src/types.ts';
 
 const app = fileURLToPath(new URL('..', import.meta.url));
@@ -57,8 +57,9 @@ try {
       }
     };
   });
-  await page.goto(origin);
+  await installSceneryFixture(page); await page.goto(origin);
   await page.waitForFunction(() => !document.querySelector('#start').disabled && Number.isFinite(window.__stallStates.at(-1)?.aero_alpha_max_rad));
+  await prepareFlightUI(page);
   const initial = await page.evaluate(() => window.__stallStates.at(-1));
   assert(STALL_FIELDS.every(key => Number.isFinite(initial[key])), 'actual engine exports all atomic airflow fields');
   const stats = async () => {
@@ -71,6 +72,7 @@ try {
   const open = async () => {
     await page.locator('#view-menu > summary').click(); await page.locator('#toggle-stall-awareness').click();
     await page.locator('#stall-awareness-panel').waitFor({ state: 'visible' });
+    await page.locator('#stall-awareness-title').click();
   };
   const readings = () => page.locator('[data-stall-row]').evaluateAll(rows => Object.fromEntries(rows.map(row => [row.dataset.stallRow,
     { alpha_rad: Number(row.dataset.localAlphaRad), margin_rad: Number(row.dataset.referenceMarginRad), status: row.dataset.status }])));
@@ -86,7 +88,7 @@ try {
   assert.equal(await page.locator('[data-stall-row]').count(), 6);
   assert.match(await page.locator('#stall-awareness-description').textContent(), /Positive AoA reference only.*Not measured separation/);
   assert.match(await page.locator('.stall-awareness-diagram').textContent(), /FUSELAGE UNKNOWN.*TAIL UNKNOWN/s);
-  assert.equal(await page.locator('#stall-awareness-panel').evaluate(e => getComputedStyle(e).backgroundColor), 'rgb(20, 35, 43)', 'panel is opaque');
+  assert.equal(await page.locator('#stall-awareness-panel').evaluate(e => getComputedStyle(e).opacity), '1', 'activated panel is opaque');
   actualReadings(await readings(), initial);
   const paused = await stats(), fov = await page.locator('#scene').getAttribute('data-fov-deg');
   await page.locator('#stall-awareness-panel').focus();

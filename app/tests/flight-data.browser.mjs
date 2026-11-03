@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process';
 import { access, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
-import { startOrResume } from './flight-actions.mjs';
+import { installSceneryFixture, prepareFlightUI, startOrResume } from './flight-actions.mjs';
 
 const app = fileURLToPath(new URL('..', import.meta.url));
 const origin = 'http://127.0.0.1:5196';
@@ -48,9 +48,10 @@ try {
       }
     };
   });
-  await page.goto(origin);
+  await installSceneryFixture(page); await page.goto(origin);
   const waitReady = () => page.waitForFunction(() => !document.querySelector('#start').disabled && Number.isFinite(window.__dataStates.at(-1)?.ground_forward_mps));
   await waitReady();
+  await prepareFlightUI(page);
   const state = () => page.evaluate(() => window.__dataStates.at(-1));
   const stats = async () => {
     const count = await page.evaluate(() => window.__dataStats.length);
@@ -63,6 +64,7 @@ try {
     if (await page.locator('#flight-data-panel').isVisible()) return;
     await page.locator('#view-menu > summary').click(); await page.locator('#toggle-flight-data').click();
     await page.locator('#flight-data-panel').waitFor({ state: 'visible' });
+    await page.locator('#flight-data-title').click();
   };
   const matches = async actual => {
     await page.waitForFunction(step => Number(document.querySelector('#flight-data-panel').dataset.step) === step, actual.step);
@@ -135,7 +137,7 @@ try {
   checks.push('actual landing reactions and selected recorded wheel/load/gradient snapshots agree while Review leaves physics frozen');
 
   await page.locator('#flight-data-close').click(); await page.locator('#scene').focus(); await page.keyboard.press('r');
-  await page.setViewportSize({ width: 390, height: 844 }); await page.reload(); await waitReady(); await open(); await matches(await state());
+  await page.setViewportSize({ width: 390, height: 844 }); await page.reload(); await waitReady(); await prepareFlightUI(page, { controls: false }); await open(); await matches(await state());
   const box = await page.locator('#flight-data-panel').boundingBox();
   assert(box.x >= 0 && box.x + box.width <= 390 && box.y >= 0 && box.y + box.height <= 844);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 390);

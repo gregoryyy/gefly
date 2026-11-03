@@ -1,3 +1,4 @@
+import { installSceneryFixture, prepareFlightUI } from './flight-actions.mjs';
 // Full app, real worker/native engine/terrain and source-derived EDDF preset.
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
@@ -17,7 +18,8 @@ try {
   await page.addInitScript(()=>{const Native=window.Worker;window.navStates=[];window.navBuilds=[];window.navStats=[];
     window.Worker=class extends Native{constructor(...args){super(...args);if(!String(args[0]).includes('/sim/worker.js'))return;window.navWorker=this;this.addEventListener('message',({data})=>{if(data.type==='state')window.navStates.push(data);if(data.type==='ready')window.navBuilds.push(data.build);if(data.type==='stats')window.navStats.push(data);});}};
   });
-  await page.goto(origin);await page.waitForFunction(()=>!document.querySelector('#start').disabled&&!document.querySelector('#eddf-ils-practice').disabled,null,{timeout:60000});
+  await installSceneryFixture(page); await page.goto(origin);await page.waitForFunction(()=>!document.querySelector('#start').disabled&&!document.querySelector('#eddf-ils-practice').disabled,null,{timeout:60000});
+  await prepareFlightUI(page);
   await page.locator('#flight-menu summary').click();await page.locator('#eddf-ils-practice').click();
   await page.waitForFunction(()=>window.navBuilds.length===2&&window.navStates.at(-1)?.radio_nav_active_khz===111550&&document.querySelector('#nav1-gauge').dataset.stationId==='IFCW',null,{timeout:60000});
   assert.equal(await page.locator('#nav1-active').textContent(),'111.55');assert.equal(await page.locator('#nav2-active').textContent(),'114.20');
