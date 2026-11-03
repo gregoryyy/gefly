@@ -50,6 +50,14 @@ The existing low-RPM/stopped-prop glide limitation and Q24 remain unresolved.
 
 **Insights**
 
+**Scope drift:** Small product requests expanded into unnecessary workflow,
+documentation and branch-management work, delaying the queued improvements.
+
+**Preference for meaningless process:** I treated extra handoffs, bookkeeping
+and repeated checks of unaffected behavior as progress. They consumed time
+without advancing the requested result. Deliver small runnable changes, batch
+minor edits and keep verification proportional to the behavior changed.
+
 The audio conflict needs both state paths: taking one side loses either warning
 frames or bounded activation recovery. A new isolated worktree can select a
 different Python runtime than the normal workspace; record environmental failures
