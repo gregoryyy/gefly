@@ -383,3 +383,16 @@ test('Review retains altitude-alert events without accepting partial or noninteg
   assert.equal(trace.record({...state(2),kap_alert_state:1},0),false);
   assert.equal(trace.record({...state(2),kap_alert_state:1,kap_alert_sequence:.5},0),false);
 });
+
+test('systems switches round-trip, paused edits replace only latest snapshot, old traces stay unavailable', () => {
+  const trace = new FlightTrace();
+  assert(trace.record({ ...state(0), systems_switch_mask: 15 }, 0));
+  assert(trace.record({ ...state(1), systems_switch_mask: 15 }, 0));
+  assert(trace.record({ ...state(1), systems_switch_mask: 143 }, 0));
+  assert.equal(trace.atTime(0)!.state.systems_switch_mask, 15);
+  const loaded = FlightTrace.fromJSON(trace.exportJSON());
+  assert.equal(loaded.atTime(1)!.state.systems_switch_mask, 143);
+  assert.equal(trace.record({ ...state(2), systems_switch_mask: 2 }, 0), false);
+  const old = new FlightTrace(); old.record(state(0), 0); old.record(state(1), 0);
+  assert.equal(FlightTrace.fromJSON(old.exportJSON()).atTime(0)!.state.systems_switch_mask, undefined);
+});

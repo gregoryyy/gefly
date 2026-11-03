@@ -1,3 +1,4 @@
+import { validSystemsMask } from './aircraft-systems.ts';
 import type { TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
 import { ALERT_FIELDS, validAlertState } from '../../studies/e1-browser/sim/altitude-alert.js';
 import type { AltitudeAlertSnapshot } from '../../studies/e1-browser/sim/altitude-alert.js';
@@ -143,11 +144,15 @@ export function validCollisionState(input: object): boolean {
     && (value.step === undefined || value.collision_step! <= value.step)
     && (value.t_s === undefined || value.collision_t_s! <= value.t_s);
 }
+export function validSystemsState(state: { systems_switch_mask?: number }): boolean {
+  return state.systems_switch_mask === undefined || validSystemsMask(state.systems_switch_mask);
+}
 export interface FlightState extends Partial<Record<keyof AltitudeAlertSnapshot, number>>, Partial<KapSnapshot>, TerrainState, AltimeterState, CockpitState, EngineState, PitchTrimState, GroundState, ControlState, StallState, CollisionState, Partial<RadioNavSnapshot> {
   step: number; t_s: number; lat_rad: number; lon_rad: number;
   alt_msl_m: number; roll_rad: number; pitch_rad: number; heading_rad: number; tas_mps: number;
   /** Requested wall-clock pacing; fixed simulation dt is unchanged. */
   simulation_rate?: number;
+  systems_switch_mask?: number;
 }
 export interface Controls { elevator: number; aileron: number; rudder: number; throttle: number; flap_norm?: number; brake_norm?: number; mixture_norm?: number; mixture_auto?: boolean; pitch_trim_norm?: number; engine_running?: boolean; pilot_override?: boolean }
 export interface FlightScene {

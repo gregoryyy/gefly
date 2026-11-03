@@ -1,38 +1,49 @@
 # Gefly
 
-Gefly is a flight simulator that starts with approachable exercises and progressively adds realistic flight dynamics, aircraft controls and avionics. The first target is a **Cessna 172 for EASA PPL learning**, delivered as a **web application**, with GeoFS as an interaction reference. CPL exercises follow later. The first configuration is a classic-panel Cessna 172S (serials 172S9491–172S9809); the radio/avionics fit remains open. The selected stack is TypeScript, CesiumJS (three.js fallback), MapLibre 2D maps and JSBSim in a module Web Worker at a fixed 1/120 s step.
+**Open a browser and fly.** Gefly aims to bring the most realistic flying
+experience practical to anyone with a browser, a keyboard and a touchpad. Start
+with the pleasure of “just fly,” then grow into instruments, navigation and
+procedures, exercises for PPL and other small-plane licences, and later CPL
+objectives.
+
+Our vision is a **free, open-source flight-school community built around a
+simulator**. Focus on fewer aircraft with deeper realism: controls, avionics,
+flight physics, checklists and professional reference material that work together.
+Begin with a classic-panel **Cessna 172 and EASA PPL**, with optional flight
+controllers and more advanced cockpits as the experience grows.
+
+Make the world part of learning. Fly over recognizable terrain, navigate with
+real airports and radio aids, plan with maps and charts, and practise weather,
+traffic and communication scenarios. Begin around Frankfurt and Hessen, then
+expand through open DACH data and other regions. AI should help create sourced,
+replayable flight experiences and realistic interactions.
+
+Build it together: fly alongside other pilots, share exercises and debriefs,
+and contribute aircraft, scenery, navigation data and learning material. Instructors,
+flight schools and ecosystem partners can help shape the experience while the
+platform stays open. **The free version stays free**; optional paid services may
+support commercial maps and charts, hosting and AI features.
+
+See the [vision and roadmap](docs/ROAD.md) for the full direction.
 
 ![Gefly flying near Egelsbach with classic cockpit panels, real terrain imagery and the right-side flight map](docs/images/gefly-flight-map.png)
 
-Live prototype flight in chase view, with the cockpit instruments and controls.
-The aircraft model remains experimental. [Screenshot provenance and credits](docs/images/README.md).
+Live prototype flight in chase view, with cockpit instruments and controls.
+[Screenshot provenance and credits](docs/images/README.md).
 
-The intended product is **free and open source**, with a community site organized
-around flight-school practice. The first regional model is **EDDF plus a 100 NM
-radius**, using real source material. Later experience authoring should use LLMs
-to assemble sourced territory/navigation/chart packages and support AI interaction.
-The architecture favors reusing open physics engines and aircraft models. The
-license is GPL-3.0-or-later; the first exercise is a take-off, circuit and landing
-at Frankfurt-Egelsbach (EDFE) in a classic-panel Cessna 172S, with the Reims FR172 as a second configuration. The dynamics engine
-is JSBSim, rendered with CesiumJS (three.js fallback) in TypeScript (GAPS Q17);
-providers, hosting and deployment are still decisions.
+Today, Gefly is an experimental browser prototype with JSBSim flight dynamics,
+CesiumJS scenery, MapLibre maps, classic instruments and flight review. The native
+aircraft is a generic 172P research model; the planned project-owned 172S model,
+complete learning experience and community features are still being built. No
+training credit or validated aircraft fidelity is claimed. The first planned
+exercise is a take-off, circuit and landing at Frankfurt-Egelsbach (EDFE), within
+the EDDF/100 NM reference region.
 
-The aim is to connect each modeled behavior to aircraft documentation and each exercise to an explicit learning objective. Assistance and model limitations should stay visible as realism increases. A runnable local browser prototype now connects JSBSim, flight controls, instruments and cockpit/chase views; the complete learner simulator and project-owned 172S flight model are not implemented. Aircraft fidelity and learning benefits remain goals to evaluate, with no eligibility for training credit established.
-
-The refined direction preserves GeoFS-style accessibility and geography while
-focusing on fewer aircraft with fuller working controls: **classic C172 instruments
-first, glass later**, QNH/QFE/standard settings, cockpit navigation, briefing,
-checklists, text radio, drills and synchronized review. The [training design](docs/design/TRAINING.md)
-separates requested capabilities from proposed delivery order; the [comparison
-research](docs/research/2026-10-31-geofs-gap-analysis.md) checks documented features
-and community reports rather than assuming the user's observed gaps are absent
-everywhere in GeoFS.
-
-The first input baseline is **Mac desktop, keyboard and touchpad**, with optional
-**yoke/joystick and rudder pedals**, using a [GeoFS-inspired control profile](docs/design/CONTROLS.md).
-Briefing starts with versioned scenarios and labeled historical/generated
-weather/NOTAM data; a live-data adapter is optional later work. Mobile orientation remains
-a later supported-device capability.
+The project uses TypeScript and reuses open physics engines and aircraft models
+where practical, under **GPL-3.0-or-later**. See the
+[training design](docs/design/TRAINING.md) and
+[GeoFS-inspired control profile](docs/design/CONTROLS.md) for the learning and
+interaction direction.
 
 ## Fly the prototype
 
@@ -97,6 +108,12 @@ The altimeter's **pressure window** opens paused pressure practice. Compare QNH,
 launch-point QFE and standard pressure, or adjust the setting manually in hPa or
 inHg. The ideal indication follows engine static pressure; launch QFE is a
 practice reference, not airport elevation. Review retains the recorded setting.
+
+The left **Systems** panel adds BAT/ALT, avionics, light and pitot-heat buttons,
+with digital bus volts, battery amps and load. **MODEL** marks simplified electrical
+estimates; these controls do not yet drive native avionics outages, icing or external
+lights. Switch positions are recorded for Review. On narrow screens use
+**View → Aircraft systems** or **Alt+Shift+Y**.
 
 The classic **six-pack** now shows airspeed, attitude, pressure altitude, ideal
 turn/slip, true heading and vertical speed. Click the scene to toggle touchpad
