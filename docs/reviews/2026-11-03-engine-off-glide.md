@@ -1,9 +1,10 @@
 # Engine-off glide: independent quality and validation
 
 Reviewer: Codex subagent `glide_quality`, 2026-11-03, Europe/Berlin.
-Scope: TODO 2.0.51, R-SIM-10, engine shutdown/restart (R-ENG-1), new diagnostic
-units/read-only behavior (R-SIM-3) and same-build reset (R-SIM-4), based on main
-`a655bc9`. The reviewer did not author the implementation, fixtures or research.
+Scope: TODO 2.0.52, R-SIM-10, engine shutdown/restart (R-ENG-1), new diagnostic
+units/read-only behavior (R-SIM-3) and same-build reset (R-SIM-4), at the integrated source after merging current main `9960c6a` into feature
+commit `19367b6`. Earlier source and negative-control runs based on `a655bc9`
+are identified separately below. The reviewer did not author the implementation, fixtures or research.
 This is a same-provider bounded integration review, not the external peer gate
 or acceptance of the selected C172S aircraft.
 
@@ -15,7 +16,7 @@ idle-throttle shutdown at initial 35 m/s exposes a remaining near-stopped
 propeller case. Tiny positive rotation and negative force must not count as
 sustained windmilling. The stronger fixture uses JSBSim's own 0.01 rev/s regular
 advance-ratio branch boundary rather than an invented aircraft tolerance. The
-orchestrator retained this failure and TODO 2.0.51 open, with no unsupported
+orchestrator retained this failure and TODO 2.0.52 open, with no unsupported
 high-advance extrapolation or tuning to hide it. The source-backed nominal
 improvement is suitable for a labelled local prototype increment; it does not
 complete R-SIM-10 or justify real-aircraft training use.
@@ -60,20 +61,31 @@ independent execution below.
   shutdown, native restart, second shutdown, diagnostic read-only behavior and
   exact state/propulsion/digest checkpoint equality across identical fixed-step
   resets. It also confirms build metadata binds the final preparation script.
-- Maintained `app/tests/regional-nav-flight.browser.mjs`: five groups pass,
+- Renewed integrated `app/tests/regional-nav-flight.browser.mjs`: five groups pass,
   including actual native APR/GS capture, source/terrain preset and read-only
   Review.
-- Maintained `app/tests/engine-smoke.mjs`: ten groups pass, including actual E and
+- Renewed integrated `app/tests/engine-smoke.mjs`: eleven groups pass, including
+  missing-data group rejection from merged PR #52, actual E and
   cockpit shutdown/restart, paused staging, mixture cutoff, throttle commands,
   heading response, overrides and recorded read-only engine state.
 
 Browser checks used actual Chrome **156.0.8078.80**, native WASM and DEM packages;
 map/photo pixels use deterministic local fixtures. Both suites check no page
-errors or external destinations. Native WASM SHA-256:
-`31288b5db29c0bf6dfb038c213793b37d7ce8416739a4065730411efcc7473d8`
-(**1,756,923 bytes**).
+errors or external destinations. They were rerun after CI's npm-install phase
+finished to exclude dependency-install overlap. Final integrated native WASM
+SHA-256:
+`b2dcf7a3056d60867db41d94cb468fbbe77f46ed4327b101eb1535ef3d65a6d6`
+(**1,756,399 bytes**). The final eight-case native suite and independent
+shutdown/restart/read-only/reset harness were also renewed on this exact binary.
+All per-case metrics and repeated digest were observed equal to the pre-merge
+run; this is an observation on these builds, not a cross-build guarantee.
+Final renewed logs are `output/flight/glide-quality-integrated-*.json`.
 
-The reviewer separately compiled the same current bridge and prepared aircraft
+The pre-merge binary was
+`31288b5db29c0bf6dfb038c213793b37d7ce8416739a4065730411efcc7473d8`
+(1,756,923 bytes); its earlier checks remain historical evidence only.
+
+Before the main refresh, the reviewer separately compiled that source bridge and prepared aircraft
 against the **original** propeller in ignored
 `output/flight/glide-original-prop-bin/`; final `sim/dist` was not modified.
 The glide regression fails on the intended ignition-off sustained-windmilling
@@ -99,7 +111,13 @@ polars. The roughly 9.1:1 selected-172S source reference is not a test threshold
 Raw commands/results are retained under ignored `output/flight/glide-quality-*`
 and `output/flight/glide-original-prop-*`. Shared CI, typecheck/build and assurance
 are orchestrator-owned; they were not independently run by this reviewer.
-Source/record whitespace check passes.
+Source/record whitespace checks pass. Independent parent-by-parent command
+inclusion confirms both feature and main test entry points survived the package
+conflict: 40 browser/native commands and both aircraft/propeller Python tails.
+The SBOM retains main's rights-unresolved material and the complete generic
+propeller paragraph. Complete DONE section comparisons preserve all 94 feature
+parent entries and all 99 main entries with unchanged bodies; later integration
+entries are separately owned by the orchestrator.
 
 ## Scoped specification validation
 
@@ -121,11 +139,14 @@ validity remain unaccepted. This report does not close the peer-review batch.
 
 ## Frozen reviewed source
 
-At **2026-11-03 10:39 Europe/Berlin**, the reviewer hashed the following 18 paths
+After integrated checks, at **2026-11-03 10:43 Europe/Berlin**, the reviewer hashed the following 18 paths
 as sorted `path + NUL + lowercase SHA-256(file bytes) + newline` records. Packet
 SHA-256:
-`474f671a053689769a1a740c48cc9c2351fbace64fcd72f15745fab49b14ef75`.
-The ignored full inventory is `output/flight/glide-quality-packet.json`.
+`411530d8e26a4d9a3638329625299040f10d54493454b633574c23797b91bfc6`.
+The ignored final inventory is `output/flight/glide-quality-packet.json`.
+The pre-merge packet `474f671a053689769a1a740c48cc9c2351fbace64fcd72f15745fab49b14ef75`
+is retained separately in `output/flight/glide-quality-premerge-packet.json`;
+it does not stand in for final integration review.
 Shared TODO/DONE and this review prose are outside the source packet; their open
 scope and original user record were inspected separately. Generated binaries are
 outside the packet and identified above. A changed covered byte requires affected

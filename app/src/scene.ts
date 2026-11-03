@@ -12,6 +12,7 @@ import { createPublicTerrainProvider } from './terrain-provider';
 import { createStreamedTerrainProvider } from './streamed-terrain-provider';
 import { sampleAtlas, type RegionalTile } from '../../studies/e1-browser/sim/terrain-stream.js';
 import { createRegionalImageryProvider } from './regional-imagery';
+import { imageryStatusText } from './imagery-status';
 import { loadTerrainPackage, sampleTerrain, type TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
 import { aircraftBasisENU, boundedCameraLook, cockpitCameraENU, chaseCameraENU, type CameraLook } from './aircraft-orientation';
 import { DEFAULT_FOV_RAD, MIN_FOV_RAD, MAX_FOV_RAD } from './field-of-view.ts';
@@ -144,6 +145,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   let overviewLoaded = false;
   let regionalImagery: Awaited<ReturnType<typeof createRegionalImageryProvider>> | null = null;
   let regionalSettled = false;
+  let removeCameraListener: (() => void) | null = null;
   let airportLayer: ImageryLayer | null = null;
   let localRegionalLayer: ImageryLayer | null = null;
   let livePhotoLayer: ImageryLayer | null = null;
@@ -180,7 +182,6 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   }, 25000);
   function imageryStatus(state: FlightState): void {
     if (disposed) return;
-    let text = '', outcome = 'ready';
     const regionalStats = regionalImagery?.getStats();
     const regionalLevel = regionalStats?.resolutionAt(state.lat_rad / DEG_RAD, state.lon_rad / DEG_RAD) ?? null;
     container.dataset.imageryRegional = !regionalSettled ? 'loading' : !regionalImagery ? 'unavailable'
@@ -192,32 +193,16 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     container.dataset.imageryRegionalCache = String(regionalStats?.cacheSize ?? 0);
     container.dataset.imageryRegionalInflight = String(regionalStats?.inflight ?? 0);
     container.dataset.imageryRegionalFailed = String(regionalStats?.failedTiles ?? 0);
-    if (!imagerySettled) {
-      outcome = 'loading';
-      text = loadSlow ? 'Aerial imagery is taking longer to load. Controls remain available.' : 'Loading the local Egelsbach aerial photograph…';
-    } else if (regionalLevel === null && !detailLoaded && !overviewLoaded && !airportLoaded) {
-      outcome = 'error'; text = 'Starter photographs unavailable. Reload to retry; flight controls still work.';
-    } else if (liveLayers && container.dataset.liveImagery==='degraded' && regionalLevel===null) {
-      outcome='degraded';text='Live photography unavailable or incomplete · map fallback';
-    } else if (liveLayers && regionalLevel===null) {
-      text=scene.globe.tilesLoaded ? 'Live photography / map fallback · capture dates unknown' : 'Loading live regional scenery…';
-      if(scene.globe.tilesLoaded)container.dataset.liveImagery='ready';
-    } else if (regionalLevel === null && !(airportLoaded && inside(AIRPORT_DETAIL, state)) && !(detailLoaded && inside(DETAIL, state)) && !(overviewLoaded && inside(OVERVIEW, state))) {
-      outcome = 'outside-coverage'; text = 'Outside this starter imagery area. No photographic ground coverage here.';
-    } else if (airportLoaded && inside(AIRPORT_DETAIL, state)) {
-      text = '';
-    } else if (regionalLevel !== null) {
-      if (regionalStats!.failedTiles) { outcome = 'degraded'; text = 'Some regional imagery is unavailable; lower detail may be shown.'; }
-      else if (!scene.globe.tilesLoaded) text = 'Loading regional detail for this view…';
-    } else if (!detailLoaded) {
-      outcome = 'degraded'; text = 'Starter detail unavailable; coarse overview only.';
-    } else if (!inside(DETAIL, state)) {
-      text = 'Regional overview · outside detailed starter area';
-    } else if (!airportLoaded && inside(AIRPORT_DETAIL, state)) {
-      outcome = 'degraded'; text = 'Airport detail unavailable; starter photograph only.';
-    } else if (!overviewLoaded) {
-      outcome = 'degraded'; text = 'Starter detail loaded; surrounding overview unavailable.';
-    }
+    const liveImagery = !liveLayers ? undefined : container.dataset.liveImagery === 'degraded' ? 'degraded'
+      : scene.globe.tilesLoaded ? 'ready' : 'loading';
+    const { outcome, text } = imageryStatusText({
+      settled: imagerySettled, slow: loadSlow, detailLoaded, overviewLoaded, airportLoaded,
+      insideDetail: inside(DETAIL, state), insideOverview: inside(OVERVIEW, state), insideAirport: inside(AIRPORT_DETAIL, state),
+      regional: !regionalSettled ? 'loading' : regionalImagery ? 'ready' : 'failed', regionalLevel,
+      regionalFailedTiles: regionalStats?.failedTiles ?? 0, tilesLoaded: scene.globe.tilesLoaded,
+      liveImagery,
+    });
+    if (liveImagery === 'ready') container.dataset.liveImagery = 'ready';
     if (status.textContent !== text) status.textContent = text;
     status.hidden = !text;
     container.dataset.imagery = outcome;
@@ -261,6 +246,9 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     void createRegionalImageryProvider({ signal: photographAbort.signal, onStatus() { if (!disposed) { imageryStatus(lastState); scene.requestRender(); } } }).then(handle => {
       if (disposed) { handle.dispose(); return; }
       regionalImagery = handle; regionalSettled = true;
+      // Per-view cancellation: a substantial camera change drops queued tile loads
+      // for the old view; Cesium re-requests tiles that remain visible.
+      removeCameraListener = scene.camera.changed.addEventListener(() => { if (!disposed) handle.cancelQueued(); });
       const index = airportLayer ? scene.imageryLayers.indexOf(airportLayer) : scene.imageryLayers.length;
       localRegionalLayer=new ImageryLayer(handle.provider);
       scene.imageryLayers.add(localRegionalLayer,index);orderPhotographs();
@@ -445,6 +433,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       if (disposed) return;
       disposed = true;
       photographAbort.abort();
+      removeCameraListener?.(); removeCameraListener = null;
       regionalImagery?.dispose();
       observer.disconnect();
       creditObserver.disconnect();

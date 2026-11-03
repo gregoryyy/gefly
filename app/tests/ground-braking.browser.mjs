@@ -1,5 +1,9 @@
 // Actual Chrome/WASM braking trajectories and production worker collision policy.
 // These generic c172x regression fixtures do not validate aircraft braking limits.
+// The public-terrain ground roll is a SYNTHETIC worker fixture: it posts terrain
+// together with a landing preset, a combination app/src/session.ts never sends
+// (production uses public terrain only for airborne starts). It checks worker
+// collision policy over the public grid, not a flight users can reach.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -89,7 +93,9 @@ try {
     }
     const result = [];
     for (const terrain of [false, true]) result.push({ terrain, native: await native(terrain), worker: await worker(terrain) });
-    return { normal: result, full_brake: await worker(false, false, 1), impact: await worker(false, true) };
+    return { normal: result, full_brake: await worker(false, false, 1), impact: await worker(false, true),
+      // Synthetic public-terrain full-command case, compared with unchanged native dynamics.
+      full_brake_public: { native: await native(true, 1), worker: await worker(true, false, 1) } };
   });
   // Write diagnostics before assertions so the first failing contact is retained.
   await writeFile(`${output}/ground-braking-browser.json`, JSON.stringify({ checks, observations }, null, 2) + '\n');
@@ -102,10 +108,22 @@ try {
     assert(Math.hypot(native.frames.at(-1).ground_forward_mps, native.frames.at(-1).ground_side_mps) < .2, 'normal braked aircraft reaches rest');
     assert.equal(worker.stats.digest, native.digest, 'collision checks leave actual native braking dynamics unchanged');
     assert.deepEqual(worker.stats.final_state, native.final_state);
-    checks.push(`${terrain ? 'public terrain' : 'flat ground'}: actual selected 25% braking compresses nose gear and pitches down, reaches rest with no collision, and matches unchanged native dynamics`);
+    checks.push(`${terrain ? 'synthetic public-terrain landing-preset fixture (not a production init)' : 'flat ground'}: actual selected 25% braking compresses nose gear and pitches down, reaches rest with no collision, and matches unchanged native dynamics`);
   }
   assert(observations.braking.full_brake.stats.collision_mask & 16, 'explicit full braking still permits the native geometry/illustrative prop contact; physics and collision are not weakened');
   checks.push('explicit full brake command retains propeller-contact detection');
+  {
+    const { native, worker } = observations.braking.full_brake_public, stats = worker.stats;
+    if (stats.collision_mask) {
+      // A latch stops the worker at its first contact step; native keeps rolling.
+      assert(stats.collision_step >= 1 && stats.collision_step <= 3600 && stats.collision_step === stats.step);
+      assert.equal(worker.frames.at(-1).collision_mask, stats.collision_mask);
+    } else {
+      assert.equal(stats.step, 3600); assert.equal(stats.digest, native.digest); assert.deepEqual(stats.final_state, native.final_state);
+    }
+    observations.full_brake_public_summary = { collision_mask: stats.collision_mask ?? null, collision_step: stats.collision_step ?? null, step: stats.step };
+    checks.push('synthetic public-terrain full-brake fixture either latches a first-step contact or matches unchanged native dynamics');
+  }
   const impact = observations.braking.impact.frames.at(-1), impactStats = observations.braking.impact.stats;
   assert(impact.collision_mask & 16, 'intentional nose-low descent still detects modeled propeller contact');
   assert(impact.pitch_rad < 0 && impact.collision_down_mps > 0);

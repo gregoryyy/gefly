@@ -2,6 +2,8 @@ import type { FlightState } from './types';
 import { DEFAULT_RADIO_NAV, getNavigationCatalogue, navigationIndication, radioFrequencyKeys, setObs, swapRadio, tuneStandby,
   validRadioNavSnapshot, type RadioKind, type RadioNavSnapshot, type RadioReceiver } from './radio-nav';
 import './radio-nav-panel.css';
+import { flightNote } from './cockpit-views';
+import { stationCountText, stationRebuildDeferred, stepStandby_khz } from './nav-input';
 
 interface RadioNavOptions {
   container: HTMLElement;
@@ -15,7 +17,7 @@ const navId = (receiver: RadioReceiver, suffix: string) => `${receiver === 1 ? '
 /** Dual session-only tuning units. LAB is fictional teaching geometry, never flight dynamics. */
 export function createRadioNavPanel(options: RadioNavOptions): {
   snapshot(): RadioNavSnapshot;
-  update(state: Readonly<FlightState> | null, reviewing: boolean, running: boolean): void;
+  update(state: Readonly<FlightState> | null, reviewing: boolean, running: boolean, flying?: boolean): void;
   adjustObs(receiver: RadioReceiver, delta_deg: number): void;
   setConfiguration(config: RadioNavSnapshot): void;
   reset(): void;
@@ -55,7 +57,8 @@ export function createRadioNavPanel(options: RadioNavOptions): {
     <p>2013.10 · HISTORICAL, NOT CURRENT · teaching only<br>Load to standby, then swap to activate.</p>
     <div class="nav-stations-filters"><label>Search name, identifier, airport or frequency <input class="nav-stations-search" type="search" autocomplete="off"></label>
     <label><input class="nav-stations-nearby" type="checkbox" checked> Within 50 NM of aircraft</label><span class="nav-stations-position"></span></div>
-    <div class="nav-stations-list" aria-live="polite"></div>`;
+    <p class="nav-stations-count" role="status" aria-live="polite"></p>
+    <div class="nav-stations-list" aria-label="Station results"></div>`;
   document.body.append(stations);
   const stationList = stations.querySelector<HTMLElement>('.nav-stations-list')!;
   const stationsOpen = content.querySelector<HTMLButtonElement>('#nav-stations-open')!;
@@ -63,6 +66,16 @@ export function createRadioNavPanel(options: RadioNavOptions): {
   const stationSearch = stations.querySelector<HTMLInputElement>('.nav-stations-search')!;
   const stationNearby = stations.querySelector<HTMLInputElement>('.nav-stations-nearby')!;
   const stationPosition = stations.querySelector<HTMLElement>('.nav-stations-position')!;
+  const stationCount = stations.querySelector<HTMLElement>('.nav-stations-count')!;
+  // Rows stay stable while a pointer hovers or presses (Safari does not focus clicked buttons).
+  let stationPointerInside = false, stationPressActive = false;
+  const pointerEnter = () => { stationPointerInside = true; };
+  const pointerLeave = () => { stationPointerInside = false; };
+  const pointerDown = () => { stationPressActive = true; };
+  const pointerUp = () => { if (stationPressActive) { stationPressActive = false; } };
+  stationList.addEventListener('pointerenter', pointerEnter); stationList.addEventListener('pointerleave', pointerLeave);
+  stationList.addEventListener('pointerdown', pointerDown);
+  window.addEventListener('pointerup', pointerUp); window.addEventListener('pointercancel', pointerUp);
   const slot = dialog.querySelector<HTMLElement>('.radio-dialog-slot')!;
   const done = dialog.querySelector<HTMLButtonElement>('#radio-nav-close')!;
   const media = window.matchMedia('(max-width: 900px)');
@@ -71,7 +84,7 @@ export function createRadioNavPanel(options: RadioNavOptions): {
   const demo = element<HTMLInputElement>('nav-demo');
   let config: RadioNavSnapshot = { ...DEFAULT_RADIO_NAV };
   let state: Readonly<FlightState> | null = null;
-  let reviewing = false, running = false, disposed = false;
+  let reviewing = false, running = false, flying = false, disposed = false;
   const canControl = () => !!state && running && !reviewing && !disposed;
   function render(): void {
     const shown = reviewing ? state && validRadioNavSnapshot(state) ? state : null : config;
@@ -79,8 +92,8 @@ export function createRadioNavPanel(options: RadioNavOptions): {
     content.querySelectorAll<HTMLInputElement | HTMLButtonElement>('input,button').forEach(control => { control.disabled = control !== stationsOpen && !enabled; });
     renderStations(enabled);
     element('radio-state-label').textContent = reviewing ? 'RECORDED' : 'LIVE';
-    dialog.querySelector('.radio-dialog-note')!.textContent = reviewing ? 'Recorded radio state · controls are read-only.'
-      : running ? 'Flight continues while this panel is open.' : 'Flight is paused.';
+    // `running` means controls are available; only `flying` says the simulation advances.
+    dialog.querySelector('.radio-dialog-note')!.textContent = flightNote(reviewing, flying, 'Recorded radio state · controls are read-only.');
     for (const receiver of RECEIVERS) {
       for (const kind of KINDS) {
         const keys = radioFrequencyKeys(kind, receiver);
@@ -139,18 +152,22 @@ export function createRadioNavPanel(options: RadioNavOptions): {
     const key = JSON.stringify([enabled, stationSearch.value, stationNearby.checked, positionAvailable,
       state?.lat_rad, state?.lon_rad, reviewing]);
     if (!force && key === stationRenderKey && stationCatalogue === catalogue) return;
-    // Avoid replacing result buttons at simulation frequency or while a keyboard user is on one.
-    if (!force && !reviewing && positionAvailable === displayedPositionAvailable && enabled === displayedStationEnabled && stationCatalogue === catalogue &&
-        (performance.now() - stationRenderedAt < 1000 || stationList.contains(document.activeElement))) return;
+    // Avoid replacing result buttons at simulation frequency or under a user's focus/pointer.
+    if (stationRebuildDeferred({ force,
+      structuralChange: positionAvailable !== displayedPositionAvailable || enabled !== displayedStationEnabled || stationCatalogue !== catalogue,
+      reviewing, sinceLastRender_ms: performance.now() - stationRenderedAt,
+      focusInside: stationList.contains(document.activeElement), pointerInside: stationPointerInside, pressActive: stationPressActive })) return;
     stationRenderKey = key; stationCatalogue = catalogue; displayedStationEnabled = enabled; displayedPositionAvailable = positionAvailable; stationRenderedAt = performance.now();
     stationList.replaceChildren();
-    if (!catalogue) { stationList.textContent = 'Station directory loading or unavailable.'; return; }
+    const announce = (count: number | null) => { const text = stationCountText(count); if (stationCount.textContent !== text) stationCount.textContent = text; };
+    if (!catalogue) { announce(null); return; }
     const query = stationSearch.value.trim().toLocaleLowerCase();
     const matches = catalogue.records.map(record => ({ record, distance: stationDistance(record.lat_deg, record.lon_deg) }))
       .filter(({ record, distance }) => (!stationNearby.checked || !positionAvailable || (distance !== null && distance <= 50)) &&
         [record.id, record.name, record.airport, (record.frequency_khz / 1000).toFixed(2)].some(value => value?.toLocaleLowerCase().includes(query)))
       .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity) || a.record.id.localeCompare(b.record.id));
-    if (!matches.length) { stationList.textContent = 'No stations match these filters.'; return; }
+    announce(matches.length);
+    if (!matches.length) return;
     for (const { record, distance } of matches) {
       const row = document.createElement('div'); row.className = 'nav-station';
       const description = document.createElement('span');
@@ -215,8 +232,7 @@ export function createRadioNavPanel(options: RadioNavOptions): {
         if (id === `${kind}${receiver}-swap`) { change(swapRadio(config, kind, receiver)); return; }
         if (id === `${kind}${receiver}-up` || id === `${kind}${receiver}-down`) {
           const current = config[radioFrequencyKeys(kind, receiver).standby];
-          const step = kind === 'com' ? 25 : 50, min = kind === 'com' ? 118000 : 108000, max = kind === 'com' ? 136975 : 117950;
-          change(tuneStandby(config, kind, Math.max(min, Math.min(max, current + (id.endsWith('-up') ? step : -step))), receiver)); return;
+          change(tuneStandby(config, kind, stepStandby_khz(kind, current, id.endsWith('-up') ? 1 : -1), receiver)); return;
         }
       }
       if (id === navId(receiver, 'obs-up') || id === navId(receiver, 'obs-down')) { adjustObs(receiver, id.endsWith('-up') ? 1 : -1); return; }
@@ -239,7 +255,7 @@ export function createRadioNavPanel(options: RadioNavOptions): {
     // Establish an explicit flight preset before the first worker state arrives.
     // The worker receives this configuration atomically in init; no live tuning event.
     setConfiguration(next) { if (!disposed && !reviewing && validRadioNavSnapshot(next)) { config = { ...next }; render(); } },
-    update(next, inReview, isRunning) { if (!disposed) { state = next; reviewing = inReview; running = isRunning; render(); } },
+    update(next, inReview, isRunning, isFlying = false) { if (!disposed) { state = next; reviewing = inReview; running = isRunning; flying = isFlying; render(); } },
     reset() { if (!disposed) { config = { ...DEFAULT_RADIO_NAV }; render(); } },
     dispose() {
       if (disposed) return; disposed = true;
@@ -247,6 +263,9 @@ export function createRadioNavPanel(options: RadioNavOptions): {
       content.removeEventListener('click', click); content.removeEventListener('input', clearValidity); content.removeEventListener('change', inputChange);
       stationsOpen.removeEventListener('click', openStations); stationsClose.removeEventListener('click', closeStations);
       stations.removeEventListener('click', stationBackdrop);
+      stationList.removeEventListener('pointerenter', pointerEnter); stationList.removeEventListener('pointerleave', pointerLeave);
+      stationList.removeEventListener('pointerdown', pointerDown);
+      window.removeEventListener('pointerup', pointerUp); window.removeEventListener('pointercancel', pointerUp);
       stationSearch.removeEventListener('input', stationFilters); stationNearby.removeEventListener('change', stationFilters);
       if (stations.open) stations.close(); stations.remove();
       media.removeEventListener('change', layout); if (dialog.open) dialog.close(); dialog.remove(); container.replaceChildren();

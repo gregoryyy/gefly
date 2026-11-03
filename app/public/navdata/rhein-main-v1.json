@@ -10,6 +10,18 @@
     "center_lon_deg": 8.55835,
     "radius_nm": 100,
     "center_source": "https://ourairports.com/airports/EDDF/",
+    "center_source_record": {
+      "dataset": "OurAirports airports.csv",
+      "repository_commit": "72322ae9555947b969dda8effa793072159a9a1e",
+      "url": "https://raw.githubusercontent.com/davidmegginson/ourairports-data/72322ae9555947b969dda8effa793072159a9a1e/airports.csv",
+      "sha256": "e869f2a5c500aa0a5c74c680559c4e3ab7e65c7a442daa7c92b7f99fb51613ca",
+      "record": "id 2212, ident EDDF, latitude_deg 50.026706, longitude_deg 8.55835",
+      "retrieved": "2026-11-03",
+      "record_page": "https://ourairports.com/airports/EDDF/",
+      "record_page_inspected": "2026-11-03",
+      "record_page_updated": "2026-01-29",
+      "license": "Public domain (OurAirports release; repository Unlicense)"
+    },
     "center_reference": "Community airport point, not verified official ARP",
     "distance_model": "6371000 m sphere"
   },
@@ -23,7 +35,7 @@
     "license": "GPL-2.0-or-later",
     "rights_notice": "Copyright © 2013 Robin A. Peel; complete original notice retained in source-nav810.dat",
     "changes": "Bounded regional subset; explicit pairing, units converted to metres/kHz; GS values precede FlightGear scenery-height calibration.",
-    "compiler_sha256": "438308b8014995e51c35e8959ac417aedd410399afe72c1d57bcfd2b6e622018"
+    "compiler_sha256": "9b21b78f4a4e7b87318b3fa7ef3083a256eced3e0ca003caa21ad60b94de2f90"
   },
   "records": [
     {

@@ -47,7 +47,7 @@ table let rotation and propeller drag vanish after shutdown. Direct-drive design
 RPM replaces the generator's gearing estimate; this changes powered propeller
 forces too. Aircraft airframe coefficients and native force integration remain
 in JSBSim. At low RPM/outside the finite coefficient tables, propeller rotation
-and drag can still collapse; this case remains unaccepted under TODO 2.0.51.
+and drag can still collapse; this case remains unaccepted under TODO 2.0.52.
 This is a partial generic model correction, not accepted 172S performance;
 see [sources and diagnostic limits](research/2026-11-03-engine-off-glide.md).
 

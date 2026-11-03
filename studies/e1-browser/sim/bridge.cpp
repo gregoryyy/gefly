@@ -116,6 +116,32 @@ bool terrain_support_available() {
   return true;
 }
 
+// A missing JSBSim property must stay unavailable. FGFDMExec::GetPropertyValue
+// returns 0 for a missing node, which would become a plausible reading (for
+// example 0 degF = 255.37 K oil temperature). NaN makes the JS group reject it.
+double property_or_nan(const char* name) {
+  if (!g_fdm || !g_fdm->GetPropertyManager()->HasNode(name))
+    return std::numeric_limits<double>::quiet_NaN();
+  return g_fdm->GetPropertyValue(name);
+}
+
+// Contact identities come from the c172x <contact name> entries, never from
+// their order: nose/left/right wheels, then tail skid/left tip/right tip.
+// Returns false unless each name occurs exactly once among the gear units.
+constexpr const char* kContactNames[6] = {"Nose Gear", "Left Main Gear", "Right Main Gear",
+                                          "TAIL_SKID", "LEFT_TIP", "RIGHT_TIP"};
+bool resolve_contacts(unsigned (&index)[6]) {
+  if (!g_fdm) return false;
+  const auto gear = g_fdm->GetGroundReactions();
+  for (int k = 0; k < 6; ++k) {
+    int found = 0;
+    for (unsigned i = 0; i < gear->GetNumGearUnits(); ++i)
+      if (gear->GetGearUnit(i)->GetName() == kContactNames[k]) { index[k] = i; ++found; }
+    if (found != 1) return false;
+  }
+  return true;
+}
+
 bool finite_all(std::initializer_list<double> v) {
   for (double x : v) if (!std::isfinite(x)) return false;
   return true;
@@ -547,15 +573,15 @@ EMSCRIPTEN_KEEPALIVE double* gf_cockpit_state() {
     for (double& value : values) value = std::numeric_limits<double>::quiet_NaN();
     return values;
   }
-  auto& f = *g_fdm;
-  values[0] = f.GetPropertyValue("velocities/vc-fps") * kFtToM;
-  values[1] = f.GetPropertyValue("velocities/psidot-rad_sec");
-  values[2] = f.GetPropertyValue("accelerations/n-pilot-y-norm");
-  values[3] = f.GetPropertyValue("accelerations/n-pilot-z-norm");
-  values[4] = f.GetPropertyValue("fcs/flap-pos-deg") * kPi / 180.0;
-  values[5] = f.GetPropertyValue("fcs/left-brake-cmd-norm");
-  values[6] = f.GetPropertyValue("fcs/right-brake-cmd-norm");
-  values[7] = f.GetPropertyValue("gear/wow") > 0 ? 1.0 : 0.0;
+  values[0] = property_or_nan("velocities/vc-fps") * kFtToM;
+  values[1] = property_or_nan("velocities/psidot-rad_sec");
+  values[2] = property_or_nan("accelerations/n-pilot-y-norm");
+  values[3] = property_or_nan("accelerations/n-pilot-z-norm");
+  values[4] = property_or_nan("fcs/flap-pos-deg") * kPi / 180.0;
+  values[5] = property_or_nan("fcs/left-brake-cmd-norm");
+  values[6] = property_or_nan("fcs/right-brake-cmd-norm");
+  const double wow = property_or_nan("gear/wow");
+  values[7] = std::isfinite(wow) ? (wow > 0 ? 1.0 : 0.0) : wow;
   return values;
 }
 
@@ -626,7 +652,8 @@ EMSCRIPTEN_KEEPALIVE double* gf_pitch_trim_state() {
 // converts it to rendering ellipsoid height outside the dynamics.
 EMSCRIPTEN_KEEPALIVE double* gf_ground_state() {
   static double values[18];
-  if (!g_fdm || g_fdm->GetGroundReactions()->GetNumGearUnits() != 6) {
+  unsigned contact[6];
+  if (!g_fdm || g_fdm->GetGroundReactions()->GetNumGearUnits() != 6 || !resolve_contacts(contact)) {
     for (double& value : values) value = std::numeric_limits<double>::quiet_NaN();
     return values;
   }
@@ -642,8 +669,8 @@ EMSCRIPTEN_KEEPALIVE double* gf_ground_state() {
   values[4] = f.GetPropertyValue("velocities/v-down-fps") * kFtToM;
   values[5] = 0;
   for (int i = 0; i < 3; ++i) {
-    if (gear->GetGearUnit(i + 3)->GetWOW()) values[5] += 1 << i;
-    const auto unit = gear->GetGearUnit(i);
+    if (gear->GetGearUnit(contact[i + 3])->GetWOW()) values[5] += 1 << i;
+    const auto unit = gear->GetGearUnit(contact[i]);
     values[6 + i * 4] = unit->GetWOW() ? 1.0 : 0.0;
     values[7 + i * 4] = unit->GetCompLen() * kFtToM;
     values[8 + i * 4] = -unit->GetCompForce() * kLbfToN;
@@ -661,20 +688,21 @@ EMSCRIPTEN_KEEPALIVE double* gf_engine_state() {
     for (double& value : values) value = std::numeric_limits<double>::quiet_NaN();
     return values;
   }
-  auto& f = *g_fdm;
-  values[0] = f.GetPropertyValue("propulsion/engine[0]/map-pa");
-  values[1] = f.GetPropertyValue("propulsion/engine[0]/engine-rpm") * 2.0 * kPi / 60.0;
-  values[2] = f.GetPropertyValue("fcs/mixture-cmd-norm");
+  // Every property is HasNode-checked: a misnamed or absent node yields NaN and
+  // engineFields() then omits the whole group instead of a plausible zero.
+  values[0] = property_or_nan("propulsion/engine[0]/map-pa");
+  values[1] = property_or_nan("propulsion/engine[0]/engine-rpm") * 2.0 * kPi / 60.0;
+  values[2] = property_or_nan("fcs/mixture-cmd-norm");
   values[3] = g_mixture_auto;
-  values[4] = f.GetPropertyValue("propulsion/engine[0]/oil-pressure-psi") * kPsiToPa;
-  values[5] = (f.GetPropertyValue("propulsion/engine[0]/oil-temperature-degF") - 32.0) * 5.0 / 9.0 + 273.15;
-  values[6] = (f.GetPropertyValue("propulsion/engine[0]/egt-degF") - 32.0) * 5.0 / 9.0 + 273.15;
-  values[7] = f.GetPropertyValue("propulsion/engine[0]/fuel-flow-rate-gph") * kUsGalToM3 / 3600.0;
-  values[8] = f.GetPropertyValue("propulsion/tank[0]/contents-volume-gal") * kUsGalToM3;
-  values[9] = f.GetPropertyValue("propulsion/tank[1]/contents-volume-gal") * kUsGalToM3;
+  values[4] = property_or_nan("propulsion/engine[0]/oil-pressure-psi") * kPsiToPa;
+  values[5] = (property_or_nan("propulsion/engine[0]/oil-temperature-degF") - 32.0) * 5.0 / 9.0 + 273.15;
+  values[6] = (property_or_nan("propulsion/engine[0]/egt-degF") - 32.0) * 5.0 / 9.0 + 273.15;
+  values[7] = property_or_nan("propulsion/engine[0]/fuel-flow-rate-gph") * kUsGalToM3 / 3600.0;
+  values[8] = property_or_nan("propulsion/tank[0]/contents-volume-gal") * kUsGalToM3;
+  values[9] = property_or_nan("propulsion/tank[1]/contents-volume-gal") * kUsGalToM3;
   values[10] = g_ap_mode;
   values[11] = g_ap_heading_target;
-  values[12] = f.GetPropertyValue("ap/roll-cmd-norm-output");
+  values[12] = property_or_nan("ap/roll-cmd-norm-output");
   return values;
 }
 

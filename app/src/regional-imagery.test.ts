@@ -1,7 +1,8 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import { createHash } from 'node:crypto';
-import { ancestorCrop, createRegionalImageryProvider, regionalTileAt, validateRegionalManifest } from './regional-imagery.ts';
+import { RequestState } from 'cesium';
+import { ancestorCrop, createRegionalImageryProvider, MAX_QUEUED_TILES, regionalTileAt, validateRegionalManifest } from './regional-imagery.ts';
 
 const bytes = new Uint8Array([255, 216, 1, 2, 255, 217]);
 const hash = createHash('sha256').update(bytes).digest('hex');
@@ -99,4 +100,47 @@ test('scene cancellation can abort the manifest before a provider handle exists'
     const pending = createRegionalImageryProvider({signal:controller.signal});
     controller.abort(); await assert.rejects(pending,/cancelled/); assert.equal(redirect,'error');
   } finally { globalThis.fetch = priorFetch; }
+});
+
+test('F58 per-view cancellation: queued loads are bounded, newest first and cancellable without failing tiles', async () => {
+  const oldFetch = globalThis.fetch, oldBitmap = globalThis.createImageBitmap, oldDocument = globalThis.document;
+  const m = manifest(); const nw = regionalTileAt(50.12, 8.48, 15);
+  const count = 6 + MAX_QUEUED_TILES + 4;
+  m.tiles = Array.from({ length: count }, (_, i) => ({ ...tile, z: 15, x: nw.x + (i % 20), y: nw.y + Math.floor(i / 20) }));
+  const started: string[] = []; const release: (() => void)[] = [];
+  globalThis.fetch = ((url: string | URL | Request) => {
+    if (String(url).endsWith('manifest.json')) return Promise.resolve(new Response(JSON.stringify(m)));
+    started.push(String(url));
+    return new Promise<Response>(resolve => release.push(() => resolve(new Response(bytes))));
+  }) as typeof fetch;
+  globalThis.createImageBitmap = (async () => ({ width: 512, height: 512, close() {} })) as typeof createImageBitmap;
+  globalThis.document = { createElement: () => ({ getContext: () => ({ drawImage() {} }) }) } as unknown as Document;
+  try {
+    const { provider, dispose, getStats, cancelQueued } = await createRegionalImageryProvider();
+    const requests = m.tiles.map(() => ({ state: RequestState.ISSUED, cancelled: false }));
+    const results = m.tiles.map((t, i) => Promise.resolve(provider.requestImage(t.x, t.y, t.z, requests[i] as never)).then(() => 'ok', () => 'cancelled'));
+    await new Promise(resolve => setTimeout(resolve, 0));
+    assert.equal(getStats().inflight, 6);
+    assert.equal(getStats().queuedTiles, MAX_QUEUED_TILES, 'queue is bounded');
+    assert.equal(getStats().cancelledTiles, count - 6 - MAX_QUEUED_TILES, 'oldest queued loads are dropped');
+    // Finishing one fetch starts the newest queued request (current view first).
+    const before = started.length; release.shift()!();
+    for (let i = 0; i < 100 && started.length === before; i++) await new Promise(resolve => setTimeout(resolve, 1));
+    assert.ok(started.at(-1)!.includes(`/${m.tiles.at(-1)!.x}/`), 'newest queued tile starts next');
+    assert.equal(cancelQueued(), MAX_QUEUED_TILES - 1);
+    assert.equal(getStats().queuedTiles, 0);
+    for (let i = 0; i < 200 && (release.length || getStats().inflight); i++) { release.shift()?.(); await new Promise(resolve => setTimeout(resolve, 1)); }
+    const outcomes = await Promise.all(results);
+    const cancelledIndexes = outcomes.flatMap((outcome, i) => outcome === 'cancelled' ? [i] : []);
+    assert.equal(cancelledIndexes.length, count - 7);
+    assert.ok(cancelledIndexes.every(i => requests[i].state === RequestState.CANCELLED), 'Cesium sees CANCELLED and retries later');
+    assert.equal(getStats().failedTiles, 0, 'dropped loads are not marked failed');
+    // A cancelled tile can be requested again.
+    const again = m.tiles[cancelledIndexes[0]];
+    const retry = provider.requestImage(again.x, again.y, again.z);
+    for (let i = 0; i < 100 && !release.length; i++) await new Promise(resolve => setTimeout(resolve, 1));
+    release.shift()?.(); await retry; assert.equal(getStats().failedTiles, 0);
+    assert.ok(getStats().loadedTiles >= 8);
+    dispose();
+  } finally { globalThis.fetch = oldFetch; globalThis.createImageBitmap = oldBitmap; globalThis.document = oldDocument; }
 });

@@ -166,7 +166,8 @@ performance data. See [control sources](../docs/research/2026-11-02-classic-cont
 Use **View → Flight controls** in the top menu to show or hide the on-screen
 flight-control panel. Hiding it releases transient held inputs while retaining
 throttle, trim and the other selected settings. Use **Flight → Restart flight**
-to restart; **Alt+Shift+R** is its shortcut, while **R** opens Review. **Options** is a top-menu
+to restart; **Alt+Shift+R** is its shortcut, while **R** enters and leaves
+recorded Review. **Options** is a top-menu
 action. Keyboard remapping is later work.
 
 Open **Options** in the header to adjust pitch, roll and rudder sensitivity from
@@ -179,7 +180,8 @@ the flight scene.
 To compare the response, start a flight, open **Options**, select **Gentle**,
 then **Done** and **Resume flight**. Try a small stick movement or a brief held
 button input. Repeat with **Default** to compare. Sensitivity settings last for
-the current page session; restarting through Flight preserves them. They
+the current page session; restarting through **Flight → Restart flight**
+preserves them. They
 change input response, not the aircraft's physics or calibration.
 
 **Options → Link rudder to aileron** adds a session-only input assist, off by
@@ -200,6 +202,9 @@ generic study model; it is not the yoke position, a trim tab or an aircraft trim
 specification. Select **Off · 0%** to compare unassisted behavior, or **Study default** to restore the correction. Sensitivity changes
 do not scale it. It is suspended while the autopilot controls roll, then its
 configured value returns after disconnect.
+
+Q is left rudder and W right rudder. Positive `rudder_cmd_norm` yaws left in the
+pinned generic model.
 
 Menu commands show their shortcuts. The **Alt+Shift** combinations include
 **C/V** cockpit/chase, **M** map, **D** flight data, **A** stall awareness,
@@ -252,6 +257,10 @@ specific-force ball; it does not reproduce a canted gyro's roll response, lag or
 errors. Heading remains true rather than magnetic. Vertical speed is the existing
 filtered geometric-height derivative, not a calibrated pitot-static VSI. Review
 shows the captured instrument values while the live engine remains paused.
+
+The fitted cockpit keeps labels at least 7 CSS px and keycap text at 10 px at scale 1;
+smaller viewports scale the whole surface down. The engine face reads OIL PRESS,
+OIL TEMP and EGT, with the full names as tooltips.
 
 ## Classic panel layout
 
@@ -388,6 +397,11 @@ gauges and controls are project-authored. No poster bitmap or branded instrument
 assets are redistributed. This resemblance does not confirm an exact aircraft
 variant, installed avionics fit or validated receiver/ILS behavior.
 
+The instruments and the flight worker must load byte-identical navigation data
+(matching SHA-256). Otherwise a visible alert appears, and regional guidance and EDDF
+ILS practice are disabled. An older local runtime that does not report its hash also
+fails closed; rebuild it.
+
 ## Pressure setting
 
 Select the **pressure window** beneath the altimeter to pause flight and inspect
@@ -444,6 +458,9 @@ samples. Flight reset or page reload clears it. There is no export, persistence,
 video recording, or input/event log. Full synchronized configuration, event and
 input replay remains future work under the [replay contract](../docs/design/CONTRACTS.md).
 
+Missing recorded throttle, flap command or stick positions show NO DATA in Review,
+never idle, UP or centred.
+
 ## Ground collision
 
 Normal wheel landings continue through the model's spring/damper/friction response.
@@ -473,6 +490,9 @@ airflow noise follows valid actual TAS. Fuel cutoff or actual stopped-engine
 state removes combustion while a rotating propeller can retain mechanical sound. This is a procedural
 approximation, not a calibrated recording of an installed aircraft. It uses no
 microphone, downloaded sample, provider service or extra runtime dependency.
+
+Sound is off by default; the status reads "Sound off · press S to enable". A browser
+that never completes audio activation shows a retry state after 3 s.
 
 ## Spatial stall awareness
 
@@ -676,6 +696,9 @@ state, fades with height and is hidden at or above 120 m AGL or when compatible
 ground data is missing. The scene uses a fixed sun/date; the shadow is a viewing cue, not another source of contact physics.
 
 ## Public terrain and sharper imagery
+
+If the regional imagery package fails, a notice says that coarse starter imagery and
+relief are shown. Queued tiles for an old view are dropped when the camera moves.
 
 Normal flights retain the local public Hessen package spanning 8.45–8.90°E and
 49.85–50.35°N. It contains real Rhine–Main/Taunus elevations from the official

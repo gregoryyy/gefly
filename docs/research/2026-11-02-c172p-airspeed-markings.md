@@ -44,3 +44,15 @@ the accessible legend names it VFE10 explicitly.
 The TAS fallback omits all CAS references. Nothing here applies selected-172S
 values, validates JSBSim performance, establishes a dynamic stall warning or
 changes flight physics.
+
+## Rights basis addendum (2026-11-03 07:40 Europe/Berlin)
+
+Added by Claude Code housekeeping after Claude peer review F34 (high) and F32 ([report](../reviews/2026-11-03-codex-prs-39-50-peer.md)). It records the current rights position. It is not a legal opinion.
+
+**POH values: rights basis unresolved.** The values listed above ship as individual numbers in `app/src/aircraft-handbook-data.ts` and `app/src/airspeed-markings.ts`. They come from a Cessna-authored, copyrighted 1982 Model 172P handbook, read from a third-party-hosted scan of one airframe's POH (`cessna-n54829-poh.pdf`). They are shipped in the `facts_only` form of [CONTRACTS §10.5](../design/CONTRACTS.md): cited values with page references, and no copied text, tables, figures or page images.
+
+The recorded user allowances do not cover this document:
+- GAPS Q7 (2026-11-01 13:59) allows POH values to be extracted as cited facts.
+- GAPS Q5 (2026-11-02 07:36) accepts whole lists from the selected 172S POH (S17).
+
+Both decisions concern the selected 172S handbook. No recorded decision, publisher permission or rights analysis (factual-data copyright, EU database right) extends them to this C172P POH. Public hosting is not permission (R-DATA-1). Until the user decides, the values are labelled **rights unresolved**. A GAPS entry is proposed to the orchestrator.

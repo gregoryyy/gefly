@@ -30,8 +30,12 @@ import { FlightTrace } from './flight-trace';
 import { createFlightReviewControls } from './flight-review-controls';
 import { applyControlSettings, DEFAULT_CONTROL_SETTINGS, type ControlSettings } from './control-settings';
 import { createControlSettingsPanel } from './control-settings-panel';
+import { reviewKeyAction, snapReviewTime } from './review-transport';
+import { checkNavdata, eddfPracticeReady, workerNavdata, type NavdataCheck, type NavdataSide } from './navdata-identity';
+import { pilotAxes, recordedControlView, recordedHeldKeys } from './pilot-controls';
 import type { Controls, FlightState, FlightScene, LandingPreset, AirborneSite } from './types';
 import type { PracticeMap } from './practice-map';
+import { practiceMapUpdateDue } from './practice-map-data';
 
 const root = document.querySelector<HTMLDivElement>('#app')!;
 root.innerHTML = `
@@ -48,6 +52,7 @@ root.innerHTML = `
     <button id="pause" disabled>Pause <kbd>SPACE</kbd></button>
   </header>
   <section id="notice" class="notice" role="status" aria-live="polite" hidden></section>
+  <section id="navdata-error" class="notice navdata-error" role="alert" hidden></section>
   <section id="flight-gate" class="flight-gate" aria-label="Flight session">
     <span class="eyebrow" id="gate-label">PREPARING YOUR FLIGHT</span>
     <h1 id="gate-title">Loading aircraft…</h1>
@@ -144,6 +149,7 @@ let liveStatus = 'Loading flight…';
 let practiceMap: PracticeMap | null = null;
 let mapVisible = false, mapLoading = false, mapDisposed = false;
 let lastMapUpdate_ms = -Infinity;
+let lastMapSample: unknown = undefined;
 // Existing E1 fixture's empirical input offset, not an aircraft coefficient.
 let rollOffset = -0.109375;
 let controlSettings: ControlSettings = { ...DEFAULT_CONTROL_SETTINGS };
@@ -169,7 +175,7 @@ function updateSessionUI() {
   el<HTMLButtonElement>('airborne-practice').disabled = reviewing;
   el<HTMLButtonElement>('taunus-practice').disabled = reviewing;
   document.querySelectorAll<HTMLButtonElement>('[data-region]').forEach(button=>button.disabled=reviewing);
-  el<HTMLButtonElement>('eddf-ils-practice').disabled = reviewing || !getNavigationCatalogue();
+  el<HTMLButtonElement>('eddf-ils-practice').disabled = reviewing || !getNavigationCatalogue() || document.querySelector<HTMLElement>('.flight-app')!.dataset.navdata !== 'match';
   document.querySelectorAll<HTMLButtonElement>('[data-landing]').forEach(button => { button.disabled = reviewing; });
   el<HTMLButtonElement>('controls-settings').disabled = reviewing;
   el<HTMLInputElement>('throttle').disabled = !controlsAvailable();
@@ -228,16 +234,25 @@ const session = createSession({
     updateReviewControls();
     if (oldAp !== (state.ap_mode ?? 0)) { apDisconnectPending = false; publishInput(); updateSessionUI(); }
   },
-  onReady(trim) {
+  onReady(trim, reply?: { navdata_sha256?: string | null; navdata_error?: string | null }) {
+    // session.ts forwards the worker's ready {navdata_sha256, navdata_error}; undefined = older worker.
+    engineNavdata = workerNavdata(reply); const navdataStatus = applyNavdataCheck();
     ready = true; failed = false; throttle = trim.throttle;
     terrainLoading=false; scene?.setTerrainTiles?.([...regionalTiles.values()]);
     pitchTrimTarget = Math.abs(trim.pitch_trim) <= 1 ? trim.pitch_trim : null;
     el<HTMLInputElement>('throttle').value = String(throttle * 100);
-    notice(!landingPreset && trim.status !== 1 ? 'Initial trim did not converge. Handling may be unstable; restart if needed.' : '');
-    if (airborneSite === 'eddf-ils' && !landingPreset) {
-      const approach = eddfApproachPractice(getNavigationCatalogue());
-      radioPanel.setConfiguration(approach.navigation);
-      session.setKap140({action:'heading', value: approach.ic.heading_rad});
+    const trimNotice = !landingPreset && trim.status !== 1 ? 'Initial trim did not converge. Handling may be unstable; restart if needed.' : '';
+    notice(trimNotice);
+    const eddf = eddfPracticeReady(airborneSite, landingPreset, navdataStatus);
+    if (eddf === 'apply') {
+      try {
+        const approach = eddfApproachPractice(getNavigationCatalogue());
+        radioPanel.setConfiguration(approach.navigation);
+        session.setKap140({action:'heading', value: approach.ic.heading_rad});
+      } catch { notice(`${trimNotice} EDDF 25C practice guidance unavailable; flying without the historical approach setup.`.trim()); }
+    } else if (eddf === 'degraded') {
+      // The visible navdata alert explains why; the flight still becomes ready (Paused).
+      notice(`${trimNotice} EDDF 25C practice guidance disabled: navigation data is unavailable or does not match.`.trim());
     }
     publishInput();
     if (startWhenReady && !document.hidden && !sceneFailed) { startWhenReady = false; startFlight(); }
@@ -399,11 +414,30 @@ const radioPanel = createRadioNavPanel({
   onOpen: neutralize, onClose: focusFlight,
 });
 
+// R-NAV-4: the UI and worker each load the package; their byte hashes must agree.
+let uiNavdata: NavdataSide = { settled: false, sha256: null, error: null };
+let engineNavdata: NavdataSide = { settled: false, sha256: null, error: null };
+let loadedCatalogue: ReturnType<typeof getNavigationCatalogue> = null;
+function applyNavdataCheck(): NavdataCheck['status'] {
+  const check = checkNavdata(uiNavdata, engineNavdata);
+  document.querySelector<HTMLElement>('.flight-app')!.dataset.navdata = check.status;
+  // Fail closed on an error. While a restarted worker is pending, keep the UI
+  // catalogue: session init needs it for the EDDF practice preset.
+  setNavigationCatalogue(check.status === 'error' ? null : loadedCatalogue);
+  el('navdata-error').textContent = check.status === 'error' ? check.message : '';
+  el('navdata-error').hidden = check.status !== 'error';
+  el<HTMLButtonElement>('eddf-ils-practice').disabled = reviewing || check.status !== 'match';
+  radioPanel.update(latest, reviewing, controlsAvailable(), running);
+  return check.status;
+}
 void loadNavigationPackage().then(pkg => {
-  setNavigationCatalogue(pkg);
-  el<HTMLButtonElement>('eddf-ils-practice').disabled = reviewing;
-  radioPanel.update(latest, reviewing, controlsAvailable());
-}).catch(() => { /* The worker reports a fail-closed navigation loading error. */ });
+  // loadNavigationPackage verifies the SHA-256 (crypto.subtle) of the exact bytes it fetched.
+  loadedCatalogue = pkg; uiNavdata = { settled: true, sha256: pkg.sha256, error: null };
+  applyNavdataCheck();
+}).catch((error: unknown) => {
+  uiNavdata = { settled: true, sha256: null, error: error instanceof Error ? error.message : String(error) };
+  applyNavdataCheck();
+});
 
 document.querySelector('.radio-heading strong')!.textContent = 'RADIO STACK · 25 kHz';
 const navigationGauges = createNavigationGauges({
@@ -486,7 +520,7 @@ async function setMapVisible(visible: boolean) {
   const panel = el('practice-map-panel');
   panel.hidden = !visible;
   el('toggle-map').setAttribute('aria-pressed', String(visible));
-  if (practiceMap) { practiceMap.setVisible(visible); lastMapUpdate_ms = -Infinity; return; }
+  if (practiceMap) { try { practiceMap.setVisible(visible); } catch { mapUnavailable(); } lastMapUpdate_ms = -Infinity; return; }
   if (!visible || mapLoading || mapDisposed) return;
   mapLoading = true; panel.textContent = 'Loading practice map…';
   try {
@@ -511,14 +545,9 @@ const reviewControls = createFlightReviewControls({
   onEnter: enterReview,
   onExit: exitReview,
   onSeek(time_s) {
-    const bounds = flightTrace.bounds();
-    if (!reviewing || !bounds || !Number.isFinite(time_s)) return;
-    // Native range serialization can round its right endpoint below the last
-    // sample. Snap only floating-point-close endpoints, preserving floor seeks inside.
-    const edgeTolerance_s = 8 * Number.EPSILON * Math.max(1, Math.abs(bounds.start_s), Math.abs(bounds.end_s));
-    const selected_s = time_s >= bounds.end_s - edgeTolerance_s ? bounds.end_s
-      : time_s <= bounds.start_s + edgeTolerance_s ? bounds.start_s : time_s;
-    reviewPlaying = false; engineAudio.update(null, false); reviewTime_s = clamp(selected_s, bounds.start_s, bounds.end_s);
+    const selected_s = snapReviewTime(time_s, flightTrace.bounds());
+    if (!reviewing || selected_s === null) return;
+    reviewPlaying = false; engineAudio.update(null, false); reviewTime_s = selected_s;
     lastMapUpdate_ms = -Infinity;
     updateReviewControls();
   },
@@ -546,7 +575,7 @@ function exitReview() {
   reviewing = reviewPlaying = false; lastMapUpdate_ms = -Infinity;
   el('status').textContent = liveStatus;
   neutralize(); updateSessionUI();
-  el<HTMLInputElement>('throttle').value = String(throttle * 100);
+  el<HTMLInputElement>('throttle').value = String(throttle * 100); el('throttle').dataset.unavailable = 'false';
   enginePanel.update(latest, false, controlsAvailable(), { mixture_norm: mixtureCommand, mixture_auto: mixtureAutomatic,
     ...(engineCommand === null ? {} : { engine_running: engineCommand }) });
   pitchTrimControl.update(latest, false, controlsAvailable(), pitchTrimTarget);
@@ -567,9 +596,8 @@ function held(code: string) { return keys.has(code) || keyboardControls.has(code
 function publishInput() {
   if (reviewing || mapDisposed || groundCollisionStopped()) return;
   const raw: Controls = {
-    elevator: clamp((held('ArrowUp') ? 0.35 : 0) - (held('ArrowDown') ? 0.35 : 0) + stickY * 0.4, -1, 1),
-    aileron: clamp((held('ArrowRight') ? 0.45 : 0) - (held('ArrowLeft') ? 0.45 : 0) + stickX * 0.5, -1, 1),
-    rudder: (held('KeyQ') ? 0.35 : 0) - (held('KeyW') ? 0.35 : 0), throttle,
+    // Sign conventions (positive rudder = left yaw) are documented in pilot-controls.ts.
+    ...pilotAxes(held, stickX, stickY), throttle,
     flap_norm: flapTarget_deg / 30, brake_norm: held('KeyB') ? 1 : 0,
     mixture_norm: mixtureCommand, mixture_auto: mixtureAutomatic,
     ...(engineCommand === null ? {} : { engine_running: engineCommand }),
@@ -588,6 +616,7 @@ function publishInput() {
   el('pitch-control').textContent = controls.elevator.toFixed(2);
   el('rudder-control').textContent = controls.rudder.toFixed(2);
   el('power').textContent = `${Math.round(throttle * 100)}%`;
+  el('joystick-knob').hidden = false; el('joystick').dataset.unavailable = 'false';
   el('joystick-knob').style.transform = `translate(${stickX * 46}px, ${-stickY * 46}px)`;
   document.querySelectorAll<HTMLElement>('[data-code]').forEach(button => button.classList.toggle('held', held(button.dataset.code!)));
 }
@@ -633,6 +662,7 @@ function reset(preset = landingPreset) {
   enginePanel.update(null, false, false); autopilotPanel.update(null, false, false);
   radioPanel.update(null, false, false); navigationGauges.update(null, false, false); landingFeedback.update(null, false);
   updateConfiguration(null, false);
+  engineNavdata = { settled: false, sha256: null, error: null }; applyNavdataCheck();
   notice(''); session.reset(landingPreset, airborneSite); updateSessionUI(); focusFlight();
 }
 function setView(next: typeof view) {
@@ -681,7 +711,8 @@ function updateConfiguration(state: Readonly<FlightState> | null, recorded: bool
   flapLever.disabled = !available || !controlsAvailable() || recorded;
   for (const id of ['flaps-retract', 'flaps-extend']) el<HTMLButtonElement>(id).disabled = flapLever.disabled;
   const selected = recorded || groundCollisionStopped() ? state?.flap_command_norm === undefined ? null : state.flap_command_norm * 30 : flapTarget_deg;
-  flapLever.value = String(selected ?? 0);
+  flapLever.dataset.unavailable = String(selected === null);
+  if (selected !== null) flapLever.value = String(selected);
   flapLever.setAttribute('aria-valuetext', selected === null ? 'Recorded lever position unavailable' : `${Math.round(selected)} degrees selected`);
   el<HTMLButtonElement>('wheel-brakes').disabled = !available || !controlsAvailable() || recorded;
   el('flaps-actual').textContent = available ? `${(state!.flap_rad! * 180 / Math.PI).toFixed(0)}°${recorded ? ' · recorded' : ' actual'}` : 'Rebuild engine';
@@ -693,10 +724,13 @@ function updateConfiguration(state: Readonly<FlightState> | null, recorded: bool
 function updateRecordedControls(state: Readonly<FlightState>): void {
   const value = (number: number | undefined, unit = '', scale = 1) => number !== undefined && Number.isFinite(number)
     ? `${(number * scale).toFixed(1)}${unit}` : '—';
-  const throttleRecorded = state.throttle_norm;
-  el<HTMLInputElement>('throttle').value = String(throttleRecorded === undefined ? 0 : throttleRecorded * 100);
-  el('throttle').setAttribute('aria-valuetext', throttleRecorded === undefined ? 'Recorded throttle unavailable' : `${Math.round(throttleRecorded * 100)} percent recorded`);
-  el('power').textContent = throttleRecorded === undefined ? '—' : `${Math.round(throttleRecorded * 100)}%`;
+  const recordedView = recordedControlView(state);
+  const throttleInput = el<HTMLInputElement>('throttle');
+  // Missing recorded positions are marked unavailable; the CSS hides the thumb/knob.
+  throttleInput.dataset.unavailable = String(recordedView.throttle_percent === null);
+  if (recordedView.throttle_percent !== null) throttleInput.value = String(recordedView.throttle_percent);
+  throttleInput.setAttribute('aria-valuetext', recordedView.throttle_percent === null ? 'Recorded throttle unavailable' : `${Math.round(recordedView.throttle_percent)} percent recorded`);
+  el('power').textContent = recordedView.throttle_percent === null ? 'NO DATA' : `${Math.round(recordedView.throttle_percent)}%`;
   for (const [id, number] of [['roll-control', state.aileron_cmd_norm], ['pitch-control', state.elevator_cmd_norm], ['rudder-control', state.rudder_cmd_norm]] as const) {
     el(id).textContent = number !== undefined && Number.isFinite(number) ? number.toFixed(2) : '—';
   }
@@ -711,11 +745,11 @@ function updateRecordedControls(state: Readonly<FlightState>): void {
   el('recorded-mixture').textContent = value(state.mixture_norm, '%', 100);
   el('recorded-mixture-mode').textContent = state.mixture_auto === 1 ? 'AUTO' : state.mixture_auto === 0 ? 'MANUAL' : '—';
   el('recorded-engine').textContent = state.engine_running === 1 ? 'RUN' : state.engine_running === 0 ? 'STOP' : '—';
-  el('joystick-knob').style.transform = `translate(${(state.aileron_cmd_norm ?? 0) * 46}px, ${-(state.elevator_cmd_norm ?? 0) * 46}px)`;
-  const active: Record<string, boolean> = { ArrowLeft: (state.aileron_cmd_norm ?? 0) < 0, ArrowRight: (state.aileron_cmd_norm ?? 0) > 0,
-    ArrowUp: (state.elevator_cmd_norm ?? 0) > 0, ArrowDown: (state.elevator_cmd_norm ?? 0) < 0,
-    KeyQ: (state.rudder_cmd_norm ?? 0) > 0, KeyW: (state.rudder_cmd_norm ?? 0) < 0,
-    KeyB: Math.max(state.brake_left_norm ?? 0, state.brake_right_norm ?? 0) > 0 };
+  const knob = el('joystick-knob');
+  knob.hidden = recordedView.stick === null;
+  el('joystick').dataset.unavailable = String(recordedView.stick === null);
+  if (recordedView.stick) knob.style.transform = `translate(${recordedView.stick.x * 46}px, ${-recordedView.stick.y * 46}px)`;
+  const active = recordedHeldKeys(state);
   document.querySelectorAll<HTMLElement>('[data-code]').forEach(button => button.classList.toggle('held', active[button.dataset.code!] === true));
 }
 function setFlaps(degrees: number) {
@@ -791,23 +825,21 @@ for (const button of Array.from(document.querySelectorAll<HTMLButtonElement>('[d
 
 addEventListener('keydown', event => {
   if ((event.target instanceof Element && event.target.closest('.practice-map-panel')) || document.querySelector('dialog[open]') || menuOpen() || event.ctrlKey || event.metaKey || event.altKey) return;
-  if (event.code === 'KeyR') {
-    if (!editing(event.target)) {
-      event.preventDefault();
-      if (!event.repeat) { if (reviewing) exitReview(); else enterReview(); }
-    }
+  if (event.code === 'KeyR' && !reviewing) {
+    if (!editing(event.target)) { event.preventDefault(); if (!event.repeat) enterReview(); }
     return;
   }
   if (reviewing) {
-    const timeline = event.target instanceof HTMLElement && event.target.id === 'review-time';
-    if (editing(event.target) && !timeline) return;
-    const nativeSpace = event.target instanceof HTMLElement && !!event.target.closest('button,a,summary');
-    if (event.code === 'Space' && !nativeSpace) {
-      event.preventDefault(); if (!event.repeat) toggleReviewPlayback();
-    }
-    if (event.code === 'KeyV' && !event.repeat) {
-      event.preventDefault(); setView(view === 'cockpit' ? 'chase' : 'cockpit');
-    }
+    // Routing is unit tested in review-transport.test.ts; flight keys never reach live controls.
+    const action = reviewKeyAction(event.code, {
+      editing: editing(event.target),
+      timeline: event.target instanceof HTMLElement && event.target.id === 'review-time',
+      nativeButton: event.target instanceof HTMLElement && !!event.target.closest('button,a,summary'),
+    }, event.repeat);
+    if (action !== 'ignore') event.preventDefault();
+    if (action === 'exit') exitReview();
+    else if (action === 'toggle-play') toggleReviewPlayback();
+    else if (action === 'toggle-view') setView(view === 'cockpit' ? 'chase' : 'cockpit');
     return;
   }
   if (editing(event.target)) return;
@@ -876,10 +908,10 @@ function animate(now: number) {
     const state = reviewSample?.state ?? latest;
     flightAssists.update(state.simulation_rate ?? 1, reviewing);
     const shownVsiFpm = reviewSample ? reviewSample.vertical_speed_mps / 0.3048 * 60 : verticalSpeedFpm;
-    if (practiceMap && mapVisible && now - lastMapUpdate_ms >= 250) {
+    if (practiceMap && mapVisible && practiceMapUpdateDue({ reviewing, now_ms: now, lastUpdate_ms: lastMapUpdate_ms, sample: reviewSample, lastSample: lastMapSample })) {
       try {
         practiceMap.update(state, flightTrace.sampledStates(600), reviewing ? 'review' : 'live');
-        lastMapUpdate_ms = now;
+        lastMapUpdate_ms = now; lastMapSample = reviewSample;
       } catch {
         mapUnavailable();
       }
@@ -898,15 +930,16 @@ function animate(now: number) {
     if (scenery.textContent !== sceneryLabel) scenery.textContent = sceneryLabel;
     sixPack.update(state, shownVsiFpm, reviewing);
     enginePanel.update(state, reviewing, controlsAvailable(), groundCollisionStopped() ? undefined : { mixture_norm: mixtureCommand, mixture_auto: mixtureAutomatic,
-    ...(engineCommand === null ? {} : { engine_running: engineCommand }) });
+    ...(engineCommand === null ? {} : { engine_running: engineCommand }) }, running);
     autopilotPanel.update(state, reviewing, controlsAvailable(), groundCollisionStopped());
-    radioPanel.update(state, reviewing, controlsAvailable());
-    navigationGauges.update(state, reviewing, controlsAvailable());
+    radioPanel.update(state, reviewing, controlsAvailable(), running);
+    navigationGauges.update(state, reviewing, controlsAvailable(), running);
     pitchTrimControl.update(state, reviewing, controlsAvailable(), groundCollisionStopped() ? null : pitchTrimTarget);
     updateConfiguration(state, reviewing);
     if (reviewing || groundCollisionStopped()) updateRecordedControls(state);
     else {
       el<HTMLInputElement>('throttle').value = String(throttle * 100);
+      el('throttle').dataset.unavailable = 'false';
       el('throttle').setAttribute('aria-valuetext', `${Math.round(throttle * 100)} percent selected`);
       el('power').textContent = `${Math.round(throttle * 100)}%`;
     }

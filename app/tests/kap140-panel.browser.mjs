@@ -28,7 +28,7 @@ try {
     window.fixture={kap_profile:1,kap_engaged:0,kap_lateral:0,kap_lateral_arm:0,kap_vertical:0,kap_alt_arm:0,kap_gs_arm:0,
       kap_lateral_alert:0,kap_vertical_alert:0,kap_hdg_prompt:0,kap_heading_bug_rad:Math.PI/2,kap_selected_altitude_m:1524,kap_vs_target_mps:2.54,
       kap_hold_pressure_altitude_m:1200,kap_baro_setting_pa:101325,kap_baro_units:0,kap_display_page:0,
-      kap_indicated_altitude_m:1200,kap_nav_valid:0,kap_nav_kind:0,kap_gs_valid:0,kap_elevator_norm:0};
+      kap_indicated_altitude_m:1200,kap_nav_valid:0,kap_nav_kind:0,kap_gs_valid:0,kap_elevator_norm:0,kap_sensor_fault:0};
     window.panel=createAutopilotPanel({container:document.querySelector('#autopilot-systems'),onCommand:command=>commands.push({...command,wall_ms:performance.now()}),onOpen(){},onClose(){}});
     window.setState=(patch={},review=false,available=true,locked=false)=>{Object.assign(fixture,patch);panel.update(fixture,review,available,locked);};setState();
     </script>` }));
@@ -60,6 +60,11 @@ try {
   assert.equal(await page.locator('#ap-lateral').textContent(), 'ROL'); assert.equal(await page.locator('#ap-vertical').textContent(), 'VS');
   assert.equal(await page.locator('#ap-lateral-alert').textContent(), 'NAV'); assert.equal(await page.locator('#ap-vertical-alert').textContent(), 'GS');
   assert(await page.locator('#ap-lateral-alert').evaluate(element => element.classList.contains('kap-flashing')));
+  await state({ kap_engaged: 0 });
+  assert.equal(await page.locator('#ap-lateral-alert').textContent(), '', 'F47: no source-loss alert with AP OFF');
+  assert.equal(await page.locator('#ap-vertical-alert').textContent(), '');
+  await state({ kap_sensor_fault: 1 }); assert.equal(await page.locator('#ap-engaged-label').textContent(), 'FAULT', 'F48: invalid AP sensors are annunciated');
+  await state({ kap_sensor_fault: 0, kap_engaged: 1 }); assert.equal(await page.locator('#ap-lateral-alert').textContent(), 'NAV');
   await clear(); await page.locator('#ap-nav').click(); assert.deepEqual(await commands(), [{ action: 'nav' }]);
   assert.equal(await page.locator('#ap-lateral').textContent(), 'ROL', 'invalid signal selection cannot fabricate capture');
   assert(await page.locator('#ap-altitude-alert').isHidden(), 'legacy optional alert group absence remains unavailable');
@@ -97,6 +102,25 @@ try {
   await state({ kap_baro_units: 1 }); assert.equal(await page.locator('#ap-selector-unit').textContent(), 'IN HG');
   assert.equal(await page.locator('#ap-selector-value').inputValue(), '29.92');
   checks.push('short BARO displays pressure, two-second hold changes units exactly once, and hPa/inHg values use the AP snapshot rather than altimeter assumptions');
+
+  // F45: entries are interpreted by the page shown when they started, not at commit.
+  await state({ kap_display_page: 2, kap_baro_units: 0 }); await clear();
+  await page.locator('#ap-selector-value').fill('1020');
+  await state({ kap_display_page: 0 });
+  assert.equal(await page.locator('#ap-selector-unit').textContent(), 'HPA', 'entry in progress keeps its starting units');
+  await page.locator('#ap-heading-target').focus();
+  assert.deepEqual(await commands(), [{ action: 'baro-setting', value: 102000 }], 'a BARO entry never becomes a selected altitude after the page expires');
+  await state({ kap_display_page: 0 }); assert.equal(await page.locator('#ap-selector-unit').textContent(), 'FT');
+  await clear(); await page.locator('#ap-selector-value').fill('6200'); await state({ kap_display_page: 1 });
+  assert.equal(await page.locator('#ap-selector-value').getAttribute('readonly'), null, 'an altitude entry is not made read-only by a later VS page');
+  await page.locator('#ap-heading-target').focus();
+  assert.equal((await commands()).length, 1); assert.equal((await commands())[0].action, 'select-altitude');
+  assert(Math.abs((await commands())[0].value - 1889.76) < 1e-9);
+  await state({ kap_display_page: 2, kap_baro_units: 0, kap_baro_setting_pa: 101325 }); await clear();
+  await page.locator('#ap-selector-increase').hover(); await page.mouse.down(); await state({ kap_display_page: 0 }); await page.mouse.up();
+  assert.deepEqual(await commands(), [{ action: 'baro-setting', value: 101425 }], 'a knob press keeps the page shown at press time');
+  await state({ kap_display_page: 2, kap_baro_units: 1 });
+  checks.push('selector entries and knob presses use the page and units shown when they started, so a BARO entry never becomes a selected altitude after the page expires');
 
   await clear(); await hold('ap-up', 400); assert.deepEqual(await commands(), [{ action: 'vertical', value: 1 }, { action: 'vertical', value: 0 }], 'worker owns repeat timing, not browser timers');
   await clear(); await page.locator('#ap-down').focus(); await page.keyboard.down('Space'); await page.waitForTimeout(350); await page.keyboard.down('Space'); await page.keyboard.up('Space');

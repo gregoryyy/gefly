@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { imageryCorners, makePracticeMapFrame } from './practice-map-data.ts';
+import { imageryCorners, makePracticeMapFrame, practiceMapUpdateDue } from './practice-map-data.ts';
 import type { FlightState } from './types';
 
 function state(overrides: Partial<FlightState> = {}): FlightState {
@@ -77,4 +77,13 @@ test('image bounds reject wrong lengths, nonfinite values, geographic ranges and
     }
   }
   for (const bounds of invalid) assert.throws(() => imageryCorners(bounds), RangeError);
+});
+
+test('F7 Review map updates on every selected-sample change; live stays at 4 Hz', () => {
+  const a = {}, b = {};
+  assert.equal(practiceMapUpdateDue({ reviewing: true, now_ms: 10, lastUpdate_ms: 5, sample: b, lastSample: a }), true);
+  assert.equal(practiceMapUpdateDue({ reviewing: true, now_ms: 10, lastUpdate_ms: 5, sample: a, lastSample: a }), false);
+  assert.equal(practiceMapUpdateDue({ reviewing: true, now_ms: 10, lastUpdate_ms: -Infinity, sample: a, lastSample: a }), true, 'seek/enter/exit forces one update');
+  assert.equal(practiceMapUpdateDue({ reviewing: false, now_ms: 1249, lastUpdate_ms: 1000, sample: null, lastSample: null }), false);
+  assert.equal(practiceMapUpdateDue({ reviewing: false, now_ms: 1250, lastUpdate_ms: 1000, sample: null, lastSample: null }), true);
 });

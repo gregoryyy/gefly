@@ -32,7 +32,7 @@ import { loadRegionalManifest, TerrainStream, sampleAtlas, sampleAtlasGradient }
 import { pressureAltitude_m, indicatedAltitude_m, validSetting } from './altimeter.js';
 import { stallFields, controlFields, cockpitFields, pitchTrimFields, groundFields } from './cockpit.js';
 import { autopilotCommand, engineFields, engineSwitchFields } from './engine.js';
-import { groundCollisionContact, collisionRecord, EMPTY_COLLISION } from './collision.js';
+import { groundCollisionContact, collisionRecord, collisionStateFields, contactOutcome, EMPTY_COLLISION } from './collision.js';
 import { createKap140, validKapCommand, validKapState } from './kap140.js';
 import { createAltitudeAlert } from './altitude-alert.js';
 import { DEFAULT_NAVIGATION, NAVIGATION_FIELDS, validNavigation, navigationSignal, loadNavigationPackage } from './navigation.js';
@@ -130,11 +130,21 @@ function requestTerrain(lat, lon) {
 }
 let groundCollisionEnabled = false;
 let collision = EMPTY_COLLISION;
+// Contact-data availability from the latest ground sample. When contact
+// telemetry is unavailable the collision group is omitted from state/stats
+// (never published as collision_mask 0, which would read as a definitive clear).
+let collisionAvailable = false;
 let kap = null;
 let altitudeAlert = null;
 let pilotOverrideActive = false;
 let navigation = { ...DEFAULT_NAVIGATION };
 let navigationPackage = null;
+// Init/ready navdata identity contract (see README "Navigation database"):
+// navdata_sha256 is the lowercase hex SHA-256 of the exact package bytes this
+// worker loaded and verified, or null when none was loaded; navdata_error is the
+// load failure message, or null. A failed load degrades NAV sources to
+// unavailable instead of stopping every flight mode.
+let navdataError = null;
 // Ideal pressure instrument only. Its setting never changes the atmosphere,
 // dynamics state, integration step or original study digest.
 let altimeterSettingPa = 101325;
@@ -257,6 +267,15 @@ function kapSensors() {
     vertical_speed_mps: -ground.ground_down_mps, elevator_norm: M.HEAPF64[pointer + 2],
     nav: navigationSignal(navigation, { lat_rad: state[1], lon_rad: state[2], alt_msl_m: state[3] }, navigationPackage?.records, navigationPackage?.source_label) };
 }
+// Invalid sensors are surfaced, not skipped: the controller disconnects an
+// engaged AP and sets kap_sensor_fault in every following state; the worker
+// also reports the transition once (generic simulator safety substitution).
+let kapSensorsInvalid = false;
+function stepKap(sensors) {
+  const valid = kap.step(sensors);
+  if (!valid && !kapSensorsInvalid) postMessage({ type: 'autopilot-fault', message: 'Autopilot sensors invalid; autopilot disconnected.' });
+  kapSensorsInvalid = !valid;
+}
 function applyKapGuidance(sensors = kapSensors()) {
   if (!kap) return true;
   const guidance = kap.guidance(sensors);
@@ -351,7 +370,7 @@ function onNavigation(msg) {
   const merged = { ...navigation, ...msg.config };
   navigation = Object.fromEntries(NAVIGATION_FIELDS.map(k => [k, merged[k]]));
   // Source-loss fallback is immediate even while paused; dynamics stay frozen.
-  if (kap) { const sensors = kapSensors(); kap.step(sensors); if (!applyKapGuidance(sensors)) return; }
+  if (kap) { const sensors = kapSensors(); stepKap(sensors); if (!applyKapGuidance(sensors)) return; }
   postState();
 }
 function onAutopilot(msg) {
@@ -395,6 +414,15 @@ function terrainFields() {
     terrain_geoid_m: sample.geoid_m, terrain_height_ellipsoid_m: sample.ellipsoid_m };
 }
 
+function collisionFields() {
+  return collisionStateFields(groundCollisionEnabled, collisionAvailable, collision);
+}
+
+function sampleContact() {
+  const ground = readGroundFields(), state = readState();
+  return groundCollisionContact(ground.ground_agl_m, state[4], state[5], ground.structure_contact_mask, terrainGrid ? { ...terrainGradient(state[1], state[2]), heading_rad: state[6] } : undefined);
+}
+
 function stateMessage() {
   const flapCommand = typeof M._gf_flap_command_norm === 'function' ? M._gf_flap_command_norm() : NaN;
   const s = readState();
@@ -403,7 +431,7 @@ function stateMessage() {
     type: 'state', step: stepIndex, simulation_rate: simulationRate, t_s: s[0], lat_rad: s[1], lon_rad: s[2],
     alt_msl_m: s[3], roll_rad: s[4], pitch_rad: s[5], heading_rad: s[6], tas_mps: s[7],
     last_input_wall_ms: lastInputWallMs, step_cost_us: lastStepCostUs, ...altimeterFields,
-    ...readStallFields(), ...readControlFields(), ...readCockpitFields(), ...readPitchTrimFields(), ...readGroundFields(), ...readEngineFields(), ...readEngineSwitchFields(), ...terrainFields(), ...kapFields(), ...((kap || navigationPackage) ? navigation : {}), ...collision,
+    ...readStallFields(), ...readControlFields(), ...readCockpitFields(), ...readPitchTrimFields(), ...readGroundFields(), ...readEngineFields(), ...readEngineSwitchFields(), ...terrainFields(), ...kapFields(), ...((kap || navigationPackage) ? navigation : {}), ...collisionFields(),
   };
 }
 
@@ -471,7 +499,7 @@ function stepOnce() {
     }
   }
   if (!applyDueInputs()) return false;
-  if (kap) { const sensors = kapSensors(); kap.step(sensors); if (!applyKapGuidance(sensors)) return false; }
+  if (kap) { const sensors = kapSensors(); stepKap(sensors); if (!applyKapGuidance(sensors)) return false; }
   const previousGround = groundCollisionEnabled ? readGroundFields() : null;
   const rc = M._gf_step();
   const b = performance.now();
@@ -482,10 +510,15 @@ function stepOnce() {
   lastStepCostUs = (b - a) * 1000;
   if (costCount < costs.length) costs[costCount++] = lastStepCostUs;
   if (groundCollisionEnabled) {
-    const ground = readGroundFields(), state = readState();
-    const contact = groundCollisionContact(ground.ground_agl_m, state[4], state[5], ground.structure_contact_mask, terrainGrid ? { ...terrainGradient(state[1], state[2]), heading_rad: state[6] } : undefined);
-    const record = contact.mask ? collisionRecord(contact.mask, stepIndex, state[0], previousGround) : null;
-    if (record) {
+    const contact = sampleContact();
+    collisionAvailable = contact.available;
+    const record = contact.mask ? collisionRecord(contact.mask, stepIndex, readState()[0], previousGround) : null;
+    const outcome = contactOutcome(contact, record);
+    // A detected contact is never dropped: without valid pre-step motion
+    // there is no truthful record, so the flight stops with an explicit error.
+    if (outcome === 'fail') { fail(`Ground contact detected at step ${stepIndex} but its pre-step motion is unavailable; flight stopped.`); return false; }
+    if (outcome === 'latch') {
+
       collision = record;
       pending = [];
       onHalt();
@@ -544,13 +577,13 @@ function stats() {
     run_wall_ms: runWallMs + (running ? performance.now() - runWallStartMs : 0),
     step_cost_us: costs.slice(0, costCount),
     cross_origin_isolated: self.crossOriginIsolated === true,
-    ...collision, ...kapFields(),
+    ...collisionFields(), ...kapFields(),
   };
 }
 
 async function onInit(msg) {
   terrainStream?.cancel();
-  initialized = false; terrainGeneration++; terrainLoad = null; resumeAfterTerrain = false; terrainStream = null; terrainFault = false; kap = null; altitudeAlert = null; pilotOverrideActive = false; navigation = { ...DEFAULT_NAVIGATION }; navigationPackage = null;
+  initialized = false; terrainGeneration++; terrainLoad = null; resumeAfterTerrain = false; terrainStream = null; terrainFault = false; kap = null; altitudeAlert = null; pilotOverrideActive = false; navigation = { ...DEFAULT_NAVIGATION }; navigationPackage = null; navdataError = null; collisionAvailable = false; kapSensorsInvalid = false;
   await modulePromise;
   const ic = msg.ic || {};
   const dt = msg.dt_s;
@@ -566,12 +599,15 @@ async function onInit(msg) {
     const merged = { ...DEFAULT_NAVIGATION, ...msg.navigation };
     navigation = Object.fromEntries(NAVIGATION_FIELDS.map(k => [k, merged[k]]));
   }
-  if (msg.regional_navigation === true) navigationPackage = await loadNavigationPackage();
   if (msg.kap140 !== undefined && typeof msg.kap140 !== 'boolean') { fail('init: invalid kap140 capability flag'); return; }
   const presets = { normal: 1, hard: 2, side: 3, banked: 4 };
   const preset = msg.landing_preset;
   if (preset !== undefined && (typeof preset !== 'string' || !Object.hasOwn(presets, preset)
     || typeof M._gf_init_landing !== 'function')) { fail('init: landing preset unavailable or invalid'); return; }
+  if (msg.regional_navigation === true) {
+    try { navigationPackage = await loadNavigationPackage(); }
+    catch (e) { navigationPackage = null; navdataError = `Navigation database unavailable: ${e && e.message ? e.message : String(e)}`.slice(0, 500); }
+  }
   terrainGrid = null;
   if (typeof M._gf_clear_terrain_grid === 'function') M._gf_clear_terrain_grid();
   if (msg.terrain === true) {
@@ -609,6 +645,7 @@ async function onInit(msg) {
   missedSteps = 0; droppedSteps = 0; maxLagSteps = 0; maxLagMs = 0; lateInputs = 0; appliedInputs = 0; maxBatch = 0; ticks = 0;
   costs = new Float32Array(COST_CAPACITY); costCount = 0; runWallMs = 0;
   groundCollisionEnabled = msg.ground_collision === true; collision = EMPTY_COLLISION;
+  collisionAvailable = groundCollisionEnabled && sampleContact().available;
   initializeAltimeter();
   if (msg.kap140 && typeof M._gf_set_autopilot_vertical === 'function' && typeof M._gf_autopilot_vertical_state === 'function' && typeof M._gf_static_pressure_pa === 'function') {
     kap = createKap140(kapSensors());
@@ -618,6 +655,8 @@ async function onInit(msg) {
   initialized = true;
   postMessage({
     type: 'ready',
+    navdata_sha256: navigationPackage ? navigationPackage.sha256 : null,
+    navdata_error: navdataError,
     build: { ...(navigationPackage ? { navigation: { id: navigationPackage.id, edition: navigationPackage.edition, sha256: navigationPackage.sha256, historical: navigationPackage.historical } } : {}), ...(terrainGrid ? { terrain: { id: terrainGrid.id, sha256: terrainGrid.sha256, physical_datum: terrainGrid.physical_datum, geoid_model: terrainGrid.geoid_model } } : {}),
              ...(terrainStream ? { regional_terrain: { id: 'rhein-main-dgm200-gcg-v1', cache_limit: 9, transition_degrees: .02,
                loaded_tiles: Array.from(terrainStream.tiles.values(), grid => ({ id: grid.id, sha256: grid.sha256 })) } } : {}),

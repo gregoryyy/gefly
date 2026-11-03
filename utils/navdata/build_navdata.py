@@ -13,6 +13,20 @@ SOURCE_SHA = '24cfae74114d43586a5816029bb2ddeeeb1a0b6b4472b4ce775d7d748898b839'
 COMMIT = '5371094f6cc81d39b5cc7d9052ba13ba4a8b8e95'
 SOURCE_URL = f'https://gitlab.com/flightgear/fgdata/-/raw/{COMMIT}/Navaids/nav.dat.gz'
 CENTER = (50.026706, 8.558350)  # OurAirports community EDDF point; not verified official ARP.
+# Pinned record behind CENTER (R-DATA-1): OurAirports airports.csv, public-domain
+# release (repository Unlicense). Row values equal CENTER; not an official ARP.
+CENTER_RECORD = {
+    'dataset': 'OurAirports airports.csv',
+    'repository_commit': '72322ae9555947b969dda8effa793072159a9a1e',
+    'url': 'https://raw.githubusercontent.com/davidmegginson/ourairports-data/72322ae9555947b969dda8effa793072159a9a1e/airports.csv',
+    'sha256': 'e869f2a5c500aa0a5c74c680559c4e3ab7e65c7a442daa7c92b7f99fb51613ca',
+    'record': 'id 2212, ident EDDF, latitude_deg 50.026706, longitude_deg 8.55835',
+    'retrieved': '2026-11-03',
+    'record_page': 'https://ourairports.com/airports/EDDF/',
+    'record_page_inspected': '2026-11-03',
+    'record_page_updated': '2026-01-29',
+    'license': 'Public domain (OurAirports release; repository Unlicense)',
+}
 RADIUS_NM = 100
 FT = .3048
 
@@ -95,7 +109,7 @@ def compile_package(source:Path, output:Path):
         records.append(record);used.add(row['line'])
     if len({r['uid'] for r in records})!=len(records): raise ValueError('Nonunique regional uid')
     records.sort(key=lambda r:(r['kind'],r['airport'] or '',r['id'],r['frequency_khz'],r['uid']))
-    package={'version':1,'id':'rhein-main-nav810-2013-10-v1','edition':'2013.10','historical':True,'source_label':'Rhein-Main NAV 2013.10 · historical','vertical_reference':'Source AMSL; exact vertical datum and survey accuracy unverified. Geometric training approximation only.','region':{'center_lat_deg':CENTER[0],'center_lon_deg':CENTER[1],'radius_nm':RADIUS_NM,'center_source':'https://ourairports.com/airports/EDDF/','center_reference':'Community airport point, not verified official ARP','distance_model':'6371000 m sphere'},'source':{'url':SOURCE_URL,'commit':COMMIT,'gzip_sha256':sha(zipped),'raw_sha256':sha(raw),'encoding':'ISO-8859-1 decoded and serialized as UTF-8','edition_header':next(x for x in lines[:4] if '810 Version' in x),'license':'GPL-2.0-or-later','rights_notice':'Copyright © 2013 Robin A. Peel; complete original notice retained in source-nav810.dat','changes':'Bounded regional subset; explicit pairing, units converted to metres/kHz; GS values precede FlightGear scenery-height calibration.','compiler_sha256':sha(Path(__file__).read_bytes())},'records':records,'component_issues':diagnostics,'excluded_malformed_worldwide_rows':excluded,'unmodeled_source_rows':[{'source_line':r['line'],'row_type':r['type'],'id':r['id'],'reason':'NDB/marker or unmatched unsupported component; no simulated reception'} for r in selected if r['line'] not in used],'limitations':['Historical simulator inventory, not current AIRAC/NOTAM or real-flight data.','No RF propagation/terrain masking, surveyed runway or antenna acceptance.','Source-calibrated VOR radials are not current magnetic variation.','Only explicit paired DME/GS components are modeled.']}
+    package={'version':1,'id':'rhein-main-nav810-2013-10-v1','edition':'2013.10','historical':True,'source_label':'Rhein-Main NAV 2013.10 · historical','vertical_reference':'Source AMSL; exact vertical datum and survey accuracy unverified. Geometric training approximation only.','region':{'center_lat_deg':CENTER[0],'center_lon_deg':CENTER[1],'radius_nm':RADIUS_NM,'center_source':CENTER_RECORD['record_page'],'center_source_record':CENTER_RECORD,'center_reference':'Community airport point, not verified official ARP','distance_model':'6371000 m sphere'},'source':{'url':SOURCE_URL,'commit':COMMIT,'gzip_sha256':sha(zipped),'raw_sha256':sha(raw),'encoding':'ISO-8859-1 decoded and serialized as UTF-8','edition_header':next(x for x in lines[:4] if '810 Version' in x),'license':'GPL-2.0-or-later','rights_notice':'Copyright © 2013 Robin A. Peel; complete original notice retained in source-nav810.dat','changes':'Bounded regional subset; explicit pairing, units converted to metres/kHz; GS values precede FlightGear scenery-height calibration.','compiler_sha256':sha(Path(__file__).read_bytes())},'records':records,'component_issues':diagnostics,'excluded_malformed_worldwide_rows':excluded,'unmodeled_source_rows':[{'source_line':r['line'],'row_type':r['type'],'id':r['id'],'reason':'NDB/marker or unmatched unsupported component; no simulated reception'} for r in selected if r['line'] not in used],'limitations':['Historical simulator inventory, not current AIRAC/NOTAM or real-flight data.','No RF propagation/terrain masking, surveyed runway or antenna acceptance.','Source-calibrated VOR radials are not current magnetic variation.','Only explicit paired DME/GS components are modeled.']}
     output.mkdir(parents=True,exist_ok=True)
     data=(json.dumps(package,ensure_ascii=False,indent=2)+'\n').encode()
     (output/'rhein-main-v1.json').write_bytes(data)

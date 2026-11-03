@@ -1,0 +1,351 @@
+{
+ "record": "docs/reviews/2026-11-03-runtime-evidence.md",
+ "revision": "b3a7538c9834faaa4e70d61777de350f62a7728a",
+ "checkout_head": "facbfbb78d9c3238c2f4f7e56ddcd19d9adba00b (differs from b3a7538 only in docs/DONE.md, docs/TODO.md and docs/reviews/*)",
+ "platform": "headless Linux, software WebGL (ANGLE Vulkan SwiftShader); not the reference platform",
+ "build": {
+  "jsbsim_tag": "v1.3.3",
+  "jsbsim_commit": "66f7fafc07fe13e7ede9db20873030fed2881713",
+  "emsdk": "6.0.13",
+  "emsdk_rev": "d7b4130688bfa348392b921ab04015aa15c4f154",
+  "emcc": "emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 6.0.13 (e13ee988ce3d87a738dd8f3661d02223308c412a)",
+  "flags": "-O2 -fwasm-exceptions",
+  "wasm_bytes": 1752475,
+  "wasm_sha256": "50b7c373bc634ddfb75bbd8570b2da8e4404eefe6ab7b20d72e8053bd1354c07",
+  "aircraft_adapter": {
+   "adapter_id": "gefly-c172x-mixture-pitch-ap-v2",
+   "adapter_script_sha256": "5f9dcf09a1d004351bb5faf165c037f9f3b3433ba10f52f7957374b2ab745487",
+   "ap_prepared_sha256": "e128be7673cd6fd29e8a0bab4ff7392e62974ff236e44a23861d3f4ffc8ebd9c",
+   "ap_source_sha256": "1e83fec37beabf33e1a1bdd7a30fb5d4aeca79ddb52a2dca58a7bcfc1d20e570",
+   "prepared_sha256": "f0dad1b5a4c17f8ac607da1709d38f2de77119aeb82c272dd7cedefccad69219",
+   "source_path": "aircraft/c172x/c172x.xml",
+   "source_sha256": "b736f4b7560d5aab4d2a69026798be1d369b2b2bb5ddcf627aebfd441ba71840"
+  }
+ },
+ "dist_sha256": {
+  "jsbsim.wasm": "50b7c373bc634ddfb75bbd8570b2da8e4404eefe6ab7b20d72e8053bd1354c07",
+  "jsbsim.mjs": "97f2c4c2bb4454b00300fbcd9320f2315f11317d0cf3f007ea3b12294ffb7855",
+  "build-info.json": "741347bf02234b3b06b6da83a926239d1e926aabed8eebfcabc27261c91d946b"
+ },
+ "test_browser_suites": [
+  {
+   "command": "node tests/landing-physics.mjs",
+   "exit": 0,
+   "wall_s": 2,
+   "outcome": "pass",
+   "self_reported_result": null,
+   "first_error": null,
+   "failed_at": null
+  },
+  {
+   "command": "node tests/smoke.mjs",
+   "exit": 1,
+   "wall_s": 94,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "locator.click: Timeout 30000ms exceeded.",
+   "failed_at": "app/tests/smoke.mjs:69:46"
+  },
+  {
+   "command": "node tests/classic-smoke.mjs",
+   "exit": 1,
+   "wall_s": 65,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "locator.click: Timeout 30000ms exceeded.",
+   "failed_at": "app/tests/flight-actions.mjs:4:44"
+  },
+  {
+   "command": "node tests/engine-smoke.mjs",
+   "exit": 1,
+   "wall_s": 198,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "locator.click: Timeout 30000ms exceeded.",
+   "failed_at": "app/tests/flight-actions.mjs:4:44"
+  },
+  {
+   "command": "node ../studies/e1-browser/sim/autopilot-native.mjs",
+   "exit": 0,
+   "wall_s": 1,
+   "outcome": "pass",
+   "self_reported_result": "pass",
+   "first_error": null,
+   "failed_at": null
+  },
+  {
+   "command": "node ../studies/e1-browser/sim/kap140-worker.mjs",
+   "exit": 0,
+   "wall_s": 3,
+   "outcome": "pass",
+   "self_reported_result": "pass",
+   "first_error": null,
+   "failed_at": null
+  },
+  {
+   "command": "node ../studies/e1-browser/sim/navigation-worker.mjs",
+   "exit": 0,
+   "wall_s": 1,
+   "outcome": "pass",
+   "self_reported_result": "pass",
+   "first_error": null,
+   "failed_at": null
+  },
+  {
+   "command": "node tests/kap140-panel.browser.mjs",
+   "exit": 0,
+   "wall_s": 8,
+   "outcome": "pass",
+   "self_reported_result": "pass",
+   "first_error": null,
+   "failed_at": null
+  },
+  {
+   "command": "node tests/kap140-flight.browser.mjs",
+   "exit": 1,
+   "wall_s": 71,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "locator.click: Timeout 30000ms exceeded.",
+   "failed_at": "app/tests/kap140-flight.browser.mjs:74:36"
+  },
+  {
+   "command": "node tests/fuel-gauge.browser.mjs",
+   "exit": 1,
+   "wall_s": 134,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "locator.click: Timeout 30000ms exceeded.",
+   "failed_at": "app/tests/fuel-gauge.browser.mjs:54:40"
+  },
+  {
+   "command": "node tests/fov-smoke.mjs",
+   "exit": 1,
+   "wall_s": 344,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "page.screenshot: Timeout 30000ms exceeded.",
+   "failed_at": "app/tests/fov-smoke.mjs:94:14"
+  },
+  {
+   "command": "node tests/pitch-trim.browser.mjs",
+   "exit": 1,
+   "wall_s": 77,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "locator.click: Timeout 30000ms exceeded.",
+   "failed_at": "app/tests/flight-actions.mjs:4:44"
+  },
+  {
+   "command": "node tests/pointer-yoke.browser.mjs",
+   "exit": 1,
+   "wall_s": 257,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "locator.click: Timeout 30000ms exceeded.",
+   "failed_at": "app/tests/flight-actions.mjs:4:44"
+  },
+  {
+   "command": "node tests/avionics-smoke.mjs",
+   "exit": 1,
+   "wall_s": 45,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:",
+   "failed_at": "app/tests/avionics-smoke.mjs:113:3"
+  },
+  {
+   "command": "node tests/navigation-input.browser.mjs",
+   "exit": 1,
+   "wall_s": 119,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "locator.click: Timeout 30000ms exceeded.",
+   "failed_at": "app/tests/navigation-input.browser.mjs:80:44"
+  },
+  {
+   "command": "node tests/navigation-aux.browser.mjs",
+   "exit": 1,
+   "wall_s": 88,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "locator.click: Timeout 30000ms exceeded.",
+   "failed_at": "app/tests/flight-actions.mjs:4:44"
+  },
+  {
+   "command": "node tests/regional-nav.browser.mjs",
+   "exit": 0,
+   "wall_s": 8,
+   "outcome": "pass",
+   "self_reported_result": null,
+   "first_error": null,
+   "failed_at": null
+  },
+  {
+   "command": "node tests/regional-nav-flight.browser.mjs",
+   "exit": 1,
+   "wall_s": 93,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "locator.click: Timeout 30000ms exceeded.",
+   "failed_at": "app/tests/regional-nav-flight.browser.mjs:26:37"
+  },
+  {
+   "command": "node tests/forward-marker-smoke.mjs",
+   "exit": 1,
+   "wall_s": 176,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "locator.evaluate: Timeout 30000ms exceeded.",
+   "failed_at": "app/tests/forward-marker-smoke.mjs:42:61"
+  },
+  {
+   "command": "node tests/aircraft-shadow.browser.mjs",
+   "exit": 1,
+   "wall_s": 59,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "locator.click: Timeout 30000ms exceeded.",
+   "failed_at": "app/tests/aircraft-shadow.browser.mjs:45:84"
+  },
+  {
+   "command": "node tests/review-controls.browser.mjs",
+   "exit": 1,
+   "wall_s": 93,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "locator.click: Timeout 30000ms exceeded.",
+   "failed_at": "app/tests/review-controls.browser.mjs:76:46"
+  },
+  {
+   "command": "node tests/panel-layout.browser.mjs",
+   "exit": 1,
+   "wall_s": 123,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "locator.click: Timeout 30000ms exceeded.",
+   "failed_at": "app/tests/panel-layout.browser.mjs:86:42"
+  },
+  {
+   "command": "node tests/flight-data.browser.mjs",
+   "exit": 1,
+   "wall_s": 61,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "locator.click: Timeout 30000ms exceeded.",
+   "failed_at": "app/tests/flight-data.browser.mjs:64:48"
+  },
+  {
+   "command": "node tests/handbook.browser.mjs",
+   "exit": 1,
+   "wall_s": 60,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "locator.click: Timeout 30000ms exceeded.",
+   "failed_at": "app/tests/handbook.browser.mjs:54:48"
+  },
+  {
+   "command": "node tests/stall-awareness.browser.mjs",
+   "exit": 1,
+   "wall_s": 63,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "locator.click: Timeout 30000ms exceeded.",
+   "failed_at": "app/tests/stall-awareness.browser.mjs:72:103"
+  },
+  {
+   "command": "node tests/engine-audio.browser.mjs",
+   "exit": 1,
+   "wall_s": 52,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "locator.click: Timeout 30000ms exceeded.",
+   "failed_at": "app/tests/engine-audio.browser.mjs:93:44"
+  },
+  {
+   "command": "node tests/ground-collision.browser.mjs",
+   "exit": 1,
+   "wall_s": 85,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "locator.click: Timeout 30000ms exceeded.",
+   "failed_at": "app/tests/ground-collision.browser.mjs:85:115"
+  },
+  {
+   "command": "node tests/ground-braking.browser.mjs",
+   "exit": 1,
+   "wall_s": 42,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "locator.click: Timeout 30000ms exceeded.",
+   "failed_at": "app/tests/ground-braking.browser.mjs:147:42"
+  },
+  {
+   "command": "node tests/terrain-renderer.browser.mjs",
+   "exit": 1,
+   "wall_s": 70,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "page.evaluate: Error: Actual Cesium terrain mesh did not settle: {\"scene\":{\"imagery\":\"ready\",\"terrain\":\"public-grid\",\"terrainId\":\"hessen-edfe-taunus-dgm32-gcg20…",
+   "failed_at": "app/tests/terrain-renderer.browser.mjs:49:40"
+  },
+  {
+   "command": "node tests/public-terrain.browser.mjs",
+   "exit": 1,
+   "wall_s": 45,
+   "outcome": "fail",
+   "self_reported_result": null,
+   "first_error": "locator.click: Timeout 30000ms exceeded.",
+   "failed_at": "app/tests/public-terrain.browser.mjs:64:48"
+  }
+ ],
+ "other_runs": [
+  {
+   "command": "node studies/e1-browser/sim/terrain-native.mjs",
+   "exit": 0,
+   "outcome": "pass",
+   "self_reported_result": "pass",
+   "checks": 3
+  },
+  {
+   "command": "g++ -std=c++17 -O0 -Wall studies/e1-browser/sim/terrain-grid.test.cpp && ./terrain-grid-test",
+   "exit": 0,
+   "outcome": "pass"
+  },
+  {
+   "command": "python -m unittest -v test_harness (studies/e1-jsbsim, venv with jsbsim 1.3.3 / numpy 2.5.4 from requirements.txt --require-hashes)",
+   "exit": 0,
+   "outcome": "pass",
+   "tests": 23,
+   "skipped": 0
+  },
+  {
+   "command": "npm test (app)",
+   "exit": 0,
+   "outcome": "pass",
+   "node_test": {
+    "tests": 202,
+    "pass": 202,
+    "fail": 0,
+    "skipped": 0
+   },
+   "python_prepare_aircraft": {
+    "tests": 6,
+    "result": "OK"
+   }
+  }
+ ],
+ "frame_probe": {
+  "note": "diagnostic only, untrusted programmatic Start click",
+  "paused_5s": {
+   "frames": 5,
+   "max_gap_ms": 1467
+  },
+  "flying_10s": {
+   "frames": 6,
+   "elapsed_ms": 11455,
+   "max_gap_ms": 2667
+  },
+  "screenshot_ms": 12373
+ }
+}

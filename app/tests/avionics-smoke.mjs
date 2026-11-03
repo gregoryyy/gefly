@@ -111,7 +111,11 @@ try {
     assert.equal(await page.locator(`#nav${receiver}-gauge`).getAttribute('data-valid'), 'false');
     assert.equal(await page.locator(`#nav${receiver}-gauge .nav-cdi-needle`).getAttribute('hidden') !== null, true);
   }
-  assert(await page.locator('#nav1-gauge .nav-gs-inop').isVisible());
+  // PR #49 replaced the static "GS INOP" placard with a live GS flag/needle pair.
+  assert.equal(await page.locator('#nav1-gauge').getAttribute('data-gs-valid'), 'false');
+  assert(await page.locator('#nav1-gauge .nav-gs-flag').isVisible(), 'NAV1 GS flag shows without a valid glideslope');
+  assert.equal(await page.locator('#nav1-gauge .nav-gs-needle').getAttribute('hidden') !== null, true, 'GS needle hidden without a valid glideslope');
+  assert.equal(await page.locator('#nav2-gauge .nav-gs-flag').count(), 0, 'NAV2 has no glideslope receiver');
   assert.equal(await text('nav-flag'), 'NAV'); assert.equal(await page.locator('#nav-demo').isChecked(), false);
   for (const id of ['com1-standby', 'nav1-swap', 'nav-obs', 'com2-standby', 'nav2-swap', 'nav2-obs', 'nav-demo', 'flap-control', 'pitch-trim-control', 'throttle', 'mixture-control']) {
     assert.equal(await page.locator(`#${id}`).isDisabled(), false, `${id} is available while paused`);
@@ -126,7 +130,9 @@ try {
   assert.equal(await page.locator('#flap-control').getAttribute('step'), '10');
   assert.equal(await page.locator('#pitch-trim-up kbd').textContent(), "'"); assert.equal(await page.locator('#pitch-trim-initial kbd').textContent(), '/');
   assert.equal(await page.locator('#pitch-trim-down kbd').textContent(), String.fromCharCode(92));
-  assert.match(await page.locator('.radio-limitations').textContent(), /8.33 kHz\/ATC unavailable/);
+  // PR #49 reworded the inline scope note; Options #limitations keeps the 8.33 kHz statement.
+  assert.match(await page.locator('.radio-limitations').textContent(), /NOT CURRENT.*COM 25 kHz subset; no ATC/);
+  assert.match(await page.locator('#limitations').textContent(), /no 8\.33 kHz or communication service/);
   for (const selector of ['.radio-limitations', '.nav-signal-note', '.navigation-gauge-note', '.autopilot-content > p', '#pitch-trim-note']) {
     for (const note of await page.locator(selector).all()) assert(await note.isHidden(), 'panel explanations stay in Options');
   }

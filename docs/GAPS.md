@@ -415,6 +415,50 @@ no model identifiers in repository files. Carried into [AGENTS](../AGENTS.md),
 
 ## Open questions
 
+### Q24. Rights basis for extracted C172P POH and JSBSim c172x values in the app?
+
+Why: R-DATA-1 needs a licence, permission or rights analysis for every external
+aircraft value that ships. The Claude peer review found none (F34 high, F32;
+[report](reviews/2026-11-03-codex-prs-39-50-peer.md), 2026-11-03 08:05).
+
+What ships today:
+- **C172P POH values** (KCAS limits, stall speeds, CG limits, load factors, VA), read
+  from a third-party-hosted scan of the copyrighted 1982 Cessna C172P POH. The Q5/Q7
+  facts-only allowances name the selected 172S POH, not this document.
+- **JSBSim v1.3.3 values:** c172x contacts, span, AERORP, alpha-max, 130 lb tanks,
+  `eng_io320` 2700 RPM and the `FGTank` 6.6 lb/gal. `c172x.xml` says "GPL" with no
+  version, "educational and entertainment purposes only" and "not to be sold"; E1
+  rated it not cleared. Q17 excludes shipping the data files and did not consider
+  extracted values.
+
+Options:
+- (a) Extend the `facts_only` allowance to these named C172P POH values.
+- (b) Accept the JSBSim values under a recorded rights analysis, or ask upstream.
+- (c) Remove or replace the values, e.g. with the sourced 172S `facts_only` data
+  already in `data/aircraft/c172s-classic/`.
+
+Blocking: calling these values cleared, and any public distribution of the app
+build. Until decided, they are labelled "rights unresolved" in the SBOM,
+THIRD_PARTY_NOTICES, the research notes and the app source objects. Owner:
+orchestrator; user decision.
+
+### Q25. Confirm the "small, runnable, demonstrable increments" rule?
+
+Original peer finding (F6, 2026-11-03 08:05): AGENTS carried this priority but no
+immutable input record was available to that review. ~~If the user confirms it,
+add a new input record.~~
+
+Answer (existing instruction preserved): **2026-11-03 10:13, user**
+(recording time; [current transcript record](input/2026-11-03-demonstrable-increments-record.md)):
+“from now on, prioritize to create demonstrable increments.” This explicit earlier
+user instruction is present in the available conversation; it does not need to be
+asked again. Its original send time is not supplied here. The new record is dated
+when preserved, not retroactively assigned to 2026-11-02.
+
+Resolved: retain the existing AGENTS priority and use small runnable increments.
+This supplies the missing recorded source for the instruction, not a new approval
+or evidence that an earlier documentation workflow captured it correctly.
+
 ### Q23. Design open questions carried from the drafts (register)
 
 Why: SDLC keeps open decisions in GAPS; the foundation review (TODO 1.6, 2026-11-02 00:21) found
