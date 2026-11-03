@@ -7,6 +7,8 @@ interface PointerYokeOptions {
   onMode: (mode: PointerYokeMode) => void;
   enabled: () => boolean;
   lookOnly?: () => boolean;
+  /** Fixed scene-center yoke and persistent drag look; opt-in. */
+  centered?: () => boolean;
 }
 
 const HOLD_MS = 250;
@@ -15,9 +17,10 @@ const LOOK_RAD_PER_PX = 0.004;
 const MAX_LOOK_PITCH_RAD = 70 * Math.PI / 180;
 const clamp = (value: number, limit: number) => Math.max(-limit, Math.min(limit, value));
 
-/** Scene-only relative yoke and temporary look gestures; never requests pointer lock. */
+/** Scene-only click/hold gestures; legacy relative or opt-in fixed-center yoke. */
 export function createPointerYoke(options: PointerYokeOptions): {
   cancel(): void;
+  reset(): void;
   dispose(): void;
 } {
   const { element } = options;
@@ -34,6 +37,7 @@ export function createPointerYoke(options: PointerYokeOptions): {
   let mode: PointerYokeMode = 'off';
   let yokeX = 0, yokeY = 0, lookYaw = 0, lookPitch = 0;
   let holdTimer: ReturnType<typeof setTimeout> | undefined;
+  let neutralUntilMoveFrom: { x: number; y: number } | undefined;
 
   function setYoke(x: number, y: number): void {
     if (disposed || (x === yokeX && y === yokeY)) return;
@@ -59,7 +63,14 @@ export function createPointerYoke(options: PointerYokeOptions): {
   function cancel(): void {
     if (disposed) return;
     clearPress(); looking = false; yokeActive = false;
-    setYoke(0, 0); setLook(0, 0); setMode('off');
+    neutralUntilMoveFrom = undefined;
+    setYoke(0, 0);
+    if (!options.centered?.()) setLook(0, 0);
+    setMode('off');
+  }
+  function reset(): void {
+    if (disposed) return;
+    cancel(); setLook(0, 0);
   }
   function lookAtPointer(): void {
     setLook(clamp(pressLookYaw + (lastX - pressX) * LOOK_RAD_PER_PX, Math.PI),
@@ -83,8 +94,10 @@ export function createPointerYoke(options: PointerYokeOptions): {
     event.preventDefault(); element.focus({ preventScroll: true });
     pressLookOnly = options.lookOnly?.() === true;
     previousYokeActive = !pressLookOnly && yokeActive;
-    pressLookYaw = pressLookOnly ? lookYaw : 0;
-    pressLookPitch = pressLookOnly ? lookPitch : 0;
+    const persistentLook = pressLookOnly || options.centered?.() === true;
+    pressLookYaw = persistentLook ? lookYaw : 0;
+    pressLookPitch = persistentLook ? lookPitch : 0;
+    neutralUntilMoveFrom = undefined;
     if (pressLookOnly) { yokeActive = false; setMode('off'); }
     pressX = lastX = event.clientX; pressY = lastY = event.clientY;
     activePointer = event.pointerId; looking = false;
@@ -109,8 +122,20 @@ export function createPointerYoke(options: PointerYokeOptions): {
     }
     if (options.lookOnly?.() || !yokeActive || event.isPrimary === false) return;
     if (!inside(event)) { suspendOutside(); return; }
-    setYoke(clamp((event.clientX - anchorX) / YOKE_TRAVEL_PX, 1),
-      clamp((anchorY - event.clientY) / YOKE_TRAVEL_PX, 1));
+    if (options.centered?.()) {
+      // A click/drag release cannot introduce a control jump at the drop point.
+      // Pointer entry is authoritative even if its coordinates match the release.
+      if (event.type === 'pointermove' && neutralUntilMoveFrom
+        && event.clientX === neutralUntilMoveFrom.x && event.clientY === neutralUntilMoveFrom.y) return;
+      neutralUntilMoveFrom = undefined;
+      const rect = element.getBoundingClientRect();
+      const centerX = (rect.left + rect.right) / 2, centerY = (rect.top + rect.bottom) / 2;
+      setYoke(clamp((event.clientX - centerX) / YOKE_TRAVEL_PX, 1),
+        clamp((centerY - event.clientY) / YOKE_TRAVEL_PX, 1));
+    } else {
+      setYoke(clamp((event.clientX - anchorX) / YOKE_TRAVEL_PX, 1),
+        clamp((anchorY - event.clientY) / YOKE_TRAVEL_PX, 1));
+    }
   }
   function up(event: PointerEvent): void {
     if (disposed || event.pointerId !== activePointer) return;
@@ -121,12 +146,13 @@ export function createPointerYoke(options: PointerYokeOptions): {
     yokeActive = !pressLookOnly && (wasLooking ? previousYokeActive : !previousYokeActive);
     // A look gesture borrows the pointer, not the yoke's reference position.
     // Only a short click establishes a new midpoint when toggling the yoke.
-    if (!wasLooking && !pressLookOnly) {
+    if (!wasLooking && !pressLookOnly && !options.centered?.()) {
       anchorX = event.clientX; anchorY = event.clientY;
     }
     setYoke(0, 0);
-    // Review look is an inspection camera: keep its last orientation between drags.
-    if (!pressLookOnly) setLook(0, 0);
+    // Review and fixed-center look retain their last orientation between drags.
+    if (!pressLookOnly && !options.centered?.()) setLook(0, 0);
+    if (options.centered?.()) neutralUntilMoveFrom = { x: event.clientX, y: event.clientY };
     setMode(yokeActive ? 'yoke' : 'off');
   }
   function interrupted(event: PointerEvent): void {
@@ -137,7 +163,7 @@ export function createPointerYoke(options: PointerYokeOptions): {
     if (!looking) suspendOutside();
   }
   function key(event: KeyboardEvent): void {
-    if (event.code === 'Escape') { event.preventDefault(); cancel(); }
+    if (event.code === 'Escape') { event.preventDefault(); reset(); }
   }
   function visibility(): void { if (document.hidden) cancel(); }
 
@@ -153,10 +179,10 @@ export function createPointerYoke(options: PointerYokeOptions): {
   document.addEventListener('visibilitychange', visibility);
 
   return {
-    cancel,
+    cancel, reset,
     dispose() {
       if (disposed) return;
-      cancel(); disposed = true;
+      reset(); disposed = true;
       element.removeEventListener('pointerdown', down);
       element.removeEventListener('pointermove', move);
       element.removeEventListener('pointerenter', move);

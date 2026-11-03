@@ -1,4 +1,4 @@
-import { startOrResume } from './flight-actions.mjs';
+import { installSceneryFixture, prepareFlightUI, startOrResume } from './flight-actions.mjs';
 // Actual Chrome/JSBSim trim and menu regression; not a C172S handling validation.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -59,10 +59,11 @@ try {
       }
     };
   });
-  await page.goto(origin);
+  await installSceneryFixture(page); await page.goto(origin);
   const waitReady = () => page.waitForFunction(() => !document.querySelector('#start').disabled
     && Number.isFinite(window.__trimStates.at(-1)?.pitch_trim_norm));
   await waitReady();
+  await prepareFlightUI(page);
   const state = () => page.evaluate(() => window.__trimStates.at(-1));
   const stats = async () => {
     const count = await page.evaluate(() => window.__trimStats.length);

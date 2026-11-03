@@ -634,3 +634,13 @@ input[type=range][data-unavailable=true]::-moz-range-thumb { visibility: hidden;
 /* Navigation-data identity errors stay visible below the general notice (R-NAV-4). */
 .notice.navdata-error { top: 150px; border-color: #ff9a8a88; background: #3a1f1ced; color: #ffd2c8; }
 @media (max-width: 620px) { .notice.navdata-error { top: 180px; } }
+.cockpit-fitted #radio-nav-systems .radio-nav-content { padding: 7px; }
+.cockpit-fitted #radio-nav-systems .radio-receiver { padding: 4px 0 3px; }
+.cockpit-fitted #radio-nav-systems .radio-heading { margin-bottom: 4px; }
+.cockpit-fitted #radio-nav-systems .radio-receiver-title { margin-bottom: 3px; }
+.cockpit-fitted #radio-nav-systems .radio-frequency-row { margin-bottom: 4px; }
+.cockpit-fitted #radio-nav-systems .nav-course { margin-top: 3px; }
+
+/* Both brake commands share the existing compact cockpit row. */
+.brake-buttons { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px; }
+.brake-buttons .control-key { min-width: 0; white-space: nowrap; }

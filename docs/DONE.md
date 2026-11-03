@@ -3,6 +3,217 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 10:21 — Resolve PR #52 against current main
+
+TODO: 0.21 integration follow-up; the batched peer findings remain open.
+Agent: Codex orchestrator owns the merge, package scripts and shared records.
+`resolve52_ui` and `resolve52_runtime` reconcile disjoint UI/runtime paths;
+`resolve52_records` preserves source documentation in parallel.
+`resolve52_quality` independently checks quality and specification behavior on
+the frozen source packet; this is not an external-provider peer acceptance.
+
+**Implementation notes**
+
+Merge main `a655bc9` into PR #52 head `eb7e5b7`. Preserve receiver-package
+attestation, degraded EDDF startup, missing-data handling and bounded retry fixes
+alongside streamed terrain, the flight map, parking/rudder controls, centered
+touchpad and flight assists. Contact sampling uses the streamed terrain gradient.
+Combine live imagery fallback and whole-pyramid failure disclosure. Retain both
+parents' package commands and every complete historical DONE entry/body.
+Record the existing direct demonstrable-increments instruction with its recording
+date, resolving Q25 without inventing an original timestamp or new approval.
+
+Shared CI passes: 280 app, 84 assurance and 11 assessment cases; nine of 23 native
+study cases remain explicitly skipped. Fresh native build, native bridge check,
+TypeScript and production build pass. Actual-browser smoke, flight-assists and
+centered-touchpad suites pass. Independent review passes 140 focused unit tests
+and browser checks for unavailable/mismatched worker navigation, streamed region,
+native approach capture and parking/rudder controls. See the bounded
+[review and frozen packet](reviews/2026-11-03-pr52-conflicts.md).
+
+**Deviations**
+
+No full peer batch acceptance, missing-property/name-reordering native fault
+injection, aircraft fidelity or training approval is claimed. Q24 source rights,
+TODO 0.19/0.21 and reopened 1.14.1 remain unresolved. Browser map/photo pixels use
+local deterministic fixtures; native physics and DEM integration are actual.
+
+**Insights**
+
+Resolving text markers alone misses integration faults: the auto-merged contact
+helper still selected the old fine-only gradient. Combined runtime checks and
+explicit parent-by-parent record/script comparisons preserve behavior and history.
+
+## 2026-11-03 09:09 — Optional centered touchpad and persistent view
+
+TODO: 2.0.50 complete for the bounded R-INPUT-1/R-REVIEW-1 increment.
+Agent: Codex orchestrator owns main wiring, contextual hint, explicit new-flight
+reset, shared requirements/status and publication. `centered_pointer_core`/code1
+implements pointer mode/lifecycle and tests; `centered_pointer_options`/code2
+implements Options/settings and the actual-app browser suite.
+`centered_pointer_housekeeping` updates raw input/control/security documentation
+in parallel. `centered_pointer_quality` independently reviews quality and
+validates the integrated criteria. Cross-provider peer remains pending under the
+existing batched cadence; no external provider acceptance is claimed.
+
+**Implementation notes**
+
+Options adds the initially off, session-only Centered touchpad controls mode.
+Neutral is the current visible scene midpoint, independent of activation/drop
+positions and recalculated from current bounds on movement/re-entry. Click still
+toggles yoke control. Hold-drag borrows the pointer with neutral axes and accumulates
+camera look. Release, pause, focus loss, Options and ordinary cancellations keep
+the angle; Escape in the scene and new-flight reset explicitly center it. Release
+stays neutral until actual motion or authoritative re-entry. Preserve default
+relative control, Review read-only behavior, sensitivity presets and the existing
+150 px input travel/gains. No physical trackpad-contact reading is claimed.
+
+Shared CI passes 240 app, 84 assurance and 11 assessment tests; nine of 23 existing
+native-study cases remain explicitly skipped. TypeScript/build pass. The six
+new authored browser groups pass after test-only observer/readiness repairs.
+Independent review passes 32 focused tests, all six new browser groups, three
+legacy relative-pointer groups and four additional rendered-camera/live-native
+cases. Live center produces native aileron −0.109375 (the existing study offset)
+and elevator zero; a +75/−75 px displacement produces .140625/.2. Camera checks
+retain the changed actual forward-marker projection through release/Options/blur,
+and Escape restores baseline. Paused step/digest/final state stay identical.
+See [review](reviews/2026-11-03-centered-touchpad.md).
+Final nine-path source/test/package packet:
+`4f9ddb1df233553af7584c30e60116be42c0e97beb934dbc2de02f3b0436db72`.
+
+**Deviations**
+
+The browser supplies viewport pointer positions, not the physical center of a
+trackpad: the implementation interpretation is recorded in the input note.
+Default behavior remains unchanged. No general sensitivity retuning, aircraft
+physics change, hardware calibration or training approval is accepted.
+Earlier map/parking PRs merged into feature branches after their prerequisite
+merged to main; this publication brings those already-reviewed increments and
+this option onto current main together.
+
+**Insights**
+
+Paused sessions deliberately stage commands without posting them to the worker.
+Tests distinguish observed staged commands from actual frozen native state and
+renew live native application separately. Vite formatting and lazy-map readiness
+needed observer repairs, not product changes. Independent rendered-marker checks
+cover the actual camera in addition to its requested look metadata.
+
+## 2026-11-03 08:53 — Parking brake and optional linked rudder
+
+TODO: 2.0.49 complete for the bounded R-INPUT-1/R-REVIEW-1 increment.
+Agent: Codex orchestrator owns integration, compact brake controls, shortcut,
+shared requirements/status and publication. `ground_controls_settings`/code1
+implements the command mapping, Options checkbox and pure tests;
+`ground_controls_browser`/code2 implements actual-browser/native regression checks.
+`ground_controls_housekeeping` updates input/control/security documentation in
+parallel. `ground_controls_quality` independently reviews quality and validates
+specification behavior. Cross-provider peer remains pending under the existing
+batched cadence; no external provider review is claimed.
+
+**Implementation notes**
+
+Add the N-toggle parking brake beside held B wheel braking in the existing
+compact row. Full native parking braking bypasses the adjustable wheel gain;
+the latch survives release/pause/focus/Options but clears on flight restart.
+Guard N and disable the button for unavailable/collided/Review states. Review
+retains recorded applied braking and explicitly marks the unrecorded latch
+unknown rather than inferring it. Preserve native mechanics instead of freezing
+position or velocity.
+
+Options adds an initially off, session-only Link rudder to aileron checkbox.
+Map deliberate roll before the experimental roll correction, with the pinned
+model's opposite rudder sign; nonzero manual rudder overrides, and sensitivity
+presets preserve the chosen link. Reuse the existing rudder-to-nosewheel coupling.
+Actual native ground-turn cases verify turning direction without new aircraft
+coefficients or installed-aircraft calibration claims.
+
+Shared CI passes with 233 app tests, 84 assurance tests and 11 assessment tests;
+nine of 23 existing native-study cases remain explicitly skipped. TypeScript,
+build and all five new actual-browser/native groups pass. Independent checks pass
+41 focused control/session tests, the maintained five-group browser rerun and
+extra paused keyboard/layout/held-B/Review cases after the label repair, plus
+eight legacy ground-braking browser groups. The
+[review](reviews/2026-11-03-parking-rudder.md) records current outcomes and limits.
+Frozen eight-path runtime/test/package packet:
+`39076da0e3c9df6c9322d43e4f7e56f0774e4f9166b5720e6a9ff2bfa9bdc67b`.
+
+**Deviations**
+
+No native steering change was required: the bridge already maps rudder to the
+model's steer command. The rudder link is a simulator input assist, not a claim
+of mechanical linkage. Parking-latch history is unavailable in Review; actual
+left/right braking remains recorded. No parking-force limit, anti-tip assist,
+aircraft-fidelity or training acceptance is added.
+
+**Insights**
+
+Independent layout measurement caught the long wheel label crossing into the
+parking button. Short WHEEL/PARK labels retain full accessible names and the
+same row height; renewed ON/OFF/Review checks cover 1440 and 1024 px. Paused
+latching and settings changes retain identical native step/digest/final state.
+
+## 2026-11-03 08:36 — Right-side flight map and southern Germany source inventory
+
+TODO: 2.0.48 complete for the bounded R-WORLD-6/R-NAV-3/R-NAV-4/
+R-REVIEW-1 increment. Agent: Codex orchestrator owns integration, shared status,
+airfield loader, map rendering, keyboard routing, screenshot and publication.
+`flight_map_data`/code2 implements the map-only NAV compiler/assets/loader and
+expanded map proxy; `flight_map_layout`/code1 implements responsive docking,
+bounded-label styles and browser checks. `flight_map_research` investigates public
+sources; `flight_map_quality` provides parallel source housekeeping and independent
+quality/specification validation. Cross-provider peer remains pending under the
+existing batched cadence; this entry does not claim an external peer review.
+
+**Implementation notes**
+
+M/marked View menu opens a public-data map on the right of the flying view,
+with the whole retained flight path, actual position/true heading, nautical scale,
+Follow/Fit/pan controls and Review marker. Preserve the full-width cockpit and
+bounded narrow-screen controls. README includes a visually inspected actual
+flight/map screenshot with public BKG tiles and source credits. Optional layers and initial background tile
+failures do not block local aircraft/path overlays; initialize on style readiness.
+
+Select all 731 OurAirports source entries in the five user-confirmed states,
+including 244 heliports and 41 closed facilities, with type/state-code search,
+reported elevations and distinct closed labels. Keep all points in the GPU layer,
+bounding nearby DOM labels to 80 and directory results to 100. Add 144 source-dated
+community radio beacons and 66 historical German LOC/ILS parents with 61 GS/six
+separate DME points. Preserve source positions, kHz/MHz, dates, notices and licenses.
+These map-only references do not replace the radio receiver/worker package.
+
+Shared CI passes with 229 app tests, 84 assurance tests and 11 assessment tests;
+nine of 23 existing native-study cases remain explicitly skipped. TypeScript,
+build, six proxy checks and the two authored browser suites pass. Independent
+quality/validation passes 16 focused checks, three maintained browser suites,
+full-source airport/NAV comparisons and four actual-app optional-data/cold-tile/
+held-tile failure cases. Affected lifecycle checks and build were renewed after
+the style-ready repair. See [review](reviews/2026-11-03-right-flight-map.md).
+The reviewed 24-path runtime/test/source packet is
+`b840f38479d7c2d452878e046f893ca350a071f7e9e3c00db341f0592ae80849`.
+
+**Deviations**
+
+The NAV source has no state membership field: its declared German geographic
+envelope includes adjoining-state context, while airport selection is exactly
+the five states. Community snapshots are not current AIS or an official operating
+inventory; LOC/ILS data remains historical 2013.10. Broader map bounds do not
+expand physical terrain or photography. No current chart, procedure, NOTAM,
+installed-aircraft fidelity or general touchpad handling acceptance is implied.
+The initial sandbox CI attempt failed only because local runtime tests could not
+bind loopback; the authorized loopback-capable rerun passed.
+
+**Insights**
+
+Real public-service screenshot capture exposed a dependency on initial tile
+loading that immediate raster fixtures missed; cold failed and indefinitely held
+tile tests now independently verify overlay availability. Full-source comparison
+establishes completeness relative to the pinned community selection, separately
+from operational completeness. Correct the two previous entries' headings from
+07:51/07:30 to 06:51/06:30: their original UTC clock values were converted using
+UTC+2, while Europe/Berlin on 3 November is UTC+1. Their complete bodies and raw
+inputs are preserved.
+
 ## 2026-11-03 08:35 — Close the quality review of the peer fixes (TODO 0.21)
 
 TODO: 0.21 in progress. Agent: Claude Code orchestrator; code2 subagent (fixes);
@@ -160,6 +371,119 @@ external reviewer: fresh Claude CLI 2.1.317 processes (model evidence
 No browser or native run evidence is recorded, so the runtime criteria stay blocked.
 No fixes yet. The Claude-authored #32–#37 are excluded and left for the Codex review
 (TODO 0.19).
+
+## 2026-11-03 06:51 — Streamed regional flights, quiet overlays and flight assists
+
+TODO: 2.0.44, 2.0.45 and 2.0.47 complete for the bounded R-WORLD-5/R-UX-2/
+R-AP-2/R-SIM-9 increment. Agent: Codex orchestrator integrates and owns status,
+session/history and publication. `terrain_stream`/code1 implements terrain
+streaming/native/render contracts; `airport_map`/code2 implements airport map and
+the bounded scenery proxy; `region_sources` researches sources and independently
+checks non-authored data/native/render behavior. `overlay_controls` implements
+floating-panel/title/menu behavior; `browser_adapt` updates legacy browser flows.
+`rate_worker`/code1 implements AP capture and pacing; `flight_assists_ui`/code2
+implements their menu/keyboard/overlay and browser tests; `region_housekeeping`
+updates inventories/setup/network/rights docs alongside implementation.
+`increment_quality` independently reviews and validates the final affected code,
+source carry-forward and browser behavior. Cross-provider peer remains pending;
+no external review of this packet is claimed.
+
+**Implementation notes**
+
+Stream 42 hash-pinned BKG DGM200/GCG tiles over the declared region with nine
+resident native tiles and bounded visited renderer history. Share exact edge
+nodes and a derivative-aware fine/coarse feather; add Darmstadt, Odenwald and
+Spessart flights, source-limited live public map/photography and 103 sourced
+community airport points. Keep imagery gaps transparent, resource use bounded,
+and provider/source/age/datum/production-hosting limits explicit. Source compiler
+and shipped-edge integrity now have a regression check.
+
+Hide top bar and flight controls initially, add O and marked menu shortcuts,
+and require deliberate activation of half-opacity floating panels. A releases
+manual UI control and captures one authoritative HDG/ALT frame; repeated A
+recaptures. = cycles requested 1/1.5/2/5/10× pacing with a confirmed on-screen
+rate and separately labeled recorded Review metadata. Keep native integration
+at 1/120 s, preserve pause/loading intent, and reset new flights to 1×. German
+Shift+0 = does not reach throttle idle. No sensitivity/aircraft-coefficient
+retuning or general touchpad handling fix is included.
+
+Shared CI passes, including 219 app tests; nine of 23 existing native-study tests
+remain explicitly skipped. Build and five proxy tests pass. Independent checks
+pass 65 targeted tests, eight real-WASM groups, regional native/worker cases and
+three affected integrated browser suites. At equal steps all five rate fixtures
+produce identical native state/digest. Independent one-second Node pacing was
+1004/669/503/202/102 ms, without dropped steps; this is not a universal browser
+speed guarantee. See [final review](reviews/2026-11-03-flight-assists.md) and
+[regional review](reviews/2026-11-03-streamed-region.md). The final 116-path
+runtime/test packet is
+`55fcea2cd15cd82963e9196e11883342dd7f552876ffadd01c7017e283fbe042`.
+
+README now shows an actual, visually inspected Chrome flight at 19.05 simulation
+seconds, with real terrain/imagery, chase aircraft and cockpit panels. No mocked
+pixels or image editing were used. Source credits remain visible; some live
+requests reported degraded coverage. The image and [provenance](images/README.md)
+are separate from the runtime review packet.
+
+**Deviations**
+
+Regional assets cover the documented rectangle, not full EDDF/100 NM or global
+landings. DGM200/derived transitions are not surveyed airport geometry; source
+age and unknown photo capture dates remain explicit. The live proxy requires
+Pillow and the development server/equivalent endpoints; a static build alone is
+not the deployable simulator. Browser interaction tests use explicitly labeled
+imagery fixtures; source-response checks and the README screenshot use real
+data. Native dialog-close/next-frame races were repaired in browser tests, then
+independently rerun; they did not require product changes.
+
+**Insights**
+
+Global-quality appearance, physical ground correctness and control feedback are
+separate acceptance concerns. The reported touchpad overshoot/sudden jumps remain
+unresolved: new overlay hand-off and heavier rendering warrant measurement, while
+the same default airborne native fixture remains unchanged. Rate changes must
+alter scheduling rather than enlarge integration steps; convenience AP capture
+must sample the worker and remain distinct from original avionics semantics.
+
+## 2026-11-03 06:30 — Global scenery and Google Earth research
+
+TODO: 2.0.46 complete for research only. Agent: Codex orchestrator integrates;
+`global_sources` researches open/commercial world data, terms and pipelines;
+`google_flythrough` researches Google Earth/Maps routes; independent
+`scenery_research_review` checks primary claims and request coverage, including
+the final material-library addition. Same-provider review passes at note hash
+`545d5c4db55699bb6bc11c25f8809463ae1b37b00f4fdcb5f67d81cd31be8b35`;
+cross-provider peer remains pending. See [note](research/2026-11-03-global-scenery.md)
+and [review](reviews/2026-11-03-global-scenery-research.md).
+
+**Implementation notes**
+
+Record global terrain/vector/photo alternatives, local adaptive reconstruction
+and procedural materials, source-specific datum limits, service/cache rights and
+dated costs. Identify Google's current experimental web flight mode, EEA tile
+availability restriction, Maps JavaScript visual-adapter alternative and a
+proposed external KML tour export. Actually fetch two public terrain metadata
+responses and decode one 512 px Frankfurt-area terrain tile; record exact hashes
+and format results. No provider account, billing or runtime integration added.
+Input records/index preserve this request and the preceding regional/overlay
+instructions. Register 2.0.44/2.0.45 as still in integration, without promoting
+targeted tests to completed publication.
+
+**Deviations**
+
+No dedicated deep-research service is installed; use structured primary-source
+web research and upstream code inspection. Research acceptance does not pass
+global terrain accuracy, visual quality, flight performance or landing fidelity.
+The separate regional/overlay working-tree changes still need their integrated
+completion gates; this entry does not claim them delivered.
+
+**Insights**
+
+Resampling supplies more samples, not missing measurements. Open global terrain
+is practical, but mixed datums and surface-versus-ground distinctions matter for
+contact physics. Reusing Google visuals would preserve our own flight model only
+through a supported visual API integration; the Earth application's casual flight
+mode is a separate experience. A hybrid open baseline with finer local exercise
+regions remains the recommendation, not a selected paid provider.
 
 ## 2026-11-03 05:33 — Detailed regional textures and compact radio station discovery
 

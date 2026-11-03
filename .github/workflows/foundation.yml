@@ -59,3 +59,11 @@ jobs:
         run: npm --prefix app run build
       - name: Test worker session lifecycle
         run: npm --prefix app test
+      - name: Set up scenery compositor Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.11'
+      - name: Install pinned scenery compositor
+        run: python3 -m pip install -r utils/scenery/requirements.txt
+      - name: Test bounded live scenery proxy
+        run: npm --prefix app run test:scenery

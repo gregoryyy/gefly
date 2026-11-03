@@ -51,7 +51,7 @@ The application bundles three.js 0.187.0, Copyright © 2010–2026 three.js auth
 
 CesiumJS 1.146.0, Copyright 2011–2026 CesiumJS Contributors, is used under Apache-2.0; see [the full notice](LICENSES/Cesium-Apache-2.0.txt). UI builds retain its package-provided license and third-party inventories beside the copied static assets. Two unmodified Hessen HVBG ATKIS DOP20 photographs are bundled under DL-DE Zero 2.0: the starter photograph `edfe-starter.jpg` and the coarse regional backdrop `edfe-overview.jpg`. [Their provenance record](app/public/imagery/SOURCE.json) gives source bounds, license, request and byte hash for each. Retrieval time and layer edition were not recorded; only an upper bound, the first commit time, is given. Visible attribution and ellipsoid-surface limitations accompany them. See [SBOM](docs/SBOM.md).
 
-MapLibre GL JS 6.16.0, Copyright (c) 2023 MapLibre contributors, is used under BSD-3-Clause. The [complete license](LICENSES/MapLibre-BSD-3-Clause.txt) is retained; UI builds copy the package notice to MapLibre-LICENSE.txt. MapLibre uses the already inventoried local HVBG photographs without a remote basemap.
+MapLibre GL JS 6.16.0, Copyright (c) 2023 MapLibre contributors, is used under BSD-3-Clause. The [complete license](LICENSES/MapLibre-BSD-3-Clause.txt) is retained; UI builds copy the package notice to MapLibre-LICENSE.txt. MapLibre uses bundled HVBG photographs, the community airport inventory and the fixed-source live scenery endpoints inventoried below.
 
 ## Public regional terrain and sharper airport imagery
 
@@ -137,3 +137,110 @@ dates are unknown. Exact source requests/raw hashes and derived byte hashes are
 retained in `SOURCES.json` and `manifest.json`. This supplies visual scenery,
 without current airport, chart or surveyed runway acceptance. See
 [source/rights research](docs/research/2026-11-03-regional-textures.md).
+
+## Streamed DGM200 regional terrain
+
+The [42-tile regional package](app/public/terrain/region/README.md) derives from
+BKG DGM200, **© GeoBasis-DE / BKG (2026), Daten verändert**, under
+[Data licence Germany – Attribution 2.0](https://www.govdata.de/dl-de/by-2-0).
+[BKG](https://www.bkg.bund.de) publishes the
+[product](https://gdz.bkg.bund.de/index.php/default/digitales-gelandemodell-gitterweite-200-m-dgm200.html)
+and [documentation](https://sgx.geodatenzentrum.de/web_public/gdz/dokumentation/deu/dgm200.pdf).
+The original source archive and extracted TIFF are not bundled; URLs and exact
+hashes are retained in the manifest. Changes: regional extraction, exact
+coordinate transformation, bilinear source-centre resampling on common nodes,
+float32 encoding and a declared fine/coarse boundary blend. The 200 m source
+spacing and approximately 2000–2019 survey ages are not upgraded by display LOD.
+
+GCG2016/2023 West retains **© Bundesamt für Kartographie und Geodäsie (2026)**,
+[CC BY 4.0](LICENSES/CC-BY-4.0.txt), and the original
+[sources](app/public/terrain/BKG-SOURCES.pdf) and
+[attribution](app/public/terrain/BKG-CC-BY-NOTICE.pdf) notices. Changes are bounded
+regional extraction/interpolation and combination with the DEM. Each input keeps
+its own terms; original Gefly code remains GPL-3.0-or-later. No BKG endorsement,
+surveyed airport accuracy or accepted training fidelity is implied.
+
+## Community airport points
+
+`app/public/airports/` selects 731 entries across five southern German states from
+[OurAirports' public-domain data](https://ourairports.com/data/), commit
+`e86a650a968ba239a1288f96c05fcb80688e77a6`, retrieved 2026-11-03. Source and
+derived byte hashes, bounds and provenance are in its manifest. Modifications:
+five-state selection retaining all source types, field selection, sorting and JSON conversion. This
+community inventory has no accuracy/fitness guarantee and is not a navigation
+chart, official ARP, surveyed ground or current operational directory.
+
+## Live public map and photography
+
+The local development proxy fetches and resamples fixed public WMS layers;
+source responses are cached temporarily, not bundled as a global data grant.
+
+- **TopPlusOpen:** © [BKG](https://www.bkg.bund.de) (2026),
+  [DL-DE-BY-2.0](https://www.govdata.de/dl-de/by-2-0), with the linked
+  [data-source inventory](https://sgx.geodatenzentrum.de/web_public/gdz/datenquellen/datenquellen_topplusopen.html).
+  It is a map fallback, not aerial photography or an aviation chart.
+- **Hessen HVBG DOP20:** `he_dop_rgb`,
+  [DL-DE-Zero-2.0](https://www.govdata.de/dl-de/zero-2-0); voluntary HVBG credit.
+- **Bavaria DOP40:** © [Bayerische Vermessungsverwaltung](https://www.ldbv.bayern.de)
+  (2026), [CC BY 4.0](LICENSES/CC-BY-4.0.txt), layer `by_dop40c`.
+- **Baden-Württemberg DOP20:** © [LGL-BW](https://www.lgl-bw.de) (2026),
+  [DL-DE-BY-2.0](https://www.govdata.de/dl-de/by-2-0), layer `IMAGES_DOP_20_RGB`.
+
+Changes: WMS resampling to EPSG:3857, transparent image composition and PNG
+encoding. Native source 20/40 cm resolution does not establish output detail;
+capture dates are unknown. Missing photo footprints can remain transparent over
+the map. Live responses are not a pinned photographic replay/video archive.
+See [source observations](docs/research/2026-11-03-dynamic-region.md) and
+[runtime inventory](docs/SBOM.md). Research into Google/MapTiler/Cesium services
+does not adopt their content or grant reuse rights.
+
+## Pillow scenery compositor
+
+Pillow **11.2.1**, installed separately from
+`utils/scenery/requirements.txt`, supports live PNG composition and existing
+offline imagery authoring. It is not bundled into browser or physics code.
+The installed wheel retains the full license and notices of its native libraries;
+those notices must accompany any later packaged redistribution. The inspected
+Pillow 11.2.1 core license states:
+
+> The Python Imaging Library (PIL) is
+>
+> Copyright © 1997-2011 by Secret Labs AB
+> Copyright © 1995-2011 by Fredrik Lundh and contributors
+>
+> Pillow is the friendly PIL fork. It is
+>
+> Copyright © 2010 by Jeffrey A. Clark and contributors
+
+Pillow is licensed under the open source MIT-CMU License:
+
+> By obtaining, using, and/or copying this software and/or its associated
+> documentation, you agree that you have read, understood, and will comply
+> with the following terms and conditions:
+>
+> Permission to use, copy, modify and distribute this software and its
+> documentation for any purpose and without fee is hereby granted,
+> provided that the above copyright notice appears in all copies, and that
+> both that copyright notice and this permission notice appear in supporting
+> documentation, and that the name of Secret Labs AB or the author not be
+> used in advertising or publicity pertaining to distribution of the software
+> without specific, written prior permission.
+>
+> SECRET LABS AB AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS
+> SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS.
+> IN NO EVENT SHALL SECRET LABS AB OR THE AUTHOR BE LIABLE FOR ANY SPECIAL,
+> INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+> LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
+> OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+> PERFORMANCE OF THIS SOFTWARE.
+
+## Southern Germany map navigation
+
+`app/public/mapdata/` combines 144 German OurAirports community beacons from the
+same public-domain snapshot with 66 historical German LOC/ILS parents and their
+explicit antennas from Robin A. Peel / FlightGear NAV810 2013.10, GPL-2.0-or-later.
+The original source notice, consumed historical rows and complete GPL license are
+retained in that directory. Modifications: bounded geographic/country selection,
+component pairing, feet-to-metres conversion, source frequency labels and GeoJSON
+serialization. See its [provenance and changes](app/public/mapdata/README.md).
+Community beacons and historical ILS do not establish current operational service.

@@ -1,6 +1,6 @@
 import {
   Axis, Cartesian3, CesiumWidget, Color, Credit, Ellipsoid, EllipsoidTerrainProvider,
-  ImageryLayer, Ion, JulianDate,
+  ImageryLayer, Ion, JulianDate, UrlTemplateImageryProvider,
   Matrix3, Matrix4, Model, PerspectiveFrustum, Rectangle, ShadowMode, SingleTileImageryProvider, Transforms,
 } from 'cesium';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
@@ -9,6 +9,8 @@ import { projectForwardDirection } from './forward-marker-projection';
 import { createAircraftVisual } from './aircraft-visual';
 import { createAircraftShadow } from './aircraft-shadow';
 import { createPublicTerrainProvider } from './terrain-provider';
+import { createStreamedTerrainProvider } from './streamed-terrain-provider';
+import { sampleAtlas, type RegionalTile } from '../../studies/e1-browser/sim/terrain-stream.js';
 import { createRegionalImageryProvider } from './regional-imagery';
 import { imageryStatusText } from './imagery-status';
 import { loadTerrainPackage, sampleTerrain, type TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
@@ -69,6 +71,11 @@ function elevationRelief(grid: TerrainGrid): HTMLCanvasElement {
 export async function createScene(container: HTMLElement): Promise<FlightScene> {
   const terrainGrid = await loadTerrainPackage();
   const publicTerrain = createPublicTerrainProvider(terrainGrid);
+  let activeTerrain = publicTerrain;
+  let streamedTiles: TerrainGrid[] = [], atlasTiles = new Map<string,RegionalTile>();
+  let terrainRevision = 0, providerKey = '';
+  let liveLayers = false;
+  const atlasSample=(lat:number,lon:number)=>streamedTiles.length ? sampleAtlas(terrainGrid,atlasTiles,lat,lon) : sampleTerrain(terrainGrid,lat,lon);
   const flatTerrain = new EllipsoidTerrainProvider();
   const initialGround = sampleTerrain(terrainGrid, INITIAL_STATE.lat_rad, INITIAL_STATE.lon_rad);
   if (!initialGround) throw new Error('Initial visual position is outside the public terrain package');
@@ -140,6 +147,13 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   let regionalSettled = false;
   let removeCameraListener: (() => void) | null = null;
   let airportLayer: ImageryLayer | null = null;
+  let localRegionalLayer: ImageryLayer | null = null;
+  let livePhotoLayer: ImageryLayer | null = null;
+  function orderPhotographs() {
+    if(livePhotoLayer)scene.imageryLayers.raiseToTop(livePhotoLayer);
+    if(localRegionalLayer)scene.imageryLayers.raiseToTop(localRegionalLayer);
+    if(airportLayer)scene.imageryLayers.raiseToTop(airportLayer);
+  }
   let loadSlow = false;
   const creditObserver = new ResizeObserver(() => {
     if (!disposed && credit) status.style.bottom = `${Math.max(38, credit.getBoundingClientRect().height + 12)}px`;
@@ -179,12 +193,16 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     container.dataset.imageryRegionalCache = String(regionalStats?.cacheSize ?? 0);
     container.dataset.imageryRegionalInflight = String(regionalStats?.inflight ?? 0);
     container.dataset.imageryRegionalFailed = String(regionalStats?.failedTiles ?? 0);
+    const liveImagery = !liveLayers ? undefined : container.dataset.liveImagery === 'degraded' ? 'degraded'
+      : scene.globe.tilesLoaded ? 'ready' : 'loading';
     const { outcome, text } = imageryStatusText({
       settled: imagerySettled, slow: loadSlow, detailLoaded, overviewLoaded, airportLoaded,
       insideDetail: inside(DETAIL, state), insideOverview: inside(OVERVIEW, state), insideAirport: inside(AIRPORT_DETAIL, state),
       regional: !regionalSettled ? 'loading' : regionalImagery ? 'ready' : 'failed', regionalLevel,
       regionalFailedTiles: regionalStats?.failedTiles ?? 0, tilesLoaded: scene.globe.tilesLoaded,
+      liveImagery,
     });
+    if (liveImagery === 'ready') container.dataset.liveImagery = 'ready';
     if (status.textContent !== text) status.textContent = text;
     status.hidden = !text;
     container.dataset.imagery = outcome;
@@ -217,6 +235,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
         if (index === 0) overviewLoaded = true; else if (index === 1) detailLoaded = true; else airportLoaded = true;
       }
     });
+    orderPhotographs();
     imagerySettled = true; clearTimeout(loadTimeout);
     container.dataset.imageryTiles = String(Number(detailLoaded) + Number(overviewLoaded) + Number(airportLoaded));
     container.dataset.imageryDetail = detailLoaded ? 'ready' : 'unavailable';
@@ -231,7 +250,8 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       // for the old view; Cesium re-requests tiles that remain visible.
       removeCameraListener = scene.camera.changed.addEventListener(() => { if (!disposed) handle.cancelQueued(); });
       const index = airportLayer ? scene.imageryLayers.indexOf(airportLayer) : scene.imageryLayers.length;
-      scene.imageryLayers.add(new ImageryLayer(handle.provider), index);
+      localRegionalLayer=new ImageryLayer(handle.provider);
+      scene.imageryLayers.add(localRegionalLayer,index);orderPhotographs();
       imageryStatus(lastState); scene.requestRender();
     }).catch(() => { if (!disposed) { regionalSettled = true; imageryStatus(lastState); } });
   });
@@ -287,11 +307,25 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       throw new RangeError('Cannot render a non-finite aircraft state');
     }
     const useTerrain = state.terrain_profile === 1;
-    const terrainSample = useTerrain ? sampleTerrain(terrainGrid, state.lat_rad, state.lon_rad) : null;
+    const terrainSample = useTerrain ? atlasSample(state.lat_rad, state.lon_rad) : null;
     if (useTerrain && (!terrainSample || !Number.isFinite(state.ground_height_ellipsoid_m))) {
       container.dataset.terrain = terrainSample ? 'height-unavailable' : 'outside-coverage';
       throw new RangeError('Public terrain needs covered coordinates and an explicit converted aircraft height');
     }
+    if (useTerrain && streamedTiles.length) {
+      const fine = state.lon_rad>=terrainGrid.west_rad && state.lon_rad<=terrainGrid.east_rad && state.lat_rad>=terrainGrid.south_rad && state.lat_rad<=terrainGrid.north_rad;
+      const key=`${terrainRevision}/${Math.floor((state.lon_rad/DEG_RAD-8.25)*4)}/${Math.floor((state.lat_rad/DEG_RAD-49.25)*4)}/${fine}`;
+      if(key!==providerKey) {
+        const provider=createStreamedTerrainProvider(terrainGrid,streamedTiles,state);
+        if(!provider) throw new Error('Required streamed terrain has not loaded.');
+        activeTerrain=provider;providerKey=key;
+        if(terrainEnabled) scene.globe.terrainProvider=activeTerrain;
+      }
+    } else if (activeTerrain!==publicTerrain && !streamedTiles.length) {
+      activeTerrain=publicTerrain;providerKey='';if(terrainEnabled)scene.globe.terrainProvider=publicTerrain;
+    }
+    container.dataset.terrainStreamed=String(streamedTiles.length>0);
+    container.dataset.terrainCached=String(streamedTiles.length);
     lastState = state; lastView = view; lastLook = boundedCameraLook(look);
     // Keep zoom independent of look gestures and updates that omit camera input.
     if (look?.fov_rad !== undefined) {
@@ -300,7 +334,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     }
     const { lat_rad, lon_rad, alt_msl_m, pitch_rad, roll_rad, heading_rad } = state;
     if (useTerrain !== terrainEnabled) {
-      scene.globe.terrainProvider = useTerrain ? publicTerrain : flatTerrain;
+      scene.globe.terrainProvider = useTerrain ? activeTerrain : flatTerrain;
       scene.globe.depthTestAgainstTerrain = useTerrain;
       reliefLayer.show = useTerrain;
       terrainEnabled = useTerrain;
@@ -379,6 +413,22 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   update(initialVisual, 'cockpit');
   return {
     update,
+    setTerrainTiles(tiles) {
+      streamedTiles=Array.from(tiles); atlasTiles=new Map(tiles.map(grid=>[grid.id,grid as RegionalTile]));terrainRevision++;
+      if(tiles.length && !liveLayers) {
+        liveLayers=true;
+        const rectangle=Rectangle.fromDegrees(8.25,49.25,10,50.75);
+        const mapLayer = new ImageryLayer(new UrlTemplateImageryProvider({url:'/scenery/map/{z}/{x}/{y}.png',minimumLevel:5,maximumLevel:12,tileWidth:256,tileHeight:256,rectangle,
+          credit:new Credit('© <a href="https://www.bkg.bund.de" target="_blank" rel="noopener noreferrer">BKG</a> (2026) · <a href="https://www.govdata.de/dl-de/by-2-0" target="_blank" rel="noopener noreferrer">dl-de/by-2-0</a> · <a href="https://sgx.geodatenzentrum.de/web_public/gdz/datenquellen/datenquellen_topplusopen.html" target="_blank" rel="noopener noreferrer">TopPlusOpen sources</a> · map fallback',true)}));
+        scene.imageryLayers.add(mapLayer,2);
+        const photoProvider=new UrlTemplateImageryProvider({url:'/scenery/imagery/{z}/{x}/{y}.png',minimumLevel:7,maximumLevel:14,tileWidth:512,tileHeight:512,rectangle,
+          credit:new Credit('Open photography: HVBG · <a href="https://www.govdata.de/dl-de/zero-2-0">DL-DE-Zero-2.0</a>; © <a href="https://www.ldbv.bayern.de">Bayerische Vermessungsverwaltung</a> (2026) · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; Datenquelle: <a href="https://www.lgl-bw.de">LGL-BW</a> (2026) · <a href="https://www.govdata.de/dl-de/by-2-0">dl-de/by-2-0</a> · resampled, composited · capture dates unknown',true)});
+        photoProvider.errorEvent.addEventListener(()=>{container.dataset.liveImagery='degraded';});
+        livePhotoLayer=new ImageryLayer(photoProvider);
+        scene.imageryLayers.add(livePhotoLayer,3);orderPhotographs();
+        container.dataset.liveImagery='loading';
+      }
+    },
     dispose() {
       if (disposed) return;
       disposed = true;

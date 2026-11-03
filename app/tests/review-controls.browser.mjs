@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process';
 import { access, mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
-import { startOrResume } from './flight-actions.mjs';
+import { installSceneryFixture, prepareFlightUI, startOrResume } from './flight-actions.mjs';
 
 const app = fileURLToPath(new URL('..', import.meta.url));
 const origin = 'http://127.0.0.1:5192';
@@ -52,8 +52,9 @@ try {
       }
     };
   });
-  await page.goto(origin);
+  await installSceneryFixture(page); await page.goto(origin);
   await page.waitForFunction(() => !document.querySelector('#start').disabled && Number.isFinite(window.__reviewStates.at(-1)?.throttle_norm));
+  await prepareFlightUI(page);
   const state = () => page.evaluate(() => window.__reviewStates.at(-1));
   const workerId = await page.evaluate(() => window.__reviewWorkerId);
   const stats = async () => {

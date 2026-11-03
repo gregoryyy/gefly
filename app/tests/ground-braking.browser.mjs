@@ -9,7 +9,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
-import { startOrResume } from './flight-actions.mjs';
+import { installSceneryFixture, prepareFlightUI, startOrResume } from './flight-actions.mjs';
 import { COCKPIT_FIELDS } from '../src/types.ts';
 
 const app = fileURLToPath(new URL('..', import.meta.url));
@@ -151,8 +151,9 @@ try {
       }
     };
   });
-  await ui.goto(origin);
+  await installSceneryFixture(ui); await ui.goto(origin);
   await ui.waitForFunction(() => !document.querySelector('#start').disabled && window.brakeStates.length > 0, null, { timeout: 60000 });
+  await prepareFlightUI(ui);
   const stats = async () => {
     const n = await ui.evaluate(() => window.brakeStats.length);
     await ui.evaluate(() => window.brakeWorker.postMessage({ type: 'stats' }));
@@ -245,8 +246,9 @@ try {
       get onmessage() { return super.onmessage; }
     };
   }, [...COCKPIT_FIELDS]);
-  await legacy.goto(origin);
+  await installSceneryFixture(legacy); await legacy.goto(origin);
   await legacy.waitForFunction(() => !document.querySelector('#start').disabled && window.legacyDeliveredStates.length > 0, null, { timeout: 60000 });
+  await prepareFlightUI(legacy);
   await startOrResume(legacy); await legacy.waitForFunction(() => window.legacyDeliveredStates.at(-1)?.step > 20);
   await legacy.locator('#pause').click(); await legacy.waitForTimeout(150);
   const legacyStats = async () => {
@@ -259,7 +261,7 @@ try {
   await legacy.locator('#scene').focus(); await legacy.keyboard.press('r'); await legacy.locator('#flight-review').waitFor({ state: 'visible' });
   await legacy.waitForFunction(() => document.querySelector('#wheel-brakes').getAttribute('aria-label') === 'Recorded wheel brakes unavailable');
   assert(await legacy.locator('#wheel-brakes').isDisabled());
-  assert.match(await legacy.locator('#wheel-brakes').textContent(), /WHEEL BRAKES —/);
+  assert.match(await legacy.locator('#wheel-brakes').textContent(), /WHEEL —/);
   assert.doesNotMatch(await legacy.locator('#wheel-brakes').textContent(), /0%/);
   assert.match(await legacy.locator('#brake-state').textContent(), /unavailable/i);
   assert(await legacy.evaluate(fields => window.legacyRawStates.every(state => Number.isFinite(state.brake_left_norm) && Number.isFinite(state.brake_right_norm))

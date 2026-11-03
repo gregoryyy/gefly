@@ -11,9 +11,10 @@
 // - wall_ms is the sender's performance.timeOrigin + performance.now() (epoch ms),
 //   so main thread and worker timestamps are comparable.
 // - Pacing: wall clock decides how many steps are due (step n+1 is due at
-//   t0 + (n+1)*dt); up to MAX_CATCHUP steps run per tick. A step is *missed*
-//   when it starts more than one step period (dt, 8.3 ms) after its due time
-//   (contract budget definition). max_lag_steps (due minus completed steps at a
+//   t0 + (n+1)*dt/rate); native integration always retains dt. Up to MAX_CATCHUP
+//   steps run per tick. A step is *missed* when it starts more than one paced
+//   wall-step period after its due time (8.3 ms at 1x with dt=1/120 s).
+//   max_lag_steps (due minus completed steps at a
 //   tick, before catch-up), max_lag_ms and max_catchup_batch are reported.
 //   A deficit beyond MAX_CATCHUP is additionally dropped from the wall-clock
 //   schedule (dropped_steps; simulation time slips, no integration step is
@@ -27,6 +28,7 @@
 // cost per step for each block, separating compute cost from post-idle wake cost.
 import createJSBSim from './dist/jsbsim.mjs';
 import { loadTerrainPackage, sampleTerrain, sampleTerrainGradient, terrainContainsInterior } from './terrain.js';
+import { loadRegionalManifest, TerrainStream, sampleAtlas, sampleAtlasGradient } from './terrain-stream.js';
 import { pressureAltitude_m, indicatedAltitude_m, validSetting } from './altimeter.js';
 import { stallFields, controlFields, cockpitFields, pitchTrimFields, groundFields } from './cockpit.js';
 import { autopilotCommand, engineFields, engineSwitchFields } from './engine.js';
@@ -34,6 +36,7 @@ import { groundCollisionContact, collisionRecord, collisionStateFields, contactO
 import { createKap140, validKapCommand, validKapState } from './kap140.js';
 import { createAltitudeAlert } from './altitude-alert.js';
 import { DEFAULT_NAVIGATION, NAVIGATION_FIELDS, validNavigation, navigationSignal, loadNavigationPackage } from './navigation.js';
+import { validSimulationRate, pacedStepMilliseconds } from './simulation-rate.js';
 
 const MAX_CATCHUP = 12;          // steps per tick (100 ms at 1/120 s)
 const TIMER_SLACK_MS = 0.1;     // wake margin after a step's due time
@@ -55,7 +58,7 @@ const modulePromise = (async () => {
 
 let initialized = false;
 let dtS = 1 / 120;
-let dtMs = 1000 / 120;
+let simulationRate = 1;
 let statePeriodMs = 1000 / 60;
 let running = false;
 let stepIndex = 0;
@@ -81,6 +84,50 @@ let runWallMs = 0;
 let untilStep = Infinity;
 let terrainGrid = null;
 let terrainFault = false;
+let terrainStream = null;
+let terrainLoad = null;
+let terrainGeneration = 0;
+let resumeAfterTerrain = false;
+function terrainSample(lat, lon) {
+  return terrainStream ? sampleAtlas(terrainGrid, terrainStream.tiles, lat, lon) : sampleTerrain(terrainGrid, lat, lon);
+}
+function terrainGradient(lat, lon) {
+  return terrainStream ? sampleAtlasGradient(terrainGrid, terrainStream.tiles, lat, lon) : sampleTerrainGradient(terrainGrid, lat, lon);
+}
+function installTile(grid) {
+  const pointer = M._malloc(grid.physical_m.byteLength);
+  if (!pointer) throw new Error('Cannot allocate regional terrain tile.');
+  let rc;
+  try {
+    M.HEAPF64.set(grid.physical_m, pointer / 8);
+    rc = M._gf_set_terrain_tile(grid.slot, grid.west_rad, grid.south_rad, grid.east_rad, grid.north_rad,
+      grid.width, grid.height, pointer, grid.physical_m.length);
+  } finally { M._free(pointer); }
+  if (rc !== 0) throw new Error(`Regional terrain tile rejected: ${rc}`);
+  const physical_m = grid.physical_m.slice(), geoid_m = grid.geoid_m.slice();
+  postMessage({ type: 'terrain-tile', grid: { ...grid, physical_m, geoid_m } }, [physical_m.buffer, geoid_m.buffer]);
+}
+function removeTile(grid) {
+  if (M._gf_remove_terrain_tile(grid.slot) !== 0) throw new Error('Cannot remove regional terrain tile.');
+  postMessage({ type: 'terrain-remove', id: grid.id });
+}
+function requestTerrain(lat, lon) {
+  if (terrainLoad) return;
+  const generation = terrainGeneration, stream = terrainStream;
+  resumeAfterTerrain = running;
+  onHalt();
+  postMessage({ type: 'terrain-loading', loading: true });
+  terrainLoad = stream.move(lat, lon).then(() => {
+    if (generation !== terrainGeneration) return;
+    terrainLoad = null;
+    postMessage({ type: 'terrain-loading', loading: false });
+    if (resumeAfterTerrain) { resumeAfterTerrain = false; onRun({ until_step: untilStep }); }
+  }).catch(error => {
+    if (generation !== terrainGeneration) return;
+    terrainLoad = null; resumeAfterTerrain = false; terrainFault = true;
+    fail(`Regional terrain loading failed: ${error.message}`);
+  });
+}
 let groundCollisionEnabled = false;
 let collision = EMPTY_COLLISION;
 // Contact-data availability from the latest ground sample. When contact
@@ -191,7 +238,7 @@ function readGroundFields() {
   const pointer = M._gf_ground_state() >> 3;
   const fields = groundFields(M.HEAPF64.subarray(pointer, pointer + 18));
   if (terrainGrid && Number.isFinite(fields.ground_height_ellipsoid_m)) {
-    const state = readState(), sample = sampleTerrain(terrainGrid, state[1], state[2]);
+    const state = readState(), sample = terrainSample(state[1], state[2]);
     if (!sample) throw new Error('Terrain coverage unavailable; restart inside the published terrain region.');
     fields.ground_height_ellipsoid_m += sample.geoid_m;
   }
@@ -268,6 +315,54 @@ function onKap140(msg) {
   altitudeAlert?.update(alertSensors());
   postState();
 }
+
+// Simulator convenience: capture both axes from one authoritative sensor frame.
+// This is deliberately separate from the physical KAP 140 AP button semantics.
+function onAutopilotCapture() {
+  if (!kap) {
+    postMessage({ type: 'autopilot-rejected', message: 'Autopilot capture is unavailable.' }); return;
+  }
+  // A release queued immediately before this command must take effect even while
+  // paused. Genuine held pilot input still prevents engagement.
+  if (!applyDueInputs()) return;
+  if (pilotOverrideActive) {
+    postMessage({ type: 'autopilot-rejected', message: 'Release manual flight input before engaging autopilot.' });
+    postState(); return;
+  }
+  const sensors = kapSensors();
+  const snapshot = kap.snapshot(sensors);
+  const selected = snapshot.kap_indicated_altitude_m;
+  if (selected < -1000 || selected > 20000) {
+    postMessage({ type: 'autopilot-rejected', message: 'Current altitude is outside the autopilot selection range.' }); return;
+  }
+  // Clear prior NAV/GS/vertical modes, then capture HDG and ALT once. Recapture
+  // while engaged also stays engaged rather than toggling AP off.
+  for (const command of [
+    { action: 'disconnect' }, { action: 'heading', value: sensors.heading_rad },
+    { action: 'select-altitude', value: selected }, { action: 'ap' },
+    { action: 'hdg' }, { action: 'alt' },
+  ]) {
+    if (!kap.command(command, sensors)) { fail('Autopilot capture command failed.'); return; }
+  }
+  if (!applyKapGuidance(sensors)) return;
+  altitudeAlert?.update(alertSensors());
+  postState();
+}
+
+function onSimulationRate(msg) {
+  if (!validSimulationRate(msg.rate)) {
+    postMessage({ type: 'simulation-rate-rejected', message: 'Unsupported simulation speed.' }); return;
+  }
+  if (msg.rate !== simulationRate) {
+    // Rebase at the last completed fixed step, so changing speed cannot replay
+    // elapsed wall time at the new rate or produce one large integration step.
+    const wasRunning = running;
+    if (wasRunning) onHalt();
+    simulationRate = msg.rate;
+    if (wasRunning) onRun({ until_step: untilStep });
+  }
+  postState();
+}
 function onNavigation(msg) {
   if (!validNavigation(msg.config)) {
     postMessage({ type: 'navigation-rejected', message: 'NAV1 configuration invalid.' }); return;
@@ -313,7 +408,7 @@ function onAutopilot(msg) {
 
 function terrainFields() {
   if (!terrainGrid) return {};
-  const state = readState(), sample = sampleTerrain(terrainGrid, state[1], state[2]);
+  const state = readState(), sample = terrainSample(state[1], state[2]);
   if (!sample) throw new Error('Public terrain coverage is unavailable.');
   return { terrain_profile: 1, terrain_height_msl_m: sample.physical_m,
     terrain_geoid_m: sample.geoid_m, terrain_height_ellipsoid_m: sample.ellipsoid_m };
@@ -325,7 +420,7 @@ function collisionFields() {
 
 function sampleContact() {
   const ground = readGroundFields(), state = readState();
-  return groundCollisionContact(ground.ground_agl_m, state[4], state[5], ground.structure_contact_mask, terrainGrid ? { ...sampleTerrainGradient(terrainGrid, state[1], state[2]), heading_rad: state[6] } : undefined);
+  return groundCollisionContact(ground.ground_agl_m, state[4], state[5], ground.structure_contact_mask, terrainGrid ? { ...terrainGradient(state[1], state[2]), heading_rad: state[6] } : undefined);
 }
 
 function stateMessage() {
@@ -333,7 +428,7 @@ function stateMessage() {
   const s = readState();
   return {
     ...(Number.isFinite(flapCommand) && flapCommand >= 0 && flapCommand <= 1 ? { flap_command_norm: flapCommand } : {}),
-    type: 'state', step: stepIndex, t_s: s[0], lat_rad: s[1], lon_rad: s[2],
+    type: 'state', step: stepIndex, simulation_rate: simulationRate, t_s: s[0], lat_rad: s[1], lon_rad: s[2],
     alt_msl_m: s[3], roll_rad: s[4], pitch_rad: s[5], heading_rad: s[6], tas_mps: s[7],
     last_input_wall_ms: lastInputWallMs, step_cost_us: lastStepCostUs, ...altimeterFields,
     ...readStallFields(), ...readControlFields(), ...readCockpitFields(), ...readPitchTrimFields(), ...readGroundFields(), ...readEngineFields(), ...readEngineSwitchFields(), ...terrainFields(), ...kapFields(), ...((kap || navigationPackage) ? navigation : {}), ...collisionFields(),
@@ -389,13 +484,17 @@ function stepOnce() {
   if (collision.collision_mask) return false;
   const a = performance.now();
   if (running) {                      // paced steps only (not burst)
-    const lagMs = a - (t0Ms + (stepIndex + 1 - stepBase) * dtMs);
-    if (lagMs > dtMs) missedSteps += 1;
+    const wallStepMs = pacedStepMilliseconds(dtS, simulationRate);
+    const lagMs = a - (t0Ms + (stepIndex + 1 - stepBase) * wallStepMs);
+    if (lagMs > wallStepMs) missedSteps += 1;
     if (lagMs > maxLagMs) maxLagMs = lagMs;
   }
   if (terrainGrid) {
     const state = readState();
-    if (!terrainContainsInterior(terrainGrid, state[1], state[2]) || M._gf_terrain_available() !== 1) {
+    if (terrainStream && terrainStream.needsUpdate(state[1], state[2])) {
+      requestTerrain(state[1], state[2]); return false;
+    }
+    if ((!terrainStream && !terrainContainsInterior(terrainGrid, state[1], state[2])) || M._gf_terrain_available() !== 1) {
       terrainFault = true; fail('Terrain coverage boundary reached. Restart inside the Egelsbach–Frankfurt–Taunus region.'); return false;
     }
   }
@@ -419,6 +518,7 @@ function stepOnce() {
     // there is no truthful record, so the flight stops with an explicit error.
     if (outcome === 'fail') { fail(`Ground contact detected at step ${stepIndex} but its pre-step motion is unavailable; flight stopped.`); return false; }
     if (outcome === 'latch') {
+
       collision = record;
       pending = [];
       onHalt();
@@ -435,7 +535,8 @@ function tick() {
   if (!running) return;
   ticks += 1;
   let now = performance.now();
-  const target = stepBase + Math.floor((now - t0Ms) / dtMs + 1e-9);
+  const wallStepMs = pacedStepMilliseconds(dtS, simulationRate);
+  const target = stepBase + Math.floor((now - t0Ms) / wallStepMs + 1e-9);
   if (target - stepIndex > maxLagSteps) maxLagSteps = target - stepIndex;
   let batch = 0;
   while (stepIndex < target && batch < MAX_CATCHUP && stepIndex < untilStep) {
@@ -452,7 +553,7 @@ function tick() {
   if (stepIndex < target) {          // deficit beyond catch-up: drop it
     const deficit = target - stepIndex;
     droppedSteps += deficit;
-    t0Ms += deficit * dtMs;
+    t0Ms += deficit * wallStepMs;
   }
   now = performance.now();
   if (batch > 0 && now >= nextPostMs) {
@@ -460,14 +561,14 @@ function tick() {
     while (nextPostMs <= now) nextPostMs += statePeriodMs;   // fixed cadence, no backlog
   }
   // Wake just after the next step is due (timer callbacks can fire slightly early).
-  const nextStepMs = t0Ms + (stepIndex + 1 - stepBase) * dtMs;
+  const nextStepMs = t0Ms + (stepIndex + 1 - stepBase) * wallStepMs;
   timer = setTimeout(tick, Math.max(0, nextStepMs - performance.now() + TIMER_SLACK_MS));
 }
 
 function stats() {
   const s = readState();
   return {
-    type: 'stats', step: stepIndex, t_s: s[0], dt_s: dtS,
+    type: 'stats', step: stepIndex, t_s: s[0], dt_s: dtS, simulation_rate: simulationRate,
     digest: M.UTF8ToString(M._gf_digest_hex()),
     final_state: Array.from(M.HEAPF64.subarray(M._gf_state() >> 3, (M._gf_state() >> 3) + M._gf_state_len())),
     missed_steps: missedSteps, dropped_steps: droppedSteps,
@@ -481,7 +582,8 @@ function stats() {
 }
 
 async function onInit(msg) {
-  initialized = false; terrainFault = false; kap = null; altitudeAlert = null; pilotOverrideActive = false; navigation = { ...DEFAULT_NAVIGATION }; navigationPackage = null; navdataError = null; collisionAvailable = false; kapSensorsInvalid = false;
+  terrainStream?.cancel();
+  initialized = false; terrainGeneration++; terrainLoad = null; resumeAfterTerrain = false; terrainStream = null; terrainFault = false; kap = null; altitudeAlert = null; pilotOverrideActive = false; navigation = { ...DEFAULT_NAVIGATION }; navigationPackage = null; navdataError = null; collisionAvailable = false; kapSensorsInvalid = false;
   await modulePromise;
   const ic = msg.ic || {};
   const dt = msg.dt_s;
@@ -489,6 +591,7 @@ async function onInit(msg) {
   if (!finiteIn(dt, 1e-4, 0.1) || !finiteIn(hz, 1, 1000)) { fail('init: bad dt_s or state_hz'); return; }
   if (msg.aircraft !== 'c172x') { fail(`init: unsupported aircraft ${msg.aircraft}`); return; }
   if (msg.ground_collision !== undefined && typeof msg.ground_collision !== 'boolean') { fail('init: ground_collision must be boolean'); return; }
+  if (msg.streaming_terrain !== undefined && (typeof msg.streaming_terrain !== 'boolean' || (msg.streaming_terrain && msg.terrain !== true))) { fail('init: invalid streaming_terrain flag'); return; }
   if (msg.terrain !== undefined && typeof msg.terrain !== 'boolean') { fail('init: terrain must be boolean'); return; }
   if (msg.regional_navigation !== undefined && typeof msg.regional_navigation !== 'boolean') { fail('init: invalid regional_navigation flag'); return; }
   if (msg.navigation !== undefined) {
@@ -512,7 +615,7 @@ async function onInit(msg) {
       fail('Public terrain requires the updated local engine. Run just build-flight-engine and restart.'); return;
     }
     terrainGrid = await loadTerrainPackage();
-    if (!terrainContainsInterior(terrainGrid, ic.lat_rad, ic.lon_rad)) { fail('Initial position is outside public terrain coverage.'); return; }
+    if (!msg.streaming_terrain && !terrainContainsInterior(terrainGrid, ic.lat_rad, ic.lon_rad)) { fail('Initial position is outside public terrain coverage.'); return; }
     const pointer = M._malloc(terrainGrid.physical_m.byteLength);
     if (!pointer) { fail('Cannot allocate the public terrain grid.'); return; }
     let configured;
@@ -523,11 +626,21 @@ async function onInit(msg) {
     } finally { M._free(pointer); }
     if (configured !== 0) { fail(`Terrain grid rejected: ${configured}`); return; }
   }
+  if (msg.streaming_terrain) {
+    if (typeof M._gf_set_terrain_tile !== 'function' || typeof M._gf_remove_terrain_tile !== 'function') {
+      fail('Regional terrain requires the updated local engine. Run just build-flight-engine and restart.'); return;
+    }
+    const generation = terrainGeneration;
+    terrainStream = new TerrainStream(await loadRegionalManifest(),
+      grid => { if (generation === terrainGeneration) installTile(grid); },
+      grid => { if (generation === terrainGeneration) removeTile(grid); });
+    await terrainStream.move(ic.lat_rad, ic.lon_rad);
+  }
   const rc = preset === undefined
     ? M._gf_init(dt, ic.lat_rad, ic.lon_rad, ic.alt_msl_m, ic.heading_rad, ic.tas_mps)
     : M._gf_init_landing(dt, ic.lat_rad, ic.lon_rad, ic.heading_rad, presets[preset]);
   if (rc !== 0) { fail(`init rc=${rc}`); return; }
-  dtS = dt; dtMs = dt * 1000; statePeriodMs = 1000 / hz;
+  dtS = dt; simulationRate = 1; statePeriodMs = 1000 / hz;
   stepIndex = 0; pending = []; lastInputWallMs = null; lastStepCostUs = 0;
   missedSteps = 0; droppedSteps = 0; maxLagSteps = 0; maxLagMs = 0; lateInputs = 0; appliedInputs = 0; maxBatch = 0; ticks = 0;
   costs = new Float32Array(COST_CAPACITY); costCount = 0; runWallMs = 0;
@@ -544,7 +657,10 @@ async function onInit(msg) {
     type: 'ready',
     navdata_sha256: navigationPackage ? navigationPackage.sha256 : null,
     navdata_error: navdataError,
-    build: { ...(navigationPackage ? { navigation: { id: navigationPackage.id, edition: navigationPackage.edition, sha256: navigationPackage.sha256, historical: navigationPackage.historical } } : {}), ...(terrainGrid ? { terrain: { id: terrainGrid.id, sha256: terrainGrid.sha256, physical_datum: terrainGrid.physical_datum, geoid_model: terrainGrid.geoid_model } } : {}), jsbsim_tag: build.jsbsim_tag, emsdk: build.emsdk, wasm_bytes: build.wasm_bytes,
+    build: { ...(navigationPackage ? { navigation: { id: navigationPackage.id, edition: navigationPackage.edition, sha256: navigationPackage.sha256, historical: navigationPackage.historical } } : {}), ...(terrainGrid ? { terrain: { id: terrainGrid.id, sha256: terrainGrid.sha256, physical_datum: terrainGrid.physical_datum, geoid_model: terrainGrid.geoid_model } } : {}),
+             ...(terrainStream ? { regional_terrain: { id: 'rhein-main-dgm200-gcg-v1', cache_limit: 9, transition_degrees: .02,
+               loaded_tiles: Array.from(terrainStream.tiles.values(), grid => ({ id: grid.id, sha256: grid.sha256 })) } } : {}),
+             jsbsim_tag: build.jsbsim_tag, emsdk: build.emsdk, wasm_bytes: build.wasm_bytes,
              jsbsim_commit: build.jsbsim_commit, wasm_sha256: build.wasm_sha256, flags: build.flags,
              aircraft_adapter: build.aircraft_adapter },
     trim: { status: M._gf_trim_status(), throttle: M._gf_trim_throttle(), pitch_trim: M._gf_trim_pitch() },
@@ -580,6 +696,10 @@ function onInput(msg) {
 }
 
 function onRun(msg) {
+  if (terrainLoad) {
+    untilStep = Number.isInteger(msg.until_step) && msg.until_step > 0 ? msg.until_step : Infinity;
+    resumeAfterTerrain = true; return;
+  }
   if (running) return;
   untilStep = Number.isInteger(msg.until_step) && msg.until_step > 0 ? msg.until_step : Infinity;
   running = true;
@@ -616,10 +736,10 @@ self.onmessage = (ev) => {
     try {
       if (msg.type === 'init') { onHalt(); await onInit(msg); return; }
       if (!initialized) { postMessage({ type: 'error', message: `${msg.type} before init` }); return; }
-      if (terrainFault && ['input', 'altimeter', 'autopilot', 'kap140', 'navigation', 'run', 'burst'].includes(msg.type)) {
+      if (terrainFault && ['input', 'altimeter', 'autopilot', 'autopilot-capture', 'simulation-rate', 'kap140', 'navigation', 'run', 'burst'].includes(msg.type)) {
         postMessage({ type: 'terrain-rejected', command: msg.type, message: 'Terrain coverage unavailable; restart inside the region.' }); return;
       }
-      if (collision.collision_mask && ['input', 'altimeter', 'autopilot', 'kap140', 'navigation', 'run', 'burst'].includes(msg.type)) {
+      if (collision.collision_mask && ['input', 'altimeter', 'autopilot', 'autopilot-capture', 'simulation-rate', 'kap140', 'navigation', 'run', 'burst'].includes(msg.type)) {
         postMessage({ type: 'collision-rejected', command: msg.type, message: 'Ground contact latched; restart flight to continue.' });
         return;
       }
@@ -627,11 +747,13 @@ self.onmessage = (ev) => {
         case 'input': onInput(msg); break;
         case 'altimeter': onAltimeter(msg); break;
         case 'autopilot': onAutopilot(msg); break;
+        case 'autopilot-capture': onAutopilotCapture(); break;
+        case 'simulation-rate': onSimulationRate(msg); break;
         case 'kap140': onKap140(msg); break;
         case 'navigation': onNavigation(msg); break;
         case 'run': onRun(msg); break;
-        case 'pause': onHalt(); break;
-        case 'stop': onHalt(); postMessage(stats()); break;
+        case 'pause': resumeAfterTerrain = false; onHalt(); break;
+        case 'stop': resumeAfterTerrain = false; onHalt(); postMessage(stats()); break;
         case 'stats': postMessage(stats()); break;
         case 'burst': onBurst(msg); break;
         default: postMessage({ type: 'error', message: `unknown message type ${msg.type}` });

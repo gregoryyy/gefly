@@ -77,3 +77,14 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [Continue regional textures](2026-11-03-regional-textures.md) — extend detailed orthophotography around Frankfurt and approaches.
 - [Radio panel and station picker](2026-11-03-radio-stations-ux.md) — fit panel height, outside dismissal, nearby and name filters.
 - [Online imagery and COM directory questions](2026-11-03-imagery-provider-com.md) — provider options and communication-station discovery.
+- [Dynamic region source observations](2026-11-03-dynamic-region.md) — dated official-source observations and small public-service probes.
+- [Larger dynamic region request](2026-11-03-dynamic-region-request.md) — Darmstadt, Odenwald, Spessart, more airports and dynamic coverage.
+- [Overlay controls and title bar](2026-11-03-overlay-controls.md) — initially hidden controls/title bar, half-opacity floating panels, click activation and menu shortcuts; O identifies the top bar.
+- [Global scenery research request](2026-11-03-global-scenery-research.md) — global streaming, local resampling, Google-quality visuals and Google Earth alternatives.
+- [Flight assists, PR and screenshot](2026-11-03-flight-assists-and-pr.md) — A captures current heading/altitude, = cycles simulation pacing with an overlay; publish recent work and add an actual flight screenshot to README; touchpad symptom clarification does not request retuning.
+- [Right-side flight map](2026-11-03-right-flight-map.md) — research and build a public-data flight map beside the flight view, showing the current flown path.
+- [Flight map default](2026-11-03-flight-map-default.md) — confirmed map with airports and navigation aids as the initial view; aerial imagery remains optional.
+- [Southern Germany map data](2026-11-03-southern-germany-map.md) — all source airfields and navigation data; confirmed Bavaria, Baden-Württemberg, Hesse, Rhineland-Palatinate and Saarland.
+- [Parking brake and rudder controls](2026-11-03-parking-rudder.md) — N toggled parking brake beside wheel brakes, optional aileron/rudder link and rudder wheel steering.
+- [Centered touchpad control option](2026-11-03-centered-touchpad.md) — fixed steering midpoint, drag view without automatic recentering; browser-coordinate interpretation recorded.
+- [Existing demonstrable-increments instruction](2026-11-03-demonstrable-increments-record.md) — preserved from the available conversation on this recording date; original send time not reconstructed (Q25).

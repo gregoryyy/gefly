@@ -1,3 +1,4 @@
+import { installSceneryFixture, prepareFlightUI } from './flight-actions.mjs';
 // Actual-browser responsive cockpit geometry; no aircraft fidelity claim.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -25,9 +26,10 @@ try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const errors = [];
   page.on('pageerror', error => errors.push(error.stack ?? String(error)));
-  await page.goto(origin);
+  await installSceneryFixture(page); await page.goto(origin);
   await page.waitForSelector('.cockpit-fitted');
   await page.waitForFunction(() => !document.querySelector('#start').disabled);
+  await prepareFlightUI(page);
   const geometry = () => page.evaluate(() => {
     const rect = selector => {
       const element = document.querySelector(selector), r = element.getBoundingClientRect(), s = getComputedStyle(element);
@@ -129,7 +131,7 @@ try {
   // A fresh mobile load must not depend on desktop-first portal placement.
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
   mobile.on('pageerror', error => errors.push(error.stack ?? String(error)));
-  await mobile.goto(origin); await mobile.waitForFunction(() => !document.querySelector('#start').disabled);
+  await installSceneryFixture(mobile); await mobile.goto(origin); await mobile.waitForFunction(() => !document.querySelector('#start').disabled);
   assert(await mobile.locator('.engine-controls .autopilot-content').isVisible());
   assert(await mobile.locator('#engine-open').isVisible());
   await mobile.close();

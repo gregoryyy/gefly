@@ -1,3 +1,4 @@
+import { installSceneryFixture, prepareFlightUI } from './flight-actions.mjs';
 // Actual JSBSim quantity display plus isolated presentation reference cases.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -31,7 +32,8 @@ try {
         }); }
     };
   });
-  await page.goto(origin); await page.waitForFunction(() => !document.querySelector('#start').disabled && Number.isFinite(window.fuelStates.at(-1)?.fuel_left_m3));
+  await installSceneryFixture(page); await page.goto(origin); await page.waitForFunction(() => !document.querySelector('#start').disabled && Number.isFinite(window.fuelStates.at(-1)?.fuel_left_m3));
+  await prepareFlightUI(page);
   const actual = await page.evaluate(() => window.fuelStates.at(-1));
   const capacity = await page.evaluate(async () => (await import('/src/c172x-instrument-references.ts')).C172X_TANK_CAPACITY_M3);
   const stats = async () => {

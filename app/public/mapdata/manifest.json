@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "id": "southern-germany-map-navigation-v1",
+  "asset": "southern-germany-v1.json",
+  "bounds": [
+    6,
+    47,
+    14,
+    51.75
+  ],
+  "count": 277,
+  "station_count": 210,
+  "counts_by_source": {
+    "ourairports": 144,
+    "nav810": 66
+  },
+  "counts_by_component": {
+    "DME": 6,
+    "GS": 61,
+    "station": 210
+  },
+  "bytes": 175504,
+  "sha256": "f485303ecf944d874a7cc7154a6ff0aa0f3de75c9c305372a9bd34bf1d2439d5",
+  "sources": [
+    {
+      "id": "ourairports",
+      "sha256": "d7292380662c33a95214945023ec0a5b13189599305fd18be739e167a97a9bd1",
+      "edition": "2026-11-02 snapshot",
+      "historical": false,
+      "label": "OurAirports snapshot 2026-11-02; service status unverified",
+      "url": "https://raw.githubusercontent.com/davidmegginson/ourairports-data/e86a650a968ba239a1288f96c05fcb80688e77a6/navaids.csv",
+      "license": "Public domain / Unlicense"
+    },
+    {
+      "id": "nav810",
+      "sha256": "24cfae74114d43586a5816029bb2ddeeeb1a0b6b4472b4ce775d7d748898b839",
+      "edition": "2013.10",
+      "historical": true,
+      "label": "Robin A. Peel / FlightGear NAV 2013.10; historical",
+      "url": "https://gitlab.com/flightgear/fgdata/-/raw/5371094f6cc81d39b5cc7d9052ba13ba4a8b8e95/Navaids/nav.dat.gz",
+      "license": "GPL-2.0-or-later"
+    }
+  ],
+  "scope": "Map-only German source points in 6\u201314\u00b0E / 47\u201351.75\u00b0N; includes adjoining states. Airports use a separate five-state selection. Not current AIS, AIRAC, airspace, NOTAM or published procedures.",
+  "component_issues": [],
+  "excluded_malformed_worldwide_rows": [
+    {
+      "source_line": 16455,
+      "reason": "Malformed worldwide row outside region and component margin"
+    },
+    {
+      "source_line": 16758,
+      "reason": "Malformed worldwide row outside region and component margin"
+    },
+    {
+      "source_line": 16812,
+      "reason": "Malformed worldwide row outside region and component margin"
+    },
+    {
+      "source_line": 16827,
+      "reason": "Malformed worldwide row outside region and component margin"
+    }
+  ]
+}

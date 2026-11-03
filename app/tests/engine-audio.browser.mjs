@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
-import { startOrResume } from './flight-actions.mjs';
+import { installSceneryFixture, prepareFlightUI, startOrResume } from './flight-actions.mjs';
 
 const app = fileURLToPath(new URL('..', import.meta.url));
 const origin = 'http://127.0.0.1:5200';
@@ -75,8 +75,9 @@ try {
       }
     };
   });
-  await page.goto(origin);
+  await installSceneryFixture(page); await page.goto(origin);
   await page.waitForFunction(() => !document.querySelector('#start').disabled && Number.isFinite(window.__soundStates.at(-1)?.prop_radps));
+  await prepareFlightUI(page);
   assert.equal(await page.evaluate(() => window.__soundContexts.length), 0, 'page load does not create an audio context');
   assert.equal(await page.locator('#audio-toggle').getAttribute('data-audio-state'), 'locked');
   assert.equal(await page.locator('#audio-toggle').getAttribute('aria-pressed'), 'true', 'engine sound defaults off');
@@ -616,13 +617,13 @@ try {
 
   const unsupported = await browser.newPage({ viewport: { width: 900, height: 800 } });
   await unsupported.addInitScript(() => { window.AudioContext = undefined; window.webkitAudioContext = undefined; });
-  await unsupported.goto(origin); await unsupported.waitForFunction(() => !document.querySelector('#start').disabled);
+  await installSceneryFixture(unsupported); await unsupported.goto(origin); await unsupported.waitForFunction(() => !document.querySelector('#start').disabled);
   assert(await unsupported.locator('#audio-toggle').isDisabled());
   await startOrResume(unsupported); await unsupported.waitForFunction(() => document.querySelector('#status').textContent === 'Flying');
   await unsupported.close();
   const rejected = await browser.newPage({ viewport: { width: 900, height: 800 } });
   await rejected.addInitScript(() => { AudioContext.prototype.resume = () => Promise.reject(new Error('test activation rejection')); });
-  await rejected.goto(origin); await rejected.waitForFunction(() => !document.querySelector('#start').disabled);
+  await installSceneryFixture(rejected); await rejected.goto(origin); await rejected.waitForFunction(() => !document.querySelector('#start').disabled);
   await startOrResume(rejected);
   await rejected.locator('#scene').focus(); await rejected.keyboard.press('s');
   await rejected.waitForFunction(() => document.querySelector('#audio-toggle').dataset.audioState === 'unavailable');

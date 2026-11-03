@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import { sceneryMiddleware } from './scenery-server';
 import { MOUNT, runtimeMiddleware, runtimeRoot } from './runtime.ts';
 import { resolve, extname, sep } from 'node:path';
 import { createReadStream } from 'node:fs';
@@ -19,6 +20,7 @@ export default defineConfig({
   plugins: [{
     name: 'local-flight-assets',
     configureServer(server) {
+      server.middlewares.use(sceneryMiddleware());
       // The research runtime remains local and is excluded from production output.
       server.middlewares.use(MOUNT, runtimeMiddleware(runtimeRoot()));
       server.middlewares.use('/cesium', async (req, res) => {

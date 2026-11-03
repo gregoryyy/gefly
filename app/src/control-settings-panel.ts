@@ -47,6 +47,16 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
         </div>
       `).join('')}
     </div>
+    <label class="control-settings-note control-settings-toggle" for="coordinated-rudder">
+      <input type="checkbox" id="coordinated-rudder" aria-describedby="coordinated-rudder-note">
+      Link rudder to aileron
+    </label>
+    <p class="control-settings-note" id="coordinated-rudder-note">Input assist: bank input also commands rudder and nosewheel steering. Manual rudder takes priority; roll correction is excluded.</p>
+    <label class="control-settings-note control-settings-toggle" for="centered-touchpad">
+      <input type="checkbox" id="centered-touchpad" aria-describedby="centered-touchpad-note">
+      Centered touchpad controls
+    </label>
+    <p class="control-settings-note" id="centered-touchpad-note">Flight-view center is neutral. Hold-drag sets the view; release keeps it. Escape resets the view.</p>
     <div class="control-settings-presets">
       <span>Quick presets</span>
       <button type="button" id="settings-gentle">Gentle</button>
@@ -64,7 +74,13 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
     output: dialog.querySelector<HTMLOutputElement>(`#sensitivity-${axis}-value`)!,
   }));
 
+  const toggles = ([
+    ['coordinatedRudder', 'coordinated-rudder'],
+    ['centeredTouchpad', 'centered-touchpad'],
+  ] as const).map(([setting, id]) => ({ setting, input: dialog.querySelector<HTMLInputElement>(`#${id}`)! }));
+
   function render(): void {
+    for (const { setting, input } of toggles) input.checked = settings[setting] ?? false;
     for (const { axis, input, output } of sliders) {
       const gain = axis === 'brake' ? settings.brake ?? DEFAULT_CONTROL_SETTINGS.brake : settings[axis];
       const percent = Math.round(gain * 100);
@@ -81,6 +97,11 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
   }
 
   function onInput(event: Event): void {
+    const toggle = toggles.find(({ input }) => input === event.target);
+    if (toggle) {
+      change({ ...settings, [toggle.setting]: toggle.input.checked });
+      return;
+    }
     const slider = sliders.find(({ input }) => input === event.target);
     if (slider) change({ ...settings, [slider.axis]: Number(slider.input.value) / 100 });
   }
@@ -88,8 +109,9 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
   function onClick(event: MouseEvent): void {
     const target = event.target;
     if (!(target instanceof HTMLButtonElement)) return;
-    if (target.id === 'settings-gentle') change(GENTLE_CONTROL_SETTINGS);
-    if (target.id === 'settings-default') change(DEFAULT_CONTROL_SETTINGS);
+    const preferences = { coordinatedRudder: settings.coordinatedRudder ?? false, centeredTouchpad: settings.centeredTouchpad ?? false };
+    if (target.id === 'settings-gentle') change({ ...GENTLE_CONTROL_SETTINGS, ...preferences });
+    if (target.id === 'settings-default') change({ ...DEFAULT_CONTROL_SETTINGS, ...preferences });
     if (target.id === 'settings-close') dialog.close();
   }
 

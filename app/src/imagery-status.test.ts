@@ -29,3 +29,22 @@ test('regional loading and ready states keep the earlier starter messages', () =
   assert.deepEqual(imageryStatusText({ ...loaded, regional: 'loading', regionalLevel: null }), { outcome: 'ready', text: 'Regional overview · outside detailed starter area' });
   assert.equal(imageryStatusText({ ...loaded, regional: 'loading', regionalLevel: null, detailLoaded: false, overviewLoaded: false, airportLoaded: false }).outcome, 'error');
 });
+
+
+test('R-WORLD-5 streamed photography reports loading, readiness and fallback beyond bundled coverage', () => {
+  const outside = { ...loaded, regionalLevel: null, insideDetail: false, insideOverview: false, insideAirport: false };
+  assert.deepEqual(imageryStatusText({ ...outside, liveImagery: 'loading' }), { outcome: 'ready', text: 'Loading live regional scenery…' });
+  assert.deepEqual(imageryStatusText({ ...outside, liveImagery: 'ready' }), { outcome: 'ready', text: 'Live photography / map fallback · capture dates unknown' });
+  assert.deepEqual(imageryStatusText({ ...outside, liveImagery: 'degraded' }), { outcome: 'degraded', text: 'Live photography unavailable or incomplete · map fallback' });
+  // A working bundled regional tile keeps its local status despite a live-service error.
+  assert.deepEqual(imageryStatusText({ ...loaded, liveImagery: 'degraded' }), { outcome: 'ready', text: '' });
+});
+
+test('F57 R-WORLD-4 bundled-pyramid failure remains visible alongside live regional imagery', () => {
+  for (const liveImagery of ['loading', 'ready', 'degraded'] as const) {
+    const status = imageryStatusText({ ...loaded, regional: 'failed', regionalLevel: null, liveImagery });
+    assert.match(status.text, /^Bundled regional detail imagery unavailable; live imagery\/map fallback shown\./);
+    assert.notEqual(status.outcome, 'ready');
+    assert.match(status.text, liveImagery === 'degraded' ? /Live photography unavailable/ : liveImagery === 'loading' ? /Loading live regional scenery/ : /capture dates unknown/);
+  }
+});

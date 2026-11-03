@@ -29,5 +29,18 @@ int main() {
     } catch (const std::invalid_argument&) { rejected = true; }
     assert(rejected);
   }
+  auto fine = std::make_shared<const TerrainGrid>(0, 0, .01, .01, 2, 2, values, 4);
+  auto coarse = std::make_shared<const TerrainGrid>(0, 0, .02, .02, 2, 2, flat, 4);
+  gefly::TerrainAtlas atlas(fine); atlas.set(1, coarse);
+  assert(atlas.sample(.005, .005)->height_m == 50);
+  assert(atlas.sample(.015, .015)->height_m == 120);
+  const double edge = .0001;
+  const auto feather = atlas.sample(edge, .005);
+  const double band = .02 * 3.14159265358979323846 / 180;
+  const double t = edge / band, w = t*t*(3-2*t), dw = 6*t*(1-t)/band;
+  auto a = fine->sample(edge, .005); auto b = coarse->sample(edge, .005);
+  assert(std::abs(feather->height_m - (b->height_m + w * (a->height_m-b->height_m))) < 1e-10);
+  assert(std::abs(feather->dh_dlon_m - (b->dh_dlon_m + w*(a->dh_dlon_m-b->dh_dlon_m) + (a->height_m-b->height_m)*dw)) < 1e-6);
+  atlas.remove(1); assert(!atlas.contains(.015, .015));
   std::cout << "PASS terrain triangular interpolation, cell gradients, ECEF normals, boundaries and malformed grids\n";
 }

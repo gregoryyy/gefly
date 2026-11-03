@@ -2,9 +2,9 @@
 
 Status: selected stack with proposed product component boundaries. **Web application**, **Cessna 172**, **EASA PPL first**, **classic instruments before glass** and **QNH/QFE/standard-pressure coverage** are user decisions. Aircraft: a classic-panel 172S first, then the Reims FR172, as distinct engine configurations (Q3); the first exercise is a circuit at Frankfurt-Egelsbach (EDFE). The dynamics engine is **JSBSim** (Q17), used as a replaceable LGPL library; the web stack is TypeScript with a CesiumJS renderer (three.js fallback), MapLibre 2D maps and JSBSim in a module Web Worker at a fixed **1/120 s** step (Q17). Exact radio fit and geographic data provider remain open. Native and browser studies exist; the complete learner simulator and project-owned 172S flight model are not implemented. Expanded scope and proposed delivery slices are in [the training design](design/TRAINING.md).
 
-An experimental [local browser application](../app/README.md) now integrates the existing study worker with a TypeScript flight deck and Cesium scene with a bundled official Hessen starter photograph. npm/Vite owns this bounded application; the reusable package boundaries below remain the target for subsequent extraction. Its generic study aircraft is built only for local research. Normal flights now use a bounded public Hessen DEM and GCG2016/2023 package, shared by a native physical-height terrain callback and the Cesium ellipsoid-height surface; flat landing studies remain explicit opt-outs. This prototype surface is not accepted airport/runway or full regional fidelity. The project-owned 172S model, real EDFE circuit and production runtime distribution remain incomplete.
+An experimental [local browser application](../app/README.md) integrates the existing study worker with a TypeScript flight deck and Cesium scene. npm/Vite owns this bounded application; reusable package boundaries below remain the target for extraction. Its generic study aircraft is built only for local research. Normal flights combine the finer public Hessen DEM with 42 lazy-loaded BKG DGM200 tiles over 8.25–10.00°E / 49.25–50.75°N, sharing physical DHHN2016 heights and GCG2016/2023 offsets between native ground contact and the Cesium ellipsoid-height surface. Explicit flat landing studies remain separate. This is not surveyed airport/runway or full EDDF/100 NM fidelity. The project-owned 172S model, real EDFE circuit and production runtime distribution remain incomplete.
 
-A lazy-loaded MapLibre practice map now shows the selected flight position, true heading and a bounded whole retained path over the same local imagery. Review uses the historical marker state, while the full retained line remains visible. It does not supply accepted airport, chart, fix or procedure data.
+A lazy-loaded MapLibre map shows selected flight position, true heading, the bounded whole retained path and 731 searchable five-state OurAirports community airfield/heliport entries with optional reported elevation. Review uses the historical marker state, while the full retained line remains visible. Airport selection moves only the map. The community inventory is not accepted airport/runway, chart, fix or procedure data; reported elevation never overwrites contact terrain. Both 2D and 3D views use bundled imagery plus fixed-source live map/photo endpoints.
 
 The research worker also computes an ideal ISA scale-offset pressure altimeter
 from actual JSBSim static pressure at each fixed step. Read-only pressure exports
@@ -22,15 +22,19 @@ inclinometer is an ideal apparent-force display, not a full turn-coordinator gyr
 The scene's authored +X-nose/+Y-up/+Z-right glTF axes are explicitly mapped through
 Cesium's axis correction into an aircraft ENU basis; look offsets affect only the
 camera. Scene click/hold input uses explicit yoke/look modes, neutralizing on
-release/cancel/focus transitions without pointer-lock permission.
+release/cancel/focus transitions without pointer-lock permission. The opt-in
+centered mode reads the current scene rectangle for its neutral point and retains
+camera look independently of those control cancellations; Escape and flight
+restart explicitly reset the look. The default relative mode keeps its existing
+click anchor and temporary live look.
 
 Flaps and symmetric wheel brakes drive existing model FCS properties. Manual
 mixture uses a source-hash-guarded local aircraft copy: a default-on gate on the
 upstream automatic-mixture channel preserves its original coefficients and
 baseline behavior. Build metadata records source/prepared/adapter hashes. The
-basic autopilot reuses the existing modern JSBSim roll/guidance controller for
-wings-level and true-heading modes. Legacy AP channels remain off; altitude hold
-is unsupported. Raw pilot intent disconnects AP before the study roll correction
+autopilot reuses existing generic JSBSim roll/pitch controllers beneath the KAP
+operating-state model, including heading and pressure-altitude modes. Legacy AP
+channels remain isolated from that adapter. Raw pilot intent disconnects AP before the study roll correction
 is applied, and the correction is suspended while AP owns roll. These are generic
 research-model controls, not the installed 172S avionics or full v1.1 run contract.
 See [sources and limits](research/2026-11-02-classic-controls.md).
@@ -39,8 +43,9 @@ Additional user decisions: a **free/open-source flight-school community site**,
 **LLM-assisted flight-experience authoring and AI interaction**, an initial
 **EDDF/100 NM regional model from real source material**, and **reuse of open
 physics engines/models wherever practical**. These guide the target; the project license is GPL-3.0-or-later
-(Q5); JSBSim is the selected dynamics engine (Q17); no hosting service, dataset or
-LLM provider has been selected.
+(Q5); JSBSim is the selected dynamics engine (Q17). Bounded geographic datasets
+and public imagery sources are now integrated; production hosting and an LLM
+provider remain undecided.
 
 ## Reuse-first physics and aircraft models
 
@@ -56,9 +61,9 @@ Assess fixed-step/replay behavior, supported aircraft/envelope, browser integrat
 performance, maintenance and compatibility with the intended open-source release.
 
 The [browser study](../studies/e1-browser/README.md) implements a WASM adapter and
-module worker, with bounded reference-Mac observations. It does not yet establish
-real terrain/imagery loading, the full device-resolution budget or the product
-cockpit workload. A custom reference harness or gap-specific component is acceptable when
+module worker, with bounded reference-Mac observations. The older study alone does
+not establish the later real terrain/imagery integration, full device-resolution
+budget or product cockpit workload. A custom reference harness or gap-specific component is acceptable when
 its purpose is explicit; replacing an available model needs a recorded mismatch
 or unmet requirement and independent validation. Reuse does not establish C172
 configuration accuracy. See [open-engine/regional sources](research/2026-10-31-eddf-open-foundation.md),
@@ -102,6 +107,23 @@ Record initial conditions, scenario/model versions, fixed step, seed, control ev
 
 ## Geography, navigation and pressure references
 
+The right-side flight map reuses the existing MapLibre instance, bounded
+same-origin BKG/public-photo endpoints, airport catalogue and hash-verified
+map-only community/historical navigation package. This is separate from the
+radio model’s regional 2013.10 inventory. All 731 airfield points are GPU-rendered;
+directory results and nearby DOM labels are bounded to 100 and 80 respectively.
+The map endpoint covers 6–14°E / 47–51.75°N; photo and physics bounds stay regional.
+Desktop opening reserves space in the Cesium
+viewport; the cockpit remains full width, and ResizeObserver updates rendering
+dimensions without resetting flight. M/marked menu controls visibility. A public
+map is the initial base; aerial imagery and source-dated NAV visibility are
+presentation choices. The independent path/marker consume actual live or selected
+recorded state at the existing bounded map refresh rate. Full retained history
+remains visible in Review; the historical marker does not restore the worker.
+All airport/NAV interactions are read-only and do not tune radios. No new data
+provider, font server, geolocation permission or simulation integration is added.
+See R-WORLD-6 and the [source assessment](research/2026-11-03-flight-map.md).
+
 The first reference region is the geodesic disk **100 NM (185.2 km)** around
 EDDF's sourced official airport reference point. Do not substitute a city center,
 an unverified third-party airport point or an old chart without recording it as
@@ -117,7 +139,9 @@ charts and from rendered imagery; publicly viewable material is not automaticall
 redistributable. The open-source build needs a reproducible authorized-data path,
 and optional external material must declare its access requirements. Generated
 maps identify both generated presentation and the real/historical/synthetic status
-of underlying data. No region geometry or dataset has yet been imported.
+of underlying data. The current prototype has imported versioned terrain,
+photography, historical radio navigation and community airport points; those
+bounded datasets do not complete the accepted 100 NM regional model.
 
 Give each scenario a versioned geographic/navigation snapshot: airport/runway and
 threshold identity, coordinates, elevations with units/datums, navaids/frequencies,
@@ -325,3 +349,58 @@ loads, caps six concurrent requests and 64 decoded source images, and returns a
 fresh canvas to avoid closing images still held by GPU upload. Missing finer
 levels crop the correct north-down ancestor subrectangle. The old coarse/relief
 layers remain underneath and the sharper Egelsbach overlay remains above.
+
+## Streamed regional ground and live scenery
+
+The [regional manifest](../app/public/terrain/region/manifest.json) pins 42
+129×129-node tiles, each containing interleaved physical DHHN2016 H and
+GCG2016/2023 ζ channels. The authoring compiler builds one exact shared
+geographic lattice from BKG's 200 m source, then slices tiles so adjacent edges
+share identical float32 nodes. The native atlas receives H; Cesium samples the
+same surface plus ζ. A derived 0.02° inward smoothstep band joins the finer
+Hessen surface to the coarse layer, with derivatives shared for contact slopes.
+This interpolation is an explicit approximation, not improved source accuracy.
+
+The fixed-step worker installs/removes complete immutable tile buffers between
+steps. Its moving 3×3 working set holds at most nine tiles; a tile-centre change
+pauses physics until the new set is ready, then resumes only prior running intent.
+User pause cancels automatic resume. Missing/corrupt data stops rather than
+substituting a flat/stale surface. The renderer retains up to 42 visited tiles for
+recorded Review, without restoring or advancing physics. Source 200 m relief and
+mostly 2000–2019 surveys remain distinct from finer display subdivision.
+
+Vite's development middleware exposes fixed same-origin `/scenery/map/...png`
+and `/scenery/imagery/...png` XYZ endpoints. It converts bounded coordinates to
+allowlisted WMS requests for TopPlusOpen and three state photography services.
+Node controls request/cache limits; a bounded Python/Pillow process composites
+transparent 512 px responses. Unavailable/transparent photo areas expose map
+fallback rather than invented imagery. The original verified local pyramid and
+airport detail remain above live layers. Live image capture dates are unknown,
+and responses are unversioned; Review retains flight/terrain state rather than a
+frozen photographic recording. Full flow, bounds and retention are in [SEC](SEC.md).
+
+Only the development server currently installs the proxy. A static UI build
+does not supply that endpoint or the generated research-engine runtime;
+production hosting remains undecided. No Google, MapTiler or ion account/service
+was activated by the global-scenery research.
+
+## Simulator shortcuts and pacing
+
+The top title/menu bar and floating flight controls start hidden; O toggles the
+bar independently of the central Start/Pause card. Floating controls, map,
+flight-data and stall panels are inactive at half opacity. A first activation
+gesture is consumed and releases held pilot axes/yoke mode; subsequent gestures
+operate the active panel. Ordinary cockpit controls remain direct. Menu shortcut
+combinations invoke the existing guarded commands; they do not bypass Review,
+disabled controls, editable fields or dialogs.
+
+A is a simulator convenience to capture the worker's current true heading and
+pressure altitude into HDG + ALT, reusing existing KAP mode commands and generic
+native servos. It is distinct from the modeled physical AP button and does not
+change aircraft coefficients. Manual pilot axes retain their disconnect/rejection
+priority. The = shortcut cycles requested live rates 1/1.5/2/5/10×. The worker
+changes wall-clock pacing while retaining the fixed 1/120 s integration step and
+simulation-time controller behavior; CPU overload can reduce achieved speed.
+Pause/loading/reset and Review remain distinct from accelerated live integration.
+The on-screen indicator uses the worker-confirmed rate; no requested rate is a
+claim of measured real-time throughput.

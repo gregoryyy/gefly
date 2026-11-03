@@ -1,6 +1,7 @@
 import { RADIO_NAV_FIELDS, validRadioNavSnapshot } from './radio-nav.ts';
 import { ALERT_FIELDS, validAlertState, KAP_FIELDS, validKapState, TERRAIN_FIELDS, validTerrainState, COLLISION_FIELDS, validCollisionState, STALL_FIELDS, validStallState, CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, ENGINE_SWITCH_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
 import type { FlightState } from './types';
+import { validSimulationRate } from '../../studies/e1-browser/sim/simulation-rate.js';
 
 export interface TraceSample {
   readonly state: Readonly<FlightState>;
@@ -40,11 +41,13 @@ export class FlightTrace {
 
   record(state: FlightState, vertical_speed_mps: number): boolean {
     if (!state || typeof state !== 'object' || !Number.isFinite(vertical_speed_mps) || !validAltimeterState(state) || !validCockpitState(state) || !validEngineState(state) || !validPitchTrimState(state) || !validGroundState(state) || !validControlState(state) || !validStallState(state) || !validCollisionState(state) || !validTerrainState(state) || !validKapState(state) || !validAlertState(state)
-      || (RADIO_NAV_FIELDS.some(key => state[key] !== undefined) && !validRadioNavSnapshot(state))) return false;
+      || (RADIO_NAV_FIELDS.some(key => state[key] !== undefined) && !validRadioNavSnapshot(state))
+      || (state.simulation_rate !== undefined && !validSimulationRate(state.simulation_rate))) return false;
     const snapshot: FlightState = {
       step: state.step, t_s: state.t_s, lat_rad: state.lat_rad, lon_rad: state.lon_rad,
       alt_msl_m: state.alt_msl_m, roll_rad: state.roll_rad, pitch_rad: state.pitch_rad,
       heading_rad: state.heading_rad, tas_mps: state.tas_mps,
+      ...(state.simulation_rate === undefined ? {} : { simulation_rate: state.simulation_rate }),
     };
     for (const key of [...ALERT_FIELDS, ...KAP_FIELDS, ...TERRAIN_FIELDS, ...COLLISION_FIELDS, ...STALL_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...ENGINE_SWITCH_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS, ...RADIO_NAV_FIELDS]) if (state[key] !== undefined) snapshot[key] = state[key];
     if (!Object.values(snapshot).every((value) => typeof value === 'number' && Number.isFinite(value))
@@ -54,11 +57,11 @@ export class FlightTrace {
     if (this.count > 0) {
       const latest = this.sample(this.count - 1).state;
       if (snapshot.step === latest.step && snapshot.t_s === latest.t_s
-        && ['altimeter_setting_pa','ap_mode','ap_heading_target_rad', ...ALERT_FIELDS, ...KAP_FIELDS, ...RADIO_NAV_FIELDS]
+        && ['simulation_rate','altimeter_setting_pa','ap_mode','ap_heading_target_rad', ...ALERT_FIELDS, ...KAP_FIELDS, ...RADIO_NAV_FIELDS]
           .some(key => snapshot[key as keyof FlightState] !== latest[key as keyof FlightState])) {
         // A paused setting/mode change replaces only the last instrument snapshot. Old
         // samples remain immutable; physics, environment and recorded VSI cannot change.
-        const fixed = Object.keys({ ...latest, ...snapshot }).filter((key) => !['altimeter_setting_pa', 'altimeter_indicated_m','ap_mode','ap_heading_target_rad','ap_aileron_norm', ...ALERT_FIELDS, ...KAP_FIELDS, ...RADIO_NAV_FIELDS].includes(key)) as (keyof FlightState)[];
+        const fixed = Object.keys({ ...latest, ...snapshot }).filter((key) => !['simulation_rate','altimeter_setting_pa', 'altimeter_indicated_m','ap_mode','ap_heading_target_rad','ap_aileron_norm', ...ALERT_FIELDS, ...KAP_FIELDS, ...RADIO_NAV_FIELDS].includes(key)) as (keyof FlightState)[];
         if (!fixed.every((key) => snapshot[key] === latest[key])) return false;
         const index = (this.head + this.count - 1) % this.samples.length;
         this.samples[index] = Object.freeze({ state: Object.freeze(snapshot), vertical_speed_mps: this.sample(this.count - 1).vertical_speed_mps });

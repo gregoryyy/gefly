@@ -1,4 +1,4 @@
-import { startOrResume } from './flight-actions.mjs';
+import { installSceneryFixture, prepareFlightUI, startOrResume } from './flight-actions.mjs';
 // Actual Chrome/JSBSim regression for classic instruments and scene gestures.
 // This checks the product behavior, not aircraft handling or training fidelity.
 import assert from 'node:assert/strict';
@@ -58,9 +58,10 @@ try {
       }
     };
   });
-  await page.goto(origin);
+  await installSceneryFixture(page); await page.goto(origin);
   await page.waitForFunction(() => !document.querySelector('#start').disabled
     && window.__classicStates.at(-1)?.cas_mps > 0);
+  await prepareFlightUI(page);
   const state = () => page.evaluate(() => window.__classicStates.at(-1));
   const stats = async () => {
     const count = await page.evaluate(() => window.__classicStats.length);

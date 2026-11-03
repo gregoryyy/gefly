@@ -1,3 +1,4 @@
+import { installSceneryFixture, prepareFlightUI } from './flight-actions.mjs';
 // Actual Cesium projection and fixed-step physics invariance for the body-forward cue.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -34,7 +35,8 @@ try {
       }
     };
   });
-  await page.goto(origin); await page.waitForFunction(()=>!document.querySelector('#start').disabled);
+  await installSceneryFixture(page); await page.goto(origin); await page.waitForFunction(()=>!document.querySelector('#start').disabled);
+  await prepareFlightUI(page);
   await page.locator('#start').click(); await page.waitForFunction(()=>window.__forwardStates.at(-1)?.step>10);
   // Pull the nose up briefly so the recorded trace holds distinctly different attitudes.
   await page.keyboard.down('ArrowDown'); await page.waitForTimeout(900); await page.keyboard.up('ArrowDown'); await page.waitForTimeout(300);

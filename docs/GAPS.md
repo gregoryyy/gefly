@@ -444,10 +444,20 @@ orchestrator; user decision.
 
 ### Q25. Confirm the "small, runnable, demonstrable increments" rule?
 
-Why: AGENTS.md (Work and documentation) carries a rule recorded in DONE on
-2026-11-02 12:08 as the user's priority. No `docs/input/` record exists for it, and
-AGENTS rule changes need a recorded decision (peer F6, 2026-11-03 08:05). If the user confirms it,
-add a new input record; do not write one retroactively.
+Original peer finding (F6, 2026-11-03 08:05): AGENTS carried this priority but no
+immutable input record was available to that review. ~~If the user confirms it,
+add a new input record.~~
+
+Answer (existing instruction preserved): **2026-11-03 10:13, user**
+(recording time; [current transcript record](input/2026-11-03-demonstrable-increments-record.md)):
+“from now on, prioritize to create demonstrable increments.” This explicit earlier
+user instruction is present in the available conversation; it does not need to be
+asked again. Its original send time is not supplied here. The new record is dated
+when preserved, not retroactively assigned to 2026-11-02.
+
+Resolved: retain the existing AGENTS priority and use small runnable increments.
+This supplies the missing recorded source for the instruction, not a new approval
+or evidence that an earlier documentation workflow captured it correctly.
 
 ### Q23. Design open questions carried from the drafts (register)
 

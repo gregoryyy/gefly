@@ -1,0 +1,5 @@
+.topbar[hidden] { display: none; }
+.floating-overlay { opacity: .5; }
+.floating-overlay.overlay-active { opacity: 1; }
+/* Shortcut labels remain discoverable in compact menus. */
+.topbar .menu-shortcut, .flight-deck .menu-shortcut { display: inline; white-space: nowrap; }

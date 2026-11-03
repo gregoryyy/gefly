@@ -5,7 +5,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
-import { startOrResume } from './flight-actions.mjs';
+import { installSceneryFixture, prepareFlightUI, startOrResume } from './flight-actions.mjs';
 const app = fileURLToPath(new URL('..', import.meta.url)), origin = 'http://127.0.0.1:5213';
 const output = fileURLToPath(new URL('../../output/flight/', import.meta.url));
 const server = spawn(process.execPath, ['--input-type=module', '-e', `import{createServer}from'vite';const s=await createServer({server:{host:'127.0.0.1',port:5213,strictPort:true,hmr:false,watch:{ignored:['**/*']}}});await s.listen();s.printUrls();`], { cwd: app, stdio: 'pipe' });
@@ -56,8 +56,9 @@ try {
       }
     };
   });
-  await page.goto(origin);
+  await installSceneryFixture(page); await page.goto(origin);
   await page.waitForFunction(() => !document.querySelector('#start').disabled && window.kapStates.at(-1)?.kap_profile === 1, null, { timeout: 60000 });
+  await prepareFlightUI(page);
   const state = () => page.evaluate(() => window.kapStates.at(-1));
   const stats = async () => {
     const count = await page.evaluate(() => window.kapStats.length);

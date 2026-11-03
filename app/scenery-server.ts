@@ -1,0 +1,142 @@
+import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import type { IncomingMessage, ServerResponse } from 'node:http';
+
+const LIMIT = 2 * 1024 * 1024;
+const WORLD = 20037508.342789244;
+// WGS84 [west, south, east, north]. Public cartography covers the five-state
+// inventory; photography remains within its separately reviewed regional area.
+const MAP_BOUNDS = [6, 47, 14, 51.75] as const;
+const IMAGERY_BOUNDS = [8, 49, 10, 50.75] as const;
+const SOURCES = {
+  map: ['https://sgx.geodatenzentrum.de/wms_topplus_open', 'web'],
+  hessen: ['https://www.gds-srv.hessen.de/cgi-bin/lika-services/ogc-free-images.ows', 'he_dop_rgb'],
+  bavaria: ['https://geoservices.bayern.de/od/wms/dop/v1/dop40', 'by_dop40c'],
+  bw: ['https://owsproxy.lgl-bw.de/owsproxy/ows/WMS_LGL-BW_ATKIS_DOP_20_C', 'IMAGES_DOP_20_RGB'],
+} as const;
+type Source = keyof typeof SOURCES;
+type Fetcher = typeof fetch;
+type Result = { bytes: Buffer; type: string; sources: string; partial: boolean; expires: number };
+export interface SceneryOptions { fetcher?: Fetcher; cacheBytes?: number; python?: string }
+
+class Semaphore {
+  private active = 0;
+  private queue: Array<() => void> = [];
+  private readonly max: number;
+  constructor(max: number) { this.max = max; }
+  async run<T>(work: () => Promise<T>): Promise<T> {
+    if (this.active < this.max) this.active++;
+    else await new Promise<void>((resolve) => this.queue.push(resolve));
+    try { return await work(); } finally { const next = this.queue.shift(); if (next) next(); else this.active--; }
+  }
+}
+
+function bbox(z: number, x: number, y: number): [number, number, number, number] {
+  const span = 2 * WORLD / 2 ** z;
+  return [-WORLD + x * span, WORLD - (y + 1) * span, -WORLD + (x + 1) * span, WORLD - y * span];
+}
+function latitude(y: number): number { return (2 * Math.atan(Math.exp(y / WORLD * Math.PI)) - Math.PI / 2) * 180 / Math.PI; }
+function longitude(x: number): number { return x / WORLD * 180; }
+function pngValid(data: Uint8Array, size: number): boolean {
+  const b = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+  return b.length >= 33 && b.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10])) &&
+    b.toString('ascii', 12, 16) === 'IHDR' && b.readUInt32BE(16) === size && b.readUInt32BE(20) === size;
+}
+function urlFor(source: Source, box: number[], size: number): string {
+  const [base, layer] = SOURCES[source];
+  const url = new URL(base);
+  const params: Record<string, string> = { SERVICE: 'WMS', REQUEST: 'GetMap', VERSION: '1.1.1', LAYERS: layer,
+    STYLES: '', SRS: 'EPSG:3857', BBOX: box.join(','), WIDTH: String(size), HEIGHT: String(size), FORMAT: 'image/png', TRANSPARENT: 'TRUE' };
+  for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
+  return url.href;
+}
+async function readBounded(response: Response): Promise<Buffer> {
+  if (!response.ok || !response.body || !/^image\/png(?:;|$)/i.test(response.headers.get('content-type') || '') || Number(response.headers.get('content-length') || 0) > LIMIT) throw new Error('invalid upstream response');
+  const reader = response.body.getReader();
+  const chunks: Buffer[] = []; let size = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > LIMIT) throw new Error('upstream too large');
+      chunks.push(Buffer.from(value));
+    }
+  } finally { await reader.cancel(); }
+  return Buffer.concat(chunks, size);
+}
+function compose(images: Buffer[], python: string): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const script = fileURLToPath(new URL('../utils/scenery/compose.py', import.meta.url));
+    const child = spawn(python, [script], { stdio: ['pipe', 'pipe', 'ignore'], env: { PATH: process.env.PATH || '/usr/bin:/bin' } });
+    let done = false, size = 0; const chunks: Buffer[] = [];
+    const finish = (error?: Error) => { if (done) return; done = true; clearTimeout(timer); if (error) { child.kill(); reject(error); } else resolve(Buffer.concat(chunks, size)); };
+    const timer = setTimeout(() => finish(new Error('compositor timeout')), 15000);
+    child.on('error', () => finish(new Error('compositor unavailable')));
+    child.stdin.on('error', () => finish(new Error('compositor input failed')));
+    child.stdout.on('data', (chunk: Buffer) => { size += chunk.length; if (size > LIMIT) finish(new Error('compositor output too large')); else chunks.push(chunk); });
+    child.on('close', (code) => code === 0 && size > 3 ? finish() : finish(new Error('compositor failed')));
+    child.stdin.end(JSON.stringify(images.map((image) => image.toString('base64'))));
+  });
+}
+
+/** Fixed-source, memory-bounded local XYZ proxy. No request parameter becomes a URL or path. */
+export function sceneryMiddleware(options: SceneryOptions = {}) {
+  const fetcher = options.fetcher || fetch, python = options.python || 'python3';
+  const capacity = Math.max(0, Math.min(32 * 1024 * 1024, options.cacheBytes ?? 32 * 1024 * 1024));
+  const network = new Semaphore(4), composers = new Semaphore(2), jobs = new Semaphore(8);
+  const cache = new Map<string, Result>(), pending = new Map<string, Promise<Result>>(); let cacheSize = 0;
+  async function acquire(source: Source, box: number[], size: number): Promise<Buffer> {
+    return network.run(async () => {
+      const response = await fetcher(urlFor(source, box, size), { redirect: 'error', signal: AbortSignal.timeout(15000) });
+      const bytes = await readBounded(response);
+      if (!pngValid(bytes, size)) throw new Error('invalid PNG dimensions');
+      return bytes;
+    });
+  }
+  async function generate(kind: string, box: number[]): Promise<Result> {
+    if (kind === 'map') return { bytes: await acquire('map', box, 256), type: 'image/png', sources: 'BKG', partial: false, expires: Date.now() + 3600000 };
+    const [west, south, east, north] = [longitude(box[0]), latitude(box[1]), longitude(box[2]), latitude(box[3])];
+    const selected: Source[] = [];
+    if (north >= 49.35) selected.push('hessen');
+    if (east >= 8.96) selected.push('bavaria');
+    if (south <= 49.8) selected.push('bw');
+    const results = await Promise.allSettled(selected.map((source) => acquire(source, box, 512)));
+    const images: Buffer[] = [], sources: string[] = [];
+    results.forEach((result, i) => { if (result.status === 'fulfilled') { images.push(result.value); sources.push(selected[i]); } });
+    if (!images.length) throw new Error('imagery unavailable');
+    const bytes = await composers.run(() => compose(images, python));
+    return { bytes, type: 'image/png', sources: sources.join(','), partial: sources.length !== selected.length, expires: Date.now() + 900000 };
+  }
+  return (req: IncomingMessage, res: ServerResponse, next: () => void): void => {
+    const url = req.url || '';
+    if (!url.startsWith('/scenery/')) { next(); return; }
+    const match = /^\/scenery\/(map|imagery)\/(\d{1,2})\/(\d{1,6})\/(\d{1,6})\.(png|jpg)$/.exec(url);
+    if (!match || !['GET', 'HEAD'].includes(req.method || '') || match[5] !== 'png') { res.writeHead(404).end(); return; }
+    const [, kind, zs, xs, ys] = match; const z = Number(zs), x = Number(xs), y = Number(ys), n = 2 ** z;
+    if (z < (kind === 'map' ? 5 : 7) || z > (kind === 'map' ? 16 : 15) || x >= n || y >= n || String(z) !== zs || String(x) !== xs || String(y) !== ys) { res.writeHead(404).end(); return; }
+    const box = bbox(z, x, y);
+    const [west, south, east, north] = kind === 'map' ? MAP_BOUNDS : IMAGERY_BOUNDS;
+    if (longitude(box[2]) < west || longitude(box[0]) > east || latitude(box[3]) < south || latitude(box[1]) > north) { res.writeHead(404).end(); return; }
+    const key = `${kind}/${z}/${x}/${y}`;
+    let result = cache.get(key);
+    if (result && result.expires <= Date.now()) { cache.delete(key); cacheSize -= result.bytes.length; result = undefined; }
+    if (result) { cache.delete(key); cache.set(key, result); }
+    let task = result ? Promise.resolve(result) : pending.get(key);
+    if (!task) {
+      if (pending.size >= 128) { res.writeHead(503, { 'Cache-Control': 'no-store' }).end(); return; }
+      task = jobs.run(() => generate(kind, box)).then((value) => {
+        if (value.bytes.length <= capacity) {
+          while (cacheSize + value.bytes.length > capacity) { const oldest = cache.keys().next().value as string; cacheSize -= cache.get(oldest)!.bytes.length; cache.delete(oldest); }
+          cache.set(key, value); cacheSize += value.bytes.length;
+        }
+        return value;
+      });
+      pending.set(key, task); task.finally(() => pending.delete(key)).catch(() => {});
+    }
+    task.then((value) => {
+      res.writeHead(200, { 'Content-Type': value.type, 'Content-Length': value.bytes.length, 'Cache-Control': 'private, max-age=300', 'X-Scenery-Sources': value.sources, 'X-Scenery-Partial': String(value.partial), 'X-Content-Type-Options': 'nosniff' });
+      res.end(req.method === 'HEAD' ? undefined : value.bytes);
+    }).catch(() => { if (!res.headersSent) res.writeHead(502, { 'Cache-Control': 'no-store' }).end(); });
+  };
+}

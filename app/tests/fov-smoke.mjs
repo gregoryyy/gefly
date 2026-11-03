@@ -1,4 +1,4 @@
-import { startOrResume } from './flight-actions.mjs';
+import { installSceneryFixture, prepareFlightUI, startOrResume } from './flight-actions.mjs';
 // Actual Chrome renderer and JSBSim input regression; not aircraft fidelity validation.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -56,10 +56,11 @@ try {
       }
     };
   });
-  await page.goto(origin);
+  await installSceneryFixture(page); await page.goto(origin);
   const waitReady = () => page.waitForFunction(() => !document.querySelector('#start').disabled
     && window.__fovStates.at(-1)?.cas_mps > 0 && document.querySelector('#scene').dataset.fovDeg);
   await waitReady();
+  await prepareFlightUI(page);
   const fov = async () => Number(await page.locator('#scene').getAttribute('data-fov-deg'));
   const waitFov = expected => page.waitForFunction(expected => Number(document.querySelector('#scene').dataset.fovDeg) === expected, expected);
   const stats = async () => {
@@ -123,11 +124,12 @@ try {
   assert.equal(await fov(), chosen, 'browser pinch/ctrl-wheel is not scene zoom');
   await page.locator('#view-menu > summary').click(); await page.locator('#toggle-map').click();
   await page.waitForFunction(() => document.querySelector('[aria-label="Zoom map in"]')?.disabled === false);
+  await page.locator('.practice-map-heading').click();
   const mapBox = await page.locator('.practice-map-viewport').boundingBox();
   await page.mouse.move(mapBox.x + mapBox.width / 2, mapBox.y + mapBox.height / 2);
   await page.mouse.wheel(0, -120); await page.waitForTimeout(100);
   assert.equal(await fov(), chosen, 'map scrolling cannot change the flight camera');
-  await page.getByRole('button', { name: 'Close practice map', exact: true }).click();
+  await page.getByRole('button', { name: 'Close flight map', exact: true }).click();
   await page.locator('#altimeter-open').click();
   await page.locator('#altimeter-dialog').waitFor({ state: 'visible' });
   await page.locator('#altimeter-title').hover(); await page.mouse.wheel(0, -120);

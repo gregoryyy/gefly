@@ -9,6 +9,8 @@ export interface ImageryObservations {
   regionalLevel: number | null;
   regionalFailedTiles: number;
   tilesLoaded: boolean;
+  /** Optional streamed regional photography/map fallback, separate from the bundled pyramid. */
+  liveImagery?: 'loading' | 'ready' | 'degraded';
 }
 export type ImageryOutcome = 'loading' | 'ready' | 'degraded' | 'error' | 'outside-coverage';
 
@@ -18,13 +20,18 @@ export function imageryStatusText(o: Readonly<ImageryObservations>): { outcome: 
   const base = starterStatus(o);
   if (o.regional !== 'failed' || !o.settled) return base;
   // A whole-package failure is always announced, whatever the starter coverage says.
-  return { outcome: base.outcome === 'ready' ? 'degraded' : base.outcome, text: base.text ? `${REGIONAL_UNAVAILABLE_TEXT} ${base.text}` : REGIONAL_UNAVAILABLE_TEXT };
+  const notice = o.liveImagery
+    ? 'Bundled regional detail imagery unavailable; live imagery/map fallback shown.'
+    : REGIONAL_UNAVAILABLE_TEXT;
+  return { outcome: base.outcome === 'ready' ? 'degraded' : base.outcome, text: base.text ? `${notice} ${base.text}` : notice };
 }
 
 function starterStatus(o: Readonly<ImageryObservations>): { outcome: ImageryOutcome; text: string } {
   const regional = o.regional === 'ready' ? o.regionalLevel : null;
   if (!o.settled) return { outcome: 'loading', text: o.slow ? 'Aerial imagery is taking longer to load. Controls remain available.' : 'Loading the local Egelsbach aerial photograph…' };
   if (regional === null && !o.detailLoaded && !o.overviewLoaded && !o.airportLoaded) return { outcome: 'error', text: 'Starter photographs unavailable. Reload to retry; flight controls still work.' };
+  if (regional === null && o.liveImagery === 'degraded') return { outcome: 'degraded', text: 'Live photography unavailable or incomplete · map fallback' };
+  if (regional === null && o.liveImagery) return { outcome: 'ready', text: o.liveImagery === 'ready' ? 'Live photography / map fallback · capture dates unknown' : 'Loading live regional scenery…' };
   if (regional === null && !(o.airportLoaded && o.insideAirport) && !(o.detailLoaded && o.insideDetail) && !(o.overviewLoaded && o.insideOverview)) return { outcome: 'outside-coverage', text: 'Outside this starter imagery area. No photographic ground coverage here.' };
   if (o.airportLoaded && o.insideAirport) return { outcome: 'ready', text: '' };
   if (regional !== null) {

@@ -1,4 +1,4 @@
-import { startOrResume } from './flight-actions.mjs';
+import { installSceneryFixture, prepareFlightUI, startOrResume } from './flight-actions.mjs';
 // Actual Chrome/JSBSim engine and basic-autopilot regression, not handling validation.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -61,8 +61,9 @@ try {
       }
     };
   });
-  await page.goto(origin);
+  await installSceneryFixture(page); await page.goto(origin);
   await page.waitForFunction(() => !document.querySelector('#start').disabled && window.__engineStates.at(-1)?.prop_radps > 0);
+  await prepareFlightUI(page);
   const state = () => page.evaluate(() => window.__engineStates.at(-1));
   const stats = async () => {
     const count = await page.evaluate(() => window.__engineStats.length);

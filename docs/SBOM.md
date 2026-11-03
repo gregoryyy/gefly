@@ -10,16 +10,20 @@ plan rather than assuming a single engine license covers all these materials.
 
 ## Experimental browser application
 
-The local [application](../app/README.md) pins three.js 0.187.0 (MIT) to generate the original generic aircraft visual, Vite 8.3.5 (MIT), TypeScript 7.0.2 (Apache-2.0), @types/three 0.187.0 (MIT) and Playwright 1.64.1 (Apache-2.0). Runtime dependencies are CesiumJS 1.146.0 and MapLibre GL JS 6.16.0, described below, and three.js. Exact transitive versions/integrity hashes are in `app/package-lock.json`. **Audit, 2026-11-03 07:36 Europe/Berlin:** the lockfile was last changed in `3e8fc63` (SHA-256 `33d24625cb9849f2dc6ff594229f2464befa83db318f04a652e3efa5dca39342`; 125 packages: 55 prod, 70 dev, 48 optional). It was audited with npm 11.19.1 on Node v24.22.1 against the public registry advisory database. `npm audit --omit=dev` and the full `npm audit` each reported 0 vulnerabilities and exited 0. The earlier 2026-11-01 zero-advisory audit came before the TypeScript 7, Vite 8, Cesium and MapLibre changes and does not cover them. An audit is a dated advisory lookup, not a security review. The three.js license is retained under [LICENSES](../LICENSES/three-MIT.txt). Fonts use local system fallbacks. Application, engine and the bundled Hessen starter image are local; there are no runtime imagery-service requests.
+The local [application](../app/README.md) pins three.js 0.187.0 (MIT) to generate the original generic aircraft visual, Vite 8.3.5 (MIT), TypeScript 7.0.2 (Apache-2.0), @types/three 0.187.0 (MIT) and Playwright 1.64.1 (Apache-2.0). Runtime dependencies are CesiumJS 1.146.0 and MapLibre GL JS 6.16.0, described below, and three.js. Exact transitive versions/integrity hashes are in `app/package-lock.json`. **Audit, 2026-11-03 07:36 Europe/Berlin:** the lockfile was last changed in `3e8fc63` (SHA-256 `33d24625cb9849f2dc6ff594229f2464befa83db318f04a652e3efa5dca39342`; 125 packages: 55 prod, 70 dev, 48 optional). It was audited with npm 11.19.1 on Node v24.22.1 against the public registry advisory database. `npm audit --omit=dev` and the full `npm audit` each reported 0 vulnerabilities and exited 0. The earlier 2026-11-01 zero-advisory audit came before the TypeScript 7, Vite 8, Cesium and MapLibre changes and does not cover them. An audit is a dated advisory lookup, not a security review. The three.js license is retained under [LICENSES](../LICENSES/three-MIT.txt). Fonts use local system fallbacks. Application, engine, physical terrain and bundled photographs are local. The separate fixed-source scenery proxy now makes public WMS requests during flight/map use; its runtime dependencies and source rights are inventoried below.
 
-JSBSim and c172x remain generated local research assets under the existing study recipe and rights limitations below. Vite serves only the twelve named worker/runtime files in development. Shared project-owned helpers are bundled with the UI; the generated JSBSim files and worker endpoint remain outside the production UI build, which is not a deployable flight simulator. No runtime model assets or source SDKs are committed or published.
+JSBSim and c172x remain generated local research assets under the existing study recipe and rights limitations below. Vite serves only the explicitly allowlisted worker/runtime files in `app/runtime.ts`. Shared project-owned helpers are bundled with the UI; generated JSBSim files, the worker endpoint and live scenery proxy remain outside the production UI build, which is not a deployable flight simulator. No runtime aircraft-model assets or source SDKs are committed or published.
 
 
-CesiumJS 1.146.0 (Apache-2.0) now renders the actual geographic scene. Its workers, widgets, textures, license and third-party inventories come from the locked npm package, without Cesium ion or commercial base layers; see [license](../LICENSES/Cesium-Apache-2.0.txt). A fixed official Hessen ATKIS DOP20 starter photograph is bundled under `app/public/imagery/`: [source bounds, request URL, byte hash and license](../app/public/imagery/SOURCE.json). The 1024×1024 JPEG is an unmodified GetMap image from the `he_dop_rgb` layer, covering 8.62–8.66° E / 49.95–49.975° N (approximately 3 × 2.8 km). [Dataset terms](https://opendata.hessen.de/de/dataset/atkis-dop-20) specify [DL-DE Zero 2.0](https://www.govdata.de/dl-de/zero-2-0); voluntary source credit remains visible. No acquisition date or current airport conditions are claimed. Retrieval time and layer edition were also not recorded. The live `he_dop_rgb` layer has no time dimension, so the request URL does not pin an edition. SOURCE.json therefore records `retrievedAt`/`sourceEdition` as null and gives the first commit time as `retrievedNotLaterThan`. The photographs are now draped over the separately sourced regional terrain on normal flights, or the ellipsoid on explicit flat studies. Imagery alone establishes no accepted airport elevation, chart geometry or navigational authority. A bundled 512×512 coarse overview adds regional context at 8.4–8.9° E / 49.8–50.1° N; its separate byte hash and request are also recorded in SOURCE.json. The application labels overview-only coverage and reports missing coverage beyond it; EDDF/100 NM expansion remains future work.
+CesiumJS 1.146.0 (Apache-2.0) now renders the actual geographic scene. Its workers, widgets, textures, license and third-party inventories come from the locked npm package, without Cesium ion or commercial base layers; see [license](../LICENSES/Cesium-Apache-2.0.txt). A fixed official Hessen ATKIS DOP20 starter photograph is bundled under `app/public/imagery/`: [source bounds, request URL, byte hash and license](../app/public/imagery/SOURCE.json). The 1024×1024 JPEG is an unmodified GetMap image from the `he_dop_rgb` layer, covering 8.62–8.66° E / 49.95–49.975° N (approximately 3 × 2.8 km). [Dataset terms](https://opendata.hessen.de/de/dataset/atkis-dop-20) specify [DL-DE Zero 2.0](https://www.govdata.de/dl-de/zero-2-0); voluntary source credit remains visible. No acquisition date or current airport conditions are claimed. Retrieval time and layer edition were also not recorded. The live `he_dop_rgb` layer has no time dimension, so the request URL does not pin an edition. SOURCE.json therefore records `retrievedAt`/`sourceEdition` as null and gives the first commit time as `retrievedNotLaterThan`. The photographs are now draped over the separately sourced regional terrain on normal flights, or the ellipsoid on explicit flat studies. Imagery alone establishes no accepted airport elevation, chart geometry or navigational authority. A bundled 512×512 coarse overview adds regional context at 8.4–8.9° E / 49.8–50.1° N; its separate byte hash and request are also recorded in SOURCE.json. The application labels overview-only coverage when regional imagery is unavailable. The bundled overview has bounded coverage; live regional map/photo layers provide additional context as described below. Complete EDDF/100 NM coverage remains future work.
 
-Live adaptive WMS requests were removed after excessive refinement and service timeouts. The tested source also rejects images over 3000 pixels with an HTTP 200 XML exception. Bundling the verified starter image avoids that runtime dependency; research-model runtime data remains excluded from distribution.
+The earlier unrestricted adaptive WMS experiment was removed after excessive
+refinement/service timeouts. The current replacement uses bounded XYZ paths,
+fixed public sources, small PNG dimensions, deadlines and memory/concurrency
+limits. Verified bundled photography remains available independently; the live
+service does not grant additional airport accuracy or currentness.
 
-MapLibre GL JS 6.16.0 (BSD-3-Clause) is pinned for the lazy-loaded practice map. Its worker is explicitly bundled by Vite; application resources, imagery metadata and raster photographs remain local, with no external style/tiles/glyph service. The complete [MapLibre license](../LICENSES/MapLibre-BSD-3-Clause.txt) is retained in source and copied into UI build output. Geographic conversion follows the [official image-source corner convention](https://maplibre.org/maplibre-gl-js/docs/API/classes/ImageSource/). The plotted route uses at most 600 endpoint-preserving samples of the already bounded flight trace; it establishes no navigational/chart or airport-reference accuracy.
+MapLibre GL JS 6.16.0 (BSD-3-Clause) is pinned for the lazy-loaded practice map. Its worker is explicitly bundled by Vite; no external style/glyph service is used. The map adds local versioned airport points and the fixed-source public scenery endpoints below. The complete [MapLibre license](../LICENSES/MapLibre-BSD-3-Clause.txt) is retained in source and copied into UI build output. Geographic conversion follows the [official image-source corner convention](https://maplibre.org/maplibre-gl-js/docs/API/classes/ImageSource/). The plotted route uses at most 600 endpoint-preserving samples of the already bounded flight trace; it establishes no navigational/chart or airport-reference accuracy.
 
 ## Current development tools
 
@@ -80,9 +84,11 @@ The runtime requirements are recorded in the pinned
 and [setup-python source](https://github.com/actions/setup-python/blob/6d4fd22b20465ccc0f7354476588e8df7c9ca0e0/README.md).
 These are CI action runtimes, not application dependencies. Action/interpreter
 setup can download tools; the shared gate then uses Git, Node standard libraries
-and the Python standard library. Its only package install is the app's npm dependencies
+and the Python standard library. Package installation includes the app's npm dependencies
 from the lockfile via `npm ci --ignore-scripts` (no lifecycle scripts), in the
-browser-application job and in the runner's app phase. It invokes no live peer
+browser-application job and in the runner's app phase. The browser-application
+job separately installs pinned Pillow with Python 3.11 for offline scenery-proxy
+tests; those tests use supplied responses rather than live WMS. It invokes no live peer
 provider, PDF/browser/TeX process or simulator runtime. Tests mock provider calls.
 Value files pin the aircraft manifest by id, version and SHA-256 of the file bytes;
 the validator rejects duplicate JSON keys.
@@ -162,11 +168,11 @@ validated aircraft/region model.
 | JSBSim engine and included aircraft data / Aeromatic | Can an applicable C172 model meet reference cases through a suitable browser/deployment adapter? Pin engine/model versions and inspect rights separately. **Selected** (Q17; LGPL-2.1-or-later accepted as copyleft exception; bundled aircraft data not shipped). Studied in [studies/e1-jsbsim](../studies/e1-jsbsim/README.md): PyPI 1.3.3 / `v1.3.3`@`66f7faf`, engine LGPL-2.1-or-later per source headers; `c172x` data says "GPL" (unversioned) and "not to be sold"; engine/propeller/systems files carry no notice. Q5 compatibility review pending. |
 | FlightGear C172P model/package | Which flight/model/cockpit components are portable and applicable? Inspect component/asset rights and dependencies instead of importing a whole package by assumption. |
 | Existing JSBSim WASM wrapper | Is the actual early-stage wrapper maintainable and adequate? Review wrapper and bundled engine licenses and run browser/replay budgets before adoption. |
-| CesiumJS 1.146.0 | Studied in [studies/e1-browser/render](../studies/e1-browser/render/README.md) via CDN; Apache-2.0 (permissive). Ion token disabled, no ion/Bing assets. Not adopted in the application yet: `app/package.json` and `app/package-lock.json` neither declare nor lock CesiumJS, and `app/` does not import it (the local prototype renders with three.js). The study still uses CDN loading without SRI. |
+| CesiumJS 1.146.0 | Studied in [studies/e1-browser/render](../studies/e1-browser/render/README.md) via CDN; Apache-2.0 (permissive). Now adopted and locked in the application, with local package assets and no ion/Bing service. The older study's CDN loading without SRI is historical study behavior, not the app's delivery path. |
 | three.js 0.187.0 | Studied in [studies/e1-browser/render](../studies/e1-browser/render/README.md) via CDN; MIT (permissive). Adopted through the application lockfile for the local prototype; the older study still uses CDN loading without SRI. |
 | emsdk 6.0.13 | Build tool for the JSBSim WASM study ([sim](../studies/e1-browser/sim/README.md)); not bundled; build outputs not committed. |
 | OpenStreetMap data | Assess relevant basemap/coverage and ODbL obligations; public tile service access is a separate policy and hosting decision. |
-| OurAirports data | Candidate airport records with stated public-domain terms and accuracy limitations; not an accepted substitute for EDDF's official ARP or authoritative procedures. |
+| OurAirports data | Adopted as a bounded, hash-pinned 731-entry five-state community map directory, with public-domain terms and accuracy limitations; not an accepted substitute for EDDF's official ARP, surveyed ground or authoritative procedures. |
 | Copernicus elevation/surface products | Select product/edition, distinguish surface from terrain, review vertical reference/accuracy, attribution and actual download/service access. |
 | DFS/AIP and EAD reference material | Verify viewing, extraction and redistribution permissions; public consultation is not an open chart/navigation-data grant or proof of current operational coverage. |
 
@@ -256,7 +262,8 @@ not invented satellite photography. Full-resolution tiled imagery/terrain and
 complete 100 NM coverage remain later work.
 
 The KAP 140 operating model adds project-authored worker modules `kap140.js` and
-`navigation.js` (twelve allowlisted runtime files in total, including the independent altitude alerter). The prepared
+`navigation.js`; `terrain-stream.js` extends the explicit runtime allowlist for
+regional loading. The prepared
 `c172ap.xml` preserves upstream gains/notices and records source/prepared hashes;
 generated aircraft/runtime files remain local and are not redistributed. Native
 VS/ALT output is separate from the legacy engine/AP group. Manufacturer manuals
@@ -291,7 +298,82 @@ records exact raw requests/hashes, and the manifest binds derived tile bytes.
 Capture dates remain unknown. Effective output is approximately 3.07 m at level 14
 and 1.54 m at level 15 near 50°N; the existing approximately 0.75 m EDFE overlay
 remains separate. No npm runtime dependency is added. The offline compiler uses
-Pillow 11.2.1 (MIT-CMU; authoring only), pinned in
+Pillow 11.2.1 (MIT-CMU; authoring for this offline compiler), pinned in
 [requirements](../utils/imagery/requirements.txt), with the installed package's
 license retained. See [research/rights](research/2026-11-03-regional-textures.md)
 and [reproduction](../utils/imagery/README.md).
+
+## Streamed regional terrain, airport directory and live photography
+
+The [regional terrain manifest](../app/public/terrain/region/manifest.json)
+declares 42 tiles over 8.25–10°E / 49.25–50.75°N, each 133,128 bytes; their total
+is 5,591,376 bytes. BKG DGM200 uses EPSG:25832 and DHHN2016 normal heights at
+200 m source spacing, under DL-DE-BY-2.0. The ZIP SHA-256 is
+`db82ad95da97bf9b8a5b4eab7aa856cd6f67bb0caaec551d21d12c7807ab3216`;
+the extracted TIFF SHA-256 is
+`2921c7f92b970bb115ce94d6d19eb42a7735ca8c60b176660567dd1ffb62cd1f`.
+Source surveys date approximately 2000–2019. GCG2016/2023 West is the existing
+CC-BY-4.0 source ZIP, SHA-256
+`16b2f09996aee74eaa647fde4b7724ade17e384be534f38d23d9d229f30520c3`.
+The compiler uses exact PROJ coordinates and source-centre bilinear interpolation
+on a shared lattice, slices common edges and writes interleaved float32 H/ζ.
+Native/render sampling adds a derived fine/coarse transition. Per-tile hashes,
+compiler hash, source URLs and modifications are in the manifest; see
+[package/reproduction](../app/public/terrain/region/README.md). No source ZIP or
+GIS library is needed by the browser while flying.
+
+`app/public/airports/` contains 731 entries from Bavaria, Baden-Württemberg,
+Hesse, Rhineland-Palatinate and Saarland, preserving all source types, including
+244 heliports and 41 closed facilities, from the
+[OurAirports public-domain inventory](https://ourairports.com/data/). Pinned
+commit `e86a650a968ba239a1288f96c05fcb80688e77a6`, CSV SHA-256
+`6852f06007ec1154256faff98edb8bbfbbce93fdb279525940864f07e9d90b32`;
+the 121,497-byte selected JSON has SHA-256
+`dab6325f2948d4e93b36e3bb6b754ecb12c5f4b01127a82706dc521309fee6ad`.
+The compiler keeps identifiers, coordinates, type and optional elevation, with
+edition/rights in its manifest. Community positions/elevations do not establish
+runway, navigation or current operational applicability.
+
+The development `/scenery` proxy adds these unversioned public services; they are
+not bundled source datasets or commercial provider integrations:
+
+| Source | Fixed service/layer | Rights and visible credit |
+| --- | --- | --- |
+| BKG TopPlusOpen | `https://sgx.geodatenzentrum.de/wms_topplus_open`, `web` | DL-DE-BY-2.0; linked BKG/year/license and [source inventory](https://sgx.geodatenzentrum.de/web_public/gdz/datenquellen/datenquellen_topplusopen.html). Map fallback, not photography/chart. |
+| Hessen HVBG DOP20 | `https://www.gds-srv.hessen.de/cgi-bin/lika-services/ogc-free-images.ows`, `he_dop_rgb` | DL-DE-Zero-2.0; HVBG credit retained. 20 cm source, not output resolution. |
+| Bavaria DOP40 | `https://geoservices.bayern.de/od/wms/dop/v1/dop40`, `by_dop40c` | CC-BY-4.0; © Bayerische Vermessungsverwaltung (2026), linked LDBV/license. 40 cm source. |
+| Baden-Württemberg DOP20 | `https://owsproxy.lgl-bw.de/owsproxy/ows/WMS_LGL-BW_ATKIS_DOP_20_C`, `IMAGES_DOP_20_RGB` | DL-DE-BY-2.0; © LGL-BW (2026), linked LGL/license. 20 cm source. |
+
+Changes: WMS EPSG:3857 resampling, 256 px map or 512 px photo requests, transparent
+photo composition and PNG encoding. Capture dates remain unknown. Cached bytes
+are temporary and not a frozen Review image/video snapshot; request/resource
+limits and external flow are in [SEC](SEC.md). Full EDDF/100 NM and global
+provider adoption remain separate work.
+
+The live compositor now requires **Pillow 11.2.1**, pinned in
+[`utils/scenery/requirements.txt`](../utils/scenery/requirements.txt), under
+MIT-CMU with PIL/Pillow copyright and its installed wheel's retained third-party
+notices. It is a Python scenery-server runtime dependency as well as an existing
+authoring tool, not an npm/browser/physics dependency. Python standard-library
+process/JSON/base64 modules wrap it. No Pillow code is vendored into the project;
+[THIRD_PARTY_NOTICES](../THIRD_PARTY_NOTICES.md) retains the core license notice.
+Static UI output does not include the Vite proxy; a production service and its
+packaged dependency inventory remain hosting decisions.
+
+## Southern Germany map-only navigation
+
+`app/public/mapdata/` adds 144 German OurAirports radio-beacon records from the
+same pinned commit as the five-state airport catalogue. The full navaids CSV hash
+is `d7292380662c33a95214945023ec0a5b13189599305fd18be739e167a97a9bd1`.
+OurAirports releases these data as public domain/Unlicense, without an accuracy
+guarantee. The snapshot is dated 2026-11-02 and was retrieved 2026-11-03.
+The declared 6–14°E / 47–51.75°N envelope includes adjoining states; navaids lack
+state membership fields. No official completeness/current-AIS claim is made.
+
+The package also derives 66 German LOC/ILS parent records and their explicit
+components from the existing GPL-2.0-or-later NAV810 2013.10 source, before
+FlightGear scenery-height calibration. It retains consumed raw rows, source
+notice and full license. The final 277-point, 175,504-byte GeoJSON SHA-256 is
+`f485303ecf944d874a7cc7154a6ff0aa0f3de75c9c305372a9bd34bf1d2439d5`.
+This is a separate map-only package; the receiver/worker inventory is unchanged.
+See [source and rebuild instructions](../app/public/mapdata/README.md).
