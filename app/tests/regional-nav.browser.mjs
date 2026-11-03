@@ -4,8 +4,8 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 const app = fileURLToPath(new URL('..', import.meta.url));
-const origin = 'http://127.0.0.1:5211';
-const server = spawn(process.execPath, ['--input-type=module', '-e', `import {createServer} from 'vite'; const s=await createServer({server:{host:'127.0.0.1',port:5211,strictPort:true,hmr:false}}); await s.listen();`], { cwd: app, stdio: 'pipe' });
+const origin = 'http://127.0.0.1:5218';
+const server = spawn(process.execPath, ['--input-type=module', '-e', `import {createServer} from 'vite'; const s=await createServer({server:{host:'127.0.0.1',port:5218,strictPort:true,hmr:false}}); await s.listen();`], { cwd: app, stdio: 'pipe' });
 let browser;
 try {
   for (let i = 0; i < 100; i++) { try { if ((await fetch(origin)).ok) break; } catch {} await new Promise(r => setTimeout(r, 100)); if (i === 99) throw Error('Vite did not start'); }
@@ -32,6 +32,18 @@ try {
     return { id: loc.id, freq: loc.frequency_khz, name: loc.name };
   });
   await page.locator('#nav-stations-open').click();
+  assert(await page.locator('.nav-stations-nearby').isChecked());
+  const nearbyDistances = await page.locator('.nav-station span').allTextContents();
+  assert(nearbyDistances.length > 0);
+  assert(nearbyDistances.every(text => Number(text.match(/([\d.]+) NM$/)?.[1]) <= 50));
+  await page.locator('.nav-stations-search').fill('FFM');
+  assert((await page.locator('.nav-station').count()) > 0);
+  assert((await page.locator('.nav-station').allTextContents()).every(text => /FFM/i.test(text)));
+  await page.locator('.nav-stations-search').fill('');
+  const nearbyCount = await page.locator('.nav-station').count();
+  await page.locator('.nav-stations-nearby').uncheck();
+  assert((await page.locator('.nav-station').count()) > nearbyCount);
+  await page.locator('.nav-stations-nearby').check();
   assert.match(await page.locator('.nav-stations-dialog').innerText(), /HISTORICAL, NOT CURRENT/);
   const row = page.locator('.nav-station').filter({ hasText: info.name }).first();
   await row.getByRole('button', { name: new RegExp(`to NAV1 standby$`) }).click();
@@ -39,7 +51,13 @@ try {
   assert.notEqual(await page.evaluate(() => window.navTest.config.radio_nav_active_khz), info.freq);
   await row.getByRole('button', { name: new RegExp(`to NAV2 standby$`) }).click();
   assert.equal(await page.evaluate(() => window.navTest.config.radio_nav2_standby_khz), info.freq);
-  await page.locator('.nav-stations-close').click();
+  await page.mouse.click(2, 2);
+  assert.equal(await page.locator('.nav-stations-dialog').evaluate(el => el.open), false);
+  assert(await page.locator('#nav-stations-open').evaluate(el => document.activeElement === el));
+  await page.locator('#nav-stations-open').click();
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('.nav-stations-dialog').evaluate(el => el.open), false);
+  assert(await page.locator('#nav-stations-open').evaluate(el => document.activeElement === el));
   await page.locator('#nav1-swap').click(); await page.locator('#nav2-swap').click();
   assert.equal(await page.locator('#nav1-gauge').getAttribute('data-station-kind'), 'LOC');
   assert.equal(await page.locator('#nav2-gauge').getAttribute('data-station-kind'), 'LOC');
@@ -52,6 +70,13 @@ try {
   assert(await page.locator('#nav1-swap').isDisabled());
   await page.locator('#nav-stations-open').click();
   assert(await page.locator('.nav-station button').first().isDisabled());
+  await page.locator('.nav-stations-search').fill('FFM');
+  assert(await page.locator('.nav-station button').first().isDisabled());
+  assert.match(await page.locator('.nav-stations-position').innerText(), /Recorded position/);
+  await page.evaluate(() => { const t = window.navTest; t.panel.update({ ...t.state, ...t.config, lat_rad: NaN }, true, true); });
+  assert(await page.locator('.nav-stations-nearby').isDisabled());
+  assert.match(await page.locator('.nav-stations-position').innerText(), /unavailable/);
+  assert.match(await page.locator('.nav-station').first().innerText(), /distance unavailable/);
   assert.equal(await page.locator('#nav1-gauge').getAttribute('data-gs-valid'), 'true');
   console.log('Regional NAV browser: standby and swap on both receivers, LOC/GS/bearing flags and read-only Review passed');
 } finally { await browser?.close(); server.kill(); }

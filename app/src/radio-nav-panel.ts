@@ -51,11 +51,18 @@ export function createRadioNavPanel(options: RadioNavOptions): {
   dialog.innerHTML = '<h2 id="radio-nav-title">Dual radio / NAV</h2><p class="radio-dialog-note">Flight continues while this panel is open.</p><div class="radio-dialog-slot"></div><button type="button" id="radio-nav-close" class="primary">Done</button>';
   const stations = document.createElement('dialog');
   stations.className = 'nav-stations-dialog'; stations.setAttribute('aria-labelledby', 'nav-stations-title');
-  stations.innerHTML = '<h2 id="nav-stations-title">Stations</h2><p>2013.10 · HISTORICAL, NOT CURRENT · teaching only</p><p>Load a frequency to standby; use the receiver swap button to activate it.</p><div class="nav-stations-list"></div><button type="button" class="nav-stations-close">Done</button>';
+  stations.innerHTML = `<div class="nav-stations-header"><h2 id="nav-stations-title">Stations</h2><button type="button" class="nav-stations-close" aria-label="Close stations">×</button></div>
+    <p>2013.10 · HISTORICAL, NOT CURRENT · teaching only<br>Load to standby, then swap to activate.</p>
+    <div class="nav-stations-filters"><label>Search name, identifier, airport or frequency <input class="nav-stations-search" type="search" autocomplete="off"></label>
+    <label><input class="nav-stations-nearby" type="checkbox" checked> Within 50 NM of aircraft</label><span class="nav-stations-position"></span></div>
+    <div class="nav-stations-list" aria-live="polite"></div>`;
   document.body.append(stations);
   const stationList = stations.querySelector<HTMLElement>('.nav-stations-list')!;
   const stationsOpen = content.querySelector<HTMLButtonElement>('#nav-stations-open')!;
   const stationsClose = stations.querySelector<HTMLButtonElement>('.nav-stations-close')!;
+  const stationSearch = stations.querySelector<HTMLInputElement>('.nav-stations-search')!;
+  const stationNearby = stations.querySelector<HTMLInputElement>('.nav-stations-nearby')!;
+  const stationPosition = stations.querySelector<HTMLElement>('.nav-stations-position')!;
   const slot = dialog.querySelector<HTMLElement>('.radio-dialog-slot')!;
   const done = dialog.querySelector<HTMLButtonElement>('#radio-nav-close')!;
   const media = window.matchMedia('(max-width: 900px)');
@@ -108,20 +115,48 @@ export function createRadioNavPanel(options: RadioNavOptions): {
     }
     demo.checked = shown?.radio_demo_enabled === 1;
   }
-  let displayedCatalogue: ReturnType<typeof getNavigationCatalogue> | undefined;
-  let displayedEnabled: boolean | undefined;
-  function renderStations(enabled: boolean): void {
+  // Great-circle distance on a spherical Earth, displayed in nautical miles.
+  function stationDistance(lat_deg: number, lon_deg: number): number | null {
+    if (!state || !Number.isFinite(state.lat_rad) || !Number.isFinite(state.lon_rad) ||
+        Math.abs(state.lat_rad) > Math.PI / 2 || Math.abs(state.lon_rad) > Math.PI ||
+        !Number.isFinite(lat_deg) || !Number.isFinite(lon_deg)) return null;
+    const lat = lat_deg * Math.PI / 180, lon = lon_deg * Math.PI / 180;
+    const a = Math.sin((lat - state.lat_rad) / 2) ** 2 + Math.cos(state.lat_rad) * Math.cos(lat) * Math.sin((lon - state.lon_rad) / 2) ** 2;
+    return 3440.065 * 2 * Math.asin(Math.sqrt(Math.min(1, Math.max(0, a))));
+  }
+  let stationRenderKey = '';
+  let stationRenderedAt = 0;
+  let displayedStationEnabled: boolean | undefined;
+  let displayedPositionAvailable: boolean | undefined;
+  let stationCatalogue: ReturnType<typeof getNavigationCatalogue> | undefined;
+  function renderStations(enabled: boolean, force = false): void {
+    if (!stations.open && !force) return;
     const catalogue = getNavigationCatalogue();
-    if (catalogue === displayedCatalogue && enabled === displayedEnabled) return;
-    displayedCatalogue = catalogue; displayedEnabled = enabled;
+    const positionAvailable = !!state && Number.isFinite(state.lat_rad) && Number.isFinite(state.lon_rad) &&
+      Math.abs(state.lat_rad) <= Math.PI / 2 && Math.abs(state.lon_rad) <= Math.PI;
+    stationNearby.disabled = !positionAvailable;
+    stationPosition.textContent = positionAvailable ? (reviewing ? 'Recorded position' : 'Displayed aircraft position') : 'Aircraft position unavailable; showing all stations.';
+    const key = JSON.stringify([enabled, stationSearch.value, stationNearby.checked, positionAvailable,
+      state?.lat_rad, state?.lon_rad, reviewing]);
+    if (!force && key === stationRenderKey && stationCatalogue === catalogue) return;
+    // Avoid replacing result buttons at simulation frequency or while a keyboard user is on one.
+    if (!force && !reviewing && positionAvailable === displayedPositionAvailable && enabled === displayedStationEnabled && stationCatalogue === catalogue &&
+        (performance.now() - stationRenderedAt < 1000 || stationList.contains(document.activeElement))) return;
+    stationRenderKey = key; stationCatalogue = catalogue; displayedStationEnabled = enabled; displayedPositionAvailable = positionAvailable; stationRenderedAt = performance.now();
     stationList.replaceChildren();
     if (!catalogue) { stationList.textContent = 'Station directory loading or unavailable.'; return; }
-    for (const record of catalogue.records) {
+    const query = stationSearch.value.trim().toLocaleLowerCase();
+    const matches = catalogue.records.map(record => ({ record, distance: stationDistance(record.lat_deg, record.lon_deg) }))
+      .filter(({ record, distance }) => (!stationNearby.checked || !positionAvailable || (distance !== null && distance <= 50)) &&
+        [record.id, record.name, record.airport, (record.frequency_khz / 1000).toFixed(2)].some(value => value?.toLocaleLowerCase().includes(query)))
+      .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity) || a.record.id.localeCompare(b.record.id));
+    if (!matches.length) { stationList.textContent = 'No stations match these filters.'; return; }
+    for (const { record, distance } of matches) {
       const row = document.createElement('div'); row.className = 'nav-station';
       const description = document.createElement('span');
       const place = [record.airport, record.runway && `RWY ${record.runway}`].filter(Boolean).join(' ');
       const capabilities = [record.kind, record.kind !== 'DME' && record.dme && 'DME', record.gs && 'GS'].filter(Boolean).join(' / ');
-      description.textContent = `${record.id} · ${record.name}${place ? ` · ${place}` : ''} · ${(record.frequency_khz / 1000).toFixed(2)} MHz · ${capabilities}`;
+      description.textContent = `${record.id} · ${record.name}${place ? ` · ${place}` : ''} · ${(record.frequency_khz / 1000).toFixed(2)} MHz · ${capabilities} · ${distance === null ? 'distance unavailable' : `${distance.toFixed(1)} NM`}`;
       row.append(description);
       for (const receiver of RECEIVERS) {
         const button = document.createElement('button'); button.type = 'button';
@@ -133,9 +168,16 @@ export function createRadioNavPanel(options: RadioNavOptions): {
       stationList.append(row);
     }
   }
-  function openStations(): void { if (!disposed && !stations.open) { renderStations(canControl()); stations.showModal(); } }
+  function openStations(): void { if (!disposed && !stations.open) { renderStations(canControl(), true); stations.showModal(); stationSearch.focus(); } }
   function closeStations(): void { stations.close(); }
+  function stationBackdrop(event: MouseEvent): void {
+    const bounds = stations.getBoundingClientRect();
+    if (event.target === stations && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) stations.close();
+  }
+  function stationFilters(): void { renderStations(canControl(), true); }
   stationsOpen.addEventListener('click', openStations); stationsClose.addEventListener('click', closeStations);
+  stations.addEventListener('click', stationBackdrop);
+  stationSearch.addEventListener('input', stationFilters); stationNearby.addEventListener('change', stationFilters);
   function change(next: RadioNavSnapshot): void {
     if (!canControl()) return;
     config = next; options.onChange({ ...config }); render();
@@ -204,6 +246,8 @@ export function createRadioNavPanel(options: RadioNavOptions): {
       opener.removeEventListener('click', open); done.removeEventListener('click', finish); dialog.removeEventListener('close', close);
       content.removeEventListener('click', click); content.removeEventListener('input', clearValidity); content.removeEventListener('change', inputChange);
       stationsOpen.removeEventListener('click', openStations); stationsClose.removeEventListener('click', closeStations);
+      stations.removeEventListener('click', stationBackdrop);
+      stationSearch.removeEventListener('input', stationFilters); stationNearby.removeEventListener('change', stationFilters);
       if (stations.open) stations.close(); stations.remove();
       media.removeEventListener('change', layout); if (dialog.open) dialog.close(); dialog.remove(); container.replaceChildren();
     },

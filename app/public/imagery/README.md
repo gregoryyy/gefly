@@ -10,3 +10,10 @@ See [source dataset](https://opendata.hessen.de/de/dataset/atkis-dop-20) and
 The photographs are frozen starter assets. Its acquisition date is unknown, and it
 supplies no accepted airport elevation, terrain, chart or current operational data.
 No research aircraft data is included in this directory.
+
+## Regional coverage
+
+[The regional pyramid](rhein-main/README.md) adds1.5–3 m output detail around
+Frankfurt and the approach/circuit area. Its source groups, transformations and
+per-tile hashes are separate from the frozen starter photographs. The current
+3D scene drapes these visual assets over the separately versioned public terrain.

@@ -78,6 +78,9 @@ try {
   await landing.locator('#start').click();
   await landing.waitForFunction(() => { const s = window.worldStates.at(-1); return s.gear_nose_wow + s.gear_left_wow + s.gear_right_wow > 0; });
   await landing.locator('#pause').click(); await landing.waitForFunction(() => document.querySelector('#status').textContent === 'Paused');
+  // The UI changes status immediately; the stats reply acknowledges the worker's
+  // queued pause before selecting the final contact frame for recorded Review.
+  await stats(landing);
   const contact = await state(landing); datum(contact); observations.contact = contact;
   assert(contact.gear_nose_load_n + contact.gear_left_load_n + contact.gear_right_load_n > 0);
   assert.equal(contact.collision_mask, 0, 'normal terrain wheel touchdown is not a body crash');

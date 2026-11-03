@@ -220,7 +220,7 @@ adapter and its six tests, including the pinned c172ap MSL/VS/output-gate wiring
 
 The local [public height package](../app/public/terrain/README.md) is a derived
 1,025²-node region from Hessen HVBG `he_dgm1_32` (approximately 32 m overview of
-DGM1, edition 2025H2, DHHN2016 physical heights, DL-DEZero2.0) and BKG's
+DGM1, edition 2025H2, DHHN2016 physical heights, DL-DEZero 2.0) and BKG's
 GCG2016/2023 western quasigeoid (CCBY4.0, © Bundesamt für Kartographie und
 Geodäsie; retrieved 2026). [The manifest](../app/public/terrain/edfe-taunus-v1.json)
 pins raw source hashes, returned affine metadata, derived byte hash and tool
@@ -261,3 +261,17 @@ OurAirports inventory lacks ILS components. No proprietary AIS data is copied.
 The community OurAirports EDDF anchor is public domain and is not an official ARP.
 See [data provenance and reproduction](../app/public/navdata/README.md) and
 [independent source research](research/2026-11-03-rhein-main-navigation.md).
+
+## Regional orthophoto pyramid
+
+`app/public/imagery/rhein-main/` contains a bounded regional pyramid derived from
+Hessen HVBG `he_dop_rgb` orthophotography under DL-DE Zero 2.0. WMS EPSG:3857
+metatiles are resampled by the service, cropped and JPEG re-encoded; `SOURCES.json`
+records exact raw requests/hashes, and the manifest binds derived tile bytes.
+Capture dates remain unknown. Effective output is approximately 3.07 m at level 14
+and 1.54 m at level 15 near 50°N; the existing approximately 0.75 m EDFE overlay
+remains separate. No npm runtime dependency is added. The offline compiler uses
+Pillow 11.2.1 (MIT-CMU; authoring only), pinned in
+[requirements](../utils/imagery/requirements.txt), with the installed package's
+license retained. See [research/rights](research/2026-11-03-regional-textures.md)
+and [reproduction](../utils/imagery/README.md).

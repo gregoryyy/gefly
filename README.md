@@ -44,7 +44,8 @@ sound (initially off). Restart is in Flight. Click toggles touchpad yoke control
 hold-drag looks around while retaining the yoke midpoint, and two-finger vertical
 scroll changes field of view.
 A bundled official Hessen photograph shows a small starter area around Egelsbach
-over public Hessen terrain around Egelsbach, Frankfurt and the Taunus. A Flight-menu Taunus demonstration shows the hills; full regional coverage and accepted airport/runway elevations remain incomplete. The generic
+over public Hessen terrain around Egelsbach, Frankfurt and the Taunus. A Flight-menu Taunus demonstration shows the hills; full regional coverage and accepted airport/runway elevations remain incomplete. Regional orthophoto tiles now add approximately 1.5–3 m detail around Frankfurt and
+the eastern approaches, loaded by view. The generic
 research aircraft remains experimental; see
 [setup, controls and limitations](app/README.md).
 

@@ -84,3 +84,14 @@ units/encoding; it does not update their historical applicability. See the
 [data README](app/public/navdata/README.md) and
 [source research](docs/research/2026-11-03-rhein-main-navigation.md).
 The provisional EDDF extent anchor is from OurAirports' public-domain data.
+
+## Regional orthophoto tiles
+
+The `app/public/imagery/rhein-main/` pyramid derives from Hessen HVBG ATKIS DOP20,
+WMS layer `he_dop_rgb`, under [DL-DE Zero 2.0](https://www.govdata.de/dl-de/zero-2-0).
+Modifications: WMS resampling to EPSG:3857, 512px tile cropping and optimized JPEG
+re-encoding. Effective output is approximately 1.5–3 m, not native 20 cm; capture
+dates are unknown. Exact source requests/raw hashes and derived byte hashes are
+retained in `SOURCES.json` and `manifest.json`. This supplies visual scenery,
+without current airport, chart or surveyed runway acceptance. See
+[source/rights research](docs/research/2026-11-03-regional-textures.md).

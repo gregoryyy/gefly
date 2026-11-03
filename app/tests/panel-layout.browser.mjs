@@ -36,13 +36,13 @@ try {
     return { width: innerWidth, height: innerHeight, scale: Number(document.querySelector('.flight-app').dataset.cockpitScale),
       deck: rect('.flight-deck'), surface: rect('.instruments'), primary: rect('.primary-instruments'),
       aircraft: rect('.engine-controls'), face: rect('#airspeed'), nav1: rect('#nav1-gauge .navigation-gauge-face'), nav2: rect('#nav2-gauge .navigation-gauge-face'), bearing: rect('#bearing-gauge .navigation-gauge-face'), rpmFace: rect('#rpm-gauge .navigation-gauge-face'), fuel: rect('#engine-fuel-gauge'), pressure: rect('#altimeter-open'), flaps: rect('#flap-control'), trim: rect('#pitch-trim-control'),
-      ap: rect('.autopilot-content'), apButton: rect('#ap-off'), engine: rect('#engine-systems'), radio: rect('#radio-nav-systems'),
+      ap: rect('.autopilot-content'), apButton: rect('#ap-engage'), engine: rect('#engine-systems'), radio: rect('#radio-nav-systems'),
       rpm: rect('#engine-rpm'), frequency: rect('#com1-standby'), throttle: rect('#throttle'), mixture: rect('#mixture-control'),
       engineOpen: !document.querySelector('#engine-open').hidden, radioOpen: !document.querySelector('#radio-nav-open').hidden,
       appScroll: document.documentElement.scrollWidth };
   });
   let reference;
-  for (const [width, height] of [[1440, 900], [1200, 800], [901, 800], [900, 800], [880, 800], [621, 800], [620, 844], [390, 844], [1440, 600]]) {
+  for (const [width, height] of [[1440, 900], [1280, 720], [1200, 800], [901, 800], [900, 800], [880, 800], [621, 800], [620, 844], [390, 844], [1440, 600]]) {
     await page.setViewportSize({ width, height });
     await page.waitForTimeout(180);
     const g = await geometry(); observations.push(g);

@@ -9,6 +9,7 @@ import { projectForwardDirection } from './forward-marker-projection';
 import { createAircraftVisual } from './aircraft-visual';
 import { createAircraftShadow } from './aircraft-shadow';
 import { createPublicTerrainProvider } from './terrain-provider';
+import { createRegionalImageryProvider } from './regional-imagery';
 import { loadTerrainPackage, sampleTerrain, type TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
 import { aircraftBasisENU, boundedCameraLook, cockpitCameraENU, chaseCameraENU, type CameraLook } from './aircraft-orientation';
 import { DEFAULT_FOV_RAD, MIN_FOV_RAD, MAX_FOV_RAD } from './field-of-view.ts';
@@ -134,6 +135,9 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   let detailLoaded = false;
   let airportLoaded = false;
   let overviewLoaded = false;
+  let regionalImagery: Awaited<ReturnType<typeof createRegionalImageryProvider>> | null = null;
+  let regionalSettled = false;
+  let airportLayer: ImageryLayer | null = null;
   let loadSlow = false;
   const creditObserver = new ResizeObserver(() => {
     if (!disposed && credit) status.style.bottom = `${Math.max(38, credit.getBoundingClientRect().height + 12)}px`;
@@ -163,15 +167,29 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   function imageryStatus(state: FlightState): void {
     if (disposed) return;
     let text = '', outcome = 'ready';
+    const regionalStats = regionalImagery?.getStats();
+    const regionalLevel = regionalStats?.resolutionAt(state.lat_rad / DEG_RAD, state.lon_rad / DEG_RAD) ?? null;
+    container.dataset.imageryRegional = !regionalSettled ? 'loading' : !regionalImagery ? 'unavailable'
+      : regionalStats!.failedTiles > 0 ? 'degraded' : regionalLevel === null ? 'outside-coverage' : 'ready';
+    container.dataset.imageryRegionalLevel = regionalLevel === null ? '' : String(regionalLevel);
+    const loadedLevel = regionalStats?.loadedLevelAt(state.lat_rad / DEG_RAD, state.lon_rad / DEG_RAD) ?? null;
+    container.dataset.imageryRegionalLoadedLevel = loadedLevel === null ? '' : String(loadedLevel);
+    container.dataset.imageryRegionalLoaded = String(regionalStats?.loadedTiles ?? 0);
+    container.dataset.imageryRegionalCache = String(regionalStats?.cacheSize ?? 0);
+    container.dataset.imageryRegionalInflight = String(regionalStats?.inflight ?? 0);
+    container.dataset.imageryRegionalFailed = String(regionalStats?.failedTiles ?? 0);
     if (!imagerySettled) {
       outcome = 'loading';
       text = loadSlow ? 'Aerial imagery is taking longer to load. Controls remain available.' : 'Loading the local Egelsbach aerial photograph…';
-    } else if (!detailLoaded && !overviewLoaded && !airportLoaded) {
+    } else if (regionalLevel === null && !detailLoaded && !overviewLoaded && !airportLoaded) {
       outcome = 'error'; text = 'Starter photographs unavailable. Reload to retry; flight controls still work.';
-    } else if (!(airportLoaded && inside(AIRPORT_DETAIL, state)) && !(detailLoaded && inside(DETAIL, state)) && !(overviewLoaded && inside(OVERVIEW, state))) {
+    } else if (regionalLevel === null && !(airportLoaded && inside(AIRPORT_DETAIL, state)) && !(detailLoaded && inside(DETAIL, state)) && !(overviewLoaded && inside(OVERVIEW, state))) {
       outcome = 'outside-coverage'; text = 'Outside this starter imagery area. No photographic ground coverage here.';
     } else if (airportLoaded && inside(AIRPORT_DETAIL, state)) {
       text = '';
+    } else if (regionalLevel !== null) {
+      if (regionalStats!.failedTiles) { outcome = 'degraded'; text = 'Some regional imagery is unavailable; lower detail may be shown.'; }
+      else if (!scene.globe.tilesLoaded) text = 'Loading regional detail for this view…';
     } else if (!detailLoaded) {
       outcome = 'degraded'; text = 'Starter detail unavailable; coarse overview only.';
     } else if (!inside(DETAIL, state)) {
@@ -207,7 +225,9 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     if (disposed) return;
     results.forEach((result, index) => {
       if (result.status === 'fulfilled') {
-        scene.imageryLayers.add(new ImageryLayer(result.value));
+        const layer = new ImageryLayer(result.value);
+        scene.imageryLayers.add(layer);
+        if (index === 2) airportLayer = layer;
         if (index === 0) overviewLoaded = true; else if (index === 1) detailLoaded = true; else airportLoaded = true;
       }
     });
@@ -217,6 +237,14 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     container.dataset.imageryAirportDetail = airportLoaded ? 'ready' : 'unavailable';
     container.dataset.imageryCoverage = 'airport:8.628,49.954,8.66,49.966;detail:8.62,49.95,8.66,49.975;overview:8.4,49.8,8.9,50.1';
     imageryStatus(lastState); scene.requestRender();
+    // Keep the existing 0.75 m airfield overlay above regional 1.5–3 m tiles.
+    void createRegionalImageryProvider({ signal: photographAbort.signal, onStatus() { if (!disposed) { imageryStatus(lastState); scene.requestRender(); } } }).then(handle => {
+      if (disposed) { handle.dispose(); return; }
+      regionalImagery = handle; regionalSettled = true;
+      const index = airportLayer ? scene.imageryLayers.indexOf(airportLayer) : scene.imageryLayers.length;
+      scene.imageryLayers.add(new ImageryLayer(handle.provider), index);
+      imageryStatus(lastState); scene.requestRender();
+    }).catch(() => { if (!disposed) { regionalSettled = true; imageryStatus(lastState); } });
   });
 
   let aircraft: Model | null = null;
@@ -366,6 +394,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       if (disposed) return;
       disposed = true;
       photographAbort.abort();
+      regionalImagery?.dispose();
       observer.disconnect();
       creditObserver.disconnect();
       clearTimeout(loadTimeout);

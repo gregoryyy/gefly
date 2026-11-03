@@ -316,3 +316,12 @@ a geometric intercept fixture over existing public terrain, not a published
 procedure. Recorded tuning and the page-local frozen dataset drive Review.
 These fixtures do not establish current operational service, RF propagation,
 receiver calibration or installed servo, PFT/electrical/trim-fault fidelity.
+
+Regional orthophotos add a bounded local XYZ/Web-Mercator imagery provider over
+unchanged terrain/dynamics. A versioned manifest identifies every 512-pixel tile;
+source groups retain exact WMS requests and raw hashes, while derived tile hashes
+bind crop/re-encoding output. Cesium requests visible levels; the provider deduplicates
+loads, caps six concurrent requests and 64 decoded source images, and returns a
+fresh canvas to avoid closing images still held by GPU upload. Missing finer
+levels crop the correct north-down ancestor subrectangle. The old coarse/relief
+layers remain underneath and the sharper Egelsbach overlay remains above.

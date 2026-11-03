@@ -582,9 +582,21 @@ terrain demonstration. It is not a published route or procedure. The four
 
 The sharper airport overlay has approximately 0.75 m output pixels, sampled from
 public 20 cm orthophotography, over the wider starter photograph. Derived relief
-shading covers the DEM outside photographic coverage. A tile pyramid/cache can
-extend higher-resolution coverage later, loading detail by view rather than
-stretching a regional JPEG. Current imagery has no established capture date and
+shading covers the DEM outside photographic coverage. A bundled 723-tile pyramid now covers 8.48–8.80°E / 49.93–50.12°N, with approximately
+3.07 m output pixels across the area and 1.54 m around Frankfurt/approaches and
+Egelsbach. Tiles load by view, with six concurrent requests and 64 decoded source
+images; coarse ancestors/relief remain available when detail is missing. The
+separate 0.75 m airport photograph stays above regional tiles. Current imagery has no established capture date and
 is not airport/runway reference data. See the [terrain package](public/terrain/README.md),
 [imagery provenance](public/imagery/DETAIL-SOURCE.json) and
 [third-party notices](../THIRD_PARTY_NOTICES.md).
+
+Try **Flight → EDDF 25C ILS practice**, then Chase, for the Frankfurt imagery.
+Reload an already-open development page after updating assets. The package is
+67.2 MiB on disk; a flight requests only needed tiles. See the
+[regional imagery manifest and rights](public/imagery/rhein-main/README.md).
+
+The **Stations** picker supports a 50 NM nearby filter, name/identifier/airport/
+frequency search and distance ordering. Click outside or press Escape to close;
+the header filters remain visible while only the results scroll. Review uses its
+selected recorded position and leaves loading frequencies read-only.

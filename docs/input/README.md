@@ -73,3 +73,7 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [Ground braking report](2026-11-03-ground-braking.md) — ground collision while braking.
 - [Original autopilot behavior](2026-11-03-autopilot-original.md) — match the original aircraft autopilot.
 - [Rhein-Main radio navigation](2026-11-03-rhein-main-navigation.md) — add regional VOR, DME, ILS and related sources.
+- [KAP 140 confirmation](2026-11-03-kap140-confirmation.md) — confirmed two-axis autopilot with altitude preselection.
+- [Continue regional textures](2026-11-03-regional-textures.md) — extend detailed orthophotography around Frankfurt and approaches.
+- [Radio panel and station picker](2026-11-03-radio-stations-ux.md) — fit panel height, outside dismissal, nearby and name filters.
+- [Online imagery and COM directory questions](2026-11-03-imagery-provider-com.md) — provider options and communication-station discovery.

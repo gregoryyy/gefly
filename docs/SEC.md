@@ -178,3 +178,13 @@ frozen per context and remains historical throughout a page session/Review.
 Directory source strings use textContent. No live AIS, network ATC, external URLs,
 executable scenario content or persistence is added. LAB remains explicit and
 isolated. Approximate reception ranges are not authoritative operational status.
+
+The regional imagery provider derives fixed same-origin XYZ paths from bounded,
+validated integer coordinates. It rejects redirects, invalid manifest metadata,
+duplicate/out-of-coverage entries, over-budget packages and invalid byte counts,
+hashes or JPEG dimensions. Fetch/stream operations have deadlines and scene
+cancellation also covers manifest loading before the provider exists. No source
+URL from provenance is executed at runtime. A bounded decode cache, deduplicated
+requests and ancestor fallback limit view loading; imagery failures do not write
+flight state. Offline public WMS ingestion runs separately with bounded requests,
+image decoding, tile budgets, atomic output and source/derivative notices.

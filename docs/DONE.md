@@ -3,6 +3,93 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 05:33 — Detailed regional textures and compact radio station discovery
+
+TODO: 2.0.33 and 2.0.42 complete for bounded R-WORLD-4/R-NAV-4/R-PANEL-1/
+R-DATA-1/R-REVIEW-1. COM directory remains planned in 2.0.43.
+Agent: Codex orchestrator/integration; texture_provider/code1 implements the bounded
+provider/tests; texture_assets/code2 implements ingestion/assets/tests; radio_layout
+implements the parallel radio slice. texture_research performs parallel research/
+input housekeeping and independent quality/spec validation of non-authored code,
+assets, source transformations and browser behavior. Its own prose is excluded
+from self-approval. Root inspects the adopted source grant and integrated artifacts.
+
+**Implementation notes**
+
+Ship 723 openly licensed local orthophoto tiles around Egelsbach, Frankfurt and
+the eastern approaches: 70,489,589 derived JPEG bytes (67.2 MiB), from 200 raw WMS
+source groups. Web Mercator levels 10–14 cover 8.48–8.80°E/49.93–50.12°N; selected
+level 15 areas provide approximately 1.54 m output pixels, with approximately 3.07 m
+regional pixels. Source dates remain unknown; source 20 cm is not output 20 cm.
+Capture exact raw requests/hashes, adaptive 512/1024/2048px grouping and crop/JPEG 85
+transformations. The view loader validates bytes/hashes/dimensions, deduplicates
+requests, caps six fetches/64 source images and crops the correct ancestor on
+missing detail. Preserve coarse/relief fallback and the separate 0.75 m EDFE overlay.
+
+Fix the Cesium imagery LOD interaction: exact-zero finest terrain error becomes
+Infinity and then integer level 0. A numerical 1e-6 m display floor selects detailed
+imagery while preserving exact shared/native height samples; it is not an accuracy
+claim. A trial 0.25 m floor failed near-ground refinement and was replaced.
+
+Compact the radio stack within its existing shared column height. Stations keeps
+search/nearby filters and close control in a reachable header while only results
+scroll; use live/recorded position, 50 NM proximity, distance order and explicit
+missing-position state. Backdrop/Escape dismiss and restore focus; standby/swap
+and read-only Review remain intact. Record the confirmed KAP 140 target separately.
+
+Independent quality/specification pass at 741-path packet
+`decb6d47407d90400cf480a312610d0364bfd76bf853e61732d5d19ba712393a`:
+verify all 723 hashes and independently regenerate every tile from all 200 actual
+raw source groups;11 provider/assets/terrain tests, four compiler tests, actual
+Chrome GPUlevel 15/512px, cache64/fetch6, exact stable screenshots, zero measured
+camera drift and unchanged state. Radio interaction and seven independent full-
+cockpit viewport cases pass; root's maintained layout test passes ten viewports.
+Actual full-app EDDF/APR/GS/Review and public terrain/contact/guard/failure checks
+pass. The public-terrain test now waits for worker pause acknowledgment before
+capturing its contact frame; runtime behavior is unchanged. Shared CI passes 202
+app tests, six adapter tests and foundation/assurance/training gates; nine of 23
+existing native study tests remain explicitly skipped. Build, scaffold and
+assurance pass. See [independent review](reviews/2026-11-03-regional-textures.md).
+
+**Deviations**
+
+Ingestion required adaptive smaller requests after slow WMS metatiles and a
+storage interruption; the user freed space. The bounded tile budget is 80 MiB,
+with quality 85 retained. Full 100 NM, native20 cm output, buildings, live external
+imagery and current chart/airport acceptance remain separate. COM discovery is
+queued with source/currentness and 8.33 kHz applicability work; no ATC service is
+invented. External Claude CLI 2.1.193 times out after 180 s with no report/model
+identity. Its earlier runtime packet is not final coverage; peer remains pending.
+
+**Insights**
+
+GPU-level checks caught a coarse-LOD bug that schema/source tests could not.
+A software rendering floor must avoid both division by zero and unwanted mesh
+refinement. Keep screenshot comparisons bounded and acknowledge worker pause
+before comparing recorded physical frames.
+
+## 2026-11-03 04:47 — Confirmed KAP 140 equipment target
+
+TODO: 2.0.40 confirmed equipment target; remaining 2.0.14.
+Refs: R-AP-1.
+Agent: Codex orchestrator; no subagents needed for this decision-only record.
+
+**Implementation notes**
+
+Preserve the exact question/answer in a new immutable input record and update
+GAPS/R-AP-1 to distinguish the confirmed two-axis/preselect equipment target
+from the previous assumption. Retire the obsolete fictional-only navigation
+condition in that same current decision paragraph. No runtime change.
+
+**Deviations**
+
+Serial-specific installation, firmware applicability and accepted fidelity remain
+unresolved; the confirmation does not accept the generic servos or historical data.
+
+**Insights**
+
+An equipment choice and validation of its simulation are separate decisions.
+
 ## 2026-11-03 02:56 — Historical Rhein-Main radio navigation and EDDF ILS practice
 
 TODO: 2.0.41 complete as bounded R-NAV-4 and partial R-NAV-1/R-NAV-2/R-DATA-1/

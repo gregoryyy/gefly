@@ -57,7 +57,7 @@ test('adjacent tiles agree at shared edges and LOD/coverage are bounded to real 
   }
   assert(provider.getLevelMaximumGeometricError(0) > 0);
   assert(provider.getLevelMaximumGeometricError(0) < 1000, 'regional LOD does not inherit a global circumference estimate');
-  assert.equal(provider.getLevelMaximumGeometricError(1), 0);
+  assert.equal(provider.getLevelMaximumGeometricError(1), 1e-6);
 });
 
 test('unsupported grid shapes and missing heights cannot silently become zero terrain', async () => {

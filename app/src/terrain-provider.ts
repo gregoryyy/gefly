@@ -49,7 +49,12 @@ export function createPublicTerrainProvider(grid: TerrainGrid): TerrainProvider 
     // The finest mesh is the declared grid surface; no extra resampled detail
     // is advertised beyond it. This is a rendering budget, not DEM accuracy.
     if (!Number.isInteger(level) || level < 0) throw new RangeError('Invalid terrain level');
-    return level >= finestLevel ? 0 : levelZeroError / 2 ** level;
+    // Cesium also divides this value when choosing imagery LOD. A zero error
+    // turns that calculation into Infinity, which its integer conversion maps
+    // to level zero: even a nearby fine mesh then displays the coarsest photo.
+    // A microscopic positive floor keeps imagery LOD finite while stopping
+    // unnecessary refinement beyond the finest shared height surface.
+    return level >= finestLevel ? 1e-6 : levelZeroError / 2 ** level;
   };
   provider.getTileDataAvailable = available;
   return provider;

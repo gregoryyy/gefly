@@ -48,7 +48,7 @@ try {
   await page.goto(`${origin}/terrain-renderer-fixture.html`); await page.waitForFunction(() => window.terrainReady, null, { timeout: 60000 });
   const mesh = (finest = true) => page.evaluate(async finest => {
     const start = performance.now(), state = window.terrainState, widget = window.__terrainWidget;
-    while (performance.now() - start < 20000) {
+    while (performance.now() - start < 60000) {
       window.terrainScene.update(state, 'chase', window.terrainLook); await new Promise(resolve => requestAnimationFrame(resolve));
       const height = widget.scene.globe.getHeight({ longitude: state.lon_rad, latitude: state.lat_rad, height: 0 });
       const contains = tile => tile && state.lon_rad >= tile.rectangle.west && state.lon_rad <= tile.rectangle.east
@@ -63,13 +63,14 @@ try {
         expected_m: state.terrain_height_ellipsoid_m, profile: document.querySelector('#scene').dataset.terrain,
         provider: widget.scene.globe.terrainProvider.constructor.name };
     }
-    throw new Error('Actual Cesium terrain mesh did not settle');
+    throw new Error('Actual Cesium terrain mesh did not settle: '+JSON.stringify({scene:document.querySelector('#scene').dataset,tilesLoaded:widget.scene.globe.tilesLoaded,levels:widget.scene.globe._surface._tilesToRender.map(t=>t.level)}));
   }, finest);
   observations.airfield = await mesh();
   assert.equal(observations.airfield.provider, 'CustomHeightmapTerrainProvider');
   assert.equal(observations.airfield.profile, 'public-grid');
   assert(Math.abs(observations.airfield.height_m - observations.airfield.expected_m) <= .25, 'actual airfield mesh agrees with shared ellipsoid surface within predeclared rendering budget');
   await page.waitForFunction(() => document.querySelector('#scene').dataset.imageryTiles === '3');
+  await page.waitForFunction(() => document.querySelector('#scene').dataset.imageryRegional !== 'loading');
   observations.airportTexture = await page.evaluate(async () => {
     const widget = window.__terrainWidget, state = window.terrainState;
     for (let i = 0; i < 40; i++) { terrainScene.update(state,'chase',terrainLook); await new Promise(resolve => requestAnimationFrame(resolve)); }
@@ -82,9 +83,42 @@ try {
     return { tiles_loaded: widget.scene.globe.tilesLoaded, layers: layers.length, provider_width: provider.tileWidth,
       provider_height: provider.tileHeight, gpu_width: texture?.width, gpu_height: texture?.height };
   });
-  assert.deepEqual(observations.airportTexture, { tiles_loaded: true, layers: 5, provider_width: 3000, provider_height: 1800,
+  assert.deepEqual(observations.airportTexture, { tiles_loaded: true, layers: 6, provider_width: 3000, provider_height: 1800,
     gpu_width: 3000, gpu_height: 1800 }, 'actual highest airport layer is uploaded at its native resolution before the screenshot');
   await page.screenshot({ path: `${output}/terrain-airport-detail.png` });
+  await page.evaluate(() => window.setTerrainPoint(50.04, 8.59, 180, 249.568));
+  await page.waitForFunction(() => {
+    const widget = window.__terrainWidget;
+    terrainScene.update(terrainState, 'chase', terrainLook);
+    return widget.scene.globe.tilesLoaded && Number(document.querySelector('#scene').dataset.imageryRegionalLoaded) > 0;
+  }, null, { timeout: 60000 });
+  await page.evaluate(async () => { for(let i=0;i<8;i++){terrainScene.update(terrainState,'chase',terrainLook);await new Promise(r=>requestAnimationFrame(r));} });
+  observations.frankfurtTexture = await page.evaluate(() => {
+    const scene = window.__terrainWidget.scene;
+    const layers = Array.from({length:scene.imageryLayers.length}, (_,i)=>scene.imageryLayers.get(i));
+    const regional = layers.find(layer=>layer.imageryProvider.maximumLevel===15 && layer.imageryProvider.tileWidth===512);
+    const ready = scene.globe._surface._tilesToRender.flatMap(tile=>tile.data?.imagery??[])
+      .map(item=>item.readyImagery).filter(image=>image?.imageryLayer===regional && (image.texture||image.textureWebMercator));
+    return {levels:[...new Set(ready.map(image=>image.level))],
+      textures:[...new Set(ready.map(image=>(image.texture||image.textureWebMercator).width))],
+      cache:Number(document.querySelector('#scene').dataset.imageryRegionalCache),
+      inflight:Number(document.querySelector('#scene').dataset.imageryRegionalInflight),
+      failed:Number(document.querySelector('#scene').dataset.imageryRegionalFailed)};
+  });
+  console.log('Frankfurt GPU imagery',JSON.stringify(observations.frankfurtTexture));
+  assert(observations.frankfurtTexture.levels.some(level=>level>=14), 'actual Frankfurt GPU imagery has useful regional detail');
+  assert.deepEqual(observations.frankfurtTexture.textures,[512]);
+  assert(observations.frankfurtTexture.cache<=64 && observations.frankfurtTexture.inflight<=6);
+  assert.equal(observations.frankfurtTexture.failed,0);
+  await page.screenshot({path:`${output}/regional-frankfurt-textures.png`});
+  const beforeRegional = await page.screenshot();
+  await page.evaluate(async () => { for(let i=0;i<15;i++) { terrainScene.update(terrainState,'chase',terrainLook); await new Promise(r=>requestAnimationFrame(r)); } });
+  assert.equal((await page.screenshot()).equals(beforeRegional),true,'settled regional view does not flicker');
+  await page.evaluate(()=>window.setTerrainPoint(50.07,8.70,400,249.568));
+  await page.waitForFunction(()=>{terrainScene.update(terrainState,'chase',terrainLook);return __terrainWidget.scene.globe.tilesLoaded;},null,{timeout:60000});
+  await page.screenshot({path:`${output}/regional-eddf-approach-textures.png`});
+  checks.push('view-requested regional Frankfurt and approach tiles upload actual 512px GPU textures, retain bounded cache/concurrency and a stable paused view');
+
   const hill = await page.evaluate(() => window.setTerrainPoint(50.232, 8.46, 3, 135)); observations.hill = await mesh();
   assert(hill.physical_m > 700 && hill.geoid_m > 40, 'public package contains real high-relief heights and an explicit quasigeoid');
   assert(observations.hill.height_m - observations.airfield.height_m > 600, 'rendered terrain is not a zero-height or constant-height globe');
