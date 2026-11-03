@@ -80,3 +80,16 @@ provides a useful independent near-sea-level sensitivity example: 1013 versus
 as evidence. Application practice bounds, such as 800–1100 hPa, are not sourced
 installed-instrument limits. No weather feed, accepted airport elevation,
 transition-procedure lesson or aircraft-specific accuracy is accepted here.
+
+## Rights and access addendum (2026-11-03 07:40 Europe/Berlin)
+
+Added by Claude Code housekeeping after Claude peer review F19 ([report](../reviews/2026-11-03-codex-prs-39-50-peer.md)). It does not change the findings above. "Not verified" means no licence or terms page was read for this note; it is not a claim that the source is restricted or free.
+
+| Source | Edition and access | Licence or rights | Use here |
+| --- | --- | --- | --- |
+| JSBSim `FGAtmosphere.cpp`, `FGStandardAtmosphere.cpp` | Tag `v1.3.3`; first recorded 2026-11-02 (commit `699b083`); exact access time not recorded | JSBSim repository at tag `v1.3.3`: `COPYING` is the GNU LGPL version 2.1 (re-read 2026-11-03).  | Units and bindings described; no code copied |
+| NIST SP 811, appendix B.8 | Edition not recorded; access date not recorded | Not verified | Conversion factors used as cited facts |
+| NASA TP-2009-215402 and TP-2007-213475 (NTRS) | Report numbers are the edition; access date not recorded | Not verified (NTRS records can carry their own notices) | Equations restated as cited facts; no text or tables copied |
+| Transport Canada Aviation Safety Letter 4/2024 | Issue is the edition; access date not recorded | Not verified | Cite-only |
+| NWS altimeter-setting PDF | Edition not recorded; access date not recorded | Not verified | Equation form cited; restated |
+| EASA EUR OPS Bulletin 2023_001; Easy Access Rules ATM/ANS | Bulletin number is the edition; EAR revision not recorded; access date not recorded | Not verified | Cite-only |

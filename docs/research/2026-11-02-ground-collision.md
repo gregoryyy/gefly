@@ -27,3 +27,13 @@ A bounded rule may latch a stop for actual JSBSim structural contact, or for non
 Evaluate the stop predicate after each fixed worker step, retain the first qualifying state/event and prevent subsequent steps until explicit restart. Rendering frequency must not decide whether contact occurred. Publish the stopped state and reason so Review can inspect it; a render-clock pause may otherwise miss the contact during a worker catch-up block. Keep standalone engine benchmarks separate from an opted-in application session stop rule.
 
 Endpoint detection can retain a penetrating post-step state; it is not continuous collision detection or a solved time of impact. The response is limited to the first detected fixed step, with possible one-step overshoot and unresolved within-step motion. It adds no breakup, gear collapse, propeller damage, material strength or safe-impact criterion. Verification needs deterministic contact timing, frame/sign checks, normal wheel-contact continuation, latched stop under catch-up/resume attempts, Review/reset behavior and the declared visual/ground alignment.
+
+## Rights and access addendum (2026-11-03 07:40 Europe/Berlin)
+
+Added by Claude Code housekeeping after Claude peer review F43 ([report](../reviews/2026-11-03-codex-prs-39-50-peer.md)). It does not change the findings above. "Not verified" means no licence or terms page was read for this note; it is not a claim that the source is restricted or free.
+
+| Source | Edition and access | Licence or rights | Use here |
+| --- | --- | --- | --- |
+| `c172x.xml` | Tag `v1.3.3`; first recorded 2026-11-02 (commit `2708eb4`) | `aircraft/c172x/c172x.xml` (raw-byte SHA-256 `b736f4b7560d5aab4d2a69026798be1d369b2b2bb5ddcf627aebfd441ba71840`, re-fetched 2026-11-03) declares `GPL (General Public License)` with no version, "educational and entertainment purposes only" and "not to be sold"; the [E1 survey](2026-11-01-e1-engine-stack-candidates.md) rated it *not cleared, do not distribute*.  | Contact layout described. The six contact coordinates ship in `app/src/aircraft-handbook-data.ts` (see the [handbook note](2026-11-02-c172p-handbook-diagrams.md)), so the open aircraft-data rights question applies (F34). |
+| `FGLGear.h/.cpp`, `FGGroundCallback.cpp` | Tag `v1.3.3`; same dates | JSBSim repository at tag `v1.3.3`: `COPYING` is the GNU LGPL version 2.1 (re-read 2026-11-03).  | Behaviour described; no code copied |
+| `prop_75in2f.xml` (75 in diameter) | Tag `v1.3.3`; SHA-256 `6481edf1da940fdea5358913d226c3e25d3e6b8209b4805370258a9a65ca7403`, re-fetched 2026-11-03 | No licence notice in the file; repository `COPYING` is LGPL-2.1 | Cited only for comparison with the illustrative visual |

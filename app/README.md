@@ -122,7 +122,7 @@ performance data. See [control sources](../docs/research/2026-11-02-classic-cont
 Use **View → Flight controls** in the top menu to show or hide the on-screen
 flight-control panel. Hiding it releases transient held inputs while retaining
 throttle, trim and the other selected settings. Use **Flight → Restart flight**
-to restart; the R shortcut also remains available. **Options** is a top-menu
+to restart. R enters and leaves recorded Review; it does not restart. **Options** is a top-menu
 action. Keyboard remapping is later work.
 
 Open **Options** in the header to adjust pitch, roll and rudder sensitivity from
@@ -135,7 +135,7 @@ the flight scene.
 To compare the response, start a flight, open **Options**, select **Gentle**,
 then **Done** and **Resume flight**. Try a small stick movement or a brief held
 button input. Repeat with **Default** to compare. Sensitivity settings last for
-the current page session; restarting the flight with R preserves them. They
+the current page session; restarting the flight from **Flight → Restart flight** preserves them. They
 change input response, not the aircraft's physics or calibration.
 
 The **roll correction** is a constant left aileron command: its default −0.109375

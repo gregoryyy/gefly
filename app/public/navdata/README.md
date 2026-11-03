@@ -32,6 +32,9 @@ python3 utils/navdata/build_navdata.py --source /path/to/nav.dat.gz --output app
 
 The extent is 100 NM on a 6,371,000 m sphere around the community OurAirports
 EDDF point (50.026706, 8.558350), not a verified official airport reference point.
+That point is row id 2212 of public-domain OurAirports `airports.csv` at commit
+`72322ae9555947b969dda8effa793072159a9a1e` (SHA-256 `e869f2a5…13ca`, retrieved
+2026-11-03); `region.center_source_record` gives the full reference.
 Source AMSL heights have no independently verified modern vertical datum.
 VOR courses use historical station magnetic calibration, not current magnetic
 variation; LOC courses are true. DME is geometric slant range minus sourced bias.
