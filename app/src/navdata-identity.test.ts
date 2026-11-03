@@ -22,6 +22,8 @@ test('F55 mismatch, UI failure and worker error are visible errors', () => {
 test('F55 malformed or missing worker reports never pass', () => {
   assert.equal(checkNavdata(ui(a), workerNavdata(undefined)).status, 'error');
   assert.equal(checkNavdata(ui(a), workerNavdata({})).status, 'error');
+  assert.match((checkNavdata(ui(a), workerNavdata({ navdata_sha256: undefined, navdata_error: undefined })) as { message: string }).message,
+    /did not report/, 'an older worker (undefined fields) fails closed');
   assert.equal(checkNavdata(ui(a), workerNavdata({ navdata_sha256: a.toUpperCase(), navdata_error: null })).status, 'error');
   assert.equal(checkNavdata(ui(a), workerNavdata({ navdata_sha256: a, navdata_error: 42 })).status, 'error');
 });

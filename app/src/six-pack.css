@@ -48,5 +48,5 @@
   .six-pack .gauge canvas { width: min(100%, 106px); }
   .six-pack .gauge-readout b { min-height: 18px; font-size: 16px; }
   .six-pack #turn-rate { font-size: 12px; }
-  .six-pack .gauge-readout span { min-height: 9px; font-size: 6px; letter-spacing: .35px; }
+  .six-pack .gauge-readout span { min-height: 9px; font-size: var(--cockpit-label-min, 7px); letter-spacing: .35px; }
 }

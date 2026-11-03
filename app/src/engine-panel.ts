@@ -78,10 +78,10 @@ export function createEnginePanel(options: EnginePanelOptions): {
       <div class="engine-fuel"><span>MODEL TANKS · US GAL</span><b>L <output id="engine-fuel-left">—</output></b><b>R <output id="engine-fuel-right">—</output></b></div>
     </div><div class="engine-readouts">
       <div><span>RPM</span><b id="engine-rpm">—</b><small>PROP RPM</small></div>
-      <div><span>MANIFOLD</span><b id="engine-map">—</b><small>inHg</small></div>
-      <div><span>OIL PRESSURE</span><b id="engine-oil-press">—</b><small>psi</small></div>
-      <div><span>OIL TEMPERATURE</span><b id="engine-oil-temp">—</b><small>°C</small></div>
-      <div><span>EXHAUST GAS</span><b id="engine-egt">—</b><small>°C</small></div>
+      <div title="Manifold pressure"><span>MANIFOLD</span><b id="engine-map">—</b><small>inHg</small></div>
+      <div title="Oil pressure"><span>OIL PRESS</span><b id="engine-oil-press">—</b><small>psi</small></div>
+      <div title="Oil temperature"><span>OIL TEMP</span><b id="engine-oil-temp">—</b><small>°C</small></div>
+      <div title="Exhaust gas temperature"><span>EGT</span><b id="engine-egt">—</b><small>°C</small></div>
       <div><span>FUEL FLOW</span><b id="engine-fuel-flow">—</b><small>US gal/h</small></div>
     </div></div>
     <p id="engine-unavailable" class="engine-unavailable" role="status" title="Engine data unavailable · rebuild flight engine">INOP</p>

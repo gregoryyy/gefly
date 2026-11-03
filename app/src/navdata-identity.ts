@@ -15,8 +15,9 @@ const HEX64 = /^[0-9a-f]{64}$/;
 
 /** Normalize the worker's reply fields; anything malformed is an error, not a pass. */
 export function workerNavdata(reply: { navdata_sha256?: unknown; navdata_error?: unknown } | null | undefined): NavdataSide {
-  if (!reply || !('navdata_sha256' in reply || 'navdata_error' in reply)) {
-    return { settled: true, sha256: null, error: 'flight engine did not report its navigation data identity' };
+  // undefined fields mean an older worker that cannot attest its package: fail closed.
+  if (!reply || (reply.navdata_sha256 === undefined && reply.navdata_error === undefined)) {
+    return { settled: true, sha256: null, error: 'flight engine did not report its navigation data identity; rebuild the local runtime' };
   }
   const error = typeof reply.navdata_error === 'string' && reply.navdata_error ? reply.navdata_error
     : reply.navdata_error === null || reply.navdata_error === undefined ? null : 'invalid navigation error report';

@@ -37,7 +37,7 @@
 .rpm-unavailable { fill: #d39779; font: 12px system-ui,sans-serif; text-anchor: middle; }
 .navigation-aux-readout { min-height: 28px; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; align-items: baseline; gap: 2px 5px; margin-top: 2px; }
 .navigation-aux-readout output { color: #ebd5a9; font: 15px/1.2 ui-monospace,SFMono-Regular,monospace; font-variant-numeric: tabular-nums; }
-.navigation-aux-readout span { color: #a7b5b2; font: 6px system-ui,sans-serif; letter-spacing: .4px; }
+.navigation-aux-readout span { color: #a7b5b2; font: var(--cockpit-label-min, 7px) system-ui,sans-serif; letter-spacing: .4px; }
 .nav-to-from-symbol { fill: #e5e9df; }
 .nav-to-from-symbol text { text-anchor: middle; font: 11px system-ui,sans-serif; }
 .nav-scale-label { fill: #9faea9; font: 8px system-ui,sans-serif; text-anchor: middle; letter-spacing: .4px; }

@@ -225,8 +225,8 @@ const session = createSession({
     updateReviewControls();
     if (oldAp !== (state.ap_mode ?? 0)) { apDisconnectPending = false; publishInput(); updateSessionUI(); }
   },
-  onReady(trim, reply?: { navdata_sha256?: unknown; navdata_error?: unknown }) {
-    // The session forwards the worker's ready navdata fields as the second argument.
+  onReady(trim, reply?: { navdata_sha256?: string | null; navdata_error?: string | null }) {
+    // session.ts forwards the worker's ready {navdata_sha256, navdata_error}; undefined = older worker.
     engineNavdata = workerNavdata(reply); applyNavdataCheck();
     ready = true; failed = false; throttle = trim.throttle;
     pitchTrimTarget = Math.abs(trim.pitch_trim) <= 1 ? trim.pitch_trim : null;
