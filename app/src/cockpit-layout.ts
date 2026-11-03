@@ -8,13 +8,24 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
   let disposed = false;
   let zoom = 1;
   let panX = 0;
-  let panY = 0;
+  let fitted = 1, naturalHeight = 0, naturalWidth = 0, headingHeight = 0, verticalPadding = 0;
+  let maxZoom = 3;
 
   function paintZoom(): void {
     if (!deck || !instruments) return;
-    const fitted = Number(container.dataset.cockpitScale) || 1;
+    // Keep both instrument rows inside the growing deck; retain scenery above it.
+    const height = Math.ceil(naturalHeight * fitted * zoom + headingHeight + verticalPadding);
+    container.style.setProperty('--deck-height', `${height}px`);
+    const rect = deck.getBoundingClientRect();
+    const padding = getComputedStyle(deck);
+    const left = rect.left + parseFloat(padding.paddingLeft);
+    const right = rect.right - parseFloat(padding.paddingRight);
+    const width = naturalWidth * fitted;
+    const baseLeft = rect.left + (rect.width - width) / 2;
+    panX = width * zoom <= right - left ? 0
+      : Math.max(right - baseLeft - width * zoom, Math.min(left - baseLeft, panX));
     instruments.style.transformOrigin = '0 0';
-    instruments.style.transform = `translate(${panX / fitted}px, ${panY / fitted}px) scale(${zoom})`;
+    instruments.style.transform = `translateX(${panX / fitted}px) scale(${zoom})`;
     deck.dataset.zoomed = String(zoom > 1);
     deck.dataset.panelZoom = String(zoom);
   }
@@ -22,20 +33,21 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
   function wheel(event: WheelEvent): void {
     if (!deck || !instruments || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey
       || container.ownerDocument.querySelector('dialog[open]')
-      || !Number.isFinite(event.deltaY) || !Number.isFinite(event.deltaX)
-      || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+      || !Number.isFinite(event.deltaY) || !Number.isFinite(event.deltaX)) return;
+    const horizontal = Math.abs(event.deltaX) > Math.abs(event.deltaY);
+    if (horizontal ? zoom === 1 : event.deltaY === 0) return;
     const unit = event.deltaMode === 0 ? 1 : event.deltaMode === 1 ? 16
       : event.deltaMode === 2 ? deck.clientHeight : 0;
     if (!unit) return;
     event.preventDefault();
     event.stopPropagation();
-    const next = Math.max(1, Math.min(3, zoom * Math.exp(-Math.max(-200, Math.min(200, event.deltaY * unit)) * .002)));
+    if (horizontal) { panX -= event.deltaX * unit; paintZoom(); return; }
+    const next = Math.max(1, Math.min(maxZoom, zoom * Math.exp(-Math.max(-200, Math.min(200, event.deltaY * unit)) * .002)));
     const rect = instruments.getBoundingClientRect();
     // Keep the instrument point under the pointer fixed in screen coordinates.
     panX += (event.clientX - rect.left) * (1 - next / zoom);
-    panY += (event.clientY - rect.top) * (1 - next / zoom);
     zoom = next;
-    if (zoom === 1) { panX = 0; panY = 0; }
+    if (zoom === 1) panX = 0;
     paintZoom();
   }
 
@@ -44,12 +56,12 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
     if (disposed || !deck || !instruments) return;
     const style = getComputedStyle(deck);
     const horizontalPadding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
-    const verticalPadding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)
+    verticalPadding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)
       + parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth);
-    const headingHeight = deck.querySelector<HTMLElement>('.deck-heading')?.offsetHeight ?? 0;
+    headingHeight = deck.querySelector<HTMLElement>('.deck-heading')?.offsetHeight ?? 0;
     // offset sizes describe the canonical, unzoomed controls. No physics or camera state is changed.
-    const naturalHeight = instruments.offsetHeight;
-    const naturalWidth = instruments.offsetWidth;
+    naturalHeight = instruments.offsetHeight;
+    naturalWidth = instruments.offsetWidth;
     if (naturalHeight <= 0 || naturalWidth <= 0) return;
     let sceneReserve = 180;
     if (container.dataset.review === 'true') {
@@ -62,16 +74,14 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
     const scale = Math.min(1,
       Math.max(1, deck.clientWidth - horizontalPadding) / naturalWidth,
       Math.max(1, container.clientHeight - sceneReserve - headingHeight - verticalPadding) / naturalHeight);
-    const height = Math.ceil(naturalHeight * scale + headingHeight + verticalPadding);
+    fitted = scale;
+    maxZoom = Math.max(1, Math.min(3, (container.clientHeight - sceneReserve - headingHeight - verticalPadding) / (naturalHeight * scale)));
     if (container.style.getPropertyValue('--cockpit-scale') !== String(scale)) {
       container.style.setProperty('--cockpit-scale', String(scale));
     }
-    if (container.style.getPropertyValue('--deck-height') !== `${height}px`) {
-      container.style.setProperty('--deck-height', `${height}px`);
-    }
     container.dataset.cockpitScale = String(scale);
     // A viewport/layout change restores the full, fitted panel.
-    zoom = 1; panX = 0; panY = 0;
+    zoom = 1; panX = 0;
     paintZoom();
   }
   function schedule(): void {

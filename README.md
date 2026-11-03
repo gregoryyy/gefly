@@ -26,9 +26,10 @@ support commercial maps and charts, hosting and AI features.
 
 See the [vision and roadmap](docs/ROAD.md) for the full direction.
 
-![Gefly flying near Egelsbach with classic cockpit panels, real terrain imagery and the right-side flight map](docs/images/gefly-flight-map.png)
+![Gefly flying near Egelsbach with the latest cockpit panels, a visible horizon and a recorded flight path on the Egelsbach map](docs/images/gefly-flight-map.png)
 
-Live prototype flight in chase view, with cockpit instruments and controls.
+Live prototype flight near Egelsbach: the latest cockpit panels, horizon and
+actual flown trajectory on the right-side map.
 [Screenshot provenance and credits](docs/images/README.md).
 
 Today, Gefly is an experimental browser prototype with JSBSim flight dynamics,
@@ -73,8 +74,9 @@ and the achieved rate depends on available CPU/rendering capacity.
 Restart is in Flight. Click toggles touchpad yoke control;
 hold-drag looks around while retaining the yoke midpoint, and two-finger vertical
 scroll over the scenery changes field of view. Over the cockpit panel, scroll up
-to enlarge the instruments around the pointer (up to 3×); scroll down to restore
-the fitted panel. Resizing the window also restores the fit.
+to enlarge the instruments (up to 3×, limited by screen height). The panel grows
+upward so both gauge rows stay visible; horizontal scrolling moves between columns
+and stops at the panel edges. Scroll down or resize the window to restore the fit.
 Public terrain now streams across **8.25–10.00°E / 49.25–50.75°N**, including
 Darmstadt, Odenwald and Spessart, with named Flight-menu demonstrations. The
 bounded 200 m BKG relief surrounds the finer Egelsbach–Frankfurt–Taunus package;

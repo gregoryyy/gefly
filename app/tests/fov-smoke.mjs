@@ -97,18 +97,50 @@ try {
   const enlarged = await ap.boundingBox();
   assert(enlarged.width > box.width * 1.3, 'AP control visibly enlarges');
   assert(Math.abs(enlarged.x + enlarged.width / 2 - anchor.x) < 1, 'horizontal pointer anchor stays fixed');
-  assert(Math.abs(enlarged.y + enlarged.height / 2 - anchor.y) < 1, 'vertical pointer anchor stays fixed');
+  const deckBounds = await page.locator('.flight-deck').boundingBox();
+  assert(enlarged.y >= deckBounds.y && enlarged.y + enlarged.height <= deckBounds.y + deckBounds.height);
+  const rowsFit = await page.locator('.primary-instruments').evaluate(panel => {
+    const deck = panel.closest('.flight-deck').getBoundingClientRect();
+    return [...panel.querySelectorAll('canvas, .navigation-gauge-face')].every(gauge => {
+      const r = gauge.getBoundingClientRect(); return r.top >= deck.top && r.bottom <= deck.bottom;
+    });
+  });
+  assert(rowsFit, 'both gauge rows remain vertically visible');
   assert.equal(await fov(), 60, 'panel zoom does not change camera FOV');
   const wasEngaged = await ap.getAttribute('aria-pressed');
-  await page.mouse.click(anchor.x, anchor.y);
+  await ap.click();
   await page.waitForFunction(previous => document.querySelector('#ap-engage').getAttribute('aria-pressed') !== previous, wasEngaged);
-  await page.mouse.click(anchor.x, anchor.y);
+  await ap.click();
   await page.waitForFunction(previous => document.querySelector('#ap-engage').getAttribute('aria-pressed') === previous, wasEngaged);
   await page.mouse.wheel(0, 200);
   await page.waitForTimeout(100);
   const restored = await ap.boundingBox();
   assert(Math.abs(restored.width - box.width) < 1);
   assert(Math.abs(restored.x - box.x) < 1 && Math.abs(restored.y - box.y) < 1, 'zooming out restores fitted panel');
+  // Extreme zoom/pan gestures cannot lose the panel past either edge.
+  for (let i = 0; i < 8; i++) {
+    const d = await page.locator('.flight-deck').boundingBox();
+    await page.mouse.move(700, d.y + d.height - 30); await page.mouse.wheel(0, -200);
+    await page.waitForTimeout(40);
+  }
+  for (const dx of [10000, -10000]) {
+    const bounds = await page.locator('.flight-deck').boundingBox();
+    await page.mouse.move(700, bounds.y + 50); await page.mouse.wheel(dx, 0);
+    await page.waitForTimeout(80);
+    const coverage = await page.locator('.instruments').evaluate(panel => {
+      const p = panel.getBoundingClientRect(), d = panel.closest('.flight-deck').getBoundingClientRect();
+      return { left: p.left, right: p.right, top: p.top, bottom: p.bottom, deck: { left: d.left, right: d.right, top: d.top, bottom: d.bottom } };
+    });
+    assert(coverage.left <= coverage.deck.left + 13 && coverage.right >= coverage.deck.right - 13);
+    assert(coverage.top >= coverage.deck.top && coverage.bottom <= coverage.deck.bottom + 1);
+  }
+  for (let i = 0; i < 8; i++) {
+    const d = await page.locator('.flight-deck').boundingBox();
+    await page.mouse.move(700, d.y + d.height - 30); await page.mouse.wheel(0, 200);
+    await page.waitForTimeout(40);
+  }
+  assert.equal(Number(await page.locator('.flight-deck').getAttribute('data-panel-zoom')), 1);
+  assert.equal(await fov(), 60);
   frozen(paused, await stats());
   checks.push('pointer-centered panel zoom, working enlarged AP clicks, exact fit restoration and unchanged camera/native physics');
   await scroll(-120);

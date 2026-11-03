@@ -191,6 +191,8 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.60 Add the left-hand systems panel with modeled switches, digital electrical estimates, source scope, BAT/ALT interlocking, paused operation, recorded replay and narrow-screen dialog access. R-SYS-1/R-PANEL-1/R-REVIEW-1. Build, 30 focused model/trace cases and actual-browser interaction/layout/replay/native-isolation checks pass; peer pending.
 
+- [x] 2.0.61 Constrain panel zoom by available height, retain both gauge rows and bounded horizontal scrolling; refresh the README capture with current controls, horizon and the actual Egelsbach flight path. R-PANEL-1/R-VIEW-1. Build and focused native/browser zoom checks pass; screenshot provenance accompanies the image. Peer pending.
+
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.
 - [ ] 2.3 code2 implements the corresponding browser controls, instruments and exercise feedback against frozen contracts **in parallel with 2.2**.

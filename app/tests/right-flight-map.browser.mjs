@@ -129,7 +129,15 @@ try {
   await scene.focus(); await page.keyboard.press('a');
   await page.waitForFunction(() => window.rightMapStates.at(-1)?.step > 120);
   const firstPath = await pathData();
+  await page.waitForFunction(() => document.querySelector('.practice-map-trajectory polyline')?.getAttribute('points')?.split(' ').length > 1);
   assert(firstPath.features[0]?.geometry.coordinates.length >= 2, 'real flight creates a trail');
+  const projectedError = await page.evaluate(coordinate => {
+    const expected = window.__rightFlightMap.project(coordinate);
+    const actual = document.querySelector('.practice-map-trajectory polyline').points.getItem(0);
+    return Math.hypot(actual.x - expected.x, actual.y - expected.y);
+  }, firstPath.features[0].geometry.coordinates[0]);
+  assert(projectedError < .02, 'visible trajectory is projected from actual recorded coordinates');
+
   await page.waitForFunction(async length => (await window.__rightFlightMap.getSource('recorded-path').getData()).features[0]?.geometry.coordinates.length > length, firstPath.features[0].geometry.coordinates.length);
   await scene.focus(); await page.keyboard.press('Space');
   await page.waitForTimeout(100);
