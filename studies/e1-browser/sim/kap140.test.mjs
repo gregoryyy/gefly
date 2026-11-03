@@ -44,3 +44,37 @@ test('HDG intercept and prompt; ROL remains wings-level and REV ignores VOR',()=
  const loc={...s,nav:{...s.nav,kind:2}};const c=createKap140(s);cmd(c,'ap',s);cmd(c,'heading',s,2);cmd(c,'hdg',s);cmd(c,'rev',loc);assert(Math.abs(c.guidance(loc).heading_rad-(2+Math.PI-Math.PI/4))<1e-12);
 });
 test('VS page appears on engagement and ALT to VS, then expires',()=>{const s=sensor(),a=createKap140(s);cmd(a,'ap',s);assert.equal(a.snapshot(s).kap_display_page,1);cmd(a,'vertical',s,1);assert(Math.abs(a.snapshot(s).kap_vs_target_mps-(2+100*FPM))<1e-12);cmd(a,'vertical',s,0);a.step({...s,t_s:3});assert.equal(a.snapshot({...s,t_s:3}).kap_display_page,0);cmd(a,'alt',{...s,t_s:4});cmd(a,'alt',{...s,t_s:5});assert.equal(a.snapshot({...s,t_s:5}).kap_display_page,1);a.step({...s,t_s:8});assert.equal(a.snapshot({...s,t_s:8}).kap_display_page,0);});
+
+test('F46: cancelling an armed NAV/APR/REV keeps active HDG; cancelling an active mode reverts to ROL',()=>{
+ const s=sensor(), loc={...s,nav:{...s.nav,kind:2}};
+ for(const [action,mode,src] of [['nav',2,s],['apr',3,loc],['rev',4,loc]]){
+  const a=createKap140(s);cmd(a,'ap',s);cmd(a,'heading',s,2);cmd(a,'hdg',s);cmd(a,action,src);
+  let x=a.snapshot(src);assert.equal(x.kap_lateral,1);assert.equal(x.kap_lateral_arm,mode);
+  cmd(a,action,{...src,t_s:6});x=a.snapshot({...src,t_s:6});assert.equal(x.kap_lateral,1,`${action} cancel keeps HDG`);assert.equal(x.kap_lateral_arm,0);assert.equal(x.kap_gs_arm,0);
+  assert.equal(x.kap_hdg_prompt,0,'cancel does not start the HDG prompt');assert.equal(a.guidance(src).heading_rad,2);
+ }
+ const b=createKap140(s);cmd(b,'ap',s);cmd(b,'nav',s);assert.equal(b.snapshot(s).kap_lateral,0);cmd(b,'nav',s);assert.equal(b.snapshot(s).kap_lateral,0);assert.equal(b.snapshot(s).kap_lateral_arm,0);
+ const near={...s,nav:{...s.nav,cdi_norm:.1}}, c=createKap140(s);cmd(c,'ap',s);cmd(c,'hdg',s);cmd(c,'nav',near);assert.equal(c.snapshot(near).kap_lateral,2);cmd(c,'nav',near);assert.equal(c.snapshot(near).kap_lateral,0,'active NAV cancel keeps the existing generic ROL reversion');
+ const invalid={...s,nav:{...s.nav,valid:false}}, d=createKap140(s);cmd(d,'ap',s);cmd(d,'nav',invalid);assert.equal(d.snapshot(invalid).kap_lateral_alert,2);assert.equal(d.snapshot(invalid).kap_hdg_prompt,0,'rejected source press does not prompt');
+});
+test('F47: source-loss alerts clear on disconnect, do not carry into re-engagement and end on GS recapture',()=>{
+ const s=sensor(), a=createKap140(s);cmd(a,'ap',s);cmd(a,'hdg',s);cmd(a,'nav',s);const invalid={...s,nav:{...s.nav,valid:false}};a.step(invalid);assert.equal(a.snapshot(invalid).kap_lateral_alert,2);
+ cmd(a,'disconnect',invalid);assert.equal(a.snapshot(invalid).kap_lateral_alert,0);assert.equal(a.snapshot(invalid).kap_hdg_prompt,0);
+ cmd(a,'ap',s);assert.equal(a.snapshot(s).kap_lateral_alert,0);assert.equal(a.snapshot(s).kap_vertical_alert,0);
+ const loc={...s,nav:{valid:true,kind:2,cdi_norm:.1,course_rad:2,gs_valid:true,gs_norm:.1}}, b=createKap140(s);cmd(b,'ap',s);cmd(b,'apr',loc);b.step(loc);assert.equal(b.snapshot(loc).kap_vertical,2);
+ const lost={...loc,nav:{...loc.nav,gs_valid:false}};b.step(lost);assert.equal(b.snapshot(lost).kap_vertical_alert,2);b.step(loc);assert.equal(b.snapshot(loc).kap_vertical,2);assert.equal(b.snapshot(loc).kap_vertical_alert,0,'GS recapture ends the GS alert');
+ b.step(lost);assert.equal(b.snapshot(lost).kap_vertical_alert,2);cmd(b,'ap',lost);assert.equal(b.snapshot(lost).kap_engaged,0);assert.equal(b.snapshot(lost).kap_vertical_alert,0,'AP press disconnect clears the GS alert');
+});
+test('F48: invalid sensors are surfaced, disconnect an engaged AP and never produce an invalid snapshot',()=>{
+ const s=sensor(), a=createKap140(s);cmd(a,'ap',s);cmd(a,'alt',s);assert.equal(a.step(s),true);assert.equal(a.snapshot(s).kap_sensor_fault,0);
+ for(const bad of [{...s,elevator_norm:1.2},{...s,pressure_altitude_m:NaN},{...s,nav:{...s.nav,cdi_norm:NaN}},{...s,t_s:-1}]){
+  const b=createKap140(s);cmd(b,'ap',s);cmd(b,'alt',s);
+  assert.equal(b.step(bad),false);const x=b.snapshot(bad);assert(validKapState(x),JSON.stringify(x));
+  assert.equal(x.kap_sensor_fault,1);assert.equal(x.kap_engaged,0);assert.equal(x.kap_nav_valid,0);assert.equal(x.kap_gs_valid,0);
+  const g=b.guidance(bad);assert.equal(g.lateral_mode,0);assert.equal(g.vertical_mode,0);assert(Number.isFinite(g.heading_rad)&&Number.isFinite(g.vertical_target));
+  assert.equal(b.command({action:'ap'},bad),false,'engagement with invalid sensors is rejected');
+  assert.equal(b.step(s),true);assert.equal(b.snapshot(s).kap_sensor_fault,1,'fault stays latched after sensors recover');assert.equal(b.snapshot(s).kap_engaged,0);
+  cmd(b,'ap',s);assert.equal(b.snapshot(s).kap_sensor_fault,0);assert.equal(b.snapshot(s).kap_engaged,1);
+ }
+ const c=createKap140(s);assert.equal(c.step({...s,elevator_norm:2}),false);assert.equal(c.snapshot(s).kap_sensor_fault,1);assert.equal(c.snapshot(s).kap_engaged,0);
+});
