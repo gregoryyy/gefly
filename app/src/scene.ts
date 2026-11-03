@@ -1,12 +1,13 @@
 import {
   Axis, Cartesian3, CesiumWidget, Color, Credit, Ellipsoid, EllipsoidTerrainProvider,
   ImageryLayer, Ion, JulianDate, UrlTemplateImageryProvider,
-  Matrix3, Matrix4, Model, PerspectiveFrustum, Rectangle, ShadowMode, SingleTileImageryProvider, Transforms,
+  Matrix3, Matrix4, Model, PerspectiveFrustum, Quaternion, Rectangle, ShadowMode, SingleTileImageryProvider, Transforms,
 } from 'cesium';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 import { createForwardMarker } from './forward-marker';
 import { projectForwardDirection } from './forward-marker-projection';
 import { createAircraftVisual } from './aircraft-visual';
+import { AIRCRAFT_CONTROL_SURFACES, controlSurfaceAngle } from './aircraft-control-surfaces';
 import { createAircraftShadow } from './aircraft-shadow';
 import { createPublicTerrainProvider } from './terrain-provider';
 import { createStreamedTerrainProvider } from './streamed-terrain-provider';
@@ -257,6 +258,11 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   });
 
   let aircraft: Model | null = null;
+  const controlSurfaces = AIRCRAFT_CONTROL_SURFACES.map(surface => ({
+    surface, axis: Cartesian3.normalize(Cartesian3.fromElements(surface.axis[0], surface.axis[1], surface.axis[2]), new Cartesian3()),
+    hinge: Cartesian3.fromElements(surface.hinge[0], surface.hinge[1], surface.hinge[2]), rotation: new Quaternion(),
+    basis: new Matrix3(), matrix: new Matrix4(),
+  }));
   let modelUrl: string | null = null;
   const position = new Cartesian3();
   const frame = new Matrix4();
@@ -362,6 +368,16 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     if (aircraft) {
       aircraft.modelMatrix = Matrix4.clone(modelMatrix, aircraft.modelMatrix);
       aircraft.show = view === 'chase';
+      if (aircraft.ready) {
+        for (const binding of controlSurfaces) {
+          const node = aircraft.getNode(binding.surface.name);
+          if (!node) continue;
+          Quaternion.fromAxisAngle(binding.axis, controlSurfaceAngle(state, binding.surface), binding.rotation);
+          Matrix3.fromQuaternion(binding.rotation, binding.basis);
+          // Assign the local hinge transform on every selected live/replay frame.
+          node.matrix = Matrix4.fromRotationTranslation(binding.basis, binding.hinge, binding.matrix);
+        }
+      }
     }
     aircraftShadow.update(state, view, aircraft);
     if (view === 'cockpit') {

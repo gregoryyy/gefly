@@ -3,6 +3,37 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 11:30 — Moving chase controls and normal AP clicks
+
+TODO: 2.0.54; R-VIEW-1/R-REVIEW-1/R-AP-1. Agent: Codex, direct implementation
+and focused checks under the user's request for proportionate small-change work.
+
+**Implementation notes**
+
+Split the original visual into fixed sections and seven hinged surface nodes.
+Actual native left/right aileron, elevator, rudder and flap radians drive their
+local rotations in live flight and selected replay; no control input or dynamics
+is synthesized. Missing older values reset the visual pose rather than retaining
+live deflections. Normal AP clicks now represent the physical engagement press;
+long presses still fire once, with immediate disconnect and read-only guards.
+
+Production build passes. Focused browser checks verify each surface changes
+visible pixels and neutral restores identical pixels at frozen physics/world
+state; native controls, replay seeking and ordinary live AP engagement/disconnect
+pass. The maintained KAP panel gesture/availability suite passes. Screenshots are
+under ignored output/flight/control-surfaces-{neutral,deflected}.png.
+
+**Deviations**
+
+Hinge locations and exterior shapes are illustrative visual geometry, not a new
+calibrated aircraft model. Browser AP click behavior is an explicit interaction
+convenience. Cross-provider peer review remains pending.
+
+**Insights**
+
+Use the existing recorded actuator telemetry and a focused rendered check. Keep
+this small interaction increment separate from broader physics or process work.
+
 ## 2026-11-03 11:13 — Refresh PR #56 and lead ROAD with the product vision
 
 TODO: 0.22 and 2.0.51 integration follow-up; no additional runtime feature scope.

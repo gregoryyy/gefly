@@ -78,6 +78,9 @@ export function createAutopilotPanel(options: AutopilotOptions): {
     if (!previous) return;
     previous.button.classList.remove('kap-held');
     if (previous.action === 'vertical') options.onCommand({ action: 'vertical', value: 0 });
+    // A completed browser click represents the physical AP press. Long holds
+    // still fire at 250 ms; release must never send a duplicate engagement.
+    if (commitBaro && previous.action === 'ap' && !previous.fired) send({ action: 'ap' });
     if (commitBaro && previous.action === 'baro' && !previous.fired) send({ action: 'baro' });
     if (previous.pointerId !== undefined && previous.button.hasPointerCapture(previous.pointerId)) previous.button.releasePointerCapture(previous.pointerId);
   }
@@ -137,8 +140,8 @@ export function createAutopilotPanel(options: AutopilotOptions): {
       selector.setCustomValidity('');
     }
     if (reviewing || document.activeElement !== heading) { heading.value = state ? ((Math.round(degrees(state.kap_heading_bug_rad) * 10) % 3600) / 10).toFixed(1) : ''; heading.setCustomValidity(''); }
-    ap.setAttribute('aria-label', state?.kap_engaged ? 'Disconnect autopilot' : 'Hold for one quarter second to engage autopilot');
-    ap.title = state?.kap_engaged ? 'Disconnect autopilot' : 'Hold AP for at least 0.25 seconds';
+    ap.setAttribute('aria-label', state?.kap_engaged ? 'Disconnect autopilot' : 'Engage autopilot');
+    ap.title = state?.kap_engaged ? 'Disconnect autopilot' : 'Click to engage; a browser click represents the physical 0.25-second AP press';
     baro.title = 'Press to display BARO; hold 2 seconds to change pressure units';
     for (const [id, pressed] of [['ap-engage', !!state?.kap_engaged], ['ap-heading', !!state?.kap_engaged && state.kap_lateral === 1],
       ['ap-nav', !!state?.kap_engaged && state.kap_lateral === 2 || state?.kap_lateral_arm === 2], ['ap-apr', !!state?.kap_engaged && state.kap_lateral === 3 || state?.kap_lateral_arm === 3],

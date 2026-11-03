@@ -242,6 +242,10 @@ The indicated command is not a physical trim-tab angle, calibrated trim-wheel
 position or validated selected-172S behavior. A manual trim command change now
 disconnects the two-axis autopilot; automatic trim-servo behavior is not modeled.
 
+The chase aircraft has separate hinged rudder, ailerons, elevators and flaps.
+They follow actual simulated surface positions, including trim/autopilot effects
+and selected replay frames; moving the camera does not change the aircraft.
+
 ## Six-pack instruments
 
 The panel follows the familiar two-row arrangement:
@@ -290,8 +294,9 @@ the applied value. Throttle shortcuts 1–9 select 10–90%, while 0 selects idl
 the throttle slider provides finer adjustment.
 
 The separate autopilot box models the **KAP 140 two-axis unit with altitude
-preselection**, using the later hold-to-engage behavior. Hold **AP** for at least
-0.25 s to engage ROL plus current vertical speed; press AP to disconnect. **P** is
+preselection**. A browser click represents the physical quarter-second AP press;
+a long press also works. Click **AP** to engage ROL plus current vertical speed;
+press AP to disconnect. **P** is
 a simulator shortcut for AP on/off. **A** is a separate simulator convenience:
 with manual axes released, it engages **HDG + ALT** at the worker's current true
 heading and pressure altitude. It captures again when already engaged rather
@@ -342,8 +347,7 @@ co-channel sources and source loss remain flagged; no current service is inferre
 
 Try **Flight → EDDF 25C ILS practice · historical**: the aircraft starts five NM
 from the historical glideslope antenna, below the beam at 90 kt, with NAV1 IFCW
-111.55, NAV2 FFM 114.20 and the DG bug set to the LOC true course. Hold AP at least
-a quarter second, select APR and start flight. This demonstrates geometric capture
+111.55, NAV2 FFM 114.20 and the DG bug set to the LOC true course. Click AP, select APR and start flight. This demonstrates geometric capture
 over the existing public terrain; it is not a published procedure or clearance.
 
 This is an operating-logic model over reused generic JSBSim controllers, not a
