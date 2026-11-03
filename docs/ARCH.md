@@ -305,6 +305,14 @@ its backward-compatible thirteen-field group; KAP mode/target/validity data is a
 separate atomic extension, with its own pressure setting and NAV1 configuration.
 UI timing recognizes physical button gestures, while simulation-time state owns
 mode transitions, arming and capture. Recorded mode snapshots never drive native
-physics. Current source data is the opt-in fictional LAB VOR; coupled-mode
-valid-source fixtures do not establish real navigation services or installed
-servo, PFT/electrical/trim-fault fidelity.
+physics. A shared pure navigation module now drives both NAV instrument receivers
+and fixed-step NAV1/AP guidance from the same immutable historical NAV810 package.
+Normal initialization verifies bounded same-origin bytes/hash/schema before physics;
+LAB remains an explicit isolated source. Real VOR OBS uses sourced station magnetic
+calibration, while LOC/GS courses and the prototype DG remain true. Components
+retain separate coordinates/heights/ranges and DME bias; missing, conflicting or
+co-channel ambiguous service is unavailable. The source-derived EDDF 25C start is
+a geometric intercept fixture over existing public terrain, not a published
+procedure. Recorded tuning and the page-local frozen dataset drive Review.
+These fixtures do not establish current operational service, RF propagation,
+receiver calibration or installed servo, PFT/electrical/trim-fault fidelity.

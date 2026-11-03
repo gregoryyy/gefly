@@ -24,10 +24,11 @@
 .nav-unit-title { fill: #c9d4d6; font: 11px system-ui,sans-serif; text-anchor: middle; letter-spacing: .6px; }
 .nav-unit-reference { fill: #b3aa85; font: 8px system-ui,sans-serif; text-anchor: middle; letter-spacing: .5px; }
 .nav-cdi-axis { stroke: #bfc7bf; stroke-width: 1; }
-.nav-cdi-dot { fill: #d4ddd2; }
-.nav-cdi-needle { fill: none; stroke: #f1f1df; stroke-width: 3.5; stroke-linecap: round; }
-.nav-warning-flag rect, .nav-gs-inop rect { fill: #a43e2e; stroke: #de775c; stroke-width: .8; }
-.nav-warning-flag text, .nav-gs-inop text { fill: #fff4cf; text-anchor: middle; font: bold 10px system-ui,sans-serif; }
+.nav-cdi-dot, .nav-gs-dot { fill: #d4ddd2; }
+.nav-cdi-needle, .nav-gs-needle { fill: none; stroke: #f1f1df; stroke-width: 3.5; stroke-linecap: round; }
+.nav-warning-flag rect, .nav-gs-flag rect { fill: #a43e2e; stroke: #de775c; stroke-width: .8; }
+.nav-warning-flag text, .nav-gs-flag text { fill: #fff4cf; text-anchor: middle; font: bold 10px system-ui,sans-serif; }
+.nav-dme-readout { fill: #d4c595; font: 9px ui-monospace, monospace; text-anchor: middle; }
 .bearing-warning-flag rect { fill: #a43e2e; stroke: #de775c; stroke-width: .8; }
 .bearing-warning-flag text { fill: #fff4cf; text-anchor: middle; font: bold 10px system-ui,sans-serif; }
 .nav-bearing-pointer path { fill: #edcc70; stroke: #edcc70; stroke-width: 2.5; }
@@ -37,7 +38,6 @@
 .navigation-aux-readout { min-height: 28px; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; align-items: baseline; gap: 2px 5px; margin-top: 2px; }
 .navigation-aux-readout output { color: #ebd5a9; font: 15px/1.2 ui-monospace,SFMono-Regular,monospace; font-variant-numeric: tabular-nums; }
 .navigation-aux-readout span { color: #a7b5b2; font: 6px system-ui,sans-serif; letter-spacing: .4px; }
-.nav-gs-inop text { font-size: 9px; }
 .nav-to-from-symbol { fill: #e5e9df; }
 .nav-to-from-symbol text { text-anchor: middle; font: 11px system-ui,sans-serif; }
 .nav-scale-label { fill: #9faea9; font: 8px system-ui,sans-serif; text-anchor: middle; letter-spacing: .4px; }

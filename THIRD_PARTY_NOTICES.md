@@ -38,9 +38,8 @@ Original Gefly material is licensed GPL-3.0-or-later (user decision,
 above remains applicable to the identified derived files. Separately licensed
 dependencies, data and assets keep their own terms.
 
-No aircraft manuals/models, navigation/chart databases, JSBSim/FlightGear code,
-community add-ons or LLM runtime libraries have been bundled. Public terrain and
-orthophotography are the separately licensed geographic data described below. Research links are
+No aircraft manuals/models, charts, JSBSim/FlightGear code,
+community add-ons or LLM runtime libraries have been bundled. Public terrain, orthophotography and historical navigation data are the separately licensed geographic data described below. Research links are
 references, not grants to reuse those materials. Future additions retain their
 own source, applicability and rights review in [SBOM](docs/SBOM.md).
 
@@ -71,3 +70,17 @@ The additional 3000×1800 Hessen DOP20 airport JPEG is an unmodified public WMS
 GetMap response, under DL-DE Zero 2.0. Its [separate source record](app/public/imagery/DETAIL-SOURCE.json)
 retains bounds, request, byte hash and approximately 0.74–0.76 m output pixels.
 The original 20 cm source resolution is not a claim of 20 cm output detail.
+
+## Historical radio navigation data
+
+`app/public/navdata/rhein-main-v1.json` and `source-nav810.dat` derive from Robin
+A. Peel's NAV810 cycle 2013.10/build20131334, retained in the pinned FlightGear
+fgdata revision `5371094f6cc81d39b5cc7d9052ba13ba4a8b8e95`. Copyright © 2013
+Robin A. Peel; **GPL-2.0-or-later**, no warranty. The complete original notice is
+preserved in the source subset and JSON provenance. A full GPL v2 copy is supplied
+in [LICENSES/GPL-2.0-or-later.txt](LICENSES/GPL-2.0-or-later.txt) and beside the
+public data. Gefly selects regional rows, explicitly pairs components and converts
+units/encoding; it does not update their historical applicability. See the
+[data README](app/public/navdata/README.md) and
+[source research](docs/research/2026-11-03-rhein-main-navigation.md).
+The provisional EDDF extent anchor is from OurAirports' public-domain data.

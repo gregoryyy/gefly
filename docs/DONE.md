@@ -3,6 +3,60 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 02:56 — Historical Rhein-Main radio navigation and EDDF ILS practice
+
+TODO: 2.0.41 complete as bounded R-NAV-4 and partial R-NAV-1/R-NAV-2/R-DATA-1/
+R-REVIEW-1. Full current regional data, official boundary and installed avionics
+fidelity remain open. Agent: Codex orchestrator/integration; ap_native/code1 on
+shared signals/loader/worker and native tests; engine_sound_ui/code2 starts gauge
+work, then nav_ui/code2 completes instruments/directory/browser fixture after a
+provider capacity failure; ap_research performs parallel source research/input;
+nav_review independently checks source completeness, code/security/numerics and
+specification/browser behavior. Research prose is not independent acceptance.
+Cross-provider peer remains pending under the existing cadence; preceding Claude
+CLI attempts timed out without a review, and this increment claims no new peer pass.
+
+**Implementation notes**
+
+Ship a redistributable NAV810 cycle 2013.10 snapshot: 31 VOR-family sources,
+39 localizers and 16 standalone DMEs around a provisional community EDDF point.
+Preserve explicit paired GS/DME antennas, station magnetic calibration, DME bias,
+original notice/license and corresponding source subset. Conflicting components
+and overlapping co-channel sources fail closed. Shared geometry drives both NAV
+receivers and fixed-step NAV1/AP guidance; hash-verified local packages freeze on
+load. The compact Stations directory loads standby frequencies with explicit swap.
+NAV1 gains GS cross-needle/flag; bearing and DME availability remain independent.
+Flight → historical EDDF 25C starts a source-derived five-NM intercept over public
+terrain with IFCW111.55/NAV1 and FFM114.20/NAV2. Paused tuning and recorded Review
+retain coherent controls and source-derived indications.
+
+Independent source audit preserves all 70 VOR/LOC parents and all 52 DME source
+rows from the 241-row extent, including ambiguous components. Native IFCW APR/GS
+tracks for ten seconds with decreasing deviations; full-app Chrome demonstrates
+paused first OBS, both receivers, real terrain, APR/GS capture and read-only Review.
+Existing LAB gesture/mobile/bearing/Review and five-group AP flight regressions
+pass. One concurrent headless AP run timed out; sequential retry passes unchanged.
+Shared CI passes 195 app Node tests, six adapter tests and foundation/assurance/
+training gates; nine of 23 existing native study tests remain explicitly skipped.
+Build, scaffold, assurance and reproducible compiler output pass. See
+[review evidence](reviews/2026-11-03-rhein-main-navigation.md).
+
+**Deviations**
+
+The source edition is historical, not current AIRAC/NOTAM/service status. The
+approximate 100 NM extent is not the verified official-ARP R-REGION-1 boundary;
+normal terrain still covers only the existing smaller package. NDB/markers are
+inventoried but unsupported. Reception sectors/geometry and generic AP servos are
+uncalibrated; no published procedure, installed receiver or approach fidelity is
+accepted. Only three EDDF ILS records have paired DME; absent components stay off.
+
+**Insights**
+
+Nearest antenna cannot identify the operating runway on reused ILS frequencies.
+Source receivability must also remain independent of OBS ambiguity and station
+passage, so changing OBS cannot select another transmitter. Explicit flight presets
+must establish panel tuning before the first state without invoking gated live input.
+
 ## 2026-11-03 02:10 — KAP 140 operating controls, two-axis guidance and altitude alerts
 
 TODO: 2.0.40 complete as bounded R-AP-1/R-INPUT-1/R-REVIEW-1 operating logic;

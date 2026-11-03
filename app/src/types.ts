@@ -151,9 +151,9 @@ export interface FlightScene {
   update(state: FlightState, view: 'cockpit' | 'chase', look?: { yaw_rad: number; pitch_rad: number; fov_rad?: number }): void;
   dispose(): void;
 }
-export type AirborneSite = 'edfe' | 'taunus';
+export type AirborneSite = 'edfe' | 'taunus' | 'eddf-ils';
 export interface FlightSession {
   setKap140(command: KapCommand): void;
-  setNavigation(config: Pick<RadioNavSnapshot, "radio_nav_active_khz" | "radio_obs_deg" | "radio_demo_enabled">): void;
+  setNavigation(config: Pick<RadioNavSnapshot, "radio_nav_active_khz" | "radio_obs_deg" | "radio_demo_enabled"> & Partial<Pick<RadioNavSnapshot, "radio_nav2_active_khz" | "radio_obs2_deg">>): void;
   start(): void; pause(): void; reset(landingPreset?: LandingPreset, site?: AirborneSite): void; input(controls: Controls): void; setAltimeter(setting_pa: number): void; setAutopilot(mode: 0|1|2, target_heading_rad?: number): void; dispose(): void;
 }

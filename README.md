@@ -67,6 +67,14 @@ current-altitude hold, selected-altitude capture and source-aware navigation;
 generic servo response and real navigation-data coverage remain limited.
 On narrow screens, open **Engine & autopilot** for those controls.
 
+**Radio stack → Stations** loads a historical Rhein-Main VOR/LOC/DME frequency into
+NAV1 or NAV2 standby; swap to activate it. **Flight → EDDF 25C ILS practice** starts
+near the sourced localizer/glideslope with NAV1 111.55 and FFM on NAV2 114.20.
+Hold AP for a quarter second, select APR and start flight to try capture.
+The bundled **2013.10** inventory is historical simulator data, with approximate
+signals and missing/ambiguous services flagged; it is not current flight information
+or a published approach. See [provenance](app/public/navdata/README.md).
+
 ## Status and entry points
 
 Technical foundation is underway, with [native](studies/e1-jsbsim/README.md) and

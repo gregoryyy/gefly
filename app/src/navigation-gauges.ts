@@ -44,14 +44,15 @@ function face(receiver: 1 | 2): string {
     <circle cx="120" cy="120" r="108" class="nav-dial"/>
     <g class="nav-compass-card">${compassCard()}</g>
     <path d="M112 7h16l-8 13z" class="nav-course-index"/>
-    <text x="120" y="91" class="nav-unit-title">NAV${receiver} · ${receiver === 1 ? 'VOR / LOC' : 'VOR'}</text>
-    <text x="120" y="104" class="nav-unit-reference">TRUE · DEMO LAB</text>
+    <text x="120" y="79" class="nav-unit-title">NAV${receiver} · ${receiver === 1 ? 'VOR / ILS' : 'VOR / LOC'}</text>
+    <text x="120" y="91" class="nav-unit-reference">NO SIGNAL</text>
     <line x1="51" y1="123" x2="189" y2="123" class="nav-cdi-axis"/>
     ${Array.from({ length: 11 }, (_, i) => `<circle cx="${60 + i * 12}" cy="123" r="${i === 5 ? 3 : 2}" class="nav-cdi-dot"/>`).join('')}
     <g class="nav-cdi-needle" hidden><path d="M120 108v40"/></g>
+    ${receiver === 1 ? `${Array.from({ length: 11 }, (_, i) => `<circle cx="120" cy="${99 + i * 4.8}" r="${i === 5 ? 3 : 1.5}" class="nav-gs-dot"/>`).join('')}<g class="nav-gs-needle" hidden><path d="M89 123h62"/></g><g class="nav-gs-flag"><rect x="52" y="151" width="28" height="18" rx="2"/><text x="66" y="164">GS</text></g>` : ''}
     <g class="nav-warning-flag"><rect x="150" y="151" width="37" height="18" rx="2"/><text x="168.5" y="164">NAV</text></g>
     <g class="nav-to-from-symbol" hidden><path d="M91 151l-6 10h12z"/><text x="120" y="162">OFF</text></g>
-    ${receiver === 1 ? '<g class="nav-gs-inop"><rect x="88.5" y="66" width="63" height="17" rx="2"/><text x="120" y="78">GS INOP</text></g>' : ''}
+    <text x="120" y="190" class="nav-dme-readout">DME — NM</text>
     <text x="120" y="210" class="nav-scale-label">5 DOTS = 10°</text>
   </svg>`;
 }
@@ -64,11 +65,11 @@ function auxiliaryFace(content: string, label: string): string {
 }
 function bearingFace(): string {
   return auxiliaryFace(`<g class="bearing-compass-card">${compassCard()}</g><path d="M112 7h16l-8 13z" class="nav-course-index"/>
-    <text x="120" y="92" class="nav-unit-title">BRG / DME</text><text x="120" y="105" class="nav-unit-reference">NAV1 · LAB · TRUE</text>
+    <text x="120" y="92" class="nav-unit-title">BRG / DME</text><text x="120" y="105" class="nav-unit-reference">NAV1 · TRUE AID</text>
     <g class="nav-bearing-pointer" hidden><path d="M120 42l-7 15h14zM120 55v132M113 179l7 16 7-16"/></g>
     <circle cx="120" cy="120" r="6" class="nav-course-index"/>
     <g class="bearing-warning-flag"><rect x="99" y="151" width="42" height="18" rx="2"/><text x="120" y="164">BRG</text></g>
-    <title>Fictional NAV1 LAB true bearing and geometric DME, not ADF/NDB reception</title>`, 'Fictional LAB bearing and geometric DME unavailable');
+    <title>NAV1 VOR-derived true bearing teaching aid and independent DME, not ADF/NDB reception</title>`, 'NAV1 bearing teaching aid and DME unavailable');
 }
 function rpmFace(): string {
   const ticks: string[] = [];
@@ -86,28 +87,28 @@ function rpmFace(): string {
     <text x="120" y="210" class="rpm-unavailable">INOP</text>`, 'Actual propeller RPM unavailable');
 }
 
-/** Four original classic displays; LAB bearing is not an ADF/NDB receiver. */
+/** Four original displays over the shared signal model, not ADF/NDB reception. */
 export function createNavigationGauges(options: NavigationGaugesOptions): {
   update(state: Readonly<FlightState> | null, reviewing: boolean, running: boolean): void;
   dispose(): void;
 } {
   const { container } = options;
   container.classList.add('navigation-gauges');
-  container.setAttribute('aria-label', 'NAV1, NAV2, fictional LAB bearing/DME and actual propeller RPM');
+  container.setAttribute('aria-label', 'NAV1 ILS/VOR, NAV2 VOR/localizer, NAV1 bearing teaching aid/DME and actual propeller RPM');
   const opener = document.createElement('button');
   opener.id = 'navigation-open'; opener.type = 'button'; opener.className = 'navigation-open';
   opener.textContent = 'NAV instruments'; opener.setAttribute('aria-haspopup', 'dialog'); opener.setAttribute('aria-controls', 'navigation-dialog');
   const content = document.createElement('div');
   content.className = 'navigation-gauges-content';
-  content.innerHTML = ([1, 2] as const).map(receiver => `<section id="nav${receiver}-gauge" class="navigation-gauge" data-receiver="${receiver}" aria-label="NAV${receiver} VOR teaching instrument">
+  content.innerHTML = ([1, 2] as const).map(receiver => `<section id="nav${receiver}-gauge" class="navigation-gauge" data-receiver="${receiver}" aria-label="NAV${receiver} ${receiver === 1 ? 'VOR/localizer/glideslope' : 'VOR/localizer'} instrument">
     ${face(receiver)}
-    <div class="navigation-obs-controls"><button type="button" id="nav${receiver}-gauge-obs-down" data-receiver="${receiver}" data-delta="-1" aria-label="Decrease NAV${receiver} OBS true course by one degree">−</button>
-      <div class="navigation-obs-knob" tabindex="0" role="spinbutton" aria-label="NAV${receiver} OBS true course" aria-valuemin="0" aria-valuemax="359" title="Drag right/left to turn OBS. Arrow keys: 1 degree; Shift + arrow: 10 degrees."><span>OBS TRUE</span><output id="nav${receiver}-gauge-obs">—</output></div>
-      <button type="button" id="nav${receiver}-gauge-obs-up" data-receiver="${receiver}" data-delta="1" aria-label="Increase NAV${receiver} OBS true course by one degree">+</button></div>
+    <div class="navigation-obs-controls"><button type="button" id="nav${receiver}-gauge-obs-down" data-receiver="${receiver}" data-delta="-1" aria-label="Decrease NAV${receiver} OBS course by one degree">−</button>
+      <div class="navigation-obs-knob" tabindex="0" role="spinbutton" aria-label="NAV${receiver} OBS course" aria-valuemin="0" aria-valuemax="359" title="Drag right/left to turn OBS. Arrow keys: 1 degree; Shift + arrow: 10 degrees."><span>OBS TRUE</span><output id="nav${receiver}-gauge-obs">—</output></div>
+      <button type="button" id="nav${receiver}-gauge-obs-up" data-receiver="${receiver}" data-delta="1" aria-label="Increase NAV${receiver} OBS course by one degree">+</button></div>
     <p id="nav${receiver}-gauge-note" class="navigation-gauge-note">Radio configuration unavailable</p>
-  </section>`).join('') + `<section id="bearing-gauge" class="navigation-gauge" data-instrument="bearing" aria-label="Fictional NAV1 LAB true bearing and geometric DME">
+  </section>`).join('') + `<section id="bearing-gauge" class="navigation-gauge" data-instrument="bearing" aria-label="NAV1 VOR-derived true bearing teaching aid and independent DME">
     ${bearingFace()}<div class="navigation-aux-readout"><output id="bearing-true">—</output><span>BRG TRUE</span><output id="bearing-dme">—</output><span>DME NM</span></div>
-    <p class="navigation-gauge-note" id="bearing-note">LAB off · no real station database</p></section>
+    <p class="navigation-gauge-note" id="bearing-note">Navigation signal unavailable</p></section>
     <section id="rpm-gauge" class="navigation-gauge" data-instrument="rpm" aria-label="Actual propeller RPM">
     ${rpmFace()}<div class="navigation-aux-readout"><output id="rpm-value">—</output><span>PROP RPM · MODEL</span></div></section>`;
   const dialog = document.createElement('dialog');
@@ -132,6 +133,8 @@ export function createNavigationGauges(options: NavigationGaugesOptions): {
       needle: root.querySelector<SVGGElement>('.nav-cdi-needle')!,
       flag: root.querySelector<SVGGElement>('.nav-warning-flag')!,
       direction: root.querySelector<SVGGElement>('.nav-to-from-symbol')!,
+      gsNeedle: root.querySelector<SVGGElement>('.nav-gs-needle'),
+      gsFlag: root.querySelector<SVGGElement>('.nav-gs-flag'),
       knob: root.querySelector<HTMLElement>('.navigation-obs-knob')!,
       obs: root.querySelector<HTMLOutputElement>('output')!,
       note: root.querySelector<HTMLElement>('.navigation-gauge-note')!,
@@ -259,44 +262,67 @@ export function createNavigationGauges(options: NavigationGaugesOptions): {
       const { receiver } = gauge;
       const obs = config ? (receiver === 1 ? config.radio_obs_deg : config.radio_obs2_deg) : null;
       const indication = config ? navigationIndication(config, state, receiver) : null;
-      const valid = indication?.valid === true;
+      const valid = indication?.valid === true && indication.cdi_norm !== null && Number.isFinite(indication.cdi_norm);
+      const localizer = indication?.station_kind === 'LOC';
+      const reference = indication?.course_reference === 'MAG' ? 'MAG' : indication?.course_reference === 'TRUE' ? 'TRUE' : 'REF';
+      const gsValid = receiver === 1 && indication?.gs_valid === true && indication.gs_norm !== null && Number.isFinite(indication.gs_norm);
+      const dmeValid = indication?.dme_valid === true && indication.dme_nm !== null && Number.isFinite(indication.dme_nm);
+      const station = indication?.station_id ?? 'NO SIGNAL';
+      const fixedCourse = indication?.course_true_deg === null || indication?.course_true_deg === undefined ? 'FIXED' : `FIXED ${String(Math.round(indication.course_true_deg) % 360).padStart(3, '0')}°T`;
       gauge.root.dataset.valid = String(valid);
+      gauge.root.dataset.gsValid = String(gsValid); gauge.root.dataset.dmeValid = String(dmeValid);
+      gauge.root.dataset.stationId = indication?.station_id ?? ''; gauge.root.dataset.stationKind = indication?.station_kind ?? '';
+      gauge.root.dataset.courseReference = indication?.course_reference ?? 'NONE';
+      gauge.root.dataset.gsNorm = gsValid ? String(indication!.gs_norm) : '';
       gauge.obs.value = obs === null ? '—' : `${String(obs).padStart(3, '0')}°`;
       gauge.knob.setAttribute('aria-disabled', String(!canAdjust));
-      gauge.knob.setAttribute('aria-valuetext', obs === null ? 'Unavailable' : `${obs} degrees TRUE${reviewing ? ', recorded' : ''}`);
+      gauge.knob.querySelector('span')!.textContent = localizer ? 'OBS REF' : `OBS ${reference}`;
+      gauge.knob.setAttribute('aria-label', `NAV${receiver} OBS ${localizer ? 'reference only, localizer course is fixed' : reference + ' course'}`);
+      gauge.knob.setAttribute('aria-valuetext', obs === null ? 'Unavailable' : `${obs} degrees ${localizer ? 'reference only' : reference}${reviewing ? ', recorded' : ''}`);
       if (obs === null) gauge.knob.removeAttribute('aria-valuenow');
       else gauge.knob.setAttribute('aria-valuenow', String(obs));
       gauge.svg.dataset.obsEnabled = String(canAdjust);
-      gauge.card.toggleAttribute('hidden', obs === null);
-      if (obs !== null) gauge.card.setAttribute('transform', `rotate(${-obs} 120 120)`);
+      const cardCourse = localizer ? indication?.course_true_deg ?? null : obs;
+      gauge.card.toggleAttribute('hidden', cardCourse === null);
+      if (cardCourse !== null) gauge.card.setAttribute('transform', `rotate(${-cardCourse} 120 120)`);
       gauge.needle.toggleAttribute('hidden', !valid);
       gauge.flag.toggleAttribute('hidden', valid);
-      gauge.direction.toggleAttribute('hidden', !valid);
+      gauge.direction.toggleAttribute('hidden', !valid || localizer || indication?.to_from === 'OFF');
+      gauge.gsNeedle?.toggleAttribute('hidden', !gsValid); gauge.gsFlag?.toggleAttribute('hidden', gsValid);
+      if (gsValid) gauge.gsNeedle!.setAttribute('transform', `translate(0 ${-indication!.gs_norm! * 24})`);
+      gauge.root.querySelector('.nav-unit-reference')!.textContent = indication?.station_id
+        ? `${station} · ${localizer ? fixedCourse : reference} · ${config?.radio_demo_enabled ? 'DEMO' : 'HIST'}` : 'NO SIGNAL';
+      gauge.root.querySelector('.nav-dme-readout')!.textContent = dmeValid ? `DME ${indication!.dme_nm!.toFixed(1)} NM` : 'DME — NM';
+      gauge.root.querySelector('.nav-scale-label')!.textContent = localizer ? 'LOC · FIXED COURSE' : indication?.station_kind === 'DME' ? 'DME ONLY · NO CDI' : `5 DOTS = 10° · ${reference}`;
       if (valid) {
         gauge.needle.setAttribute('transform', `translate(${indication.cdi_norm! * 60} 0)`);
         gauge.direction.querySelector('text')!.textContent = indication.to_from;
         gauge.direction.querySelector('path')!.setAttribute('transform', indication.to_from === 'TO' ? '' : 'rotate(180 91 156)');
       }
       gauge.note.textContent = `${reviewing ? 'RECORDED · ' : ''}${indication?.reason ?? 'Radio configuration unavailable'}`;
-      gauge.svg.setAttribute('aria-label', valid
-        ? `NAV${receiver} fictional LAB, OBS ${obs} degrees TRUE, CDI ${(indication.cdi_norm! * 5).toFixed(1)} dots positive right, ${indication.to_from}${receiver === 1 ? ', glide slope inoperative' : ''}${reviewing ? ', recorded' : ''}`
-        : `NAV${receiver} unavailable, NAV flag. ${indication?.reason ?? 'Radio configuration unavailable'}${receiver === 1 ? '. Glide slope inoperative' : ''}`);
+      gauge.svg.setAttribute('aria-label', `NAV${receiver} ${station}, ${indication?.source_label ?? 'source unavailable'}, `
+        + (valid ? `${localizer ? fixedCourse : `OBS ${obs} degrees ${reference}`}, CDI ${(indication!.cdi_norm! * 5).toFixed(1)} dots positive right${!localizer ? ', ' + indication!.to_from : ''}`
+          : `NAV flag, ${indication?.reason ?? 'radio configuration unavailable'}`)
+        + (receiver === 1 ? gsValid ? `, glideslope ${(indication!.gs_norm! * 5).toFixed(1)} dots positive up` : `, GS flag, ${indication?.gs_reason ?? 'glideslope unavailable'}` : ', no glideslope receiver on this instrument')
+        + `, DME ${dmeValid ? indication!.dme_nm!.toFixed(1) + ' nautical miles indicated' : 'unavailable'}${reviewing ? ', recorded' : ''}`);
     }
     const bearing = config ? bearingDistanceIndication(config, state, 1) : null;
     const heading = state && Number.isFinite(state.heading_rad) ? ((state.heading_rad / DEG) % 360 + 360) % 360 : null;
     const validBearing = bearing?.valid === true && heading !== null;
     bearingRoot.dataset.valid = String(validBearing); bearingRoot.dataset.recorded = String(reviewing);
     bearingRoot.dataset.bearingTrueDeg = bearing?.bearing_true_deg === null || bearing?.bearing_true_deg === undefined ? '' : String(bearing.bearing_true_deg);
-    bearingRoot.dataset.dmeNm = bearing?.dme_nm === null || bearing?.dme_nm === undefined ? '' : String(bearing.dme_nm);
+    const dmeValid = bearing?.dme_valid === true && bearing.dme_nm !== null && Number.isFinite(bearing.dme_nm);
+    bearingRoot.dataset.dmeNm = dmeValid ? String(bearing!.dme_nm) : ''; bearingRoot.dataset.dmeValid = String(dmeValid);
     bearingCard.toggleAttribute('hidden', heading === null);
     if (heading !== null) bearingCard.setAttribute('transform', `rotate(${-heading} 120 120)`);
     bearingPointer.toggleAttribute('hidden', !validBearing); bearingFlag.toggleAttribute('hidden', validBearing);
     if (validBearing) bearingPointer.setAttribute('transform', `rotate(${bearing.bearing_true_deg! - heading!} 120 120)`);
     const bearingText = validBearing ? `${String(Math.round(bearing.bearing_true_deg!) % 360).padStart(3, '0')}°` : '—';
     bearingRoot.querySelector<HTMLOutputElement>('#bearing-true')!.value = bearingText;
-    bearingRoot.querySelector<HTMLOutputElement>('#bearing-dme')!.value = bearing?.dme_nm === null || bearing?.dme_nm === undefined ? '—' : bearing.dme_nm.toFixed(1);
+    bearingRoot.querySelector<HTMLOutputElement>('#bearing-dme')!.value = dmeValid ? bearing!.dme_nm!.toFixed(1) : '—';
+    bearingRoot.querySelector('.nav-unit-reference')!.textContent = `${bearing?.station_id ?? 'NAV1'} · TRUE AID`;
     bearingRoot.querySelector<HTMLElement>('#bearing-note')!.textContent = `${reviewing ? 'RECORDED · ' : ''}${bearing?.reason ?? 'Radio configuration unavailable'}`;
-    bearingRoot.querySelector('svg')!.setAttribute('aria-label', `NAV1 fictional LAB, true bearing ${bearingText}, geometric DME ${bearing?.dme_nm?.toFixed(1) ?? 'unavailable'} nautical miles${reviewing ? ', recorded' : ''}`);
+    bearingRoot.querySelector('svg')!.setAttribute('aria-label', `NAV1 ${bearing?.station_id ?? 'unidentified'}, ${bearing?.source_label ?? 'source unavailable'}, VOR-derived true bearing teaching aid ${bearingText}, DME ${dmeValid ? bearing!.dme_nm!.toFixed(1) + ' nautical miles indicated' : 'unavailable'}, not ADF/NDB reception${reviewing ? ', recorded' : ''}`);
     const rpm = state && typeof state.prop_radps === 'number' && Number.isFinite(state.prop_radps) && state.prop_radps >= 0 ? state.prop_radps * 60 / (2 * Math.PI) : null;
     const validRpm = rpm !== null && Number.isFinite(rpm);
     rpmRoot.dataset.valid = String(validRpm); rpmRoot.dataset.recorded = String(reviewing);

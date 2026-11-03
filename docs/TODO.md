@@ -148,6 +148,8 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.40 Deliver source-scoped KAP 140 two-axis/preselect operating controls, native VS/ALT and heading guidance, DG arming/capture/source-loss logic, altitude alerts, coherent paused/Review state and validated input boundaries. R-AP-1/R-INPUT-1/R-REVIEW-1; reference cases declare generic servo/capture tuning and current fictional NAV1 coverage. Independent quality/25-group browser validation and shared CI pass; see [review](reviews/2026-11-03-kap140.md). Deeper installed-aircraft fidelity remains in 2.0.14; physical sound delivery is unverified and peer pending.
 
+- [x] 2.0.41 Add a source-pinned historical Rhein-Main VOR/LOC/GS/DME inventory, dual-receiver station directory, common instrument/AP signals and an EDDF 25C geometric practice preset. R-NAV-4/R-NAV-1/R-NAV-2/R-DATA-1/R-REVIEW-1. Source edition 2013.10, approximate extent around a community EDDF coordinate; no current AIRAC/procedure or complete R-REGION-1 claim. Independent source/code/actual-browser validation and shared CI pass; see [review](reviews/2026-11-03-rhein-main-navigation.md). Peer pending.
+
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.
 - [ ] 2.3 code2 implements the corresponding browser controls, instruments and exercise feedback against frozen contracts **in parallel with 2.2**.
