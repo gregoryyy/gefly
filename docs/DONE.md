@@ -3,6 +3,60 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 08:53 — Parking brake and optional linked rudder
+
+TODO: 2.0.49 complete for the bounded R-INPUT-1/R-REVIEW-1 increment.
+Agent: Codex orchestrator owns integration, compact brake controls, shortcut,
+shared requirements/status and publication. `ground_controls_settings`/code1
+implements the command mapping, Options checkbox and pure tests;
+`ground_controls_browser`/code2 implements actual-browser/native regression checks.
+`ground_controls_housekeeping` updates input/control/security documentation in
+parallel. `ground_controls_quality` independently reviews quality and validates
+specification behavior. Cross-provider peer remains pending under the existing
+batched cadence; no external provider review is claimed.
+
+**Implementation notes**
+
+Add the N-toggle parking brake beside held B wheel braking in the existing
+compact row. Full native parking braking bypasses the adjustable wheel gain;
+the latch survives release/pause/focus/Options but clears on flight restart.
+Guard N and disable the button for unavailable/collided/Review states. Review
+retains recorded applied braking and explicitly marks the unrecorded latch
+unknown rather than inferring it. Preserve native mechanics instead of freezing
+position or velocity.
+
+Options adds an initially off, session-only Link rudder to aileron checkbox.
+Map deliberate roll before the experimental roll correction, with the pinned
+model's opposite rudder sign; nonzero manual rudder overrides, and sensitivity
+presets preserve the chosen link. Reuse the existing rudder-to-nosewheel coupling.
+Actual native ground-turn cases verify turning direction without new aircraft
+coefficients or installed-aircraft calibration claims.
+
+Shared CI passes with 233 app tests, 84 assurance tests and 11 assessment tests;
+nine of 23 existing native-study cases remain explicitly skipped. TypeScript,
+build and all five new actual-browser/native groups pass. Independent checks pass
+41 focused control/session tests, the maintained five-group browser rerun and
+extra paused keyboard/layout/held-B/Review cases after the label repair, plus
+eight legacy ground-braking browser groups. The
+[review](reviews/2026-11-03-parking-rudder.md) records current outcomes and limits.
+Frozen eight-path runtime/test/package packet:
+`39076da0e3c9df6c9322d43e4f7e56f0774e4f9166b5720e6a9ff2bfa9bdc67b`.
+
+**Deviations**
+
+No native steering change was required: the bridge already maps rudder to the
+model's steer command. The rudder link is a simulator input assist, not a claim
+of mechanical linkage. Parking-latch history is unavailable in Review; actual
+left/right braking remains recorded. No parking-force limit, anti-tip assist,
+aircraft-fidelity or training acceptance is added.
+
+**Insights**
+
+Independent layout measurement caught the long wheel label crossing into the
+parking button. Short WHEEL/PARK labels retain full accessible names and the
+same row height; renewed ON/OFF/Review checks cover 1440 and 1024 px. Paused
+latching and settings changes retain identical native step/digest/final state.
+
 ## 2026-11-03 08:36 — Right-side flight map and southern Germany source inventory
 
 TODO: 2.0.48 complete for the bounded R-WORLD-6/R-NAV-3/R-NAV-4/

@@ -74,7 +74,8 @@ unavailable. Returning to live restores pending control settings.
 | E | Request engine ignition/starter on or off |
 | / | Restore initial trim |
 | [ / ] | Retract / extend flaps one 10° detent |
-| B (hold) | Apply both wheel brakes; release to let go |
+| B (hold) | Apply both wheel brakes at the Options command; release to let go |
+| N | Toggle the parking brake on / off |
 | ' / \\ (hold) | Elevator trim nose up / nose down |
 | Two-finger vertical scroll over the scene | Up: zoom in; down: zoom out |
 | Escape | Release scene yoke/look control |
@@ -130,6 +131,18 @@ enabled, with no brake-triggered exemption. Brakes act through
 wheel contact, not as an airbrake, so they do not directly slow the initial
 airborne flight. Ready flight controls remain available while paused; commands are staged until
 Resume without advancing physics. Recorded Review remains read-only.
+
+The **parking brake** button sits beside the wheel-brake button. Click it or
+press **N** to toggle full commanded braking on both main wheels; its pressed
+state shows the live latch. This is independent of the Options wheel-brake
+percentage. Releasing B, pausing, opening Options, hiding controls or losing
+focus clears held inputs but keeps the parking brake latched. Press N again to
+release it; restarting the flight or reloading starts with it off. Parking brake
+changes made while paused are staged until Resume. It uses existing wheel-contact
+braking, with native braking forces and collision limits; it does not freeze
+the aircraft. Review disables the toggle and shows its latch as unavailable: recorded
+applied brake values do not identify which live control requested them.
+
 These controls use the research aircraft's existing model, not accepted 172S
 performance data. See [control sources](../docs/research/2026-11-02-classic-controls.md).
 
@@ -151,6 +164,18 @@ then **Done** and **Resume flight**. Try a small stick movement or a brief held
 button input. Repeat with **Default** to compare. Sensitivity settings last for
 the current page session; restarting through Flight preserves them. They
 change input response, not the aircraft's physics or calibration.
+
+**Options → Link rudder to aileron** adds a session-only input assist, off by
+default. Deliberate left/right aileron input also commands rudder for the same
+turning direction; explicit Q/W rudder input takes priority. The mix uses the
+pilot's roll input before the experimental roll correction, so centered controls
+do not acquire a rudder command from that offset. It does not mix autopilot
+outputs or represent a mechanical linkage in the aircraft. Default/Gentle
+sensitivity changes preserve the checkbox; reloading the page returns it to
+off. The research model already couples rudder input to nosewheel steering, so
+Q/W—and linked roll input when enabled—also steer on the ground through the
+existing gear model. No new steering coefficients or aircraft calibration are
+introduced.
 
 The **roll correction** is a constant left aileron command: its default −0.109375
 means about **10.9% of full left command**. It counters roll drift observed in the
@@ -393,7 +418,8 @@ and flight reset are unavailable during review. The throttle, pilot-axis command
 actual left/right ailerons, elevator/rudder angles, flap lever/position, brakes,
 trim, mixture and avionics show the selected recorded sample as read-only. Older
 engines without the new control telemetry show those fields as unavailable.
-Pending live throttle/mixture/flap/trim selections return when leaving Review.
+Pending live throttle/mixture/flap/trim selections and the parking-brake latch
+return when leaving Review.
 
 This is a **recorded trace, not resimulated replay**. The current flight's recent
 state history stays in page memory, bounded to 600 simulation seconds and 36,000

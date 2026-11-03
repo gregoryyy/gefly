@@ -243,7 +243,7 @@ try {
   await legacy.locator('#scene').focus(); await legacy.keyboard.press('r'); await legacy.locator('#flight-review').waitFor({ state: 'visible' });
   await legacy.waitForFunction(() => document.querySelector('#wheel-brakes').getAttribute('aria-label') === 'Recorded wheel brakes unavailable');
   assert(await legacy.locator('#wheel-brakes').isDisabled());
-  assert.match(await legacy.locator('#wheel-brakes').textContent(), /WHEEL BRAKES —/);
+  assert.match(await legacy.locator('#wheel-brakes').textContent(), /WHEEL —/);
   assert.doesNotMatch(await legacy.locator('#wheel-brakes').textContent(), /0%/);
   assert.match(await legacy.locator('#brake-state').textContent(), /unavailable/i);
   assert(await legacy.evaluate(fields => window.legacyRawStates.every(state => Number.isFinite(state.brake_left_norm) && Number.isFinite(state.brake_right_norm))

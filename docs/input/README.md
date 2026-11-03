@@ -85,3 +85,4 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [Right-side flight map](2026-11-03-right-flight-map.md) — research and build a public-data flight map beside the flight view, showing the current flown path.
 - [Flight map default](2026-11-03-flight-map-default.md) — confirmed map with airports and navigation aids as the initial view; aerial imagery remains optional.
 - [Southern Germany map data](2026-11-03-southern-germany-map.md) — all source airfields and navigation data; confirmed Bavaria, Baden-Württemberg, Hesse, Rhineland-Palatinate and Saarland.
+- [Parking brake and rudder controls](2026-11-03-parking-rudder.md) — N toggled parking brake beside wheel brakes, optional aileron/rudder link and rudder wheel steering.

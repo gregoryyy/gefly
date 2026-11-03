@@ -77,7 +77,7 @@ root.innerHTML = `
       <div class="axis-display"><span>FLAP CMD <b id="recorded-flap-command">—</b></span><span>ACTUAL <b id="recorded-flap-actual">—</b></span><span>TRIM <b id="recorded-trim">—</b></span></div>
       <div class="axis-display"><span>THROTTLE <b id="recorded-throttle">—</b></span><span>MIXTURE <b id="recorded-mixture">—</b></span><span>MODE <b id="recorded-mixture-mode">—</b></span><span>ENGINE <b id="recorded-engine">—</b></span></div>
     </div>
-    <details class="control-options"><summary>Keyboard & assistance</summary><p>↑ Push nose down · ↓ Pull nose up<br>← / → Bank · Q / W Rudder<br>1–9 Throttle: 10–90% · 0: idle<br>[ / ] Retract / extend flaps · B Hold wheel brakes at Options command<br>&#39; / &#92; Trim nose up / down<br>P Autopilot on / off<br>E Engine on/off · S Sound on/off<br>Space Pause · R Review</p><label for="roll-offset">Roll correction <output id="offset-value">−0.109</output></label><input id="roll-offset" type="range" min="-0.25" max="0.25" step="0.001" value="-0.109375" aria-label="Experimental roll correction for the generic model"><small>The generic model tends to roll right with centered controls. This adds a small constant left-aileron command. Zero removes the correction; it is not aircraft trim.</small><div class="roll-correction-presets"><button id="roll-correction-off" type="button">Off · 0%</button><button id="roll-correction-default" type="button">Study default</button></div></details>
+    <details class="control-options"><summary>Keyboard & assistance</summary><p>↑ Push nose down · ↓ Pull nose up<br>← / → Bank · Q / W Rudder<br>1–9 Throttle: 10–90% · 0: idle<br>[ / ] Retract / extend flaps · B Hold wheel brakes · N Toggle parking brake<br>&#39; / &#92; Trim nose up / down<br>P Autopilot on / off<br>E Engine on/off · S Sound on/off<br>Space Pause · R Review</p><label for="roll-offset">Roll correction <output id="offset-value">−0.109</output></label><input id="roll-offset" type="range" min="-0.25" max="0.25" step="0.001" value="-0.109375" aria-label="Experimental roll correction for the generic model"><small>The generic model tends to roll right with centered controls. This adds a small constant left-aileron command. Zero removes the correction; it is not aircraft trim.</small><div class="roll-correction-presets"><button id="roll-correction-off" type="button">Off · 0%</button><button id="roll-correction-default" type="button">Study default</button></div></details>
   </aside>
   <div class="scenery-label">Hessen public terrain · Egelsbach–Frankfurt–Taunus</div>
   <aside id="practice-map-panel" class="practice-map-panel" aria-label="Flight map" hidden></aside>
@@ -90,7 +90,7 @@ root.innerHTML = `
         <div class="throttle-control"><label for="throttle">THROTTLE <b id="power">—</b></label><input id="throttle" type="range" aria-orientation="vertical" min="0" max="100" value="69" aria-label="Throttle percentage"><span>IDLE <i></i> FULL</span><p><kbd>1–9</kbd> 10–90% <kbd>0</kbd> Idle</p></div>
         <div class="vertical-config-controls"><div class="flap-controls"><div class="config-heading"><label for="flap-control">FLAPS</label><b id="flaps-actual">—</b></div><div class="flap-slider"><input id="flap-control" type="range" min="0" max="30" step="10" value="0" list="flap-stops" aria-label="Flap lever angle degrees" aria-orientation="vertical"><datalist id="flap-stops"><option value="0"></option><option value="10"></option><option value="20"></option><option value="30"></option></datalist><div class="flap-stop-labels" aria-hidden="true"><span>UP</span><span>10</span><span>20</span><span>30</span></div></div><div class="flap-keycaps"><button id="flaps-retract" type="button" aria-label="Retract flaps one detent, left bracket key" aria-keyshortcuts="[" title="[ · Retract flaps">↑ <kbd>[</kbd></button><button id="flaps-extend" type="button" aria-label="Extend flaps one detent, right bracket key" aria-keyshortcuts="]" title="] · Extend flaps">↓ <kbd>]</kbd></button></div></div>
         <div id="pitch-trim"></div></div>
-        <div class="brake-controls"><button id="wheel-brakes" data-code="KeyB" class="control-key" aria-label="Hold wheel brakes">WHEEL BRAKES <kbd>B</kbd></button><small id="brake-state">Wheel brakes · ground contact only</small></div>
+        <div class="brake-controls"><div class="brake-buttons"><button id="wheel-brakes" data-code="KeyB" class="control-key" aria-label="Hold wheel brakes">WHEEL <kbd>B</kbd></button><button id="parking-brake" type="button" class="control-key" aria-label="Toggle parking brake" aria-keyshortcuts="N" aria-pressed="false" disabled>PARK OFF <kbd>N</kbd></button></div><small id="brake-state">Wheel brakes · ground contact only</small></div>
       </aside>
       <div class="avionics-units cockpit-radio"><div id="radio-nav-systems"></div></div>
     </div>
@@ -131,6 +131,7 @@ const regionalTiles = new Map<string,TerrainGrid>();
 let terrainLoading = false;
 let mixtureCommand = 1, mixtureAutomatic = true, apDisconnectPending = false;
 let engineCommand: boolean | null = null;
+let parkingBrake = false;
 let scene: FlightScene | null = null;
 let sceneFailed = false, ready = false, running = false, failed = false;
 let hasFlown = false, startWhenReady = false;
@@ -172,6 +173,7 @@ function updateSessionUI() {
   document.querySelectorAll<HTMLButtonElement>('[data-landing]').forEach(button => { button.disabled = reviewing; });
   el<HTMLButtonElement>('controls-settings').disabled = reviewing;
   el<HTMLInputElement>('throttle').disabled = !controlsAvailable();
+  renderParkingBrake(latest, reviewing);
   document.querySelector<HTMLElement>('.control-panel')!.hidden = !reviewing && !controlsVisible;
   document.querySelector<HTMLElement>('.throttle-control')!.hidden = false;
   el('recorded-control-details').hidden = !reviewing;
@@ -309,6 +311,29 @@ function engineShortcut(event: KeyboardEvent): void {
   event.preventDefault(); event.stopPropagation(); toggleEngine();
 }
 document.addEventListener('keydown', engineShortcut, true);
+function parkingBrakeShortcut(event: KeyboardEvent): void {
+  if (event.code !== 'KeyN' || !event.isTrusted || event.repeat || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey
+    || editing(event.target) || menuOpen() || document.querySelector('dialog[open]')
+    || (event.target instanceof Element && event.target.closest('.practice-map-panel'))) return;
+  if (!controlsAvailable() || latest?.brake_left_norm === undefined) return;
+  event.preventDefault(); event.stopPropagation(); toggleParkingBrake();
+}
+document.addEventListener('keydown', parkingBrakeShortcut, true);
+function toggleParkingBrake(): void {
+  if (!controlsAvailable() || latest?.brake_left_norm === undefined) return;
+  parkingBrake = !parkingBrake;
+  publishInput();
+}
+el('parking-brake').onclick = () => { toggleParkingBrake(); focusFlight(); };
+function renderParkingBrake(state: Readonly<FlightState> | null, recorded: boolean): void {
+  const button = el<HTMLButtonElement>('parking-brake');
+  button.disabled = recorded || !controlsAvailable() || state?.brake_left_norm === undefined;
+  button.setAttribute('aria-pressed', recorded ? 'mixed' : String(parkingBrake));
+  button.classList.toggle('held', !recorded && parkingBrake);
+  button.firstChild!.textContent = recorded ? 'PARK — ' : `PARK ${parkingBrake ? 'ON' : 'OFF'} `;
+  button.setAttribute('aria-label', recorded ? 'Parking brake latch not recorded; Review is read only'
+    : `Toggle parking brake, ${parkingBrake ? 'set' : 'released'}; full wheel brake command`);
+}
 function toggleEngine(): void {
   if (!controlsAvailable() || latest?.engine_command_on === undefined) return;
   engineCommand = !(engineCommand ?? latest.engine_command_on === 1);
@@ -556,10 +581,11 @@ function publishInput() {
     apDisconnectPending = true; session.setKap140({action: 'disconnect'});
   }
   raw.pilot_override = raw.elevator !== 0 || raw.aileron !== 0 || raw.rudder !== 0;
-  const controls = applyControlSettings(raw, controlSettings, latest?.ap_mode ? 0 : rollOffset);
+  const controls = applyControlSettings(raw, controlSettings, latest?.ap_mode ? 0 : rollOffset, parkingBrake);
   const direction = rollOffset < 0 ? 'left' : rollOffset > 0 ? 'right' : 'off';
   el('offset-value').textContent = `${Math.abs(rollOffset * 100).toFixed(1)}% ${direction}${latest?.ap_mode ? ' · suspended by AP' : ''}`;
   session.input(controls);
+  renderParkingBrake(latest, false);
   el('roll-control').textContent = controls.aileron.toFixed(2);
   el('pitch-control').textContent = controls.elevator.toFixed(2);
   el('rudder-control').textContent = controls.rudder.toFixed(2);
@@ -597,7 +623,7 @@ function reset(preset = landingPreset) {
   document.querySelector('.location strong')!.textContent = ['darmstadt','odenwald','spessart'].includes(airborneSite) ? airborneSite.toUpperCase() : airborneSite === 'eddf-ils' ? 'FRANKFURT 25C' : airborneSite === 'taunus' ? 'TAUNUS' : 'EGELSBACH';
   collisionUnavailableNoticed = false;
   radioPanel.reset();
-  flightTrace.clear(); pitchTrimTarget = null; flapTarget_deg = 0; mixtureCommand = 1; mixtureAutomatic = true; engineCommand = null; apDisconnectPending = false;
+  flightTrace.clear(); parkingBrake = false; pitchTrimTarget = null; flapTarget_deg = 0; mixtureCommand = 1; mixtureAutomatic = true; engineCommand = null; apDisconnectPending = false;
   if (practiceMap && latest) { try { practiceMap.update(latest, [], 'live'); } catch { mapUnavailable(); } }
   lastMapUpdate_ms = -Infinity;
   pressureAltimeter.update(null, false);
@@ -646,11 +672,12 @@ el('limits').onclick = () => {
 // Pointer capture keeps a drag usable when it crosses the pad edge. Release,
 // cancellation, lost capture and focus loss all clear user axes immediately.
 function updateConfiguration(state: Readonly<FlightState> | null, recorded: boolean): void {
+  renderParkingBrake(state, recorded);
   const available = state?.flap_rad !== undefined && state.brake_left_norm !== undefined;
   const capturedBrake = Number.isFinite(state?.brake_left_norm) && Number.isFinite(state?.brake_right_norm)
     ? Math.max(state!.brake_left_norm!, state!.brake_right_norm!) : null;
   const brakePercent = recorded ? capturedBrake === null ? null : Math.round(capturedBrake * 100) : Math.round((controlSettings.brake ?? .25) * 100);
-  el('wheel-brakes').firstChild!.textContent = `WHEEL BRAKES ${brakePercent === null ? '—' : `${brakePercent}%`} `;
+  el('wheel-brakes').firstChild!.textContent = `WHEEL ${brakePercent === null ? '—' : `${brakePercent}%`} `;
   el('wheel-brakes').setAttribute('aria-label', recorded ? brakePercent === null ? 'Recorded wheel brakes unavailable' : `Recorded wheel brakes, ${brakePercent} percent command` : `Hold wheel brakes, ${brakePercent} percent command; adjustable in Options`);
   const flapLever = el<HTMLInputElement>('flap-control');
   flapLever.disabled = !available || !controlsAvailable() || recorded;
@@ -885,5 +912,5 @@ function animate(now: number) {
   requestAnimationFrame(animate);
 }
 publishInput(); updateSessionUI(); requestAnimationFrame(animate);
-addEventListener('pagehide', () => { document.removeEventListener('keydown', flightMapShortcut, true); flightAssists.dispose(); overlayPresentation.dispose();disposeMenuShortcuts(); mapDisposed = true; engineAudio.dispose(); audioControls?.dispose(); document.removeEventListener('click', activateEngineAudio, true); document.removeEventListener('keydown', activateEngineAudio, true); document.removeEventListener('keydown', soundShortcut, true); document.removeEventListener('keydown', engineShortcut, true); groundCollisionPanel.dispose(); aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
+addEventListener('pagehide', () => { document.removeEventListener('keydown', flightMapShortcut, true); flightAssists.dispose(); overlayPresentation.dispose();disposeMenuShortcuts(); mapDisposed = true; engineAudio.dispose(); audioControls?.dispose(); document.removeEventListener('click', activateEngineAudio, true); document.removeEventListener('keydown', activateEngineAudio, true); document.removeEventListener('keydown', soundShortcut, true); document.removeEventListener('keydown', engineShortcut, true); document.removeEventListener('keydown', parkingBrakeShortcut, true); groundCollisionPanel.dispose(); aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
 void sceneReady;

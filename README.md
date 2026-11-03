@@ -66,6 +66,10 @@ Hessen, Bavarian and Baden-Württemberg photography and a map fallback. The gene
 research aircraft remains experimental; see
 [setup, controls and limitations](app/README.md).
 
+**N** toggles the parking brake beside the **B** wheel-brake button.
+Options → **Link rudder to aileron** adds optional yaw/steering assistance;
+Q/W manual rudder takes priority. Rudder also steers the nosewheel on the ground.
+
 **M** or **View → Flight map** opens a right-side map beside the 3D view,
 showing the aircraft, whole retained flight path and **731 searchable
 community airfield and heliport entries across five southern German states**, including available airport elevations. Choose the

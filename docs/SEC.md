@@ -128,6 +128,18 @@ UI-only production build is not a published simulator deployment.
 
 Control sensitivity settings, including the 0–100% keyboard/button wheel-brake command gain, are bounded dimensionless gains held only in page memory. They have no persistence or network path, preserve throttle, and leave the declared study roll offset separate. Opening the settings dialog pauses flight and releases held inputs; closing it does not resume automatically. These input preferences do not calibrate or modify aircraft physics.
 
+The parking-brake latch is separate page-session input state. A guarded N/button
+toggle requests full bounded wheel braking independently of the momentary brake
+gain; it does not freeze aircraft state or bypass native contact/collision logic.
+Pause, focus loss and input neutralization clear held commands while retaining
+this explicit latch; restart clears it. Paused changes do not integrate physics.
+Review disables mutation and does not infer an unrecorded latch from captured
+left/right brake values. The optional aileron-to-rudder input assist defaults off,
+accepts only a boolean preference and mixes bounded deliberate pilot input before
+the study roll offset; explicit rudder input takes priority. It does not mix
+native autopilot output or change the existing rudder/nosewheel coupling. Both
+features add no persistence, device permission, telemetry or external traffic.
+
 In-session flight review keeps copied state samples and captured vertical speed only in page memory, capped at 36,000 samples and 600 simulation seconds. Reset/reload clears history. It has no storage, export, import or network path. Review pauses and neutralizes the real worker; historical state is sent only to the renderer/instruments and never restores physics. Unrecorded control positions are hidden, with explicit state-only trace labels.
 
 The lazy practice map loads its bundled MapLibre worker, images and bounded,
