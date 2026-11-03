@@ -55,6 +55,14 @@ export function createAutopilotPanel(options: AutopilotOptions): {
   let altitudeAlert: AltitudeAlertSnapshot | null = null;
   let gesture: { button: HTMLButtonElement; pointerId?: number; key?: string; action: 'ap' | 'baro' | 'vertical'; fired: boolean } | null = null;
   let holdTimer: ReturnType<typeof setTimeout> | undefined;
+  // The shared selector is interpreted by the page and units shown when the
+  // entry started (first keystroke, or press of a +/− knob button), never by the
+  // page shown at commit: BARO/VS pages expire after 3 s while the user types,
+  // and a pressure value must never become a selected altitude (F45).
+  type SelectorPage = { page: number; units: number };
+  let entry: SelectorPage | null = null;
+  let knobPress: (SelectorPage & { button: HTMLButtonElement }) | null = null;
+  const shownPage = (): SelectorPage => ({ page: latest?.kap_display_page ?? 0, units: latest?.kap_baro_units ?? 0 });
   container.replaceChildren(opener, content); document.body.append(dialog);
   const canControl = () => !!latest && available && !reviewing && !readOnly && !disposed;
   function text(id: string, value: string): void {
@@ -90,7 +98,11 @@ export function createAutopilotPanel(options: AutopilotOptions): {
     const enabled = canControl(), state = latest;
     if (!enabled) stopGesture();
     text('ap-state-label', reviewing ? 'REC' : 'LIVE');
-    text('ap-engaged-label', !state ? 'INOP' : state.kap_engaged ? 'AP' : 'OFF');
+    // Generic simulator fault flag: invalid AP sensors disconnect the AP (F48).
+    const fault = state?.kap_sensor_fault === 1;
+    text('ap-engaged-label', !state ? 'INOP' : fault ? 'FAULT' : state.kap_engaged ? 'AP' : 'OFF');
+    element('ap-engaged-label').classList.toggle('kap-flashing', fault);
+    element('ap-engaged-label').title = fault ? 'Autopilot sensors invalid; autopilot disconnected (simulator safety substitution)' : '';
     text('ap-lateral', state?.kap_engaged ? lateral[state.kap_lateral] : '—');
     text('ap-vertical', state?.kap_engaged ? vertical[state.kap_vertical] : '—');
     text('ap-lateral-armed', state?.kap_lateral_arm ? `${lateral[state.kap_lateral_arm]} ARM` : '');
@@ -101,20 +113,26 @@ export function createAutopilotPanel(options: AutopilotOptions): {
     alert.setAttribute('aria-label', alertState === 1 ? 'Altitude approach alert' : alertState === 2 ? 'Selected altitude crossing alert' : alertState === 3 ? 'Altitude deviation alert' : 'Altitude alert unavailable or inactive');
     element('ap-heading-prompt').classList.toggle('kap-flashing', !!state?.kap_hdg_prompt);
     text('ap-vertical-armed', state ? [state.kap_alt_arm ? 'ALT' : '', state.kap_gs_arm ? 'GS' : ''].filter(Boolean).join(' ') + (state.kap_alt_arm || state.kap_gs_arm ? ' ARM' : '') : '');
-    for (const [id, label] of [['ap-lateral-alert', state?.kap_lateral_alert ? lateral[state.kap_lateral_alert] : ''], ['ap-vertical-alert', state?.kap_vertical_alert ? 'GS' : '']] as const) {
+    // Source-loss alerts belong to an engagement; never show them with AP OFF (F47).
+    for (const [id, label] of [['ap-lateral-alert', state?.kap_engaged && state.kap_lateral_alert ? lateral[state.kap_lateral_alert] : ''], ['ap-vertical-alert', state?.kap_engaged && state.kap_vertical_alert ? 'GS' : '']] as const) {
       text(id, label); element(id).classList.toggle('kap-flashing', !!label);
     }
     for (const button of buttons) button.disabled = !enabled;
     element<HTMLButtonElement>('ap-rev').disabled = !enabled || state?.kap_nav_kind !== 2 && state?.kap_lateral_alert !== 4;
     selector.disabled = heading.disabled = !enabled;
-    const page = state?.kap_display_page ?? 0, units = state?.kap_baro_units ?? 0;
-    selector.readOnly = page === 1;
-    const pageLabel = page === 1 ? 'Vertical speed in feet per minute, use UP and DN' : page === 2 ? `Autopilot barometric setting in ${units ? 'inches of mercury' : 'hectopascals'}, simulator entry` : 'Selected altitude in feet, simulator entry';
+    const page = state?.kap_display_page ?? 0;
+    // While an entry is in progress, keep the label, unit and editability of the
+    // page it started on, so what is typed is shown with the units it will use.
+    const editing = !reviewing && entry !== null && document.activeElement === selector;
+    const selectorPage = editing ? entry!.page : page, units = editing ? entry!.units : state?.kap_baro_units ?? 0;
+    selector.readOnly = selectorPage === 1;
+    const pageLabel = selectorPage === 1 ? 'Vertical speed in feet per minute, use UP and DN' : selectorPage === 2 ? `Autopilot barometric setting in ${units ? 'inches of mercury' : 'hectopascals'}, simulator entry` : 'Selected altitude in feet, simulator entry';
     selector.setAttribute('aria-label', pageLabel);
-    text('ap-selector-unit', page === 1 ? 'FPM' : page === 2 ? units ? 'IN HG' : 'HPA' : 'FT');
-    if (reviewing || document.activeElement !== selector) {
+    text('ap-selector-unit', selectorPage === 1 ? 'FPM' : selectorPage === 2 ? units ? 'IN HG' : 'HPA' : 'FT');
+    // Refresh until the first keystroke; an entry in progress keeps its text.
+    if (reviewing || document.activeElement !== selector || entry === null) {
       selector.value = !state ? '' : page === 1 ? (state.kap_vs_target_mps / FT_M * 60).toFixed(0)
-        : page === 2 ? (state.kap_baro_setting_pa / (units ? INHG_PA : 100)).toFixed(units ? 2 : 0)
+        : page === 2 ? (state.kap_baro_setting_pa / (state.kap_baro_units ? INHG_PA : 100)).toFixed(state.kap_baro_units ? 2 : 0)
           : (state.kap_selected_altitude_m / FT_M).toFixed(0);
       selector.setCustomValidity('');
     }
@@ -143,20 +161,25 @@ export function createAutopilotPanel(options: AutopilotOptions): {
     else if (button.id.startsWith('ap-heading-')) send({ action: 'heading', value: ((degrees(latest!.kap_heading_bug_rad) + (button.id.endsWith('decrease') ? -10 : 10) + 360) % 360) * Math.PI / 180 });
     else if (button.id.startsWith('ap-selector-')) {
       const direction = button.id.endsWith('decrease') ? -1 : 1;
-      send(latest!.kap_display_page === 2 ? { action: 'baro-setting', value: latest!.kap_baro_setting_pa + direction * (latest!.kap_baro_units ? .01 * INHG_PA : 100) }
+      const pressed = knobPress?.button === button ? knobPress : shownPage(); knobPress = null;
+      send(pressed.page === 2 ? { action: 'baro-setting', value: latest!.kap_baro_setting_pa + direction * (pressed.units ? .01 * INHG_PA : 100) }
         : { action: 'select-altitude', value: latest!.kap_selected_altitude_m + direction * 100 * FT_M });
     }
   }
   function change(event: Event): void {
     if (!event.isTrusted || !canControl() || !(event.target instanceof HTMLInputElement)) return;
     const input = event.target, value = input.valueAsNumber;
+    // A rejected entry keeps its text and starting page; a sent one ends it.
+    const started = input === selector ? entry ?? shownPage() : null;
+    if (started?.page === 1) { input.setCustomValidity('Vertical speed is set with UP and DN.'); input.reportValidity(); return; }
     const command: KapCommand = input === heading ? { action: 'heading', value: value * Math.PI / 180 }
-      : latest!.kap_display_page === 2 ? { action: 'baro-setting', value: value * (latest!.kap_baro_units ? INHG_PA : 100) }
+      : started!.page === 2 ? { action: 'baro-setting', value: value * (started!.units ? INHG_PA : 100) }
         : { action: 'select-altitude', value: value * FT_M };
     if (input.readOnly || !input.checkValidity() || !validKapCommand(command)) { input.setCustomValidity('Enter a value within the simulator setting range.'); input.reportValidity(); return; }
-    input.setCustomValidity(''); send(command);
+    input.setCustomValidity(''); if (input === selector) entry = null; send(command);
   }
   function pointerDown(event: PointerEvent): void {
+    if (event.isTrusted && event.button === 0) knobDown(event);
     if (!event.isTrusted || event.button !== 0 || !(event.target instanceof HTMLButtonElement)) return;
     if (![ap, baro, element('ap-up'), element('ap-down')].includes(event.target)) return;
     event.preventDefault(); event.target.focus(); beginGesture(event.target, event.pointerId);
@@ -165,12 +188,27 @@ export function createAutopilotPanel(options: AutopilotOptions): {
   function keyDown(event: KeyboardEvent): void {
     event.stopPropagation();
     if (event.repeat) { event.preventDefault(); return; }
+    if (event.isTrusted && ['Space', 'Enter'].includes(event.code)) knobDown(event);
     if (!event.isTrusted || !['Space', 'Enter'].includes(event.code) || !(event.target instanceof HTMLButtonElement)) return;
     if (![ap, baro, element('ap-up'), element('ap-down')].includes(event.target)) return;
     event.preventDefault(); beginGesture(event.target, undefined, event.code);
   }
   function keyUp(event: KeyboardEvent): void { if (gesture?.key === event.code) { event.preventDefault(); stopGesture(true); } }
-  function clearValidity(event: Event): void { if (event.target instanceof HTMLInputElement) event.target.setCustomValidity(''); }
+  function clearValidity(event: Event): void {
+    if (!(event.target instanceof HTMLInputElement)) return;
+    if (event.target === selector && entry === null && !selector.readOnly) entry = shownPage();
+    event.target.setCustomValidity('');
+  }
+  // Chrome dispatches focusout before the commit's change event, so end the
+  // entry in a later task; rendering now would overwrite the uncommitted text.
+  function selectorBlur(event: FocusEvent): void {
+    if (event.target !== selector) return;
+    setTimeout(() => { if (!disposed && document.activeElement !== selector) { entry = null; render(); } }, 0);
+  }
+  function knobDown(event: Event): void {
+    const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('button') : null;
+    if (button?.id.startsWith('ap-selector-')) knobPress = { button, ...shownPage() };
+  }
   function cancel(): void { stopGesture(); }
   function visibility(): void { if (document.hidden) cancel(); }
   function layout(): void {
@@ -182,7 +220,7 @@ export function createAutopilotPanel(options: AutopilotOptions): {
   function open(): void { if (!disposed && media.matches && !dialog.open) { options.onOpen(); dialog.showModal(); } }
   function close(): void { cancel(); if (!disposed) options.onClose(); }
   function finish(): void { dialog.close(); }
-  content.addEventListener('click', click); content.addEventListener('change', change); content.addEventListener('input', clearValidity);
+  content.addEventListener('click', click); content.addEventListener('change', change); content.addEventListener('input', clearValidity); content.addEventListener('focusout', selectorBlur);
   content.addEventListener('pointerdown', pointerDown); content.addEventListener('pointerup', pointerUp); content.addEventListener('pointercancel', pointerUp); content.addEventListener('lostpointercapture', pointerUp);
   content.addEventListener('keydown', keyDown); window.addEventListener('keyup', keyUp); window.addEventListener('blur', cancel); document.addEventListener('visibilitychange', visibility);
   opener.addEventListener('click', open); done.addEventListener('click', finish); dialog.addEventListener('close', close); media.addEventListener('change', layout);
@@ -197,7 +235,7 @@ export function createAutopilotPanel(options: AutopilotOptions): {
     dispose() {
       if (disposed) return;
       stopGesture(); disposed = true;
-      content.removeEventListener('click', click); content.removeEventListener('change', change); content.removeEventListener('input', clearValidity);
+      content.removeEventListener('click', click); content.removeEventListener('change', change); content.removeEventListener('input', clearValidity); content.removeEventListener('focusout', selectorBlur);
       content.removeEventListener('pointerdown', pointerDown); content.removeEventListener('pointerup', pointerUp); content.removeEventListener('pointercancel', pointerUp); content.removeEventListener('lostpointercapture', pointerUp);
       content.removeEventListener('keydown', keyDown); window.removeEventListener('keyup', keyUp); window.removeEventListener('blur', cancel); document.removeEventListener('visibilitychange', visibility);
       opener.removeEventListener('click', open); done.removeEventListener('click', finish); dialog.removeEventListener('close', close); media.removeEventListener('change', layout);

@@ -9,6 +9,8 @@ export interface KapSnapshot {
   kap_hold_pressure_altitude_m: number; kap_baro_setting_pa: number; kap_baro_units: number; kap_display_page: number;
   kap_indicated_altitude_m: number; kap_nav_valid: number; kap_nav_kind: number; kap_gs_valid: number;
   kap_elevator_norm: number;
+  /** 1 while sensors are invalid, latched after a fault disconnect until the next AP/disconnect press. Generic simulator flag. */
+  kap_sensor_fault: number;
 }
 export const KAP_FIELDS: readonly (keyof KapSnapshot)[];
 export function validKapState(value: object): boolean;
@@ -18,9 +20,11 @@ export interface KapSensors {
   pressure_altitude_m: number; vertical_speed_mps: number; elevator_norm?: number;
   nav: { valid: boolean; kind: 0 | 1 | 2 | 3; cdi_norm: number; course_rad: number; gs_valid: boolean; gs_norm: number };
 }
+export function validSensors(value: unknown): value is KapSensors;
 export interface KapController {
   command(command: KapCommand, sensors: KapSensors): boolean;
-  step(sensors: KapSensors): void;
+  /** False when sensors are invalid; an engaged AP disconnects and kap_sensor_fault is set. */
+  step(sensors: KapSensors): boolean;
   snapshot(sensors: KapSensors): KapSnapshot;
   guidance(sensors: KapSensors): { lateral_mode: 0 | 1 | 2; heading_rad: number; vertical_mode: 0 | 1 | 2; vertical_target: number };
 }
