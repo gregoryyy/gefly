@@ -1,3 +1,4 @@
+import { installLegacyLabFixture, setLegacyLab, legacyLabEnabled } from './legacy-lab-fixture.mjs';
 import { installSceneryFixture, prepareFlightUI, startOrResume } from './flight-actions.mjs';
 // Actual Chrome/JSBSim UI integration; LAB navigation is fictional teaching geometry.
 import assert from 'node:assert/strict';
@@ -56,7 +57,7 @@ try {
       }
     };
   });
-  await installSceneryFixture(page); await page.goto(origin);
+  await installLegacyLabFixture(page); await installSceneryFixture(page); await page.goto(origin);
   const waitReady = () => page.waitForFunction(() => !document.querySelector('#start').disabled && window.__avionicsStates.at(-1)?.cas_mps > 0);
   await waitReady();
   await prepareFlightUI(page);
@@ -116,8 +117,8 @@ try {
   assert(await page.locator('#nav1-gauge .nav-gs-flag').isVisible(), 'NAV1 GS flag shows without a valid glideslope');
   assert.equal(await page.locator('#nav1-gauge .nav-gs-needle').getAttribute('hidden') !== null, true, 'GS needle hidden without a valid glideslope');
   assert.equal(await page.locator('#nav2-gauge .nav-gs-flag').count(), 0, 'NAV2 has no glideslope receiver');
-  assert.equal(await text('nav-flag'), 'NAV'); assert.equal(await page.locator('#nav-demo').isChecked(), false);
-  for (const id of ['com1-standby', 'nav1-swap', 'nav-obs', 'com2-standby', 'nav2-swap', 'nav2-obs', 'nav-demo', 'flap-control', 'pitch-trim-control', 'throttle', 'mixture-control']) {
+  assert.equal(await text('nav-flag'), 'NAV'); assert.equal(await legacyLabEnabled(page), false);
+  for (const id of ['com1-standby', 'nav1-swap', 'nav-obs', 'com2-standby', 'nav2-swap', 'nav2-obs', 'flap-control', 'pitch-trim-control', 'throttle', 'mixture-control']) {
     assert.equal(await page.locator(`#${id}`).isDisabled(), false, `${id} is available while paused`);
   }
   assert.equal(await page.locator('#engine-systems #ap-status').count(), 0);
@@ -154,9 +155,9 @@ try {
   assert.equal(await page.locator('#com1-standby').evaluate(input => input.validity.valid), false);
   assert.equal(await text('com1-active'), '122.800');
   await fill('com1-standby', '122.825');
-  await page.locator('#nav-demo').check();
+  await setLegacyLab(page, true);
   await fill('nav1-standby', '114.00'); await page.locator('#nav1-swap').click();
-  await waitText('nav-flag', 'NAV'); assert.match(await text('nav-signal-note'), /No LAB signal/);
+  await waitText('nav-flag', 'NAV'); assert.match(await text('nav-signal-note'), /No (fictional )?LAB signal/);
   await fill('nav1-standby', '113.80'); await page.locator('#nav1-swap').click();
   await waitText('nav-flag', 'LAB'); assert.match(await text('nav-ident'), /FICTIONAL/);
   assert(Number(await text('nav-dme')) > 0);
@@ -220,7 +221,7 @@ try {
   await page.locator('#pause').click(); await page.waitForFunction(() => document.querySelector('#status').textContent === 'Paused');
   let paused = await stats();
   const physicalBefore = await state();
-  for (const id of ['com1-standby', 'nav1-swap', 'nav-obs', 'com2-standby', 'nav2-swap', 'nav2-obs', 'nav-demo', 'flap-control', 'pitch-trim-control', 'throttle', 'mixture-control']) {
+  for (const id of ['com1-standby', 'nav1-swap', 'nav-obs', 'com2-standby', 'nav2-swap', 'nav2-obs', 'flap-control', 'pitch-trim-control', 'throttle', 'mixture-control']) {
     assert.equal(await page.locator(`#${id}`).isDisabled(), false, `${id} remains available while paused`);
   }
   for (const [id, value] of [['pitch-trim-control', 20], ['mixture-control', 60], ['flap-control', 10], ['throttle', 42]]) {
@@ -248,16 +249,16 @@ try {
   await page.waitForFunction(() => document.querySelector('#status').textContent === 'Review');
   await page.locator('#review-time').focus(); await page.keyboard.press('Home');
   await waitText('radio-state-label', 'RECORDED'); await waitText('com1-active', '118.000');
-  for (const id of ['com1-standby', 'nav2-swap', 'nav2-obs', 'nav-demo', 'flap-control', 'pitch-trim-control', 'mixture-control']) {
+  for (const id of ['com1-standby', 'nav2-swap', 'nav2-obs', 'flap-control', 'pitch-trim-control', 'mixture-control']) {
     assert(await page.locator(`#${id}`).isDisabled(), `${id} is locked during recorded review`);
   }
-  assert.equal(await page.locator('#nav-demo').isChecked(), false); assert.equal(await text('nav-flag'), 'NAV');
+  assert.equal(await legacyLabEnabled(page), false); assert.equal(await text('nav-flag'), 'NAV');
   assert.equal(await page.locator('#nav-obs').inputValue(), '0');
   assert.equal(await text('com2-active'), '121.500'); assert.equal(await text('nav2-active'), '114.00');
   assert.equal(await page.locator('#nav2-obs').inputValue(), '0');
   assert.equal(await page.locator('#nav2-gauge').getAttribute('data-valid'), 'false');
   await page.keyboard.press('End'); await waitText('com1-active', '122.800');
-  assert.equal(await page.locator('#nav-demo').isChecked(), true);
+  assert.equal(await legacyLabEnabled(page), true);
   assert.equal(Number(await page.locator('#nav-obs').inputValue()), finalObs);
   assert.equal(await text('com2-active'), '136.975'); assert.equal(await text('nav2-active'), '113.80');
   assert.equal(Number(await page.locator('#nav2-obs').inputValue()), finalObs2);
@@ -270,7 +271,7 @@ try {
   const previousWorker = await page.evaluate(() => window.__avionicsWorkerId);
   await page.locator('#flight-menu > summary').click(); await page.locator('#reset').click();
   await page.waitForFunction(previous => window.__avionicsStates.at(-1)?.__worker_id > previous, previousWorker); await waitReady();
-  await waitText('com1-active', '118.000'); assert.equal(await page.locator('#nav-demo').isChecked(), false); assert.equal(await text('nav-flag'), 'NAV');
+  await waitText('com1-active', '118.000'); assert.equal(await legacyLabEnabled(page), false); assert.equal(await text('nav-flag'), 'NAV');
   checks.push('captured radio configurations restore across review; pause freezes physics and reset restores defaults');
 
   await page.screenshot({ path: `${output}/avionics-desktop.png` });
@@ -350,7 +351,7 @@ try {
   try {
     await Promise.race([requested, new Promise((_, reject) => { requestTimeout = setTimeout(() => reject(new Error('Replacement WASM request did not arrive')), 10000); })]);
     assert(await page.locator('#start').isDisabled());
-    for (const id of ['com1-standby', 'nav1-swap', 'nav-obs', 'nav-demo', 'mixture-control', 'ap-heading', 'pitch-trim-control']) {
+    for (const id of ['com1-standby', 'nav1-swap', 'nav-obs', 'mixture-control', 'ap-heading', 'pitch-trim-control']) {
       assert(await page.locator(`#${id}`).isDisabled(), `${id} is disabled while replacement engine is delayed`);
     }
     assert.equal(await text('engine-rpm'), '—'); assert.equal(await text('ap-engaged-label'), 'INOP');

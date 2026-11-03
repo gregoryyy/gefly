@@ -1,3 +1,4 @@
+import { installLegacyLabFixture, setLegacyLab, legacyLabEnabled } from './legacy-lab-fixture.mjs';
 // Actual JSBSim state/configuration and native UI; no injected flight snapshots.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -35,7 +36,7 @@ try {
       }
     };
   });
-  await installSceneryFixture(page); await page.goto(origin); await page.waitForFunction(() => !document.querySelector('#start').disabled);
+  await installLegacyLabFixture(page); await installSceneryFixture(page); await page.goto(origin); await page.waitForFunction(() => !document.querySelector('#start').disabled);
   await prepareFlightUI(page);
   const stats = async () => {
     const count = await page.evaluate(() => window.__auxStats.length);
@@ -48,7 +49,7 @@ try {
   assert(await page.locator('#bearing-gauge .nav-bearing-pointer').getAttribute('hidden') !== null);
   const initial = await page.evaluate(() => window.__auxStates.at(-1));
   assert.equal(await page.locator('#rpm-value').textContent(), String(Math.round(initial.prop_radps * 60 / (2 * Math.PI))));
-  await page.locator('#nav-demo').check();
+  await setLegacyLab(page, true);
   await page.waitForFunction(() => Number(document.querySelector('#bearing-gauge').dataset.dmeNm) > 0);
   assert.equal(await page.locator('#bearing-gauge').getAttribute('data-valid'), 'false', 'overhead bearing is ambiguous while slant DME remains available');
   checks.push('LAB opt-in and station passage flag bearing without inventing a pointer; actual propeller RPM and slant DME remain distinct');
@@ -80,6 +81,7 @@ try {
 
   await page.setViewportSize({ width: 390, height: 844 }); await page.reload();
   await page.waitForFunction(() => !document.querySelector('#start').disabled);
+  await prepareFlightUI(page, { controls: false });
   await page.locator('#view-menu > summary').click(); await page.locator('#navigation-open').click();
   assert.equal(await page.locator('#navigation-dialog .navigation-gauge').count(), 4);
   const bounds = await page.locator('#navigation-dialog').evaluate(element => {

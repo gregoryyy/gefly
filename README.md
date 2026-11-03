@@ -50,6 +50,10 @@ the menu, and **Alt+Shift+F** shows the flight controls. Floating controls, map,
 flight-data and stall-awareness panels are half opaque until clicked; their
 first click activates the panel, and subsequent gestures operate it.
 Arrow keys control pitch/roll, Q/W rudder, 0 throttle idle and 1–9 throttle.
+In Review, **← / →** seek backward/forward one second, with repeated keys supported.
+**=** or the replay speed button cycles **1×, 1.5×, 2×, 5×, 10×**, independently
+of live-flight speed. The overlay shows **REPLAY** speed.
+
 Space pauses, R opens Review, V changes view, E toggles the engine and S toggles
 sound (initially off). **A** captures current heading/altitude with the autopilot;
 **=** cycles **1×, 1.5×, 2×, 5×, 10×**, with an on-screen simulation-rate indicator.
