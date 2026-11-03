@@ -2,7 +2,7 @@ import { startOrResume } from './flight-actions.mjs';
 // Actual browser/JSBSim integration, not a dynamics-fidelity test.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { access, copyFile, mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { access, copyFile, mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,13 +11,30 @@ const app = fileURLToPath(new URL('..', import.meta.url));
 const runtime = fileURLToPath(new URL('../../studies/e1-browser/sim/', import.meta.url));
 await access(join(runtime, 'dist/jsbsim.wasm'))
   .catch(() => { throw new Error('Build the local research engine first: just build-flight-engine'); });
-// Missing-engine case: a temporary runtime copy holding worker.js and the build
-// record but not dist/jsbsim.{mjs,wasm}, served by a second dev server. Only the
-// jsbsim.mjs request is exercised: the worker's import of it fails first, so a
-// missing jsbsim.wasm alone is not separately covered.
+// Missing-engine case: a temporary runtime copy holding worker.js, every module it
+// imports statically (derived from the sources, not a fixed list) and the build
+// record, but not dist/jsbsim.{mjs,wasm}, served by a second dev server. Only the
+// engine is missing, so the worker fails on dist/jsbsim.mjs alone; a missing
+// jsbsim.wasm alone is not separately covered.
+async function staticRuntimeImports(entry) {
+  const found = new Set(), queue = [entry];
+  while (queue.length) {
+    const file = queue.shift();
+    if (found.has(file)) continue;
+    found.add(file);
+    const source = await readFile(join(runtime, file), 'utf8');
+    for (const match of source.matchAll(/^\s*(?:import|export)\s+(?:[^'";]*?\s+from\s+)?['"](\.\/[^'"]+)['"]/gm)) {
+      const target = match[1].slice(2);
+      if (!target.startsWith('dist/')) queue.push(target);
+    }
+  }
+  return [...found];
+}
+const runtimeModules = await staticRuntimeImports('worker.js');
+assert(runtimeModules.length > 4 && runtimeModules.includes('navigation.js') && runtimeModules.includes('kap140.js'), `worker import graph: ${runtimeModules}`);
 const missingRoot = await mkdtemp(join(tmpdir(), 'gefly-missing-engine-'));
 await mkdir(join(missingRoot, 'dist'));
-for (const file of ['worker.js', 'altimeter.js', 'cockpit.js', 'engine.js']) await copyFile(join(runtime, file), join(missingRoot, file));
+for (const file of runtimeModules) await copyFile(join(runtime, file), join(missingRoot, file));
 await copyFile(join(runtime, 'dist/build-info.json'), join(missingRoot, 'dist/build-info.json')).catch(() => {});
 for (const file of ['dist/jsbsim.mjs', 'dist/jsbsim.wasm'])
   await access(join(missingRoot, file)).then(() => { throw new Error(`${file} must be absent from the missing-engine copy`); }, () => {});
@@ -75,6 +92,10 @@ try {
   const mapState=await state();const mapText=await page.locator('.practice-map-readout').textContent();
   const mapLatitude=Number(mapText.match(/([0-9.]+)° N/)[1]);
   assert(Math.abs(mapLatitude-mapState.lat_rad*180/Math.PI)<0.00025,'map latitude tracks live state within display rounding and update interval');
+  await page.waitForFunction(()=>Number(document.querySelector('#practice-map-panel').dataset.pathPoints)>=2,null,{timeout:5000});
+  const markerHeading=Number(await page.locator('#practice-map-panel').getAttribute('data-marker-heading-deg'));
+  const liveHeadingDeg=(((await state()).heading_rad*180/Math.PI)%360+360)%360;
+  assert(Math.abs(((markerHeading-liveHeadingDeg+540)%360)-180)<3,'map marker rotates to the live true heading');
   await page.getByRole('button',{name:'Fit path',exact:true}).click();
   assert.equal(await page.evaluate(()=>document.activeElement.id),'scene','map buttons preserve flight keyboard focus');
   await page.getByRole('button',{name:'Follow',exact:true}).click();
@@ -182,11 +203,14 @@ try {
   assert.equal((await state()).step,reviewPaused.step);
   await page.locator('#flight-menu > summary').click(); await page.locator('#reset').click();await page.waitForFunction(()=>!document.querySelector('#start').disabled);
   assert.equal(await page.locator('#review-flight').isDisabled(),true,'restart clears current-flight review');
+  assert(Number(await page.locator('#practice-map-panel').getAttribute('data-path-points'))<2,'restart clears the drawn map path');
   await startOrResume(page);
   await page.locator('#controls-settings').click();
   await page.waitForFunction(()=>document.querySelector('#status').textContent==='Paused');
-  // The DOM pauses immediately; let queued worker state messages drain first.
-  await page.waitForTimeout(150);
+  // The DOM pauses immediately; wait until queued worker state messages have
+  // drained (two consecutive polls see the same step) instead of a fixed sleep.
+  await page.evaluate(()=>{window.__drainStep=undefined;});
+  await page.waitForFunction(()=>{const step=window.__flightStates.at(-1)?.step;const same=step!==undefined&&window.__drainStep===step;window.__drainStep=step;return same;},null,{polling:100,timeout:5000});
   const settingsPaused=await state();await page.waitForTimeout(200);
   assert.equal((await state()).step,settingsPaused.step,'settings pause the actual engine');
   await page.locator('#settings-gentle').click();
@@ -231,16 +255,26 @@ try {
   await page.evaluate(()=>window.dispatchEvent(new Event('blur')));await page.waitForTimeout(100);const blurred=await state();
   await page.waitForTimeout(250);assert.equal((await state()).step,blurred.step,'blur must pause');
   assert.deepEqual(errors,[]);assert.deepEqual([...hosts],['127.0.0.1'],'runtime should be local only');
-  const missing=await browser.newPage();const engineResponses=[];
-  missing.on('response',response=>{if(new URL(response.url()).pathname.endsWith('/dist/jsbsim.mjs'))engineResponses.push(response.status());});
+  const noMap=await browser.newPage();const noMapErrors=[];noMap.on('pageerror',e=>noMapErrors.push(String(e)));
+  await noMap.route('**/imagery/SOURCE.json',route=>route.fulfill({status:404,body:''}));
+  await noMap.goto('http://127.0.0.1:5174');await noMap.waitForFunction(()=>!document.querySelector('#start').disabled);
+  await noMap.locator('#view-menu > summary').click();await noMap.locator('#toggle-map').click();
+  await noMap.waitForFunction(()=>document.querySelector('.practice-map-status')?.textContent.includes('Practice map unavailable'));
+  await startOrResume(noMap);await noMap.waitForFunction(()=>document.querySelector('#status').textContent==='Flying');
+  assert.deepEqual(noMapErrors,[],'map failure is isolated from flight');await noMap.close();
+  const missing=await browser.newPage();const engineResponses=[];const otherRuntime404=[];
+  missing.on('response',response=>{const path=new URL(response.url()).pathname;
+    if(path.endsWith('/dist/jsbsim.mjs'))engineResponses.push(response.status());
+    else if(path.includes('/studies/e1-browser/sim/')&&response.status()===404)otherRuntime404.push(path);});
   await missing.goto('http://127.0.0.1:5175');await missing.waitForFunction(()=>document.querySelector('#status').textContent==='Error');
   assert.match(await missing.locator('#notice').textContent(),/build-flight-engine/);
-  assert(engineResponses.length>0&&engineResponses.every(status=>status===404),'absent dist/jsbsim.mjs is requested and not served');await missing.close();
+  assert(engineResponses.length>0&&engineResponses.every(status=>status===404),'absent dist/jsbsim.mjs is requested and not served');
+  assert.deepEqual(otherRuntime404,[],'only the engine is missing: every other runtime module is served');await missing.close();
   const noGL=await browser.newPage();const noGLErrors=[];noGL.on('pageerror',e=>noGLErrors.push(String(e)));
   await noGL.addInitScript(()=>{const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(kind,...args){return kind.startsWith('webgl')?null:original.call(this,kind,...args);};});
   await noGL.goto('http://127.0.0.1:5174');await noGL.waitForFunction(()=>document.querySelector('#notice').textContent.includes('Scene unavailable'));
   await noGL.waitForTimeout(400);assert.equal(await noGL.locator('#pause').isDisabled(),true);assert.deepEqual(noGLErrors,[]);await noGL.close();
-  console.log(JSON.stringify({result:'pass',browser:browser.version(),initial:{step:initial.step,tas_mps:initial.tas_mps},right_bank_delta_rad:after.roll_rad-before.roll_rad,checks:['static-pressure altimeter and launch QFE','pressure units and bounds','paused pressure and modal isolation','recorded pressure review','explicit start','live JSBSim','full-width canvas','loaded aerial imagery','local practice map and true heading','map focus and history selection','pause','view invariance','reset keyboard focus','right bank','on-screen hold and outside release','draggable stick and outside release','blur pause','state review and seeking','review playback without engine advancement','review return and reset','settings pause and focus','gain presets and defaults','custom gain and reset preservation','local runtime and bundled imagery only','missing engine','WebGL failure'],screenshots:'output/flight/{cockpit,chase}.png'},null,2));
+  console.log(JSON.stringify({result:'pass',browser:browser.version(),initial:{step:initial.step,tas_mps:initial.tas_mps},right_bank_delta_rad:after.roll_rad-before.roll_rad,checks:['static-pressure altimeter and launch QFE','pressure units and bounds','paused pressure and modal isolation','recorded pressure review','explicit start','live JSBSim','full-width canvas','loaded aerial imagery','local practice map and true heading','map path drawn, marker heading and restart clearing','map failure isolation','map focus and history selection','pause','view invariance','reset keyboard focus','right bank','on-screen hold and outside release','draggable stick and outside release','blur pause','state review and seeking','review playback without engine advancement','review return and reset','settings pause and focus','gain presets and defaults','custom gain and reset preservation','local runtime and bundled imagery only','missing engine','WebGL failure'],screenshots:'output/flight/{cockpit,chase}.png'},null,2));
 } finally {
   await browser?.close();for(const server of servers)server.kill('SIGTERM');
   await rm(missingRoot,{recursive:true,force:true});

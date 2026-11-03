@@ -36,6 +36,8 @@ try {
   });
   await page.goto(origin); await page.waitForFunction(()=>!document.querySelector('#start').disabled);
   await page.locator('#start').click(); await page.waitForFunction(()=>window.__forwardStates.at(-1)?.step>10);
+  // Pull the nose up briefly so the recorded trace holds distinctly different attitudes.
+  await page.keyboard.down('ArrowDown'); await page.waitForTimeout(900); await page.keyboard.up('ArrowDown'); await page.waitForTimeout(300);
   await page.locator('#pause').click(); await page.waitForFunction(()=>document.querySelector('#status').textContent==='Paused');
   const stats=async()=>{const count=await page.evaluate(()=>window.__forwardStats.length);await page.evaluate(()=>window.__forwardWorker.postMessage({type:'stats'}));await page.waitForFunction(n=>window.__forwardStats.length>n,count);return page.evaluate(()=>window.__forwardStats.at(-1));};
   const baseline=await stats();
@@ -61,6 +63,24 @@ try {
   await page.locator('#review-time').focus();await page.keyboard.press('Home');await page.waitForTimeout(70);const sought=await marker();assert.equal(sought.hidden,review.hidden);assert.equal(sought.clipped,review.clipped);assert(Math.abs(sought.x-review.x)<.02&&Math.abs(sought.y-review.y)<.02);
   const frozen=await stats();assert.equal(frozen.step,baseline.step);assert.equal(frozen.digest,baseline.digest);assert.deepEqual(frozen.final_state,baseline.final_state);
   checks.push('persistent recorded inspection and seeking retain projected marker without live physics');
+  await page.locator('#scene').focus();await page.keyboard.press('Escape');await page.waitForTimeout(70);
+  // F31: the cue must be recomputed from each recorded attitude. In chase view the
+  // camera follows heading only, so a recorded pitch change must move the marker
+  // vertically in the same sense, and seeking back must reproduce the first position.
+  await page.locator('#view-menu > summary').click();await page.locator('#chase').click();
+  const recordedPitch=await page.evaluate(()=>{const states=window.__forwardStates.filter(s=>Number.isFinite(s.pitch_rad));return {first:states[0].pitch_rad,last:states.at(-1).pitch_rad};});
+  assert(Math.abs(recordedPitch.last-recordedPitch.first)>0.02,`trace attitude differs: ${JSON.stringify(recordedPitch)}`);
+  await page.locator('#review-time').focus();
+  await page.keyboard.press('Home');await page.waitForTimeout(100);const startCue=await marker();
+  await page.keyboard.press('End');await page.waitForTimeout(100);const endCue=await marker();
+  await page.keyboard.press('Home');await page.waitForTimeout(100);const startAgain=await marker();
+  assert(!startCue.hidden&&!endCue.hidden,'recorded forward cue visible in chase review');
+  assert(Math.abs(endCue.y-startCue.y)>2,'different recorded attitude moves the cue');
+  assert.equal(Math.sign(startCue.y-endCue.y),Math.sign(recordedPitch.last-recordedPitch.first),'nose-up recorded pitch raises the cue');
+  assert(Math.abs(startAgain.x-startCue.x)<.02&&Math.abs(startAgain.y-startCue.y)<.02,'seeking back recomputes the same recorded cue');
+  observations.recordedAttitude={recordedPitch,startCue,endCue};
+  checks.push('review cue recomputes from recorded attitude (chase pitch direction and seek reproducibility)');
+  await page.locator('#view-menu > summary').click();await page.locator('#cockpit').click();
   await page.locator('#scene').focus();await page.keyboard.press('Escape');await page.waitForTimeout(70);
   await begin();await page.mouse.move(1100,165);await page.mouse.up();await page.waitForTimeout(70);const wide=await marker();
   await page.mouse.move(1100,160);await page.mouse.wheel(0,100);await page.waitForTimeout(100);const wider=await marker();assert(Math.abs(wider.x-720)<Math.abs(wide.x-720));
