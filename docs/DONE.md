@@ -3,6 +3,119 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 07:51 — Streamed regional flights, quiet overlays and flight assists
+
+TODO: 2.0.44, 2.0.45 and 2.0.47 complete for the bounded R-WORLD-5/R-UX-2/
+R-AP-2/R-SIM-9 increment. Agent: Codex orchestrator integrates and owns status,
+session/history and publication. `terrain_stream`/code1 implements terrain
+streaming/native/render contracts; `airport_map`/code2 implements airport map and
+the bounded scenery proxy; `region_sources` researches sources and independently
+checks non-authored data/native/render behavior. `overlay_controls` implements
+floating-panel/title/menu behavior; `browser_adapt` updates legacy browser flows.
+`rate_worker`/code1 implements AP capture and pacing; `flight_assists_ui`/code2
+implements their menu/keyboard/overlay and browser tests; `region_housekeeping`
+updates inventories/setup/network/rights docs alongside implementation.
+`increment_quality` independently reviews and validates the final affected code,
+source carry-forward and browser behavior. Cross-provider peer remains pending;
+no external review of this packet is claimed.
+
+**Implementation notes**
+
+Stream 42 hash-pinned BKG DGM200/GCG tiles over the declared region with nine
+resident native tiles and bounded visited renderer history. Share exact edge
+nodes and a derivative-aware fine/coarse feather; add Darmstadt, Odenwald and
+Spessart flights, source-limited live public map/photography and 103 sourced
+community airport points. Keep imagery gaps transparent, resource use bounded,
+and provider/source/age/datum/production-hosting limits explicit. Source compiler
+and shipped-edge integrity now have a regression check.
+
+Hide top bar and flight controls initially, add O and marked menu shortcuts,
+and require deliberate activation of half-opacity floating panels. A releases
+manual UI control and captures one authoritative HDG/ALT frame; repeated A
+recaptures. = cycles requested 1/1.5/2/5/10× pacing with a confirmed on-screen
+rate and separately labeled recorded Review metadata. Keep native integration
+at 1/120 s, preserve pause/loading intent, and reset new flights to 1×. German
+Shift+0 = does not reach throttle idle. No sensitivity/aircraft-coefficient
+retuning or general touchpad handling fix is included.
+
+Shared CI passes, including 219 app tests; nine of 23 existing native-study tests
+remain explicitly skipped. Build and five proxy tests pass. Independent checks
+pass 65 targeted tests, eight real-WASM groups, regional native/worker cases and
+three affected integrated browser suites. At equal steps all five rate fixtures
+produce identical native state/digest. Independent one-second Node pacing was
+1004/669/503/202/102 ms, without dropped steps; this is not a universal browser
+speed guarantee. See [final review](reviews/2026-11-03-flight-assists.md) and
+[regional review](reviews/2026-11-03-streamed-region.md). The final 116-path
+runtime/test packet is
+`55fcea2cd15cd82963e9196e11883342dd7f552876ffadd01c7017e283fbe042`.
+
+README now shows an actual, visually inspected Chrome flight at 19.05 simulation
+seconds, with real terrain/imagery, chase aircraft and cockpit panels. No mocked
+pixels or image editing were used. Source credits remain visible; some live
+requests reported degraded coverage. The image and [provenance](images/README.md)
+are separate from the runtime review packet.
+
+**Deviations**
+
+Regional assets cover the documented rectangle, not full EDDF/100 NM or global
+landings. DGM200/derived transitions are not surveyed airport geometry; source
+age and unknown photo capture dates remain explicit. The live proxy requires
+Pillow and the development server/equivalent endpoints; a static build alone is
+not the deployable simulator. Browser interaction tests use explicitly labeled
+imagery fixtures; source-response checks and the README screenshot use real
+data. Native dialog-close/next-frame races were repaired in browser tests, then
+independently rerun; they did not require product changes.
+
+**Insights**
+
+Global-quality appearance, physical ground correctness and control feedback are
+separate acceptance concerns. The reported touchpad overshoot/sudden jumps remain
+unresolved: new overlay hand-off and heavier rendering warrant measurement, while
+the same default airborne native fixture remains unchanged. Rate changes must
+alter scheduling rather than enlarge integration steps; convenience AP capture
+must sample the worker and remain distinct from original avionics semantics.
+
+## 2026-11-03 07:30 — Global scenery and Google Earth research
+
+TODO: 2.0.46 complete for research only. Agent: Codex orchestrator integrates;
+`global_sources` researches open/commercial world data, terms and pipelines;
+`google_flythrough` researches Google Earth/Maps routes; independent
+`scenery_research_review` checks primary claims and request coverage, including
+the final material-library addition. Same-provider review passes at note hash
+`545d5c4db55699bb6bc11c25f8809463ae1b37b00f4fdcb5f67d81cd31be8b35`;
+cross-provider peer remains pending. See [note](research/2026-11-03-global-scenery.md)
+and [review](reviews/2026-11-03-global-scenery-research.md).
+
+**Implementation notes**
+
+Record global terrain/vector/photo alternatives, local adaptive reconstruction
+and procedural materials, source-specific datum limits, service/cache rights and
+dated costs. Identify Google's current experimental web flight mode, EEA tile
+availability restriction, Maps JavaScript visual-adapter alternative and a
+proposed external KML tour export. Actually fetch two public terrain metadata
+responses and decode one 512 px Frankfurt-area terrain tile; record exact hashes
+and format results. No provider account, billing or runtime integration added.
+Input records/index preserve this request and the preceding regional/overlay
+instructions. Register 2.0.44/2.0.45 as still in integration, without promoting
+targeted tests to completed publication.
+
+**Deviations**
+
+No dedicated deep-research service is installed; use structured primary-source
+web research and upstream code inspection. Research acceptance does not pass
+global terrain accuracy, visual quality, flight performance or landing fidelity.
+The separate regional/overlay working-tree changes still need their integrated
+completion gates; this entry does not claim them delivered.
+
+**Insights**
+
+Resampling supplies more samples, not missing measurements. Open global terrain
+is practical, but mixed datums and surface-versus-ground distinctions matter for
+contact physics. Reusing Google visuals would preserve our own flight model only
+through a supported visual API integration; the Earth application's casual flight
+mode is a separate experience. A hybrid open baseline with finer local exercise
+regions remains the recommendation, not a selected paid provider.
+
 ## 2026-11-03 05:33 — Detailed regional textures and compact radio station discovery
 
 TODO: 2.0.33 and 2.0.42 complete for bounded R-WORLD-4/R-NAV-4/R-PANEL-1/

@@ -1,3 +1,4 @@
+import { installSceneryFixture, prepareFlightUI } from './flight-actions.mjs';
 // Actual public package + actual WASM + app render/Review/contact integration.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -56,7 +57,8 @@ try {
     assert(Math.abs(s.ground_height_ellipsoid_m - s.terrain_geoid_m - s.ground_agl_m - s.terrain_height_msl_m) < 1e-6,
       'actual native vertical AGL uses the same physical DEM as the rendered surface');
   }
-  const page = await newPage(); await page.goto(origin); await ready(page);
+  const page = await newPage(); await installSceneryFixture(page); await page.goto(origin); await ready(page);
+  await prepareFlightUI(page);
   const first = await state(page); datum(first); observations.initial = first;
   assert(first.terrain_height_msl_m > 100 && first.terrain_geoid_m > 40 && first.ground_agl_m > 200);
   assert.equal((await page.evaluate(() => window.worldReady.at(-1))).build.terrain.sha256, '7123539a37bda7d7770d0f5e9662e5e48a350273bc68836ee34f1bf4b50ed7a9');
@@ -73,7 +75,8 @@ try {
   checks.push('default app uses actual public DEM/GCG with physical native AGL; Flight-menu Taunus demo is a real native flight and camera changes keep physics frozen');
 
   // A native landing fixture above the actual public surface, not a mocked state.
-  const landing = await newPage(true); await landing.goto(origin); await ready(landing);
+  const landing = await newPage(true); await installSceneryFixture(landing); await landing.goto(origin); await ready(landing);
+  await prepareFlightUI(landing);
   datum(await state(landing)); assert(Math.abs((await state(landing)).ground_agl_m - 3) < .02);
   await landing.locator('#start').click();
   await landing.waitForFunction(() => { const s = window.worldStates.at(-1); return s.gear_nose_wow + s.gear_left_wow + s.gear_right_wow > 0; });
@@ -129,7 +132,7 @@ try {
     const response = await route.fetch(), bytes = new Uint8Array(await response.body()); bytes[0] ^= 1;
     await route.fulfill({ response, body: Buffer.from(bytes) });
   });
-  await missing.goto(origin); await missing.waitForFunction(() => document.querySelector('#notice').textContent.includes('integrity'));
+  await installSceneryFixture(missing); await missing.goto(origin); await missing.waitForFunction(() => document.querySelector('#notice').textContent.includes('integrity'));
   assert(await missing.locator('#start').isDisabled()); assert.equal(await missing.evaluate(() => window.worldWorkerId), 0);
   checks.push('corrupt public data fails before a flight worker starts; no flat fallback or external runtime service is used');
   await writeFile(`${output}/public-terrain-browser.json`, JSON.stringify({ checks, observations }, null, 2) + '\n');

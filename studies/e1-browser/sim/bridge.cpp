@@ -71,13 +71,13 @@ int g_ap_mode = 0;
 int g_ap_vertical_mode = 0;
 double g_ap_vertical_target = 0.0;
 double g_ap_heading_target = 0.0;
-std::shared_ptr<const gefly::TerrainGrid> g_pending_terrain;
-std::shared_ptr<const gefly::TerrainGrid> g_active_terrain;
+std::shared_ptr<gefly::TerrainAtlas> g_pending_terrain;
+std::shared_ptr<gefly::TerrainAtlas> g_active_terrain;
 bool g_terrain_query_failed = false;
 
 class GridGroundCallback final : public JSBSim::FGGroundCallback {
  public:
-  GridGroundCallback(std::shared_ptr<const gefly::TerrainGrid> grid, double a, double b)
+  GridGroundCallback(std::shared_ptr<gefly::TerrainAtlas> grid, double a, double b)
       : grid_(std::move(grid)), a_(a), b_(b) {}
   void SetEllipse(double a, double b) override { a_ = a; b_ = b; }
   // Source DEM is immutable. IC terrain setters cannot overwrite its datum.
@@ -98,7 +98,7 @@ class GridGroundCallback final : public JSBSim::FGGroundCallback {
     return point.GetGeodAltitude() - sample->height_m / kFtToM;
   }
  private:
-  std::shared_ptr<const gefly::TerrainGrid> grid_;
+  std::shared_ptr<gefly::TerrainAtlas> grid_;
   double a_, b_;
 };
 
@@ -230,13 +230,41 @@ EMSCRIPTEN_KEEPALIVE int gf_configure_terrain_grid(double west, double south, do
   const size_t heap = emscripten_get_heap_size();
   if (!address || address % alignof(double) || address > heap || bytes > heap - address) return kErrRange;
   try {
-    g_pending_terrain = std::make_shared<const gefly::TerrainGrid>(west, south, east, north,
+    auto fine = std::make_shared<const gefly::TerrainGrid>(west, south, east, north,
       static_cast<size_t>(width), static_cast<size_t>(height), values, static_cast<size_t>(count));
+    g_pending_terrain = std::make_shared<gefly::TerrainAtlas>(fine);
     return 0;
   } catch (const std::exception&) { return kErrRange; }
 }
+// Caller installs or removes a complete tile only between simulation steps.
+EMSCRIPTEN_KEEPALIVE int gf_set_terrain_tile(int id, double west, double south, double east, double north,
+    double width, double height, const double* values, double count) {
+  if (!g_pending_terrain || id < 0 || id >= 56 || !finite_all({west,south,east,north,width,height,count})
+      || width != 129 || height != 129 || count != 129 * 129) return kErrRange;
+  const uintptr_t address = reinterpret_cast<uintptr_t>(values);
+  const size_t bytes = static_cast<size_t>(count) * sizeof(double), heap = emscripten_get_heap_size();
+  if (!address || address % alignof(double) || address > heap || bytes > heap - address) return kErrRange;
+  try {
+    auto tile = std::make_shared<const gefly::TerrainGrid>(west,south,east,north,129,129,values,129*129);
+    g_pending_terrain->set(id, std::move(tile));
+    return 0;
+  } catch (const std::exception&) { return kErrRange; }
+}
+EMSCRIPTEN_KEEPALIVE int gf_remove_terrain_tile(int id) {
+  if (!g_pending_terrain || id < 0 || id >= 56) return kErrRange;
+  g_pending_terrain->remove(id); return 0;
+}
 EMSCRIPTEN_KEEPALIVE int gf_clear_terrain_grid() { g_pending_terrain.reset(); return 0; }
 EMSCRIPTEN_KEEPALIVE int gf_terrain_available() { return terrain_support_available() ? 1 : 0; }
+// Read-only sample for cross-runtime terrain/normal verification.
+EMSCRIPTEN_KEEPALIVE const double* gf_terrain_sample(double longitude, double latitude) {
+  static double result[3];
+  const auto sample = g_active_terrain ? g_active_terrain->sample(longitude, latitude) : std::nullopt;
+  result[0] = sample ? sample->height_m : std::numeric_limits<double>::quiet_NaN();
+  result[1] = sample ? sample->dh_dlon_m : std::numeric_limits<double>::quiet_NaN();
+  result[2] = sample ? sample->dh_dlat_m : std::numeric_limits<double>::quiet_NaN();
+  return result;
+}
 EMSCRIPTEN_KEEPALIVE double gf_terrain_height_m(double longitude, double latitude) {
   if (g_active_terrain) {
     const auto sample = g_active_terrain->sample(longitude, latitude);

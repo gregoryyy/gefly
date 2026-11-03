@@ -1,0 +1,46 @@
+import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { chromium } from 'playwright';
+import { prepareFlightUI } from './flight-actions.mjs';
+
+const app = fileURLToPath(new URL('..', import.meta.url));
+const origin = 'http://127.0.0.1:5198';
+const server = spawn(process.execPath, ['--input-type=module', '-e', `import { createServer } from 'vite'; const server = await createServer({server:{host:'127.0.0.1',port:5198,strictPort:true,hmr:false,watch:{ignored:['**/*']}}}); await server.listen(); server.printUrls();`], { cwd: app, stdio: 'pipe' });
+let output = '', browser;
+server.stdout.on('data', chunk => { output += chunk; });
+server.stderr.on('data', chunk => { output += chunk; });
+try {
+  for (let i = 0; i < 100 && !output.includes('Local:'); i++) await new Promise(resolve => setTimeout(resolve, 100));
+  assert(output.includes('Local:'), output);
+  browser = await chromium.launch({ headless: true, ...(process.env.CHROME ? { executablePath: process.env.CHROME } : { channel: 'chrome' }) });
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.goto(origin);
+  await prepareFlightUI(page, { controls: false });
+  await page.locator('#view-menu > summary').click();
+  await page.locator('#toggle-map').click();
+  const panel = page.locator('#practice-map-panel');
+  await panel.locator('.practice-map-heading').click();
+  assert.equal(await panel.evaluate(element => element.classList.contains('overlay-active')), true);
+  await panel.locator('summary').click();
+  await panel.getByRole('status').filter({ hasText: '103 of 103' }).waitFor();
+  assert.equal(await panel.locator('.practice-map-airport-marker').count(), 103);
+  await panel.getByLabel('Search airports').fill('EDFE');
+  await panel.getByRole('button', { name: /EDFE ·/ }).click();
+  const detail = await panel.locator('.practice-map-airport-detail').textContent();
+  assert.match(detail, /EDFE/); assert.match(detail, /Elevation/); assert.match(detail, /OurAirports/);
+  assert.equal(await panel.getByRole('button', { name: 'Follow' }).getAttribute('aria-pressed'), 'false');
+  await panel.getByLabel('Search airports').fill('DE-0274');
+  await panel.getByRole('button', { name: /DE-0274 ·/ }).click();
+  assert.match(await panel.locator('.practice-map-airport-detail').textContent(), /Elevation unavailable/);
+  await panel.getByLabel('Search airports').fill('no such field');
+  assert.match(await panel.getByRole('status').filter({ hasText: '0 of 103' }).textContent(), /0 of 103/);
+  const canvas = panel.locator('.maplibregl-canvas');
+  const box = await canvas.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down(); await page.mouse.move(box.x + box.width / 2 + 60, box.y + box.height / 2, { steps: 5 }); await page.mouse.up();
+  assert.equal(await panel.getByRole('button', { name: 'Follow' }).getAttribute('aria-pressed'), 'false');
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert((await panel.boundingBox()).width <= 390);
+  console.log('Airport map browser checks passed');
+} finally { await browser?.close(); server.kill(); }

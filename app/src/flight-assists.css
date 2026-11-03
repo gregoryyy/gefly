@@ -1,0 +1,18 @@
+.simulation-rate-overlay {
+  position: absolute;
+  right: 20px;
+  top: 84px;
+  z-index: 3;
+  padding: 5px 9px;
+  border: 1px solid #cad7d34d;
+  border-radius: 5px;
+  background: #12212899;
+  color: #f0f4e8;
+  font: 600 12px/1.2 ui-monospace, monospace;
+  letter-spacing: .04em;
+  pointer-events: none;
+}
+.simulation-rate-overlay[data-review="true"] { color: #dbd1a8; }
+@media (max-width: 620px) {
+  .simulation-rate-overlay { right: 10px; top: 92px; font-size: 10px; }
+}

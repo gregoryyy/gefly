@@ -1,4 +1,4 @@
-import { startOrResume } from './flight-actions.mjs';
+import { installSceneryFixture, prepareFlightUI, startOrResume } from './flight-actions.mjs';
 // Actual Chrome/JSBSim UI integration; LAB navigation is fictional teaching geometry.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -56,9 +56,10 @@ try {
       }
     };
   });
-  await page.goto(origin);
+  await installSceneryFixture(page); await page.goto(origin);
   const waitReady = () => page.waitForFunction(() => !document.querySelector('#start').disabled && window.__avionicsStates.at(-1)?.cas_mps > 0);
   await waitReady();
+  await prepareFlightUI(page);
   const state = () => page.evaluate(() => window.__avionicsStates.at(-1));
   const stats = async () => {
     const count = await page.evaluate(() => window.__avionicsStats.length);

@@ -111,13 +111,33 @@ usable simulator path when community or AI services are unavailable.
 
 ## Local browser flight prototype
 
-The experimental Vite server binds to 127.0.0.1 and allowlists only twelve declared worker/runtime/module files. It does not expose the repository through that middleware. npm installation and the pinned study build download upstream dependencies; JSBSim and application assets remain local. The renderer uses bundled, openly licensed Hessen photographs and a bounded public elevation/quasigeoid package with versioned bounds, source hashes and rights metadata; no live imagery or elevation service is contacted during flight. Terrain paths, dimensions, bytes, SHA-256, finite heights and vertical datum are validated before starting physics. Missing/corrupt terrain or native coverage exit fails closed; an explicit flat study is the only legacy flat-ground path. Authoring GIS packages run separately from the application, consume hash-pinned source files and are not browser dependencies. No device geolocation, accounts, telemetry, persistence or AI/provider calls are used. Generated generic aircraft data stays local and is excluded from the production UI build. Browser checks cover missing runtime, WebGL failure, control release and focus-loss pause. The UI-only production build is not a published simulator deployment.
+The experimental Vite server binds to 127.0.0.1 and serves the explicitly named
+worker/runtime/helper files from `app/runtime.ts`; this middleware does not expose
+the repository. npm installation and the pinned study build download upstream
+dependencies. JSBSim, application code, physical terrain and airport-directory
+assets remain local. Photography now combines bundled images with a separate
+fixed-source live proxy described below; the old local-only scenery statement no
+longer applies. No live elevation service drives physics. Terrain paths,
+dimensions, bytes, SHA-256, finite heights and vertical datum are validated before
+installation. Missing/corrupt terrain and native coverage exit fail closed; an
+explicit flat study is the only legacy flat-ground path. Authoring GIS packages
+run separately, consuming hash-pinned source files. No device geolocation,
+accounts, personal telemetry, persistence or runtime AI calls are used. Generated
+generic aircraft data stays local and outside the production UI build. The
+UI-only production build is not a published simulator deployment.
 
 Control sensitivity settings, including the 0–100% keyboard/button wheel-brake command gain, are bounded dimensionless gains held only in page memory. They have no persistence or network path, preserve throttle, and leave the declared study roll offset separate. Opening the settings dialog pauses flight and releases held inputs; closing it does not resume automatically. These input preferences do not calibrate or modify aircraft physics.
 
 In-session flight review keeps copied state samples and captured vertical speed only in page memory, capped at 36,000 samples and 600 simulation seconds. Reset/reload clears history. It has no storage, export, import or network path. Review pauses and neutralizes the real worker; historical state is sent only to the renderer/instruments and never restores physics. Unrecorded control positions are hidden, with explicit state-only trace labels.
 
-The lazy practice map loads its bundled MapLibre worker, existing images and SOURCE.json locally. Fixed image URLs ignore source/reference URL fields in metadata; WGS84 bounds are validated before display. It plots up to 600 retained states and follows the selected recorded frame in review. Map errors remain local to that panel; no map action drives physics. The panel adds no telemetry, storage, remote basemap, glyph server or device geolocation.
+The lazy practice map loads its bundled MapLibre worker, images and bounded,
+hash-validated airport catalogue locally, and uses the live scenery endpoints
+below. Source/provenance URL strings do not become fetch destinations; WGS84
+bounds and catalogue fields are validated, with directory text rendered as text.
+It plots up to 600 retained states and follows the selected recorded frame in
+Review. Airport selection moves only the map and cannot teleport the aircraft or
+change physical terrain. Map errors remain panel-local. It adds no learner
+telemetry, storage, remote glyph server or device geolocation.
 
 The ideal pressure instrument reads engine atmosphere values through read-only Pa
 exports. Its bounded 80000–110000 Pa setting changes only worker instrument state,
@@ -188,3 +208,68 @@ URL from provenance is executed at runtime. A bounded decode cache, deduplicated
 requests and ancestor fallback limit view loading; imagery failures do not write
 flight state. Offline public WMS ingestion runs separately with bounded requests,
 image decoding, tile budgets, atomic output and source/derivative notices.
+
+## Streamed terrain and live public scenery proxy
+
+The fixed regional terrain manifest declares exactly 42 known 0.25° tiles over
+8.25–10°E / 49.25–50.75°N. Runtime tile URLs are derived from validated IDs;
+redirects, unexpected lengths, hashes, dimensions and non-finite nodes are
+rejected. Reads have 15 s deadlines and cancellation. At most nine current
+tiles are installed into the native atlas between fixed steps; the renderer
+retains at most 42 visited tiles for Review. Loading pauses authoritative physics
+without changing its step size; explicit user pause/stop cancels automatic resume.
+Missing source coverage cannot silently become zero or the last known height.
+
+The browser requests same-origin `/scenery/map/{z}/{x}/{y}.png` or
+`/scenery/imagery/{z}/{x}/{y}.png`. The Vite process sends WMS 1.1.1 requests only
+to these hard-coded HTTPS sources:
+
+- `sgx.geodatenzentrum.de/wms_topplus_open`, `web` map layer.
+- `www.gds-srv.hessen.de/cgi-bin/lika-services/ogc-free-images.ows`, `he_dop_rgb`.
+- `geoservices.bayern.de/od/wms/dop/v1/dop40`, `by_dop40c`.
+- `owsproxy.lgl-bw.de/owsproxy/ows/WMS_LGL-BW_ATKIS_DOP_20_C`, `IMAGES_DOP_20_RGB`.
+
+Requests accept only GET/HEAD and canonical bounded integer XYZ paths, rejecting
+query strings, arbitrary destinations and redirects. Endpoint coverage is
+8–10°E / 49–50.75°N; map z5–16 and photo z7–15. Image responses are capped at
+2 MiB and checked as PNG with expected 256/512 px dimensions. The proxy limits
+eight active jobs, four upstream fetches, two compositors and 128 pending keys;
+deduplicated memory LRU is capped at 32 MiB with map/photo TTLs of 1 h/15 min.
+Fetch and compositor deadlines are 15 s. Cache responses sent to the browser are
+private with a 300 s max-age. Failures return 502 or queue saturation 503 without
+writing terrain or aircraft state.
+
+Photography uses the fixed local Python compositor with at most three 512 px
+images, 9 MiB bounded base64/JSON stdin and 2 MiB output. Its executable/script
+arguments are configured locally, never supplied by a request. Pillow 11.2.1
+performs decoding and alpha composition; its dependency is required only by the
+scenery service, not the browser or native physics. Black/white blank images are
+skipped, and transparent coverage gaps reveal the map underneath. A partial
+upstream result carries response headers but is not a guarantee of complete
+photo coverage; every view retains the map-fallback/unknown-date disclosure.
+
+The upstream services see the server's network address and requested map bounds
+for simulated scenery; the browser does not request GPS. No account/key, learner
+record, control trace or recorded flight is uploaded. The proxy has no disk cache
+or application request log, and restart drops its cache; upstream retention is
+the provider's responsibility. Live map/photo bytes are not versioned scenario
+inputs and may change in Review. Aircraft state and bundled terrain are retained
+separately; image access does not drive dynamics. Rights/attribution remain
+source-specific in [SBOM](SBOM.md) and [notices](../THIRD_PARTY_NOTICES.md).
+
+This service exists in Vite development only. Static production output needs an
+equivalent endpoint service and the separate research-engine deployment; hosting
+and production privacy/availability decisions remain open. Global provider
+research did not activate a commercial service or add remote runtime endpoints.
+
+## Convenience autopilot and simulation rate
+
+A captures worker-authoritative heading and pressure-altitude targets through
+the existing guarded KAP/native interfaces; it cannot claim installed-aircraft
+performance or bypass manual-input priority. The = rate union accepts only
+1/1.5/2/5/10×. It changes pacing, never the fixed integration step or aircraft
+parameters. Shortcuts are guarded against typing, modifiers, repeats, modal
+dialogs and read-only Review. The rate overlay reports confirmed state rather
+than an unacknowledged command. Reset returns to normal speed; failed/paused
+loading does not create catch-up integration. These controls add no persistence,
+permissions, telemetry or external traffic.
