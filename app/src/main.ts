@@ -231,17 +231,18 @@ const session = createSession({
     ready = true; failed = false; throttle = trim.throttle;
     pitchTrimTarget = Math.abs(trim.pitch_trim) <= 1 ? trim.pitch_trim : null;
     el<HTMLInputElement>('throttle').value = String(throttle * 100);
-    notice(!landingPreset && trim.status !== 1 ? 'Initial trim did not converge. Handling may be unstable; restart if needed.' : '');
+    const trimNotice = !landingPreset && trim.status !== 1 ? 'Initial trim did not converge. Handling may be unstable; restart if needed.' : '';
+    notice(trimNotice);
     const eddf = eddfPracticeReady(airborneSite, landingPreset, navdataStatus);
     if (eddf === 'apply') {
       try {
         const approach = eddfApproachPractice(getNavigationCatalogue());
         radioPanel.setConfiguration(approach.navigation);
         session.setKap140({action:'heading', value: approach.ic.heading_rad});
-      } catch { notice('EDDF 25C practice guidance unavailable; flying without the historical approach setup.'); }
+      } catch { notice(`${trimNotice} EDDF 25C practice guidance unavailable; flying without the historical approach setup.`.trim()); }
     } else if (eddf === 'degraded') {
       // The visible navdata alert explains why; the flight still becomes ready (Paused).
-      notice('EDDF 25C practice guidance disabled: navigation data is unavailable or does not match.');
+      notice(`${trimNotice} EDDF 25C practice guidance disabled: navigation data is unavailable or does not match.`.trim());
     }
     publishInput();
     if (startWhenReady && !document.hidden && !sceneFailed) { startWhenReady = false; startFlight(); }
