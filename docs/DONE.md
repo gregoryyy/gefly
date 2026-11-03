@@ -3,6 +3,44 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 08:35 — Close the quality review of the peer fixes (TODO 0.21)
+
+TODO: 0.21 in progress. Agent: Claude Code orchestrator; code2 subagent (fixes);
+quality subagent (two rounds, final verdict accept).
+
+**Implementation notes**
+
+- **Quality review:** confirmed the fixes from the 08:05 entry.
+- **Medium F55 regression, fixed:** EDDF ILS practice restarted with failing or
+  mismatched navdata threw inside `onReady` and left the session half-ready. The
+  approach setup now runs only on a navdata match, through `eddfPracticeReady`;
+  otherwise the flight starts without it and shows a notice.
+- **Runtime evidence:** the [record](reviews/2026-11-03-runtime-evidence.md) was taken at
+  main `b3a7538`, before the fixes, as a headless Linux software-rendering run, not
+  reference-platform acceptance.
+  - JSBSim WASM built with pinned emsdk and JSBSim commits.
+  - All native and engine tests passed, including 23 of 23 e1-jsbsim tests.
+  - 2 of 26 browser suites passed; 22 timed out at about 1 frame per second and count
+    as not evaluated.
+- **avionics-smoke:** its GS INOP failure was a stale test after PR #49's live GS flag;
+  it is updated.
+
+Checks: 240 app tests passed; `npm run check` passed; `utils/ci/run.py --require-node`
+exit 0 (e1-jsbsim 9 of 23 skipped); assure 0 errors.
+
+**Deviations**
+
+- Part of code2's in-progress fix was swept into the orchestrator's docs commit
+  `1205774` by a shared-worktree `git add -A`. The history is kept; the full fix spans
+  `1205774`, `e7be2c2` and `27c3810`.
+- Open low items:
+  - in degraded EDDF mode the worker keeps the approach NAV settings while the radio
+    panel does not show them (both warnings are visible);
+  - `bridge-native.mjs` does not exercise the NaN or name-binding paths;
+  - the fitted control column has −4.5 px slack at 1440 px.
+- Browser rows stay blocked until a GPU or reference-Mac run. Peer pending (Codex,
+  TODO 0.19).
+
 ## 2026-11-03 08:05 — Fix the Claude peer-review findings for Codex PRs #39–#50 (TODO 0.21)
 
 TODO: 0.21 in progress; 1.14.1 reopened (F66; 1.14 stays ticked with an open-child warning); GAPS Q24 and Q25 opened.
