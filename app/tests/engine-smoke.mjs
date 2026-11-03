@@ -175,12 +175,14 @@ try {
   observations.cutoff = await state(); await reset();
   checks.push('manual mixture persists, automatic mode restores and cutoff stops fuel flow');
 
+  await page.locator('#ap-engage').click({ delay:350 });
+  await page.waitForFunction(() => { const s=window.__engineStates.at(-1); return s.kap_engaged===1 && s.kap_lateral===0 && s.kap_vertical===0; });
   const captureCount=await page.evaluate(()=>window.__engineStates.length);
   await page.locator('#ap-heading').click();
   await page.waitForFunction(() => window.__engineStates.at(-1).ap_mode === 2);
   const captured=await page.evaluate(count=>window.__engineStates.slice(count).find(s=>s.ap_mode===2),captureCount);
   observations.captured=captured;
-  assert(Math.abs(angleDifference(captured.ap_heading_target_rad,captured.heading_rad)) < 1e-6, `HDG captures actual true heading: target=${captured.ap_heading_target_rad}, actual=${captured.heading_rad}`);
+  assert(Math.abs(angleDifference(captured.ap_heading_target_rad,captured.kap_heading_bug_rad)) < 1e-6, `HDG tracks the external true-heading bug: target=${captured.ap_heading_target_rad}, bug=${captured.kap_heading_bug_rad}`);
   await page.waitForFunction(() => document.querySelector('#offset-value').textContent.includes('suspended by AP'));
   assert.equal(Number(await page.locator('#roll-control').textContent()), 0, 'study offset is absent from pilot roll input under AP');
   await page.locator('#scene').focus(); await page.keyboard.press('Digit7');
@@ -188,7 +190,7 @@ try {
   await page.waitForFunction(() => window.__engineStates.at(-1).flap_rad > .01);
   assert.equal((await state()).ap_mode, 2, 'throttle and flap actions preserve AP');
   await page.locator('#flaps-retract').click();
-  checks.push('heading capture and roll-offset suspension preserve secondary controls');
+  checks.push('HDG bug tracking and roll-offset suspension preserve secondary controls');
 
   const targetBefore = (await state()).ap_heading_target_rad;
   await page.locator('#ap-heading-increase').click();
@@ -203,14 +205,14 @@ try {
   observations.headingDecrease = { before:returnStart.heading_rad, after:returned.heading_rad, target:returned.ap_heading_target_rad };
   checks.push('actual fixed-step heading response to increased and decreased targets');
 
-  const beforeOff = await stats(); await page.locator('#ap-off').click();
+  const beforeOff = await stats(); await page.locator('#ap-engage').click();
   await page.waitForFunction(() => { const s=window.__engineStates.at(-1); return s.ap_mode===0 && s.ap_aileron_norm===0; });
   assert.equal((await state()).step, beforeOff.step, 'paused AP disconnect does not advance physics');
   await resume(); await page.locator('#scene').focus();
   await page.keyboard.down('ArrowRight'); await page.waitForTimeout(550); await page.keyboard.up('ArrowRight');
   await page.waitForTimeout(100); const bankStart = await state();
   assert(Math.abs(bankStart.roll_rad) > .03, 'manual input establishes a real bank');
-  await page.locator('#ap-level').click(); await page.waitForFunction(() => window.__engineStates.at(-1).ap_mode===1);
+  await page.locator('#ap-engage').click({ delay:350 }); await page.waitForFunction(() => window.__engineStates.at(-1).ap_mode===1);
   await pause(); const leveled = await burst(1200);
   assert(Math.abs(leveled.roll_rad) < Math.abs(bankStart.roll_rad), 'wings-level AP reduces actual bank');
   observations.wingsLevel = { before:bankStart.roll_rad, after:leveled.roll_rad };
@@ -218,9 +220,9 @@ try {
 
   await resume(); await page.locator('#scene').focus(); await page.keyboard.press('p');
   await page.waitForFunction(() => window.__engineStates.at(-1).ap_mode===0);
-  await page.keyboard.press('p'); await page.waitForFunction(() => window.__engineStates.at(-1).ap_mode===2);
+  await page.keyboard.press('p'); await page.waitForFunction(() => window.__engineStates.at(-1).ap_mode===1);
   await page.keyboard.down('ArrowRight'); await page.waitForFunction(() => window.__engineStates.at(-1).ap_mode===0); await page.keyboard.up('ArrowRight');
-  await page.locator('#ap-heading').click(); await page.waitForFunction(() => window.__engineStates.at(-1).ap_mode===2);
+  await page.locator('#ap-engage').click({ delay:350 }); await page.waitForFunction(() => window.__engineStates.at(-1).ap_mode===1);
   await page.mouse.click(900,150); await page.mouse.move(955,150);
   await page.waitForFunction(() => window.__engineStates.at(-1).ap_mode===0);
   await page.keyboard.press('Escape');
@@ -229,9 +231,9 @@ try {
   await page.locator('#review-flight').click();
   await page.waitForFunction(() => document.querySelector('#engine-state-label').textContent==='RECORDED');
   const reviewStats = await stats();
-  for (const id of ['mixture-control','mixture-auto','ap-heading','ap-level','ap-off']) assert.equal(await page.locator(`#${id}`).isDisabled(),true);
+  for (const id of ['mixture-control','mixture-auto','ap-heading','ap-engage']) assert.equal(await page.locator(`#${id}`).isDisabled(),true);
   await page.locator('#review-time').focus(); await page.keyboard.press('Home');
-  await page.waitForFunction(() => document.querySelector('#ap-status').textContent==='OFF');
+  await page.waitForFunction(() => document.querySelector('#ap-engaged-label').textContent==='OFF');
   await page.keyboard.press('End'); await page.waitForTimeout(100);
   assert.equal((await stats()).step,reviewStats.step);
   await page.locator('#review-exit').click(); await reset();
@@ -239,7 +241,7 @@ try {
   checks.push('recorded engine state is read-only and reset restores defaults');
 
   if (await page.locator('#status').textContent()==='Paused') await resume();
-  await page.locator('#ap-heading').click(); await page.waitForFunction(() => window.__engineStates.at(-1).ap_mode===2);
+  await page.locator('#ap-engage').click({ delay:350 }); await page.waitForFunction(() => window.__engineStates.at(-1).ap_mode===1);
   await page.setViewportSize({ width:390,height:568 });
   await page.locator('#engine-open').click();
   await page.waitForFunction(() => document.querySelector('#engine-dialog').open);

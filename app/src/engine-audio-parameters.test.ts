@@ -122,6 +122,18 @@ test('engine-only matched-load gains make upper actual RPM stronger than idle', 
   assert(idle.propeller_gain < cruise.propeller_gain / 3);
 });
 
+test('altitude alert audio accepts only the complete optional recorded counter group with a valid frame clock', () => {
+  const state = fixture({ kap_alert_state: 1, kap_alert_sequence: 7, prop_radps: undefined, tas_mps: undefined });
+  const alert = engineAudioParameters(state);
+  assert(alert.valid && alert.alert_available); assert.equal(alert.alert_sequence, 7);
+  assert.equal(alert.exhaust_gain + alert.wind_gain, 0, 'alert telemetry never invents engine or wind');
+  for (const patch of [{ kap_alert_state: undefined }, { kap_alert_sequence: undefined }, { kap_alert_sequence: -1 },
+    { kap_alert_sequence: 1.5 }, { kap_alert_sequence: Number.MAX_SAFE_INTEGER + 1 }, { kap_alert_state: 4 }, { t_s: NaN }]) {
+    assert.equal(engineAudioParameters({ ...state, ...patch }).alert_available, false);
+  }
+  assert.equal(engineAudioParameters(fixture()).alert_available, false, 'legacy group absence is unavailable');
+});
+
 test('sound-design gains and frequencies stay bounded for extreme finite inputs', () => {
   for (const magnitude of [1e-20, 1, 100, 1e6, 1e200, Number.MAX_VALUE]) {
     const result = engineAudioParameters(fixture({ prop_radps: magnitude, manifold_pressure_pa: magnitude, fuel_flow_m3ps: magnitude, tas_mps: magnitude }));

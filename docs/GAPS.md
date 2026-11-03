@@ -64,6 +64,16 @@ this selection was recorded.
 
 Why: fixes the first required platform/input experience and optional peripherals.
 
+Refinement: **2026-11-03 01:54, user request recorded by orchestrator**: asked that
+the autopilot work like the original; see [raw request](input/2026-11-03-autopilot-original.md).
+Implementation fit assumed from the classic reference and prior C172 sources:
+KAP 140 two-axis with altitude preselection, later hold-to-engage behavior.
+This is not a serial-specific installation decision. [R-AP-1](SPEC.md) and task
+2.0.40 scope its operating model, with generic native servos, TRUE DG and current
+fictional LAB VOR. Real navigation services and installed performance/PFT/trim
+fault fidelity remain open in 2.0.14. Older roll-only/INOP notes below describe
+the earlier increments, not the current operating model.
+
 Refinement: **2026-11-02 20:13, user** (recording time): requested that the
 crosshair indicate the aircraft's front and move as the camera looks sideways;
 see [verbatim input](input/2026-11-02-aircraft-forward-marker.md). Implemented as

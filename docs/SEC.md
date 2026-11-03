@@ -111,7 +111,7 @@ usable simulator path when community or AI services are unavailable.
 
 ## Local browser flight prototype
 
-The experimental Vite server binds to 127.0.0.1 and allowlists only nine declared worker/runtime/module files. It does not expose the repository through that middleware. npm installation and the pinned study build download upstream dependencies; JSBSim and application assets remain local. The renderer uses bundled, openly licensed Hessen photographs and a bounded public elevation/quasigeoid package with versioned bounds, source hashes and rights metadata; no live imagery or elevation service is contacted during flight. Terrain paths, dimensions, bytes, SHA-256, finite heights and vertical datum are validated before starting physics. Missing/corrupt terrain or native coverage exit fails closed; an explicit flat study is the only legacy flat-ground path. Authoring GIS packages run separately from the application, consume hash-pinned source files and are not browser dependencies. No device geolocation, accounts, telemetry, persistence or AI/provider calls are used. Generated generic aircraft data stays local and is excluded from the production UI build. Browser checks cover missing runtime, WebGL failure, control release and focus-loss pause. The UI-only production build is not a published simulator deployment.
+The experimental Vite server binds to 127.0.0.1 and allowlists only twelve declared worker/runtime/module files. It does not expose the repository through that middleware. npm installation and the pinned study build download upstream dependencies; JSBSim and application assets remain local. The renderer uses bundled, openly licensed Hessen photographs and a bounded public elevation/quasigeoid package with versioned bounds, source hashes and rights metadata; no live imagery or elevation service is contacted during flight. Terrain paths, dimensions, bytes, SHA-256, finite heights and vertical datum are validated before starting physics. Missing/corrupt terrain or native coverage exit fails closed; an explicit flat study is the only legacy flat-ground path. Authoring GIS packages run separately from the application, consume hash-pinned source files and are not browser dependencies. No device geolocation, accounts, telemetry, persistence or AI/provider calls are used. Generated generic aircraft data stays local and is excluded from the production UI build. Browser checks cover missing runtime, WebGL failure, control release and focus-loss pause. The UI-only production build is not a published simulator deployment.
 
 Control sensitivity settings, including the 0–100% keyboard/button wheel-brake command gain, are bounded dimensionless gains held only in page memory. They have no persistence or network path, preserve throttle, and leave the declared study roll offset separate. Opening the settings dialog pauses flight and releases held inputs; closing it does not resume automatically. These input preferences do not calibrate or modify aircraft physics.
 
@@ -139,8 +139,11 @@ mobile engine dialog releases held inputs and keeps flight running, as labeled.
 
 Cockpit/engine state groups are validated atomically before copying and display;
 missing old-engine capabilities remain unavailable rather than synthesized.
-Flap, brake and mixture commands are finite/bounded. AP messages accept only
-Off/Level/Heading with finite normalized true-heading targets. Raw manual pilot
+Flap, brake and mixture commands are finite/bounded. AP messages preserve the legacy roll interface and add a bounded, validated
+KAP operating-state command union. NAV1 configuration is an atomic validated
+worker snapshot; its fictional signal is computed at fixed steps. Source validity
+and controller outputs remain independent of UI repaint rate. Invalid targets
+are rejected without native integration. Raw manual pilot
 input disconnects AP, and its roll correction cannot silently compete with the
 controller. Review disables all these live controls and renders captured fields.
 Paused setting/mode changes replace only the final permitted instrument fields,

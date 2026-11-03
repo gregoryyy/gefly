@@ -1,3 +1,4 @@
+import { createKap140 } from '../../studies/e1-browser/sim/kap140.js';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { DEFAULT_RADIO_NAV } from './radio-nav.ts';
@@ -317,4 +318,28 @@ test('review retains the terrain height convention and rejects partial groups or
   assert.equal(trace.atTime(1)!.state.terrain_height_msl_m, 115.25);
   assert.equal(trace.record({ ...state(3), terrain_profile: 1 }, 0), false);
   assert.equal(trace.record({ ...state(2), ...terrain }, 0), false);
+});
+
+
+test('KAP Review snapshots preserve original mode/targets and permit only instrument changes while paused', () => {
+  const sensors={t_s:0,dt_s:1/120,heading_rad:1,physical_altitude_m:1000,pressure_altitude_m:1000,vertical_speed_mps:0,
+    nav:{valid:false,kind:0 as const,cdi_norm:0,course_rad:0,gs_valid:false,gs_norm:0}};
+  const ap=createKap140(sensors), trace=new FlightTrace();
+  const off=ap.snapshot(sensors); assert(trace.record({...state(1),...off},2));
+  ap.command({action:'ap'},sensors); const active=ap.snapshot(sensors);
+  assert(trace.record({...state(2),...active},3));
+  ap.command({action:'alt'},sensors); const hold=ap.snapshot(sensors);
+  assert(trace.record({...state(2),...hold},99));
+  assert.equal(trace.atTime(1)!.state.kap_engaged,0); assert.equal(trace.atTime(2)!.state.kap_vertical,1);
+  assert.equal(trace.atTime(2)!.vertical_speed_mps,3);
+  assert.equal(trace.record({...state(2),...hold,alt_msl_m:1234},3),false);
+  assert.equal(trace.record({...state(3),kap_profile:1},3),false);
+});
+
+
+test('Review retains altitude-alert events without accepting partial or noninteger counters',()=>{
+  const trace=new FlightTrace();assert(trace.record({...state(1),kap_alert_state:1,kap_alert_sequence:2},0));
+  assert.equal(trace.atTime(1)!.state.kap_alert_sequence,2);
+  assert.equal(trace.record({...state(2),kap_alert_state:1},0),false);
+  assert.equal(trace.record({...state(2),kap_alert_state:1,kap_alert_sequence:.5},0),false);
 });

@@ -71,3 +71,4 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [Later procedural landscape](2026-11-03-procedural-landscape-roadmap.md) — land-use textures, then buildings/structures.
 - [Imagery alternatives](2026-11-03-imagery-alternatives.md) — additional photography and land-cover/vector sources.
 - [Ground braking report](2026-11-03-ground-braking.md) — ground collision while braking.
+- [Original autopilot behavior](2026-11-03-autopilot-original.md) — match the original aircraft autopilot.

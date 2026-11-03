@@ -27,10 +27,10 @@ export function createAudioControls(options: AudioControlsOptions): {
   const settings = document.createElement('section');
   settings.id = 'audio-settings'; settings.className = 'audio-settings';
   settings.setAttribute('aria-labelledby', 'audio-settings-title');
-  settings.innerHTML = `<div class="audio-settings-heading"><h3 id="audio-settings-title">Engine and wind sound</h3><span id="audio-status" role="status">Press S to enable</span></div>
+  settings.innerHTML = `<div class="audio-settings-heading"><h3 id="audio-settings-title">Engine, wind and alerts</h3><span id="audio-status" role="status">Press S to enable</span></div>
     <label for="audio-volume">Volume <output id="audio-volume-value" for="audio-volume">30%</output></label>
-    <input id="audio-volume" type="range" min="0" max="100" step="1" value="30" aria-label="Engine and wind sound volume percentage">
-    <p>Synthesized piston, propeller and airflow approximation. No recording or microphone access.</p>`;
+    <input id="audio-volume" type="range" min="0" max="100" step="1" value="30" aria-label="Engine, wind and alerts volume percentage">
+    <p>Synthesized engine, airflow and warning tones. No recording or microphone access.</p>`;
   options.settingsContainer.append(settings);
   const volume = settings.querySelector<HTMLInputElement>('#audio-volume')!;
   const output = settings.querySelector<HTMLOutputElement>('#audio-volume-value')!;

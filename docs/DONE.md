@@ -3,6 +3,59 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 02:10 — KAP 140 operating controls, two-axis guidance and altitude alerts
+
+TODO: 2.0.40 complete as bounded R-AP-1/R-INPUT-1/R-REVIEW-1 operating logic;
+2.0.14 remains open for deeper installed fidelity and navigation coverage.
+Agent: Codex orchestrator/integration; ap_native/code1 on native adapter,
+operating/alerter modules and existing regression updates; engine_sound_ui/code2
+on panel/audio/new browser fixtures; ap_research on parallel source research and
+independent quality/validation of non-authored implementation. Own research/input
+and original worker-proof source are excluded from independent self-approval;
+root reviews the adopted fixture, and independent checks cover root additions.
+Actual Claude CLI peer attempt times out at 180 s without a report/model identity;
+external peer remains pending.
+
+**Implementation notes**
+
+Replace the roll-only box with source-scoped KAP 140 two-axis/preselect controls:
+AP hold-to-engage into ROL/current VS, HDG, current-pressure ALT capture, separate
+selected altitude/ARM, UP/DN and BARO. DG arming computes its intercept and source
+loss falls back visibly. REV is LOC-only; conditional GS capture accepts above
+or below. Native pitch reuses pinned JSBSim gains with MSL/VS wiring and a true
+OFF output gate. Actual flight climbs, captures selected altitude and tracks a
+fictional VOR course. Independent altitude alerts produce the 1000/200 ft cues
+and five original warning tones through the existing sound preference. Paused
+settings, retained manual override, atomic telemetry and recorded Review remain
+coherent; the compact panel stays 140 px.
+
+Independent quality/validation pass at the frozen 37-source packet: 25 browser
+groups, eight native-worker checks and targeted source/unit evidence. Native VOR
+intercept ends at normalized CDI 0.0474 after 180 simulated seconds. Shared CI
+passes 184 app Node tests, six adapter tests and the foundation/assurance/training
+suites; production build passes. Source hashes, criteria and caveats are in
+[the review](reviews/2026-11-03-kap140.md).
+
+**Deviations**
+
+Generic servos/capture tuning are not installed KAP performance. TRUE DG and LAB
+VOR remain teaching substitutions; real LOC/GS/GPS services, hardware PFT,
+electrical/autotrim/fault behavior and aircraft-specific calibration are open.
+Warning timbre and silent selector-reset policy are simulator conventions.
+Physical audio output is unverified: the host default audio clock stalls even
+with bare sine; native silent-sink/Offline tests render actual PCM while keeping
+production device settings unchanged. Nine optional Python JSBSim study cases
+and one live-provider tool test remain skipped. This is not milestone/release or
+training-credit acceptance.
+
+**Insights**
+
+Separate operating-state logic, source validity, pressure references and physical
+servo response. ALT capture and the selected altitude are distinct controls.
+Check actual course convergence and native output instead of accepting lit mode
+buttons. Test gesture releases, retained pilot input and telemetry compatibility;
+keep sound-event counters distinct from rendering and replay seeks.
+
 ## 2026-11-03 00:50 — Adjustable wheel-brake command for ground rollout
 
 TODO: 2.0.38 complete as a bounded R-INPUT-1/R-SIM-8/R-REVIEW-1 correction.

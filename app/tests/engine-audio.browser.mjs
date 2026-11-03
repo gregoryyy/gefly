@@ -12,7 +12,7 @@ const output = fileURLToPath(new URL('../../output/flight/', import.meta.url));
 const server = spawn(process.execPath, ['--input-type=module', '-e', `import {createServer} from 'vite';
  const s=await createServer({server:{host:'127.0.0.1',port:5200,strictPort:true,hmr:false,watch:{ignored:['**/*']}}});
  await s.listen();s.printUrls();`], { cwd: app, stdio: 'pipe' });
-let serverOutput = '', browser;
+let serverOutput = '', browser, primaryPage;
 server.stdout.on('data', c => { serverOutput += c; }); server.stderr.on('data', c => { serverOutput += c; });
 const checks = [], observations = {};
 function wav(samples, sampleRate) {
@@ -35,6 +35,7 @@ try {
   await mkdir(output, { recursive: true });
   browser = await chromium.launch({ headless: true, ...(process.env.CHROME ? { executablePath: process.env.CHROME } : { channel: 'chrome' }) });
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  primaryPage = page;
   const errors = [], hosts = new Set();
   page.on('pageerror', e => errors.push(e.stack ?? String(e)));
   page.on('request', request => { const u = new URL(request.url()); if (['https:', 'http:'].includes(u.protocol)) hosts.add(u.hostname); });
@@ -42,7 +43,8 @@ try {
     window.__soundContexts = []; window.__soundAnalysers = []; window.__soundOscillators = []; window.__soundSources = [];
     const NativeContext = window.AudioContext;
     window.AudioContext = class extends NativeContext {
-      constructor(...args) { super(...args); window.__soundContexts.push(this); }
+      // Native silent sink renders real PCM without depending on host CoreAudio.
+      constructor(...args) { super({ ...args[0], sinkId: { type: 'none' } }); window.__soundContexts.push(this); }
       createOscillator() { const n = super.createOscillator(); window.__soundOscillators.push(n); return n; }
       createBufferSource() { const n = super.createBufferSource(); window.__soundSources.push(n); return n; }
     };
@@ -125,6 +127,8 @@ try {
   assert.equal(await page.locator('#audio-toggle').getAttribute('aria-pressed'), 'true');
   await page.locator('#scene').focus(); await page.keyboard.down('s'); await page.keyboard.down('s'); await page.keyboard.up('s');
   await page.waitForFunction(() => window.__soundContexts.length === 1 && document.querySelector('#audio-toggle').dataset.audioState === 'playing');
+  assert.equal(await page.evaluate(() => window.__soundContexts[0].sinkId?.type), 'none', 'native silent output sink must be supported; no fake audio clock');
+  observations.audio_output = 'Native real-time silent sink plus OfflineAudioContext; physical device and human listening are not evaluated.';
   await awaitAudible();
   const audible = await sound(); assert(audible.rms > .001 && audible.peak < .98, `actual graph produces bounded engine audio: ${JSON.stringify(audible)}`);
   assert(audible.frequencies.length >= 2, 'engine graph has more than one tonal component');
@@ -357,6 +361,64 @@ try {
   observations.nativeRotation = { ...rotation, mixed: { ...rotation.mixed, samples: undefined }, isolated: { ...rotation.isolated, samples: undefined } };
   checks.push('actual native ground-rest starter and free coast drive measured rising/falling rotational audio pitch; stopped combustion stays silent and zero RPM/pause clear the new voice');
 
+  const altitudeWarnings = await page.evaluate(async () => {
+    const { createEngineAudioGraph } = await import('/src/engine-audio.ts');
+    const { engineAudioParameters } = await import('/src/engine-audio-parameters.ts');
+    const base = { ...window.__soundStates.at(-1), step: 0, t_s: 0, tas_mps: 0, prop_radps: 0, fuel_flow_m3ps: 0, engine_running: 0,
+      ground_forward_mps: 0, ground_side_mps: 0, gear_nose_wow: 0, gear_left_wow: 0, gear_right_wow: 0,
+      gear_nose_load_n: 0, gear_left_load_n: 0, gear_right_load_n: 0, kap_alert_state: 1, kap_alert_sequence: 0 };
+    const result = [];
+    for (const name of ['continuous', 'counter-jump', 'initial-counter', 'paused-counter', 'muted-counter', 'forward-seek', 'backward-seek',
+      'counter-rollback', 'missing-group', 'pulse-then-pause', 'pulse-then-seek', 'pulse-then-mute', 'new-event-after-seek']) {
+      const context = new OfflineAudioContext(1, 48000 * 1.6, 48000), graph = createEngineAudioGraph(context);
+      const parameters = (step, time, sequence) => engineAudioParameters({ ...base, step, t_s: time, kap_alert_sequence: sequence });
+      graph.update(parameters(name === 'backward-seek' ? 120 : 0, name === 'backward-seek' ? 1 : 0, name === 'initial-counter' || name === 'counter-rollback' ? 1 : 0), 1, true);
+      const times = name.startsWith('pulse-then-') ? [.2, .25, .4] : [.2, .4];
+      const waits = times.map(time => context.suspend(time)), rendering = context.startRendering();
+      await waits[0];
+      const first = name === 'forward-seek' || name === 'new-event-after-seek' ? parameters(600, 5, 1)
+        : name === 'backward-seek' ? parameters(1, 1 / 120, 1) : parameters(1, 1 / 120, name === 'counter-jump' ? 100 : name === 'counter-rollback' ? 0 : 1);
+      if (name === 'missing-group') first.alert_available = false;
+      graph.update(first, name === 'muted-counter' ? 0 : 1, name !== 'paused-counter'); await context.resume();
+      await waits[1];
+      const next = name === 'new-event-after-seek' ? parameters(601, 5 + 1 / 120, 2) : first;
+      if (name === 'pulse-then-pause') graph.update(next, 1, false);
+      else if (name === 'pulse-then-mute') graph.update(next, 0, true);
+      else if (name === 'pulse-then-seek') graph.update(parameters(600, 5, 1), 1, true);
+      else graph.update(next, 1, true);
+      await context.resume();
+      if (times.length === 3) { await waits[2]; await context.resume(); }
+      const buffer = await rendering, values = buffer.getChannelData(0), bins = [];
+      for (let start = 0; start < values.length; start += 480) {
+        const part = values.subarray(start, start + 480); bins.push(Math.sqrt(part.reduce((sum, value) => sum + value * value, 0) / part.length));
+      }
+      const pulses = bins.reduce((count, rms, i) => count + (rms > .001 && (i === 0 || bins[i - 1] <= .001) ? 1 : 0), 0);
+      const rms = (from, to) => { const part = values.subarray(from * 48000, to * 48000); return Math.sqrt(part.reduce((sum, value) => sum + value * value, 0) / part.length); };
+      const amplitude = frequency => {
+        let real = 0, imaginary = 0;
+        for (let i = .23 * 48000; i < .26 * 48000; i++) { const phase = 2 * Math.PI * frequency * i / 48000; real += values[i] * Math.cos(phase); imaginary -= values[i] * Math.sin(phase); }
+        return Math.hypot(real, imaginary);
+      };
+      result.push({ name, pulses, rms: rms(0, 1.6), tail: rms(1.3, 1.6), after_cancel: rms(.3, 1.3), tone_880: amplitude(880), tone_440: amplitude(440),
+        peak: values.reduce((maximum, value) => Math.max(maximum, Math.abs(value)), 0), bins,
+        samples: name === 'continuous' ? Array.from(values) : null }); graph.dispose();
+    }
+    return result;
+  });
+  for (const warning of altitudeWarnings) {
+    const normal = ['continuous', 'counter-jump', 'new-event-after-seek'].includes(warning.name), canceled = warning.name.startsWith('pulse-then-');
+    assert.equal(warning.pulses, normal ? 5 : canceled ? 1 : 0, `${warning.name} warning waveform contains only its intended pulses`);
+    assert(warning.peak < .2 && warning.tail < 1e-6, `${warning.name} warning is bounded and ends`);
+    if (canceled) assert(warning.after_cancel < 1e-6, `${warning.name} cancels the old pattern instead of replaying it`);
+    if (!normal && !canceled) assert.equal(warning.rms, 0, `${warning.name} never invents historical alert audio`);
+    if (warning.name === 'continuous') {
+      assert(warning.tone_880 > warning.tone_440 * 10, 'actual native waveform contains the original880Hz warning timbre');
+      await writeFile(`${output}/engine-audio-altitude-alert.wav`, wav(warning.samples, 48000));
+    }
+  }
+  observations.altitudeWarnings = altitudeWarnings.map(({ samples, ...warning }) => warning);
+  checks.push('shared native WebAudio warning produces exactly five bounded original tones for a continuous recorded alert; stable counters, mute/pause/seek/rollback/legacy baselines never replay history and discontinuity cancels active tails');
+
   const contacts = await page.evaluate(async () => {
     const { createEngineAudioGraph } = await import('/src/engine-audio.ts');
     const { engineAudioParameters } = await import('/src/engine-audio-parameters.ts');
@@ -401,7 +463,7 @@ try {
   await windPage.addInitScript(() => {
     const Native = window.AudioContext; window.windContexts = []; window.windSources = [];
     window.AudioContext = class extends Native {
-      constructor(...args) { super(...args); window.windContexts.push(this); }
+      constructor(...args) { super({ ...args[0], sinkId: { type: 'none' } }); window.windContexts.push(this); }
       createBufferSource() { const source = super.createBufferSource(); window.windSources.push(source); return source; }
     };
     const connect = AudioNode.prototype.connect;
@@ -503,7 +565,7 @@ try {
     import{createEngineAudioGraph}from'/src/engine-audio.ts';import{engineAudioParameters}from'/src/engine-audio-parameters.ts';
     window.groundFrames=[];window.groundClunks=[];window.groundAirSamples=[];window.groundPaused=false;let previousMask=null,last=null;
     document.querySelector('#ground-start').onclick=()=>{
-      window.groundContext=new AudioContext();window.groundGraph=createEngineAudioGraph(groundContext);void groundContext.resume();
+      window.groundContext=new AudioContext({sinkId:{type:'none'}});window.groundGraph=createEngineAudioGraph(groundContext);void groundContext.resume();
       window.groundWorker=new Worker('/studies/e1-browser/sim/worker.js',{type:'module'});
       groundWorker.onmessage=({data})=>{
         if(data.type==='ready'){groundWorker.postMessage({type:'input',step:0,wall_ms:performance.timeOrigin+performance.now(),elevator:0,aileron:-.109375,rudder:0,throttle:0});groundWorker.postMessage({type:'run',until_step:480});}
@@ -574,7 +636,7 @@ try {
     const Native = window.AudioContext;
     window.__recoveryContexts = []; window.__failGraphOnce = true;
     window.AudioContext = class extends Native {
-      constructor(...args) { super(...args); window.__recoveryContexts.push(this); }
+      constructor(...args) { super({ ...args[0], sinkId: { type: 'none' } }); window.__recoveryContexts.push(this); }
       createGain() { if (window.__failGraphOnce) { window.__failGraphOnce = false; throw new Error('test one-time graph creation failure'); } return super.createGain(); }
     };
   });
@@ -607,4 +669,14 @@ try {
   checks.push('quick mute stays visible on narrow layouts with no extra header row, requests or flight workers');
   await writeFile(`${output}/engine-audio-browser.json`, `${JSON.stringify({ result: 'pass', checks, observations }, null, 2)}\n`);
   console.log(JSON.stringify({ result: 'pass', checks, observations }, null, 2));
+} catch (error) {
+  observations.failure = await primaryPage?.evaluate(() => {
+    const analyser = window.__soundAnalysers.at(-1), values = analyser ? new Float32Array(analyser.fftSize) : null;
+    if (values) analyser.getFloatTimeDomainData(values);
+    return { status: document.querySelector('#status')?.textContent, audio: document.querySelector('#audio-toggle')?.dataset.audioState,
+      context: window.__soundContexts[0]?.state, rms: values ? Math.sqrt(values.reduce((sum, value) => sum + value * value, 0) / values.length) : null,
+      actual: window.__soundStates.at(-1) };
+  }).catch(() => null);
+  await writeFile(`${output}/engine-audio-browser.json`, `${JSON.stringify({ result: 'fail', checks, observations, error: String(error) }, null, 2)}\n`);
+  throw error;
 } finally { await browser?.close(); server.kill('SIGTERM'); }

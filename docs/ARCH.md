@@ -298,3 +298,13 @@ input, trace sampling or deterministic state. A shared graph can also render
 offline test PCM; no sample asset or external service is required. Immediate
 lifecycle gates silence output before a hidden-page RAF can stop. Playing Review
 synthesizes selected recorded states; it is not replay of captured audio.
+
+The classic autopilot now separates a fixed-step KAP operating-state machine
+from the reused generic native roll/pitch controllers. Engine telemetry keeps
+its backward-compatible thirteen-field group; KAP mode/target/validity data is a
+separate atomic extension, with its own pressure setting and NAV1 configuration.
+UI timing recognizes physical button gestures, while simulation-time state owns
+mode transitions, arming and capture. Recorded mode snapshots never drive native
+physics. Current source data is the opt-in fictional LAB VOR; coupled-mode
+valid-source fixtures do not establish real navigation services or installed
+servo, PFT/electrical/trim-fault fidelity.

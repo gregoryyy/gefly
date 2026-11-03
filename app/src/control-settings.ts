@@ -27,6 +27,7 @@ export function applyControlSettings(
   if (raw.pitch_trim_norm !== undefined) requireRange('pitch trim', raw.pitch_trim_norm, -1, 1);
   if (raw.mixture_norm !== undefined) requireRange('mixture', raw.mixture_norm, 0, 1);
   if (raw.mixture_auto !== undefined && typeof raw.mixture_auto !== 'boolean') throw new TypeError('Mixture automatic mode must be boolean');
+  if (raw.pilot_override !== undefined && typeof raw.pilot_override !== 'boolean') throw new TypeError('Pilot override must be boolean');
   if (raw.engine_running !== undefined && typeof raw.engine_running !== 'boolean') throw new TypeError('Engine command must be boolean');
   requireRange('pitch gain', settings.pitch, 0.25, 1.5);
   requireRange('roll gain', settings.roll, 0.25, 1.5);
@@ -40,6 +41,7 @@ export function applyControlSettings(
     aileron: clampAxis(raw.aileron * settings.roll + rollOffset),
     rudder: clampAxis(raw.rudder * settings.rudder),
     throttle: raw.throttle,
+    ...(raw.pilot_override !== undefined ? { pilot_override: raw.pilot_override } : {}),
     ...(raw.engine_running !== undefined ? { engine_running: raw.engine_running } : {}),
     ...(raw.pitch_trim_norm !== undefined ? { pitch_trim_norm: raw.pitch_trim_norm } : {}),
     ...(raw.flap_norm !== undefined ? { flap_norm: raw.flap_norm } : {}),

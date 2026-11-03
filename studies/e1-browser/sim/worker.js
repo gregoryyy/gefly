@@ -27,10 +27,13 @@
 // cost per step for each block, separating compute cost from post-idle wake cost.
 import createJSBSim from './dist/jsbsim.mjs';
 import { loadTerrainPackage, sampleTerrain, sampleTerrainGradient, terrainContainsInterior } from './terrain.js';
-import { indicatedAltitude_m, validSetting } from './altimeter.js';
+import { pressureAltitude_m, indicatedAltitude_m, validSetting } from './altimeter.js';
 import { stallFields, controlFields, cockpitFields, pitchTrimFields, groundFields } from './cockpit.js';
 import { autopilotCommand, engineFields, engineSwitchFields } from './engine.js';
 import { groundCollisionContact, collisionRecord, EMPTY_COLLISION } from './collision.js';
+import { createKap140, validKapCommand, validKapState } from './kap140.js';
+import { createAltitudeAlert } from './altitude-alert.js';
+import { DEFAULT_NAVIGATION, NAVIGATION_FIELDS, validNavigation, navigationSignal } from './navigation.js';
 
 const MAX_CATCHUP = 12;          // steps per tick (100 ms at 1/120 s)
 const TIMER_SLACK_MS = 0.1;     // wake margin after a step's due time
@@ -80,6 +83,10 @@ let terrainGrid = null;
 let terrainFault = false;
 let groundCollisionEnabled = false;
 let collision = EMPTY_COLLISION;
+let kap = null;
+let altitudeAlert = null;
+let pilotOverrideActive = false;
+let navigation = { ...DEFAULT_NAVIGATION };
 // Ideal pressure instrument only. Its setting never changes the atmosphere,
 // dynamics state, integration step or original study digest.
 let altimeterSettingPa = 101325;
@@ -192,7 +199,83 @@ function readEngineSwitchFields() {
   return engineSwitchFields(M.HEAPF64.subarray(pointer, pointer + 2));
 }
 
+function kapSensors() {
+  const state = readState(), ground = readGroundFields();
+  const pointer = M._gf_autopilot_vertical_state() >> 3;
+  const pressureAltitude = pressureAltitude_m(M._gf_static_pressure_pa());
+  if (pressureAltitude === null) throw new Error('Autopilot pressure sensor outside the supported −2 km to 11 km atmosphere.');
+  return { t_s: state[0], dt_s: dtS, heading_rad: state[6], physical_altitude_m: state[3],
+    pressure_altitude_m: pressureAltitude,
+    vertical_speed_mps: -ground.ground_down_mps, elevator_norm: M.HEAPF64[pointer + 2],
+    nav: navigationSignal(navigation, { lat_rad: state[1], lon_rad: state[2] }) };
+}
+function applyKapGuidance(sensors = kapSensors()) {
+  if (!kap) return true;
+  const guidance = kap.guidance(sensors);
+  if (M._gf_set_autopilot(guidance.lateral_mode, guidance.heading_rad) !== 0
+    || M._gf_set_autopilot_vertical(guidance.vertical_mode, guidance.vertical_target) !== 0) {
+    fail('Autopilot controller target unavailable; flight stopped.'); return false;
+  }
+  return true;
+}
+function alertSensors() {
+  const snapshot = kap.snapshot(kapSensors());
+  return {t_s:readState()[0], indicated_altitude_m:snapshot.kap_indicated_altitude_m, selected_altitude_m:snapshot.kap_selected_altitude_m, baro_setting_pa:snapshot.kap_baro_setting_pa};
+}
+function kapFields() {
+  if (!kap) return {};
+  const fields = kap.snapshot(kapSensors());
+  if (!validKapState(fields)) throw new Error('Invalid autopilot instrument state');
+  return { ...fields, ...(altitudeAlert ? altitudeAlert.snapshot() : {}) };
+}
+function onKap140(msg) {
+  const command = msg.command;
+  if (kap && command?.action === 'ap' && !kap.snapshot(kapSensors()).kap_engaged && pilotOverrideActive) {
+    postMessage({type:'autopilot-rejected',message:'Release manual flight input before engaging autopilot.'}); postState(); return;
+  }
+  let outsidePressureEnvelope = false;
+  if (kap && validKapCommand(command) && ['select-altitude','baro-setting'].includes(command.action)) {
+    const snapshot = kap.snapshot(kapSensors());
+    const target = command.action === 'select-altitude' ? command.value : snapshot.kap_selected_altitude_m;
+    const setting = command.action === 'baro-setting' ? command.value : snapshot.kap_baro_setting_pa;
+    const pressureTarget = target + pressureAltitude_m(setting);
+    outsidePressureEnvelope = pressureTarget < -2000 || pressureTarget > 11000;
+  }
+  if (!kap || !validKapCommand(command) || outsidePressureEnvelope || !kap.command(command, kapSensors())) {
+    postMessage({ type: 'autopilot-rejected', message: 'KAP 140 command unavailable or outside supported practice sensor bounds.' }); if (kap) postState(); return;
+  }
+  if (!applyKapGuidance()) return;
+  altitudeAlert?.update(alertSensors());
+  postState();
+}
+function onNavigation(msg) {
+  if (!validNavigation(msg.config)) {
+    postMessage({ type: 'navigation-rejected', message: 'NAV1 configuration invalid.' }); return;
+  }
+  navigation = Object.fromEntries(NAVIGATION_FIELDS.map(k => [k, msg.config[k]]));
+  // Source-loss fallback is immediate even while paused; dynamics stay frozen.
+  if (kap) { const sensors = kapSensors(); kap.step(sensors); if (!applyKapGuidance(sensors)) return; }
+  postState();
+}
 function onAutopilot(msg) {
+  if (kap) {
+    if (![0,1,2].includes(msg.mode) || (msg.target_heading_rad !== undefined && !Number.isFinite(msg.target_heading_rad))) { postMessage({type:'autopilot-rejected', message:'Invalid legacy AP command'}); return; }
+    const sensors = kapSensors();
+    if (msg.mode !== 0 && pilotOverrideActive) { postMessage({type:'autopilot-rejected',message:'Release manual flight input before engaging autopilot.'}); postState(); return; }
+    if (msg.mode === 0) kap.command({action:'disconnect'}, sensors);
+    else {
+      if (!kap.snapshot(sensors).kap_engaged) kap.command({action:'ap'}, sensors);
+      if (msg.mode === 2) {kap.command({action:'heading',value:(((msg.target_heading_rad ?? sensors.heading_rad) % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI)}, sensors); if (kap.snapshot(sensors).kap_lateral !== 1) kap.command({action:'hdg'}, sensors);}
+      else {
+        const snapshot=kap.snapshot(sensors);
+        if (snapshot.kap_lateral !== 0 || snapshot.kap_lateral_arm) {
+          if (snapshot.kap_lateral !== 1) kap.command({action:'hdg'}, sensors);
+          kap.command({action:'hdg'}, sensors);
+        }
+      }
+    }
+    if (applyKapGuidance()) postState(); return;
+  }
   const command = autopilotCommand(msg, readState()[6]);
   if (!command || typeof M._gf_set_autopilot !== 'function') {
     postMessage({ type: 'autopilot-rejected', message: 'Autopilot command unavailable or invalid.' });
@@ -223,7 +306,7 @@ function stateMessage() {
     type: 'state', step: stepIndex, t_s: s[0], lat_rad: s[1], lon_rad: s[2],
     alt_msl_m: s[3], roll_rad: s[4], pitch_rad: s[5], heading_rad: s[6], tas_mps: s[7],
     last_input_wall_ms: lastInputWallMs, step_cost_us: lastStepCostUs, ...altimeterFields,
-    ...readStallFields(), ...readControlFields(), ...readCockpitFields(), ...readPitchTrimFields(), ...readGroundFields(), ...readEngineFields(), ...readEngineSwitchFields(), ...terrainFields(), ...collision,
+    ...readStallFields(), ...readControlFields(), ...readCockpitFields(), ...readPitchTrimFields(), ...readGroundFields(), ...readEngineFields(), ...readEngineSwitchFields(), ...terrainFields(), ...kapFields(), ...(kap ? navigation : {}), ...collision,
   };
 }
 
@@ -239,6 +322,12 @@ function postState() {
 function applyDueInputs() {
   while (pending.length && pending[0].step <= stepIndex) {
     const inp = pending.shift();
+    pilotOverrideActive = inp.pilot_override ?? (inp.elevator !== 0 || inp.aileron !== 0 || inp.rudder !== 0);
+    if (kap && kap.snapshot(kapSensors()).kap_engaged) {
+      const trimPointer = typeof M._gf_pitch_trim_state === 'function' ? M._gf_pitch_trim_state() >> 3 : null;
+      const trimChanged = inp.pitch_trim_norm !== undefined && trimPointer !== null && Math.abs(inp.pitch_trim_norm - M.HEAPF64[trimPointer]) > 1e-12;
+      if (inp.pilot_override === true || (inp.pilot_override === undefined && (inp.elevator !== 0 || inp.aileron !== 0 || inp.rudder !== 0)) || trimChanged) { kap.command({action:'disconnect'}, kapSensors()); if (!applyKapGuidance()) return false; }
+    }
     const rc = M._gf_set_inputs(inp.elevator, inp.aileron, inp.rudder, inp.throttle);
     if (rc !== 0) { fail(`set_inputs rc=${rc}`); return false; }
     if (typeof M._gf_set_secondary_inputs === 'function') {
@@ -281,12 +370,14 @@ function stepOnce() {
     }
   }
   if (!applyDueInputs()) return false;
+  if (kap) { const sensors = kapSensors(); kap.step(sensors); if (!applyKapGuidance(sensors)) return false; }
   const previousGround = groundCollisionEnabled ? readGroundFields() : null;
   const rc = M._gf_step();
   const b = performance.now();
   if (rc !== 0) { if (rc === -7) terrainFault = true; fail(rc === -7 ? 'Terrain/contact coverage unavailable; flight stopped. Restart inside the terrain region.' : `step rc=${rc} at step ${stepIndex}`); return false; }
   stepIndex += 1;
   updateAltimeter();
+  if (altitudeAlert) altitudeAlert.update(alertSensors());
   lastStepCostUs = (b - a) * 1000;
   if (costCount < costs.length) costs[costCount++] = lastStepCostUs;
   if (groundCollisionEnabled) {
@@ -351,12 +442,12 @@ function stats() {
     run_wall_ms: runWallMs + (running ? performance.now() - runWallStartMs : 0),
     step_cost_us: costs.slice(0, costCount),
     cross_origin_isolated: self.crossOriginIsolated === true,
-    ...collision,
+    ...collision, ...kapFields(),
   };
 }
 
 async function onInit(msg) {
-  initialized = false; terrainFault = false;
+  initialized = false; terrainFault = false; kap = null; altitudeAlert = null; pilotOverrideActive = false; navigation = { ...DEFAULT_NAVIGATION };
   await modulePromise;
   const ic = msg.ic || {};
   const dt = msg.dt_s;
@@ -365,6 +456,7 @@ async function onInit(msg) {
   if (msg.aircraft !== 'c172x') { fail(`init: unsupported aircraft ${msg.aircraft}`); return; }
   if (msg.ground_collision !== undefined && typeof msg.ground_collision !== 'boolean') { fail('init: ground_collision must be boolean'); return; }
   if (msg.terrain !== undefined && typeof msg.terrain !== 'boolean') { fail('init: terrain must be boolean'); return; }
+  if (msg.kap140 !== undefined && typeof msg.kap140 !== 'boolean') { fail('init: invalid kap140 capability flag'); return; }
   const presets = { normal: 1, hard: 2, side: 3, banked: 4 };
   const preset = msg.landing_preset;
   if (preset !== undefined && (typeof preset !== 'string' || !Object.hasOwn(presets, preset)
@@ -397,6 +489,11 @@ async function onInit(msg) {
   costs = new Float32Array(COST_CAPACITY); costCount = 0; runWallMs = 0;
   groundCollisionEnabled = msg.ground_collision === true; collision = EMPTY_COLLISION;
   initializeAltimeter();
+  if (msg.kap140 && typeof M._gf_set_autopilot_vertical === 'function' && typeof M._gf_autopilot_vertical_state === 'function' && typeof M._gf_static_pressure_pa === 'function') {
+    kap = createKap140(kapSensors());
+    altitudeAlert = createAltitudeAlert(alertSensors());
+    if (!applyKapGuidance()) return;
+  }
   initialized = true;
   postMessage({
     type: 'ready',
@@ -417,7 +514,8 @@ function onInput(msg) {
     && finiteIn(msg.flap_norm ?? 0, 0, 1) && finiteIn(msg.brake_norm ?? 0, 0, 1)
     && finiteIn(mixture_norm, 0, 1) && typeof mixture_auto === 'boolean'
     && (msg.pitch_trim_norm === undefined || finiteIn(msg.pitch_trim_norm, -1, 1))
-    && (msg.engine_running === undefined || typeof msg.engine_running === 'boolean');
+    && (msg.engine_running === undefined || typeof msg.engine_running === 'boolean')
+    && (msg.pilot_override === undefined || typeof msg.pilot_override === 'boolean');
   if (!ok) { postMessage({ type: 'error', message: 'input rejected: non-finite, out of range or bad step' }); return; }
   if (msg.engine_running !== undefined && typeof M._gf_set_engine_running !== 'function') {
     postMessage({ type: 'engine-switch-rejected', message: 'Engine ignition/starter command unavailable; rebuild local engine.' });
@@ -428,6 +526,7 @@ function onInput(msg) {
                 mixture_norm, mixture_auto };
   if (msg.pitch_trim_norm !== undefined) inp.pitch_trim_norm = msg.pitch_trim_norm;
   if (msg.engine_running !== undefined) inp.engine_running = msg.engine_running;
+  if (msg.pilot_override !== undefined) inp.pilot_override = msg.pilot_override;
   let i = pending.length;
   while (i > 0 && pending[i - 1].step > inp.step) i -= 1;   // stable insert
   pending.splice(i, 0, inp);
@@ -470,10 +569,10 @@ self.onmessage = (ev) => {
     try {
       if (msg.type === 'init') { onHalt(); await onInit(msg); return; }
       if (!initialized) { postMessage({ type: 'error', message: `${msg.type} before init` }); return; }
-      if (terrainFault && ['input', 'altimeter', 'autopilot', 'run', 'burst'].includes(msg.type)) {
+      if (terrainFault && ['input', 'altimeter', 'autopilot', 'kap140', 'navigation', 'run', 'burst'].includes(msg.type)) {
         postMessage({ type: 'terrain-rejected', command: msg.type, message: 'Terrain coverage unavailable; restart inside the region.' }); return;
       }
-      if (collision.collision_mask && ['input', 'altimeter', 'autopilot', 'run', 'burst'].includes(msg.type)) {
+      if (collision.collision_mask && ['input', 'altimeter', 'autopilot', 'kap140', 'navigation', 'run', 'burst'].includes(msg.type)) {
         postMessage({ type: 'collision-rejected', command: msg.type, message: 'Ground contact latched; restart flight to continue.' });
         return;
       }
@@ -481,6 +580,8 @@ self.onmessage = (ev) => {
         case 'input': onInput(msg); break;
         case 'altimeter': onAltimeter(msg); break;
         case 'autopilot': onAutopilot(msg); break;
+        case 'kap140': onKap140(msg); break;
+        case 'navigation': onNavigation(msg); break;
         case 'run': onRun(msg); break;
         case 'pause': onHalt(); break;
         case 'stop': onHalt(); postMessage(stats()); break;

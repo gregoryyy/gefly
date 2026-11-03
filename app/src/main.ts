@@ -70,7 +70,7 @@ root.innerHTML = `
       <div class="axis-display"><span>FLAP CMD <b id="recorded-flap-command">—</b></span><span>ACTUAL <b id="recorded-flap-actual">—</b></span><span>TRIM <b id="recorded-trim">—</b></span></div>
       <div class="axis-display"><span>THROTTLE <b id="recorded-throttle">—</b></span><span>MIXTURE <b id="recorded-mixture">—</b></span><span>MODE <b id="recorded-mixture-mode">—</b></span><span>ENGINE <b id="recorded-engine">—</b></span></div>
     </div>
-    <details class="control-options"><summary>Keyboard & assistance</summary><p>↑ Push nose down · ↓ Pull nose up<br>← / → Bank · Q / W Rudder<br>1–9 Throttle: 10–90% · 0: idle<br>[ / ] Retract / extend flaps · B Hold wheel brakes at Options command<br>&#39; / &#92; Trim nose up / down<br>P Capture heading / AP off<br>E Engine on/off · S Sound on/off<br>Space Pause · R Review</p><label for="roll-offset">Roll correction <output id="offset-value">−0.109</output></label><input id="roll-offset" type="range" min="-0.25" max="0.25" step="0.001" value="-0.109375" aria-label="Experimental roll correction for the generic model"><small>The generic model tends to roll right with centered controls. This adds a small constant left-aileron command. Zero removes the correction; it is not aircraft trim.</small><div class="roll-correction-presets"><button id="roll-correction-off" type="button">Off · 0%</button><button id="roll-correction-default" type="button">Study default</button></div></details>
+    <details class="control-options"><summary>Keyboard & assistance</summary><p>↑ Push nose down · ↓ Pull nose up<br>← / → Bank · Q / W Rudder<br>1–9 Throttle: 10–90% · 0: idle<br>[ / ] Retract / extend flaps · B Hold wheel brakes at Options command<br>&#39; / &#92; Trim nose up / down<br>P Autopilot on / off<br>E Engine on/off · S Sound on/off<br>Space Pause · R Review</p><label for="roll-offset">Roll correction <output id="offset-value">−0.109</output></label><input id="roll-offset" type="range" min="-0.25" max="0.25" step="0.001" value="-0.109375" aria-label="Experimental roll correction for the generic model"><small>The generic model tends to roll right with centered controls. This adds a small constant left-aileron command. Zero removes the correction; it is not aircraft trim.</small><div class="roll-correction-presets"><button id="roll-correction-off" type="button">Off · 0%</button><button id="roll-correction-default" type="button">Study default</button></div></details>
   </aside>
   <div class="scenery-label">Hessen public terrain · Egelsbach–Frankfurt–Taunus</div>
   <aside id="practice-map-panel" class="practice-map-panel" aria-label="Practice map" hidden></aside>
@@ -88,7 +88,7 @@ root.innerHTML = `
       <div class="avionics-units cockpit-radio"><div id="radio-nav-systems"></div></div>
     </div>
     <footer><span>LOCAL RESEARCH PROTOTYPE · NOT VALIDATED FOR TRAINING</span><span>Imagery: HVBG · DL-DE Zero 2.0</span></footer>
-    <div id="limitations" hidden>Generic JSBSim 172P research data, not the planned C172S. Official Hessen DGM terrain is active on normal flights, with DHHN2016 heights in dynamics and GCG2016/2023 ellipsoid conversion for rendering. The bounded Egelsbach–Frankfurt–Taunus package is not the full EDDF/100 NM region; it has approximately 32–54 m nodes and no surveyed runway flattening or obstacle/building model. Flat-ground landing-study presets remain separate. Current airport information and real navigation data are not supplied. Airspeed shows ideal engine CAS, not installation-calibrated IAS; older engines explicitly fall back to TAS. Heading is true, and the ideal turn-rate aid is not a full gyro turn-coordinator model. The pressure altimeter uses an ideal ISA scale-offset model driven by JSBSim static pressure; launch-point QFE is a practice datum, not airport elevation. Installed C172S instrument errors and limits are not modeled. No validated landing, circuit assessment, weather, radio or checklists yet. The adjustable study roll offset adds a constant aileron input to counter the generic model’s initial roll-off; this is an experimental assist, not an aircraft trim specification. Local research runtime assets are excluded from distribution. Radio controls use a legacy 25 kHz COM subset, with no 8.33 kHz or communication service. LAB is an opt-in fictional teaching station, using true OBS/radials and spherical geometric slant distance. No real navaid database, magnetic VOR, propagation or ILS is modeled. ALT/NAV/APR/REV autopilot modes remain INOP. Landing contact studies use a flat zero-height ellipsoid, upstream generic gear forces and illustrative fixed-wheel visuals; they do not establish aircraft damage or safe load limits. Airspeed colored arcs use fixed 1982 C172P CAS references (2400 lb, forward CG, power off and zero bank for stalls), not installed IAS arcs, current-weight stall predictions or validated model bounds. The TAS fallback hides those arcs.</div>
+    <div id="limitations" hidden>Generic JSBSim 172P research data, not the planned C172S. Official Hessen DGM terrain is active on normal flights, with DHHN2016 heights in dynamics and GCG2016/2023 ellipsoid conversion for rendering. The bounded Egelsbach–Frankfurt–Taunus package is not the full EDDF/100 NM region; it has approximately 32–54 m nodes and no surveyed runway flattening or obstacle/building model. Flat-ground landing-study presets remain separate. Current airport information and real navigation data are not supplied. Airspeed shows ideal engine CAS, not installation-calibrated IAS; older engines explicitly fall back to TAS. Heading is true, and the ideal turn-rate aid is not a full gyro turn-coordinator model. The pressure altimeter uses an ideal ISA scale-offset model driven by JSBSim static pressure; launch-point QFE is a practice datum, not airport elevation. Installed C172S instrument errors and limits are not modeled. No validated landing, circuit assessment, weather, radio or checklists yet. The adjustable study roll offset adds a constant aileron input to counter the generic model’s initial roll-off; this is an experimental assist, not an aircraft trim specification. Local research runtime assets are excluded from distribution. Radio controls use a legacy 25 kHz COM subset, with no 8.33 kHz or communication service. LAB is an opt-in fictional teaching station, using true OBS/radials and spherical geometric slant distance. No real navaid database, magnetic VOR, propagation or ILS is modeled. Autopilot operating logic follows the KAP 140 two-axis altitude-preselect reference, over reused generic JSBSim servos. AP engages ROL/current VS; ALT captures current pressure altitude, separate from the selector. Native controller response and capture anticipation are uncalibrated. TRUE DG reference and opt-in fictional LAB VOR remain teaching substitutions. NAV/APR can track that signal; REV needs LOC, and GS requires valid APR/ILS. Current real LOC/GS/GPS service data, hardware PFT timing and installed trim-servo/electrical/fault dynamics are not supplied. AP and altimeter BARO settings are separate. Raw manual input or trim change disconnects AP as a simulator safety substitution. Supported pressure-sensor height is −2 km to 11 km; incompatible selector/BARO combinations are rejected. Throttle remains manual; no automatic stall or overspeed protection is claimed. Landing contact studies use a flat zero-height ellipsoid, upstream generic gear forces and illustrative fixed-wheel visuals; they do not establish aircraft damage or safe load limits. Airspeed colored arcs use fixed 1982 C172P CAS references (2400 lb, forward CG, power off and zero bank for stalls), not installed IAS arcs, current-weight stall predictions or validated model bounds. The TAS fallback hides those arcs.</div>
   </section>
 </main>`;
 
@@ -197,7 +197,7 @@ function updateSessionUI() {
 
 const session = createSession({
   onState(workerState) {
-    const state = { ...workerState, ...radioPanel.snapshot() };
+    const state = { ...radioPanel.snapshot(), ...workerState };
     const oldAp = latest?.ap_mode ?? 0;
     const wasCollided = groundCollisionStopped();
     if (previous && state.t_s > previous.t_s) {
@@ -339,9 +339,10 @@ el('engine-unavailable').textContent = 'INOP';
 (document.querySelector('.engine-power-controls') ?? document.querySelector('.engine-content'))!.insertBefore(document.querySelector('.throttle-control')!, document.querySelector('.engine-mixture'));
 const autopilotPanel = createAutopilotPanel({
   container: el('autopilot-systems'),
-  onAutopilot(mode, target_heading_rad) {
-    if (!controlsAvailable() && mode !== 0) return;
-    apDisconnectPending = false; session.setAutopilot(mode, target_heading_rad);
+  onCommand(command) {
+    const release = command.action === 'vertical' && command.value === 0;
+    if (!release && (reviewing || (!controlsAvailable() && command.action !== 'disconnect'))) return;
+    apDisconnectPending = false; session.setKap140(command);
   },
   onOpen: neutralize, onClose: focusFlight,
 });
@@ -349,8 +350,9 @@ const radioPanel = createRadioNavPanel({
   container: el('radio-nav-systems'),
   onChange(config) {
     if (!controlsAvailable() || !latest) return;
+    session.setNavigation(config);
     latest = { ...latest, ...config };
-    flightTrace.record(latest, verticalSpeedFpm * 0.3048 / 60);
+    // NAV1 tuning is acknowledged by the worker before the next recorded frame.
   },
   onOpen: neutralize, onClose: focusFlight,
 });
@@ -517,8 +519,9 @@ function publishInput() {
     ...(pitchTrimTarget !== null ? { pitch_trim_norm: pitchTrimTarget } : {}),
   };
   if (latest?.ap_mode && !apDisconnectPending && (raw.elevator !== 0 || raw.aileron !== 0 || raw.rudder !== 0)) {
-    apDisconnectPending = true; session.setAutopilot(0);
+    apDisconnectPending = true; session.setKap140({action: 'disconnect'});
   }
+  raw.pilot_override = raw.elevator !== 0 || raw.aileron !== 0 || raw.rudder !== 0;
   const controls = applyControlSettings(raw, controlSettings, latest?.ap_mode ? 0 : rollOffset);
   const direction = rollOffset < 0 ? 'left' : rollOffset > 0 ? 'right' : 'off';
   el('offset-value').textContent = `${Math.abs(rollOffset * 100).toFixed(1)}% ${direction}${latest?.ap_mode ? ' · suspended by AP' : ''}`;
@@ -531,6 +534,7 @@ function publishInput() {
   document.querySelectorAll<HTMLElement>('[data-code]').forEach(button => button.classList.toggle('held', held(button.dataset.code!)));
 }
 function neutralize() {
+  if (latest?.kap_profile === 1) session.setKap140({action:'vertical', value:0});
   if (!reviewing || failed || sceneFailed) pointerYoke?.cancel();
   keys.clear(); pointerControls.clear(); keyboardControls.clear(); stickX = stickY = 0;
   if (stickPointer !== null) {
@@ -745,7 +749,7 @@ addEventListener('keydown', event => {
     el<HTMLInputElement>('throttle').value = String(throttle * 100); publishInput();
   }
   if (event.code === 'KeyP' && controlsAvailable() && latest?.ap_mode !== undefined) {
-    event.preventDefault(); session.setAutopilot(latest.ap_mode ? 0 : 2);
+    event.preventDefault(); session.setKap140({action: latest.kap_engaged ? 'disconnect' : 'ap'});
   }
   if (['BracketLeft', 'BracketRight'].includes(event.code) && controlsAvailable() && latest?.flap_rad !== undefined) {
     event.preventDefault(); flapTarget_deg = clamp(flapTarget_deg + (event.code === 'BracketLeft' ? -10 : 10), 0, 30); publishInput();

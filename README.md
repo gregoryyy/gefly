@@ -62,8 +62,9 @@ turn/slip, true heading and vertical speed. Click the scene to toggle touchpad
 yoke control; hold-drag to look around. Two-finger vertical scrolling
 adjusts camera FOV. **F / Shift+F** selects flaps, **B** holds
 wheel brakes, and **1–9** selects 10–90% throttle (**0** idle). The engine panel
-adds mixture, RPM, manifold pressure, oil and fuel readouts. **P** captures a true
-heading or disconnects the roll-only autopilot; altitude hold is not implemented.
+adds mixture, RPM, manifold pressure, oil and fuel readouts. **P** toggles the two-axis autopilot. Its KAP 140 operating controls include VS,
+current-altitude hold, selected-altitude capture and source-aware navigation;
+generic servo response and real navigation-data coverage remain limited.
 On narrow screens, open **Engine & autopilot** for those controls.
 
 ## Status and entry points

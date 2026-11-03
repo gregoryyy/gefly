@@ -68,6 +68,8 @@ bool g_engine_switch_controlled = false;
 bool g_engine_command_on = true;
 bool g_engine_start_requested = false;
 int g_ap_mode = 0;
+int g_ap_vertical_mode = 0;
+double g_ap_vertical_target = 0.0;
 double g_ap_heading_target = 0.0;
 std::shared_ptr<const gefly::TerrainGrid> g_pending_terrain;
 std::shared_ptr<const gefly::TerrainGrid> g_active_terrain;
@@ -119,14 +121,22 @@ bool finite_all(std::initializer_list<double> v) {
   return true;
 }
 
-// Reuse the upstream modern roll AP only. Legacy c172ap channels remain off;
-// no altitude hold, replacement controller or new tuning coefficients are added.
+// Reuse the upstream modern roll and generic c172x pitch controllers.
+// The prepared pitch adapter changes wiring, not upstream gains.
 void configure_autopilot() {
   auto& f = *g_fdm;
-  for (const char* name : {"ap/heading_hold", "ap/altitude_hold", "ap/attitude_hold",
-                           "ap/airspeed_hold", "ap/aileron_cmd", "ap/elevator_cmd"}) {
+  for (const char* name : {"ap/heading_hold", "ap/attitude_hold",
+                           "ap/airspeed_hold", "ap/aileron_cmd"}) {
     f.SetPropertyValue(name, 0.0);
   }
+  f.SetPropertyValue("ap/altitude_hold", g_ap_vertical_mode == 0 ? 0.0 : 1.0);
+  f.SetPropertyValue("ap/gefly-vs-mode", g_ap_vertical_mode == 1 ? 1.0 : 0.0);
+  if (g_ap_vertical_mode == 1) f.SetPropertyValue("ap/gefly-vs-command-fps", g_ap_vertical_target / kFtToM);
+  // Keep the inactive altitude-error filter near zero to avoid stale targets
+  // when changing from VS or OFF into altitude hold.
+  f.SetPropertyValue("ap/altitude_setpoint", g_ap_vertical_mode == 2
+    ? g_ap_vertical_target / kFtToM : f.GetPropertyValue("position/h-sl-ft"));
+  if (g_ap_vertical_mode == 0) f.SetPropertyValue("ap/elevator_cmd", 0.0);
   f.SetPropertyValue("ap/autopilot-roll-on", g_ap_mode == 0 ? 0.0 : 1.0);
   f.SetPropertyValue("ap/roll-attitude-mode", g_ap_mode == 2 ? 1.0 : 0.0);
   f.SetPropertyValue("guidance/heading-selector-switch", 1.0);
@@ -180,7 +190,7 @@ int load_model(double dt_s, double lat_rad, double lon_rad, double heading_rad) 
     g_fdm.reset();
     return kErrLoad;
   }
-  g_mixture_auto = 1; g_ap_mode = 0; g_ap_heading_target = std::fmod(heading_rad, 2.0 * kPi);
+  g_mixture_auto = 1; g_ap_mode = 0; g_ap_vertical_mode = 0; g_ap_vertical_target = 0.0; g_ap_heading_target = std::fmod(heading_rad, 2.0 * kPi);
   g_engine_switch_controlled = false; g_engine_command_on = true; g_engine_start_requested = false;
   if (g_ap_heading_target < 0) g_ap_heading_target += 2.0 * kPi;
   f.SetPropertyValue("systems/automatic-mixture-enabled", 1.0);
@@ -411,6 +421,37 @@ EMSCRIPTEN_KEEPALIVE int gf_set_autopilot(double mode, double target_true_rad) {
   if (g_ap_heading_target < 0) g_ap_heading_target += 2.0 * kPi;
   configure_autopilot();
   return 0;
+}
+
+// Generic research controller: target is m/s in VS mode and physical MSL m in ALT.
+EMSCRIPTEN_KEEPALIVE int gf_set_autopilot_vertical(double mode, double target) {
+  if (!g_fdm) return kErrNotInit;
+  if (!finite_all({mode, target})) return kErrNonFinite;
+  if ((mode != 0 && mode != 1 && mode != 2) ||
+      (mode == 1 && std::fabs(target) > 20.0) ||
+      (mode == 2 && (target < -2500.0 || target > 20000.0))) return kErrRange;
+  const int next = static_cast<int>(mode);
+  if (g_ap_vertical_mode != next) {
+    const char* integral = "fcs/altitude-hold-pid/initial-integrator-value";
+    if (g_fdm->GetPropertyManager()->HasNode(integral)) g_fdm->SetPropertyValue(integral, 0.0);
+    g_fdm->SetPropertyValue("ap/elevator_cmd", 0.0);
+  }
+  g_ap_vertical_mode = next;
+  g_ap_vertical_target = target;
+  configure_autopilot();
+  return 0;
+}
+
+EMSCRIPTEN_KEEPALIVE double* gf_autopilot_vertical_state() {
+  static double values[3];
+  if (!g_fdm) {
+    for (double& value : values) value = std::numeric_limits<double>::quiet_NaN();
+    return values;
+  }
+  values[0] = g_ap_vertical_mode;
+  values[1] = g_ap_vertical_target;
+  values[2] = g_fdm->GetPropertyValue("ap/elevator_cmd");
+  return values;
 }
 
 EMSCRIPTEN_KEEPALIVE int gf_step() {

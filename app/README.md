@@ -52,7 +52,7 @@ unavailable. Returning to live restores pending control settings.
 | Q / W | Left / right rudder |
 | 1–9 | Set throttle to 10–90% |
 | 0 | Set throttle to idle |
-| P | Capture true heading / disconnect heading hold |
+| P | Autopilot on / off (simulator shortcut) |
 | Space | Start / pause / resume |
 | R | Enter / leave recorded Review |
 | V | Switch cockpit / chase view |
@@ -159,8 +159,8 @@ pilot's elevator command. Negative trim commands nose up; positive commands nose
 down. The [pinned JSBSim v1.3.3 c172x control definition](https://github.com/JSBSim-Team/jsbsim/blob/v1.3.3/aircraft/c172x/c172x.xml)
 defines that pitch-control sum; [FGFCS documents the control path](https://github.com/JSBSim-Team/jsbsim/blob/v1.3.3/src/models/FGFCS.h).
 The indicated command is not a physical trim-tab angle, calibrated trim-wheel
-position or validated selected-172S behavior. The existing roll-only autopilot
-does not control elevator trim; trimming leaves its roll mode unchanged.
+position or validated selected-172S behavior. A manual trim command change now
+disconnects the two-axis autopilot; automatic trim-servo behavior is not modeled.
 
 ## Six-pack instruments
 
@@ -204,19 +204,50 @@ automatic-mixture channel. The panel distinguishes automatic/manual operation an
 the applied value. Throttle shortcuts 1–9 select 10–90%, while 0 selects idle;
 the throttle slider provides finer adjustment.
 
-The separate autopilot box sits above the flap/trim controls. It offers **wings level** and **true-heading hold**, using the
-model's existing roll controller. Capture the current heading with P, or use the
-heading-hold control; P also disconnects heading hold. Use the displayed mode and
-target to see what is engaged. Manual pitch/roll/rudder control disconnects the AP rather
-than adding a hidden command against it. The roll correction is suspended while
-AP owns roll. This is a roll-only research controller: altitude, throttle and
-mixture remain the pilot's responsibility. It is not a validated installed
-C172S autopilot or a coupled approach system.
+The separate autopilot box models the **KAP 140 two-axis unit with altitude
+preselection**, using the later hold-to-engage behavior. Hold **AP** for at least
+0.25 s to engage ROL plus current vertical speed; press AP to disconnect. **P** is
+a simulator shortcut for AP on/off. **HDG** follows the separate **DG BUG · TRUE**
+control; HDG alone does not engage a disconnected unit.
 
-The classical **ALT / NAV / APR / REV** controls are explicitly **INOP**;
-their presence does not engage altitude, navigation or approach guidance.
-Full classical autopilot behavior and a later fullscreen modern instrument
-overlay with ILS markers remain roadmap work.
+**ALT captures the current pressure altitude**, independent of the altitude
+selector. Press it again for VS. Change the selected altitude, set a VS toward
+it, and **ARM** enables automatic altitude capture. **UP/DN** adjust VS in
+100 ft/min steps while VS is visible; the first press displays a hidden VS
+without changing it. Holding changes VS at 300 ft/min/s. In ALT, taps change the
+hold reference by 20 ft; holding requests 500 ft/min, then release captures the
+actual altitude. VS commands use the source-scoped −2000 to +1500 ft/min range.
+
+**BARO** displays the AP's separate pressure setting for 3 s; hold it 2 s to
+change hPa/inHg. It changes indicated/preselected altitude conversion, preserving
+the captured pressure-altitude hold reference. Numeric entry and selector step
+buttons are simulator conveniences; hardware knob detents are not established.
+The current ideal pressure-sensor range is −2 km to 11 km; incompatible
+selector/BARO combinations are rejected without changing the active controller.
+
+The independent altitude alerter shows **ALERT** on approach through 1000 ft
+from the selected altitude, clears within 200 ft, flashes briefly on first
+target crossing and warns when departing the 200 ft band. Five short tones
+respect the sound preference (**S**, initially off), volume, pause and Review.
+Warning timbre is original sound design. Selector/BARO edits establish a silent
+baseline; replay seeks discard old warning events instead of replaying a backlog.
+
+**NAV/APR** use worker-confirmed NAV1 validity. Enable fictional LAB and tune
+113.800 for the current VOR teaching signal; set OBS and the DG bug to the
+intended course. DG arming prompts HDG for 5 s. **REV is active only with LOC
+tuning**, and inhibits GS. Valid-source LOC/GS transitions are covered by
+reference fixtures, including GS capture from above or below. Current flight
+assets do not supply real LOC/GS/GPS services: selecting an invalid source
+produces source-loss/fallback indications, never a fictitious approach capture.
+
+This is an operating-logic model over reused generic JSBSim controllers, not a
+validated installed C172S KAP 140. Capture anticipation, normalized CDI capture
+threshold and GS correction are explicit simulator conventions. Hardware PFT
+timing, electric trim-servo/fault response and aircraft-specific calibration are
+not modeled. Raw manual axes/trim automatically disconnect as a simulator safety
+substitution; throttle and speed management remain manual. All guidance runs in
+the fixed-step worker. Paused adjustments preserve native physics, and Review
+shows captured settings/modes read-only. See [source scope](../docs/research/2026-11-03-kap140.md).
 
 ## Landing practice
 

@@ -582,3 +582,39 @@ orchestrator Q5 record first; until then their values cannot ship under this enu
 | `stats` (benchmark) | `stats {missed, dropped, max_lag, max_batch, late_inputs, digests, checkpoint}` | Product overload reporting |
 | `burst`, `stats.step_cost_us` array | test harness only | Not product |
 | `error {message}` | `error {v, code, field?, step?, message}` | Machine-readable code |
+
+## KAP operating-state extension
+
+The optional version-1 KAP snapshot is atomic, declared in
+[the shared type](../../studies/e1-browser/sim/kap140.d.ts). Its independent
+[altitude-alert extension](../../studies/e1-browser/sim/altitude-alert.d.ts)
+contains a display state and monotonic five-tone-event counter. Missing groups
+remain unavailable in Review; no current live target substitutes for old data.
+NAV1 configuration is an atomic acknowledged kHz/OBS-degree/demo-enabled group.
+Current fictional VOR geometry agrees between cockpit and fixed-step guidance;
+real navigation-source validity cannot be inferred from a tuned frequency alone.
+
+Discrete AP commands are processed in worker message order at its current step,
+with an instrument snapshot and no native integration. Continuous UP/DN ownership
+is press direction ±1 and release 0; simulation time owns repeat/capture timers.
+Release neutralizes on pause/Review/focus/disposal transitions. Raw pilot intent
+is carried separately from the study roll correction; retained held intent blocks
+engagement and new manual/trim commands disconnect the simulator controller.
+This automatic override behavior is a simulator substitution, not original servo
+force/CWS behavior.
+
+Native lateral API remains 0 Off / 1 ROL / 2 heading guidance in true radians.
+The added vertical API is 0 Off / 1 positive-up VS in m/s / 2 physical MSL target
+in metres. The pressure-hold reference is separate from selected indicated
+altitude and BARO: physical target = current physical H + captured pressure height
+− current pressure height. No quasigeoid offset enters dynamics. The pinned
+pitch adapter uses MSL instead of upstream AGL, retains upstream gains and gates
+its output while off. Source/prepared hashes identify the generated local model.
+Native aircraft/servo performance remains generic and requires separate reference
+acceptance.
+
+Five-tone patterns follow increasing recorded event counters only on continuous
+forward playback. Pause/mute/seek/reset/discontinuity establish a fresh baseline;
+skipped multiple events coalesce into one bounded pattern, not a backlog. Timbre
+and selector-reset behavior are declared simulator conventions. The warning graph
+shares existing trusted audio activation, volume and sound-off default.
