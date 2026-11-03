@@ -1,6 +1,7 @@
 import type { FlightState } from './types';
 import { C172X_TANK_CAPACITY_M3 } from './c172x-instrument-references';
 import './engine-panel.css';
+import { engineSwitchView, flightNote, requestMixture, type RequestedEngineCommand } from './cockpit-views';
 
 interface EnginePanelOptions {
   container: HTMLElement;
@@ -9,7 +10,7 @@ interface EnginePanelOptions {
   onOpen: () => void;
   onClose: () => void;
 }
-interface RequestedMixture { mixture_norm: number; mixture_auto: boolean; engine_running?: boolean }
+type RequestedMixture = RequestedEngineCommand;
 
 interface EngineState {
   engine_running?: number; engine_command_on?: number;
@@ -51,7 +52,7 @@ function engineState(state: Readonly<FlightState> | null): EngineState | null {
 
 /** Live/recorded engine values only. Controls request worker changes; they never synthesize readings. */
 export function createEnginePanel(options: EnginePanelOptions): {
-  update(state: Readonly<FlightState> | null, reviewing: boolean, controllable: boolean, requested?: RequestedMixture): void;
+  update(state: Readonly<FlightState> | null, reviewing: boolean, controllable: boolean, requested?: RequestedMixture, flying?: boolean): void;
   dispose(): void;
 } {
   const { container } = options;
@@ -97,7 +98,7 @@ export function createEnginePanel(options: EnginePanelOptions): {
   dialog.innerHTML = '<h2 id="engine-dialog-title">Engine</h2><p class="engine-flight-note">Flight continues while this panel is open.</p><div class="engine-dialog-slot"></div><button type="button" id="engine-close" class="primary">Done</button>';
   const slot = dialog.querySelector<HTMLElement>('.engine-dialog-slot')!;
   const done = dialog.querySelector<HTMLButtonElement>('#engine-close')!;
-  const flightNote = dialog.querySelector<HTMLElement>('.engine-flight-note')!;
+  const note = dialog.querySelector<HTMLElement>('.engine-flight-note')!;
   container.replaceChildren(opener, content);
   document.body.append(dialog);
   const element = <T extends HTMLElement = HTMLElement>(id: string) => content.querySelector<T>(`#${id}`)!;
@@ -106,7 +107,7 @@ export function createEnginePanel(options: EnginePanelOptions): {
   const engineSwitch = element<HTMLButtonElement>('engine-switch');
   const media = window.matchMedia('(max-width: 900px)');
   let latest: EngineState | null = null;
-  let reviewing = false, controllable = false, disposed = false;
+  let reviewing = false, controllable = false, flying = false, disposed = false;
   let requested: RequestedMixture | null = null;
 
   function format(value: number, digits = 0): string { return value.toFixed(digits); }
@@ -115,17 +116,16 @@ export function createEnginePanel(options: EnginePanelOptions): {
     const command = !reviewing && requested ? requested : latest
       ? { mixture_norm: latest.mixture_norm, mixture_auto: latest.mixture_auto === 1 } : null;
     element('engine-state-label').textContent = reviewing ? 'RECORDED' : 'LIVE';
-    flightNote.textContent = reviewing ? 'Recorded engine state · controls are read-only.' : 'Controls may be adjusted while flight is paused.';
+    note.textContent = flightNote(reviewing, flying, 'Recorded engine state · controls are read-only.');
     element('engine-unavailable').hidden = !!latest;
     mixture.disabled = automatic.disabled = !canControl;
     automatic.setAttribute('aria-pressed', String(command?.mixture_auto === true));
-    const hasSwitch = latest && [0, 1].includes(latest.engine_running!) && [0, 1].includes(latest.engine_command_on!);
-    const selectedOn = !reviewing && requested?.engine_running !== undefined ? requested.engine_running : latest?.engine_command_on === 1;
-    engineSwitch.disabled = !canControl || !hasSwitch;
-    engineSwitch.setAttribute('aria-pressed', String(!!hasSwitch && selectedOn));
-    engineSwitch.textContent = hasSwitch ? `ENG ${selectedOn ? 'ON' : 'OFF'} · E` : 'ENG INOP';
+    const switchView = engineSwitchView(latest, reviewing, requested);
+    engineSwitch.disabled = !canControl || !switchView.available;
+    engineSwitch.setAttribute('aria-pressed', String(switchView.selectedOn));
+    engineSwitch.textContent = switchView.label;
     engineSwitch.title = 'Simplified native ignition/starter command · applies on next flight step';
-    element('engine-running').textContent = hasSwitch ? latest!.engine_running === 1 ? 'RUN' : 'STOP' : '—';
+    element('engine-running').textContent = switchView.running;
     const readings: Record<string, string> = latest ? {
       'engine-rpm': format(latest.prop_radps * 60 / TWO_PI),
       'engine-map': format(latest.manifold_pressure_pa / PA_PER_INHG, 1),
@@ -178,7 +178,7 @@ export function createEnginePanel(options: EnginePanelOptions): {
     if (!latest || !controllable || reviewing || disposed) return;
     const value = mixture.valueAsNumber / 100;
     if (Number.isFinite(value) && value >= 0 && value <= 1) {
-      requested = { mixture_norm: value, mixture_auto: false };
+      requested = requestMixture(requested, value, false);
       options.onMixture(value, false); render();
     }
   }
@@ -189,7 +189,7 @@ export function createEnginePanel(options: EnginePanelOptions): {
     if (button === engineSwitch) { options.onEngine(); return; }
     if (button === automatic) {
       const norm = requested?.mixture_norm ?? latest.mixture_norm;
-      requested = { mixture_norm: norm, mixture_auto: true };
+      requested = requestMixture(requested, norm, true);
       options.onMixture(norm, true); render();
     }
   }
@@ -204,9 +204,9 @@ export function createEnginePanel(options: EnginePanelOptions): {
   setLayout(); render();
 
   return {
-    update(state, inReview, canControl, pending) {
+    update(state, inReview, canControl, pending, isFlying = false) {
       if (disposed) return;
-      latest = engineState(state); reviewing = inReview; controllable = canControl;
+      latest = engineState(state); reviewing = inReview; controllable = canControl; flying = isFlying;
       requested = pending && Number.isFinite(pending.mixture_norm) && pending.mixture_norm >= 0
         && pending.mixture_norm <= 1 && typeof pending.mixture_auto === 'boolean' ? { ...pending } : null;
       render();
