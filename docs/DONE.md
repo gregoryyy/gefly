@@ -3,6 +3,60 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-02 23:18 — Compact classic cockpit, landing cues and synchronized sound
+
+TODO: 2.0.17, 2.0.28–2.0.31 complete as bounded R-PANEL-1/R-SIM-8/
+R-ENG-1/R-AUDIO-1/R-VIEW-1/R-REVIEW-1 increments.
+Agent: Codex orchestrator/integration; fov_input/code1 on native collision/
+ignition, bearing/RPM and chase shadow; engine_sound_ui/code2 on collision UI,
+audio and fuel instrument; fov_housekeeping on parallel inputs/references.
+Independent quality: fov_housekeeping on non-authored code; reciprocal scoped
+code1/code2 reviews and orchestrator review of shared model references.
+Independent validate: fov_housekeeping, excluding its constants/prose.
+Cross-provider peer pending.
+
+**Implementation notes**
+
+Delivered NAV1/NAV2 over true-reference fictional LAB bearing/DME and actual
+propeller RPM; added a symmetric round L/R model fuel gauge, engine-before-AP
+column order, bottom engine ON/RUN indication, half-size flap/trim key buttons
+and equal column edges. The desktop deck is 388px rather than 449px while main
+round faces remain 140px. Uniform scaling and mobile portals remain usable.
+Native non-wheel/body/propeller/fin contact freezes its exact first event;
+normal wheels retain JSBSim reactions. Review/camera inspection and Flight-menu
+restart remain available. E controls ignition/starter, independent of mixture
+and S sound preference. Sound defaults off; actual engine/airflow/ground motion
+produce engine, broadband high-speed whistle, rolling and per-wheel touchdown
+sounds. Idle is quieter; paused/seeked/suspended audio cannot invent impacts.
+Chase view adds a genuine soft native mesh shadow on the existing ellipsoid;
+restored/four stationary renders are identical, with physics frozen.
+
+Frozen implementation hash and detailed execution/reviewer scopes are in
+[the review](reviews/2026-11-02-ground-collision-engine-wind.md). Native checks
+pass 147 Node tests plus five Python tests. Actual-browser checks cover the
+new cockpit, engine, Review, contact, sound and shadow behavior. Production build, shared CI and final assurance pass; nine optional Python
+JSBSim study cases are unavailable, explicitly recorded in the review.
+
+**Deviations**
+
+Flat-ground discrete collision proxies do not establish damage thresholds or
+full terrain/building collision. Fuel/RPM references are for the pinned generic
+c172x; LAB is a fictional TRUE station. Ignition/starter omits installed electrical
+and checklist fidelity; all audio is original, uncalibrated sound design. Shadows
+use the existing fixed sun and compatible flat receiver, fading above low flight.
+The final audio-device suspension guard is independently source-reviewed with
+author native-browser evidence; the other ten audio groups are independently run.
+
+**Insights**
+
+Separate actual running/contact observations from requested engine controls and
+sound preferences. Preserve live/recorded labels separately from read-only locks.
+Decimal UI serialization needs presentation-only tolerance at stored Review
+frames. Hosted Node 24 also exposed a Boolean capture-listener cleanup
+difference; matching the registration options object fixes it, with all four
+focused tests passing on Node 24 and Node 26. Native renderer shadows provide a ground cue without a second physics
+model or an extra asset/service.
+
 ## 2026-11-02 21:40 — Hear procedural engine and propeller sound
 
 TODO: 2.0.27 complete as a bounded R-AUDIO-1/R-REVIEW-1 increment.

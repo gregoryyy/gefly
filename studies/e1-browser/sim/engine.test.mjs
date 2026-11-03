@@ -1,6 +1,19 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ENGINE_FIELDS, autopilotCommand, engineFields, normalizedHeading } from './engine.js';
+import { ENGINE_FIELDS, ENGINE_SWITCH_FIELDS, autopilotCommand, engineFields, engineSwitchFields, normalizedHeading } from './engine.js';
+
+test('optional engine switch separates actual running from requested ignition without changing legacy instruments', () => {
+  for (const actual of [0, 1]) for (const command of [0, 1]) {
+    const input = [actual, command], result = engineSwitchFields(input);
+    assert.deepEqual(Object.keys(result), ENGINE_SWITCH_FIELDS);
+    assert.deepEqual(result, { engine_running: actual, engine_command_on: command });
+    input[0] = 2; assert.equal(result.engine_running, actual);
+  }
+  for (const invalid of [null, [], [0], [0, 1, 1], [NaN, 1], [1, Infinity], [.5, 1], [1, -1], [true, false]]) {
+    assert.deepEqual(engineSwitchFields(invalid), {});
+  }
+  assert.equal(Object.keys(engineFields(sample())).length, 13);
+});
 
 const sample = () => [85_000, 250, .92, 1, 350_000, 350, 1000, .00001, .04, .05, 0, 1.4, 0];
 

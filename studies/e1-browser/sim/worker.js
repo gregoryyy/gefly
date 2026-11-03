@@ -28,7 +28,8 @@
 import createJSBSim from './dist/jsbsim.mjs';
 import { indicatedAltitude_m, validSetting } from './altimeter.js';
 import { stallFields, controlFields, cockpitFields, pitchTrimFields, groundFields } from './cockpit.js';
-import { autopilotCommand, engineFields } from './engine.js';
+import { autopilotCommand, engineFields, engineSwitchFields } from './engine.js';
+import { groundCollisionContact, collisionRecord, EMPTY_COLLISION } from './collision.js';
 
 const MAX_CATCHUP = 12;          // steps per tick (100 ms at 1/120 s)
 const TIMER_SLACK_MS = 0.1;     // wake margin after a step's due time
@@ -74,6 +75,8 @@ let costCount = 0;
 let runWallStartMs = 0;
 let runWallMs = 0;
 let untilStep = Infinity;
+let groundCollisionEnabled = false;
+let collision = EMPTY_COLLISION;
 // Ideal pressure instrument only. Its setting never changes the atmosphere,
 // dynamics state, integration step or original study digest.
 let altimeterSettingPa = 101325;
@@ -174,6 +177,12 @@ function readEngineFields() {
   return engineFields(M.HEAPF64.subarray(pointer, pointer + 13));
 }
 
+function readEngineSwitchFields() {
+  if (typeof M._gf_engine_switch_state !== 'function') return {};
+  const pointer = M._gf_engine_switch_state() >> 3;
+  return engineSwitchFields(M.HEAPF64.subarray(pointer, pointer + 2));
+}
+
 function onAutopilot(msg) {
   const command = autopilotCommand(msg, readState()[6]);
   if (!command || typeof M._gf_set_autopilot !== 'function') {
@@ -197,7 +206,7 @@ function stateMessage() {
     type: 'state', step: stepIndex, t_s: s[0], lat_rad: s[1], lon_rad: s[2],
     alt_msl_m: s[3], roll_rad: s[4], pitch_rad: s[5], heading_rad: s[6], tas_mps: s[7],
     last_input_wall_ms: lastInputWallMs, step_cost_us: lastStepCostUs, ...altimeterFields,
-    ...readStallFields(), ...readControlFields(), ...readCockpitFields(), ...readPitchTrimFields(), ...readGroundFields(), ...readEngineFields(),
+    ...readStallFields(), ...readControlFields(), ...readCockpitFields(), ...readPitchTrimFields(), ...readGroundFields(), ...readEngineFields(), ...readEngineSwitchFields(), ...collision,
   };
 }
 
@@ -229,6 +238,10 @@ function applyDueInputs() {
       const engine = M._gf_set_engine_controls(inp.mixture_norm, inp.mixture_auto ? 1 : 0);
       if (engine !== 0) { fail(`engine controls rc=${engine}`); return false; }
     }
+    if (inp.engine_running !== undefined) {
+      const engine = M._gf_set_engine_running(inp.engine_running ? 1 : 0);
+      if (engine !== 0) { fail(`engine ignition/starter rc=${engine}`); return false; }
+    }
     if (inp.step < stepIndex) lateInputs += 1;
     lastInputWallMs = inp.wall_ms;
     appliedInputs += 1;
@@ -237,6 +250,7 @@ function applyDueInputs() {
 }
 
 function stepOnce() {
+  if (collision.collision_mask) return false;
   const a = performance.now();
   if (running) {                      // paced steps only (not burst)
     const lagMs = a - (t0Ms + (stepIndex + 1 - stepBase) * dtMs);
@@ -244,6 +258,7 @@ function stepOnce() {
     if (lagMs > maxLagMs) maxLagMs = lagMs;
   }
   if (!applyDueInputs()) return false;
+  const previousGround = groundCollisionEnabled ? readGroundFields() : null;
   const rc = M._gf_step();
   const b = performance.now();
   if (rc !== 0) { fail(`step rc=${rc} at step ${stepIndex}`); return false; }
@@ -251,6 +266,19 @@ function stepOnce() {
   updateAltimeter();
   lastStepCostUs = (b - a) * 1000;
   if (costCount < costs.length) costs[costCount++] = lastStepCostUs;
+  if (groundCollisionEnabled) {
+    const ground = readGroundFields(), state = readState();
+    const contact = groundCollisionContact(ground.ground_agl_m, state[4], state[5], ground.structure_contact_mask);
+    const record = contact.mask ? collisionRecord(contact.mask, stepIndex, state[0], previousGround) : null;
+    if (record) {
+      collision = record;
+      pending = [];
+      onHalt();
+      postState();
+      postMessage(stats());
+      return false;
+    }
+  }
   return true;
 }
 
@@ -300,6 +328,7 @@ function stats() {
     run_wall_ms: runWallMs + (running ? performance.now() - runWallStartMs : 0),
     step_cost_us: costs.slice(0, costCount),
     cross_origin_isolated: self.crossOriginIsolated === true,
+    ...collision,
   };
 }
 
@@ -310,6 +339,7 @@ async function onInit(msg) {
   const hz = msg.state_hz === undefined ? 60 : msg.state_hz;
   if (!finiteIn(dt, 1e-4, 0.1) || !finiteIn(hz, 1, 1000)) { fail('init: bad dt_s or state_hz'); return; }
   if (msg.aircraft !== 'c172x') { fail(`init: unsupported aircraft ${msg.aircraft}`); return; }
+  if (msg.ground_collision !== undefined && typeof msg.ground_collision !== 'boolean') { fail('init: ground_collision must be boolean'); return; }
   const presets = { normal: 1, hard: 2, side: 3, banked: 4 };
   const preset = msg.landing_preset;
   if (preset !== undefined && (typeof preset !== 'string' || !Object.hasOwn(presets, preset)
@@ -322,6 +352,7 @@ async function onInit(msg) {
   stepIndex = 0; pending = []; lastInputWallMs = null; lastStepCostUs = 0;
   missedSteps = 0; droppedSteps = 0; maxLagSteps = 0; maxLagMs = 0; lateInputs = 0; appliedInputs = 0; maxBatch = 0; ticks = 0;
   costs = new Float32Array(COST_CAPACITY); costCount = 0; runWallMs = 0;
+  groundCollisionEnabled = msg.ground_collision === true; collision = EMPTY_COLLISION;
   initializeAltimeter();
   initialized = true;
   postMessage({
@@ -342,12 +373,18 @@ function onInput(msg) {
     && finiteIn(msg.rudder, -1, 1) && finiteIn(msg.throttle, 0, 1)
     && finiteIn(msg.flap_norm ?? 0, 0, 1) && finiteIn(msg.brake_norm ?? 0, 0, 1)
     && finiteIn(mixture_norm, 0, 1) && typeof mixture_auto === 'boolean'
-    && (msg.pitch_trim_norm === undefined || finiteIn(msg.pitch_trim_norm, -1, 1));
+    && (msg.pitch_trim_norm === undefined || finiteIn(msg.pitch_trim_norm, -1, 1))
+    && (msg.engine_running === undefined || typeof msg.engine_running === 'boolean');
   if (!ok) { postMessage({ type: 'error', message: 'input rejected: non-finite, out of range or bad step' }); return; }
+  if (msg.engine_running !== undefined && typeof M._gf_set_engine_running !== 'function') {
+    postMessage({ type: 'engine-switch-rejected', message: 'Engine ignition/starter command unavailable; rebuild local engine.' });
+    return;
+  }
   const inp = { step: msg.step, wall_ms: msg.wall_ms, elevator: msg.elevator, aileron: msg.aileron,
                 rudder: msg.rudder, throttle: msg.throttle, flap_norm: msg.flap_norm ?? 0, brake_norm: msg.brake_norm ?? 0,
                 mixture_norm, mixture_auto };
   if (msg.pitch_trim_norm !== undefined) inp.pitch_trim_norm = msg.pitch_trim_norm;
+  if (msg.engine_running !== undefined) inp.engine_running = msg.engine_running;
   let i = pending.length;
   while (i > 0 && pending[i - 1].step > inp.step) i -= 1;   // stable insert
   pending.splice(i, 0, inp);
@@ -390,6 +427,10 @@ self.onmessage = (ev) => {
     try {
       if (msg.type === 'init') { onHalt(); await onInit(msg); return; }
       if (!initialized) { postMessage({ type: 'error', message: `${msg.type} before init` }); return; }
+      if (collision.collision_mask && ['input', 'altimeter', 'autopilot', 'run', 'burst'].includes(msg.type)) {
+        postMessage({ type: 'collision-rejected', command: msg.type, message: 'Ground contact latched; restart flight to continue.' });
+        return;
+      }
       switch (msg.type) {
         case 'input': onInput(msg); break;
         case 'altimeter': onAltimeter(msg); break;

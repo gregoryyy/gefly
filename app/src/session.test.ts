@@ -37,6 +37,43 @@ const state = {
 };
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+test('ground collision latches the exact stopped frame and blocks controls/resume until fresh restart', t => {
+  const { session, states, errors, statuses } = fixture(t);
+  session.start(); const worker = MockWorker.instances[0]; worker.emit(ready);
+  assert.equal(worker.messages[0].ground_collision, true);
+  const impact = { ...state, collision_mask: 16, collision_step: state.step,
+    collision_t_s: state.t_s, collision_down_mps: 4, collision_groundspeed_mps: 28 };
+  worker.emit(impact);
+  assert.equal(statuses.at(-1), 'Ground collision');
+  assert.equal((states.at(-1) as Record<string, number>).collision_mask, 16);
+  const messages = worker.messages.length;
+  session.start(); session.input({ elevator: 1, aileron: 0, rudder: 0, throttle: 1 });
+  session.setAutopilot(2); session.setAltimeter(100000);
+  assert.equal(worker.messages.length, messages);
+  session.pause(); assert.equal(statuses.at(-1), 'Ground collision');
+  worker.emit({ ...impact }); assert.deepEqual(errors, []);
+  worker.emit({ ...impact, alt_msl_m: impact.alt_msl_m - 1 });
+  assert.equal(errors.length, 1); assert.equal(worker.terminated, true);
+  session.reset(); const replacement = MockWorker.instances.at(-1)!;
+  replacement.emit(ready); replacement.emit(state); session.start();
+  assert.equal(replacement.messages.at(-1)?.type, 'run');
+});
+
+test('ground collision metadata rejects partial groups, impossible zero identities and disappearing latches', t => {
+  const { session, states, errors } = fixture(t);
+  session.start(); const worker = MockWorker.instances[0]; worker.emit(ready);
+  worker.emit({ ...state, collision_mask: 16, collision_step: 0, collision_t_s: 0,
+    collision_down_mps: 4, collision_groundspeed_mps: 28 });
+  assert.equal(states.length, 0); assert.equal(errors.length, 1);
+  session.reset(); const replacement = MockWorker.instances.at(-1)!; replacement.emit(ready);
+  const impact = { ...state, collision_mask: 16, collision_step: state.step,
+    collision_t_s: state.t_s, collision_down_mps: -2, collision_groundspeed_mps: 28 };
+  replacement.emit(impact);
+  replacement.emit({ ...state, collision_mask: 0, collision_step: 0, collision_t_s: 0,
+    collision_down_mps: 0, collision_groundspeed_mps: 0 });
+  assert.equal(states.length, 1); assert.equal(errors.length, 2);
+});
+
 test('session accepts complete spatial-airflow telemetry including warnings above one', t => {
   const { session, states, errors } = fixture(t); session.start();
   const worker = MockWorker.instances[0]; worker.emit(ready);
@@ -263,4 +300,19 @@ test('actual applied flap command is optional but must be finite and normalized'
   assert.equal(states[0].flap_command_norm, 2 / 3);
   worker.emit({ ...state, ...cockpit, flap_command_norm: 1.01 });
   assert.match(errors[0], /invalid state/);
+});
+
+test('engine switch command waits for resume and actual running telemetry is atomic', async t => {
+  const { session, states, errors } = fixture(t); session.start();
+  const worker = MockWorker.instances[0]; worker.emit(ready);
+  worker.emit({ ...state, engine_running: 1, engine_command_on: 1 });
+  assert.equal(states.at(-1).engine_running, 1);
+  session.pause(); const count = worker.messages.length;
+  session.input({ elevator: 0, aileron: 0, rudder: 0, throttle: .7, engine_running: false });
+  await sleep(70); assert.equal(worker.messages.length, count);
+  session.start(); assert.equal(worker.messages.at(-2)?.engine_running, false);
+  worker.emit({ ...state, engine_running: 0, engine_command_on: 1 });
+  assert.equal(states.at(-1).engine_running, 0, 'requested ON does not imply combustion');
+  worker.emit({ ...state, engine_running: 0 });
+  assert.match(errors.at(-1)!, /invalid state/);
 });

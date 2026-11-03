@@ -1,5 +1,5 @@
 import { RADIO_NAV_FIELDS, validRadioNavSnapshot } from './radio-nav.ts';
-import { STALL_FIELDS, validStallState, CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
+import { COLLISION_FIELDS, validCollisionState, STALL_FIELDS, validStallState, CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, ENGINE_SWITCH_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
 import type { FlightState } from './types';
 
 export interface TraceSample {
@@ -39,14 +39,14 @@ export class FlightTrace {
   }
 
   record(state: FlightState, vertical_speed_mps: number): boolean {
-    if (!state || typeof state !== 'object' || !Number.isFinite(vertical_speed_mps) || !validAltimeterState(state) || !validCockpitState(state) || !validEngineState(state) || !validPitchTrimState(state) || !validGroundState(state) || !validControlState(state) || !validStallState(state)
+    if (!state || typeof state !== 'object' || !Number.isFinite(vertical_speed_mps) || !validAltimeterState(state) || !validCockpitState(state) || !validEngineState(state) || !validPitchTrimState(state) || !validGroundState(state) || !validControlState(state) || !validStallState(state) || !validCollisionState(state)
       || (RADIO_NAV_FIELDS.some(key => state[key] !== undefined) && !validRadioNavSnapshot(state))) return false;
     const snapshot: FlightState = {
       step: state.step, t_s: state.t_s, lat_rad: state.lat_rad, lon_rad: state.lon_rad,
       alt_msl_m: state.alt_msl_m, roll_rad: state.roll_rad, pitch_rad: state.pitch_rad,
       heading_rad: state.heading_rad, tas_mps: state.tas_mps,
     };
-    for (const key of [...STALL_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS, ...RADIO_NAV_FIELDS]) if (state[key] !== undefined) snapshot[key] = state[key];
+    for (const key of [...COLLISION_FIELDS, ...STALL_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...ENGINE_SWITCH_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS, ...RADIO_NAV_FIELDS]) if (state[key] !== undefined) snapshot[key] = state[key];
     if (!Object.values(snapshot).every((value) => typeof value === 'number' && Number.isFinite(value))
       || !Number.isInteger(snapshot.step) || snapshot.step < 0 || snapshot.t_s < 0
       || snapshot.tas_mps < 0 || Math.abs(snapshot.lat_rad) > Math.PI / 2
@@ -93,14 +93,17 @@ export class FlightTrace {
     });
   }
 
-  /** Return the last recorded state at or before t_s, clamping to the retained range. */
+  /** Floor seek, allowing only floating-point serialization noise at a stored timestamp. */
   atTime(t_s: number): TraceSample | null {
     if (!Number.isFinite(t_s) || this.count === 0) return null;
+    // A native range serializes doubles to decimal and can round just below an
+    // exact stored frame. This tolerance is far smaller than a flight step.
+    const tolerance_s = 8 * Number.EPSILON * Math.max(1, Math.abs(t_s));
     let low = 0;
     let high = this.count - 1;
     while (low < high) {
       const middle = Math.ceil((low + high) / 2);
-      if (this.sample(middle).state.t_s <= t_s) low = middle;
+      if (this.sample(middle).state.t_s <= t_s + tolerance_s) low = middle;
       else high = middle - 1;
     }
     return this.sample(low);

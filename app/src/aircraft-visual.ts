@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+import { VISUAL_AIRFRAME } from '../../studies/e1-browser/sim/collision.js';
 
 /** Original generic high-wing visual, deliberately independent of dynamics data.
  * glTF axes: +x forward, +y up, +z right. Dimensions are illustrative only.
@@ -44,20 +45,19 @@ export async function createAircraftVisual(): Promise<string> {
     mesh(geometry, material, x, y, 0);
   }
 
-  const profile = [new THREE.Vector2(0.06, -3.6), new THREE.Vector2(0.2, -2.7),
-    new THREE.Vector2(0.48, -1.2), new THREE.Vector2(0.62, 0.4),
-    new THREE.Vector2(0.61, 1.4), new THREE.Vector2(0.48, 2.2),
-    new THREE.Vector2(0.3, 2.85), new THREE.Vector2(0.08, 3.05)];
+  const profile = VISUAL_AIRFRAME.profile.map(([radius, x]) => new THREE.Vector2(radius, x));
   const fuselage = new THREE.LatheGeometry(profile, 28);
   fuselage.rotateZ(-Math.PI / 2);
-  fuselage.scale(1, 0.87, 1);
+  fuselage.scale(1, VISUAL_AIRFRAME.scaleY, 1);
   mesh(fuselage, white);
 
   // Dark glazing and roof sit within the body envelope rather than an oversized box.
-  const cabin = mesh(new THREE.SphereGeometry(1, 28, 16), glass, 0.45, 0.35, 0);
-  cabin.scale.set(1.32, 0.62, 0.57);
-  const roof = mesh(new THREE.SphereGeometry(1, 24, 12), white, 0.2, 0.63, 0);
-  roof.scale.set(1.14, 0.21, 0.55);
+  const c = VISUAL_AIRFRAME.cabin;
+  const cabin = mesh(new THREE.SphereGeometry(1, 28, 16), glass, c.center[0], c.center[1], c.center[2]);
+  cabin.scale.set(c.scale[0], c.scale[1], c.scale[2]);
+  const r = VISUAL_AIRFRAME.roof;
+  const roof = mesh(new THREE.SphereGeometry(1, 24, 12), white, r.center[0], r.center[1], r.center[2]);
+  roof.scale.set(r.scale[0], r.scale[1], r.scale[2]);
   wing(10.7, 1.48, 0.25, 0.87, white);
   for (const side of [-1, 1]) {
     const tip = mesh(new THREE.BoxGeometry(1.3, 0.11, 0.72), red, 0.25, 0.83, side * 4.93);
@@ -74,16 +74,19 @@ export async function createAircraftVisual(): Promise<string> {
   wing(3.7, 0.86, -2.85, 0.18, white);
   for (const side of [-1, 1]) mesh(new THREE.BoxGeometry(0.76, 0.1, 0.4), red, -2.85, 0.14, side * 1.6);
   const finShape = new THREE.Shape();
-  finShape.moveTo(-3.5, 0.17); finShape.lineTo(-3.35, 1.75); finShape.lineTo(-2.78, 1.62);
-  finShape.lineTo(-2.18, 0.16); finShape.closePath();
-  const finGeometry = new THREE.ExtrudeGeometry(finShape, { depth: 0.09, bevelEnabled: true, bevelSize: 0.025, bevelThickness: 0.02, bevelSegments: 1 });
-  mesh(finGeometry, red, 0, 0, -0.045);
+  const fin = VISUAL_AIRFRAME.fin;
+  fin.outline.forEach(([x, y], index) => { if (index === 0) finShape.moveTo(x, y); else finShape.lineTo(x, y); });
+  finShape.closePath();
+  const finGeometry = new THREE.ExtrudeGeometry(finShape, { depth: fin.extrusionDepth, bevelEnabled: true,
+    bevelSize: fin.bevel, bevelThickness: fin.bevelThickness, bevelSegments: 1 });
+  mesh(finGeometry, red, 0, 0, -fin.extrusionDepth / 2);
   strut(new THREE.Vector3(2.05, -0.26, 0), new THREE.Vector3(2.05, -1.1, 0), 0.045, metal);
   const noseWheel = mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.11, 16), dark, 2.05, -1.15, 0);
   noseWheel.rotation.x = Math.PI / 2;
-  const spinner = mesh(new THREE.SphereGeometry(0.28, 20, 12), red, 3.04, 0, 0);
-  spinner.scale.set(1.45, 1, 1);
-  const prop = mesh(new THREE.CircleGeometry(1.05, 40), new THREE.MeshBasicMaterial({ color: '#48525a', transparent: true, opacity: 0.12, side: THREE.DoubleSide }), 3.17, 0, 0);
+  const s = VISUAL_AIRFRAME.spinner;
+  const spinner = mesh(new THREE.SphereGeometry(1, 20, 12), red, s.center[0], s.center[1], s.center[2]);
+  spinner.scale.set(s.scale[0], s.scale[1], s.scale[2]);
+  const prop = mesh(new THREE.CircleGeometry(VISUAL_AIRFRAME.prop.radius, 40), new THREE.MeshBasicMaterial({ color: '#48525a', transparent: true, opacity: 0.12, side: THREE.DoubleSide }), VISUAL_AIRFRAME.prop.x, 0, 0);
   prop.rotation.y = Math.PI / 2;
 
   try {

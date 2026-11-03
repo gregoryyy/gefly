@@ -1,5 +1,6 @@
 import type { FlightState } from './types';
-import { navigationIndication, validRadioNavSnapshot } from './radio-nav';
+import { bearingDistanceIndication, navigationIndication, validRadioNavSnapshot } from './radio-nav';
+import { C172X_MAX_RPM } from './c172x-instrument-references';
 import './navigation-gauges.css';
 
 interface NavigationGaugesOptions {
@@ -55,14 +56,44 @@ function face(receiver: 1 | 2): string {
   </svg>`;
 }
 
-/** Two independent LAB VOR-style displays; never invents an ILS/GS indication. */
+function auxiliaryFace(content: string, label: string): string {
+  return `<svg viewBox="0 0 240 240" class="navigation-gauge-face" role="img" aria-label="${label}">
+    <rect x="1" y="1" width="238" height="238" rx="17" class="nav-bezel-square"/>
+    ${[[15, 15], [225, 15], [15, 225], [225, 225]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="4" class="nav-screw"/>`).join('')}
+    <circle cx="120" cy="120" r="115" class="nav-bezel-ring"/><circle cx="120" cy="120" r="108" class="nav-dial"/>${content}</svg>`;
+}
+function bearingFace(): string {
+  return auxiliaryFace(`<g class="bearing-compass-card">${compassCard()}</g><path d="M112 7h16l-8 13z" class="nav-course-index"/>
+    <text x="120" y="92" class="nav-unit-title">BRG / DME</text><text x="120" y="105" class="nav-unit-reference">NAV1 · LAB · TRUE</text>
+    <g class="nav-bearing-pointer" hidden><path d="M120 42l-7 15h14zM120 55v132M113 179l7 16 7-16"/></g>
+    <circle cx="120" cy="120" r="6" class="nav-course-index"/>
+    <g class="bearing-warning-flag"><rect x="99" y="151" width="42" height="18" rx="2"/><text x="120" y="164">BRG</text></g>
+    <title>Fictional NAV1 LAB true bearing and geometric DME, not ADF/NDB reception</title>`, 'Fictional LAB bearing and geometric DME unavailable');
+}
+function rpmFace(): string {
+  const ticks: string[] = [];
+  for (let rpm = 0; rpm <= 3000; rpm += 100) {
+    const angle = -135 + rpm / 3000 * 270;
+    const [x1, y1] = svgPoint(rpm % 500 === 0 ? 91 : 98, angle), [x2, y2] = svgPoint(105, angle);
+    ticks.push(`<path d="M${x1} ${y1}L${x2} ${y2}" class="nav-card-major"/>`);
+    if (rpm % 500 === 0) { const [x, y] = svgPoint(76, angle); ticks.push(`<text x="${x}" y="${y}" class="nav-card-number">${rpm / 100}</text>`); }
+  }
+  const [x1, y1] = svgPoint(97, -135 + C172X_MAX_RPM / 3000 * 270), [x2, y2] = svgPoint(110, -135 + C172X_MAX_RPM / 3000 * 270);
+  return auxiliaryFace(`${ticks.join('')}<path d="M${x1} ${y1}L${x2} ${y2}" class="rpm-model-reference"/>
+    <text x="120" y="92" class="nav-unit-title">PROP RPM</text><text x="120" y="106" class="nav-unit-reference">×100</text>
+    <g class="rpm-pointer" hidden><path d="M120 45L116 134h8z"/></g><circle cx="120" cy="120" r="6" class="nav-course-index"/>
+    <text x="120" y="182" class="nav-scale-label">MODEL MAX ${C172X_MAX_RPM}</text>
+    <text x="120" y="210" class="rpm-unavailable">INOP</text>`, 'Actual propeller RPM unavailable');
+}
+
+/** Four original classic displays; LAB bearing is not an ADF/NDB receiver. */
 export function createNavigationGauges(options: NavigationGaugesOptions): {
   update(state: Readonly<FlightState> | null, reviewing: boolean, running: boolean): void;
   dispose(): void;
 } {
   const { container } = options;
   container.classList.add('navigation-gauges');
-  container.setAttribute('aria-label', 'NAV1 and NAV2 true-reference teaching instruments');
+  container.setAttribute('aria-label', 'NAV1, NAV2, fictional LAB bearing/DME and actual propeller RPM');
   const opener = document.createElement('button');
   opener.id = 'navigation-open'; opener.type = 'button'; opener.className = 'navigation-open';
   opener.textContent = 'NAV instruments'; opener.setAttribute('aria-haspopup', 'dialog'); opener.setAttribute('aria-controls', 'navigation-dialog');
@@ -74,7 +105,11 @@ export function createNavigationGauges(options: NavigationGaugesOptions): {
       <div class="navigation-obs-knob" tabindex="0" role="spinbutton" aria-label="NAV${receiver} OBS true course" aria-valuemin="0" aria-valuemax="359" title="Drag right/left to turn OBS. Arrow keys: 1 degree; Shift + arrow: 10 degrees."><span>OBS TRUE</span><output id="nav${receiver}-gauge-obs">—</output></div>
       <button type="button" id="nav${receiver}-gauge-obs-up" data-receiver="${receiver}" data-delta="1" aria-label="Increase NAV${receiver} OBS true course by one degree">+</button></div>
     <p id="nav${receiver}-gauge-note" class="navigation-gauge-note">Radio configuration unavailable</p>
-  </section>`).join('');
+  </section>`).join('') + `<section id="bearing-gauge" class="navigation-gauge" data-instrument="bearing" aria-label="Fictional NAV1 LAB true bearing and geometric DME">
+    ${bearingFace()}<div class="navigation-aux-readout"><output id="bearing-true">—</output><span>BRG TRUE</span><output id="bearing-dme">—</output><span>DME NM</span></div>
+    <p class="navigation-gauge-note" id="bearing-note">LAB off · no real station database</p></section>
+    <section id="rpm-gauge" class="navigation-gauge" data-instrument="rpm" aria-label="Actual propeller RPM">
+    ${rpmFace()}<div class="navigation-aux-readout"><output id="rpm-value">—</output><span>PROP RPM · MODEL</span></div></section>`;
   const dialog = document.createElement('dialog');
   dialog.id = 'navigation-dialog'; dialog.className = 'navigation-dialog'; dialog.setAttribute('aria-labelledby', 'navigation-title');
   dialog.innerHTML = '<h2 id="navigation-title">NAV instruments</h2><p class="navigation-dialog-note">Flight continues while this panel is open.</p><div class="navigation-dialog-slot"></div><button type="button" id="navigation-close" class="primary">Done</button>';
@@ -102,6 +137,12 @@ export function createNavigationGauges(options: NavigationGaugesOptions): {
       note: root.querySelector<HTMLElement>('.navigation-gauge-note')!,
     };
   });
+  const bearingRoot = content.querySelector<HTMLElement>('#bearing-gauge')!;
+  const rpmRoot = content.querySelector<HTMLElement>('#rpm-gauge')!;
+  const bearingCard = bearingRoot.querySelector<SVGGElement>('.bearing-compass-card')!;
+  const bearingPointer = bearingRoot.querySelector<SVGGElement>('.nav-bearing-pointer')!;
+  const bearingFlag = bearingRoot.querySelector<SVGGElement>('.bearing-warning-flag')!;
+  const rpmPointer = rpmRoot.querySelector<SVGGElement>('.rpm-pointer')!;
 
   function click(event: MouseEvent): void {
     if (!canAdjust || disposed || !(event.target instanceof Element)) return;
@@ -210,6 +251,7 @@ export function createNavigationGauges(options: NavigationGaugesOptions): {
     canAdjust = !!config && running && !reviewing;
     if (!canAdjust) stopInteraction();
     container.dataset.mode = reviewing ? 'recorded' : 'live';
+    container.dataset.step = state ? String(state.step) : '';
     content.querySelectorAll<HTMLButtonElement>('button').forEach(button => { button.disabled = !canAdjust; });
     dialog.querySelector('.navigation-dialog-note')!.textContent = reviewing ? 'Recorded NAV state · OBS controls are read-only.'
       : running ? 'Flight continues while this panel is open.' : 'Flight is paused.';
@@ -240,6 +282,29 @@ export function createNavigationGauges(options: NavigationGaugesOptions): {
         ? `NAV${receiver} fictional LAB, OBS ${obs} degrees TRUE, CDI ${(indication.cdi_norm! * 5).toFixed(1)} dots positive right, ${indication.to_from}${receiver === 1 ? ', glide slope inoperative' : ''}${reviewing ? ', recorded' : ''}`
         : `NAV${receiver} unavailable, NAV flag. ${indication?.reason ?? 'Radio configuration unavailable'}${receiver === 1 ? '. Glide slope inoperative' : ''}`);
     }
+    const bearing = config ? bearingDistanceIndication(config, state, 1) : null;
+    const heading = state && Number.isFinite(state.heading_rad) ? ((state.heading_rad / DEG) % 360 + 360) % 360 : null;
+    const validBearing = bearing?.valid === true && heading !== null;
+    bearingRoot.dataset.valid = String(validBearing); bearingRoot.dataset.recorded = String(reviewing);
+    bearingRoot.dataset.bearingTrueDeg = bearing?.bearing_true_deg === null || bearing?.bearing_true_deg === undefined ? '' : String(bearing.bearing_true_deg);
+    bearingRoot.dataset.dmeNm = bearing?.dme_nm === null || bearing?.dme_nm === undefined ? '' : String(bearing.dme_nm);
+    bearingCard.toggleAttribute('hidden', heading === null);
+    if (heading !== null) bearingCard.setAttribute('transform', `rotate(${-heading} 120 120)`);
+    bearingPointer.toggleAttribute('hidden', !validBearing); bearingFlag.toggleAttribute('hidden', validBearing);
+    if (validBearing) bearingPointer.setAttribute('transform', `rotate(${bearing.bearing_true_deg! - heading!} 120 120)`);
+    const bearingText = validBearing ? `${String(Math.round(bearing.bearing_true_deg!) % 360).padStart(3, '0')}°` : '—';
+    bearingRoot.querySelector<HTMLOutputElement>('#bearing-true')!.value = bearingText;
+    bearingRoot.querySelector<HTMLOutputElement>('#bearing-dme')!.value = bearing?.dme_nm === null || bearing?.dme_nm === undefined ? '—' : bearing.dme_nm.toFixed(1);
+    bearingRoot.querySelector<HTMLElement>('#bearing-note')!.textContent = `${reviewing ? 'RECORDED · ' : ''}${bearing?.reason ?? 'Radio configuration unavailable'}`;
+    bearingRoot.querySelector('svg')!.setAttribute('aria-label', `NAV1 fictional LAB, true bearing ${bearingText}, geometric DME ${bearing?.dme_nm?.toFixed(1) ?? 'unavailable'} nautical miles${reviewing ? ', recorded' : ''}`);
+    const rpm = state && typeof state.prop_radps === 'number' && Number.isFinite(state.prop_radps) && state.prop_radps >= 0 ? state.prop_radps * 60 / (2 * Math.PI) : null;
+    const validRpm = rpm !== null && Number.isFinite(rpm);
+    rpmRoot.dataset.valid = String(validRpm); rpmRoot.dataset.recorded = String(reviewing);
+    rpmRoot.dataset.rpm = validRpm ? String(rpm) : '';
+    rpmPointer.toggleAttribute('hidden', !validRpm); rpmRoot.querySelector('.rpm-unavailable')!.toggleAttribute('hidden', validRpm);
+    if (validRpm) rpmPointer.setAttribute('transform', `rotate(${-135 + Math.min(3000, rpm) / 3000 * 270} 120 120)`);
+    rpmRoot.querySelector<HTMLOutputElement>('#rpm-value')!.value = validRpm ? String(Math.round(rpm)) : '—';
+    rpmRoot.querySelector('svg')!.setAttribute('aria-label', validRpm ? `Actual propeller ${Math.round(rpm)} RPM${rpm > 3000 ? ', above dial scale' : ''}; model maximum reference ${C172X_MAX_RPM}${reviewing ? ', recorded' : ''}` : 'Actual propeller RPM unavailable');
   }
   update(null, false, false);
   return {

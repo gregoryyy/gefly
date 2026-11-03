@@ -166,6 +166,8 @@ try {
   await drag('#nav2-gauge .navigation-obs-knob', 20);
   await page.waitForFunction(expected => Number(document.querySelector('#nav2-gauge-obs').textContent.replace('°', '')) === expected, (mobileBefore + 5) % 360);
   await down('#nav2-gauge-obs-up'); await page.waitForTimeout(430); await page.mouse.move(350, 100); await page.mouse.up();
+  // Let the last pointer-up render reach the DOM before checking that repeat stopped.
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   const mobileStopped = await page.locator('#nav2-gauge-obs').textContent(); await page.waitForTimeout(250); assert.equal(await page.locator('#nav2-gauge-obs').textContent(), mobileStopped);
   await page.screenshot({ path: `${output}/navigation-input-mobile.png` });
   await page.locator('#navigation-close').click();

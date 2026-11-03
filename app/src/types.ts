@@ -37,7 +37,10 @@ export function validCockpitState(input: object): boolean {
 export const ENGINE_FIELDS = ['manifold_pressure_pa','prop_radps','mixture_norm','mixture_auto',
   'oil_pressure_pa','oil_temp_k','egt_k','fuel_flow_m3ps','fuel_left_m3','fuel_right_m3',
   'ap_mode','ap_heading_target_rad','ap_aileron_norm'] as const;
+export const ENGINE_SWITCH_FIELDS = ['engine_running', 'engine_command_on'] as const;
 export interface EngineState {
+  /** Actual native combustion-running flag; absent on older local engines. */
+  engine_running?: number; engine_command_on?: number;
   manifold_pressure_pa?: number; prop_radps?: number; mixture_norm?: number; mixture_auto?: number;
   oil_pressure_pa?: number; oil_temp_k?: number; egt_k?: number; fuel_flow_m3ps?: number;
   fuel_left_m3?: number; fuel_right_m3?: number; ap_mode?: number;
@@ -45,6 +48,8 @@ export interface EngineState {
 }
 export function validEngineState(input: object): boolean {
   const value = input as EngineState;
+  if (ENGINE_SWITCH_FIELDS.some(key => value[key] !== undefined)
+    && !ENGINE_SWITCH_FIELDS.every(key => typeof value[key] === 'number' && [0, 1].includes(value[key]!))) return false;
   if (!ENGINE_FIELDS.some(key => value[key] !== undefined)) return true;
   return ENGINE_FIELDS.every(key => typeof value[key] === 'number' && Number.isFinite(value[key]))
     && value.manifold_pressure_pa! > 0 && value.prop_radps! >= 0
@@ -103,11 +108,27 @@ export function validStallState(input: object): boolean {
     && value.aero_alpha_max_rad! > 0 && value.aero_alpha_max_rad! < Math.PI / 2
     && value.stall_warning_norm! >= 0 && [0, 1].includes(value.stall_hysteresis_norm!);
 }
-export interface FlightState extends AltimeterState, CockpitState, EngineState, PitchTrimState, GroundState, ControlState, StallState, Partial<RadioNavSnapshot> {
+/** Worker-latched first non-wheel contact; pre-step velocities are observations, not damage limits. */
+export const COLLISION_FIELDS = ['collision_mask', 'collision_step', 'collision_t_s',
+  'collision_down_mps', 'collision_groundspeed_mps'] as const;
+export type CollisionState = Partial<Record<typeof COLLISION_FIELDS[number], number>>;
+export function validCollisionState(input: object): boolean {
+  const value = input as CollisionState & { step?: number; t_s?: number };
+  if (!COLLISION_FIELDS.some(key => value[key] !== undefined)) return true;
+  if (!COLLISION_FIELDS.every(key => typeof value[key] === 'number' && Number.isFinite(value[key]))
+    || !Number.isInteger(value.collision_mask) || value.collision_mask! < 0 || value.collision_mask! > 127
+    || !Number.isInteger(value.collision_step) || value.collision_step! < 0
+    || value.collision_t_s! < 0 || value.collision_groundspeed_mps! < 0) return false;
+  if (value.collision_mask === 0) return COLLISION_FIELDS.every(key => value[key] === 0);
+  return value.collision_step! >= 1 && value.collision_t_s! > 0
+    && (value.step === undefined || value.collision_step! <= value.step)
+    && (value.t_s === undefined || value.collision_t_s! <= value.t_s);
+}
+export interface FlightState extends AltimeterState, CockpitState, EngineState, PitchTrimState, GroundState, ControlState, StallState, CollisionState, Partial<RadioNavSnapshot> {
   step: number; t_s: number; lat_rad: number; lon_rad: number;
   alt_msl_m: number; roll_rad: number; pitch_rad: number; heading_rad: number; tas_mps: number;
 }
-export interface Controls { elevator: number; aileron: number; rudder: number; throttle: number; flap_norm?: number; brake_norm?: number; mixture_norm?: number; mixture_auto?: boolean; pitch_trim_norm?: number }
+export interface Controls { elevator: number; aileron: number; rudder: number; throttle: number; flap_norm?: number; brake_norm?: number; mixture_norm?: number; mixture_auto?: boolean; pitch_trim_norm?: number; engine_running?: boolean }
 export interface FlightScene {
   update(state: FlightState, view: 'cockpit' | 'chase', look?: { yaw_rad: number; pitch_rad: number; fov_rad?: number }): void;
   dispose(): void;

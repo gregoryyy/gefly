@@ -46,7 +46,7 @@ function referenceLabel(value: Indication): string {
 
 /** Renders worker-computed indications; changing a display unit never changes physics. */
 export function createPressureAltimeterPanel(options: PressureAltimeterOptions): {
-  update(state: Readonly<FlightState> | null, reviewing: boolean): void;
+  update(state: Readonly<FlightState> | null, reviewing: boolean, readOnly?: boolean): void;
   dispose(): void;
 } {
   const { container } = options;
@@ -103,7 +103,7 @@ export function createPressureAltimeterPanel(options: PressureAltimeterOptions):
   const standard = dialog.querySelector<HTMLButtonElement>('#altimeter-std')!;
   let displayUnit: DisplayUnit = 'hPa';
   let latest: Indication | null = null;
-  let reviewing = false;
+  let reviewing = false, readOnly = false;
   let disposed = false;
   let requested_pa: number | null = null;
   let lastDial = '';
@@ -170,7 +170,7 @@ export function createPressureAltimeterPanel(options: PressureAltimeterOptions):
   }
 
   function render(): void {
-    opener.disabled = !latest || reviewing;
+    opener.disabled = !latest || reviewing || readOnly;
     const label = latest ? referenceLabel(latest) : 'Pressure unavailable';
     const altitude_ft = latest ? latest.altimeter_indicated_m / METRES_PER_FOOT : null;
     altitude.textContent = altitude_ft === null ? '—' : (Math.round(altitude_ft) || 0).toLocaleString('en-US');
@@ -183,7 +183,7 @@ export function createPressureAltimeterPanel(options: PressureAltimeterOptions):
       : 'Pressure altimeter unavailable; check supported range or rebuild engine');
     for (const control of [input, unitSelect, qnh, qfe, standard,
       dialog.querySelector<HTMLButtonElement>('#altimeter-decrease')!,
-      dialog.querySelector<HTMLButtonElement>('#altimeter-increase')!]) control.disabled = !latest || reviewing;
+      dialog.querySelector<HTMLButtonElement>('#altimeter-increase')!]) control.disabled = !latest || reviewing || readOnly;
     if (latest) {
       applied.textContent = `Applied: ${pressureText(latest.altimeter_setting_pa)} · ${label}`;
       indicated.textContent = `${(Math.round(altitude_ft!) || 0).toLocaleString('en-US')} ft indicated`;
@@ -197,7 +197,7 @@ export function createPressureAltimeterPanel(options: PressureAltimeterOptions):
   }
 
   function request(pressure_pa: number): void {
-    if (!latest || reviewing || disposed) return;
+    if (!latest || reviewing || readOnly || disposed) return;
     if (!Number.isFinite(pressure_pa) || pressure_pa < MIN_SETTING_PA || pressure_pa > MAX_SETTING_PA) {
       input.setCustomValidity(`Enter a pressure between ${pressureText(MIN_SETTING_PA)} and ${pressureText(MAX_SETTING_PA)}.`);
       input.reportValidity(); return;
@@ -210,7 +210,7 @@ export function createPressureAltimeterPanel(options: PressureAltimeterOptions):
   }
 
   function open(): void {
-    if (!latest || reviewing || disposed || dialog.open) return;
+    if (!latest || reviewing || readOnly || disposed || dialog.open) return;
     options.onOpen();
     refreshInput(); render();
     dialog.showModal();
@@ -225,7 +225,7 @@ export function createPressureAltimeterPanel(options: PressureAltimeterOptions):
     const target = event.target;
     if (!(target instanceof HTMLButtonElement)) return;
     if (target.id === 'altimeter-close') { dialog.close(); return; }
-    if (!latest || reviewing) return;
+    if (!latest || reviewing || readOnly) return;
     if (target.id === 'altimeter-qnh') request(latest.altimeter_qnh_pa);
     if (target.id === 'altimeter-qfe') request(latest.altimeter_qfe_pa);
     if (target.id === 'altimeter-std') request(STANDARD_PA);
@@ -245,11 +245,11 @@ export function createPressureAltimeterPanel(options: PressureAltimeterOptions):
   render();
 
   return {
-    update(state, inReview) {
+    update(state, inReview, locked = false) {
       if (disposed) return;
       const wasReviewing = reviewing;
-      latest = indication(state); reviewing = inReview;
-      if (reviewing || !latest) {
+      latest = indication(state); reviewing = inReview; readOnly = locked;
+      if (reviewing || readOnly || !latest) {
         requested_pa = null;
         if (dialog.open) dialog.close();
       }

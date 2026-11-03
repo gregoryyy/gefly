@@ -6,6 +6,13 @@ export const ENGINE_FIELDS = [
   'oil_pressure_pa', 'oil_temp_k', 'egt_k', 'fuel_flow_m3ps',
   'fuel_left_m3', 'fuel_right_m3', 'ap_mode', 'ap_heading_target_rad', 'ap_aileron_norm',
 ];
+export const ENGINE_SWITCH_FIELDS = ['engine_running', 'engine_command_on'];
+
+/** Separate optional extension: older 13-field engine instruments remain usable. */
+export function engineSwitchFields(values) {
+  if (!values || values.length !== 2 || !Array.from(values).every(value => value === 0 || value === 1)) return {};
+  return { engine_running: values[0], engine_command_on: values[1] };
+}
 
 export function normalizedHeading(heading_rad) {
   if (!Number.isFinite(heading_rad)) return null;

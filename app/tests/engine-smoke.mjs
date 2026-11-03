@@ -109,6 +109,38 @@ try {
   assert.match(await page.locator('#offset-value').textContent(), /[0-9.]+% left/);
   checks.push('engine telemetry, display units and explicit roll-offset wording');
 
+  assert.equal(initial.engine_running, 1); assert.equal(initial.engine_command_on, 1);
+  // Select a stopped-engine command while paused: neither state nor time advances.
+  await page.locator('#scene').focus();
+  await page.evaluate(() => document.dispatchEvent(new KeyboardEvent('keydown', { code:'KeyE', bubbles:true })));
+  assert.equal(await page.locator('#engine-switch').getAttribute('aria-pressed'), 'true', 'synthetic E ignored');
+  await page.keyboard.down('e'); await page.keyboard.down('e'); await page.keyboard.up('e');
+  await page.waitForFunction(() => document.querySelector('#engine-switch').getAttribute('aria-pressed')==='false');
+  const pausedEngine = await stats(); await page.waitForTimeout(150);
+  assert.equal((await stats()).step, pausedEngine.step);
+  assert.equal((await state()).engine_running, 1, 'paused switch request does not invent changed physics');
+  await resume(); await page.waitForFunction(() => window.__engineStates.at(-1).engine_running===0);
+  const stoppedEngine = await state(); observations.engineStopped = stoppedEngine;
+  assert.equal(stoppedEngine.engine_command_on,0);
+  assert.equal(stoppedEngine.mixture_auto,initial.mixture_auto);
+  assert(stoppedEngine.prop_radps > 0, 'native propeller can windmill after ignition off');
+  await page.locator('#scene').focus(); await page.keyboard.press('Control+e');
+  assert.equal(await page.locator('#engine-switch').getAttribute('aria-pressed'), 'false');
+  await page.locator('#flight-menu > summary').click(); await page.keyboard.press('e');
+  assert.equal(await page.locator('#engine-switch').getAttribute('aria-pressed'), 'false');
+  await page.locator('#flight-menu > summary').click();
+  await page.locator('#throttle').focus(); await page.keyboard.press('e');
+  assert.equal(await page.locator('#engine-switch').getAttribute('aria-pressed'), 'false', 'editing E ignored');
+  await page.locator('#engine-switch').click();
+  await page.waitForFunction(() => window.__engineStates.at(-1).engine_running===1 && window.__engineStates.at(-1).engine_command_on===1);
+  await page.locator('#review-flight').click(); const engineReviewStats = await stats();
+  assert(await page.locator('#engine-switch').isDisabled());
+  await page.locator('#scene').focus(); await page.keyboard.press('e');
+  await page.waitForTimeout(100); assert.equal((await stats()).step, engineReviewStats.step);
+  await page.locator('#review-exit').click(); await reset();
+  assert.equal((await state()).engine_command_on, 1);
+  checks.push('E and cockpit ignition/starter switch: actual power loss, paused commands, windmilling, guarded shortcuts, recorded read-only and restart');
+
   await resume();
   for (const [key, throttle] of [['Digit1',.1],['Digit5',.5],['Digit9',.9],['Numpad3',.3]]) {
     await page.locator('#scene').focus(); await page.keyboard.press(key);

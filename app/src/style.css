@@ -522,12 +522,12 @@ body .engine-dialog, body .autopilot-dialog, body .radio-nav-dialog, body .navig
 .cockpit-fitted .flight-deck { display: flex; flex-direction: column; align-items: center; padding: 10px 12px 14px; }
 .cockpit-fitted .deck-heading { width: 100%; flex: 0 0 auto; }
 .cockpit-fitted .instruments {
-  zoom: var(--cockpit-scale, 1); width: 1256px; max-width: none; height: auto;
+  zoom: var(--cockpit-scale, 1); width: 1400px; max-width: none; height: 344px;
   flex: 0 0 auto; flex-direction: row; flex-wrap: nowrap; align-items: stretch; gap: 12px; margin: 0;
 }
 .cockpit-fitted .primary-instruments {
-  display: grid; flex: 0 0 608px; width: 608px; height: auto; padding: 0;
-  grid-template-columns: repeat(4, 146px); grid-template-rows: auto auto; gap: 10px 8px;
+  display: grid; flex: 0 0 762px; width: 762px; height: 344px; padding: 0;
+  grid-template-columns: repeat(5, 146px); grid-template-rows: repeat(2, 170px); gap: 4px 8px;
 }
 .cockpit-fitted .primary-instruments #six-pack,
 .cockpit-fitted .primary-instruments .six-pack,
@@ -537,17 +537,26 @@ body .engine-dialog, body .autopilot-dialog, body .radio-nav-dialog, body .navig
 .cockpit-fitted .primary-instruments .navigation-gauge { padding: 8px 3px 0; }
 .cockpit-fitted .primary-instruments .six-pack .gauge canvas,
 .cockpit-fitted .navigation-gauge-face { width: 140px; height: 140px; max-width: none; margin: 0 auto; }
-.cockpit-fitted .six-pack .gauge-readout b { font-size: 20px; min-height: 23px; }
-.cockpit-fitted .six-pack .gauge-readout span { font-size: 7px; min-height: 10px; letter-spacing: .6px; }
+.cockpit-fitted .six-pack .gauge-readout b { font-size: 16px; min-height: 19px; }
+.cockpit-fitted .six-pack .gauge-readout span { font-size: 6px; min-height: 8px; letter-spacing: .5px; }
 .cockpit-fitted .six-pack #turn-rate { font-size: 16px; }
-.cockpit-fitted .pressure-altimeter #altimeter-open { font-size: 9px; padding: 4px 9px; margin-top: 4px; }
+.cockpit-fitted .primary-instruments::before { width: 454px; }
+.cockpit-fitted #nav1-gauge { grid-column: 4; grid-row: 1; }
+.cockpit-fitted #nav2-gauge { grid-column: 5; grid-row: 1; }
+.cockpit-fitted #bearing-gauge { grid-column: 4; grid-row: 2; }
+.cockpit-fitted #rpm-gauge { grid-column: 5; grid-row: 2; }
+.cockpit-fitted .pressure-altimeter { position: relative; }
+.cockpit-fitted .pressure-altimeter .gauge-readout b { text-align: left; padding-left: 5px; }
+.cockpit-fitted .pressure-altimeter #altimeter-open { position: absolute; top: 147px; right: 5px; font-size: 7px; padding: 2px 4px; margin: 0; }
+.cockpit-fitted .pressure-altimeter .altimeter-availability { position: absolute; inset: 148px 2px auto; background: var(--instrument-housing); margin: 0; }
+
 .cockpit-fitted .primary-instruments .navigation-obs-controls { grid-template-columns: 28px minmax(0, 1fr) 28px; gap: 3px; }
 .cockpit-fitted .primary-instruments .navigation-obs-controls button { grid-row: auto; width: auto; height: 27px; min-height: 27px; padding: 0; }
 .cockpit-fitted .primary-instruments .navigation-obs-knob { grid-column: auto; grid-row: auto; }
 .cockpit-fitted .primary-instruments .navigation-obs-knob output { font-size: 14px; }
 .cockpit-fitted .engine-controls {
-  display: flex; flex: 0 0 200px; width: 200px; height: auto; padding: 8px;
-  flex-direction: column; justify-content: flex-start; gap: 8px;
+  display: flex; flex: 0 0 200px; width: 200px; height: auto; padding: 6px 8px;
+  flex-direction: column; justify-content: flex-start; gap: 6px;
 }
 .cockpit-fitted .engine-controls #autopilot-systems { width: 100%; flex: 0 0 auto; }
 .cockpit-fitted .engine-controls .autopilot-target { grid-template-columns: auto 28px minmax(0, 1fr) 28px; }
@@ -555,12 +564,12 @@ body .engine-dialog, body .autopilot-dialog, body .radio-nav-dialog, body .navig
 .cockpit-fitted .vertical-config-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .cockpit-fitted .vertical-config-controls .config-heading,
 .cockpit-fitted .vertical-config-controls .pitch-trim-heading { min-height: 32px; flex-direction: column; }
-.cockpit-fitted .flap-slider, .cockpit-fitted #flap-control, .cockpit-fitted #pitch-trim-control { height: 120px; }
+.cockpit-fitted .flap-slider, .cockpit-fitted #flap-control, .cockpit-fitted #pitch-trim-control { height: 100px; }
 .cockpit-fitted .flap-keycaps button, .cockpit-fitted .vertical-config-controls .pitch-trim-buttons button { min-height: 24px; font-size: 11px; padding: 3px 1px; }
 .cockpit-fitted .brake-controls { margin-top: auto; }
 .cockpit-fitted .brake-controls .control-key { font-size: 11px; padding: 9px 4px; }
-.cockpit-fitted .avionics-units { flex: 0 0 424px; width: 424px; height: auto; grid-template-columns: 200px 212px; gap: 12px; padding: 0; }
-.cockpit-fitted .avionics-stack { display: flex; height: auto; }
+.cockpit-fitted .avionics-units { flex: 0 0 212px; width: 212px; height: auto; grid-template-columns: 212px; gap: 0; padding: 0; }
+.cockpit-fitted .avionics-stack { display: flex; flex: 0 0 190px; width: 190px; height: auto; }
 .cockpit-fitted .avionics-stack #engine-systems { flex: 1; width: auto; height: auto; }
 .cockpit-fitted .avionics-stack .engine-panel { width: 100%; }
 .cockpit-fitted .avionics-stack .engine-content { height: 100%; }
@@ -573,8 +582,11 @@ body .engine-dialog, body .autopilot-dialog, body .radio-nav-dialog, body .navig
 .cockpit-fitted #radio-nav-systems .radio-receiver { flex: 0 0 auto; }
 .cockpit-fitted #radio-nav-systems .nav-demo { margin-top: auto; }
 @media (max-width: 620px) {
-  .cockpit-fitted .instruments { width: 454px; flex-direction: column; align-items: stretch; gap: 10px; }
-  .cockpit-fitted .primary-instruments { display: block; flex: 0 0 auto; width: 454px; }
+  .cockpit-fitted .instruments { display: grid; width: 454px; height: auto; grid-template-columns: 1fr 1fr; align-items: stretch; gap: 8px 12px; }
+  .cockpit-fitted .primary-instruments, .cockpit-fitted .engine-controls { grid-column: 1 / -1; }
+  .cockpit-fitted .primary-instruments { grid-row: 1; }
+  .cockpit-fitted .engine-controls { grid-row: 2; }
+  .cockpit-fitted .primary-instruments { display: block; flex: 0 0 auto; width: 454px; height: auto; }
   .cockpit-fitted .primary-instruments::before { width: 100%; }
   .cockpit-fitted .primary-instruments #six-pack { display: block; }
   .cockpit-fitted .primary-instruments .six-pack { display: grid; width: 454px; max-width: none; grid-template-columns: repeat(3, 146px); gap: 8px; }
@@ -584,9 +596,9 @@ body .engine-dialog, body .autopilot-dialog, body .radio-nav-dialog, body .navig
   .cockpit-fitted .engine-controls #autopilot-systems { grid-column: 1; grid-row: 1; }
   .cockpit-fitted .engine-controls .vertical-config-controls { grid-column: 2; grid-row: 1 / 3; }
   .cockpit-fitted .engine-controls .brake-controls { grid-column: 1; grid-row: 2; margin: 0; }
-  .cockpit-fitted .avionics-units { display: grid; flex: 0 0 auto; width: 454px; max-width: none; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .cockpit-fitted .avionics-stack { display: block; }
-  .cockpit-fitted .avionics-units button.engine-open,
+  .cockpit-fitted .avionics-units { display: block; flex: 0 0 auto; width: auto; max-width: none; grid-column: 2; grid-row: 3; }
+  .cockpit-fitted .avionics-stack { display: block; width: auto; grid-column: 1; grid-row: 3; }
+  .cockpit-fitted .avionics-stack button.engine-open,
   .cockpit-fitted .avionics-units button.radio-nav-open { padding: 10px; font-size: 12px; }
 }
 @media (max-width: 620px) {
@@ -605,12 +617,13 @@ body .engine-dialog, body .autopilot-dialog, body .radio-nav-dialog, body .navig
 }
 /* Collapse the secondary units before their columns would make the main panel unreadable. */
 @media (min-width: 621px) and (max-width: 900px) {
-  .cockpit-fitted .instruments { display: grid; width: 820px; grid-template-columns: 608px 200px; grid-template-rows: auto auto; gap: 10px 12px; }
+  .cockpit-fitted .instruments { display: grid; width: 974px; height: auto; grid-template-columns: 762px 200px; grid-template-rows: 344px auto; gap: 8px 12px; }
   .cockpit-fitted .primary-instruments { grid-column: 1; grid-row: 1; }
   .cockpit-fitted .engine-controls { grid-column: 2; grid-row: 1; }
-  .cockpit-fitted .avionics-units { grid-column: 1 / -1; grid-row: 2; width: 820px; max-width: none; grid-template-columns: 1fr 1fr; }
-  .cockpit-fitted .avionics-stack { display: block; }
-  .cockpit-fitted .avionics-units button.engine-open,
+  .cockpit-fitted .avionics-stack { grid-column: 1; grid-row: 2; }
+  .cockpit-fitted .avionics-units { display: block; grid-column: 2; grid-row: 2; width: auto; max-width: none; }
+  .cockpit-fitted .avionics-stack { display: block; width: auto; grid-column: 1; grid-row: 2; }
+  .cockpit-fitted .avionics-stack button.engine-open,
   .cockpit-fitted .avionics-units button.radio-nav-open { padding: 9px; font-size: 12px; }
 }
 #recorded-control-details { display: block; }
@@ -624,4 +637,42 @@ body .engine-dialog, body .autopilot-dialog, body .radio-nav-dialog, body .navig
 .cockpit-fitted .engine-controls .autopilot-inop { margin-top: 5px; }
 .cockpit-fitted .engine-controls .autopilot-inop button { padding: 3px 2px; }
 .cockpit-fitted .vertical-config-controls .config-heading,
-.cockpit-fitted .vertical-config-controls .pitch-trim-heading { min-height: 40px; height: 40px; }
+.cockpit-fitted .vertical-config-controls .pitch-trim-heading { min-height: 28px; height: 28px; }
+
+/* Fixed line boxes keep the AP unit on the same scale even at fractional zoom. */
+.cockpit-fitted .engine-controls .autopilot-content { height: 140px; padding: 4px 6px; }
+.cockpit-fitted .engine-controls .autopilot-heading { height: 12px; line-height: 12px; }
+.cockpit-fitted .engine-controls #ap-status { height: 22px; line-height: 12px; }
+.cockpit-fitted .engine-controls .autopilot-modes button { height: 22px; line-height: 12px; }
+.cockpit-fitted .engine-controls .autopilot-target { height: 27px; }
+.cockpit-fitted .engine-controls .autopilot-target button,
+.cockpit-fitted .engine-controls .autopilot-target input { height: 27px; line-height: 13px; }
+.cockpit-fitted .engine-controls .autopilot-inop button { height: 25px; line-height: 9px; }
+
+.flap-keycaps button kbd, .pitch-trim-buttons button kbd { display: inline-block; min-width: 6px; padding: 0 1px; font-size: 5.5px; line-height: 7px; color: #f0d4a2; border: 1px solid #85989f66; border-radius: 3px; }
+.cockpit-fitted .flap-keycaps button, .cockpit-fitted .vertical-config-controls .pitch-trim-buttons button { white-space: nowrap; min-height: 12px; height: 12px; padding: 0 1px; font-size: 4px; }
+
+/* A compact readout band removes the extra vertical gap between round faces. */
+.cockpit-fitted .primary-instruments .six-pack-gauge,
+.cockpit-fitted .primary-instruments .navigation-gauge { padding-top: 5px; }
+.cockpit-fitted .six-pack .gauge-readout { display: flex; align-items: baseline; justify-content: center; gap: 4px; height: 18px; margin-top: 2px; white-space: nowrap; }
+.cockpit-fitted .six-pack .gauge-readout b { font-size: 14px; min-height: 0; line-height: 16px; }
+.cockpit-fitted .six-pack .gauge-readout span { font-size: 5px; min-height: 0; margin: 0; line-height: 8px; letter-spacing: .1px; }
+.cockpit-fitted .six-pack #turn-rate { font-size: 12px; padding: 0; }
+.cockpit-fitted .pressure-altimeter .gauge-readout { justify-content: flex-start; }
+.cockpit-fitted .pressure-altimeter .gauge-readout span { display: block; position: absolute; top: 162px; left: 5px; right: 5px; text-align: center; font-size: 5px; line-height: 6px; }
+.cockpit-fitted .primary-instruments .navigation-obs-controls { grid-template-columns: 19px minmax(0, 1fr) 19px; height: 19px; gap: 2px; }
+.cockpit-fitted .primary-instruments .navigation-obs-controls button { min-height: 19px; height: 19px; font-size: 12px; }
+.cockpit-fitted .primary-instruments .navigation-obs-knob { display: flex; align-items: baseline; justify-content: center; gap: 3px; }
+.cockpit-fitted .primary-instruments .navigation-obs-knob span { font-size: 5px; }
+.cockpit-fitted .primary-instruments .navigation-obs-knob output { font-size: 11px; }
+.cockpit-fitted .primary-instruments .navigation-aux-readout { height: 19px; font-size: 11px; }
+.cockpit-fitted .primary-instruments .six-pack-gauge::after, .cockpit-fitted .primary-instruments .navigation-gauge::after { top: 5px; }
+.cockpit-fitted .brake-controls .control-key { height: 22px; min-height: 22px; padding: 2px 4px; font-size: 8px; }
+
+.cockpit-fitted #radio-nav-systems .radio-nav-content { padding: 7px; }
+.cockpit-fitted #radio-nav-systems .radio-receiver { padding: 4px 0 3px; }
+.cockpit-fitted #radio-nav-systems .radio-heading { margin-bottom: 4px; }
+.cockpit-fitted #radio-nav-systems .radio-receiver-title { margin-bottom: 3px; }
+.cockpit-fitted #radio-nav-systems .radio-frequency-row { margin-bottom: 4px; }
+.cockpit-fitted #radio-nav-systems .nav-course { margin-top: 3px; }

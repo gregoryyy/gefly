@@ -58,6 +58,9 @@ int g_trim_ok = 0;
 double g_trim_throttle = 0.0;
 double g_trim_pitch = 0.0;
 int g_mixture_auto = 1;
+bool g_engine_switch_controlled = false;
+bool g_engine_command_on = true;
+bool g_engine_start_requested = false;
 int g_ap_mode = 0;
 double g_ap_heading_target = 0.0;
 
@@ -128,6 +131,7 @@ int load_model(double dt_s, double lat_rad, double lon_rad, double heading_rad) 
     return kErrLoad;
   }
   g_mixture_auto = 1; g_ap_mode = 0; g_ap_heading_target = std::fmod(heading_rad, 2.0 * kPi);
+  g_engine_switch_controlled = false; g_engine_command_on = true; g_engine_start_requested = false;
   if (g_ap_heading_target < 0) g_ap_heading_target += 2.0 * kPi;
   f.SetPropertyValue("systems/automatic-mixture-enabled", 1.0);
   configure_autopilot();
@@ -274,6 +278,34 @@ EMSCRIPTEN_KEEPALIVE int gf_set_engine_controls(double mixture_norm, double mixt
   return 0;
 }
 
+// Generic ignition/starter request, not a complete installed starting procedure.
+// Never call InitRunning here: it forces RPM and rewrites the pilot's mixture.
+EMSCRIPTEN_KEEPALIVE int gf_set_engine_running(double command_on) {
+  if (!g_fdm) return kErrNotInit;
+  if (!finite_all({command_on})) return kErrNonFinite;
+  if (command_on != 0 && command_on != 1) return kErrRange;
+  if (!g_fdm->GetPropertyManager()->HasNode("propulsion/engine[0]/set-running")) return kErrLoad;
+  const bool next_on = command_on == 1;
+  if (g_engine_switch_controlled && next_on == g_engine_command_on) return 0;
+  g_engine_switch_controlled = true; g_engine_command_on = next_on;
+  g_fdm->SetPropertyValue("propulsion/magneto_cmd", next_on ? 3 : 0);
+  g_engine_start_requested = next_on && g_fdm->GetPropertyValue("propulsion/engine[0]/set-running") == 0;
+  g_fdm->SetPropertyValue("propulsion/starter_cmd", g_engine_start_requested ? 1 : 0);
+  return 0;
+}
+
+// Actual native combustion-running flag and distinct requested ignition state.
+EMSCRIPTEN_KEEPALIVE double* gf_engine_switch_state() {
+  static double values[2];
+  if (!g_fdm) {
+    for (double& value : values) value = std::numeric_limits<double>::quiet_NaN();
+    return values;
+  }
+  values[0] = g_fdm->GetPropertyValue("propulsion/engine[0]/set-running") != 0 ? 1 : 0;
+  values[1] = g_engine_command_on ? 1 : 0;
+  return values;
+}
+
 EMSCRIPTEN_KEEPALIVE int gf_set_autopilot(double mode, double target_true_rad) {
   if (!g_fdm) return kErrNotInit;
   if (!finite_all({mode, target_true_rad})) return kErrNonFinite;
@@ -291,6 +323,13 @@ EMSCRIPTEN_KEEPALIVE int gf_step() {
   if (!g_fdm) return kErrNotInit;
   configure_autopilot();
   if (!g_fdm->Run()) return kErrRun;
+  // Release a requested starter as soon as the native model catches, even if no
+  // further browser input arrives. Subsequent fuel starvation does not crank it
+  // again automatically; a fresh off/on request is needed.
+  if (g_engine_start_requested && g_fdm->GetPropertyValue("propulsion/engine[0]/set-running") != 0) {
+    g_fdm->SetPropertyValue("propulsion/starter_cmd", 0);
+    g_engine_start_requested = false;
+  }
   g_steps += 1.0;
   read_state();
   hash_state();
