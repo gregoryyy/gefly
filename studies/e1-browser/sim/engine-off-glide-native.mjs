@@ -117,10 +117,62 @@ for (const initialTasMps of [35, 45]) {
 const repeated = runCase(35, 'ignition-off-idle');
 const original = cases.find(c => c.initial_tas_mps === 35 && c.mode === 'ignition-off-idle');
 assert.deepEqual(repeated, original, 'reinitializing repeats the complete fixed-step trajectory, digest and diagnostics exactly');
+// Maintain the ignition / fuel / native-starter contract alongside aerodynamic
+// changes. A better glide must not be obtained by secretly keeping combustion on
+// or replacing native shaft dynamics with an imposed RPM value.
+const runRestart = () => {
+  assert.equal(M._gf_init(DT_S, 49.96 * DEG, 8.643 * DEG, 2500, 82 * DEG, 35), 0);
+  assert.equal(M._gf_trim_status(), 1);
+  assert.equal(M._gf_set_inputs(0, 0, 0, 0), 0);
+  assert.equal(M._gf_set_autopilot(2, 82 * DEG), 0);
+  assert.equal(M._gf_set_autopilot_vertical(0, 0), 0);
+  assert.equal(M._gf_set_engine_controls(1, 0), 0);
+  assert.equal(M._gf_set_engine_running(0), 0);
+  const advance = seconds => {
+    for (let step = 0; step < Math.round(seconds / DT_S); step++) {
+      assert.equal(M._gf_step(), 0);
+      read(M._gf_state, 14);
+    }
+  };
+  const snapshot = () => ({ state: read(M._gf_state, 14),
+    propeller: read(M._gf_propeller_state, 4), engine: read(M._gf_engine_switch_state, 2),
+    controls: read(M._gf_control_state, 7), step: M._gf_step_index(),
+    digest: M.UTF8ToString(M._gf_digest_hex()) });
+  advance(60);
+  const coast = snapshot();
+  assert.equal(coast.engine[0], 0, 'idle shutdown really removes combustion');
+  for (let i = 0; i < 100; i++) read(M._gf_propeller_state, 4);
+  assert.deepEqual(snapshot(), coast, 'diagnostic reads change neither shaft/state nor step/digest');
+  assert.equal(M._gf_set_engine_controls(0, 0), 0);
+  const beforeStart = read(M._gf_propeller_state, 4);
+  assert.equal(M._gf_set_engine_running(1), 0);
+  assert.deepEqual(read(M._gf_propeller_state, 4), beforeStart,
+    'ignition/starter request itself does not force a new RPM or thrust');
+  advance(2);
+  assert.deepEqual(read(M._gf_engine_switch_state, 2), [0, 1],
+    'starter request with mixture cutoff cannot create combustion or rewrite fuel');
+  assert.equal(M._gf_set_engine_controls(1, 0), 0);
+  assert.equal(M._gf_set_inputs(0, 0, 0, .6), 0);
+  advance(20);
+  const restarted = snapshot();
+  assert.deepEqual(restarted.engine, [1, 1], 'fuel and native starter restore combustion');
+  assert(restarted.propeller[0] > 0 && restarted.propeller[1] > 0 && restarted.propeller[3] > 0,
+    'restart restores actual positive thrust, shaft power and rotation');
+  assert.equal(M._gf_set_engine_running(0), 0);
+  advance(2);
+  const stoppedAgain = snapshot();
+  assert.deepEqual(stoppedAgain.engine, [0, 0], 'a second shutdown still removes combustion');
+  return { coast, restarted, stopped_again: stoppedAgain };
+};
+const restart = runRestart();
+assert.deepEqual(runRestart(), restart, 'fresh reset repeats complete shutdown / cutoff / restart trajectory exactly');
 const nominalCases = cases.filter(c => c.status === 'pass').length;
 const unacceptedCases = cases.length - nominalCases;
 console.log(JSON.stringify({ result: unacceptedCases ? 'pass-with-known-model-limitation' : 'pass',
   accepted_nominal_cases: nominalCases, not_accepted_model_fixtures: unacceptedCases, scope: 'generic c172x native windmilling and energy regression; no aircraft glide-ratio acceptance',
   wasm_sha256: createHash('sha256').update(readFileSync(new URL('./dist/jsbsim.wasm', import.meta.url))).digest('hex'),
   diagnostic: '60–120 s after shutdown; retracted flaps, native longitudinal pitch trim, lateral leveling only; retained trim-throttle except explicit idle case; spherical horizontal range and standard-g energy-height diagnostic',
-  repeat: { initial_tas_mps: 35, mode: 'ignition-off-idle', final_digest_fnv1a64: repeated.final_digest_fnv1a64, exact_match: true }, cases }, null, 2));
+  repeat: { initial_tas_mps: 35, mode: 'ignition-off-idle', final_digest_fnv1a64: repeated.final_digest_fnv1a64, exact_match: true },
+  restart: { exact_reset_match: true, coast_prop_radps: restart.coast.propeller[3],
+    restored_thrust_n: restart.restarted.propeller[0],
+    final_digest_fnv1a64: restart.stopped_again.digest }, cases }, null, 2));
