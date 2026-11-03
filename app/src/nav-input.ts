@@ -23,8 +23,10 @@ export function obsDragDelta_deg(startX: number, clientX: number, applied_deg: n
 
 /** Next standby channel for the − / + buttons, clamped to the supported band. */
 export function stepStandby_khz(kind: RadioKind, current_khz: number, direction: -1 | 1): number {
-  const step = kind === 'com' ? 25 : 50, min = kind === 'com' ? 118000 : 108000, max = kind === 'com' ? 136975 : 117950;
-  return Math.max(min, Math.min(max, current_khz + direction * step));
+  const step = kind === 'com' ? 5 : 50, min = kind === 'com' ? 118000 : 108000, max = kind === 'com' ? 136990 : 117950;
+  let next = Math.max(min, Math.min(max, current_khz + direction * step));
+  if (kind === 'com' && next % 25 === 20) next = Math.max(min, Math.min(max, next + direction * step));
+  return next;
 }
 
 /**

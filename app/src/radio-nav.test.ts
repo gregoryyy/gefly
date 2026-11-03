@@ -37,10 +37,10 @@ test('spherical inbound bearing is not a reciprocal outbound radial and retains 
   for (const invalid of [null, { ...north, alt_msl_m: Infinity }, { ...north, lat_rad: NaN }]) assert(!bearingDistanceIndication(demo, invalid).valid);
 });
 
-test('legacy channel boundaries, spacing, swap and immutable snapshots', () => {
-  for (const frequency of [118000, 121500, 136975]) assert(validFrequency('com', frequency));
+test('COM channel-name boundaries, spacing, swap and immutable snapshots', () => {
+  for (const frequency of [118000, 118005, 118405, 121500, 136975, 136990]) assert(validFrequency('com', frequency));
   for (const frequency of [108000, 108050, 113800, 117950]) assert(validFrequency('nav', frequency));
-  for (const frequency of [117975, 136980, 137000, NaN, Infinity, 118001]) assert(!validFrequency('com', frequency));
+  for (const frequency of [117975, 136995, 137000, NaN, Infinity, 118001, 118020]) assert(!validFrequency('com', frequency));
   for (const frequency of [107950, 117975, 118000, NaN, 113825]) assert(!validFrequency('nav', frequency));
   const tuned = tuneStandby(DEFAULT_RADIO_NAV, 'com', 122800);
   const swapped = swapRadio(tuned, 'com');
@@ -118,7 +118,7 @@ test('second COM/NAV receiver tunes, swaps and selects OBS independently', () =>
   config = setObs(config, -1, 2);
   assert.equal(config.radio_obs2_deg, 359); assert.equal(recorded.radio_obs2_deg, 180);
   assert.equal(navigationIndication(recorded, north, 2).to_from, 'TO');
-  assert.throws(() => tuneStandby(config, 'com', 136980, 2), RangeError);
+  assert.throws(() => tuneStandby(config, 'com', 136995, 2), RangeError);
   assert.throws(() => tuneStandby(config, 'nav', 117975, 2), RangeError);
   assert(!validRadioNavSnapshot({ ...config, radio_obs2_deg: 360 }));
   assert(!validRadioNavSnapshot({ ...config, radio_nav2_active_khz: 113825 }));

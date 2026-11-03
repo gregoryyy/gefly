@@ -388,3 +388,20 @@ test('altitude alert extension is optional atomic data, not an invented zero eve
   assert.equal((states.at(-1) as Record<string,number>).kap_alert_sequence,2);
   worker.emit({...state,kap_alert_state:1}); assert.match(errors.at(-1)!,/invalid state/);
 });
+
+test('runway start uses real terrain, zero-speed IC and brake hold without inherited EDDF approach setup', t => {
+  const {session,errors}=fixture(t);
+  const runway={airport:'EDFE',runway:'26',lat_rad:.872,lon_rad:.15,heading_rad:4.64};
+  session.reset(undefined,'eddf-ils',runway);
+  const worker=MockWorker.instances[0],init=worker.messages[0];
+  assert.equal(init.runway_start,true); assert.equal(init.terrain,true); assert.equal(init.streaming_terrain,true);
+  assert.equal(init.landing_preset,undefined); assert.equal(init.navigation,undefined);
+  assert.equal((init.ic as Record<string,number>).tas_mps,0);
+  runway.heading_rad=1; assert.equal((init.ic as Record<string,number>).heading_rad,4.64);
+  worker.emit({...ready,trim:{throttle:0,pitch_trim:0,status:0}});session.start();
+  const input=worker.messages.find(m=>m.type==='input')!;
+  assert.equal(input.brake_norm,1);assert.equal(input.throttle,0);assert.deepEqual(errors,[]);
+  const count=MockWorker.instances.length;
+  session.reset(undefined,'edfe',{...runway,runway:'00'});assert.equal(MockWorker.instances.length,count);
+  session.reset(undefined,'edfe');assert.equal(MockWorker.instances.at(-1)!.messages[0].runway_start,undefined);
+});

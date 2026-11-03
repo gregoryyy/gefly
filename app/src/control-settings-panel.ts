@@ -16,6 +16,7 @@ interface ControlSettingsPanelOptions {
 /** Session-only input gains. Aircraft dynamics and study assists are unchanged. */
 export function createControlSettingsPanel(options: ControlSettingsPanelOptions): {
   open(): void;
+  setSettings(settings: ControlSettings): void;
   dispose(): void;
   isOpen(): boolean;
 } {
@@ -57,6 +58,9 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
       Centered touchpad controls
     </label>
     <p class="control-settings-note" id="centered-touchpad-note">Flight-view center is neutral. Hold-drag sets the view; release keeps it. Escape resets the view.</p>
+    <label class="control-settings-note control-settings-toggle"><input id="vector-scenery" type="checkbox"> Vector map and terrain · EDFE region</label>
+    <label class="control-settings-note control-settings-toggle"><input id="practice-papi" type="checkbox"> Practice PAPI / runway lights · illustrative</label>
+    <p class="control-settings-note">Vector surfaces use OpenStreetMap with public terrain. Practice lights are generic aids, not an installed EDFE lighting survey.</p>
     <div class="control-settings-presets">
       <span>Quick presets</span>
       <button type="button" id="settings-gentle">Gentle</button>
@@ -77,6 +81,7 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
   const toggles = ([
     ['coordinatedRudder', 'coordinated-rudder'],
     ['centeredTouchpad', 'centered-touchpad'],
+    ['vectorScenery', 'vector-scenery'], ['practicePapi', 'practice-papi'],
   ] as const).map(([setting, id]) => ({ setting, input: dialog.querySelector<HTMLInputElement>(`#${id}`)! }));
 
   function render(): void {
@@ -109,7 +114,7 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
   function onClick(event: MouseEvent): void {
     const target = event.target;
     if (!(target instanceof HTMLButtonElement)) return;
-    const preferences = { coordinatedRudder: settings.coordinatedRudder ?? false, centeredTouchpad: settings.centeredTouchpad ?? false };
+    const preferences = { vectorScenery: settings.vectorScenery ?? false, practicePapi: settings.practicePapi ?? false, coordinatedRudder: settings.coordinatedRudder ?? false, centeredTouchpad: settings.centeredTouchpad ?? false };
     if (target.id === 'settings-gentle') change({ ...GENTLE_CONTROL_SETTINGS, ...preferences });
     if (target.id === 'settings-default') change({ ...DEFAULT_CONTROL_SETTINGS, ...preferences });
     if (target.id === 'settings-close') dialog.close();
@@ -126,6 +131,7 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
   render();
 
   return {
+    setSettings(next) { if (!disposed) { settings = { ...next }; render(); } },
     open() {
       if (disposed || dialog.open) return;
       options.onOpen();

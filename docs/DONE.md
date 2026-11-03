@@ -3,6 +3,39 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 14:12 — Airport surfaces, runway play, COM and vector scenery
+
+TODO: 2.0.43, 2.0.62, 2.0.64–66 delivered for EDFE; 2.0.63 partially delivered.
+Agent: Codex orchestrator/native/UI integration; airport_scenery and airport_com
+implemented disjoint scenery/data/UI slices and independently reviewed root integration scopes.
+R-AIRPORT-1/2, R-PLAY-1, R-COMM-2.
+
+**Implementation notes**
+
+Add sharp runway/markings/taxiway/apron surfaces, sourced OSM vector surroundings,
+shared Options/map scenery choice and optional clearly illustrative practice lights.
+Map Start prepares EDFE08/26 on native gear at rest, idle engine and parking hold;
+Stop retains recorded Review. Add hash-pinned COM records, map selection/filters,
+explicit standby/swap and valid 8.33 channel-name handling. Preserve source credits.
+Build, focused model/session tests, full app unit/runtime checks, actual native
+public-terrain starts/holding/takeoffs in both directions and end-to-end Chrome
+start/stop/COM/vector/replay checks pass. Visual runway screenshot inspected.
+Reviews found/fixed coarse-timestep settling, inherited EDDF setup, vector setting
+inconsistency and flat-study overlay leakage. Cross-provider peer remains pending.
+
+**Deviations**
+
+Runway geometry is approximate and prepared only at EDFE. No surveyed pavement,
+installed PAPI/lighting/obstacle verification, wind-responsive windsock, current
+COM service, ATC or automated circuit/landing assessment. Generic practice lights
+remain separate from real equipment. Native aircraft fidelity is unchanged.
+
+**Insights**
+
+Validate the stationary gear state before presenting time zero, keep visual detail
+independent of collision data, and preserve channel designators rather than rounding
+an 8.33 service into a different 25 kHz channel.
+
 ## 2026-11-03 12:45 — Bounded panel zoom and refreshed flight image
 
 TODO: 2.0.61; R-PANEL-1/R-VIEW-1. Agent: Codex, direct implementation.

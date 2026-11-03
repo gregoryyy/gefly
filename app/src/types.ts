@@ -156,16 +156,19 @@ export interface FlightState extends Partial<Record<keyof AltitudeAlertSnapshot,
 }
 export interface Controls { elevator: number; aileron: number; rudder: number; throttle: number; flap_norm?: number; brake_norm?: number; mixture_norm?: number; mixture_auto?: boolean; pitch_trim_norm?: number; engine_running?: boolean; pilot_override?: boolean }
 export interface FlightScene {
+  setSceneryMode?(vector: boolean): void;
+  setPracticePapi?(enabled: boolean): void;
   setTerrainTiles?(tiles: readonly TerrainGrid[]): void;
   prepareRecording?(states: Iterable<Readonly<FlightState>>): Promise<void>;
   update(state: FlightState, view: 'cockpit' | 'chase', look?: { yaw_rad: number; pitch_rad: number; fov_rad?: number }): void;
   dispose(): void;
 }
+export interface RunwayStart { airport: string; runway: string; lat_rad: number; lon_rad: number; heading_rad: number }
 export type AirborneSite = 'edfe' | 'taunus' | 'eddf-ils' | 'darmstadt' | 'odenwald' | 'spessart';
 export interface FlightSession {
   captureAutopilot(): void;
   setSimulationRate(rate: number): void;
   setKap140(command: KapCommand): void;
   setNavigation(config: Pick<RadioNavSnapshot, "radio_nav_active_khz" | "radio_obs_deg" | "radio_demo_enabled"> & Partial<Pick<RadioNavSnapshot, "radio_nav2_active_khz" | "radio_obs2_deg">>): void;
-  start(): void; pause(): void; reset(landingPreset?: LandingPreset, site?: AirborneSite): void; input(controls: Controls): void; setAltimeter(setting_pa: number): void; setAutopilot(mode: 0|1|2, target_heading_rad?: number): void; dispose(): void;
+  start(): void; pause(): void; reset(landingPreset?: LandingPreset, site?: AirborneSite, runway?: RunwayStart): void; input(controls: Controls): void; setAltimeter(setting_pa: number): void; setAutopilot(mode: 0|1|2, target_heading_rad?: number): void; dispose(): void;
 }

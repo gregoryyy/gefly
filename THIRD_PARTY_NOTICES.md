@@ -256,3 +256,20 @@ existing engine's direct-drive design RPM for the generator's gearing estimate,
 retaining the existing propeller geometry/inertia/Mach correction data. Generated
 model bytes are excluded from source distribution and do not establish aircraft
 performance or broader model-data redistribution rights.
+
+
+## EDFE vector scenery and airport COM directory
+
+`app/public/airports/scenery/edfe-vector.geojson` is a bounded, simplified derived
+OpenStreetMap database, © OpenStreetMap contributors, under
+[ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/). Preserve source/version
+metadata and visible [attribution](https://www.openstreetmap.org/copyright).
+[Scenery source note](app/public/airports/scenery/README.md) records the source API,
+selection, timestamp, checksum, derived runway facts and generic practice-aid limits.
+No airport chart images are redistributed.
+
+`app/public/airports/com-regional.json` is a filtered OurAirports public-domain
+snapshot. Its manifest retains source commit, timestamp and checksum; see the
+[COM source note](docs/research/2026-11-03-airport-com-directory.md). It is not current
+operational aeronautical information. Original rendering code remains GPL-3.0-or-later;
+source data rights remain separate.

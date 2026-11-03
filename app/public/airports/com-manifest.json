@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "id": "southern-germany-airport-com-v1",
+  "count": 631,
+  "airport_count": 251,
+  "bytes": 87367,
+  "sha256": "c8aaa456fb38c72d21a3db224111b33852589a1297fb554abb1b67f37baf0b5f",
+  "source": "OurAirports community data; public domain; not for operational navigation",
+  "source_commit": "e86a650a968ba239a1288f96c05fcb80688e77a6",
+  "source_url": "https://raw.githubusercontent.com/davidmegginson/ourairports-data/e86a650a968ba239a1288f96c05fcb80688e77a6/airport-frequencies.csv",
+  "source_sha256": "ff32b22e7c9ad5105f557d05e9b4948986b558928ee8de47d888b17b7df44bb8",
+  "source_terms": "https://ourairports.com/data/",
+  "retrieved": "2026-11-03",
+  "scope": "Rows linked to the 731-airfield five-state catalogue; source service types retained without interpreting ATC availability. Missing rows mean unknown, not no service."
+}

@@ -47,6 +47,26 @@ where practical, under **GPL-3.0-or-later**. See the
 [GeoFS-inspired control profile](docs/design/CONTROLS.md) for the learning and
 interaction direction.
 
+## Airport play
+
+Open the flight map with **M**, choose **EDFE 26 or 08**, and select **Start at
+runway**. The aircraft starts at rest with the engine idling and parking brake
+set. Press **N** to release the brake, add power with **1–9**, and fly the circuit
+manually. **Stop exercise** on the map pauses the flight and keeps Review available.
+Other airports can be inspected, but their runway starts are not prepared yet.
+
+Sharp runway markings, taxiways and apron overlays sit on the public terrain.
+In **Options**, select **Vector map and terrain** for the bounded OSM airport
+surroundings, or enable **Practice PAPI / runway lights**. These light aids are
+illustrative, not a surveyed EDFE installation. The map's Vector/Map/Aerial buttons
+also update the shared scenery choice.
+
+Select an airport on the map and open **Airport COM** to load a service into
+**COM1/COM2 standby**, then swap on the radio stack. The directory contains 631
+source records across 251 airports, including 8.33 channel names; it is a dated
+community snapshot, not current operational information or an ATC service.
+[Sources and limits](docs/research/2026-11-03-airport-play.md).
+
 ## Fly the prototype
 
 ```sh

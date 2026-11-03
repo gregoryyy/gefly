@@ -43,7 +43,7 @@ test('build-flight-engine writes the engine into the directory just fly serves',
   assert.match(build, /^HERE=\$\(cd "\$\(dirname "\$\{BASH_SOURCE\[0\]\}"\)" && pwd\)$/m);
   assert.match(build, /^DIST=\$HERE\/dist$/m, 'outputs go to <script dir>/dist, independent of the work-dir argument');
   for (const file of ENGINE_FILES) assert.ok(build.includes(`$DIST/${file.slice('dist/'.length)}`), `build writes ${file}`);
-  assert.match(read('justfile'), /^fly:\n\s+npm --prefix "\{\{justfile_directory\(\)\}\}\/app" run dev$/m);
+  assert.match(read('justfile'), /^fly:\n\s+npm --prefix "\{\{justfile_directory\(\)\}\}\/app" run dev -- --port 5173 --strictPort$/m);
   assert.equal(JSON.parse(read('app/package.json')).scripts.dev.split(' ')[0], 'vite');
   assert.equal(runtimeRoot({}), defaultRuntimeRoot, 'just fly serves the study root by default');
   assert.match(read('studies/e1-browser/sim/worker.js'), /^import createJSBSim from '\.\/dist\/jsbsim\.mjs';$/m);
