@@ -189,6 +189,8 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.59 Fill the radio stack with equally spaced receiver units and a bottom Stations control; remove the fictional LAB selector from the cockpit. Preserve legacy-recording compatibility and historical NAV controls. Build/typecheck, desktop/mobile layout and historical station/replay checks pass. R-PANEL-1/R-NAV-4; peer pending.
 
+- [x] 2.0.60 Add the left-hand systems panel with modeled switches, digital electrical estimates, source scope, BAT/ALT interlocking, paused operation, recorded replay and narrow-screen dialog access. R-SYS-1/R-PANEL-1/R-REVIEW-1. Build, 30 focused model/trace cases and actual-browser interaction/layout/replay/native-isolation checks pass; peer pending.
+
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
 - [ ] 2.2 code1 implements the agreed simulation/state/replay slice and meaningful tests.
 - [ ] 2.3 code2 implements the corresponding browser controls, instruments and exercise feedback against frozen contracts **in parallel with 2.2**.

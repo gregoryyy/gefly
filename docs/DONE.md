@@ -3,6 +3,34 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-03 12:23 — Left-hand aircraft systems panel
+
+TODO: 2.0.60; R-SYS-1/R-PANEL-1/R-REVIEW-1. Agent: Codex, direct implementation.
+
+**Implementation notes**
+
+Add a left column with BAT/ALT, avionics, exterior-light, pitot-heat and panel-light
+buttons, plus digital bus volts, battery amps and load. Use a separate instantaneous
+teaching circuit model with explicit generic load estimates and sourced nominal
+supply/interlock conventions. Keep all panel columns on one scale and height;
+View / Alt+Shift+Y provides compact-screen dialog access. Record switch masks,
+validate JSON values and show immutable selected switches during replay; old
+traces stay unavailable. Build, 30 focused model/trace cases and actual Chrome
+paused controls/native-state invariance, circuit response, layout, replay and
+mobile access pass. Panel screenshot visually inspected.
+
+**Deviations**
+
+Electrical values are estimates, not native telemetry. No depletion, recharge
+transients, installed-current calibration, low-RPM generation, external-light
+rendering, avionics failures, starter restrictions or pitot icing coupling.
+Cross-provider peer pending.
+
+**Insights**
+
+Separate circuit selection, modeled power and actual native aircraft effects.
+Do not infer a powered circuit merely from a selected switch or invent old data.
+
 ## 2026-11-03 12:15 — Radio stack spacing and LAB removal
 
 TODO: 2.0.59; R-PANEL-1/R-NAV-4. Agent: Codex, direct implementation.
