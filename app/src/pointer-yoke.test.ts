@@ -32,6 +32,28 @@ function fixture(centered = false) {
     disable: () => { enabled = false; }, review: () => { lookOnly = true; } };
 }
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+test('center query exposes the authoritative neutral point without changing controls or borrowed look', async () => {
+  const f = fixture(); assert.equal(f.controller.getCenter(), null);
+  f.click(180, 220); assert.deepEqual(f.controller.getCenter(), {clientX:180, clientY:220});
+  const point = f.controller.getCenter()!; point.clientX = 999;
+  assert.deepEqual(f.controller.getCenter(), {clientX:180, clientY:220}, 'query result cannot move the anchor');
+  f.surface.dispatchEvent(pointer('pointerdown',300,300)); await sleep(280);
+  f.surface.dispatchEvent(pointer('pointermove',400,350));
+  const counts = [f.yokes.length,f.looks.length,f.modes.length];
+  assert.deepEqual(f.controller.getCenter(), {clientX:180, clientY:220});
+  assert.deepEqual([f.yokes.length,f.looks.length,f.modes.length],counts, 'query emits no controls or gestures');
+  f.surface.dispatchEvent(pointer('pointerup',400,350));
+  f.surface.rect = {left:250,right:800,top:0,bottom:600}; assert.equal(f.controller.getCenter(), null, 'off-scene anchor is hidden');
+  f.surface.rect.left = 0; f.review(); assert.equal(f.controller.getCenter(), null); f.controller.dispose(); assert.equal(f.controller.getCenter(), null);
+  const centered = fixture(true); centered.click(10,10);
+  assert.deepEqual(centered.controller.getCenter(), {clientX:400,clientY:300});
+  centered.surface.rect = {left:100,right:1000,top:40,bottom:800};
+  assert.deepEqual(centered.controller.getCenter(), {clientX:550,clientY:420}, 'center follows resized scene');
+  centered.disable(); assert.equal(centered.controller.getCenter(), null); centered.controller.dispose();
+  const off = fixture(); off.click(); off.click(); assert.equal(off.controller.getCenter(), null); off.controller.dispose();
+});
+
 function doubleClick(surface: Surface, x: number, y: number): void {
   for (const detail of [1, 2]) {
     surface.dispatchEvent(pointer('pointerdown', x, y)); surface.dispatchEvent(pointer('pointerup', x, y));
@@ -367,4 +389,20 @@ test('Review double-click centers retained look without yoke input; cancellation
   live.surface.dispatchEvent(Object.assign(new Event('dblclick'), { detail: 2, button: 0 }));
   assert.equal(live.modes.at(-1), 'off'); assert.deepEqual(live.yokes.at(-1), [0, 0]);
   f.controller.dispose(); live.controller.dispose();
+});
+
+test('vertical margin boost reaches raw poles within the scene, preserves ordinary rate and has no stationary or release drift', async () => {
+  const f=fixture();f.click(400,300);
+  f.surface.dispatchEvent(pointer('pointerdown',400,300));await sleep(280);
+  f.surface.dispatchEvent(pointer('pointermove',400,250));assert.deepEqual(f.looks.at(-1),[0,.2]);
+  f.surface.dispatchEvent(pointer('pointermove',400,150));const outer=f.looks.at(-1)![1];assert(outer>.6&&outer<70*Math.PI/180);
+  f.surface.dispatchEvent(pointer('pointermove',400,0));assert.deepEqual(f.looks.at(-1),[0,70*Math.PI/180]);
+  const counts=[f.looks.length,f.yokes.length];f.surface.dispatchEvent(pointer('pointermove',400,0));await sleep(30);assert.deepEqual([f.looks.length,f.yokes.length],counts);
+  f.surface.dispatchEvent(pointer('pointerup',400,0));assert.deepEqual(f.looks.at(-1),[0,70*Math.PI/180]);
+  // Repeated drag starts at the retained view and can reach the opposite pole.
+  f.surface.dispatchEvent(pointer('pointerdown',400,300));await sleep(280);
+  assert.deepEqual(f.looks.at(-1),[0,70*Math.PI/180]);
+  f.surface.dispatchEvent(pointer('pointermove',400,350));assert(Math.abs(f.looks.at(-1)![1]-(70*Math.PI/180-.2))<1e-12);
+  f.surface.dispatchEvent(pointer('pointermove',400,600));assert.deepEqual(f.looks.at(-1),[0,-70*Math.PI/180]);
+  f.surface.dispatchEvent(pointer('pointerup',400,600));assert.deepEqual(f.controller.getCenter(),{clientX:400,clientY:300});f.controller.dispose();
 });

@@ -78,3 +78,25 @@ test('F48: invalid sensors are surfaced, disconnect an engaged AP and never prod
  }
  const c=createKap140(s);assert.equal(c.step({...s,elevator_norm:2}),false);assert.equal(c.snapshot(s).kap_sensor_fault,1);assert.equal(c.snapshot(s).kap_engaged,0);
 });
+
+test('optional CWS releases both servos, continuously shows measured VS, and reacquires VS without changing lateral selection',()=>{
+ const s=sensor(),a=createKap140(s);cmd(a,'ap',s);cmd(a,'heading',s,2);cmd(a,'hdg',s);cmd(a,'select-altitude',s,1500);
+ cmd(a,'cws',s,1);assert.equal(a.snapshot(s).kap_cws,1);assert.equal(a.snapshot(s).kap_engaged,1);assert.equal(a.guidance(s).lateral_mode,0);assert.equal(a.guidance(s).vertical_mode,0);
+ const moved={...s,t_s:10,vertical_speed_mps:-1,pressure_altitude_m:950};a.step(moved);let x=a.snapshot(moved);assert.equal(x.kap_display_page,1);assert.equal(x.kap_vs_target_mps,-1);assert.equal(x.kap_lateral,1);assert.equal(x.kap_alt_arm,1);
+ cmd(a,'baro',moved);assert.equal(a.snapshot(moved).kap_display_page,1,'actual VS remains visible throughout CWS, even paused');cmd(a,'cws',moved,0);x=a.snapshot(moved);assert.equal(x.kap_cws,0);assert.equal(x.kap_engaged,1);assert.equal(x.kap_vs_target_mps,-1);assert.equal(a.guidance(moved).lateral_mode,2);assert.equal(a.guidance(moved).heading_rad,2);assert.equal(a.guidance(moved).vertical_target,-1);
+ cmd(a,'cws',{...moved,vertical_speed_mps:1},0);assert.equal(a.snapshot(moved).kap_vs_target_mps,-1,'duplicate release does not recapture');
+});
+test('CWS ALT release captures actual pressure altitude and preserves independent selector; disconnect and faults clear hold',()=>{
+ const s=sensor(),a=createKap140(s);cmd(a,'ap',s);cmd(a,'alt',s);cmd(a,'select-altitude',s,1500);cmd(a,'cws',s,1);
+ const moved={...s,t_s:4,pressure_altitude_m:960,physical_altitude_m:1060,vertical_speed_mps:1};a.step(moved);cmd(a,'cws',moved,0);let x=a.snapshot(moved);assert.equal(x.kap_vertical,1);assert.equal(x.kap_hold_pressure_altitude_m,960);assert.equal(x.kap_selected_altitude_m,1500);assert.equal(x.kap_alt_arm,1);assert.equal(a.guidance(moved).vertical_target,1060);
+ cmd(a,'cws',moved,1);cmd(a,'disconnect',moved);assert.equal(a.snapshot(moved).kap_cws,0);cmd(a,'cws',moved,1);assert.equal(a.snapshot(moved).kap_cws,0,'CWS does not engage AP');
+ cmd(a,'ap',moved);cmd(a,'cws',moved,1);a.step({...moved,vertical_speed_mps:NaN});assert.equal(a.snapshot(moved).kap_cws,0);assert.equal(a.snapshot(moved).kap_sensor_fault,1);
+});
+test('CWS commands validate atomically and old recordings may omit only the optional CWS field',()=>{
+ const s=sensor(),a=createKap140(s),before=a.snapshot(s),legacy={...before};delete legacy.kap_cws;assert(validKapState(legacy));
+ for(const value of [undefined,2,-1,NaN,'1',null]) {assert.equal(validKapCommand({action:'cws',value}),false);assert.equal(a.command({action:'cws',value},s),false);assert.deepEqual(a.snapshot(s),before);assert.equal(validKapState({...before,kap_cws:value}),false);}
+ assert.equal(validKapState({kap_cws:0}),false);
+});
+test('altitude selector immediately shows selected altitude, then first UP reveals VS without changing its command',()=>{
+ const s=sensor(),a=createKap140(s);cmd(a,'ap',s);assert.equal(a.snapshot(s).kap_display_page,1);cmd(a,'select-altitude',s,1500);assert.equal(a.snapshot(s).kap_display_page,0);const before=a.snapshot(s).kap_vs_target_mps;cmd(a,'vertical',s,1);assert.equal(a.snapshot(s).kap_display_page,1);assert.equal(a.snapshot(s).kap_vs_target_mps,before);cmd(a,'vertical',s,0);cmd(a,'vertical',s,1);assert.equal(a.snapshot(s).kap_vs_target_mps,before+100*FPM);
+});

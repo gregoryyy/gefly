@@ -110,3 +110,30 @@ test('look bounds and invalid angles are explicit instead of producing invalid t
     assert.throws(() => boundedCameraLook({ yaw_rad: 0, pitch_rad: bad }), RangeError);
   }
 });
+
+test('outer look reaches both real poles with stable analytic up and unchanged ordinary drag', () => {
+  const basis = aircraftBasisENU(.7,.2,-.4);
+  for (const yaw_rad of [-Math.PI,-.3,0,.8,Math.PI]) {
+    for (const sign of [-1,1]) {
+      const look={yaw_rad,pitch_rad:sign*MAX_LOOK_PITCH_RAD};
+      const cockpit=cockpitCameraENU(basis,look),chase=chaseCameraENU(.7,look);
+      vector(cockpit.direction,basis.up.map(v=>v*sign) as unknown as VectorENU);
+      vector(chase.direction,[0,0,-sign]);
+      for(const pose of [cockpit,chase]) { near(dot(pose.up,pose.direction),0);near(dot(pose.up,pose.up),1); }
+      const nearPole=cockpitCameraENU(basis,{...look,pitch_rad:look.pitch_rad-sign*1e-6});
+      assert(dot(cockpit.up,nearPole.up)>.999999,'up vector does not flip at pole');
+    }
+  }
+  const neutral=aircraftBasisENU(0,0,0), small=.2;
+  near(cockpitCameraENU(neutral,{yaw_rad:0,pitch_rad:small}).direction[2],Math.sin(small-8*Math.PI/180));
+  const chase=chaseCameraENU(0,{yaw_rad:0,pitch_rad:small});
+  near(chase.direction[2],-Math.sin(Math.atan2(11,30)+small));
+  for(const sign of [-1,1]){
+    let previous=-Infinity;
+    for(let i=0;i<=100;i++){
+      const pose=cockpitCameraENU(neutral,{yaw_rad:0,pitch_rad:sign*MAX_LOOK_PITCH_RAD*i/100});
+      const elevation=Math.asin(Math.max(-1,Math.min(1,pose.direction[2])))*sign;
+      assert(elevation>=previous-1e-12,'outer mapping is monotonic');previous=elevation;
+    }
+  }
+});

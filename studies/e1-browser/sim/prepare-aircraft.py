@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Prepare an ignored c172x copy with switchable mixture and pitch AP wiring.
 
-The pinned source checkout is never modified; upstream coefficients remain intact.
+The pinned source checkout is never modified; aircraft aerodynamic coefficients remain intact.
+Pitch-servo gains are an explicit generic simulator adaptation, not KAP 140 tuning.
 """
 from __future__ import annotations
 
@@ -12,7 +13,7 @@ from pathlib import Path
 import shutil
 import tempfile
 
-ADAPTER_ID = "gefly-c172x-mixture-pitch-ap-v2"
+ADAPTER_ID = "gefly-c172x-mixture-pitch-ap-v3"
 SOURCE_AP_SHA256 = "1e83fec37beabf33e1a1bdd7a30fb5d4aeca79ddb52a2dca58a7bcfc1d20e570"
 SOURCE_XML_SHA256 = "b736f4b7560d5aab4d2a69026798be1d369b2b2bb5ddcf627aebfd441ba71840"
 SYSTEM = b'    <system name="Mixture control">\n'
@@ -34,8 +35,10 @@ def patch_xml(data: bytes) -> bytes:
     return data.replace(SYSTEM, SYSTEM + PROPERTY, 1).replace(CHANNEL, GATED_CHANNEL, 1)
 
 
-# Retain upstream PID coefficients; change only sensor/command selection and
-# final output gating. VS is provided in the upstream controller's ft/s.
+# Generic simulator servo adaptation: stronger VS feedback plus body pitch-rate
+# damping addresses observed native climb oscillations. Gains are engineering
+# choices covered by a bounded native regression, not sourced KAP 140 hardware
+# gains or aircraft-performance validation. VS enters in ft/s; q in rad/s.
 AP_AGL = b"<input> -position/h-agl-ft </input>"
 AP_MSL = b"<input> -position/h-sl-ft </input>"
 AP_HDOT_INPUT = b"<input> fcs/hdot-command </input>"
@@ -46,6 +49,8 @@ AP_HDOT_SWITCH = b"""  <switch name="ap/gefly-hdot-command">
   </switch>
 
 """
+AP_PID = b"<kp> 0.01 </kp>\n    <ki> 0.00015 </ki>\n    <kd> 0.0003 </kd>"
+AP_GENERIC_PID = b"<kp> 0.04 </kp>\n    <ki> 0.0006 </ki>\n    <kd> 0.0012 </kd>"
 AP_ERROR = b'  <summer name="fcs/hdot-error">'
 AP_ELEVATOR = b"""  <pure_gain name="fcs/elevator">
     <input> fcs/altitude-hold-pid </input>
@@ -56,15 +61,25 @@ AP_ELEVATOR_GATE = b"""  <pure_gain name="fcs/elevator">
     <input> fcs/altitude-hold-pid </input>
     <gain> -1.0 </gain>
   </pure_gain>
+  <!-- Generic simulator pitch-rate damping; norm per rad/s, not KAP tuning. -->
+  <pure_gain name="ap/gefly-pitch-rate-damping">
+    <input> velocities/q-rad_sec </input>
+    <gain> 20.0 </gain>
+  </pure_gain>
+  <summer name="ap/gefly-pitch-servo">
+    <input> fcs/elevator </input>
+    <input> ap/gefly-pitch-rate-damping </input>
+    <clipto><min>-1.0</min><max>1.0</max></clipto>
+  </summer>
   <switch name="ap/elevator_cmd">
     <default value="0.0"/>
-    <test value="fcs/elevator">ap/altitude_hold eq 1</test>
+    <test value="ap/gefly-pitch-servo">ap/altitude_hold eq 1</test>
   </switch>"""
 
 def patch_autopilot(data: bytes) -> bytes:
     properties = b"  <property> ap/altitude_hold     </property>"
     added_properties = properties + b"\n  <property> ap/gefly-vs-mode </property>\n  <property> ap/gefly-vs-command-fps </property>"
-    replacements = ((properties, added_properties), (AP_AGL, AP_MSL), (AP_HDOT_INPUT, AP_HDOT_SELECT),
+    replacements = ((AP_PID, AP_GENERIC_PID), (properties, added_properties), (AP_AGL, AP_MSL), (AP_HDOT_INPUT, AP_HDOT_SELECT),
                     (AP_ERROR, AP_HDOT_SWITCH + AP_ERROR), (AP_ELEVATOR, AP_ELEVATOR_GATE))
     for before, after in replacements:
         if data.count(before) != 1:

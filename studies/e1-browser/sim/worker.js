@@ -297,6 +297,9 @@ function kapFields() {
 }
 function onKap140(msg) {
   const command = msg.command;
+  // A queued neutral input from the release gesture must take effect while CWS
+  // still owns the servos; do not resume over stale raw pilot commands.
+  if (kap && validKapCommand(command) && command.action === 'cws' && command.value === 0 && !applyDueInputs()) return;
   if (kap && command?.action === 'ap' && !kap.snapshot(kapSensors()).kap_engaged && pilotOverrideActive) {
     postMessage({type:'autopilot-rejected',message:'Release manual flight input before engaging autopilot.'}); postState(); return;
   }
@@ -311,6 +314,7 @@ function onKap140(msg) {
   if (!kap || !validKapCommand(command) || outsidePressureEnvelope || !kap.command(command, kapSensors())) {
     postMessage({ type: 'autopilot-rejected', message: 'KAP 140 command unavailable or outside supported practice sensor bounds.' }); if (kap) postState(); return;
   }
+  if (command.action === 'cws' && command.value === 0 && pilotOverrideActive) kap.command({action:'disconnect'}, kapSensors());
   if (!applyKapGuidance()) return;
   altitudeAlert?.update(alertSensors());
   postState();
@@ -451,7 +455,7 @@ function applyDueInputs() {
     if (kap && kap.snapshot(kapSensors()).kap_engaged) {
       const trimPointer = typeof M._gf_pitch_trim_state === 'function' ? M._gf_pitch_trim_state() >> 3 : null;
       const trimChanged = inp.pitch_trim_norm !== undefined && trimPointer !== null && Math.abs(inp.pitch_trim_norm - M.HEAPF64[trimPointer]) > 1e-12;
-      if (inp.pilot_override === true || (inp.pilot_override === undefined && (inp.elevator !== 0 || inp.aileron !== 0 || inp.rudder !== 0)) || trimChanged) { kap.command({action:'disconnect'}, kapSensors()); if (!applyKapGuidance()) return false; }
+      if (!kap.snapshot(kapSensors()).kap_cws && (inp.pilot_override === true || (inp.pilot_override === undefined && (inp.elevator !== 0 || inp.aileron !== 0 || inp.rudder !== 0)) || trimChanged)) { kap.command({action:'disconnect'}, kapSensors()); if (!applyKapGuidance()) return false; }
     }
     const rc = M._gf_set_inputs(inp.elevator, inp.aileron, inp.rudder, inp.throttle);
     if (rc !== 0) { fail(`set_inputs rc=${rc}`); return false; }

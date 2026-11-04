@@ -75,15 +75,15 @@ function createDirectionMarker(container: HTMLElement, direction: BodyDirectionI
 /** The existing nose crosshair plus small body-axis references. Every cue is
  * camera-projected and pointer-transparent; none receives flight controls. */
 export function createForwardMarker(container: HTMLElement): {
-  update(projection: ForwardMarkerProjection | null, directions?: BodyDirectionProjections): void;
+  update(projection: ForwardMarkerProjection | null, directions?: BodyDirectionProjections, showDirections?: boolean): void;
   dispose(): void;
 } {
   const ids: BodyDirectionId[] = ['forward', 'left', 'right', 'up', 'down', 'back'];
   const markers = new Map(ids.map(id => [id, createDirectionMarker(container, id)]));
   return {
-    update(projection, directions) {
+    update(projection, directions, showDirections = true) {
       markers.get('forward')!.update(projection);
-      for (const id of ids) if (id !== 'forward') markers.get(id)!.update(directions?.[id] ?? null);
+      for (const id of ids) if (id !== 'forward') markers.get(id)!.update(showDirections ? directions?.[id] ?? null : null);
     },
     dispose() { for (const marker of markers.values()) marker.dispose(); },
   };

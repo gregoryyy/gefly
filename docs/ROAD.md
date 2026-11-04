@@ -83,6 +83,28 @@ integration route. It remains a study, not a selected map provider or permission
 to import Google imagery. The [global scenery research](research/2026-11-03-global-scenery.md)
 compares those routes with an open-data world.
 
+## Author detailed worlds from maps
+
+Make **world authoring** a first-class capability: select a real area on the map,
+inspect available terrain/building/imagery layers, refine its appearance and
+publish a reusable high-resolution 3D scene. Start with a small EDFE patch, then
+connect detailed places across the wider region. Community members should be
+able to improve regional rules, landmark models and source-backed scene patches.
+
+Combine measured terrain and building geometry with **geotypical** regional
+materials, facades and vegetation where exact detail is missing. Evaluate both
+traditional procedural generation and optional **LLM-assisted authoring** of
+reviewable scene recipes. Compare photogrammetry and neural reconstruction for
+suitable captured landmarks; explore current Gaussian-splat streaming separately.
+Visually convincing generated details must remain identifiable as inferred rather
+than surveyed geography. Keep airport contact/navigation facts independently
+sourced and the open baseline usable without commercial maps or mandatory AI.
+
+The [world-authoring research](research/2026-11-04-world-authoring.md) compares
+these routes and proposes source-backed scene, editable authoring preview,
+AI-assisted A/B and captured-landmark increments. These are planned capabilities,
+not already implemented scene generation or Google Earth-quality coverage.
+
 ## Create a flight experience by describing it
 
 Use an LLM to describe a territory, a learning objective and the interactions a
@@ -117,6 +139,7 @@ subscriptions, prices or service contracts.
 | A coherent first flight | Open the browser, understand the controls, fly a recognizable region, use the classic cockpit and review what happened. Keep this enjoyable as deeper realism is added. |
 | The first complete PPL practice loop | Start engine-running at the EDFE runway 26 holding point, use a briefing/checklist, take off, fly the north/right-hand circuit, land and review the flight. Keyboard/touchpad remains a complete baseline. |
 | A believable regional pilot experience | Deepen source-backed aircraft handling and systems, pressure/elevation references, navigation aids, maps and charts. Add circuit variations, text radio after the first complete circuit loop, coherent weather reports and bounded traffic situations in separately runnable slices. |
+| Author a detailed world | Turn a bounded map area into a flyable 3D scene with real terrain/buildings, regional procedural detail and an editable source-marked recipe; compare optional AI assistance. |
 | Shared flying and contributed experiences | Fly with others, publish and try exercises, discuss improvements and contribute a first aircraft/world/data package. Grow community features alongside simulator depth. |
 | Wider places and deeper practice | Expand coherent DACH regions, flight planning, procedures, weather and traffic; compare the separate FR172 configuration and introduce selected glass avionics after the classic cockpit. |
 | More licence-specific journeys | Add scoped CPL objectives and distinct sailplane/ultralight experiences, with appropriate aircraft, controls, exercises and professional material. Their order relative to CPL is still open. |

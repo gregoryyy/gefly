@@ -58,6 +58,10 @@ try {
   await installSceneryFixture(page); await page.goto(origin);
   await page.waitForFunction(() => !document.querySelector('#start').disabled);
   await prepareFlightUI(page);
+  const marker = page.locator('#yoke-center-marker');
+  const markerCenter = async () => { await marker.waitFor({state:'visible'}); const box=await marker.boundingBox(); return {x:box.x+box.width/2,y:box.y+box.height/2}; };
+  const markerAt = async (x,y) => { const center=await markerCenter(); assert(Math.abs(center.x-x)<1&&Math.abs(center.y-y)<1,JSON.stringify({center,expected:{x,y}})); };
+  assert(await marker.isHidden());
   const mode = expected => page.waitForFunction(expected => document.querySelector('#scene').dataset.pointerMode === expected, expected);
   const axes = () => page.evaluate(() => ['roll-control', 'pitch-control'].map(id => Number(document.getElementById(id).textContent)));
   const stats = async () => {
@@ -69,14 +73,18 @@ try {
   const frozen = (a, b) => { assert.equal(a.step, b.step); assert.equal(a.digest, b.digest); assert.deepEqual(a.final_state, b.final_state); };
   const look = () => page.evaluate(() => ({ ...window.__pointerLook }));
   const hold = async (x, y) => {
+    const centerBefore=await markerCenter();
     await page.mouse.down(); await page.waitForTimeout(300); await mode('look');
+    await markerAt(centerBefore.x,centerBefore.y);
     await page.mouse.move(x, y, { steps: 3 }); const during = await look();
     await page.mouse.up(); await mode('yoke');
     assert.deepEqual(await look(), during, 'release keeps the dragged camera orientation');
+    await markerAt(centerBefore.x,centerBefore.y);
     return during;
   };
   const before = await stats();
   await page.mouse.click(1000, 160); await mode('yoke');
+  await markerAt(1000,160);
   await page.mouse.move(1075, 130);
   const original = await axes(); assert(original[0] > 0 && original[1] > 0);
   const firstLook = await hold(1250, 230);
@@ -127,6 +135,7 @@ try {
   assert.deepEqual(await axes(), liveAxes);
   await page.mouse.move(1000, 160); assert.deepEqual(await axes(), neutral);
   await page.mouse.click(1000, 160); await mode('off');
+  await marker.waitFor({state:'hidden'});
   await page.mouse.click(1100, 160); await mode('yoke');
   await page.mouse.move(1175, 130); assert.deepEqual(await axes(), liveAxes, 'a short click can intentionally establish a new midpoint');
   await page.keyboard.press('Escape'); await mode('off');
@@ -136,6 +145,7 @@ try {
 
   await page.locator('#scene').focus(); await page.keyboard.press('r');
   await page.waitForFunction(() => document.querySelector('#status').textContent === 'Review');
+  await marker.waitFor({state:'hidden'});
   await page.mouse.move(1000, 160); await page.mouse.down(); await page.waitForTimeout(300);
   await page.mouse.move(1050, 120); await page.mouse.up(); await mode('off');
   assert.notEqual((await look()).yaw_rad, 0);
@@ -152,6 +162,7 @@ try {
   const rect = await page.locator('#scene').boundingBox();
   const sample = { x: rect.x + rect.width / 2 + 75, y: rect.y + rect.height / 2 - 75 };
   await page.mouse.click(1000, 160); await mode('yoke');
+  await markerAt(rect.x+rect.width/2,rect.y+rect.height/2);
   await page.mouse.move(sample.x, sample.y); const centeredAxes = await axes();
   await hold(sample.x + 50, sample.y + 20);
   assert.notEqual((await look()).yaw_rad, 0);
@@ -161,6 +172,7 @@ try {
   frozen(paused, await stats());
   assert.deepEqual(errors, []);
   const result = { result: 'pass', checks: [
+    'faint neutral marker follows the authoritative relative/centered yoke reference, retains it through look, and hides off/in Review',
     'paused hold-look preserves original midpoint without advancing actual JSBSim',
     'live hold-look preserves original midpoint and actual aileron/elevator commands',
     'outside release/re-entry and short-click toggle retain their separate behavior',

@@ -3,6 +3,176 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 10:33 — Native browser fullscreen
+
+TODO: 2.0.76; R-VIEW-1/R-INPUT-1/R-REVIEW-1.
+Agent: Codex orchestrator integration; glide_cases fullscreen controller;
+glide_model menu/browser integration; glide_housekeeping independent review.
+
+**Implementation notes**
+
+F and View toggle native document fullscreen, including cockpit/map panels and
+body-mounted dialogs. Labels follow actual browser state; handle busy, rejected
+and unavailable requests, guarded shortcuts and cleanup. Existing responsive
+layout adapts without resetting flight. TypeScript and five actual browser check
+groups pass, including running flight, paused/Review state, instrument bounds and
+failure fixtures. [Scoped independent review](reviews/2026-11-04-browser-fullscreen.md)
+passes; cross-provider peer remains pending.
+
+**Deviations**
+
+Physical browser Escape exit was not evaluated: headless Chrome did not perform
+that browser action. Native fullscreenchange synchronization and F/API exit are
+verified; no CSS fullscreen substitute or keyboard lock is added.
+
+**Insights**
+
+Fullscreen the document rather than just the scene canvas so dialogs and cockpit
+controls stay in the same browser fullscreen context.
+
+## 2026-11-04 10:23 — Quieter direction cues and full vertical look
+
+TODO: 2.0.75; R-VIEW-1/R-INPUT-1/R-REVIEW-1.
+Agent: Codex orchestrator integration; glide_cases camera/pointer mapping;
+glide_model direction-cue gating/browser checks; glide_housekeeping independent review.
+
+**Implementation notes**
+
+Keep the forward crosshair; show extra L/R/U/D/B cues at 25° actual camera/body
+separation and hide them at 22°, avoiding near-front clutter and threshold
+flicker. Accelerate outer vertical pointer travel toward the scene edges and map
+outer camera angles to true poles while preserving central drag response, default
+views, analytic camera orientation and retained look on release.
+
+Independent pointer/orientation units pass 28 cases. Eight actual Cesium/native
+browser groups pass, including front-only views, hysteresis, centered cockpit
+U/D at the drag limits, FOV/resize and paused/Review native-state isolation.
+Shared CI passes with nine existing study cases skipped, not passed.
+[Independent scoped review](reviews/2026-11-04-view-marker-visibility-poles.md)
+records quality and visual validation; peer remains pending.
+
+**Deviations**
+
+Chase retains its heading/horizon-relative orbit: its poles are world vertical,
+while cockpit poles align with the aircraft's actual U/D axes at any attitude.
+No flight-control, avionics or physics change.
+
+**Insights**
+
+Reaching a real camera pole requires accounting for the default viewing offset
+as well as pointer travel. A nominal angle limit alone left U/D unreachable.
+
+## 2026-11-04 10:10 — Faint active yoke-center marker
+
+TODO: 2.0.74; R-INPUT-1.
+Agent: Codex orchestrator integration; glide_cases neutral-point query;
+glide_model marker/UI and browser checks; glide_housekeeping independent review.
+
+**Implementation notes**
+
+Show a faint 14px ring/dot at the actual active neutral pointer reference. Keep
+the relative anchor through borrowed look; follow scene resizing in centered
+mode. Hide when off, unavailable, outside the scene or in Review. The marker is
+noninteractive and decorative; observing its position changes no control state.
+Focused pointer units pass 18 cases; the real-pointer browser passes six groups
+with native paused-state isolation. [Independent quality/validation](reviews/2026-11-04-yoke-center-marker.md)
+passes; cross-provider peer pending.
+
+**Deviations**
+
+None. No new settings, input semantics or physics changes.
+
+**Insights**
+
+Render the authoritative neutral point separately from the projected aircraft
+nose so looking around cannot suggest a shifted steering reference.
+
+## 2026-11-04 10:01 — World-authoring research and planned scene pipeline
+
+TODO: 2.0.73; R-WORLD-8/R-WORLD-3/R-AUTHOR-1/R-DATA-1.
+Agent: Codex orchestrator synthesis/shared documents; glide_cases traditional
+geospatial/procedural research; glide_model AI/neural research;
+glide_housekeeping independent documentation quality and scope validation.
+
+**Implementation notes**
+
+Add world authoring to ROAD, ARCH and SPEC: real map/terrain/building layers,
+regional geotypical materials and vegetation, deterministic scene compilation,
+streamed glTF/3D Tiles, editable preview and community packages. Record a bounded
+2 × 2 km EDFE demonstrator, then authoring preview, optional LLM recipe A/B on a
+1 km² subset and an optional captured/neural landmark as unchecked work.
+
+[Research synthesis](research/2026-11-04-world-authoring.md) links primary-source
+traditional and AI assessments. Compare tool/data/model/asset rights separately,
+current Cesium Gaussian-splat streaming, geotypical versus measured geometry and
+source resolution versus accuracy. UrbanWorld2.0 is an architectural reference,
+not a cleared dependency: its named Hunyuan model excludes EU use. Preserve
+physics/navigation authority separately from decorative or captured scenery.
+
+Shared CI passes with nine existing JSBSim study cases skipped, not passed;
+foundation/link and assurance checks validate document integrity only. The
+[scoped independent review](reviews/2026-11-04-world-authoring.md) records research
+quality/coverage. No new runtime, asset import, model/provider selection or
+performance benchmark is delivered. Cross-provider peer remains pending.
+
+**Deviations**
+
+Implementation tasks remain unchecked. The user's existing untracked public-data
+research file was read for context and left untouched. No paid service, model
+weight or world dataset was activated or added.
+
+**Insights**
+
+High-resolution appearance and geographic truth are different outputs. Ground
+imagery/footprints alone cannot establish unseen facades; regional procedural
+rules can fill visual gaps while retaining an explicit distinction from measured
+facts. Browser splat support makes a bounded capture experiment plausible but
+does not create source coverage or collision geometry.
+
+## 2026-11-04 09:46 — Stable KAP climbs, CWS and saved flight location
+
+TODO: 2.0.71/2.0.72; R-AP-1/R-INPUT-1/R-REVIEW-1/R-UX-5.
+Agent: Codex orchestrator UI/integration; glide_cases controller/native response;
+glide_model location/session implementation and independent UI review;
+glide_housekeeping primary research and independent integrated quality/validation.
+
+**Implementation notes**
+
+Persist a bounded last live regional position/altitude/heading and ground/airborne
+mode locally. Reload restores paused through native initialization; airborne
+launch uses 90 kt, ground launch settles the gear at rest with brakes set.
+Restart clears the saved location. Review/import/collision frames cannot replace
+it; corrupt or denied storage falls back safely.
+
+The v3 generic pitch adapter adds rate damping and changes PID gains. In the
+powered calm-air 500 FPM fixture, the 30–90 s climb range improves from 264–737 to
+453–481 FPM. Preselect captures ALT at 125 s; pressure-altitude error near 240 s
+improves from +13.66 to +2.47 m. The selector immediately restores the altitude
+page; UP first reveals a hidden VS and later taps adjust it. Optional held CWS
+releases native servos while retaining modes; release synchronizes current VS or
+ALT. Clear live axes before CWS release and before Review inhibits live input.
+Older recordings show missing CWS state as unknown.
+
+[Independent review](reviews/2026-11-04-flight-location-kap140-cws.md) records
+quality and specification validation. Native climb/reset, CWS/worker, existing
+AP/descent/MSL, panel/live browser, location reload, units, build and shared CI
+pass. Nine existing JSBSim study cases remain skipped, not passed. Assurance
+check reports zero errors; lineage diff is inspected before publication.
+
+**Deviations**
+
+This is location persistence, not a dynamics checkpoint. CWS is an optional
+KAP140 fit with primary generic-system evidence; installation on this selected
+172 is unverified. Generic servo tuning is not installed-aircraft calibration.
+Cross-provider peer remains pending; no milestone or training acceptance claimed.
+
+**Insights**
+
+Measure the aircraft trajectory as well as mode annunciations: lit VS/ALT alone
+did not reveal sustained surging. Native target capture may complete between UI
+observations; browser tests must accept that valid transition and await rendered
+LIVE state before changing an independent radio fixture after Review.
+
 ## 2026-11-04 09:13 — Floating OSM labels over the terrain
 
 TODO: 2.0.70; R-WORLD-7/R-INPUT-1/R-REVIEW-1/R-DATA-1.
