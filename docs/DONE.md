@@ -3,6 +3,40 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 01:56 — Sensed runway-setup checklist
+
+TODO: 2.1.3; R-PLAY-1/R-TRAIN-4/R-REVIEW-1. Agent: Codex orchestrator
+integration; glide_cases implemented evaluator/tests, glide_model the tabbed UI
+and browser test, glide_housekeeping independent quality/validation review.
+
+**Implementation notes**
+
+Add Briefing/Setup/Events views to the practice card. Seven sensed comparisons
+show actual engine, applied brakes/throttle, flaps, launch trim, AP and model
+switch values against the simulator start reference. Missing data stays unknown;
+unsensed pilot/cabin/fuel/run-up checks remain unsupported. Review consumes only
+the selected recorded frame. No checklist interaction changes aircraft settings.
+The bounded popover keeps the first rows visible and preserves cockpit space.
+Build, seven evaluator groups, five new actual-browser groups and the existing
+seven-group airport/replay suite pass. Independent review repaired keyboard
+access during Review and initial table visibility; see
+[review](reviews/2026-11-04-practice-setup.md). Current bounded run/review evidence
+is registered in assurance without rewriting historical input hashes.
+
+**Deviations**
+
+This is a generic simulator launch reference, not a complete aircraft checklist,
+pilot confirmation, readiness grade or validated 172S procedure. Raw trim and
+model electrical indications retain their stated fidelity limits. Full exercise
+and aircraft acceptance remain open. Cross-provider peer pending.
+
+**Insights**
+
+Test whether the learner can actually see and reach the displayed rows, beyond
+checking their DOM values. Keep replay seeking authoritative while making all
+practice tabs reachable by keyboard, and distinguish applied controls from
+paused requests and the unrecorded parking-brake latch.
+
 ## 2026-11-03 23:26 — Portable runway context in flight recordings
 
 TODO: 2.1.2; R-PLAY-1/R-REVIEW-1. Agent: Codex orchestrator integration;

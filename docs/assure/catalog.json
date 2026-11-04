@@ -876,6 +876,210 @@
         "reviewer": "Codex glide_housekeeping (independent of implementation)",
         "independent": true
       }
+    },
+    {
+      "id": "practice-setup-observation",
+      "mode": "recorded_run",
+      "revision": "47cea7c04ea7822a0987f8a8fc857393920c17c3 + recorded working-tree source pins",
+      "procedure": "Actual Setup/airport Chrome suites plus independent evaluator unit tests; commands, stdout, environment and frozen source hashes are preserved. The catalog does not rerun them.",
+      "scope": "Sensed simulator runway-start reference, live/recorded display and inspection isolation; no aircraft checklist/readiness or procedure acceptance.",
+      "limitations": [
+        "Seven comparisons describe the simulator launch configuration only; they are not a complete C172P/C172S procedure or pilot confirmation.",
+        "Recorded-control and legacy missing-data cases use explicit synthetic recording fixtures, not native flight observations.",
+        "Browser tests use fixture map/photo pixels with the actual native worker/public terrain; paused inspection and imported data preserve native step, digest and state.",
+        "Wheel-brake indications do not establish parking-latch position; model electrical switch positions do not prove physical electrical-system behavior.",
+        "Embedded aircraft/runtime closure is not redistributed; metadata identifies the observed local binary but cannot establish full aircraft/model fidelity.",
+        "No full checklist, circuit, training/regulatory or cross-provider acceptance is claimed."
+      ],
+      "outcome": "pass",
+      "requirements": [
+        "R-PLAY-1",
+        "R-TRAIN-4",
+        "R-REVIEW-1"
+      ],
+      "inputs": [
+        {
+          "role": "fixture",
+          "path": "studies/e1-browser/results/2026-11-04-practice-setup.json",
+          "sha256": "97b011e7e02791f1a2c6b693531b8fbb83f47dee9772bbc954ab468c1ce0d795",
+          "pointer": "/runs"
+        },
+        {
+          "role": "build",
+          "path": "studies/e1-browser/results/2026-11-04-practice-setup.json",
+          "sha256": "97b011e7e02791f1a2c6b693531b8fbb83f47dee9772bbc954ab468c1ce0d795",
+          "pointer": "/build_info"
+        },
+        {
+          "role": "environment",
+          "path": "studies/e1-browser/results/2026-11-04-practice-setup.json",
+          "sha256": "97b011e7e02791f1a2c6b693531b8fbb83f47dee9772bbc954ab468c1ce0d795",
+          "pointer": "/environment"
+        },
+        {
+          "role": "evaluator",
+          "path": "app/tests/practice-setup.browser.mjs",
+          "sha256": "8fe2cfdad6aaa7f4fb7245ed95b2447b002a7ca577696506b3282f7eb5c6aee1"
+        },
+        {
+          "role": "evaluator",
+          "path": "app/tests/airport-play.browser.mjs",
+          "sha256": "0a7adccbefb9d3797f05b243d8690aaeee2325c17b79ca0ed5405e2ad6607c8c"
+        },
+        {
+          "role": "criteria",
+          "path": "app/src/practice-setup.test.ts",
+          "sha256": "f963a60628e0b873bef2cea6241586a4609ff495e5ae8dd6b381b69827f8d33d"
+        },
+        {
+          "role": "source",
+          "path": "app/src/practice-setup.ts",
+          "sha256": "c74f250694399a16003d982c0a36c1407cc1bef5359eb74b1f7df5a82a3c9d26"
+        },
+        {
+          "role": "source",
+          "path": "app/src/runway-practice-panel.ts",
+          "sha256": "f3a76d1bb75877e04a6ab97b45212d3aec0384e6da87f9dda4ff883a0c221e37"
+        },
+        {
+          "role": "source",
+          "path": "app/src/runway-practice-panel.css",
+          "sha256": "b84229191e8726dbeb0513f103b15a576e5eb6a9ccaae70e7fb7e710ffdab54a"
+        },
+        {
+          "role": "source",
+          "path": "app/src/practice-map.ts",
+          "sha256": "301089b9d0ae8b4f62e33d3106d143946c8f25fc834974d50ff7fcaaa9fe5b5c"
+        }
+      ],
+      "unavailableRoles": [
+        {
+          "role": "model",
+          "reason": "Embedded research aircraft/runtime closure is not redistributed. Observed build metadata does not establish aircraft fidelity, a real checklist or complete reconstructibility."
+        }
+      ],
+      "notApplicableRoles": [],
+      "dependsOn": [],
+      "result": {
+        "path": "studies/e1-browser/results/2026-11-04-practice-setup.json",
+        "sha256": "97b011e7e02791f1a2c6b693531b8fbb83f47dee9772bbc954ab468c1ce0d795",
+        "assertions": [
+          {
+            "pointer": "/runs/setup/result/result",
+            "equals": "pass"
+          },
+          {
+            "pointer": "/runs/setup/result/checks",
+            "equals": [
+              "native EDFE runway baseline matches seven sensed simulator-reference rows",
+              "actual engine, throttle, flaps and brakes changes differ after native state echoes",
+              "accessible three-tab keyboard inspection while paused preserves native state",
+              "synthetic imported recorded controls replace live Setup readings without native mutation",
+              "legacy missing telemetry remains unavailable and Back to live restores current readings"
+            ]
+          },
+          {
+            "pointer": "/runs/airport/exit_code",
+            "equals": 0
+          },
+          {
+            "pointer": "/runs/unit/passed",
+            "equals": 7
+          }
+        ]
+      }
+    },
+    {
+      "id": "practice-setup-scoped-review",
+      "mode": "manual_review",
+      "revision": "47cea7c04ea7822a0987f8a8fc857393920c17c3 + recorded working-tree source pins",
+      "procedure": "Independent same-provider source review and unit execution; final browser output, repaired keyboard/visibility findings and frozen source packet are recorded in the report.",
+      "scope": "Sensed generic simulator start reference only. Reviewer-authored policy prose and root catalog/result recording are excluded from independent implementation acceptance.",
+      "limitations": [
+        "Actual browser suites were run by their author; the reviewer inspected their output and visible captures.",
+        "No full aircraft checklist, circuit, hardware/system fidelity, instructor or external peer acceptance is claimed."
+      ],
+      "outcome": "pass",
+      "requirements": [
+        "R-PLAY-1",
+        "R-TRAIN-4",
+        "R-REVIEW-1"
+      ],
+      "inputs": [
+        {
+          "role": "fixture",
+          "path": "studies/e1-browser/results/2026-11-04-practice-setup.json",
+          "sha256": "97b011e7e02791f1a2c6b693531b8fbb83f47dee9772bbc954ab468c1ce0d795",
+          "pointer": "/runs"
+        },
+        {
+          "role": "build",
+          "path": "studies/e1-browser/results/2026-11-04-practice-setup.json",
+          "sha256": "97b011e7e02791f1a2c6b693531b8fbb83f47dee9772bbc954ab468c1ce0d795",
+          "pointer": "/build_info"
+        },
+        {
+          "role": "environment",
+          "path": "studies/e1-browser/results/2026-11-04-practice-setup.json",
+          "sha256": "97b011e7e02791f1a2c6b693531b8fbb83f47dee9772bbc954ab468c1ce0d795",
+          "pointer": "/environment"
+        },
+        {
+          "role": "evaluator",
+          "path": "app/tests/practice-setup.browser.mjs",
+          "sha256": "8fe2cfdad6aaa7f4fb7245ed95b2447b002a7ca577696506b3282f7eb5c6aee1"
+        },
+        {
+          "role": "evaluator",
+          "path": "app/tests/airport-play.browser.mjs",
+          "sha256": "0a7adccbefb9d3797f05b243d8690aaeee2325c17b79ca0ed5405e2ad6607c8c"
+        },
+        {
+          "role": "criteria",
+          "path": "app/src/practice-setup.test.ts",
+          "sha256": "f963a60628e0b873bef2cea6241586a4609ff495e5ae8dd6b381b69827f8d33d"
+        },
+        {
+          "role": "source",
+          "path": "app/src/practice-setup.ts",
+          "sha256": "c74f250694399a16003d982c0a36c1407cc1bef5359eb74b1f7df5a82a3c9d26"
+        },
+        {
+          "role": "source",
+          "path": "app/src/runway-practice-panel.ts",
+          "sha256": "f3a76d1bb75877e04a6ab97b45212d3aec0384e6da87f9dda4ff883a0c221e37"
+        },
+        {
+          "role": "source",
+          "path": "app/src/runway-practice-panel.css",
+          "sha256": "b84229191e8726dbeb0513f103b15a576e5eb6a9ccaae70e7fb7e710ffdab54a"
+        },
+        {
+          "role": "source",
+          "path": "app/src/practice-map.ts",
+          "sha256": "301089b9d0ae8b4f62e33d3106d143946c8f25fc834974d50ff7fcaaa9fe5b5c"
+        }
+      ],
+      "unavailableRoles": [
+        {
+          "role": "model",
+          "reason": "Embedded research aircraft/runtime closure is not redistributed. Observed build metadata does not establish aircraft fidelity, a real checklist or complete reconstructibility."
+        }
+      ],
+      "notApplicableRoles": [],
+      "dependsOn": [
+        "practice-setup-observation"
+      ],
+      "result": {
+        "path": "docs/reviews/2026-11-04-practice-setup.md",
+        "sha256": "d730615292433d89b8c0b15e4a16aeab23b8043d98e1e4d1587b5d22eeece2ca",
+        "assertions": []
+      },
+      "review": {
+        "author": "Codex root, glide_cases and glide_model",
+        "reviewer": "Codex glide_housekeeping (independent of implementation)",
+        "independent": true
+      }
     }
   ],
   "criteria": [

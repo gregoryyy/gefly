@@ -1,8 +1,8 @@
 # Runway-practice card and observations
 
-Scope: TODO 2.1.1, partial R-PLAY-1/R-TRAIN-2/R-REVIEW-1. This is a runnable
+Scope: TODO 2.1.1–2.1.3, partial R-PLAY-1/R-TRAIN-2/R-TRAIN-4/R-REVIEW-1. This is a runnable
 practice aid for the generic native 172P, not the accepted Exercise 01, selected
-172S model, checklist, published circuit route or landing assessment.
+172S model, complete aircraft checklist, published circuit route or landing assessment.
 
 The map's collapsed card identifies the selected prepared runway, objective,
 initial idle/parked configuration and controls. The EDFE north circuit is
@@ -55,3 +55,47 @@ recordings by identity even when their timestamps and sample counts match.
 Back to live restores the actual session context. Declared context does not verify
 that the recorded trajectory was flown at that airport or establish a validated
 procedure. Full scenario packages and the full scenario briefing remain open.
+
+## Sensed simulator setup reference
+
+The Setup tab compares the displayed snapshot with this simulator's runway-start
+reference. It is an original project aid toward R-TRAIN-4, not a reproduced POH
+checklist, aircraft departure procedure or readiness grade. Rows show **Match**,
+**Different**, **Unavailable** or **Unsupported**; none can be manually checked
+complete, and a different value during flight is expected.
+
+| Row | Expected simulator reference | Observed field / source |
+| --- | --- | --- |
+| Engine combustion | Running | Actual `engine_running`, not the requested ignition state |
+| Applied wheel brakes | Left and right 100% | Both native applied brake-command observations; not the UI parking latch or measured brake pressure |
+| Applied throttle | 0% | Native applied `throttle_norm`, not requested slider position or RPM |
+| Actual flaps | Displayed 0.0° | Native `flap_rad`, not flap command |
+| Trim (raw norm) | Displayed initial setting | Current and launch-reference `pitch_trim_norm` / `pitch_trim_initial_norm`; not an installed take-off mark |
+| Autopilot | KAP and legacy channels off | Both `kap_engaged` and `ap_mode` must be present and valid |
+| Model electrical | BAT / ALT / AV on | Valid `systems_switch_mask`; independent electrical teaching model, not native circuit telemetry |
+
+The reference comes from the existing
+[runway initializer and read-only bridge](../../studies/e1-browser/sim/bridge.cpp),
+the app's zero flap-command reset, and
+[model electrical defaults](../../app/src/aircraft-systems.ts). The initializer
+sets zero throttle, full brakes and a running engine; native model loading resets
+the legacy AP, while the [worker](../../studies/e1-browser/sim/worker.js) creates a
+fresh KAP controller. The native trim reader supplies the initial simulator setting.
+No manufacturer checklist text or aircraft-specific operating limit is added.
+
+Flap agreement uses the displayed 0.1° value, within the existing supported flap
+range. Trim agreement uses displayed 0.001 raw-normalized values, with negative
+zero normalized for display. These are display-comparison choices, not aircraft
+rigging or safety tolerances. Throttle idle and full-brake comparisons are exact;
+tiny nonzero/non-full commands remain Different with a bounded percentage label.
+Missing, nonfinite, invalid or partial required pairs stay Unavailable. Pilot/
+cabin inspections and fuel-selector/run-up equipment stay explicitly Unsupported.
+
+The evaluator reads a snapshot and returns frozen rows, without control writes,
+physics changes or remembered completion. Live shows the latest sampled native
+values; paused staged controls appear only after a subsequent native echo. The
+independent model electrical selections can update while paused without physics.
+Review uses its selected recorded floor sample, never current live control values
+or future/interpolated frames. Legacy recordings missing these fields remain
+Unavailable. A recording's declared runway context does not authenticate its
+configuration or make this reference an applicable real-aircraft checklist.
