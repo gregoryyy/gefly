@@ -1,10 +1,17 @@
 // Actual service worker/Cache Storage; no third-party network or flight model.
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdir, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { chromium } from 'playwright';
 import { gzipSync } from 'node:zlib';
-const worker = await readFile(new URL('../public/scenery-cache-sw.js', import.meta.url));
+const source = await readFile(new URL('../public/scenery-cache-sw.js', import.meta.url));
+// Observe the real Cache API in this fixture worker; no cache behavior is replaced.
+const worker = Buffer.concat([Buffer.from(`
+const cacheBench = {keys:0,match:0,put:0,delete:0};
+for(const name of Object.keys(cacheBench)){const original=Cache.prototype[name];Cache.prototype[name]=function(...args){cacheBench[name]++;return original.apply(this,args);};}
+self.addEventListener('message',event=>{if(event.data?.type==='cache-bench-stats')event.ports[0]?.postMessage({...cacheBench});});
+`),source]);
 const counts = new Map(), aborted = new Set(); let active = 0, peak = 0;
 const server = createServer((req, res) => {
   if (req.url === '/') { res.setHeader('Content-Type', 'text/html'); res.end('<!doctype html><title>Cache</title>'); return; }
@@ -32,6 +39,7 @@ try {
     await navigator.serviceWorker.register('/scenery-cache-sw.js'); await navigator.serviceWorker.ready;
     if (!navigator.serviceWorker.controller) await new Promise(resolve => navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true }));
   });
+  const metrics = () => page.evaluate(()=>new Promise(resolve=>{const channel=new MessageChannel();channel.port1.onmessage=event=>resolve(event.data);navigator.serviceWorker.controller.postMessage({type:'cache-bench-stats'},[channel.port2]);}));
   const get = path => page.evaluate(async path => (await fetch(path, { cache: 'no-store' })).text(), path);
   const stable = '/scenery/map/10/1/1.png';
   await page.evaluate(path => Promise.all([fetch(path), fetch(path)]).then(rs => Promise.all(rs.map(r => r.text()))), stable);
@@ -72,15 +80,36 @@ try {
   assert(aborted.has(foreground), 'visible photograph cancellation reaches the server instead of lingering in SW fetch');
   await new Promise(resolve => setTimeout(resolve, 1000));
   peak = 0;
+  const beforeBatch=await metrics(), coldStart=performance.now();
   await page.evaluate(urls => new Promise(resolve => {
     navigator.serviceWorker.addEventListener('message', function handler(e) {
       if (e.data.type === 'scenery-cache-status' && e.data.state === 'ready') { navigator.serviceWorker.removeEventListener('message', handler); resolve(); }
     });
     navigator.serviceWorker.controller.postMessage({ type: 'scenery-cache-focus', urls });
   }), Array.from({ length: 100 }, (_, i) => `/scenery/landmarks/14/${i}/1.pbf`));
+  const coldMs=performance.now()-coldStart, afterBatch=await metrics();
   assert(peak <= 2, 'two background network slots');
   const keys = await page.evaluate(async () => (await (await caches.open('gefly-scenery-v1')).keys()).map(r => r.url));
   assert.equal(keys.filter(url => url.includes('/landmarks/')).length, 96, 'landmark LRU entry budget');
   assert(!keys.some(url => url.includes('/private.json')));
+  const hot=keys.filter(url=>url.includes('/landmarks/')).slice(-32), networkBefore=[...counts.values()].reduce((a,b)=>a+b,0), warmStart=performance.now();
+  for(let round=0;round<2;round++)for(const path of hot)await get(path);
+  // Let the baseline worker's old asynchronous touch writes settle before counting.
+  await page.waitForTimeout(300);
+  const warmMs=performance.now()-warmStart, afterHits=await metrics();
+  assert.equal([...counts.values()].reduce((a,b)=>a+b,0),networkBefore,'warm hits make no network requests');
+  await page.reload();for(const path of hot.slice(0,8))await get(path);
+  assert.equal([...counts.values()].reduce((a,b)=>a+b,0),networkBefore,'warm reuse survives actual page reload');
+  const growth={cold:{keys:afterBatch.keys-beforeBatch.keys,match:afterBatch.match-beforeBatch.match,put:afterBatch.put-beforeBatch.put},warm:{keys:afterHits.keys-afterBatch.keys,match:afterHits.match-afterBatch.match,put:afterHits.put-afterBatch.put,delete:afterHits.delete-afterBatch.delete}};
+  if(process.env.SCENERY_CACHE_BASELINE!=='1'){
+    assert(growth.cold.keys<=1,'a write batch must not rescan the cache per insert');
+    assert(growth.cold.match<=110,'100 cold entries must not reread all previous cache responses');
+    assert.equal(growth.warm.keys,0);assert.equal(growth.warm.match,64,'one Cache API read per warm request');
+    assert.equal(growth.warm.put,0,'warm hits must not rewrite tile bodies');assert.equal(growth.warm.delete,0);
+  }
+  const benchmark={source_sha256:createHash('sha256').update(source).digest('hex'),baseline:process.env.SCENERY_CACHE_BASELINE==='1',cold_requests:100,warm_requests:64,reload_requests:8,cold_ms:coldMs,warm_ms:warmMs,growth};
+  await mkdir(new URL('../../output/flight/',import.meta.url),{recursive:true});
+  await writeFile(new URL(`../../output/flight/scenery-cache-${benchmark.baseline?'before':'after'}.json`,import.meta.url),JSON.stringify(benchmark,null,2)+'\n');
+  console.log(JSON.stringify(benchmark));
   console.log('PASS: real browser cache deduplication, reload reuse, expiry, exclusions, terrain identity, concurrency and eviction.');
 } finally { await browser?.close(); await new Promise(resolve => server.close(resolve)); }

@@ -97,15 +97,16 @@ export function createVectorMapMiddleware(options: VectorMapOptions = {}) {
   const capacity = Math.min(MAX_CACHE_BYTES, requested);
   const cache = new Map<string, Result>(), pending = new Map<string, Promise<Result>>();
   let cacheSize = 0;
+  const priorities = new Map<string, { value: number }>();
   const pools = {
-    bkg: { active: 0, pending: 0, queue: [] as Array<() => void> },
-    landmarks: { active: 0, pending: 0, queue: [] as Array<() => void> },
+    bkg: { active: 0, pending: 0, queue: [] as Array<{ resolve: () => void; priority: () => number }> },
+    landmarks: { active: 0, pending: 0, queue: [] as Array<{ resolve: () => void; priority: () => number }> },
   };
   const poolFor = (resource: Resource) => pools[resource.key.startsWith('landmarks/') ? 'landmarks' : 'bkg'];
-  async function acquire(resource: Resource): Promise<Result> {
+  async function acquire(resource: Resource, priority: () => number): Promise<Result> {
     const pool = poolFor(resource);
     if (pool.active < 4) pool.active++;
-    else await new Promise<void>(resolve => pool.queue.push(resolve));
+    else await new Promise<void>(resolve => pool.queue.push({ resolve, priority }));
     try {
       const response = await fetcher(resource.upstream, { redirect: 'error', signal: AbortSignal.timeout(15000), credentials: 'omit',
         headers: { 'User-Agent': 'Gefly/0.2 (+https://github.com/gregoryyy/gefly)' } });
@@ -122,7 +123,13 @@ export function createVectorMapMiddleware(options: VectorMapOptions = {}) {
         cache.set(resource.key, result); cacheSize += bytes.length;
       }
       return result;
-    } finally { const next = pool.queue.shift(); if (next) next(); else pool.active--; }
+    } finally {
+      if (pool.queue.length) {
+        let first = 0;
+        for (let i = 1; i < pool.queue.length; i++) if (pool.queue[i].priority() > pool.queue[first].priority()) first = i;
+        pool.queue.splice(first, 1)[0].resolve();
+      } else pool.active--;
+    }
   }
   return (req: IncomingMessage, res: ServerResponse, next: () => void): void => {
     const path = req.url || '';
@@ -133,12 +140,15 @@ export function createVectorMapMiddleware(options: VectorMapOptions = {}) {
     if (cached && cached.expires <= Date.now()) { cacheSize -= cached.bytes.length; cache.delete(resource.key); cached = undefined; }
     if (cached) { cache.delete(resource.key); cache.set(resource.key, cached); }
     let task = cached ? Promise.resolve(cached) : pending.get(resource.key);
+    const visible = req.headers?.['x-gefly-scenery-priority'] === 'visible';
+    if (visible && priorities.has(resource.key)) priorities.get(resource.key)!.value = 1;
     if (!task) {
       const pool = poolFor(resource);
       if (pending.size >= MAX_PENDING || pool.pending >= MAX_SOURCE_PENDING) { res.writeHead(503, { 'Cache-Control': 'no-store' }).end(); return; }
       pool.pending++;
-      task = acquire(resource); pending.set(resource.key, task);
-      task.finally(() => { pending.delete(resource.key); pool.pending--; }).catch(() => {});
+      const rank = { value: visible ? 1 : 0 }; priorities.set(resource.key, rank);
+      task = acquire(resource, () => rank.value); pending.set(resource.key, task);
+      task.finally(() => { pending.delete(resource.key); priorities.delete(resource.key); pool.pending--; }).catch(() => {});
     }
     task.then(value => {
       if (res.destroyed || res.writableEnded) return;

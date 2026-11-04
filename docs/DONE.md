@@ -3,6 +3,52 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 21:02 — Improve persistent and rendered scenery cache reuse
+
+TODO: 2.0.114; R-WORLD-9/R-WORLD-4.
+Agent: Codex proxy/client integration and actual5173 profiles; glide_model cache
+worker and browser measurements; glide_cases renderer/coalescing and browser
+measurements; glide_housekeeping independent scoped source/evidence review.
+
+**Implementation notes**
+
+Persistent cache metadata is reconstructed once per worker, then updated
+incrementally. Hits touch in-memory recency without rewriting tile bodies;
+requests wait only for their own persistence. Existing v1 content is retained.
+In the actual Cache API fixture's100-insert segment, full scans fell100→0 and
+matches5744→100;64warm hits rewrote no bodies, and tested warm/reload hits made
+no network requests. These are cache-operation measurements, not whole-app times.
+
+A64MiB finished-vector cache coalesces up to8independent consumers of one XYZ;
+only the last cancellation stops the render. The34-tile real-PBF revisit retained
+identical pixels without another render; cold rendering stayed roughly unchanged.
+Visible vector requests promote their shared proxy job ahead of queued warming,
+without changing concurrency/source limits. Nearby plans survive temporary camera
+loading; obsolete movement/mode/disabled plans still cancel. Ten proxy and six
+coverage/client tests pass. Real browser capacity, cancellation, expiry, reload,
+source-pixel and priority checks pass. Independent scoped review passes; peer pending.
+
+The actual5173 flight map settled in1.90s and0.65s after reload in one local run,
+with no page errors. A separate stable-Cesium vector profile observed9.65s for
+initial detail completion and6.13s on revisit (including a1s stability interval),
+with the first retained imagery visible much earlier. Server caches could already
+be warm; these are observations, not a controlled whole-app before/after speedup.
+
+**Deviations**
+
+The reported40s cold load is not declared resolved. Serial vector drawing and
+upstream latency remain. A preliminary queue-only timing raced later requests
+and is excluded from completion claims. Physics, controls, shortcuts, source
+rights, freshness, tile/hash checks and photo-cancellation handling are unchanged.
+Cache recency persists in memory; worker restart reconstructs insertion order.
+The64MiB figure bounds owned canvas pixels, not total browser/GPU memory.
+
+**Insights**
+
+More cached bytes alone cannot fix repeated metadata scans, redraws or discarded
+warm plans. Measure cache operations and actual loaded views separately; a brief
+empty queue is not sufficient evidence that a map has finished loading.
+
 ## 2026-11-04 20:39 — Apply the user's exact map keys and record UI overreach
 
 TODO: 2.0.113; R-WORLD-6/R-WORLD-7/R-UX-2.

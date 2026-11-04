@@ -763,7 +763,7 @@ The sharper airport overlay has approximately 0.75 m output pixels, sampled from
 public 20 cm orthophotography, over the wider starter photograph. Derived relief
 shading covers the DEM outside photographic coverage. A bundled 723-tile pyramid now covers 8.48–8.80°E / 49.93–50.12°N, with approximately
 3.07 m output pixels across the area and 1.54 m around Frankfurt/approaches and
-Egelsbach. Tiles load by view, with six concurrent requests and 64 decoded source
+Egelsbach. Tiles load by view, with two concurrent requests and 64 decoded source
 images; coarse ancestors/relief remain available when detail is missing. The
 separate 0.75 m airport photograph stays above regional tiles. Current imagery has no established capture date and
 is not airport/runway reference data. See the [terrain package](public/terrain/README.md),
@@ -813,3 +813,11 @@ Use **Comma (,)** or **Larger map** in the flight map to toggle the larger map v
 Flight map → **Charts** opens the official OFM Germany VFR viewer and DFS AIP
 airport/approach chart access. The selected airport identifier remains visible.
 Charts are publisher-hosted; embedded chart tiles/plates are not yet integrated.
+
+
+The public scenery cache keeps its existing saved tiles across reloads. It now
+uses incremental metadata and in-memory recency instead of scanning/rewriting the
+whole cache per tile. Nearby preloading survives brief camera loading, visible
+vector requests take priority, and a bounded 64 MiB rendered-tile cache shares
+duplicate work. This improves reuse; first visits still depend on public services
+and rendering. See [cache design](../docs/design/scenery-cache.md).

@@ -380,8 +380,8 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       throw new RangeError('Cannot render a non-finite aircraft state');
     }
     const useTerrain = state.terrain_profile === 1;
-    // Finish the camera's visible tiles before using connections to warm the region.
-    sceneryCache.update(state.lat_rad, state.lon_rad, vectorScenery, useTerrain && scene.globe.tilesLoaded);
+    // Start a new warm plan after visible tiles settle; retain nearby progress through brief camera tile work.
+    sceneryCache.update(state.lat_rad, state.lon_rad, vectorScenery, useTerrain, scene.globe.tilesLoaded);
     airportScenery.setVisible(useTerrain);
     airportScenery.setVectorVisible(false);
     if (vectorScenery && useTerrain) ensureMapTerrain();

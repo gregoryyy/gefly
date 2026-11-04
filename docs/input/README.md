@@ -154,3 +154,4 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [KAP evidence and current usability correction](2026-11-04-kap-evidence-correction.md)
 - [Persistent autopilot vertical-speed display](2026-11-04-kap-persistent-vs.md)
 - [User-owned map shortcuts and UI decisions](2026-11-04-user-owned-map-shortcuts.md)
+- [Map cache performance](2026-11-04-map-cache-performance.md)

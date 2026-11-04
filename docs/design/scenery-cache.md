@@ -14,8 +14,11 @@ remain applicable; caching does not change image dates or navigation authority.
 Warm near tiles before farther tiles, with at most 200 planned URLs and two
 background requests at a time. Current targets: maps z10/30km; photo and vector
 z11/20km plus z14/2km; regional terrain 35km. Labels use only enabled levels:
-places 60km, notable features 20km, detailed features 2km. Replacing the plan or
-switching it off drops queued work and aborts obsolete active warming. Warming waits until camera-visible globe tiles have settled. Foreground demand is isolated from warm cancellation, including identical URLs. Visible-demand loading remains available. Visible map requests may issue a second
+places 60km, notable features 20km, detailed features 2km. A new warm plan waits until camera-visible globe tiles settle. Brief camera
+loading retains nearby progress instead of rebuilding the same plan. Movement
+of 500 m, a mode change or disabling terrain cancels obsolete work. Foreground
+demand is isolated from warm cancellation, including identical URLs. Visible
+map requests may issue a second
 proxy-facing request to promote a tile already warming; the proxy shares the
 upstream fetch. This narrowly bypasses browser HTTP coalescing, preserving normal
 Cache Storage hits.
@@ -24,7 +27,12 @@ Visible live photographs and hashed regional JPEGs bypass service-worker interce
 
 Camera-visible Cesium requests and packaged regional imagery each have two concurrent loads, leaving local HTTP/1.1 capacity for renderer workers and terrain assets. Map-renderer code is imported before photography starts; the renderer itself is created only when selected. These limits prevent starvation rather than guaranteeing a fixed loading time.
 
-Persistent storage is bounded by 128MiB and 512 entries with LRU eviction;
+Persistent storage is bounded by 128 MiB and 512 entries. One lazily reconstructed
+metadata index tracks bytes, expiry and LRU in memory. Hits update recency without
+rewriting tile bodies; insertion evicts incrementally instead of rescanning every
+response. Worker restart reconstructs conservative insertion-order recency while
+retaining cached bodies. Each request waits only for its own persistence.
+
 OpenFreeMap landmark data has a tighter 24MiB/96-entry bound. Its
 [public service policy](https://openfreemap.org/) permits small offline extracts
 up to 3,000 tiles or 50MB, at most four parallel requests and an identifying
@@ -46,3 +54,22 @@ fetches. This is a data cache, not an offline application or a substitute for th
 server proxy: a deployment must still serve the allowlisted scenery routes.
 Simulation time/physics remain independent of warming, and authoritative terrain
 coverage/validation failures retain their existing behavior.
+
+## Rendered-vector reuse and foreground priority
+
+The single MapLibre terrain renderer retains up to 64 finished 512px RGBA canvases
+(64 MiB of owned pixels, excluding consumer/GPU copies). Same-XYZ requests share
+one render with up to 8 independently cancelable subscribers; only the last
+subscriber cancellation stops that work. Unique pending work remains bounded at
+one active render plus 48 queued jobs. Revisiting a resident tile reuses its pixels.
+No extra WebGL contexts or parallel renderer pool are created.
+
+MapLibre marks its allowlisted requests as visible demand. The fixed-source
+proxy promotes an already queued warm tile when visible demand needs it, while
+retaining one shared upstream request. Four upstream slots per source and the
+existing pending/byte limits remain unchanged. Background warming keeps its
+two-slot limit. Browser-native photo cancellation remains on its existing path.
+
+These changes reduce repeated I/O, redraws and queue contention. First visits
+still depend on upstream latency, source availability and serial vector rendering;
+a warm-cache fixture does not establish a whole-scene cold-load time.
