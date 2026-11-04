@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { PbfWriter } from 'pbf';
-import { createLandmarkLookup, createLandmarkSource, decodeLandmarkTile, type Landmark } from './landmark-data.ts';
+import { tilesWithinRadius } from './scenery-coverage.ts';
+import { createLandmarkLookup, createLandmarkSource, decodeLandmarkTile, LANDMARK_RANGES_M, type Landmark } from './landmark-data.ts';
 
 interface Feature { id: number; props: Record<string, string>; type?: number; geometry?: number[] }
 function fixture(layers: Record<string, Feature[]>): Uint8Array {
@@ -23,6 +24,9 @@ function fixture(layers: Record<string, Feature[]>): Uint8Array {
 const point = (id: number, props: Record<string, string>): Feature => ({ id, props });
 const tile = { z: 9 as const, x: 268, y: 173 };
 const lat = 49.9116 * Math.PI / 180, lon = 8.6348 * Math.PI / 180;
+const coverage = ([9, 12, 14] as const).map((z, i) => tilesWithinRadius(lat, lon, z, LANDMARK_RANGES_M[i + 1], [16, 56, 18][i]));
+const counts = coverage.map(tiles => tiles.length);
+const total = counts.reduce((sum, count) => sum + count, 0);
 const response = (bytes: Uint8Array) => new Response(bytes as Uint8Array<ArrayBuffer>, { headers: { 'content-type': 'application/vnd.mapbox-vector-tile' } });
 const flush = async () => { for (let i = 0; i < 10; i++) await new Promise(resolve => setTimeout(resolve, 0)); };
 
@@ -79,27 +83,29 @@ test('source loads cumulative tiers, deduplicates source features and reuses cur
       ? fixture({ aerodrome_label: [point(2, { name: 'Airport' })] }) : fixture({ poi: [point(3, { name: 'Named POI' })] }));
   } });
   source.update(lat, lon, 0); await flush(); assert.equal(requests.length, 0);
-  source.update(lat, lon, 1); await flush(); assert.equal(requests.length, 9);
-  assert.equal(updates.at(-1)!.status, 'ready'); assert.equal(updates.at(-1)!.items.length, 9,
+  source.update(lat, lon, 1); await flush(); assert.equal(requests.length, counts[0]);
+  assert.equal(updates.at(-1)!.status, 'ready'); assert.equal(updates.at(-1)!.items.length, counts[0],
     'within-tile duplicates merge while adjacent tile-local IDs stay distinct');
-  assert.equal(new Set(updates.at(-1)!.items.map(item => item.id)).size, 9);
-  source.update(lat, lon, 1); await flush(); assert.equal(requests.length, 9);
-  source.update(lat, lon, 2); await flush(); assert.equal(requests.length, 18);
-  assert.equal(updates.at(-1)!.items.filter(item => item.minLevel === 1).length, 9);
-  assert.equal(updates.at(-1)!.items.filter(item => item.minLevel === 2).length, 9);
-  source.update(lat, lon, 3); await flush(); assert.equal(requests.length, 27);
-  assert.deepEqual([1, 2, 3].map(level => updates.at(-1)!.items.filter(item => item.minLevel === level).length), [9, 9, 9]);
-  source.update(lat, lon, 1); await flush(); assert.equal(requests.length, 27, 'cached tier transitions do not refetch');
-  assert.equal(updates.at(-1)!.items.length, 9); source.dispose(); assert.equal(source.getStats().cacheSize, 0);
+  assert.equal(new Set(updates.at(-1)!.items.map(item => item.id)).size, counts[0]);
+  source.update(lat, lon, 1); await flush(); assert.equal(requests.length, counts[0]);
+  source.update(lat, lon, 2); await flush(); assert.equal(requests.length, counts[0] + counts[1]);
+  assert.equal(updates.at(-1)!.items.filter(item => item.minLevel === 1).length, counts[0]);
+  assert.equal(updates.at(-1)!.items.filter(item => item.minLevel === 2).length, counts[1]);
+  source.update(lat, lon, 3); await flush(); assert.equal(requests.length, total);
+  assert.deepEqual([1, 2, 3].map(level => updates.at(-1)!.items.filter(item => item.minLevel === level).length), counts);
+  source.update(lat, lon, 1); await flush(); assert.equal(requests.length, total, 'cached tier transitions do not refetch');
+  assert.equal(updates.at(-1)!.items.length, counts[0]); source.dispose(); assert.equal(source.getStats().cacheSize, 0);
 });
 
-test('source keeps four requests and 27 tiles bounded, aborts old generations/Off and cannot publish stale responses', async () => {
+test('source keeps four requests and distance coverage bounded, aborts old generations/Off and cannot publish stale responses', async () => {
   const requests: { signal: AbortSignal; release: () => void }[] = [], updates: string[] = [];
   const bytes = fixture({ place: [point(1, { class: 'city', name: 'Old' })] });
   const source = createLandmarkSource({ onUpdate: (_, status) => updates.push(status), fetcher: async (_, init) => {
     await new Promise<void>(resolve => requests.push({ signal: init!.signal!, release: resolve })); return response(bytes);
   } });
-  source.update(lat, lon, 3); assert.equal(requests.length, 4); assert.equal(source.getStats().queuedTiles, 23);
+  source.update(lat, lon, 3); assert.equal(requests.length, 4); assert.equal(source.getStats().queuedTiles, total - 4);
+  source.update(lat + 100 / 6378137, lon, 3); assert.equal(requests.length, 4);
+  assert(requests.every(request => !request.signal.aborted), 'sub-250m motion retains in-flight work');
   source.update(lat + .05, lon + .05, 2); assert(requests.every(request => request.signal.aborted));
   assert.equal(source.getStats().activeRequests, 4, 'aborted requests retain their slots until settled');
   source.update(lat, lon, 0); assert.equal(updates.at(-1), 'off');
@@ -126,7 +132,7 @@ test('source retains valid partial items when other tiles fail; invalid coordina
     () => response(new Uint8Array([26, 255, 255, 255, 127]))]) {
     let status = '';
     const failed = createLandmarkSource({ onUpdate: (_, value) => { status = value; }, fetcher: async () => bad() });
-    failed.update(lat, lon, 1); await flush(); assert.equal(status, 'degraded'); assert.equal(failed.getStats().failedTiles, 9); failed.dispose();
+    failed.update(lat, lon, 1); await flush(); assert.equal(status, 'degraded'); assert.equal(failed.getStats().failedTiles, counts[0]); failed.dispose();
   }
 });
 
@@ -233,4 +239,32 @@ test('lookup abort/disposal reject promptly, discard late data and hold slots un
   lookup.dispose(); await secondRejected;
   requests.slice(2).forEach(request => request.release()); await flush();
   await assert.rejects(lookup.lookup(lat, lon, new AbortController().signal), { name: 'AbortError' });
+});
+
+test('failed coverage retries only after cooldown without movement or a tight retry loop', async t => {
+  let now = 100000, requests = 0;
+  t.mock.method(Date, 'now', () => now);
+  const source = createLandmarkSource({ onUpdate() {}, fetcher: async () => {
+    requests++; if (now < 130000) throw new Error('temporary outage');
+    return response(fixture({ place: [point(1, { class: 'city', name: 'Recovered' })] }));
+  } });
+  source.update(lat, lon, 1); await flush(); assert.equal(requests, counts[0]);
+  for (let i = 0; i < 20; i++) source.update(lat, lon, 1);
+  await flush(); assert.equal(requests, counts[0], 'failed tiles are not retried every frame');
+  now = 129999; source.update(lat, lon, 1); await flush(); assert.equal(requests, counts[0]);
+  now = 130000; source.update(lat, lon, 1); await flush(); assert.equal(requests, counts[0] * 2);
+  assert.equal(source.getStats().cacheSize, counts[0]);
+  source.update(lat, lon, 1); await flush(); assert.equal(requests, counts[0] * 2); source.dispose();
+});
+
+test('distance coverage is nearest first, bounded below cache capacity and reaches beyond the old 3x3', () => {
+  assert.deepEqual(LANDMARK_RANGES_M, [0, 60000, 20000, 2000]);
+  assert(total <= 90 && counts[1] > 9, '20km landmark coverage is not a zoom-dependent 3x3');
+  for (const tiles of coverage) {
+    const z = tiles[0].z, n = 2 ** z;
+    const x = Math.floor((lon + Math.PI) / (2 * Math.PI) * n);
+    const y = Math.floor((1 - Math.asinh(Math.tan(lat)) / Math.PI) / 2 * n);
+    assert.equal(tiles[0].key, `${z}/${x}/${y}`, 'the containing tile is fetched first');
+    assert.equal(new Set(tiles.map(tile => tile.key)).size, tiles.length);
+  }
 });
