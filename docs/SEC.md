@@ -365,3 +365,13 @@ labels. Current-source labels in Review do not establish historical map state.
 ## Local launch position
 
 The browser stores a versioned last live latitude, longitude, MSL altitude, heading and ground/airborne flag in localStorage. It stays on the browser origin; no account or location-upload service is added. Restart flight removes it. Reads are size/schema/finite/range bounded, writes are throttled, and denied storage falls back to ordinary launch. This is simulated flight location, not device geolocation.
+
+## Planned world-authoring boundary
+
+Future source/asset imports and LLM-proposed scene recipes remain untrusted data.
+Require bounded declarative schemas, approved asset/source identifiers, safe
+paths and resource limits; do not execute generated scripts or follow arbitrary
+model-supplied URLs. Preserve per-layer and per-model rights, source provenance
+and measured/inferred/generated status. Generated visual detail cannot silently
+replace accepted terrain, runway, navigation or obstacle facts. No world-authoring
+importer, external AI data flow or new provider is activated by the research.

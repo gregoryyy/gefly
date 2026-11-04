@@ -107,3 +107,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-04 — Floating landmark labels](2026-11-04-osm-landmark-labels.md)
 
 - [2026-11-04 — Flight-location persistence and KAP140 climb/CWS](2026-11-04-flight-location-kap140-cws.md)
+
+- [2026-11-04 — World authoring and geotypical rendering research](2026-11-04-world-authoring.md)

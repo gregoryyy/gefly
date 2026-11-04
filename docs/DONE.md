@@ -3,6 +3,48 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 10:01 — World-authoring research and planned scene pipeline
+
+TODO: 2.0.73; R-WORLD-8/R-WORLD-3/R-AUTHOR-1/R-DATA-1.
+Agent: Codex orchestrator synthesis/shared documents; glide_cases traditional
+geospatial/procedural research; glide_model AI/neural research;
+glide_housekeeping independent documentation quality and scope validation.
+
+**Implementation notes**
+
+Add world authoring to ROAD, ARCH and SPEC: real map/terrain/building layers,
+regional geotypical materials and vegetation, deterministic scene compilation,
+streamed glTF/3D Tiles, editable preview and community packages. Record a bounded
+2 × 2 km EDFE demonstrator, then authoring preview, optional LLM recipe A/B on a
+1 km² subset and an optional captured/neural landmark as unchecked work.
+
+[Research synthesis](research/2026-11-04-world-authoring.md) links primary-source
+traditional and AI assessments. Compare tool/data/model/asset rights separately,
+current Cesium Gaussian-splat streaming, geotypical versus measured geometry and
+source resolution versus accuracy. UrbanWorld2.0 is an architectural reference,
+not a cleared dependency: its named Hunyuan model excludes EU use. Preserve
+physics/navigation authority separately from decorative or captured scenery.
+
+Shared CI passes with nine existing JSBSim study cases skipped, not passed;
+foundation/link and assurance checks validate document integrity only. The
+[scoped independent review](reviews/2026-11-04-world-authoring.md) records research
+quality/coverage. No new runtime, asset import, model/provider selection or
+performance benchmark is delivered. Cross-provider peer remains pending.
+
+**Deviations**
+
+Implementation tasks remain unchecked. The user's existing untracked public-data
+research file was read for context and left untouched. No paid service, model
+weight or world dataset was activated or added.
+
+**Insights**
+
+High-resolution appearance and geographic truth are different outputs. Ground
+imagery/footprints alone cannot establish unseen facades; regional procedural
+rules can fill visual gaps while retaining an explicit distinction from measured
+facts. Browser splat support makes a bounded capture experiment plausible but
+does not create source coverage or collision geometry.
+
 ## 2026-11-04 09:46 — Stable KAP climbs, CWS and saved flight location
 
 TODO: 2.0.71/2.0.72; R-AP-1/R-INPUT-1/R-REVIEW-1/R-UX-5.

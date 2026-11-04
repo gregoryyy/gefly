@@ -219,6 +219,33 @@ profile, not automatic instruments on every aircraft. Specify source, sensor/
 traffic inputs, indications and authority before implementing later ACAS/TCAS
 exercises; display of nearby traffic alone does not satisfy R-TRAFFIC-1.
 
+## World-authoring pipeline (planned)
+
+R-WORLD-8 extends the existing regional-data path into a reusable authoring
+workflow: map extent and coverage preview → authorized source retrieval → CRS/
+datum normalization → terrain/building/land-cover layers → deterministic regional
+materials and assets → tiled glTF/3D Tiles package → browser flight preview and
+reviewed community publication. Reuse GIS/conversion/procedural tools and the
+existing Cesium renderer; specific compiler/tool/provider selection remains open.
+See the [research and first demonstrator](research/2026-11-04-world-authoring.md).
+
+Keep DTM/contact terrain separate from DSM, building shells, visual materials and
+captured/neural scenery. Prefer measured geometry; carry source IDs, edition,
+rights, hashes and measured/inferred/generated status through authored objects.
+A detailed visual mesh or splat does not automatically supply collision geometry
+or an accepted obstacle database. Any physical integration needs explicit source
+and alignment validation against the existing datum/contact contract.
+
+An authoring recipe proposes extent, source manifests, approved asset IDs,
+regional rules, seed, compiler/version and LOD/texture budgets. An optional offline
+LLM/VLM can propose edits or representative detail; a bounded validator and human
+preview precede deterministic compilation. No generated JavaScript or arbitrary
+model tool invocation enters the simulator. Accepted packages replay without
+regeneration or dependence on a live model. Captured photogrammetry/splats remain
+an optional visual layer with separately verified input/output rights, runtime
+compatibility and measured streaming budgets. Current research does not select
+an AI provider, hosted tiler, model weight or worldwide-resolution guarantee.
+
 ## LLM-assisted flight-experience authoring
 
 The user describes territory, learning goals, navigation assets, chart material
