@@ -298,7 +298,7 @@ EMSCRIPTEN_KEEPALIVE int gf_configure_terrain_grid(double west, double south, do
 // Caller installs or removes a complete tile only between simulation steps.
 EMSCRIPTEN_KEEPALIVE int gf_set_terrain_tile(int id, double west, double south, double east, double north,
     double width, double height, const double* values, double count) {
-  if (!g_pending_terrain || id < 0 || id >= 56 || !finite_all({west,south,east,north,width,height,count})
+  if (!g_pending_terrain || id < 0 || id >= 108 || !finite_all({west,south,east,north,width,height,count})
       || width != 129 || height != 129 || count != 129 * 129) return kErrRange;
   const uintptr_t address = reinterpret_cast<uintptr_t>(values);
   const size_t bytes = static_cast<size_t>(count) * sizeof(double), heap = emscripten_get_heap_size();
@@ -310,7 +310,7 @@ EMSCRIPTEN_KEEPALIVE int gf_set_terrain_tile(int id, double west, double south, 
   } catch (const std::exception&) { return kErrRange; }
 }
 EMSCRIPTEN_KEEPALIVE int gf_remove_terrain_tile(int id) {
-  if (!g_pending_terrain || id < 0 || id >= 56) return kErrRange;
+  if (!g_pending_terrain || id < 0 || id >= 108) return kErrRange;
   g_pending_terrain->remove(id); return 0;
 }
 EMSCRIPTEN_KEEPALIVE int gf_clear_terrain_grid() { g_pending_terrain.reset(); return 0; }

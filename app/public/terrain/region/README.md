@@ -1,14 +1,14 @@
 # Streamed Rhein-Main public terrain
 
-This bounded package covers **8.25–10.00°E / 49.25–50.75°N**, including
-Darmstadt, Odenwald and Spessart. It is a broad-relief extension around the
+This bounded package covers **7.00–10.00°E / 49.25–51.50°N**, including
+Westerwald, the Lahn valley, Marburg and Kassel, as well as Darmstadt, Odenwald and Spessart. It is a broad-relief extension around the
 [finer Hessen package](../README.md), not full EDDF/100 NM or global terrain.
 
-`manifest.json` declares **42 tiles**, seven columns by six rows at **0.25°**.
+`manifest.json` declares **108 tiles**, twelve columns by nine rows at **0.25°**.
 Each tile has **129×129 geographic point nodes**, row-major south→north and
 west→east. Every node stores two little-endian float32 values: physical
 **DHHN2016 normal height H**, then **GCG2016/2023 quasigeoid anomaly ζ**. Each
-tile is 133,128 bytes; all height assets total 5,591,376 bytes. The native engine
+tile is 133,128 bytes; all height assets total 14,377,824 bytes. The native engine
 receives H; Cesium displays H + ζ with shared SW–NE triangle interpolation.
 
 The worker loads only the current surrounding 3×3 set, at most nine tiles, and
@@ -16,7 +16,7 @@ installs complete tiles between fixed physics steps. It pauses when that set
 must change, preserving the aircraft state; explicit pause/stop cancels automatic
 resume. Missing/corrupt data or leaving the physical coverage stops flight,
 without zero-height or stale-height substitution. Rendering retains visited
-tiles, at most 42, to display recorded Review without restoring native physics.
+tiles, at most 108, to display recorded Review without restoring native physics.
 
 The finer Hessen surface takes priority in its interior. Within a **0.02° inward
 band** from its nearest edge, native and renderer apply the same smoothstep

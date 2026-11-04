@@ -119,14 +119,19 @@ Press **.** to cycle floating OSM names: **Off → Places → Landmarks → Deta
 The same setting is in View. Labels sit above their mapped locations on either
 map terrain or photography; source coverage and label density are bounded.
 
-Public terrain now streams across **8.25–10.00°E / 49.25–50.75°N**, including
-Darmstadt, Odenwald and Spessart, with named Flight-menu demonstrations. The
+Public terrain now streams across **7.00–10.00°E / 49.25–51.50°N**, including
+Westerwald, the Lahn valley, Marburg and Kassel, alongside Darmstadt, Odenwald
+and Spessart, with named Flight-menu demonstrations. The
 bounded 200 m BKG relief surrounds the finer Egelsbach–Frankfurt–Taunus package;
 it is not surveyed runway terrain or the full EDDF/100 NM region. Bundled
 approximately 1.5–3 m imagery around Frankfurt is complemented by live public
 Hessen, Bavarian and Baden-Württemberg photography and a map fallback. The generic
 research aircraft remains experimental; see
 [setup, controls and limitations](app/README.md).
+
+Flight map → **Charts** opens the official OpenFlightMaps Germany VFR viewer
+and DFS AIP airport/approach chart access, with the selected airport identifier.
+Charts remain publisher-hosted; an embedded aeronautical overlay is not included.
 
 **N** toggles the parking brake beside the **B** wheel-brake button.
 Options → **Link rudder to aileron** adds optional yaw/steering assistance;

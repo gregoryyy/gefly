@@ -169,7 +169,7 @@ export interface FlightScene {
 }
 export interface FlightLocation { version: 1; lat_rad: number; lon_rad: number; alt_msl_m: number; heading_rad: number; mode: 'airborne' | 'ground' }
 export interface RunwayStart { airport: string; runway: string; lat_rad: number; lon_rad: number; heading_rad: number }
-export type AirborneSite = 'edfe' | 'taunus' | 'eddf-ils' | 'darmstadt' | 'odenwald' | 'spessart';
+export type AirborneSite = 'edfe' | 'taunus' | 'eddf-ils' | 'darmstadt' | 'odenwald' | 'spessart' | 'westerwald' | 'marburg' | 'kassel';
 export interface FlightSession {
   setLoading(config: LoadingConfiguration): boolean;
   restoreFromReview(state: Readonly<FlightState>): Promise<FlightState>;

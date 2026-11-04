@@ -2,7 +2,7 @@
 
 Status: selected stack with proposed product component boundaries. **Web application**, **Cessna 172**, **EASA PPL first**, **classic instruments before glass** and **QNH/QFE/standard-pressure coverage** are user decisions. Aircraft: a classic-panel 172S first, then the Reims FR172, as distinct engine configurations (Q3); the first exercise is a circuit at Frankfurt-Egelsbach (EDFE). The dynamics engine is **JSBSim** (Q17), used as a replaceable LGPL library; the web stack is TypeScript with a CesiumJS renderer (three.js fallback), MapLibre 2D maps and JSBSim in a module Web Worker at a fixed **1/120 s** step (Q17). Exact radio fit and geographic data provider remain open. Native and browser studies exist; the complete learner simulator and project-owned 172S flight model are not implemented. Expanded scope and proposed delivery slices are in [the training design](design/TRAINING.md).
 
-An experimental [local browser application](../app/README.md) integrates the existing study worker with a TypeScript flight deck and Cesium scene. npm/Vite owns this bounded application; reusable package boundaries below remain the target for extraction. Its generic study aircraft is built only for local research. Normal flights combine the finer public Hessen DEM with 42 lazy-loaded BKG DGM200 tiles over 8.25–10.00°E / 49.25–50.75°N, sharing physical DHHN2016 heights and GCG2016/2023 offsets between native ground contact and the Cesium ellipsoid-height surface. Explicit flat landing studies remain separate. This is not surveyed airport/runway or full EDDF/100 NM fidelity. The project-owned 172S model, real EDFE circuit and production runtime distribution remain incomplete.
+An experimental [local browser application](../app/README.md) integrates the existing study worker with a TypeScript flight deck and Cesium scene. npm/Vite owns this bounded application; reusable package boundaries below remain the target for extraction. Its generic study aircraft is built only for local research. Normal flights combine the finer public Hessen DEM with 108 lazy-loaded BKG DGM200 tiles over 7.00–10.00°E / 49.25–51.50°N, sharing physical DHHN2016 heights and GCG2016/2023 offsets between native ground contact and the Cesium ellipsoid-height surface. Explicit flat landing studies remain separate. This is not surveyed airport/runway or full EDDF/100 NM fidelity. The project-owned 172S model, real EDFE circuit and production runtime distribution remain incomplete.
 
 A lazy-loaded MapLibre map shows selected flight position, true heading, the bounded whole retained path and 731 searchable five-state OurAirports community airfield/heliport entries with optional reported elevation. Review uses the historical marker state, while the full retained line remains visible. Airport selection moves only the map. The community inventory is not accepted airport/runway, chart, fix or procedure data; reported elevation never overwrites contact terrain. Both 2D and 3D views use bundled imagery plus fixed-source live map/photo endpoints.
 
@@ -391,7 +391,7 @@ layers remain underneath and the sharper Egelsbach overlay remains above.
 
 ## Streamed regional ground and live scenery
 
-The [regional manifest](../app/public/terrain/region/manifest.json) pins 42
+The [regional manifest](../app/public/terrain/region/manifest.json) pins 108
 129×129-node tiles, each containing interleaved physical DHHN2016 H and
 GCG2016/2023 ζ channels. The authoring compiler builds one exact shared
 geographic lattice from BKG's 200 m source, then slices tiles so adjacent edges
@@ -404,7 +404,7 @@ The fixed-step worker installs/removes complete immutable tile buffers between
 steps. Its moving 3×3 working set holds at most nine tiles; a tile-centre change
 pauses physics until the new set is ready, then resumes only prior running intent.
 User pause cancels automatic resume. Missing/corrupt data stops rather than
-substituting a flat/stale surface. The renderer retains up to 42 visited tiles for
+substituting a flat/stale surface. The renderer retains up to 108 visited tiles for
 recorded Review, without restoring or advancing physics. Source 200 m relief and
 mostly 2000–2019 surveys remain distinct from finer display subdivision.
 

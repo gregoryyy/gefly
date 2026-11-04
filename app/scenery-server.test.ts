@@ -44,13 +44,16 @@ test('R-WORLD-6 public map covers southern Germany while imagery stays regional'
     assert.ok(init?.signal);
     return new Response(mapPng, { headers: { 'content-type': 'image/png' } });
   } });
-  // Munich, Saarbrücken and Kassel are outside the old photography rectangle.
+  // Public cartography remains broader than the regional photography.
   for (const [lat, lon] of [[48.137, 11.576], [49.2346, 6.9969], [51.315, 9.493]]) {
     const [x, y] = tile(lat, lon, 12);
     const result = await call(handler, `/scenery/map/12/${x}/${y}.png`);
     assert.equal(result.status, 200);
     assert.equal(result.headers['X-Scenery-Sources'], 'BKG');
     assert.deepEqual(result.data, mapPng);
+  }
+  for (const [lat, lon] of [[48.137, 11.576], [49.2346, 6.6], [51.8, 9.493]]) {
+    const [x, y] = tile(lat, lon, 12);
     assert.equal((await call(handler, `/scenery/imagery/12/${x}/${y}.png`)).status, 404);
   }
   assert.equal(seen.length, 3, 'rejected imagery does not request new source coverage');
@@ -149,4 +152,18 @@ test('visible duplicate promotes a queued map ahead of older background tiles', 
     assert.equal(started[4], `/wmts_topplus_open/tile/1.0.0/web/default/WEBMERCATOR/12/${y}/${x + 6}.png`);
   } finally { freeAll = true; releases.forEach(release => release()); await Promise.all([...work, duplicate]); }
   assert.equal(started.length, 7, 'duplicate visible demand still shares one upstream fetch');
+});
+
+
+test('northern Hessen photography expands without querying southern state providers', async () => {
+  const hosts: string[] = [];
+  const handler = sceneryMiddleware({ fetcher: async input => {
+    hosts.push(new URL(String(input)).hostname);
+    return new Response(photoPng, { headers: { 'content-type': 'image/png' } });
+  } });
+  const [x, y] = tile(51.2, 9.4, 12);
+  const result = await call(handler, `/scenery/imagery/12/${x}/${y}.png`);
+  assert.equal(result.status, 200);
+  assert.deepEqual(hosts, ['www.gds-srv.hessen.de']);
+  assert.equal(result.headers['X-Scenery-Partial'], 'false');
 });

@@ -14,6 +14,9 @@ GEOID_SHA='16b2f09996aee74eaa647fde4b7724ade17e384be534f38d23d9d229f30520c3'
 DEM_URL='https://daten.gdz.bkg.bund.de/produkte/dgm/dgm200/aktuell/dgm200.utm32s.geotiff.zip'
 GEOID_URL='https://daten.gdz.bkg.bund.de/produkte/sonstige/quasigeoid/aktuell/quasigeoid.geo89.w.zip'
 N=129
+WEST,SOUTH,EAST,NORTH=7.0,49.25,10.0,51.5
+TILE=.25
+COLS,ROWS=12,9
 sha=lambda b:hashlib.sha256(b).hexdigest()
 
 def geoid_table(raw):
@@ -39,7 +42,7 @@ def build(dem_path,geoid_path,output):
         # One exact geographic lattice: shared tile edges are literally the
         # same float32 nodes. Sample source pixel centers using exact PROJ
         # coordinates, avoiding per-tile GDAL warp approximation differences.
-        lon=np.linspace(8.25,10,7*(N-1)+1);lat=np.linspace(49.25,50.75,6*(N-1)+1)
+        lon=WEST+np.arange(COLS*(N-1)+1)*(TILE/(N-1));lat=SOUTH+np.arange(ROWS*(N-1)+1)*(TILE/(N-1))
         llon,llat=np.meshgrid(lon,lat)
         east,north=pyproj.Transformer.from_crs('EPSG:4326',source.crs,always_xy=True).transform(llon,llat)
         px=(east-source.transform.c)/source.transform.a-.5;py=(north-source.transform.f)/source.transform.e-.5
@@ -49,16 +52,16 @@ def build(dem_path,geoid_path,output):
         if any(np.any(v==source.nodata) for v in [sw,se,nw,ne]):raise ValueError('Unavailable DGM200 source nodes')
         full_h=(1-dy)*((1-dx)*sw+dx*se)+dy*((1-dx)*nw+dx*ne)
         full_z=interpolate_geoid(table,lon,lat)
-        for row in range(6):
-          for col in range(7):
-            west,south=8.25+col*.25,49.25+row*.25;east,north=west+.25,south+.25
+        for row in range(ROWS):
+          for col in range(COLS):
+            west,south=WEST+col*TILE,SOUTH+row*TILE;east,north=west+TILE,south+TILE
             physical=full_h[row*128:row*128+N,col*128:col*128+N]
             zeta=full_z[row*128:row*128+N,col*128:col*128+N]
             if not np.all(np.isfinite(physical)&(physical>-1000)&(physical<10000)) or not np.all(np.isfinite(zeta)&(np.abs(zeta)<200)):raise ValueError('Unavailable terrain/geoid')
             packed=np.empty((N,N,2),dtype='<f4');packed[:,:,0]=physical;packed[:,:,1]=zeta;data=packed.tobytes()
             ident=f'e{int(round(west*100))}-n{int(round(south*100))}';asset=ident+'.f32';(output/asset).write_bytes(data)
             tiles.append(dict(id=ident,west_deg=west,south_deg=south,east_deg=east,north_deg=north,width=N,height=N,asset=asset,bytes=len(data),sha256=sha(data)))
-    manifest=dict(version=1,id='rhein-main-dgm200-gcg-v1',bounds=[8.25,49.25,10,50.75],tile_degrees=.25,tile_nodes=N,rows='south-to-north',physical_datum='DHHN2016',geoid_model='GCG2016v2023_W',encoding='float32-le-interleaved-H-zeta',source=dict(dem=dict(url=DEM_URL,zip_sha256=sha(dem),tif_sha256=sha(tif),crs='EPSG:25832',resolution_m=200,license='DL-DE-BY-2.0',license_url='https://www.govdata.de/dl-de/by-2-0',credit='© GeoBasis-DE / BKG 2026 (Daten verändert)',source_age='State source surveys approximately 2000–2019; not current surveyed airport data'),geoid=dict(url=GEOID_URL,zip_sha256=sha(geoid),license='CC-BY-4.0',credit='© BKG 2026, GCG2016/2023; regional extraction/interpolation'),compiler_sha256=sha(Path(__file__).read_bytes()),transform='Exact PROJ geographic node coordinates; source-center bilinear interpolation on one shared lattice; GCG bilinear interpolation; float32 little-endian, south to north'),tiles=tiles)
+    manifest=dict(version=1,id='rhein-main-dgm200-gcg-v1',bounds=[WEST,SOUTH,EAST,NORTH],tile_degrees=TILE,tile_nodes=N,rows='south-to-north',physical_datum='DHHN2016',geoid_model='GCG2016v2023_W',encoding='float32-le-interleaved-H-zeta',source=dict(dem=dict(url=DEM_URL,zip_sha256=sha(dem),tif_sha256=sha(tif),crs='EPSG:25832',resolution_m=200,license='DL-DE-BY-2.0',license_url='https://www.govdata.de/dl-de/by-2-0',credit='© GeoBasis-DE / BKG 2026 (Daten verändert)',source_age='State source surveys approximately 2000–2019; not current surveyed airport data'),geoid=dict(url=GEOID_URL,zip_sha256=sha(geoid),license='CC-BY-4.0',credit='© BKG 2026, GCG2016/2023; regional extraction/interpolation'),compiler_sha256=sha(Path(__file__).read_bytes()),transform='Exact PROJ geographic node coordinates; source-center bilinear interpolation on one shared lattice; GCG bilinear interpolation; float32 little-endian, south to north'),tiles=tiles)
     (output/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
     print(f'Built {len(tiles)} tiles, {sum(t["bytes"] for t in tiles)} bytes')
 

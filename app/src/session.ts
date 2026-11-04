@@ -1,6 +1,7 @@
 import { validLoading, validLoadingState, loadingFromState, LOADING_FIELDS, type LoadingConfiguration } from '../../studies/e1-browser/sim/loading.js';
 import { validFlightLocation } from './flight-location.ts';
 import { resumeProblem } from '../../studies/e1-browser/sim/continue-flight.js';
+import { REGIONAL_TERRAIN } from '../../studies/e1-browser/sim/terrain-stream.js';
 import { validateTerrainGrid, type TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
 import { eddfApproachPractice } from './navigation-approach.ts';
 import { getNavigationCatalogue } from './radio-nav.ts';
@@ -30,7 +31,7 @@ interface SessionCallbacks {
 
 const DEG_RAD = Math.PI / 180;
 function regionalInitialCondition(site: AirborneSite) {
-  const point = ({darmstadt:[49.87,8.65,900,170],odenwald:[49.65,8.85,1300,90],spessart:[50,9.5,1300,270]} as const)[site as 'darmstadt'|'odenwald'|'spessart'];
+  const point = ({darmstadt:[49.87,8.65,900,170],odenwald:[49.65,8.85,1300,90],spessart:[50,9.5,1300,270],westerwald:[50.45,7.8,1500,90],marburg:[50.8,8.77,1500,0],kassel:[51.3,9.4,1500,90]} as const)[site as 'darmstadt'|'odenwald'|'spessart'|'westerwald'|'marburg'|'kassel'];
   return point ? {lat_rad:point[0]*DEG_RAD,lon_rad:point[1]*DEG_RAD,alt_msl_m:point[2],heading_rad:point[3]*DEG_RAD,tas_mps:90*1852/3600} : null;
 }
 const INPUT_PERIOD_MS = 50;
@@ -191,10 +192,11 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       const m = message as Record<string, unknown>;
       if (m.type === 'terrain-tile') {
         const grid = m.grid as TerrainGrid & {slot:number};
-        if (!validateTerrainGrid(grid) || grid.width !== 129 || grid.height !== 129 || !Number.isInteger(grid.slot) || grid.slot < 0 || grid.slot >= 42) { failCurrent('Invalid regional terrain message.'); return; }
-        const col = grid.slot % 7, row = Math.floor(grid.slot / 7);
-        const expectedBounds = [8.25 + col * .25, 49.25 + row * .25, 8.5 + col * .25, 49.5 + row * .25];
-        if (grid.id !== `e${825 + col * 25}-n${4925 + row * 25}`
+        if (!validateTerrainGrid(grid) || grid.width !== 129 || grid.height !== 129 || !Number.isInteger(grid.slot) || grid.slot < 0 || grid.slot >= REGIONAL_TERRAIN.tileCount) { failCurrent('Invalid regional terrain message.'); return; }
+        const { west, south, cols, step } = REGIONAL_TERRAIN;
+        const col = grid.slot % cols, row = Math.floor(grid.slot / cols);
+        const expectedBounds = [west + col * step, south + row * step, west + (col + 1) * step, south + (row + 1) * step];
+        if (grid.id !== `e${west * 100 + col * step * 100}-n${south * 100 + row * step * 100}`
           || [grid.west_rad, grid.south_rad, grid.east_rad, grid.north_rad].some((value, i) => Math.abs(value - expectedBounds[i] * DEG_RAD) > 1e-12)) {
           failCurrent('Regional terrain identity or bounds mismatch.'); return;
         }
@@ -319,7 +321,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       if (runway && (!/^[A-Z0-9-]{2,12}$/.test(runway.airport) || (!/^[0-3][0-9][LRC]?$/.test(runway.runway) || Number(runway.runway.slice(0,2)) < 1 || Number(runway.runway.slice(0,2)) > 36) || ![runway.lat_rad, runway.lon_rad, runway.heading_rad].every(Number.isFinite) || Math.abs(runway.lat_rad) > Math.PI/2 || Math.abs(runway.lon_rad) > Math.PI)) return;
       if (disposed) return;
       if (preset !== undefined && !['normal', 'hard', 'side', 'banked'].includes(preset)) return;
-      if (site !== undefined && !['edfe', 'taunus', 'eddf-ils', 'darmstadt', 'odenwald', 'spessart'].includes(site)) return;
+      if (site !== undefined && !['edfe', 'taunus', 'eddf-ils', 'darmstadt', 'odenwald', 'spessart', 'westerwald', 'marburg', 'kassel'].includes(site)) return;
       airborneSite = site ?? airborneSite;
       initialLocation = location ? { ...location } : undefined;
       if (location) wantedRunning = false;

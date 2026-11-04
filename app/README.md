@@ -3,7 +3,7 @@
 Fly an airborne JSBSim research aircraft with keyboard, touchpad or on-screen
 controls, a classic six-pack flight deck and cockpit/chase views. CesiumJS displays
 public regional terrain and photography around an approximate EDFE starting point,
-with streamed coverage reaching Darmstadt, Odenwald and Spessart. This is an experimental
+with streamed coverage reaching Westerwald, Marburg/Lahn and Kassel, as well as Darmstadt, Odenwald and Spessart. This is an experimental
 slice toward the [first browser exercise](../docs/TODO.md), not a completed or
 validated PPL exercise.
 
@@ -32,7 +32,7 @@ just fly
 Open the local URL printed by the development server, then select **Start flight**.
 The application loads paused so the aircraft cannot fly away while you inspect
 the controls. Starting or resetting uses the same airborne initial state near
-approximate EDFE coordinates: 1,300 ft MSL (DHHN2016 physical height) and 90 kt true airspeed. Press **I** to show the initially hidden menu. Choose **Flight → Taunus ridge flight**, **Darmstadt flight**, **Odenwald ridge flight** or **Spessart flight** for separate airborne demonstrations.
+approximate EDFE coordinates: 1,300 ft MSL (DHHN2016 physical height) and 90 kt true airspeed. Press **I** to show the initially hidden menu. Choose **Flight → Taunus ridge flight**, **Darmstadt flight**, **Odenwald ridge flight** **Spessart flight**, **Westerwald flight**, **Marburg / Lahn flight** or **Kassel flight** for separate airborne demonstrations.
 
 The engine build reuses the [existing browser study recipe](../studies/e1-browser/sim/README.md).
 Its generated WASM and bundled research-model data stay in ignored local build
@@ -755,10 +755,10 @@ DHHN2016 physical heights drive the atmosphere and dynamics; GCG2016/2023
 quasigeoid offsets are added only for rendering. Review retains the actual
 height fields. Missing/corrupt data and coverage exits stop flight, without an
 invisible flat-ground fallback. A surrounding BKG DGM200 package now covers
-**8.25–10.00°E / 49.25–50.75°N** in **42 tiles**. The worker keeps up to nine
+**7.00–10.00°E / 49.25–51.50°N** in **108 tiles**. The worker keeps up to nine
 surrounding tiles and pauses at tile-centre transitions while additional data
 loads; it preserves the current flight state and resumes prior intent. Rendering
-retains visited tiles, at most 42, for Review. A derived **0.02° inward blend**
+retains visited tiles, at most 108, for Review. A derived **0.02° inward blend**
 joins fine and coarse surfaces with the same interpolation in native contact
 physics and rendering. This transition is not surveyed terrain. The 200 m source
 surveys date approximately 2000–2019; added display subdivision is not additional
@@ -819,3 +819,7 @@ separate required flight-startup packages retain their fail-closed behavior. See
 Recordings can be saved and loaded as version 1 JSON using **Flight → Save/Load recording JSON** or the replay bar. Loading opens a validated, read-only state trace and preserves the current live flight; **Back to live** restores its previous flying/paused state. Files retain at most ten minutes/36,000 samples (256 MB import limit), in SI units; they are not native physics checkpoints.
 
 With the flight map open, **comma (,)** toggles whether it overlaps the cockpit. **M** still opens/closes the map and **N** remains the parking brake.
+
+Flight map → **Charts** opens the official OFM Germany VFR viewer and DFS AIP
+airport/approach chart access. The selected airport identifier remains visible.
+Charts are publisher-hosted; embedded chart tiles/plates are not yet integrated.

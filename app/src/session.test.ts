@@ -61,13 +61,19 @@ test('rate changes are bounded worker messages and autopilot capture flushes del
   assert.equal(errors.length, 1);
 });
 
-test('regional worker messages reject a valid-shaped grid with inconsistent slot identity', t => {
-  const { session, errors } = fixture(t);
+test('regional worker messages accept expanded edge slots and reject inconsistent identity', t => {
+  const { session, errors, tiles } = fixture(t);
   session.reset(); const worker = MockWorker.instances[0];
   const r = Math.PI / 180;
+  for (const [id, slot, west, south] of [['e700-n4925', 0, 7, 49.25], ['e975-n5125', 107, 9.75, 51.25]] as const) {
+    worker.emit({ type: 'terrain-tile', grid: { version: 1, id, slot, width: 129, height: 129,
+      west_rad: west * r, south_rad: south * r, east_rad: (west + .25) * r, north_rad: (south + .25) * r,
+      physical_m: new Float64Array(129 * 129).fill(100), geoid_m: new Float64Array(129 * 129).fill(48) } });
+  }
+  assert.equal(tiles.length, 2); assert.deepEqual(errors, []);
   worker.emit({ type: 'terrain-tile', grid: {
-    version: 1, id: 'e850-n4925', slot: 0, width: 129, height: 129,
-    west_rad: 8.25 * r, south_rad: 49.25 * r, east_rad: 8.5 * r, north_rad: 49.5 * r,
+    version: 1, id: 'e725-n4925', slot: 0, width: 129, height: 129,
+    west_rad: 7 * r, south_rad: 49.25 * r, east_rad: 7.25 * r, north_rad: 49.5 * r,
     physical_m: new Float64Array(129 * 129).fill(100), geoid_m: new Float64Array(129 * 129).fill(48),
   } });
   assert.equal(errors.length, 1); assert(worker.terminated);

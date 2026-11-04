@@ -13,6 +13,7 @@ function fixture() {
 }
 test('versioned local position rejects corrupt/extra/nonfinite/outside-region input', () => {
   assert(validFlightLocation(pose));
+  assert(validFlightLocation({ ...pose, lat_rad: 51.4 * Math.PI / 180, lon_rad: 7.1 * Math.PI / 180 }));
   for (const value of [null, [], {}, { ...pose, version: 2 }, { ...pose, extra: 'execute' }, { ...pose, mode: ['ground'] },
     { ...pose, lat_rad: NaN }, { ...pose, lon_rad: 0 }, { ...pose, alt_msl_m: 6001 }, { ...pose, heading_rad: 2 * Math.PI }]) assert(!validFlightLocation(value));
   const { store, values } = fixture();

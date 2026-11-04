@@ -8,7 +8,7 @@ const WORLD = 20037508.342789244;
 // WGS84 [west, south, east, north]. Public cartography covers the five-state
 // inventory; photography remains within its separately reviewed regional area.
 const MAP_BOUNDS = [6, 47, 14, 51.75] as const;
-const IMAGERY_BOUNDS = [8, 49, 10, 50.75] as const;
+const IMAGERY_BOUNDS = [7, 49, 10, 51.5] as const;
 const SOURCES = {
   map: ['https://sgx.geodatenzentrum.de/wmts_topplus_open', 'web'],
   hessen: ['https://www.gds-srv.hessen.de/cgi-bin/lika-services/ogc-free-images.ows', 'he_dop_rgb'],
@@ -110,9 +110,10 @@ export function sceneryMiddleware(options: SceneryOptions = {}) {
     if (kind === 'map') return { bytes: await acquire('map', box, 256, tile, priority), type: 'image/png', sources: 'BKG', partial: false, expires: Date.now() + 3600000 };
     const [west, south, east, north] = [longitude(box[0]), latitude(box[1]), longitude(box[2]), latitude(box[3])];
     const selected: Source[] = [];
-    if (north >= 49.35) selected.push('hessen');
-    if (east >= 8.96) selected.push('bavaria');
-    if (south <= 49.8) selected.push('bw');
+    // Query envelopes bound providers; actual state footprints remain transparent.
+    if (east >= 7.41867 && west <= 10.5 && north >= 49.25 && south <= 51.7596) selected.push('hessen');
+    if (east >= 8.96 && north >= 49 && south <= 50.75) selected.push('bavaria');
+    if (east >= 8 && west <= 10 && north >= 49 && south <= 49.8) selected.push('bw');
     const results = await Promise.allSettled(selected.map((source) => acquire(source, box, 512, tile, priority)));
     const images: Buffer[] = [], sources: string[] = [];
     results.forEach((result, i) => { if (result.status === 'fulfilled') { images.push(result.value); sources.push(selected[i]); } });

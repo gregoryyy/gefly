@@ -3,6 +3,37 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 13:10 — Terrain beyond the Taunus and chart access
+
+TODO: 2.0.84/2.0.85; R-WORLD-5/R-CHART-1. Agent: Codex integration;
+glide_cases terrain compiler/data and chart sources; glide_model runtime;
+glide_housekeeping independent review.
+
+**Implementation notes**
+
+Add 66 actual height tiles for 108 total (14,377,824 bytes), west to 7°E and
+north to 51.5°N. Original 42 tile hashes remain unchanged; all 195 shared edges
+match. Native WASM rebuilt; six-location native comparison has zero H mismatch,
+with at most nine resident tiles. New Flight presets and location persistence
+cover Westerwald/Lahn/Marburg/Kassel; northern Hessen photography retains source
+footprints and map fallback. Flight map Charts opens OFM VFR and DFS AIP sources.
+TypeScript, 51 focused terrain/session/location cases and nine proxy cases pass.
+The existing native/Cesium browser case passes all six presets, 0.25 m mesh
+agreement, map/Review isolation, chart links and missing/corrupt fail-closed paths.
+[Review](reviews/2026-11-04-beyond-taunus.md); peer pending.
+
+**Deviations**
+
+Aeronautical charts remain publisher-hosted. Working OFM raster tiles do not
+establish product reuse rights; full current terms and publication metadata were
+unavailable. Embedded chart/airspace/procedure layers remain TODO 2.0.85.1.
+DGM200 is broad relief, not surveyed airport/obstacle detail.
+
+**Insights**
+
+Keep source geometry and old tile bytes stable while extending the streaming
+matrix, and update the native ID limit, rendering and saved-location fences together.
+
 ## 2026-11-04 12:48 — Prioritize visible map loading
 
 TODO: 2.0.83; R-WORLD-6/R-WORLD-5. Agent: Codex integration; glide_cases proxy;
