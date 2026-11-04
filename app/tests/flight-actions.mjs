@@ -3,7 +3,7 @@ export async function prepareFlightUI(page, { controls = true } = {}) {
   const scene = page.locator('#scene');
   if (!(await page.locator('.topbar').isVisible())) {
     await scene.focus();
-    await page.keyboard.press('o');
+    await page.keyboard.press('i');
   }
   if (controls) {
     const panel = page.locator('#flight-controls-panel');

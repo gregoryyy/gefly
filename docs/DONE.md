@@ -3,6 +3,27 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 08:13 — O for Options, I for the menu bar
+
+TODO: 2.0.69; R-UX-2/R-INPUT-1. Agent: Codex orchestrator integration;
+glide_cases bar shortcut/browser checks, glide_model Options shortcut,
+glide_housekeeping independent affected review.
+
+**Implementation notes**
+
+O opens Options even with the title bar hidden; I toggles that bar. Update the
+visible shortcut, start hint, documentation and browser helpers. The existing
+browser suite passes typing, modal, modifier/repeat, hidden/shown-bar and disabled
+Review guards. The legacy Alt+Shift+O alias remains functional.
+
+**Deviations**
+
+None. Prior view/zoom implementation remains unchanged; peer pending.
+
+**Insights**
+
+Keep the Options opener independent of whether its menu button is visible.
+
 ## 2026-11-04 08:06 — View reset, body-direction cues and focused cockpit zoom
 
 TODO: 2.0.68; R-INPUT-1/R-PANEL-1/R-VIEW-1/R-REVIEW-1.

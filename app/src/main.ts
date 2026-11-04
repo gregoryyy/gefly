@@ -65,7 +65,7 @@ root.innerHTML = `
     <h1 id="gate-title">Loading aircraft…</h1>
     <p id="gate-copy">The aircraft starts airborne at 90 kt. Flight time stays paused until you start.</p>
     <button id="start" class="primary" disabled>Loading…</button>
-    <span class="gate-hint">O opens the menu · Space starts/pauses · Alt+Shift+F shows flight controls.</span>
+    <span class="gate-hint">I opens the menu · O opens Options · Space starts/pauses · Alt+Shift+F shows flight controls.</span>
   </section>
   <aside id="landing-feedback" hidden></aside>
   <aside id="ground-collision-panel" hidden></aside>

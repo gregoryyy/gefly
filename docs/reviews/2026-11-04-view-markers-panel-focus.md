@@ -70,3 +70,36 @@ source/specification/package/test files. SHA-256 of sorted
 `path + NUL + file SHA-256 + newline`:
 `e2cb8490bec449064e5e613ccd87baa1442c39309df8ce342dbc5eae91a98066`.
 This report and the reviewer's own notes are excluded from independent acceptance.
+
+## Affected shortcut renewal — 2026-11-04 08:14 Europe/Berlin
+
+**Quality: pass. Scoped validation: pass.** Reviewed the two shortcut handlers,
+main hint, current README/SPEC and mechanical bar-key updates in the shared
+browser helper and affected tests. Plain **I** toggles the title/menu bar; plain
+**O** invokes the existing Options button even when the bar is hidden. Options
+keeps its visible/ARIA primary shortcut label. Existing Alt+Shift+O and
+Alt+Shift+I routes remain Options and ILS practice respectively; modifier guards
+prevent either from becoming a plain title-bar toggle. Routing still honors
+editable targets, open dialogs, repeats and disabled buttons. No new flight-state
+or input implementation is introduced.
+
+The final implementation-agent execution of the existing
+`node app/tests/overlay-presentation.browser.mjs` passed, recorded in
+`output/flight/options-menu-keys-browser.log`. Reviewed actual fixture alias
+checks and integrated-app checks: O opens Options with a hidden or shown bar
+without toggling it; I toggles/closes bar menus; typing, modal, modifier/repeat
+and disabled-Review Options guards hold, while I remains available in Review.
+The reviewer inspected source and that execution evidence without rerunning the
+suite. Other mechanically updated browser scripts were inspected, not claimed
+as newly executed checks. Prior view/zoom implementation and its accepted tests
+remain unchanged; this renewal is confined to key routing and updated call sites.
+
+Current combined 26-file packet:
+`output/flight/view-markers-panel-focus-shortcuts-review-packet.json`, using the
+same sorted-path hash algorithm:
+`92d16e024d9f352c0d901dea7a2dd1f055e409d0aecd02331cffa1eb84d5972b`.
+It supersedes the earlier packet for current integration; the earlier packet
+remains historical. Base for this follow-up is
+`4ad8c313ba400f057672a7c32105b0411e867679` plus reviewed working-tree changes.
+Shared status/catalog records remain outside independent acceptance. Peer and
+full hardware/fidelity coverage remain pending as stated above.

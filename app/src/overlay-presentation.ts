@@ -61,7 +61,7 @@ export function createOverlayPresentation({ root, title, onActivate }: { root: H
       event.stopImmediatePropagation();
       return;
     }
-    if (event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.key.toLowerCase() !== 'o') return;
+    if (event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.key.toLowerCase() !== 'i') return;
     if (document.querySelector('dialog[open]') || (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])'))) return;
     if (!title.hidden) {
       for (const menu of title.querySelectorAll<HTMLDetailsElement>('details[open]')) menu.open = false;

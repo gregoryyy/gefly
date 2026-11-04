@@ -16,16 +16,17 @@ export function installMenuShortcuts(root: HTMLElement): () => void {
       const button = root.querySelector<HTMLButtonElement>(selector);
       if (!button || button.dataset.menuShortcut === key) continue;
       button.dataset.menuShortcut = key;
-      button.setAttribute('aria-keyshortcuts', `${key === 'V' ? 'V ' : key === 'M' ? 'M ' : ''}Alt+Shift+${key}`);
+      button.setAttribute('aria-keyshortcuts', key === 'O' ? 'O' : `${key === 'V' ? 'V ' : key === 'M' ? 'M ' : ''}Alt+Shift+${key}`);
       const label = document.createElement('kbd');
-      label.textContent = /Mac|iPhone|iPad/.test(navigator.platform) ? `⌥⇧${key}` : `Alt+Shift+${key}`;
+      label.textContent = key === 'O' ? 'O' : /Mac|iPhone|iPad/.test(navigator.platform) ? `⌥⇧${key}` : `Alt+Shift+${key}`;
       label.className = 'menu-shortcut';
       button.append(' ', label);
     }
     root.querySelector('#pause')?.setAttribute('aria-keyshortcuts', 'Space');
   };
   const onKey = (event: KeyboardEvent) => {
-    if (!event.altKey || !event.shiftKey || event.ctrlKey || event.metaKey || event.repeat) return;
+    const plainOptions = event.code === 'KeyO' && !event.altKey && !event.shiftKey;
+    if (event.ctrlKey || event.metaKey || event.repeat || (!plainOptions && (!event.altKey || !event.shiftKey))) return;
     if (document.querySelector('dialog[open]') || (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])'))) return;
     // KeyboardEvent.code remains stable when Shift changes the printable character.
     const key = event.code.startsWith('Key') ? event.code.slice(3) : event.code.startsWith('Digit') ? event.code.slice(5) : '';
