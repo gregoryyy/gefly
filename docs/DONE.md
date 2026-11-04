@@ -3,6 +3,32 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 07:28 — Bring merged flight-control and circuit increments to main
+
+TODO: 2.0.67/2.1.4; R-INPUT-1/R-VIEW-1/R-PLAY-1/R-TRAIN-5.
+Agent: Codex orchestrator integration; glide_housekeeping independent merge audit.
+
+**Implementation notes**
+
+GitHub merged PR70 into the map-terrain branch and PR71 into the flying-controls
+branch; main at e2bef5a contained only PR69. Merge the completed branch b87e022
+onto current main without conflicts, preserving complete DONE entries and all
+previous source/review evidence. The integration tree before this log entry is
+byte-identical to b87e022; no product implementation changes are introduced.
+Publish the consolidated result with main as its explicit PR target.
+
+**Deviations**
+
+The two GitHub merged states did not establish delivery to main. Existing scoped
+quality/validation reports still cover identical source bytes; full circuit and
+cross-provider acceptance remain unclaimed. Re-run shared CI and assurance on
+the integrated revision.
+
+**Insights**
+
+Verify actual main ancestry after stacked merges. Retarget dependent PRs to main
+once their parent is merged before asking for the next merge.
+
 ## 2026-11-04 03:13 — Optional north-circuit guide on the flight map
 
 TODO: 2.1.4; R-PLAY-1/R-TRAIN-5/R-WORLD-6/R-REVIEW-1. Agent: Codex
