@@ -128,6 +128,7 @@ const groundCollisionPanel = createGroundCollisionPanel({
   onReview: () => enterReview(),
   onFlightMenu() {
     if (reviewing) exitReview();
+    document.querySelector<HTMLElement>('.topbar')!.hidden = false;
     closeViewMenu(); el<HTMLDetailsElement>('flight-menu').open = true;
     el('reset').focus({ preventScroll: true });
   },

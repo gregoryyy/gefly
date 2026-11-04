@@ -3,6 +3,25 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 11:26 — Collision-panel Flight menu
+
+TODO: 2.0.79; R-UX-2.
+Agent: Codex integration; glide_cases one-line fix; glide_model existing browser
+regression; glide_housekeeping scoped review.
+
+**Implementation notes**
+
+Reveal the top bar before opening Flight and focusing Restart. The existing
+collision browser passes visibility/focus and actual restart. [Review](reviews/2026-11-04-collision-flight-menu.md).
+
+**Deviations**
+
+None; no physics or input change. Peer pending.
+
+**Insights**
+
+An open details element is still invisible inside a hidden header.
+
 ## 2026-11-04 11:14 — Low-speed ground-collision grace zone
 
 TODO: 2.0.78; R-SIM-8.
