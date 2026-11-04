@@ -42,3 +42,36 @@ test('prefetch uses declared source coverage, nearby detail first and bounded co
  assert(!planSceneryPrefetch(52*DEG,13*DEG,false).some(u=>u.startsWith('/scenery/imagery/')),'outside aerial coverage is omitted');
  assert(planSceneryPrefetch(52*DEG,13*DEG,true).some(u=>u.startsWith('/scenery/vector/')),'vector declared coverage extends north');
 });
+
+test('nearby warming survives transient visible work; new locations wait and disable cancels', async () => {
+ const descriptors=new Map(['window','navigator','fetch'].map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)]));
+ const messages: {urls:string[]}[]=[];
+ const active={postMessage:(message:{urls:string[]})=>messages.push(message)};
+ const serviceWorker={register:async()=>({active}),ready:Promise.resolve({active}),addEventListener(){},removeEventListener(){}};
+ Object.defineProperty(globalThis,'window',{configurable:true,value:{isSecureContext:true}});
+ Object.defineProperty(globalThis,'navigator',{configurable:true,value:{serviceWorker}});
+ Object.defineProperty(globalThis,'fetch',{configurable:true,value:async()=>new Response('',{status:503})});
+ let cache: ReturnType<typeof import('./scenery-cache.ts').createSceneryCache> | undefined;
+ try {
+  const {createSceneryCache}=await import('./scenery-cache.ts');
+  cache=createSceneryCache({dataset:{}} as unknown as HTMLElement);
+  const lat=49.96*DEG,lon=8.643*DEG;
+  cache.update(lat,lon,true,true,false);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(messages.length,0,'initial visible work finishes before warming starts');
+  cache.update(lat,lon,true,true,true);assert(messages.at(-1)!.urls.length>0);
+  const started=messages.length;
+  for(const settled of [false,true,false,true])cache.update(lat,lon,true,true,settled);
+  assert.equal(messages.length,started,'nearby busy/idle changes do not discard warming progress');
+  cache.update(lat+.02,lon,true,true,false);
+  assert.deepEqual(messages.at(-1)!.urls,[],'movement makes the previous warm plan obsolete');
+  const cancelled=messages.length;
+  cache.update(lat+.02,lon,true,true,false);assert.equal(messages.length,cancelled);
+  cache.update(lat+.02,lon,true,true,true);assert(messages.at(-1)!.urls.length>0);
+  cache.update(lat+.02,lon,true,false,false);assert.deepEqual(messages.at(-1)!.urls,[],'actual disabling still cancels');
+  const disabled=messages.length;cache.update(lat+.02,lon,true,false,false);assert.equal(messages.length,disabled);
+ } finally {
+  cache?.dispose();
+  for(const [key,descriptor] of descriptors)if(descriptor)Object.defineProperty(globalThis,key,descriptor);else Reflect.deleteProperty(globalThis,key);
+ }
+});

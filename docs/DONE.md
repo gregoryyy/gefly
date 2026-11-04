@@ -3,6 +3,415 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 21:02 — Improve persistent and rendered scenery cache reuse
+
+TODO: 2.0.114; R-WORLD-9/R-WORLD-4.
+Agent: Codex proxy/client integration and actual5173 profiles; glide_model cache
+worker and browser measurements; glide_cases renderer/coalescing and browser
+measurements; glide_housekeeping independent scoped source/evidence review.
+
+**Implementation notes**
+
+Persistent cache metadata is reconstructed once per worker, then updated
+incrementally. Hits touch in-memory recency without rewriting tile bodies;
+requests wait only for their own persistence. Existing v1 content is retained.
+In the actual Cache API fixture's100-insert segment, full scans fell100→0 and
+matches5744→100;64warm hits rewrote no bodies, and tested warm/reload hits made
+no network requests. These are cache-operation measurements, not whole-app times.
+
+A64MiB finished-vector cache coalesces up to8independent consumers of one XYZ;
+only the last cancellation stops the render. The34-tile real-PBF revisit retained
+identical pixels without another render; cold rendering stayed roughly unchanged.
+Visible vector requests promote their shared proxy job ahead of queued warming,
+without changing concurrency/source limits. Nearby plans survive temporary camera
+loading; obsolete movement/mode/disabled plans still cancel. Ten proxy and six
+coverage/client tests pass. Real browser capacity, cancellation, expiry, reload,
+source-pixel and priority checks pass. Independent scoped review passes; peer pending.
+
+The actual5173 flight map settled in1.90s and0.65s after reload in one local run,
+with no page errors. A separate stable-Cesium vector profile observed9.65s for
+initial detail completion and6.13s on revisit (including a1s stability interval),
+with the first retained imagery visible much earlier. Server caches could already
+be warm; these are observations, not a controlled whole-app before/after speedup.
+
+**Deviations**
+
+The reported40s cold load is not declared resolved. Serial vector drawing and
+upstream latency remain. A preliminary queue-only timing raced later requests
+and is excluded from completion claims. Physics, controls, shortcuts, source
+rights, freshness, tile/hash checks and photo-cancellation handling are unchanged.
+Cache recency persists in memory; worker restart reconstructs insertion order.
+The64MiB figure bounds owned canvas pixels, not total browser/GPU memory.
+
+**Insights**
+
+More cached bytes alone cannot fix repeated metadata scans, redraws or discarded
+warm plans. Measure cache operations and actual loaded views separately; a brief
+empty queue is not sufficient evidence that a map has finished loading.
+
+## 2026-11-04 20:39 — Apply the user's exact map keys and record UI overreach
+
+TODO: 2.0.113; R-WORLD-6/R-WORLD-7/R-UX-2.
+Agent: Codex main/input integration; glide_cases map label and browser checks;
+glide_model README/BOOT corrections; glide_housekeeping independent source review.
+
+**Implementation notes**
+
+M opens/closes the map, comma toggles the larger open-map view, period retains
+terrain-label levels, and unmodified US slash switches vector/photo terrain.
+Menu/help labels agree. Slash no longer resets trim; the existing panel reset
+button remains available. BOOT Insights explicitly records AI overreach changing
+user-decided UI/UX without consent. TypeScript and the existing ten-group actual
+map browser case pass, including unchanged staged/actual trim and paused native
+state, shortcut guards, live/Review paths and map interactions. Source review
+passes; peer pending.
+
+**Deviations**
+
+The bindings supersede2.0.108. No other shortcuts, label-detail behavior,
+physics, AP behavior or airport work changed.
+
+**Insights**
+
+User-decided UI and UX are constraints. Do not reinterpret or silently replace
+key bindings; change them only with user consent and keep all guidance aligned.
+
+## 2026-11-04 20:24 — Keep commanded VS visible throughout VS flight
+
+TODO: 2.0.112; R-AP-1.
+Agent: Codex panel implementation, integration and actual port5173 reproduction;
+glide_cases actual browser regression; glide_housekeeping independent source and
+visual review. glide_model was interrupted before panel edits.
+
+**Implementation notes**
+
+Added a compact signed commanded-VS readout in the existing KAP header. It remains
+visible in engaged VS independently of the temporary shared-selector page, so
+selected altitude and rate are available together. It clears in ALT/GS/OFF,
+CWS and unavailable/legacy state. No controller, servo, input or physics change;
+unit height remains140px. The unmocked running5173 browser showed VS+500FPM beside
+2300FT and ALT ARM at31.5s and90.8s; the actual182×141px crop is readable and
+unclipped. TypeScript passes. The existing actual-flight browser case passes physical P engagement without
+ARM, persistent readout at30/90s, and the240s powered climb/capture gates. Its
+scenery is a UI fixture; flight/controller state is actual native output.
+Independent source and visual review pass. Peer pending.
+
+**Deviations**
+
+This persistent readout is an explicit simulator UI extension. The hardware-style
+shared selector still has its three-second page behavior. The preceding narrow
+fix did not satisfy the repeated persistent-display request; broader KAP usability
+remains open in2.0.111.
+
+**Insights**
+
+Checking a transient value immediately after a press misses the disappearance
+the user is reporting. Verify it after the timeout and during actual flight.
+
+## 2026-11-04 20:08 — Correct KAP evidence scope, stale ALT display, shortcuts and terrain mode
+
+TODO: 2.0.108–2.0.111; R-AP-1/R-AP-2/R-WORLD-6/R-WORLD-7/R-UX-2/R-AIRPORT-1.
+Agent: Codex integration and actual port5173 inspection; glide_model controller
+and shortcut changes; glide_cases browser implementation/observations;
+glide_housekeeping independent evidence audit and source quality review.
+
+**Implementation notes**
+
+The running unmocked app reproduced A showing HDG/ALT with a locked0FPM selector
+while paused. ALT now ends that stale VS page immediately, preserving intentional
+BARO timing. Eighteen focused controller tests pass. The renewed actual cockpit
+case uses A, immediate unblurred altitude entry, ALT and UP/DN, asserting visible
+VS/FPM/ALT ARM against worker state before a240sim-second native flight. Full pilot
+power produced mean517.6FPM (range505.3–534.2) for the500FPM command, capture at116s,
+and final altitude error3.01m with −9.72FPM. This is a calm default-fixture
+engineering check, not installed KAP performance. The existing seven-group
+AP/shortcut/Replay case passes with current menu access. Independent source
+quality review passes; cross-provider peer pending.
+
+Removed the generated Option/Alt–Shift catalogue: comma opens/closes the map,
+period cycles landmarks, and overlap is click-only. Existing map and overlay
+browser checks pass. Exclusive vector mode hides every photo/raster layer,
+including late arrivals; the actual official-tile case observed22 rendered vector
+tiles with no failed tiles. Missing tiles expose neutral relief. Dependencies are
+now independently installed in each checkout; the actual5173 server is running
+this source. No new airport models are included here.
+
+**Deviations**
+
+Historical native/panel observations were bounded results, not evidence that all
+current cockpit workflows worked. Their TODO records now say so; broader current
+KAP usability remains open in2.0.111 and full installed fidelity in2.0.14. The
+legacy NAV/audio/CWS browser groups were not rerun for this change. No servo gains,
+worker behavior or flight physics were changed. A second root investigation was
+invalidated by live reload during editing and is not acceptance evidence.
+
+**Insights**
+
+Test displayed modes and sustained native response through the user's exact
+control sequence. Injected displays and direct-native fixtures can miss an
+integrated failure. A dependency-install step through a shared node_modules
+symlink broke the live checkout; never share a mutable install between checkouts.
+Keep builds and checks separate from the user's running dependency tree.
+
+## 2026-11-04 19:03 — Make A switch autopilot off
+
+TODO: 2.0.103; R-AP-2.
+Agent: Codex integration and airport-work isolation; glide_model two-file toggle;
+glide_cases actual keyboard/menu/native checks; glide_housekeeping source review.
+
+**Implementation notes**
+
+A now captures current heading/altitude when AP is off, and explicitly disconnects
+when engaged or capture is pending. The menu names the actual on/off action.
+Existing P/panel behavior, input guards and steering reference remain intact.
+TypeScript and the existing seven-group flight-assists Chrome case pass: native
+on/off/on, both servo outputs zero and LCD OFF, paused state unchanged, panel and
+menu actions, and shortcut/Review guards. The nine-group pointer case also passes
+A-off servo release with center-marker retention, typed ARM, takeover and CWS.
+Independent source review passes;
+cross-provider peer pending.
+
+**Deviations**
+
+No KAP mode law, worker, servo or aircraft-physics changes. Pending airfield and
+terrain work is preserved in an isolated checkout, outside the running AP fix.
+
+**Insights**
+
+A was implemented as repeated capture, while the user's explicit requirement is
+an on/off toggle. Validate the actual shortcut sequence, not just the underlying
+capture API. Keep unfinished scenery out of the user's working simulator while
+repairing controls.
+
+## 2026-11-04 18:26 — Keep edited altitude armed after its ARM click
+
+TODO: 2.0.102; R-AP-1.
+Agent: Codex integration and timer-free gesture cleanup; glide_model panel fix;
+glide_cases actual before/after browser; glide_housekeeping independent source review.
+
+**Implementation notes**
+
+Reproduced the clarified symptom: HDG/ALT stay engaged while typing2500 and
+clicking ARM dispatches select-altitude762 followed by arm, cancelling the
+selection's auto-arm. Remember pre-blur button intent within the panel and
+consume only that same gesture's redundant toggle. Retain intent until click,
+with explicit gesture/lifecycle cleanup instead of a timing-dependent expiry.
+TypeScript and the existing nine-group actual Chrome case pass: the edited
+selection stays armed, a subsequent ARMED press cancels, and knob, steering-center,
+AP handoff, keyboard takeover and CWS paths remain passing. Source review passes;
+peer pending.
+
+**Deviations**
+
+Only autopilot-panel behavior changes. No worker, KAP mode law, input-controller,
+flight-physics or aircraft-data edits. Delayed compatibility-click timing was
+not directly simulated; no such runtime acceptance is claimed.
+
+**Insights**
+
+The user's clarification distinguishes this ARM failure from the separate
+pointer-disconnect regression. A knob-based check missed the natural typed-entry
+commit: validate editing the field and clicking the requested action directly,
+including the blur/change/click sequence, before concluding the reported issue is fixed.
+
+## 2026-11-04 17:53 — Center steering in the visible flight window
+
+TODO: 2.0.101; R-INPUT-1.
+Agent: Codex integration; glide_model two preset defaults and existing unit check;
+glide_cases actual geometry/interaction browser check; glide_housekeeping BOOT
+insight and independent source review.
+
+**Implementation notes**
+
+Enable the existing fixed-center mode by default rather than retaining a clicked
+relative anchor near the window bottom. Both marker and neutral input already use
+the same scene rectangle, excluding the cockpit and docked map. Relative mode
+remains an explicit Options choice. Seventeen settings cases, TypeScript and the
+existing browser case pass: bottom activation centers at720,270, resize at640,268,
+and docked map at384.797,268; native step stays0 during geometry checks. Existing
+relative, AP/ARM, keyboard takeover and CWS paths still pass. Source review passes;
+cross-provider peer pending.
+
+**Deviations**
+
+Only the two preset booleans change runtime behavior. No geometry, pointer gesture,
+AP, worker or physics algorithm changes; pointer source edits are comments only.
+
+**Insights**
+
+The user reports unpredictable regressions from small requests, undoing earlier
+work and making the simulator unreliable. Modular design must contain changes
+rather than spreading them through shared UI/input helpers. Record this as a
+design defect, preserve working behavior at adjacent boundaries, and avoid
+unrelated refactors or process expansion. Added the durable lesson to BOOT.
+
+## 2026-11-04 17:47 — Keep AP engaged while reaching its controls
+
+TODO: 2.0.100; R-AP-1/R-INPUT-1.
+Agent: Codex pointer/AP integration; glide_model session contract; glide_cases
+actual browser regression; glide_housekeeping independent source review.
+
+**Implementation notes**
+
+Passive touchpad-yoke motion no longer disconnects AP while capture is pending
+or confirmed. Keep the selected steering marker/reference; allow held CWS and
+explicit keyboard/stick takeover. Session capture reports dispatch acceptance,
+and rejected commands clear pending handoff and show the worker's reason.
+Thirty-six session cases, TypeScript and the existing eight-group Chrome pointer
+case pass. Immediate motion after A, crossing the scene to ARM, actual arming,
+selector auto-arm/cancellation, keyboard takeover and held CWS/release all pass.
+Assurance integrity passes; independent source review passes; peer pending.
+
+**Deviations**
+
+The shared CI attempt did not complete (exit101 while disk space was critically
+low); it is not a pass. Reclaimed disposable ignored build/GIS dependencies;
+source and simulator runtime remain intact. No KAP mode logic or physics changes.
+
+**Insights**
+
+Retaining yoke selection also retained pointer authority, allowing the next
+ordinary pointer movement to disconnect AP. Verify the user's complete action
+sequence through the next cockpit interaction, rather than stopping at capture.
+
+## 2026-11-04 17:28 — Retain the steering center through routine controls
+
+TODO: 2.0.99; R-INPUT-1.
+Agent: Codex main integration; glide_model pointer controller; glide_cases actual
+browser regression; glide_housekeeping independent source review.
+
+**Implementation notes**
+
+Routine neutralization now zeros axes while retaining selected yoke mode,
+reference and view. Disabled menu/dialog handling does the same. Explicit Off,
+focus loss, restart, failure/collision and Review still cancel steering. Unchanged
+pointer coordinates cannot restore stale commands; actual re-entry remains
+authoritative. Twenty pointer cases and TypeScript pass. Actual Chrome confirms
+the same marker through Start, pause/resume, menu dismissal, Options Save and AP
+capture without re-clicking steering on. Root inspected the live screenshot;
+independent source review passes. Cross-provider peer pending.
+
+**Deviations**
+
+No physics, camera scaling or marker appearance changes.
+
+**Insights**
+
+One shared helper conflated releasing inputs with forgetting the user's selected
+steering mode. The previous browser check clicked steering back on after Start,
+masking that loss; it now verifies retention directly through real transitions.
+
+## 2026-11-04 17:19 — Keep grounded flight running through contact proxies
+
+TODO: 2.0.98; R-SIM-8.
+Agent: Codex integration; glide_model collision policy; glide_cases existing
+braking browser; glide_housekeeping independent source review.
+
+**Implementation notes**
+
+Use native wheel support from before each step to suppress collision stopping
+once a wheel is already on the ground. Missing/invalid support cannot grant the
+exemption; all wheels airborne re-arms detection. Raw contact geometry and native
+forces stay unchanged. Fourteen contact cases, TypeScript and the existing
+ten-group actual Chrome braking case pass. Full-brake flat/public rolls finish
+3600 steps with exactly matching native state/digest; a direct airborne impact
+still latches at296 with pre-step wheel flags all zero. Independent source review
+passes; cross-provider peer pending.
+
+**Deviations**
+
+This changes the stopping policy, not the aircraft's damage or wheel physics.
+
+**Insights**
+
+A proxy overlap during ground roll must not be treated as a new landing impact.
+Pre-step support distinguishes those cases without a new speed threshold.
+
+## 2026-11-04 17:03 — Continue collisions and prioritize ordinary flying
+
+TODO: 2.0.95–2.0.97; R-SIM-8/R-REVIEW-1/R-PLAY-1/R-UX-2/R-INPUT-1.
+Agent: Codex panel/menu integration; glide_model collision worker/session/tests;
+glide_cases Options layout and existing browser updates; glide_housekeeping
+independent source quality and actual flight-launch validation.
+
+**Implementation notes**
+
+Collision ×/Continue acknowledges the current contact without resetting native
+pose, time, fuel or history. Same-part contact is ignored only until separation;
+new/later contacts remain active. 49 focused cases and the existing actual Chrome
+collision case pass: impact303 is retained in JSON, acknowledgement preserves
+its native frame and the same worker advances to304 without immediate re-latch.
+
+Flight begins with runway choice, Takeoff, Landing and Fly a circuit. Research
+fixtures are secondary; normal practice clears stale research presets. Actual
+Takeoff08/26, Landing08/26 initial geometry, landing Restart, Circuit08/26 fitted
+guides and research-to-Landing transition pass. Landing is an approximate3NM,
+90kt clean initial condition at threshold terrain plus geometric3-degree height;
+power/configuration remain manual, with no published-approach or grading claim.
+
+Options has compact Controls/Scenery/Sound and collapsed Advanced groups.
+Desktop/mobile screenshots inspected; actual Save, Escape/outside rollback,
+advanced-control access and sound enable/mute rollback pass. TypeScript and
+shared CI pass (nine optional Python study checks remain skipped). Independent
+source quality/scoped validation pass; cross-provider peer pending.
+
+**Deviations**
+
+Collision acknowledgement does not repair or teleport the aircraft. Recorded
+collision × only dismisses information; it never resumes the live simulation.
+No new native build, physics coefficients, data sources or dependencies.
+
+**Insights**
+
+Ordinary flight actions must precede research fixtures. Explicit preset clearing
+prevents a selected contact study from silently changing the next practice start.
+
+## 2026-11-04 16:27 — Repair imagery loading and manual nosewheel steering
+
+TODO: 2.0.91–2.0.94; R-WORLD-5/R-WORLD-9/R-AIRPORT-1/R-INPUT-1/R-PLAY-1/R-AP-1.
+Agent: Codex UI/integration; glide_cases actual imagery/cache repair;
+glide_model steering adapter and native/browser cases; glide_housekeeping
+independent source quality and actual AP/terrain-control validation.
+
+**Implementation notes**
+
+Visible photo requests bypass SW interception, obsolete background loads abort
+without cancelling foreground demand, and warming waits for visible scenery.
+Reserve HTTP capacity for workers and import map-renderer code before photography.
+Real cache-enabled photography loads 54 regional JPEGs plus live photos without
+failures. Real map textures render from nine BKG vector tile URLs with zero
+failures; remaining tiles continue streaming. Root inspected the actual map screenshot. Map renderer code loads before photo traffic; browser connections remain available for worker downloads.
+
+The generic upstream Autopilot system overwrote manual nose steering every FCS
+step. Prepared adapter v4 appends manual steering after it, preserving the source
+10-degree geometry, friction and aerodynamic coefficients. Actual wheel angle
+now retains the commanded ±3.5 degrees; symmetric 5 kt coasts turn about ±12 degrees
+in three seconds. Six adapter cases, eight actual runway/browser groups and five
+parking/rudder groups pass, including taxi turns and a full-power takeoff.
+
+View → Terrain / Alt+Shift+J synchronizes with Options and the map. Actual AP
+panel engagement, selector autoarming, ARM cancellation/rearming and VS commands
+pass; ARM/ARMED state and titles now explain the source-prescribed toggle. Seven
+regional imagery units, the cache cancellation browser case and TypeScript pass.
+Independent source quality and scoped validation pass. Shared CI passes with local
+server permissions; the earlier default-sandbox run could not bind its runtime
+test listeners. Cross-provider peer pending.
+
+**Deviations**
+
+No new feature or aircraft-performance calibration. Imagery uses native HTTP
+caching for visible photographs; complete offline/photo coverage is not claimed.
+The user's intermittent no-acceleration report stopped reproducing during this
+work; both fresh and saved-ground runs accelerate in the actual app. No invented
+startup fix is claimed. Local WASM was rebuilt; other checkouts need the normal
+flight-engine build to obtain steering adapter v4.
+
+**Insights**
+
+Command telemetry and high-speed aerodynamic yaw hid failed wheel steering.
+Verify low-speed motion through complete physics steps. Real tile rendering,
+cancellation and worker loading matter beyond UI flags or mocked imagery.
+
 ## 2026-11-04 14:41 — Consolidate merged cockpit fixes for main
 
 TODO: 2.0.87–2.0.90. Agent: Codex integration.

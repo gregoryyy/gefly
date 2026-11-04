@@ -49,8 +49,13 @@ interaction direction.
 
 ## Airport play
 
-Open the flight map with **M**, choose **EDFE 26 or 08**, and select **Start at
-runway**. The aircraft starts at rest with the engine idling and parking brake
+In **Flight**, choose runway **26 or 08**, then **Takeoff**, **Landing · 3 NM final**
+or **Fly a circuit**. Circuit opens and fits the generated
+map guide. Landing is a clean 90 kt visual-practice start at a geometric 3-degree
+height above the threshold; set power/flaps yourself. It is not a published approach.
+Research flights and contact studies are in the secondary group.
+
+Alternatively, open the flight map with **M**, choose **EDFE 26 or 08**, and select **Start at runway**. The aircraft starts at rest with the engine idling and parking brake
 set. Press **N** to release the brake, add power with **1–9**, and fly the circuit
 manually. **Stop exercise** on the map pauses the flight and keeps Review available.
 Other airports can be inspected, but their runway starts are not prepared yet.
@@ -58,7 +63,8 @@ Other airports can be inspected, but their runway starts are not prepared yet.
 Expand the runway's **north circuit** card for the practice objective and start
 configuration. It logs sensed lift-off, touchdown, ground stop and collision
 events, with available ground speed and contact vertical speed. **R** opens Review;
-the card follows the selected recording time. These are observations, not a
+the card follows the selected recording time. After a collision, **Continue flight**
+or **×** resumes the same aircraft state; the impact stays in the recording. These are observations, not a
 landing grade or a validated C172S lesson.
 **Save JSON** retains the declared EDFE runway so **Load JSON** restores this card
 and its recorded observations. Older files without that context keep it unknown.
@@ -67,10 +73,10 @@ start reference. **Events** shows the sensed flight log. Missing data and checks
 the simulator cannot verify stay explicit; no aircraft settings change.
 
 Sharp runway markings, taxiways and apron overlays sit on the public terrain.
-In **Options**, select **Map terrain** to drape official German cartography
+Use **/** (Slash on a US keyboard), **View → Terrain** or **Options → Map terrain** to switch between photography and official German cartography
 without text over the terrain. Roads, fields, woodland, water and building
-footprints extend beyond the airport; photography stays underneath while tiles
-load or if the service fails. The flight map keeps its **Map/Aerial** background;
+footprints extend beyond the airport. The modes are exclusive: loading or missing
+vector tiles expose terrain relief, not photography. The flight map keeps its **Map/Aerial** background;
 its **Map terrain** button changes only the 3D texture. **Practice PAPI / runway
 lights** are separate illustrative aids, not a surveyed EDFE installation.
 [Map terrain source and limits](docs/research/2026-11-04-label-free-map-terrain.md).
@@ -93,7 +99,7 @@ just stop                 # stop this checkout's flight server
 
 Select **Start flight**, then click the scene for touchpad yoke control or use the keyboard.
 The top menu/title bar and floating flight controls start hidden: **I** toggles
-the menu, **O** opens Options, and **Alt+Shift+F** shows the flight controls. **F** toggles browser fullscreen (also in View); the browser’s **Esc** action exits it. Floating controls, map,
+the menu, **O** opens Options (Controls, Scenery, Sound and Advanced), and **View → Flight controls** shows the flight controls. **F** toggles browser fullscreen (also in View); the browser’s **Esc** action exits it. Floating controls, map,
 flight-data and stall-awareness panels are half opaque until clicked; their
 first click activates the panel, and subsequent gestures operate it.
 Arrow keys control pitch/roll, Q/W rudder, 0 throttle idle and 1–9 throttle.
@@ -102,7 +108,7 @@ In Review, **← / →** seek backward/forward one second, with repeated keys su
 of live-flight speed. The overlay shows **REPLAY** speed.
 
 Space pauses, R opens Review, V changes view, E toggles the engine and S toggles
-sound (initially off). **A** captures current heading/altitude with the autopilot;
+sound (initially off). **A** toggles the autopilot, capturing current heading/altitude when engaging;
 **=** cycles **1×, 1.5×, 2×, 5×, 10×**, with an on-screen simulation-rate indicator.
 These are simulator conveniences; acceleration preserves the fixed physics step
 and the achieved rate depends on available CPU/rendering capacity.
@@ -141,7 +147,9 @@ Charts remain publisher-hosted; an embedded aeronautical overlay is not included
 Touchpad and keyboard bank input also steer the rudder/nosewheel by default.
 Options → **Link rudder to aileron** can disable this assistance;
 Q/W manual rudder takes priority. Rudder also steers the nosewheel on the ground.
-Options → **Centered touchpad controls** fixes neutral at the flight-view center.
+Steering neutral and its circle default to the visible flight-window center,
+above the cockpit and beside a docked map. Options → **Centered touchpad controls**
+can be disabled for click-relative steering.
 Both touchpad modes retain the camera angle after hold-drag.
 
 For runway practice, **Circuit guide** adds a generated north-circuit schematic
@@ -150,7 +158,8 @@ the selected live or recorded position. This is a practice aid, not a published
 route or an altitude, speed or obstacle-clearance instruction.
 
 **M** or **View → Flight map** opens a right-side map beside the 3D view,
-showing the aircraft, whole retained flight path and **731 searchable
+showing the aircraft and whole retained flight path. **Comma (,)** toggles the
+larger map view. The map has **731 searchable
 community airfield and heliport entries across five southern German states**, including available airport elevations. Choose the
 public map or aerial imagery; a nautical scale and **community radio beacons and historical LOC/ILS
 references (2013.10)** provide source-marked practice context. Pan/zoom,
@@ -172,7 +181,7 @@ The left **Systems** panel adds BAT/ALT, avionics, light and pitot-heat buttons,
 with digital bus volts, battery amps and load. **MODEL** marks simplified electrical
 estimates; these controls do not yet drive native avionics outages, icing or external
 lights. Switch positions are recorded for Review. On narrow screens use the collapsed
-**Aircraft systems** panel button or **Alt+Shift+Y**.
+**Aircraft systems** panel button.
 
 The classic **six-pack** now shows airspeed, attitude, pressure altitude, ideal
 turn/slip, true heading and vertical speed. Click the scene to toggle touchpad
@@ -180,10 +189,10 @@ yoke control; hold-drag to look around. Two-finger vertical scrolling
 over the scenery adjusts camera FOV; over the cockpit it zooms the panel around
 the pointer. **[ / ]** selects flaps, **B** holds
 wheel brakes, and **1–9** selects 10–90% throttle (**0** idle). The engine panel
-adds mixture, RPM, manifold pressure, oil and fuel readouts. **Flight → Weight & fuel** (**Alt+Shift+W**) sets occupants, baggage, auxiliary load and initial fuel in litres; Apply restarts the flight. Fuel use reduces both tank contents and native aircraft mass. **P** toggles the two-axis autopilot. Its KAP 140 operating controls include VS,
+adds mixture, RPM, manifold pressure, oil and fuel readouts. **Flight → Weight & fuel** sets occupants, baggage, auxiliary load and initial fuel in litres; Apply restarts the flight. Fuel use reduces both tank contents and native aircraft mass. **P** toggles the two-axis autopilot. Its KAP 140 operating controls include VS,
 current-altitude hold, selected-altitude capture and source-aware navigation;
 generic servo response and real navigation-data coverage remain limited.
-To climb to a preselected altitude, set climb power, select the altitude and confirm ALT ARM, switch ALT to VS if needed, then use UP/DN to set the rate. The first press reveals a hidden VS value; subsequent taps change 100 FPM. Hold **CWS** to hand-fly and release to capture current VS or held altitude. CWS is an optional KAP140 control; this particular C172 installation is unverified.
+To climb to a preselected altitude, engage AP, set climb power and select the altitude. Selection automatically arms capture: **ARMED** and **ALT ARM** confirm it. Pressing **ARMED** cancels capture. Switch ALT to VS if needed, then use UP/DN to set the rate. The first press reveals a hidden VS value; subsequent taps change 100 FPM. Hold **CWS** to hand-fly and release to capture current VS or held altitude. CWS is an optional KAP140 control; this particular C172 installation is unverified.
 
 On narrow screens, open **Engine & autopilot** for those controls.
 

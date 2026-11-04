@@ -32,8 +32,9 @@ test('manifest rejects duplicate, hostile paths, bounds, hash and level', () => 
 test('requests deduplicate parents, crop correctly, and disposal closes cache', async () => {
   const oldFetch = globalThis.fetch, oldBitmap = globalThis.createImageBitmap, oldDocument = globalThis.document;
   let count = 0, closed = 0; const draws: number[][] = [];
-  globalThis.fetch = (async (url: string | URL | Request) => {
+  globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
     if (String(url).endsWith('manifest.json')) return new Response(JSON.stringify(manifest()));
+    assert.equal(new Headers(init?.headers).get('X-Gefly-Scenery-Priority'), 'visible');
     count++; return new Response(bytes);
   }) as typeof fetch;
   globalThis.createImageBitmap = (async () => ({ width: 512, height: 512, close: () => closed++ })) as typeof createImageBitmap;
@@ -84,8 +85,8 @@ test('tile fetch concurrency is bounded and disposal aborts queued work', async 
     const { provider, dispose, getStats } = await createRegionalImageryProvider();
     const pending = m.tiles.map(t => provider.requestImage(t.x, t.y, t.z));
     await new Promise(resolve => setTimeout(resolve, 0));
-    assert.equal(peak, 6); assert.equal(getStats().inflight, 6); assert.equal(requests, 6);
-    dispose(); await Promise.all(pending); assert.equal(getStats().inflight, 0); assert.equal(requests, 6);
+    assert.equal(peak, 2); assert.equal(getStats().inflight, 2); assert.equal(requests, 2);
+    dispose(); await Promise.all(pending); assert.equal(getStats().inflight, 0); assert.equal(requests, 2);
   } finally { globalThis.fetch = oldFetch; globalThis.document = oldDocument; }
 });
 
@@ -105,7 +106,7 @@ test('scene cancellation can abort the manifest before a provider handle exists'
 test('F58 per-view cancellation: queued loads are bounded, newest first and cancellable without failing tiles', async () => {
   const oldFetch = globalThis.fetch, oldBitmap = globalThis.createImageBitmap, oldDocument = globalThis.document;
   const m = manifest(); const nw = regionalTileAt(50.12, 8.48, 15);
-  const count = 6 + MAX_QUEUED_TILES + 4;
+  const count = 2 + MAX_QUEUED_TILES + 4;
   m.tiles = Array.from({ length: count }, (_, i) => ({ ...tile, z: 15, x: nw.x + (i % 20), y: nw.y + Math.floor(i / 20) }));
   const started: string[] = []; const release: (() => void)[] = [];
   globalThis.fetch = ((url: string | URL | Request) => {
@@ -120,9 +121,9 @@ test('F58 per-view cancellation: queued loads are bounded, newest first and canc
     const requests = m.tiles.map(() => ({ state: RequestState.ISSUED, cancelled: false }));
     const results = m.tiles.map((t, i) => Promise.resolve(provider.requestImage(t.x, t.y, t.z, requests[i] as never)).then(() => 'ok', () => 'cancelled'));
     await new Promise(resolve => setTimeout(resolve, 0));
-    assert.equal(getStats().inflight, 6);
+    assert.equal(getStats().inflight, 2);
     assert.equal(getStats().queuedTiles, MAX_QUEUED_TILES, 'queue is bounded');
-    assert.equal(getStats().cancelledTiles, count - 6 - MAX_QUEUED_TILES, 'oldest queued loads are dropped');
+    assert.equal(getStats().cancelledTiles, count - 2 - MAX_QUEUED_TILES, 'oldest queued loads are dropped');
     // Finishing one fetch starts the newest queued request (current view first).
     const before = started.length; release.shift()!();
     for (let i = 0; i < 100 && started.length === before; i++) await new Promise(resolve => setTimeout(resolve, 1));
@@ -132,7 +133,7 @@ test('F58 per-view cancellation: queued loads are bounded, newest first and canc
     for (let i = 0; i < 200 && (release.length || getStats().inflight); i++) { release.shift()?.(); await new Promise(resolve => setTimeout(resolve, 1)); }
     const outcomes = await Promise.all(results);
     const cancelledIndexes = outcomes.flatMap((outcome, i) => outcome === 'cancelled' ? [i] : []);
-    assert.equal(cancelledIndexes.length, count - 7);
+    assert.equal(cancelledIndexes.length, count - 3);
     assert.ok(cancelledIndexes.every(i => requests[i].state === RequestState.CANCELLED), 'Cesium sees CANCELLED and retries later');
     assert.equal(getStats().failedTiles, 0, 'dropped loads are not marked failed');
     // A cancelled tile can be requested again.
@@ -140,7 +141,7 @@ test('F58 per-view cancellation: queued loads are bounded, newest first and canc
     const retry = provider.requestImage(again.x, again.y, again.z);
     for (let i = 0; i < 100 && !release.length; i++) await new Promise(resolve => setTimeout(resolve, 1));
     release.shift()?.(); await retry; assert.equal(getStats().failedTiles, 0);
-    assert.ok(getStats().loadedTiles >= 8);
+    assert.ok(getStats().loadedTiles >= 4);
     dispose();
   } finally { globalThis.fetch = oldFetch; globalThis.createImageBitmap = oldBitmap; globalThis.document = oldDocument; }
 });

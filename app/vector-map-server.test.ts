@@ -14,14 +14,14 @@ function tilePath(lat: number, lon: number, z = 12): string {
   const n = 2 ** z, x = Math.floor((lon + 180) / 360 * n), y = Math.floor((1 - Math.asinh(Math.tan(lat * Math.PI / 180)) / Math.PI) / 2 * n);
   return `/scenery/vector/${z}/${x}/${y}.pbf`;
 }
-function call(handler: Handler, url: string, method = 'GET'): Promise<{ status: number; headers: Record<string, string>; data: Buffer; next: boolean }> {
+function call(handler: Handler, url: string, method = 'GET', requestHeaders: Record<string, string> = {}): Promise<{ status: number; headers: Record<string, string>; data: Buffer; next: boolean }> {
   return new Promise(resolve => {
     let status = 0, headers: Record<string, string> = {};
     const res = { destroyed: false, writableEnded: false, headersSent: false,
       writeHead(code: number, values: Record<string, string> = {}) { status = code; headers = values; this.headersSent = true; return this; },
       end(data?: Buffer) { this.writableEnded = true; resolve({ status, headers, data: data || Buffer.alloc(0), next: false }); },
     };
-    handler({ url, method } as IncomingMessage, res as unknown as ServerResponse,
+    handler({ url, method, headers: requestHeaders } as IncomingMessage, res as unknown as ServerResponse,
       () => resolve({ status: 0, headers: {}, data: Buffer.alloc(0), next: true }));
   });
 }
@@ -212,4 +212,24 @@ test('a saturated cartography host cannot starve landmarks, and either host rese
     release(); assert((await Promise.all(waiting)).every(result => result.status === 200));
     assert.equal(blockedPeak, 4);
   }
+});
+
+
+test('visible vector demand promotes its queued warm tile and shares one upstream load', async () => {
+  const started: string[] = [], releases: (() => void)[] = []; let freeAll = false;
+  const handler = createVectorMapMiddleware({ fetcher: async input => {
+    started.push(new URL(String(input)).pathname);
+    if (!freeAll) await new Promise<void>(resolve => releases.push(resolve));
+    return response();
+  } });
+  const path = (i: number) => `/scenery/vector/12/${2140 + i}/1390.pbf`;
+  const work = Array.from({ length: 7 }, (_, i) => call(handler, path(i)));
+  const visible = call(handler, path(6), 'GET', { 'x-gefly-scenery-priority': 'visible' });
+  try {
+    assert.equal(started.length, 4);
+    releases.shift()!();
+    for (let i = 0; i < 100 && started.length < 5; i++) await new Promise(resolve => setTimeout(resolve, 1));
+    assert.match(started[4], /\/12\/2146\/1390\.pbf$/);
+  } finally { freeAll = true; releases.forEach(release => release()); await Promise.all([...work, visible]); }
+  assert.equal(started.length, 7, 'visible and warm consumers share one finite upstream fetch');
 });

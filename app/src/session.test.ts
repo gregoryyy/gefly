@@ -25,13 +25,14 @@ function fixture(t: TestContext) {
   const original = globalThis.Worker;
   globalThis.Worker = MockWorker as unknown as typeof Worker;
   MockWorker.instances = [];
-  const states: unknown[] = [], errors: string[] = [], statuses: string[] = [], readies: unknown[] = [], tiles: unknown[] = [];
+  const states: unknown[] = [], errors: string[] = [], statuses: string[] = [], readies: unknown[] = [], tiles: unknown[] = [], autopilotRejections: string[] = [];
   const session = createSession({
     onState: (state) => states.push(state), onReady: value => {readies.push(value);}, onTerrainTile: value => {tiles.push(value);},
+    onAutopilotRejected: message => autopilotRejections.push(message),
     onError: (error) => errors.push(error), onStatus: (status) => statuses.push(status),
   });
   t.after(() => { session.dispose(); globalThis.Worker = original; });
-  return { session, states, errors, statuses, readies, tiles };
+  return { session, states, errors, statuses, readies, tiles, autopilotRejections };
 }
 
 const ready = { type: 'ready', trim: { throttle: 0.693, pitch_trim: 0.168, status: 1 } };
@@ -42,7 +43,8 @@ const state = {
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 test('rate changes are bounded worker messages and autopilot capture flushes deliberate neutral handoff while paused', t => {
-  const { session, errors } = fixture(t);
+  const { session, errors, autopilotRejections } = fixture(t);
+  assert.equal(session.captureAutopilot(), false, 'not ready cannot dispatch capture');
   session.reset(); const worker = MockWorker.instances[0]; worker.emit(ready);
   for (const rate of [1, 1.5, 2, 5, 10]) session.setSimulationRate(rate);
   assert.deepEqual(worker.messages.filter(m => m.type === 'simulation-rate').map(m => m.rate), [1, 1.5, 2, 5, 10]);
@@ -50,12 +52,16 @@ test('rate changes are bounded worker messages and autopilot capture flushes del
   for (const rate of [0, -1, 3, NaN, Infinity]) session.setSimulationRate(rate);
   assert.equal(worker.messages.length, count);
   session.input({ elevator: .2, aileron: .3, rudder: 0, throttle: .7, pilot_override: true });
-  session.captureAutopilot(); assert.equal(worker.messages.length, count);
+  assert.equal(session.captureAutopilot(), false); assert.equal(worker.messages.length, count);
   session.input({ elevator: 0, aileron: -.109375, rudder: 0, throttle: .7, pilot_override: false });
-  session.captureAutopilot();
+  assert.equal(session.captureAutopilot(), true);
   assert.equal(worker.messages.at(-2)!.type, 'input');
   assert.equal(worker.messages.at(-2)!.aileron, 0);
   assert.equal(worker.messages.at(-1)!.type, 'autopilot-capture');
+  worker.emit({type: 'autopilot-rejected', message: 'Release manual flight input before engaging autopilot.'});
+  worker.emit({type: 'autopilot-rejected', message: 42});
+  assert.deepEqual(autopilotRejections, ['Release manual flight input before engaging autopilot.']);
+  assert.deepEqual(errors, [], 'command rejection does not stop the flight');
   worker.emit({ ...state, simulation_rate: 5 });
   worker.emit({ ...state, simulation_rate: 3 });
   assert.equal(errors.length, 1);
@@ -502,4 +508,33 @@ test('unsupported or duplicate continuation never allocates an extra worker or r
   await assert.rejects(f.session.restoreFromReview(state),/telemetry|configuration/);assert.equal(MockWorker.instances.length,1);
   const pending=f.session.restoreFromReview(continuationFrame());await assert.rejects(f.session.restoreFromReview(continuationFrame()),/already/);assert.equal(MockWorker.instances.length,2);
   const rejected=assert.rejects(pending,/native failure/);MockWorker.instances[1].emit({type:'error',message:'native failure'});await rejected;
+});
+
+
+test('collision continuation preserves the native worker/frame and unlocks only an exact explicit acknowledgement', async t => {
+  const { session, states, errors, statuses } = fixture(t); session.start();
+  const worker = MockWorker.instances[0]; worker.emit(ready);
+  const impact = { ...state, collision_mask: 16, collision_step: state.step, collision_t_s: state.t_s,
+    collision_down_mps: 4, collision_groundspeed_mps: 28 };
+  worker.emit(impact); const pending = session.continueAfterCollision();
+  assert.deepEqual(worker.messages.at(-1), { type: 'collision-continue', step: state.step });
+  const clear = { ...impact, collision_mask: 0, collision_step: 0, collision_t_s: 0, collision_down_mps: 0, collision_groundspeed_mps: 0 };
+  worker.emit({ type: 'collision-continued', collision_step: state.step, state: clear });
+  const continued = await pending; assert.equal(continued.step, impact.step); assert.equal(continued.alt_msl_m, impact.alt_msl_m);
+  assert.equal(MockWorker.instances.length, 1); assert.equal(worker.terminated, false); assert.equal(statuses.at(-1), 'Paused');
+  assert.equal((states[0] as FlightState).collision_mask, 16, 'the prior impact snapshot remains unchanged');
+  session.start(); assert.equal(worker.messages.at(-1)?.type, 'run');
+  worker.emit({ ...clear, step: state.step + 1, t_s: state.t_s + 1/120 });
+  assert.deepEqual(errors, []); assert.equal((states.at(-1) as FlightState).collision_mask, 0);
+});
+
+test('collision continuation rejects worker refusal and cancels on reset without unlocking a later flight', async t => {
+  const { session, errors } = fixture(t); session.start(); const worker = MockWorker.instances[0]; worker.emit(ready);
+  worker.emit({ ...state, collision_mask: 16, collision_step: state.step, collision_t_s: state.t_s,
+    collision_down_mps: 4, collision_groundspeed_mps: 28 });
+  let pending = session.continueAfterCollision(); worker.emit({ type: 'collision-continue-rejected', message: 'Contact unavailable' });
+  await assert.rejects(pending, /Contact unavailable/); const count = worker.messages.length; session.start(); assert.equal(worker.messages.length, count);
+  pending = session.continueAfterCollision(); const rejection = assert.rejects(pending, /cancelled/); session.reset(); await rejection;
+  worker.emit({ type: 'collision-continued', collision_step: state.step, state }); assert.deepEqual(errors, []);
+  assert.equal(MockWorker.instances.length, 2);
 });

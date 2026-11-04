@@ -82,6 +82,7 @@ try {
   const preset = async name => {
     const id = await page.evaluate(() => window.warningWorkerId);
     await page.locator('#flight-menu > summary').click();
+    if (!await page.locator('#flight-research').evaluate(element => element.open)) await page.locator('#flight-research > summary').click();
     await page.locator(`[data-landing=${name}]`).click();
     await page.waitForFunction(id => window.warningWorkerId > id && !document.querySelector('#start').disabled, id, { timeout: 60000 });
   };
@@ -105,7 +106,7 @@ try {
   // Reset preserves a running flight's intent; pause the landing first.
   if ((await page.locator('#pause').textContent()).trim().startsWith('Pause')) await page.locator('#pause').click();
   const id = await page.evaluate(() => window.warningWorkerId);
-  await page.locator('#flight-menu > summary').click(); await page.locator('#airborne-practice').click();
+  await page.locator('#flight-menu > summary').click(); await page.locator('#flight-research').evaluate(element => { element.open = true; }); await page.locator('#airborne-practice').click();
   await page.waitForFunction(id => window.warningWorkerId > id && !document.querySelector('#start').disabled, id, { timeout: 60000 });
   await startOrResume(page); await scene.focus(); await page.keyboard.press('0');
   await page.locator('#pitch-trim-control').focus(); await page.keyboard.press('End');

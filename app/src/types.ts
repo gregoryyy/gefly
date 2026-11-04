@@ -173,7 +173,8 @@ export type AirborneSite = 'edfe' | 'taunus' | 'eddf-ils' | 'darmstadt' | 'odenw
 export interface FlightSession {
   setLoading(config: LoadingConfiguration): boolean;
   restoreFromReview(state: Readonly<FlightState>): Promise<FlightState>;
-  captureAutopilot(): void;
+  continueAfterCollision(): Promise<FlightState>;
+  captureAutopilot(): boolean;
   setSimulationRate(rate: number): void;
   setKap140(command: KapCommand): void;
   setNavigation(config: Pick<RadioNavSnapshot, "radio_nav_active_khz" | "radio_obs_deg" | "radio_demo_enabled"> & Partial<Pick<RadioNavSnapshot, "radio_nav2_active_khz" | "radio_obs2_deg">>): void;

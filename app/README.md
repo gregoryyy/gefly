@@ -42,7 +42,7 @@ A missing or failed engine build is an error, not a switch to scripted flight.
 ## Controls
 
 The top title/menu bar and flight-control overlay start hidden. **I** toggles the
-top bar; it does not control the central Start/Pause card. **Alt+Shift+F** toggles
+top bar; it does not control the central Start/Pause card. **View → Flight controls** toggles
 the flight controls. Floating controls, map, flight-data and stall-awareness
 panels show at 50% opacity until activated. The first click activates and consumes
 that gesture; click again to operate a control. Clicking elsewhere deactivates
@@ -66,7 +66,9 @@ unavailable. Returning to live restores pending control settings.
 | P | Autopilot on / off (simulator shortcut) |
 | A | Engage autopilot HDG + ALT at current heading/pressure altitude |
 | = | Cycle simulation rate 1× → 1.5× → 2× → 5× → 10× → 1× |
-| . | Cycle landmark labels: Off / Places / Landmarks / Detailed |
+| M | Open / close the flight map |
+| , | Toggle the larger map view |
+| . | Cycle terrain landmark labels: Off / Places / Landmarks / Detailed |
 | I | Show / hide the top title/menu bar |
 | O | Open Options |
 | Space | Start / pause / resume |
@@ -74,7 +76,7 @@ unavailable. Returning to live restores pending control settings.
 | V | Switch cockpit / chase view |
 | S | Toggle sound, including flight-warning cues (off by default) |
 | E | Request engine ignition/starter on or off |
-| / | Restore initial trim |
+| / (US keyboard) | Toggle vector / photographic terrain |
 | [ / ] | Retract / extend flaps one 10° detent |
 | B (hold) | Apply both wheel brakes at the Options command; release to let go |
 | N | Toggle the parking brake on / off |
@@ -89,34 +91,25 @@ retain focus for accessible adjustment. Losing window focus pauses the flight
 and releases held inputs. Optional flight hardware and phone orientation are
 later work.
 
-The default touchpad yoke mode uses a relative anchor. **Short-click the
-unobstructed scene** to set that anchor and toggle yoke control on. Moving the
-pointer relative to the anchor controls pitch and roll. Short-click
-again to disengage. To look around, hold the click for about a quarter-second,
-then drag. During live flight, releasing returns to the prior yoke mode and
-centers the temporary look. Leaving the scene or window neutralizes the yoke
-axes while preserving its mode and original anchor. Re-entering immediately
-uses the pointer position relative to that anchor as the authoritative input;
-no new click is needed. An actual window focus loss still pauses flight and
-clears transient controls, as do Escape, a modal or entering Review.
-Header buttons, instrument controls and the joystick do not toggle scene yoke.
+The default touchpad yoke uses the **center of the visible flight window** as
+neutral, above the cockpit and beside a docked map. **Short-click the unobstructed
+scene** to toggle yoke control. Click location does not move that center; resizing
+or docking the map updates it. The faint circle marks the same neutral reference
+used by the controls. Browser pointer position is used, not physical touchpad contact.
 
-Enable **Options → Centered touchpad controls** for a fixed neutral reference:
-the **center of the currently visible flight view**, including after a resize
-or opening the docked map. A short click still toggles yoke control, but neither
-its position nor a drag-release position moves that reference. The browser sees
-pointer positions in the view, not the physical center of the touchpad.
+Hold-click for about a quarter-second and drag to look around. Release retains
+the camera angle and restores the prior yoke mode with neutral input until actual
+movement or re-entry. Start, pause and Options release commands without forgetting
+the selected center. Window focus loss cancels steering; Escape or flight restart
+resets the view. Instrument controls do not toggle scene yoke. Passive pointer
+movement during AP control does not disconnect it; use P or deliberate manual
+controls to take over, or hold CWS to hand-fly temporarily.
 
-In this optional mode, hold for about a quarter-second and drag to steer the
-view. Releasing keeps the chosen camera angle; the next drag starts from that
-angle. Yoke input stays neutral while looking and on release, then the next real
-pointer movement or re-entry controls the aircraft relative to the view center.
-Pause, Options and focus loss still clear transient flight input, but retain the
-camera angle. **Escape** or starting a new flight resets the view. Review remains
-read-only camera inspection. The option starts off, lasts only for the page
-session and survives Default/Gentle sensitivity presets; switching it off restores
-the existing relative-anchor behavior. It does not change aircraft gains or
-physics.
+**Options → Centered touchpad controls** starts on and survives Default/Gentle
+sensitivity presets. Turn it off for click-relative steering: the activation click
+sets the neutral anchor and circle, and hold-look keeps that anchor. Both modes
+retain camera orientation after drag. Settings last for the page session; gains
+and aircraft physics are unchanged. Review permits read-only camera inspection.
 
 Use **two fingers to scroll vertically over the flight scene** to adjust the
 camera field of view (FOV): scroll up to zoom in with a narrower perspective, or
@@ -168,7 +161,7 @@ performance data. See [control sources](../docs/research/2026-11-02-classic-cont
 Use **View → Flight controls** in the top menu to show or hide the on-screen
 flight-control panel. Hiding it releases transient held inputs while retaining
 throttle, trim and the other selected settings. Use **Flight → Restart flight**
-to restart; **Alt+Shift+R** is its shortcut, while **R** enters and leaves
+to restart; **R** enters and leaves
 recorded Review. **Options** is a top-menu
 action. Keyboard remapping is later work.
 
@@ -208,13 +201,11 @@ configured value returns after disconnect.
 Q is left rudder and W right rudder. Positive `rudder_cmd_norm` yaws left in the
 pinned generic model.
 
-Menu commands show their shortcuts. The **Alt+Shift** combinations include
-**C/V** cockpit/chase, **M** map, **D** flight data, **A** stall awareness,
-**F** flight controls, **H** handbook, **O** Options and **R** restart.
-**1–4** choose flat landing studies, **E/T/I** choose Egelsbach/Taunus/historical
-EDDF practice, and **6/7/8** choose Darmstadt/Odenwald/Spessart. Responsive panel
-openers use **G/B/N/P** for Engine/Radio/NAV/Autopilot where available. These
-combinations do not replace the unmodified flight keys.
+**M** opens and closes the flight map. **Comma (,)** toggles its larger view.
+**Period (.)** cycles terrain landmark labels. **/** (Slash on a US keyboard)
+toggles vector/photo terrain. **O** opens Options and **I** toggles the title/menu bar. Unassigned menu
+actions remain clickable; no Option/Alt–Shift combinations are installed.
+Keyboard shortcuts keep typing, modal and repeat guards.
 
 ## Simulation rate
 
@@ -232,9 +223,8 @@ does not command the live flight's acceleration or restore physics from history.
 Hold the **'** key for nose-up elevator trim or **\\** for nose-down trim while flying,
 or adjust the vertical trim slider. The flap detents are vertical beside it. The command stays set when the key is released and
 across pause/resume and Review. Adjustment is available while paused, with
-physics unchanged until Resume; recorded Review remains read-only. The **/**
-key or middle keycap restores the command computed when this flight
-started. Restarting the flight computes its initial trim again.
+physics unchanged until Resume; recorded Review remains read-only. The middle
+trim reset button restores the command computed when this flight started. Restarting the flight computes its initial trim again.
 
 This uses the generic c172x model's normalized pitch-trim command, added to the
 pilot's elevator command. Negative trim commands nose up; positive commands nose
@@ -301,8 +291,8 @@ a long press also works. Click **AP** to engage ROL plus current vertical speed;
 press AP to disconnect. **P** is
 a simulator shortcut for AP on/off. **A** is a separate simulator convenience:
 with manual axes released, it engages **HDG + ALT** at the worker's current true
-heading and pressure altitude. It captures again when already engaged rather
-than disconnecting. This is not a physical KAP 140 button. **HDG** follows the separate **DG BUG · TRUE**
+heading and pressure altitude. Press A again to disconnect; pressing it while
+capture is pending also cancels the engagement. This is not a physical KAP 140 button. **HDG** follows the separate **DG BUG · TRUE**
 control; HDG alone does not engage a disconnected unit.
 
 **ALT captures the current pressure altitude**, independent of the altitude
@@ -578,7 +568,7 @@ when the handbook opens.
 
 ## Practice map
 
-Press **O**, then select **View → Map**, or use **Alt+Shift+M**, to show or hide a
+Press **M** or select **View → Flight map** to show or hide a
 north-up practice map. It loads MapLibre on demand and uses bundled photographs
 plus the fixed-source live map/photo service described below. The aircraft marker shows true heading; the plotted route uses up
 to 600 points from the current flight's retained state trace. **Trace start**
@@ -773,7 +763,7 @@ The sharper airport overlay has approximately 0.75 m output pixels, sampled from
 public 20 cm orthophotography, over the wider starter photograph. Derived relief
 shading covers the DEM outside photographic coverage. A bundled 723-tile pyramid now covers 8.48–8.80°E / 49.93–50.12°N, with approximately
 3.07 m output pixels across the area and 1.54 m around Frankfurt/approaches and
-Egelsbach. Tiles load by view, with six concurrent requests and 64 decoded source
+Egelsbach. Tiles load by view, with two concurrent requests and 64 decoded source
 images; coarse ancestors/relief remain available when detail is missing. The
 separate 0.75 m airport photograph stays above regional tiles. Current imagery has no established capture date and
 is not airport/runway reference data. See the [terrain package](public/terrain/README.md),
@@ -793,7 +783,7 @@ selected recorded position and leaves loading frequencies read-only.
 
 ## Right-side flight map
 
-Press **M**, **Alt+Shift+M**, or choose **View → Flight map**. On desktop the
+Press **M** or choose **View → Flight map**. On desktop the
 map opens beside the outside view while the cockpit keeps its full width; smaller
 viewports use a bounded floating map. Its first click activates the panel.
 The default **Map** uses BKG TopPlusOpen; **Aerial** shows the existing public
@@ -818,8 +808,16 @@ separate required flight-startup packages retain their fail-closed behavior. See
 
 Recordings can be saved and loaded as version 1 JSON using **Flight → Save/Load recording JSON** or the replay bar. Loading opens a validated, read-only state trace and preserves the current live flight; **Back to live** restores its previous flying/paused state. Files retain at most ten minutes/36,000 samples (256 MB import limit), in SI units; they are not native physics checkpoints.
 
-With the flight map open, **comma (,)** toggles whether it overlaps the cockpit. **M** still opens/closes the map and **N** remains the parking brake.
+Use **Comma (,)** or **Larger map** in the flight map to toggle the larger map view. **M** opens/closes the map and **N** remains the parking brake.
 
 Flight map → **Charts** opens the official OFM Germany VFR viewer and DFS AIP
 airport/approach chart access. The selected airport identifier remains visible.
 Charts are publisher-hosted; embedded chart tiles/plates are not yet integrated.
+
+
+The public scenery cache keeps its existing saved tiles across reloads. It now
+uses incremental metadata and in-memory recency instead of scanning/rewriting the
+whole cache per tile. Nearby preloading survives brief camera loading, visible
+vector requests take priority, and a bounded 64 MiB rendered-tile cache shares
+duplicate work. This improves reuse; first visits still depend on public services
+and rendering. See [cache design](../docs/design/scenery-cache.md).

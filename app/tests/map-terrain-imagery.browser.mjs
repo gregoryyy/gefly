@@ -22,9 +22,11 @@ try {
   assert(ready, serverOutput); await mkdir(output, { recursive: true });
   browser = await chromium.launch({ headless: true, ...(process.env.CHROME ? { executablePath: process.env.CHROME } : { channel: 'chrome' }) });
   const page = await browser.newPage({ viewport: { width: 1100, height: 620 } });
-  const pageErrors = [], requests = []; let sourceTile;
+  const pageErrors = [], requests = [], priorityRequests = []; let sourceTile;
   page.on('pageerror', error => pageErrors.push(String(error)));
-  page.on('request', request => requests.push(request.url()));
+  page.on('request', request => { requests.push(request.url());
+    if (/\/scenery\/vector\/\d+\//.test(request.url())) priorityRequests.push({url:request.url(),priority:request.headers()['x-gefly-scenery-priority']});
+  });
   page.on('response', async response => {
     if (new URL(response.url()).pathname === '/scenery/vector/14/8584/5562.pbf' && response.status() === 200)
       sourceTile = await response.body();
@@ -73,6 +75,14 @@ try {
   await writeFile(`${output}/map-terrain-official-tile.png`, Buffer.from(await page.evaluate(() => first.toDataURL().split(',')[1]), 'base64'));
   checks.push('actual official PBF cartography renders outside EDFE; label-free 512px canvases retain independent pixels and a bounded reusable cache');
 
+  assert(priorityRequests.length>0&&priorityRequests.every(request=>request.priority==='visible'),'actual visible PBF requests carry foreground priority');
+  checks.push('actual official vector requests advertise visible priority to the fixed-source proxy');
+  if(process.env.MAP_TERRAIN_HEADER_ONLY==='1') {
+    await page.evaluate(()=>handle.dispose());
+    assert.deepEqual(pageErrors,[]);
+    await writeFile(`${output}/map-terrain-priority-browser.json`,JSON.stringify({result:'pass',priorityRequests,real:observations.real},null,2)+'\n');
+    console.log(JSON.stringify({result:'pass',checks,priorityRequests},null,2));
+  } else {
   observations.overzoom = await page.evaluate(async () => {
     const tile = tileAt(49.9116, 8.6348, 16), image = await handle.provider.requestImage(tile.x, tile.y, tile.z);
     return { tile, image: await imageFacts(image), stats: handle.getStats() };
@@ -81,17 +91,57 @@ try {
   assert.equal(requests.some(url => /\/scenery\/vector\/16\//.test(url)), false, 'level 16 overzooms source level 15 rather than requesting unsupported native tiles');
   checks.push('level-16 imagery overzooms the declared native source ceiling of 15');
 
+  // Actual public-source working set: source pixels stay unmodified. This is
+  // renderer timing, not a simulated-flight or guaranteed-network benchmark.
+  observations.realTiming = await page.evaluate(async () => {
+    const tile=tileAt(49.9116,8.6348,14),tiles=Array.from({length:34},(_,i)=>({...tile,x:tile.x+i%7,y:tile.y+Math.floor(i/7)}));
+    const started=performance.now(),before=handle.getStats();
+    for(const t of tiles) await handle.provider.requestImage(t.x,t.y,t.z);
+    const cold_ms=performance.now()-started,afterCold=handle.getStats();
+    let time=performance.now(); const hot=tiles.at(-1); await handle.provider.requestImage(hot.x,hot.y,hot.z);
+    const warm_ms=performance.now()-time,afterWarm=handle.getStats();
+    time=performance.now(); const revisit=await handle.provider.requestImage(tiles[0].x,tiles[0].y,tiles[0].z);
+    return {tiles:tiles.length,cold_ms,warm_ms,revisit_ms:performance.now()-time,before,afterCold,afterWarm,
+      afterRevisit:handle.getStats(),revisitImage:await imageFacts(revisit)};
+  });
+  assert(observations.realTiming.revisitImage.visible>512*512*.9);
+  assert.equal(observations.realTiming.afterRevisit.loadedTiles,observations.realTiming.afterCold.loadedTiles,'real34-tile working set revisits without redraw');
+  assert(observations.realTiming.afterRevisit.cacheHits>observations.realTiming.afterCold.cacheHits);
+  console.log('Real cold/warm/revisit',JSON.stringify(observations.realTiming));
+
   assert(sourceTile?.length > 1000, 'capture the already verified official tile for a bounded cache-only fixture');
   // Reusing one source tile here tests lifetime/capacity, not geographic truth.
   await page.route('**/scenery/vector/*/*/*.pbf', route => route.fulfill({ contentType: 'application/vnd.mapbox-vector-tile', body: sourceTile }));
   observations.cache = await page.evaluate(async () => {
     const tile = tileAt(50.5, 10, 14);
-    for (let i = 0; i < 34; i++) await handle.provider.requestImage(tile.x + i % 10, tile.y + Math.floor(i / 10), tile.z);
+    for (let i = 0; i < 66; i++) await handle.provider.requestImage(tile.x + i % 10, tile.y + Math.floor(i / 10), tile.z);
     return { stats: handle.getStats(), rendererCount: document.querySelectorAll('[data-map-terrain-renderer]').length };
   });
-  assert.equal(observations.cache.stats.cacheSize, 32); assert.equal(observations.cache.rendererCount, 1);
+  assert.equal(observations.cache.stats.cacheSize, 64);
+  assert.equal(observations.cache.stats.cacheBytes,64*1024*1024); assert.equal(observations.cache.rendererCount, 1);
+  observations.coalescing=await page.evaluate(async()=>{
+    const tile=tileAt(50.4,9.7,14),requests=Array.from({length:9},()=>new CesiumRequest()),before=handle.getStats();
+    const first=handle.provider.requestImage(tile.x,tile.y,tile.z,requests[0]);
+    const sameRequest=handle.provider.requestImage(tile.x,tile.y,tile.z,requests[0]);
+    const others=requests.slice(1,8).map(request=>handle.provider.requestImage(tile.x,tile.y,tile.z,request));
+    const overflow=handle.provider.requestImage(tile.x,tile.y,tile.z,requests[8]);
+    const settled=Promise.allSettled([first,...others]);requests[0].cancel();
+    const results=await settled,images=results.filter(result=>result.status==='fulfilled').map(result=>result.value);
+    return {sameRequest:sameRequest===first,overflowDeferred:overflow===undefined,
+      rejected:results.filter(result=>result.status==='rejected').length,fulfilled:images.length,
+      oneCanvas:images.every(image=>image===images[0]),image:await imageFacts(images[0]),
+      firstCancelled:requests[0].state===CancelledState,before,after:handle.getStats()};
+  });
+  assert(observations.coalescing.sameRequest);assert(observations.coalescing.overflowDeferred);
+  assert.equal(observations.coalescing.rejected,1);assert.equal(observations.coalescing.fulfilled,7);
+  assert(observations.coalescing.oneCanvas);assert(observations.coalescing.firstCancelled);
+  assert(observations.coalescing.image.visible>512*512*.9);
+  assert.equal(observations.coalescing.after.loadedTiles-observations.coalescing.before.loadedTiles,1,'duplicate XYZ renders once despite one cancelled subscriber');
+  assert.equal(observations.coalescing.after.coalescedRequests-observations.coalescing.before.coalescedRequests,7);
+  assert.equal(observations.coalescing.after.queuedTiles,0);
+  checks.push('same XYZ shares one render/canvas with independent request cancellation; eight subscribers/key are bounded and overflow defers');
   await page.unroute('**/scenery/vector/*/*/*.pbf');
-  checks.push('34 controlled tile jobs evict old canvases at the 32-image cap while retaining one renderer');
+  checks.push('66 controlled tile jobs evict old canvases at the 64-image/64MiB owned-pixel cap while retaining one renderer');
 
   observations.queue = await page.evaluate(async () => {
     const tile = tileAt(50.3, 8.9, 14), promises = [], actualRequests = [];
@@ -108,7 +158,7 @@ try {
   });
   assert.equal(observations.queue.queued, 48); assert.equal(observations.queue.cancelled, 48);
   assert.equal(observations.queue.rejected, 70); assert.equal(observations.queue.cancelledStates, 70);
-  assert.equal(observations.queue.stats.queuedTiles, 0); assert(observations.queue.stats.cacheSize <= 32);
+  assert.equal(observations.queue.stats.queuedTiles, 0); assert(observations.queue.stats.cacheSize <= 64);
   assert.equal(observations.queue.rendererCount, 1);
   checks.push('serial work queue stays at 48, dropped/view-cancelled requests use Cesium cancellation, and cancellation creates no extra WebGL contexts');
 
@@ -152,7 +202,9 @@ try {
   assert.equal(requests.some(url => /\/fonts?\/|example\.invalid|\.pbf\?/.test(url)), false);
   assert.deepEqual(pageErrors, []);
   checks.push('style tampering is rejected before creating a renderer and imported style cannot fetch fonts or external resources');
+  await writeFile(`${output}/map-terrain-imagery-browser.json`,JSON.stringify({result:'pass',checks,observations,browser:await browser.version()},null,2)+'\n');
   console.log(JSON.stringify({ result: 'pass', checks, observations, browser: await browser.version() }, null, 2));
+  }
 } finally {
   if (browser) await browser.close();
   server.kill('SIGTERM');

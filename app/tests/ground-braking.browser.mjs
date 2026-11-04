@@ -1,9 +1,9 @@
 // Actual Chrome/WASM braking trajectories and production worker collision policy.
 // These generic c172x regression fixtures do not validate aircraft braking limits.
 // The public-terrain ground roll is a SYNTHETIC worker fixture: it posts terrain
-// together with a landing preset, a combination app/src/session.ts never sends
-// (production uses public terrain only for airborne starts). It checks worker
-// collision policy over the public grid, not a flight users can reach.
+// together with a landing preset, a combination app/src/session.ts never sends.
+// Production runway starts use a different initialization path. This checks
+// worker collision policy over the public grid, not a selectable landing flight.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -37,30 +37,35 @@ try {
   await page.goto(`${origin}/ground-braking-fixture.html`);
   observations.braking = await page.evaluate(async () => {
     const { default: createModule } = await import('/studies/e1-browser/sim/dist/jsbsim.mjs');
-    const { loadTerrainPackage } = await import('/studies/e1-browser/sim/terrain.js');
+    const { loadTerrainPackage, sampleTerrainGradient } = await import('/studies/e1-browser/sim/terrain.js');
     const { groundFields } = await import('/studies/e1-browser/sim/cockpit.js');
+    const { groundCollisionContact } = await import('/studies/e1-browser/sim/collision.js');
     const grid = await loadTerrainPackage(), d = Math.PI / 180;
     const ic = { lat_rad: 49.96 * d, lon_rad: 8.643 * d, heading_rad: 82 * d };
     const rc = value => { if (value !== 0) throw new Error(`Native braking fixture rejected: ${value}`); };
-    async function native(terrain, brake = .25, parking = false) {
+    async function native(terrain, brake = .25, parking = false, impact = false) {
       const M = await createModule();
       if (terrain) {
         const pointer = M._malloc(grid.physical_m.byteLength);
         try { M.HEAPF64.set(grid.physical_m, pointer / 8); rc(M._gf_configure_terrain_grid(grid.west_rad, grid.south_rad, grid.east_rad, grid.north_rad,
           grid.width, grid.height, pointer, grid.physical_m.length)); } finally { M._free(pointer); }
       }
-      rc(M._gf_init_landing(1 / 120, ic.lat_rad, ic.lon_rad, ic.heading_rad, 1));
-      rc(M._gf_set_inputs(0, -.109375, 0, 0)); rc(M._gf_set_secondary_inputs(0, 0));
+      rc(impact ? M._gf_init(1 / 120, ic.lat_rad, ic.lon_rad, 30, ic.heading_rad, 45)
+        : M._gf_init_landing(1 / 120, ic.lat_rad, ic.lon_rad, ic.heading_rad, 1));
+      rc(M._gf_set_inputs(impact ? .35 : 0, -.109375, 0, 0)); rc(M._gf_set_secondary_inputs(0, 0));
       const frames = [];
       let maxNoseCompression = 0, minimumPitch = Infinity, nativeStructure = 0, parkingSpeed = null;
-      for (let step = 1; step <= 3600; step++) {
-        if (step === 241) rc(M._gf_set_secondary_inputs(0, brake));
+      let firstProxyContact = null, minimumProxyClearance = Infinity;
+      for (let step = 1; step <= (impact ? 1200 : 3600); step++) {
+        if (!impact && step === 241) rc(M._gf_set_secondary_inputs(0, brake));
         if (parking && step === 2567) {
           const gp = M._gf_ground_state() / 8;
           const g = groundFields(Array.from(M.HEAPF64.subarray(gp, gp + 18)));
           parkingSpeed = Math.hypot(g.ground_forward_mps, g.ground_side_mps);
           rc(M._gf_set_secondary_inputs(0, 1));
         }
+        const previousPointer = M._gf_ground_state() / 8;
+        const previousGround = groundFields(Array.from(M.HEAPF64.subarray(previousPointer, previousPointer + 18)));
         rc(M._gf_step());
         const sp = M._gf_state() / 8, gp = M._gf_ground_state() / 8;
         const s = Array.from(M.HEAPF64.subarray(sp, sp + 14));
@@ -68,10 +73,19 @@ try {
         if (![...s, ...Object.values(ground)].every(Number.isFinite)) throw new Error('Non-finite native braking state');
         maxNoseCompression = Math.max(maxNoseCompression, ground.gear_nose_compression_m);
         minimumPitch = Math.min(minimumPitch, s[5]); nativeStructure |= ground.structure_contact_mask;
+        const contact = groundCollisionContact(ground.ground_agl_m, s[4], s[5], ground.structure_contact_mask,
+          terrain ? { ...sampleTerrainGradient(grid, s[1], s[2]), heading_rad: s[6] } : undefined, ground);
+        if (Number.isFinite(contact.clearance_m)) minimumProxyClearance = Math.min(minimumProxyClearance, contact.clearance_m);
+        if (contact.mask && !firstProxyContact) firstProxyContact = { step, ...contact,
+          previous_wow: ['nose', 'left', 'right'].map(wheel => previousGround[`gear_${wheel}_wow`]),
+          previous_groundspeed_mps: Math.hypot(previousGround.ground_forward_mps, previousGround.ground_side_mps),
+          previous_down_mps: previousGround.ground_down_mps };
         if (step % 12 === 0 || step === 1) frames.push({ step, t_s: s[0], pitch_rad: s[5], roll_rad: s[4], ...ground });
+        if (impact && contact.mask) break;
       }
       const pointer = M._gf_state() / 8;
       return { frames, parking_apply_speed_mps: parkingSpeed, max_nose_compression_m: maxNoseCompression, min_pitch_rad: minimumPitch, native_structure_mask: nativeStructure,
+        first_proxy_contact: firstProxyContact, minimum_proxy_clearance_m: minimumProxyClearance,
         final_state: Array.from(M.HEAPF64.subarray(pointer, pointer + 14)), digest: M.UTF8ToString(M._gf_digest_hex()) };
     }
     async function worker(terrain, impact = false, brake = .25, parking = false) {
@@ -104,7 +118,9 @@ try {
     }
     const result = [];
     for (const terrain of [false, true]) result.push({ terrain, native: await native(terrain), worker: await worker(terrain) });
-    return { normal: result, parking: { native: await native(false, .25, true), worker: await worker(false, false, .25, true) }, full_brake: await worker(false, false, 1), impact: await worker(false, true),
+    return { normal: result, parking: { native: await native(false, .25, true), worker: await worker(false, false, .25, true) },
+      full_brake: { native: await native(false, 1), worker: await worker(false, false, 1) },
+      impact: { native: await native(false, .25, false, true), worker: await worker(false, true) },
       // Synthetic public-terrain full-command case, compared with unchanged native dynamics.
       full_brake_public: { native: await native(true, 1), worker: await worker(true, false, 1) } };
   });
@@ -132,21 +148,21 @@ try {
     assert(Math.hypot(native.frames.at(-1).ground_forward_mps, native.frames.at(-1).ground_side_mps) < .1);
     checks.push('full parking braking near rest settles without false contact and matches native dynamics');
   }
-  assert(observations.braking.full_brake.stats.collision_mask & 16, 'explicit full braking still permits the native geometry/illustrative prop contact; physics and collision are not weakened');
-  checks.push('explicit full brake command retains propeller-contact detection');
-  {
-    const { native, worker } = observations.braking.full_brake_public, stats = worker.stats;
-    if (stats.collision_mask) {
-      // A latch stops the worker at its first contact step; native keeps rolling.
-      assert(stats.collision_step >= 1 && stats.collision_step <= 3600 && stats.collision_step === stats.step);
-      assert.equal(worker.frames.at(-1).collision_mask, stats.collision_mask);
-    } else {
-      assert.equal(stats.step, 3600); assert.equal(stats.digest, native.digest); assert.deepEqual(stats.final_state, native.final_state);
-    }
-    observations.full_brake_public_summary = { collision_mask: stats.collision_mask ?? null, collision_step: stats.collision_step ?? null, step: stats.step };
-    checks.push('synthetic public-terrain full-brake fixture either latches a first-step contact or matches unchanged native dynamics');
+  for (const [name, result] of [['flat', observations.braking.full_brake], ['synthetic public terrain', observations.braking.full_brake_public]]) {
+    const { native, worker } = result, stats = worker.stats;
+    assert.equal(stats.collision_mask, 0, `${name}: braking after wheel contact must not latch a collision`);
+    assert.equal(stats.step, 3600); assert.equal(stats.digest, native.digest); assert.deepEqual(stats.final_state, native.final_state);
+    const raw = native.first_proxy_contact;
+    assert(raw?.mask & 16, 'the illustrative prop contact remains measurable');
+    assert(raw.previous_wow.some(value => value === 1), 'the exemption is exercised after actual wheel contact');
+    assert(native.minimum_proxy_clearance_m < 0, 'raw geometric penetration is not hidden by the stop policy');
+    assert(native.frames.some(frame => frame.gear_nose_compression_m > .1 && frame.gear_nose_load_n > 0), 'native gear compression/load remain present');
+    checks.push(`${name}: full braking continues through raw proxy contact after wheel touchdown and exactly matches unchanged native dynamics`);
   }
-  const impact = observations.braking.impact.frames.at(-1), impactStats = observations.braking.impact.stats;
+  const impact = observations.braking.impact.worker.frames.at(-1), impactStats = observations.braking.impact.worker.stats;
+  const rawImpact = observations.braking.impact.native.first_proxy_contact;
+  assert.deepEqual(rawImpact.previous_wow, [0, 0, 0], 'deliberate impact reaches the proxy directly from airborne native wheel state');
+  assert.equal(rawImpact.step, impact.step, 'worker latches the same first raw native contact');
   assert(impact.collision_mask & 16, 'intentional nose-low descent still detects modeled propeller contact');
   assert(impact.pitch_rad < 0 && impact.collision_down_mps > 0);
   assert.equal(impact.collision_step, impact.step); assert.equal(impact.collision_t_s, impact.t_s);

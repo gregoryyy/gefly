@@ -84,13 +84,13 @@ try {
   await startOrResume(page); await page.waitForFunction(() => window.centeredStates.at(-1)?.step >= 60);
   await page.locator('#pause').click(); await page.waitForTimeout(80);
   const paused = await stats();
-  await page.locator('#controls-settings').click(); assert.equal(await centered.isChecked(), false);
+  await page.locator('#controls-settings').click(); assert.equal(await centered.isChecked(), true);
   await centered.check(); await rudderLink.check();
   await page.locator('#settings-gentle').click(); assert(await centered.isChecked()); assert(await rudderLink.isChecked());
   await page.locator('#settings-default').click(); assert(await centered.isChecked()); assert(await rudderLink.isChecked());
   await rudderLink.uncheck(); await frozen(paused); await page.locator('#settings-close').click();
   assert.match(await page.locator('#pointer-mode').textContent(), /CENTERED/i);
-  checks.push('centered controls default off, opt in through Options, both control preferences survive sensitivity presets, paused native state is unchanged');
+  checks.push('centered controls default on, both control preferences survive sensitivity presets, paused native state is unchanged');
 
   let r = await rect();
   await page.mouse.click(r.cx + 100, r.cy - 80); await mode('yoke');

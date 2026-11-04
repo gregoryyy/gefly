@@ -8,8 +8,10 @@ export async function prepareFlightUI(page, { controls = true } = {}) {
   if (controls) {
     const panel = page.locator('#flight-controls-panel');
     if (!(await panel.isVisible())) {
-      await scene.focus();
-      await page.keyboard.press('Alt+Shift+f');
+      const view = page.locator('#view-menu');
+      if (!await view.evaluate(menu => menu.open)) await view.locator(':scope > summary').click();
+      await page.locator('#toggle-controls').click();
+      if (await view.evaluate(menu => menu.open)) await view.locator(':scope > summary').click();
     }
     if (!(await panel.evaluate(element => element.classList.contains('overlay-active')))) {
       await panel.locator('.control-heading').click();

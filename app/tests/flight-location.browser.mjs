@@ -36,7 +36,9 @@ try {
     return message;
   };
   await page.goto(origin);await ready();
-  await page.locator('#scene').focus();await page.keyboard.press('Alt+Shift+6');
+  await prepareFlightUI(page,{controls:false});
+  await page.locator('#flight-menu > summary').click();await page.locator('#flight-research > summary').click();
+  await page.locator('[data-region="darmstadt"]').click();
   await page.waitForFunction(()=>!document.querySelector('#start').disabled&&Math.abs(window.locationStates.at(-1)?.lat_rad-49.87*Math.PI/180)<.0001);
   await page.locator('#start').click();await page.waitForFunction(()=>window.locationStates.at(-1)?.step>120);
   await page.locator('#scene').focus();await page.keyboard.press('Space');await page.waitForFunction(()=>document.querySelector('#status').textContent==='Paused');

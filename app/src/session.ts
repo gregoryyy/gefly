@@ -1,5 +1,6 @@
 import { validLoading, validLoadingState, loadingFromState, LOADING_FIELDS, type LoadingConfiguration } from '../../studies/e1-browser/sim/loading.js';
 import { validFlightLocation } from './flight-location.ts';
+import { EMPTY_COLLISION } from '../../studies/e1-browser/sim/collision.js';
 import { resumeProblem } from '../../studies/e1-browser/sim/continue-flight.js';
 import { REGIONAL_TERRAIN } from '../../studies/e1-browser/sim/terrain-stream.js';
 import { validateTerrainGrid, type TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
@@ -27,6 +28,7 @@ interface SessionCallbacks {
   onReady(trim: { throttle: number; pitch_trim: number; status: number }, navdata: NavdataIdentity): void;
   onStatus(status: string): void;
   onError(message: string): void;
+  onAutopilotRejected?(message: string): void;
 }
 
 const DEG_RAD = Math.PI / 180;
@@ -74,6 +76,11 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
   let latestStep = 0;
   let collided = false;
   let collisionState: Readonly<FlightState> | null = null;
+  let collisionContinuation: { worker: Worker; step: number; resolve: (state: FlightState) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> } | null = null;
+  function cancelCollisionContinuation(message: string): void {
+    const pending = collisionContinuation; if (!pending) return;
+    collisionContinuation = null; clearTimeout(pending.timer); pending.reject(new Error(message));
+  }
   let controls: Controls = { elevator: 0, aileron: 0, rudder: 0, throttle: 0.7 };
   let controlsChanged = false;
   let userControls = false;
@@ -122,6 +129,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
   }
 
   function destroyWorker(): void {
+    cancelCollisionContinuation('Collision continuation cancelled because the flight session changed.');
     clearTimers();
     const old = worker;
     worker = null;
@@ -233,6 +241,21 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
         if (disposed || worker !== current && restoring?.worker !== current) return;
         if (wantedRunning) run();
         else callbacks.onStatus('Paused');
+      } else if (m.type === 'collision-continue-rejected') {
+        cancelCollisionContinuation(typeof m.message === 'string' ? m.message : 'The stopped contact could not be continued.');
+      } else if (m.type === 'collision-continued') {
+        const pending = collisionContinuation;
+        if (!pending || pending.worker !== current || !collisionState) return;
+        const snapshot = m.state as Record<string, unknown>;
+        const expected = { ...collisionState, ...EMPTY_COLLISION };
+        if (m.collision_step !== collisionState.collision_step || !validState(snapshot) || snapshot.step !== pending.step
+          || Object.keys(expected).some(key => snapshot[key] !== expected[key as keyof FlightState])) {
+          failCurrent('Invalid collision continuation acknowledgement.'); return;
+        }
+        collisionContinuation = null; clearTimeout(pending.timer);
+        const cleared = Object.freeze({ ...expected });
+        collided = false; collisionState = null; wantedRunning = false; controlsChanged = true;
+        callbacks.onState(cleared); callbacks.onStatus('Paused'); pending.resolve(cleared);
       } else if (m.type === 'state') {
         if (!validState(m)) { failCurrent('The flight model returned an invalid state. Flight stopped; reset to restart.'); return; }
         const fields = [...STATE_FIELDS, ...['simulation_rate', ...LOADING_FIELDS, ...ALERT_FIELDS, ...KAP_FIELDS, ...NAVIGATION_FIELDS, ...TERRAIN_FIELDS, ...COLLISION_FIELDS, ...STALL_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...ENGINE_SWITCH_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS].filter((key) => m[key] !== undefined)];
@@ -250,6 +273,9 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
           callbacks.onStatus('Ground collision');
         }
         callbacks.onState(state);
+      } else if (m.type === 'autopilot-rejected') {
+        if (typeof m.message === 'string' && m.message.length > 0 && m.message.length <= 1000
+          && !(attempt && restoring === attempt)) callbacks.onAutopilotRejected?.(m.message);
       } else if (m.type === 'error') {
         failCurrent(`JSBSim stopped: ${typeof m.message === 'string' ? m.message : 'unknown worker failure'}`);
       }
@@ -278,6 +304,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       loading = {...config}; return true;
     },
     restoreFromReview(state) {
+      if (collisionContinuation) return Promise.reject(new Error('Wait for collision continuation to finish.'));
       const problem = resumeProblem(state);
       if (problem) return Promise.reject(new Error(problem));
       if (disposed || !worker || !ready || wantedRunning) return Promise.reject(new Error('Pause a ready live flight before continuing from Review.'));
@@ -288,7 +315,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       });
     },
     captureAutopilot() {
-      if (disposed || restoring || collided || !ready || !worker || controls.pilot_override !== false) return;
+      if (disposed || restoring || collided || !ready || !worker || controls.pilot_override !== false) return false;
       // The explicit convenience hands control to AP. Clear the separate study
       // roll correction as well, and flush release before capture even if paused.
       controls = { ...controls, elevator: 0, aileron: 0, rudder: 0, pilot_override: false };
@@ -296,10 +323,22 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
         wall_ms: performance.timeOrigin + performance.now(), ...controls });
       controlsChanged = false;
       worker.postMessage({ type: 'autopilot-capture' });
+      return true;
     },
     setSimulationRate(rate) {
       if (disposed || restoring || collided || !ready || !worker || !validSimulationRate(rate)) return;
       worker.postMessage({ type: 'simulation-rate', rate });
+    },
+    continueAfterCollision() {
+      if (disposed || restoring || !collided || !collisionState || !ready || !worker) return Promise.reject(new Error('No stopped collision is available to continue.'));
+      if (collisionContinuation) return Promise.reject(new Error('Collision continuation is already pending.'));
+      const current = worker, step = collisionState.step;
+      return new Promise<FlightState>((resolve, reject) => {
+        const timer = setTimeout(() => cancelCollisionContinuation('The stopped flight did not acknowledge continuation.'), 5000);
+        collisionContinuation = { worker: current, step, resolve, reject, timer };
+        try { current.postMessage({ type: 'collision-continue', step }); }
+        catch { cancelCollisionContinuation('Cannot continue the stopped flight.'); }
+      });
     },
     start() {
       if (collided) return;

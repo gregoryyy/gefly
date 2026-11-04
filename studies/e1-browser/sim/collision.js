@@ -95,11 +95,14 @@ export function collisionStateFields(enabled, available, latched) {
   return enabled === true && available === true ? EMPTY_COLLISION : {};
 }
 
-/** Outcome of one fixed-step sample. Missing pre-step motion fails closed. */
-export function contactOutcome(contact, record) {
+/** Outcome of one fixed-step sample. Known pre-step wheel support makes this
+ * a ground roll; airborne contact still needs valid pre-step motion. */
+export function contactOutcome(contact, record, previousGround) {
   // An unavailable proxy sample can still carry an actual native structure
   // contact (for example with an invalid terrain plane); that contact counts.
   if (contact && contact.mask) {
+    const wheels = ['gear_nose_wow', 'gear_left_wow', 'gear_right_wow'].map(key => previousGround?.[key]);
+    if (wheels.every(value => value === 0 || value === 1) && wheels.some(value => value === 1)) return 'clear';
     if (!record) return 'fail';
     // User-selected simulator grace, based on pre-impact motion, applies to
     // every contact mask. Geometry telemetry and native wheel physics stay raw.
@@ -108,4 +111,14 @@ export function contactOutcome(contact, record) {
     return 'latch';
   }
   return contact && contact.available === true ? 'clear' : 'unavailable';
+}
+
+
+/** A continued contact is acknowledged only until that part separates. New
+ * contact bits remain active; unavailable geometry cannot prove separation. */
+export function unacknowledgedContact(contact, acknowledgedMask) {
+  if (!contact || typeof contact.available !== 'boolean' || !Number.isInteger(contact.mask) || contact.mask < 0 || contact.mask > 127
+    || !Number.isInteger(acknowledgedMask) || acknowledgedMask < 0 || acknowledgedMask > 127) throw new RangeError('Invalid acknowledged contact mask');
+  const retained = contact.available ? acknowledgedMask & contact.mask : acknowledgedMask;
+  return { contact: { ...contact, mask: contact.mask & ~retained }, acknowledgedMask: retained };
 }

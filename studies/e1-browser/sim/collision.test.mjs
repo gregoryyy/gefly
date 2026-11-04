@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { VISUAL_AIRFRAME, EMPTY_COLLISION, groundCollisionContact, collisionRecord, collisionStateFields, contactOutcome } from './collision.js';
+import { VISUAL_AIRFRAME, EMPTY_COLLISION, groundCollisionContact, collisionRecord, collisionStateFields, contactOutcome, unacknowledgedContact } from './collision.js';
 
 test('ordinary wheel-supported clearance is not a crash and shared visual dimensions are immutable', () => {
   assert.equal(groundCollisionContact(1.4, 0, 0, 0).mask, 0);
@@ -136,4 +136,37 @@ test('collision grace requires both strict pre-step speed limits and preserves r
     }
     assert.equal(contactOutcome(contact, null), 'fail', 'missing pre-step motion cannot become a safe zero');
   }
+});
+
+
+test('continuing acknowledges only persistent parts, re-arms separated parts and never hides new contacts', () => {
+  const sample = mask => Object.freeze({ available: true, mask, clearance_m: -.1 });
+  let next = unacknowledgedContact(sample(24), 24);
+  assert.equal(next.contact.mask, 0); assert.equal(next.acknowledgedMask, 24);
+  next = unacknowledgedContact(sample(16), next.acknowledgedMask);
+  assert.equal(next.contact.mask, 0); assert.equal(next.acknowledgedMask, 16);
+  next = unacknowledgedContact(sample(24), next.acknowledgedMask);
+  assert.equal(next.contact.mask, 8, 'body re-contact stops even while the acknowledged prop still touches');
+  assert.equal(unacknowledgedContact(sample(48), 16).contact.mask, 32, 'a newly hit fin remains active');
+  assert.equal(unacknowledgedContact(sample(0), 16).acknowledgedMask, 0);
+  assert.equal(unacknowledgedContact(sample(16), 0).contact.mask, 16, 'prop re-contact re-arms');
+  assert.equal(unacknowledgedContact({ available: false, mask: 0 }, 16).acknowledgedMask, 16, 'unknown geometry cannot establish separation');
+  assert.throws(() => unacknowledgedContact(sample(0), 128), RangeError);
+});
+
+
+test('already-grounded native support suppresses stops while airborne samples re-arm impact detection', () => {
+  const raw = Object.freeze({ available: true, mask: 127, clearance_m: -.4 });
+  const record = collisionRecord(raw.mask, 100, 1, { ground_forward_mps: 40, ground_side_mps: 4, ground_down_mps: 6 });
+  for (let bits = 0; bits < 8; bits++) {
+    const previous = { gear_nose_wow: bits & 1 ? 1 : 0, gear_left_wow: bits & 2 ? 1 : 0, gear_right_wow: bits & 4 ? 1 : 0 };
+    assert.equal(contactOutcome(raw, record, previous), bits ? 'clear' : 'latch');
+  }
+  const supported = { gear_nose_wow: 1, gear_left_wow: 0, gear_right_wow: 0 };
+  assert.equal(contactOutcome(raw, record, supported), 'clear');
+  assert.equal(contactOutcome(raw, record, { gear_nose_wow: 0, gear_left_wow: 0, gear_right_wow: 0 }), 'latch', 'takeoff re-arms without a new timer or threshold');
+  for (const previous of [null, {}, { ...supported, gear_left_wow: undefined }, { ...supported, gear_right_wow: NaN }, { ...supported, gear_nose_wow: true }, { ...supported, gear_right_wow: 2 }]) {
+    assert.equal(contactOutcome(raw, record, previous), 'latch', 'invalid or missing support cannot invent a ground state');
+  }
+  assert.equal(raw.mask, 127); assert.equal(raw.clearance_m, -.4); assert.equal(record.collision_mask, 127, 'raw contact and pre-impact diagnostics remain unchanged');
 });

@@ -1,12 +1,14 @@
 .ground-collision-panel { --collision-top: 88px; position: absolute; top: var(--collision-top); left: 50%; transform: translateX(-50%); z-index: 7; width: min(490px, calc(100% - 36px)); max-height: calc(100% - var(--deck-height) - var(--collision-top) - 12px); overflow: auto; overscroll-behavior: contain; padding: 13px 16px; color: #e7edf0; background: #18262e; border: 1px solid #dfad7c; border-radius: 9px; box-shadow: 0 8px 30px #020b1599; font: 11px/1.4 system-ui, sans-serif; }
 .ground-collision-panel[hidden] { display: none; }
 .ground-collision-panel h2 { margin: 0; color: #f0c49e; font-size: 15px; font-weight: 600; }
+#collision-close { position: absolute; right: 8px; top: 6px; padding: 0 6px; min-height: 26px; font-size: 21px; background: transparent; border: 0; }
+.ground-collision-panel h2 { padding-right: 28px; }
 #collision-parts { margin: 5px 0 10px; color: #cbd8df; font-size: 10px; }
 .collision-readings { display: flex; gap: 12px 24px; flex-wrap: wrap; margin: 0; }
 .collision-readings dt { font-size: 9px; color: #a8bdc7; }
 .collision-readings dd { margin: 2px 0 0; font-size: 12px; font-variant-numeric: tabular-nums; }
 .collision-readings output { font-family: ui-monospace, monospace; }
-.collision-actions { display: flex; gap: 8px; margin-top: 11px; }
+.collision-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 11px; }
 .collision-actions button { padding: 6px 11px; min-height: 30px; font-size: 11px; }
 @media (max-width: 620px) { .ground-collision-panel { --collision-top: 108px; width: calc(100% - 20px); padding: 10px 12px; } .ground-collision-panel h2 { font-size: 13px; } #collision-parts { margin-bottom: 8px; } .collision-readings { gap: 8px 15px; } .collision-actions { margin-top: 9px; } }
 @media (max-height: 650px) {

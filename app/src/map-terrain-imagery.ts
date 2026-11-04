@@ -6,11 +6,19 @@ import { MAP_TERRAIN_STYLE_URL, MAP_TERRAIN_STYLE_SHA256, MAP_TERRAIN_CREDIT } f
 
 const SIZE = 512, MIN_LEVEL = 6, MAX_LEVEL = 16;
 const BOUNDS = [5.8, 47.2, 15.1, 55.1] as const;
-const MAX_STYLE_BYTES = 1024 * 1024, MAX_QUEUED = 48, MAX_CACHE = 32, TIMEOUT_MS = 12000;
+const MAX_STYLE_BYTES = 1024 * 1024, MAX_QUEUED = 48, MAX_SUBSCRIBERS = 8, TIMEOUT_MS = 12000;
+// Each owned RGBA canvas is fixed-size. This bounds cache pixel storage, not
+// MapLibre/Cesium GPU storage or references retained by imagery consumers.
+const TILE_BYTES = SIZE * SIZE * 4, MAX_CACHE_BYTES = 64 * 1024 * 1024;
+const MAX_CACHE = MAX_CACHE_BYTES / TILE_BYTES;
 type Status = 'loading' | 'ready' | 'degraded';
 type MutableRequest = Request & { cancelled?: boolean; state: RequestState };
 interface Job {
-  key: string; x: number; y: number; level: number; request?: MutableRequest;
+  key: string; x: number; y: number; level: number; subscribers: Set<Subscriber>;
+  done: boolean; cleanup: () => void;
+}
+interface Subscriber {
+  request?: MutableRequest; promise: Promise<HTMLCanvasElement>;
   resolve: (canvas: HTMLCanvasElement) => void; reject: (error: Error) => void;
   cancel: () => void; done: boolean; cleanup: () => void;
 }
@@ -60,7 +68,7 @@ function allowedResource(url: string): string {
 
 /** A single MapLibre renderer supplies sharp, label-free XYZ cartography to the
  * existing Cesium globe. It changes no terrain heights, navigation or physics.
- * Failed tiles are transparent so the normal photograph beneath remains visible.
+ * Failed tiles are transparent; the scene chooses the underlying visual fallback.
  */
 export async function createMapTerrainImagery(options: {
   onStatus?: (status: Status) => void; signal?: AbortSignal;
@@ -68,7 +76,8 @@ export async function createMapTerrainImagery(options: {
   provider: ImageryProvider;
   dispose(): void;
   cancelQueued(): number;
-  getStats(): { loadedTiles: number; failedTiles: number; queuedTiles: number; cacheSize: number };
+  getStats(): { loadedTiles: number; failedTiles: number; queuedTiles: number; cacheSize: number;
+    cacheBytes: number; cacheHits: number; coalescedRequests: number };
 }> {
   const notify = (status: Status) => { try { options.onStatus?.(status); } catch { /* UI callbacks cannot break tile jobs. */ } };
   const controller = new AbortController();
@@ -91,13 +100,16 @@ export async function createMapTerrainImagery(options: {
       bearing: 0, pitch: 0, pixelRatio: 1, fadeDuration: 0, renderWorldCopies: false,
       maxTileCacheSize: 64,
       canvasContextAttributes: { preserveDrawingBuffer: true, antialias: false },
-      transformRequest: url => ({ url: allowedResource(url), credentials: 'same-origin' }) });
+      transformRequest: url => ({ url: allowedResource(url), credentials: 'same-origin',
+        headers: { 'X-Gefly-Scenery-Priority': 'visible' } }) });
   } catch (error) { container.remove(); notify('degraded'); throw error; }
   const tilingScheme = new WebMercatorTilingScheme(), coverage = Rectangle.fromDegrees(...BOUNDS);
   const cache = new Map<string, HTMLCanvasElement>(), failed = new Map<string, number>();
+  const pending = new Map<string, Job>();
   const queue: Job[] = [];
   const blank = document.createElement('canvas'); blank.width = SIZE; blank.height = SIZE;
   let active: Job | null = null, disposed = false, loadedTiles = 0, failedTiles = 0, restoreStyle = false;
+  let cacheHits = 0, coalescedRequests = 0;
   const resetRenderer = (): void => {
     restoreStyle = true;
     // Clearing sources cancels MapLibre's in-flight source work without creating
@@ -108,25 +120,34 @@ export async function createMapTerrainImagery(options: {
     for (const [key, expires] of failed) if (expires <= Date.now()) failed.delete(key);
     return failed.size ? 'degraded' : 'ready';
   };
-  const cancelled = (job: Job): Error => {
-    if (job.request) job.request.state = RequestState.CANCELLED;
+  const cancelled = (subscriber: Subscriber): Error => {
+    if (subscriber.request) subscriber.request.state = RequestState.CANCELLED;
     return new Error('Map terrain request cancelled');
+  };
+  const settle = (job: Job, subscriber: Subscriber, image: HTMLCanvasElement | null, isCancelled: boolean): void => {
+    if (subscriber.done) return;
+    subscriber.done = true; subscriber.cleanup(); job.subscribers.delete(subscriber);
+    if (isCancelled) subscriber.reject(cancelled(subscriber));
+    else subscriber.resolve(image ?? blank);
   };
   const finish = (job: Job, image: HTMLCanvasElement | null, isCancelled = false): void => {
     if (job.done) return;
     job.done = true; job.cleanup();
+    pending.delete(job.key);
     const index = queue.indexOf(job); if (index !== -1) queue.splice(index, 1);
     if (active === job) { active = null; if (isCancelled && !disposed) resetRenderer(); }
-    if (isCancelled) job.reject(cancelled(job));
-    else job.resolve(image ?? blank);
+    for (const subscriber of job.subscribers) settle(job, subscriber, image, isCancelled);
     if (!disposed) queueMicrotask(next);
+  };
+  const cancelSubscribers = (job: Job): void => {
+    for (const subscriber of [...job.subscribers]) if (subscriber.request?.cancelled) subscriber.cancel();
   };
   function next(): void {
     if (active || disposed) return;
     const job = queue.pop(); if (!job) return;
-    if (job.request?.cancelled) { finish(job, null, true); return; }
+    cancelSubscribers(job); if (job.done) return;
     const cached = cache.get(job.key);
-    if (cached) { cache.delete(job.key); cache.set(job.key, cached); notify(completedStatus()); finish(job, cached); return; }
+    if (cached) { cacheHits++; cache.delete(job.key); cache.set(job.key, cached); notify(completedStatus()); finish(job, cached); return; }
     active = job; notify('loading');
     if (restoreStyle) { restoreStyle = false; map.setStyle(style, { diff: false }); }
     let renderingFailed = false;
@@ -139,7 +160,7 @@ export async function createMapTerrainImagery(options: {
     };
     const onIdle = () => {
       if (job.done || disposed) return;
-      if (job.request?.cancelled) { finish(job, null, true); return; }
+      cancelSubscribers(job); if (job.done) return;
       if (renderingFailed || !map.loaded() || !map.areTilesLoaded()) { fail(); return; }
       try {
         const canvas = document.createElement('canvas'); canvas.width = SIZE; canvas.height = SIZE;
@@ -176,19 +197,37 @@ export async function createMapTerrainImagery(options: {
       const mutable = request as MutableRequest | undefined;
       if (mutable?.cancelled) { mutable.state = RequestState.CANCELLED; return Promise.reject(new Error('Map terrain request cancelled')); }
       const cached = cache.get(key);
-      if (cached) { cache.delete(key); cache.set(key, cached); notify(completedStatus()); return Promise.resolve(cached); }
+      if (cached) { cacheHits++; cache.delete(key); cache.set(key, cached); notify(completedStatus()); return Promise.resolve(cached); }
       if ((failed.get(key) ?? 0) > Date.now()) { notify('degraded'); return Promise.resolve(blank); }
-      return new Promise<HTMLCanvasElement>((resolve, reject) => {
-        const job: Job = { key, x, y, level, request: mutable, resolve, reject, done: false, cleanup: () => {}, cancel: () => {} };
-        const priorCancel = mutable?.cancelFunction;
-        job.cancel = () => { try { priorCancel?.(); } catch { /* Preserve cancellation even if a prior callback fails. */ } finish(job, null, true); };
-        if (mutable) mutable.cancelFunction = job.cancel;
-        const poll = mutable ? setInterval(() => { if (mutable.cancelled) job.cancel(); }, 50) : null;
-        job.cleanup = () => { if (poll !== null) clearInterval(poll); if (mutable?.cancelFunction === job.cancel) mutable.cancelFunction = priorCancel!; };
+      let job = pending.get(key);
+      if (job) {
+        if (mutable) for (const subscriber of job.subscribers) if (subscriber.request === mutable) return subscriber.promise;
+        if (job.subscribers.size >= MAX_SUBSCRIBERS) return undefined;
+        coalescedRequests++;
+      }
+      const newJob = !job;
+      if (!job) { job = { key, x, y, level, subscribers: new Set(), done: false, cleanup: () => {} }; pending.set(key, job); }
+      const shared = job;
+      let resolve!: Subscriber['resolve'], reject!: Subscriber['reject'];
+      const promise = new Promise<HTMLCanvasElement>((accept, decline) => { resolve = accept; reject = decline; });
+      const subscriber: Subscriber = { request: mutable, promise, resolve, reject, done: false, cleanup: () => {}, cancel: () => {} };
+      const priorCancel = mutable?.cancelFunction;
+      subscriber.cancel = () => {
+        if (subscriber.done) return;
+        try { priorCancel?.(); } catch { /* A prior callback cannot cancel another subscriber. */ }
+        settle(shared, subscriber, null, true);
+        if (!shared.subscribers.size) finish(shared, null, true);
+      };
+      if (mutable) mutable.cancelFunction = subscriber.cancel;
+      const poll = mutable ? setInterval(() => { if (mutable.cancelled) subscriber.cancel(); }, 50) : null;
+      subscriber.cleanup = () => { if (poll !== null) clearInterval(poll); if (mutable?.cancelFunction === subscriber.cancel) mutable.cancelFunction = priorCancel!; };
+      shared.subscribers.add(subscriber);
+      if (newJob) {
         queue.push(job);
         while (queue.length > MAX_QUEUED) finish(queue[0], null, true);
         next();
-      });
+      }
+      return promise;
     },
   } as unknown as ImageryProvider;
   const cancelQueued = (): number => {
@@ -201,10 +240,11 @@ export async function createMapTerrainImagery(options: {
     disposed = true; controller.abort();
     cancelQueued(); if (active) finish(active, null, true);
     options.signal?.removeEventListener('abort', dispose);
-    cache.clear(); failed.clear(); map.remove(); container.remove();
+    cache.clear(); failed.clear(); pending.clear(); map.remove(); container.remove();
   };
   options.signal?.addEventListener('abort', dispose, { once: true });
   if (options.signal?.aborted) dispose();
   return { provider, dispose, cancelQueued,
-    getStats: () => ({ loadedTiles, failedTiles, queuedTiles: queue.length, cacheSize: cache.size }) };
+    getStats: () => ({ loadedTiles, failedTiles, queuedTiles: queue.length, cacheSize: cache.size,
+      cacheBytes: cache.size * TILE_BYTES, cacheHits, coalescedRequests }) };
 }

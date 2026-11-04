@@ -133,3 +133,25 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-04 — Dragging the zoomed cockpit panel](2026-11-04-cockpit-panel-drag.md)
 
 - [2026-11-04 — Remove the duplicate systems menu](2026-11-04-remove-systems-menu.md)
+
+- [2026-11-04 — Restore the flying experience](2026-11-04-flight-stabilization.md)
+
+- [2026-11-04 — Collision recovery and ordinary flight workflows](2026-11-04-flight-workflow.md)
+
+- [2026-11-04 — Already-grounded collision stopping](2026-11-04-ground-supported-collision.md)
+
+- [2026-11-04 — Steering center retention](2026-11-04-steering-center-retention.md)
+
+- [2026-11-04 — Autopilot pointer handoff](2026-11-04-autopilot-pointer-handoff.md)
+
+- [2026-11-04 — Visible steering center and regression drift](2026-11-04-visible-steering-center.md)
+
+- [2026-11-04 — Autopilot ARM clarification](2026-11-04-autopilot-arm-clarification.md)
+
+- [2026-11-04 — Autopilot A toggle](2026-11-04-autopilot-a-toggle.md)
+
+- [2026-11-04 — Shortcut and vector correction](2026-11-04-shortcut-and-vector-correction.md)
+- [KAP evidence and current usability correction](2026-11-04-kap-evidence-correction.md)
+- [Persistent autopilot vertical-speed display](2026-11-04-kap-persistent-vs.md)
+- [User-owned map shortcuts and UI decisions](2026-11-04-user-owned-map-shortcuts.md)
+- [Map cache performance](2026-11-04-map-cache-performance.md)

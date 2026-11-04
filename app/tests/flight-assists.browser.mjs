@@ -78,10 +78,15 @@ try {
   assert(Math.abs(captured.kap_selected_altitude_m - initial.kap_indicated_altitude_m) < 1e-8);
   unchanged(before, await stats());
   await page.keyboard.press('a');
-  await page.waitForTimeout(100);
-  assert.equal((await state()).kap_engaged, 1, 'A recaptures instead of toggling off');
+  await page.waitForFunction(() => { const s = window.assistStates.at(-1); return s?.kap_engaged === 0 && s.ap_mode === 0 && s.kap_elevator_norm === 0 && s.ap_aileron_norm === 0
+    && document.querySelector('#ap-engaged-label').textContent === 'OFF'; });
+  assert.equal(await page.locator('#ap-engaged-label').textContent(), 'OFF');
   unchanged(before, await stats());
-  checks.push('A captures authoritative current heading and altitude while paused without moving physics; repeated A stays engaged');
+  await page.keyboard.press('a'); await page.waitForFunction(() => window.assistStates.at(-1)?.kap_engaged === 1);
+  await page.locator('#ap-engage').click(); await page.waitForFunction(() => window.assistStates.at(-1)?.kap_engaged === 0);
+  unchanged(before, await stats());
+  await scene.focus(); await page.keyboard.press('a'); await page.waitForFunction(() => window.assistStates.at(-1)?.kap_engaged === 1);
+  checks.push('A toggles authoritative current-heading/altitude capture on/off/on; panel AP disconnects, with both native servo outputs off and paused physics unchanged');
 
   for (const rate of [1.5, 2, 5, 10, 1]) {
     await page.keyboard.press('Equal');
@@ -114,7 +119,8 @@ try {
   unchanged(before, await stats());
   checks.push('Shift+= steps down 10×→5×→2×→1.5×→1× and stays at 1× without stepping paused physics');
 
-  const commandCount = () => page.evaluate(() => window.assistCommands.filter(command => ['simulation-rate', 'autopilot-capture'].includes(command.type)).length);
+  const commandCount = () => page.evaluate(() => window.assistCommands.filter(command => ['simulation-rate', 'autopilot-capture'].includes(command.type)
+    || command.type === 'kap140' && command.command?.action === 'disconnect').length);
   const guarded = await commandCount();
   for (const key of ['Alt+Equal', 'Control+Equal', 'Meta+Equal', 'Shift+KeyA', 'Alt+KeyA']) await page.keyboard.press(key);
   await scene.evaluate(element => {
@@ -126,10 +132,13 @@ try {
   await page.locator('#flight-menu > summary').click();
   await page.keyboard.press('a'); await page.keyboard.press('Equal');
   assert.equal(await commandCount(), guarded, 'open menus keep plain shortcuts inactive');
+  assert.match(await page.locator('#capture-autopilot').textContent(), /Autopilot off/);
   await page.locator('#capture-autopilot').click();
-  await page.waitForFunction(count => window.assistCommands.filter(command => ['simulation-rate', 'autopilot-capture'].includes(command.type)).length > count, guarded);
+  await page.waitForFunction(count => window.assistCommands.filter(command => ['simulation-rate', 'autopilot-capture'].includes(command.type)
+    || command.type === 'kap140' && command.command?.action === 'disconnect').length > count, guarded);
+  await page.waitForFunction(() => window.assistStates.at(-1)?.kap_engaged === 0);
   await page.keyboard.press('i'); // hide header and close details
-  await page.keyboard.press('Alt+Shift+KeyO');
+  await page.keyboard.press('o');
   await page.locator('dialog[open]').waitFor({ state: 'visible' });
   const modalCount = await commandCount();
   await page.keyboard.press('a'); await page.keyboard.press('Equal');
@@ -199,7 +208,9 @@ try {
   await page.waitForFunction(rate => document.querySelector('#simulation-rate-overlay').textContent === `SIM ${rate}×`, liveRateBeforeReview);
   checks.push('Replay arrows seek with timeline/button focus, clamp at bounds; = and playback button cycle all rates, 5× advances the replay clock and native physics stays frozen');
 
-  await page.keyboard.press('Alt+Shift+KeyR');
+  await scene.focus(); await page.keyboard.press('i');
+  await page.locator('#flight-menu > summary').click();
+  await page.locator('#reset').click();
   await page.waitForFunction(() => !document.querySelector('#start').disabled && window.assistStates.at(-1)?.step === 0 && window.assistStates.at(-1)?.simulation_rate === 1 && document.querySelector('#simulation-rate-overlay').textContent === 'SIM 1×', null, { timeout: 60000 });
   assert.equal((await state()).kap_engaged, 0);
   checks.push('Restart restores 1× and disengaged autopilot');

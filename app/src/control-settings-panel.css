@@ -1,91 +1,60 @@
 .control-settings {
-  width: min(440px, calc(100vw - 32px));
-  max-height: calc(100dvh - 40px);
+  width: min(650px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
   margin: auto;
-  padding: 27px 30px 25px;
+  padding: 20px;
   overflow-y: auto;
   color: #eef3f5;
   background: #13232e;
   border: 1px solid #a9bec64d;
-  border-radius: 14px;
+  border-radius: 12px;
   box-shadow: 0 24px 100px #020a15b3;
 }
-.control-settings::backdrop {
-  background: #06121cbf;
-  backdrop-filter: blur(5px);
-}
-.control-settings-heading h2 {
-  margin: 8px 0;
-  font-size: 27px;
-  font-weight: 500;
-  letter-spacing: -.6px;
-}
-.control-settings-heading p {
-  margin: 0;
-  color: #afc2cd;
-  font-size: 12px;
-  line-height: 1.6;
-}
-.control-settings-axes { margin-top: 25px; }
-.control-settings-axis {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  margin-bottom: 23px;
-}
-.control-settings-axis label { font-size: 14px; font-weight: 600; }
-.control-settings-axis label span {
-  display: block;
-  margin-top: 4px;
-  font-size: 11px;
-  font-weight: 400;
-  color: #94adbc;
-}
-.control-settings-axis output {
-  align-self: center;
-  color: #f0cc95;
-  font-size: 21px;
-  font-variant-numeric: tabular-nums;
-}
-.control-settings-axis input[type=range] {
-  grid-column: 1 / -1;
-  height: 24px;
-  margin: 9px 0 1px;
-}
-.control-settings-scale {
-  display: flex;
-  justify-content: space-between;
-  grid-column: 1 / -1;
-  color: #8da7b7;
-  font-size: 10px;
-}
-.control-settings-presets {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-}
-.control-settings-presets > span { margin-right: auto; font-size: 11px; color: #afc2cd; }
-.control-settings-presets button { padding: 8px 12px; font-size: 12px; }
-.control-settings-note {
-  margin: 20px 0;
-  color: #94adbc;
-  font-size: 11px;
-  line-height: 1.7;
-}
-.control-settings > .primary { font-size: 13px; }
-@media (max-width: 480px) {
-  .control-settings { padding: 23px 20px; }
-}
-
-.control-settings-toggle {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin: 12px 0 5px;
-  color: #eef3f5;
-  font-size: 13px;
-  cursor: pointer;
-}
+.control-settings::backdrop { background: #06121cbf; backdrop-filter: blur(5px); }
+.control-settings-heading h2 { margin: 0 0 5px; font-size: 23px; font-weight: 500; }
+.control-settings-heading p { margin: 0 0 15px; color: #afc2cd; font-size: 11px; line-height: 1.5; }
+.control-settings-sections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.control-settings fieldset { min-width: 0; margin: 0; padding: 10px 12px 12px; border: 1px solid #a9bec633; border-radius: 7px; }
+.control-settings legend { padding: 0 6px; font-size: 13px; font-weight: 600; color: #e7d2ae; }
+.control-settings-controls, .control-settings-advanced { grid-column: 1 / -1; }
+.control-settings-toggles, .control-settings-axes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; }
+.control-settings-subheading { margin: 14px 0 9px; font-size: 11px; font-weight: 500; color: #afc2cd; }
+.control-settings-axis { display: grid; grid-template-columns: 1fr auto; }
+.control-settings-axis label { font-size: 12px; font-weight: 600; }
+.control-settings-axis label span { display: block; margin-top: 2px; font-size: 10px; font-weight: 400; color: #94adbc; }
+.control-settings-axis output { align-self: center; color: #f0cc95; font-size: 16px; font-variant-numeric: tabular-nums; }
+.control-settings-axis input[type=range] { grid-column: 1 / -1; width: 100%; height: 20px; margin: 5px 0 0; }
+.control-settings-scale { display: flex; justify-content: space-between; grid-column: 1 / -1; color: #8da7b7; font-size: 9px; }
+.control-settings-presets { display: flex; gap: 6px; align-items: center; margin-top: 12px; }
+.control-settings-presets > span { margin-right: auto; font-size: 10px; color: #afc2cd; }
+.control-settings-presets button { padding: 5px 10px; font-size: 11px; }
+.control-settings-note { margin: 4px 0 8px; color: #94adbc; font-size: 10px; line-height: 1.5; }
+.control-settings-toggle { display: flex; align-items: center; gap: 8px; margin: 2px 0 4px; color: #eef3f5; font-size: 12px; cursor: pointer; }
 .control-settings-toggle input { flex: 0 0 auto; margin: 0; }
-.control-settings-toggle + .control-settings-note { margin: 0 0 18px; }
+.control-settings-advanced { padding: 10px 12px; border: 1px solid #a9bec633; border-radius: 7px; }
+.control-settings-advanced > summary { font-size: 12px; cursor: pointer; }
+#settings-advanced-slot { margin-top: 10px; }
+#settings-advanced-slot > label { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
+#settings-advanced-slot > input[type=range] { width: 100%; margin: 5px 0; }
+#settings-advanced-slot > small { display: block; color: #94adbc; font-size: 10px; line-height: 1.5; }
+.control-settings .roll-correction-presets { margin-bottom: 12px; }
+#settings-controls-extra:empty, #settings-advanced-slot:empty { display: none; }
+.control-settings .control-options { margin: 8px 0 0; padding: 0; border: 0; font-size: 11px; }
+.control-settings .control-options summary { font-size: 11px; }
+.control-settings .control-options p, .control-settings .control-options small { font-size: 10px; line-height: 1.5; }
+.control-settings .audio-settings { margin: 0; padding: 0; border: 0; }
+.control-settings .audio-settings-heading { flex-direction: column; align-items: flex-start; gap: 3px; margin-bottom: 9px; }
+.control-settings .audio-settings h3 { margin: 0; font-size: 12px; }
+.control-settings .audio-settings p { font-size: 10px; }
+.control-settings #audio-settings-toggle { width: 100%; margin-bottom: 9px; padding: 6px 9px; font-size: 11px; }
+.control-settings .audio-settings #audio-volume { height: 20px; margin: 5px 0; }
+.control-settings #limitations { margin-top: 10px; font-size: 10px; line-height: 1.5; }
+.control-settings > .primary { display: block; width: 100%; margin-top: 14px; padding: 9px 12px; font-size: 12px; }
+@media (max-width: 560px) {
+  .control-settings { padding: 15px; }
+  .control-settings-sections { grid-template-columns: minmax(0, 1fr); }
+  .control-settings-toggles { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+}
+@media (max-width: 360px) {
+  .control-settings-axes { grid-template-columns: minmax(0, 1fr); }
+}

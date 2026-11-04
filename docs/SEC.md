@@ -345,7 +345,7 @@ serves canonical Germany XYZ PBF tiles and the known sprite pair; callers cannot
 choose hosts, URLs or filesystem paths. Bounds, MIME types, bytes, concurrency,
 pending work and memory caches are limited. The browser renders these tiles in
 one offscreen MapLibre context with a bounded queue/cache and disposal. Failed
-tiles are transparent over the existing photographs; data service failure does
+tiles expose only neutral terrain/relief in vector mode; photography is hidden; data service failure does
 not change physical terrain, navigation or native flight state. See the
 [source note](research/2026-11-04-label-free-map-terrain.md) for coverage/rights.
 

@@ -264,6 +264,32 @@ Researchers must disclose unavailable deep research skills and use a documented
 primary-source fallback rather than claiming a tool ran. Preserve exact source
 revisions, aircraft/configuration applicability, units and permitted data reuse.
 
+### Insights: preserve working behavior
+
+A passing injected-panel or direct-native fixture does not establish that the
+user can operate the integrated cockpit. Verify the exact trusted-input sequence,
+visible indications and sustained aircraft response together before reporting a
+repair. Keep historical observations distinct from current usability acceptance.
+
+AI overreach has changed user-decided UI/UX without consent and broken working
+interactions. The user owns interface decisions and key bindings; agents must
+not silently reinterpret or reassign them. Do not generate modifier-key catalogs
+or invent replacements for unassigned commands. Current bindings: M toggles the
+map, comma toggles its larger view, period cycles terrain landmark labels, and
+Slash (/) toggles vector/photo terrain on a US keyboard. Keep menu labels,
+actual handlers and documentation consistent with the user's decisions.
+
+Small requests have repeatedly broken earlier work through shared UI/input
+helpers, making the simulator unreliable. Treat unpredictable regressions as
+design defects: modular boundaries should contain a change and preserve delivered
+behavior outside its explicit scope. Keep presentation, selected input mode,
+current commands and autopilot authority distinct; clearing commands must not
+silently discard the user's selection or transfer control ownership.
+
+Check the complete user interaction and its nearest adjacent boundary, such as
+capturing AP and then moving to its controls. Use the smallest relevant existing
+check. Avoid unrelated refactors and broad process work for a local repair.
+
 ### Dispatch, parallel work and integration
 
 The orchestrator sends each worker a goal, TODO/requirement IDs, SPEC revision,

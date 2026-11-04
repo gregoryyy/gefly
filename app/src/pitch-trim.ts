@@ -20,7 +20,7 @@ export function createPitchTrimControl(options: PitchTrimOptions): {
   panel.innerHTML = `
     <div class="pitch-trim-heading"><label for="pitch-trim-control">PITCH TRIM</label><output id="pitch-trim-actual">Unavailable</output></div>
     <input id="pitch-trim-control" type="range" aria-orientation="vertical" min="-100" max="100" step="0.1" value="0" aria-label="Pitch trim command, positive percent nose up" disabled>
-    <div class="pitch-trim-buttons"><button type="button" id="pitch-trim-up" data-code="Quote" aria-label="Hold nose-up trim, apostrophe key" aria-keyshortcuts="'" title="Apostrophe · Nose-up trim" disabled>↑ <kbd>&#39;</kbd></button><button type="button" id="pitch-trim-initial" aria-label="Restore initial trim, slash key" aria-keyshortcuts="/" title="/ · Restore initial trim" disabled><kbd>/</kbd></button><button type="button" id="pitch-trim-down" data-code="Backslash" aria-label="Hold nose-down trim, backslash key" aria-keyshortcuts="&#92;" title="Backslash · Nose-down trim" disabled>↓ <kbd>&#92;</kbd></button></div>
+    <div class="pitch-trim-buttons"><button type="button" id="pitch-trim-up" data-code="Quote" aria-label="Hold nose-up trim, apostrophe key" aria-keyshortcuts="'" title="Apostrophe · Nose-up trim" disabled>↑ <kbd>&#39;</kbd></button><button type="button" id="pitch-trim-initial" aria-label="Restore initial trim" title="Restore initial trim" disabled>/</button><button type="button" id="pitch-trim-down" data-code="Backslash" aria-label="Hold nose-down trim, backslash key" aria-keyshortcuts="&#92;" title="Backslash · Nose-down trim" disabled>↓ <kbd>&#92;</kbd></button></div>
     <small id="pitch-trim-note">Trim unavailable · rebuild flight engine</small>
   `;
   options.container.append(panel);

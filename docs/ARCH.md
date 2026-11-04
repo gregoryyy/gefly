@@ -22,11 +22,10 @@ inclinometer is an ideal apparent-force display, not a full turn-coordinator gyr
 The scene's authored +X-nose/+Y-up/+Z-right glTF axes are explicitly mapped through
 Cesium's axis correction into an aircraft ENU basis; look offsets affect only the
 camera. Scene click/hold input uses explicit yoke/look modes, neutralizing on
-release/cancel/focus transitions without pointer-lock permission. The opt-in
+release/cancel/focus transitions without pointer-lock permission. The default
 centered mode reads the current scene rectangle for its neutral point and retains
 camera look independently of those control cancellations; Escape and flight
-restart explicitly reset the look. The default relative mode keeps its existing
-click anchor and temporary live look.
+restart explicitly reset the look. The optional relative mode retains its click anchor and camera look.
 
 Flaps and symmetric wheel brakes drive existing model FCS properties. Manual
 mixture uses a source-hash-guarded local aircraft copy: a default-on gate on the

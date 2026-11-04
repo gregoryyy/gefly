@@ -28,6 +28,7 @@ export function createAudioControls(options: AudioControlsOptions): {
   settings.id = 'audio-settings'; settings.className = 'audio-settings';
   settings.setAttribute('aria-labelledby', 'audio-settings-title');
   settings.innerHTML = `<div class="audio-settings-heading"><h3 id="audio-settings-title">Engine, wind and alerts</h3><span id="audio-status" role="status">Sound off · press S to enable</span></div>
+    <button id="audio-settings-toggle" type="button">Enable sound</button>
     <label for="audio-volume">Volume <output id="audio-volume-value" for="audio-volume">30%</output></label>
     <input id="audio-volume" type="range" min="0" max="100" step="1" value="30" aria-label="Engine, wind and alerts volume percentage">
     <p>Synthesized engine, airflow and warning tones. No recording or microphone access.</p>`;
@@ -35,6 +36,7 @@ export function createAudioControls(options: AudioControlsOptions): {
   const volume = settings.querySelector<HTMLInputElement>('#audio-volume')!;
   const output = settings.querySelector<HTMLOutputElement>('#audio-volume-value')!;
   const stateLabel = settings.querySelector<HTMLElement>('#audio-status')!;
+  const settingsToggle = settings.querySelector<HTMLButtonElement>('#audio-settings-toggle')!;
   let disposed = false, lastKey = '';
   function toggle(event: MouseEvent): void { if (!disposed && event.isTrusted) options.onToggleMute(); }
   function isolateShortcut(event: KeyboardEvent): void {
@@ -46,6 +48,7 @@ export function createAudioControls(options: AudioControlsOptions): {
     if (!disposed && event.isTrusted && Number.isFinite(value) && value >= 0 && value <= 1) options.onVolume(value);
   }
   button.addEventListener('click', toggle); button.addEventListener('keydown', isolateShortcut);
+  settingsToggle.addEventListener('click', toggle);
   volume.addEventListener('input', changeVolume);
   return {
     update(status) {
@@ -56,6 +59,7 @@ export function createAudioControls(options: AudioControlsOptions): {
       const unavailable = !status.supported || status.state === 'disposed';
       const retry = status.supported && status.state === 'unavailable';
       button.disabled = unavailable;
+      settingsToggle.disabled = unavailable;
       volume.disabled = unavailable;
       button.dataset.audioState = status.state;
       button.dataset.muted = String(status.muted);
@@ -64,6 +68,7 @@ export function createAudioControls(options: AudioControlsOptions): {
       const action = unavailable ? 'Engine sound unavailable' : retry ? 'Retry engine sound'
         : !status.unlocked ? 'Enable engine sound' : status.muted ? 'Unmute engine sound' : 'Mute engine sound';
       button.setAttribute('aria-label', `${action} (S)`); button.title = `${action} (S)`;
+      settingsToggle.textContent = action.replace('engine sound', 'sound');
       const percent = Math.round(status.volume * 100);
       volume.value = String(percent); output.value = `${percent}%`;
       volume.setAttribute('aria-valuetext', `${percent} percent`);
@@ -73,6 +78,7 @@ export function createAudioControls(options: AudioControlsOptions): {
       if (disposed) return;
       disposed = true;
       button.removeEventListener('click', toggle); button.removeEventListener('keydown', isolateShortcut);
+      settingsToggle.removeEventListener('click', toggle);
       volume.removeEventListener('input', changeVolume);
       button.remove(); settings.remove();
     },

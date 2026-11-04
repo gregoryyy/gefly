@@ -4,7 +4,7 @@ import { createAirportScenery, AIRPORT_VECTOR_CREDIT } from './airport-scenery';
 import {
   Axis, Cartesian3, Cartographic, CesiumWidget, Color, Credit, Ellipsoid, EllipsoidTerrainProvider,
   ImageryLayer, Ion, JulianDate, UrlTemplateImageryProvider,
-  Matrix3, Matrix4, Model, PerspectiveFrustum, Quaternion, Rectangle, ShadowMode, SingleTileImageryProvider, Transforms,
+  Matrix3, Matrix4, Model, PerspectiveFrustum, Quaternion, Rectangle, RequestScheduler, Resource, ShadowMode, SingleTileImageryProvider, Transforms,
 } from 'cesium';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 import { createForwardMarker } from './forward-marker';
@@ -16,6 +16,7 @@ import { createPublicTerrainProvider } from './terrain-provider';
 import { createStreamedTerrainProvider } from './streamed-terrain-provider';
 import { REGIONAL_TERRAIN, loadRegionalManifest, TerrainStream, sampleAtlas, type RegionalTile } from '../../studies/e1-browser/sim/terrain-stream.js';
 import { createRegionalImageryProvider } from './regional-imagery';
+import { createMapTerrainImagery } from './map-terrain-imagery';
 import { imageryStatusText } from './imagery-status';
 import { loadTerrainPackage, sampleTerrain, type TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
 import { aircraftBasisENU, boundedCameraLook, cockpitCameraENU, chaseCameraENU, type CameraLook } from './aircraft-orientation';
@@ -93,6 +94,9 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     ground_agl_m: INITIAL_STATE.alt_msl_m - initialGround.physical_m };
   let terrainEnabled = true;
   Ion.defaultAccessToken = '';
+  // Local HTTP/1.1 has six connections. Leave room for worker scripts and
+  // terrain data instead of filling every connection with live photographs.
+  RequestScheduler.maximumRequestsPerServer = 2;
   const credits = document.createElement('div');
   credits.style.cssText = 'position:absolute;left:10px;right:10px;bottom:5px;z-index:1;font:10px/1.3 system-ui;color:white;text-shadow:0 1px 3px #000;';
   container.appendChild(credits);
@@ -167,7 +171,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   let airportLayer: ImageryLayer | null = null;
   let localRegionalLayer: ImageryLayer | null = null;
   let livePhotoLayer: ImageryLayer | null = null;
-  let mapTerrain: Awaited<ReturnType<typeof import('./map-terrain-imagery').createMapTerrainImagery>> | null = null;
+  let mapTerrain: Awaited<ReturnType<typeof createMapTerrainImagery>> | null = null;
   let mapTerrainLayer: ImageryLayer | null = null;
   let mapTerrainLoad: Promise<void> | null = null;
   let mapTerrainStatus: 'loading' | 'ready' | 'degraded' = 'loading';
@@ -176,6 +180,16 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     if(localRegionalLayer)scene.imageryLayers.raiseToTop(localRegionalLayer);
     if(airportLayer)scene.imageryLayers.raiseToTop(airportLayer);
     if(mapTerrainLayer)scene.imageryLayers.raiseToTop(mapTerrainLayer);
+    applyImageryMode();
+  }
+  function applyImageryMode(useTerrain = lastState.terrain_profile === 1): void {
+    for (let i = 0; i < scene.imageryLayers.length; i++) {
+      const layer = scene.imageryLayers.get(i);
+      // Vector and photography are alternative terrain modes. An empty or
+      // failed vector tile exposes only the neutral base/height relief.
+      layer.show = layer === baseLayer ? true : layer === reliefLayer ? useTerrain
+        : layer === mapTerrainLayer ? vectorScenery && useTerrain : !vectorScenery;
+    }
   }
   let loadSlow = false;
   const creditObserver = new ResizeObserver(() => {
@@ -189,10 +203,11 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   baseCanvas.width = baseCanvas.height = 1;
   const baseContext = baseCanvas.getContext('2d')!;
   baseContext.fillStyle = '#263a37'; baseContext.fillRect(0, 0, 1, 1);
-  scene.imageryLayers.add(new ImageryLayer(new SingleTileImageryProvider({
+  const baseLayer = new ImageryLayer(new SingleTileImageryProvider({
     url: baseCanvas.toDataURL(), tileWidth: 1, tileHeight: 1,
     rectangle: Rectangle.MAX_VALUE,
-  })));
+  }));
+  scene.imageryLayers.add(baseLayer);
   const relief = elevationRelief(terrainGrid);
   const reliefLayer = new ImageryLayer(new SingleTileImageryProvider({
     url: relief.toDataURL('image/png'), tileWidth: relief.width, tileHeight: relief.height,
@@ -227,8 +242,8 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     });
     const text = vectorScenery && state.terrain_profile === 1
       ? mapTerrainStatus === 'ready' ? '' : mapTerrainStatus === 'degraded'
-        ? 'Map terrain unavailable in parts of this view; photography retained underneath.'
-        : 'Loading map terrain without labels; photography retained underneath.'
+        ? 'Map terrain unavailable in parts of this view; terrain relief remains visible.'
+        : 'Loading map terrain without labels; terrain relief remains visible.'
       : photographText;
     container.dataset.mapTerrain = vectorScenery && state.terrain_profile === 1 ? mapTerrainStatus : vectorScenery ? 'flat-study' : 'off';
     container.dataset.mapTerrainLoaded = String(mapTerrain?.getStats().loadedTiles ?? 0);
@@ -245,13 +260,13 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   function ensureMapTerrain(): void {
     if (mapTerrainLoad || disposed) return;
     mapTerrainStatus = 'loading';
-    mapTerrainLoad = import('./map-terrain-imagery').then(module => module.createMapTerrainImagery({
+    mapTerrainLoad = createMapTerrainImagery({
       signal: photographAbort.signal,
       onStatus(value) {
         if (disposed) return;
         mapTerrainStatus = value; imageryStatus(lastState); scene.requestRender();
       },
-    })).then(handle => {
+    }).then(handle => {
       if (disposed) { handle.dispose(); return; }
       mapTerrain = handle;
       mapTerrainLayer = new ImageryLayer(handle.provider);
@@ -365,16 +380,14 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       throw new RangeError('Cannot render a non-finite aircraft state');
     }
     const useTerrain = state.terrain_profile === 1;
-    sceneryCache.update(state.lat_rad, state.lon_rad, vectorScenery, useTerrain);
+    // Start a new warm plan after visible tiles settle; retain nearby progress through brief camera tile work.
+    sceneryCache.update(state.lat_rad, state.lon_rad, vectorScenery, useTerrain, scene.globe.tilesLoaded);
     airportScenery.setVisible(useTerrain);
     airportScenery.setVectorVisible(false);
     if (vectorScenery && useTerrain) ensureMapTerrain();
     airportScenery.update(state);
     container.dataset.airportScenery = airportScenery.status;
-    for (let i = 0; i < scene.imageryLayers.length; i++) {
-      const layer = scene.imageryLayers.get(i);
-      layer.show = layer === reliefLayer ? useTerrain : layer === mapTerrainLayer ? vectorScenery && useTerrain : true;
-    }
+    applyImageryMode(useTerrain);
     const terrainSample = useTerrain ? atlasSample(state.lat_rad, state.lon_rad) : null;
     if (useTerrain && (!terrainSample || !Number.isFinite(state.ground_height_ellipsoid_m))) {
       container.dataset.terrain = terrainSample ? 'height-unavailable' : 'outside-coverage';
@@ -514,7 +527,8 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       if (vector && !mapTerrain && mapTerrainStatus === 'degraded') mapTerrainLoad = null;
       if (vector && lastState.terrain_profile === 1) ensureMapTerrain();
       if (!vector) mapTerrain?.cancelQueued();
-      if (mapTerrainLayer) mapTerrainLayer.show = vector && lastState.terrain_profile === 1;
+      else regionalImagery?.cancelQueued();
+      applyImageryMode();
       container.dataset.sceneryMode = vector ? 'vector' : 'imagery'; imageryStatus(lastState); scene.requestRender();
     },
     setPracticePapi(enabled) { airportScenery.setPracticePapi(enabled); container.dataset.practicePapi = String(enabled); },
@@ -541,10 +555,10 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       if(tiles.length && !liveLayers) {
         liveLayers=true;
         const rectangle=Rectangle.fromDegrees(REGIONAL_TERRAIN.west, REGIONAL_TERRAIN.south, REGIONAL_TERRAIN.east, REGIONAL_TERRAIN.north);
-        const mapLayer = new ImageryLayer(new UrlTemplateImageryProvider({url:'/scenery/map/{z}/{x}/{y}.png',minimumLevel:5,maximumLevel:12,tileWidth:256,tileHeight:256,rectangle,
+        const mapLayer = new ImageryLayer(new UrlTemplateImageryProvider({url:new Resource({url:'/scenery/map/{z}/{x}/{y}.png',headers:{'X-Gefly-Scenery-Priority':'visible'}}),minimumLevel:5,maximumLevel:12,tileWidth:256,tileHeight:256,rectangle,
           credit:new Credit('© <a href="https://www.bkg.bund.de" target="_blank" rel="noopener noreferrer">BKG</a> (2026) · <a href="https://www.govdata.de/dl-de/by-2-0" target="_blank" rel="noopener noreferrer">dl-de/by-2-0</a> · <a href="https://sgx.geodatenzentrum.de/web_public/gdz/datenquellen/datenquellen_topplusopen.html" target="_blank" rel="noopener noreferrer">TopPlusOpen sources</a> · map fallback',true)}));
         scene.imageryLayers.add(mapLayer,2);
-        const photoProvider=new UrlTemplateImageryProvider({url:'/scenery/imagery/{z}/{x}/{y}.png',minimumLevel:7,maximumLevel:14,tileWidth:512,tileHeight:512,rectangle,
+        const photoProvider=new UrlTemplateImageryProvider({url:new Resource({url:'/scenery/imagery/{z}/{x}/{y}.png',headers:{'X-Gefly-Scenery-Priority':'visible'}}),minimumLevel:7,maximumLevel:14,tileWidth:512,tileHeight:512,rectangle,
           credit:new Credit('Open photography: HVBG · <a href="https://www.govdata.de/dl-de/zero-2-0">DL-DE-Zero-2.0</a>; © <a href="https://www.ldbv.bayern.de">Bayerische Vermessungsverwaltung</a> (2026) · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; Datenquelle: <a href="https://www.lgl-bw.de">LGL-BW</a> (2026) · <a href="https://www.govdata.de/dl-de/by-2-0">dl-de/by-2-0</a> · resampled, composited · capture dates unknown',true)});
         photoProvider.errorEvent.addEventListener(()=>{container.dataset.liveImagery='degraded';});
         livePhotoLayer=new ImageryLayer(photoProvider);

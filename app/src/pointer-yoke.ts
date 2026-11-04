@@ -7,7 +7,7 @@ interface PointerYokeOptions {
   onMode: (mode: PointerYokeMode) => void;
   enabled: () => boolean;
   lookOnly?: () => boolean;
-  /** Opt-in fixed scene-center yoke; drag look is retained in every mode. */
+  /** Fixed scene-center yoke; drag look is retained in every mode. */
   centered?: () => boolean;
 }
 
@@ -17,9 +17,10 @@ const LOOK_RAD_PER_PX = 0.004;
 const MAX_LOOK_PITCH_RAD = 70 * Math.PI / 180;
 const clamp = (value: number, limit: number) => Math.max(-limit, Math.min(limit, value));
 
-/** Scene-only click/hold gestures; legacy relative or opt-in fixed-center yoke. */
+/** Scene-only click/hold gestures; relative or fixed-center yoke. */
 export function createPointerYoke(options: PointerYokeOptions): {
   getCenter(): { clientX: number; clientY: number } | null;
+  neutralize(): void;
   cancel(): void;
   reset(): void;
   dispose(): void;
@@ -63,6 +64,16 @@ export function createPointerYoke(options: PointerYokeOptions): {
     // not cancel the newly restored yoke mode.
     const pointer = activePointer; activePointer = null;
     if (pointer !== null && element.hasPointerCapture(pointer)) element.releasePointerCapture(pointer);
+  }
+  function neutralize(): void {
+    if (disposed) return;
+    // Menus borrow control, not the selected yoke mode or reference position.
+    if (activePointer !== null) yokeActive = pressState?.yokeActive ?? previousYokeActive;
+    clearPress(); looking = false;
+    pressState = completedClick = clickPair = undefined;
+    neutralUntilMoveFrom = { x: lastX, y: lastY };
+    setYoke(0, 0);
+    setMode(yokeActive ? 'yoke' : 'off');
   }
   function cancel(): void {
     if (disposed) return;
@@ -122,21 +133,20 @@ export function createPointerYoke(options: PointerYokeOptions): {
     holdTimer = setTimeout(() => {
       holdTimer = undefined;
       if (disposed || activePointer === null) return;
-      if (!options.enabled()) { cancel(); return; }
+      if (!options.enabled()) { neutralize(); return; }
       looking = true; setMode('look'); lookAtPointer();
     }, HOLD_MS);
   }
   function move(event: PointerEvent): void {
-    if (disposed) return;
-    if (!options.enabled()) { cancel(); return; }
+    if (disposed || event.isPrimary === false || (activePointer !== null && event.pointerId !== activePointer)) return;
+    lastX = event.clientX; lastY = event.clientY;
+    if (!options.enabled()) { neutralize(); return; }
     if (activePointer !== null) {
-      if (event.pointerId !== activePointer) return;
-      lastX = event.clientX; lastY = event.clientY;
       if (looking) { event.preventDefault(); lookAtPointer(); }
       else if (!inside(event)) suspendOutside();
       return;
     }
-    if (options.lookOnly?.() || !yokeActive || event.isPrimary === false) return;
+    if (options.lookOnly?.() || !yokeActive) return;
     if (!inside(event)) { suspendOutside(); return; }
     // A click/drag release cannot introduce a control jump at the drop point.
     // Pointer entry is authoritative even if its coordinates match the release.
@@ -156,7 +166,8 @@ export function createPointerYoke(options: PointerYokeOptions): {
   function up(event: PointerEvent): void {
     if (disposed || event.pointerId !== activePointer) return;
     event.preventDefault();
-    if (!options.enabled()) { cancel(); return; }
+    lastX = event.clientX; lastY = event.clientY;
+    if (!options.enabled()) { neutralize(); return; }
     const wasLooking = looking;
     completedClick = wasLooking ? undefined : pressState;
     if (wasLooking) clickPair = undefined;
@@ -195,7 +206,7 @@ export function createPointerYoke(options: PointerYokeOptions): {
     if (event.pointerId === activePointer) cancel();
   }
   function leave(): void {
-    if (!options.enabled()) { cancel(); return; }
+    if (!options.enabled()) { neutralize(); return; }
     if (!looking) suspendOutside();
   }
   function key(event: KeyboardEvent): void {
@@ -227,7 +238,7 @@ export function createPointerYoke(options: PointerYokeOptions): {
       return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom
         ? { clientX, clientY } : null;
     },
-    cancel, reset,
+    neutralize, cancel, reset,
     dispose() {
       if (disposed) return;
       reset(); disposed = true;

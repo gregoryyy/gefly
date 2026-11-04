@@ -1,8 +1,8 @@
 // Public scenery only. Flight state, recordings, app code and external URLs never enter this cache.
 const CACHE = 'gefly-scenery-v1', MAX_BYTES = 128 * 1024 * 1024, MAX_ENTRIES = 512;
 const LABEL_BYTES = 24 * 1024 * 1024, LABEL_ENTRIES = 96, MAX_TILE_BYTES = 4 * 1024 * 1024;
-const pending = new Map(), plans = new Map(), saves = new Set();
-const retain = task => { saves.add(task); void task.finally(() => saves.delete(task)).catch(() => {}); return task; };
+const pending = new Map(), plans = new Map(), touches = new Set();
+let indexPromise, touchTask;
 let writes = Promise.resolve();
 const serial = work => { const next = writes.then(work); writes = next.catch(() => {}); return next; };
 function eligible(input) {
@@ -25,6 +25,67 @@ function lifetime(response) {
   return Math.max(0, Math.min(86400, seconds) - Math.max(apparent, Number.isFinite(age) ? age : 0)) * 1000;
 }
 const isLabel = url => new URL(url).pathname.startsWith('/scenery/landmarks/');
+function forget(index, url) {
+  const record = index.records.get(url); if (!record) return;
+  index.records.delete(url); index.bytes -= record.bytes;
+  if (record.label) { index.labels.delete(url); index.labelBytes -= record.bytes; }
+}
+function remember(index, url, record) {
+  forget(index, url); index.records.set(url, record); index.bytes += record.bytes;
+  if (record.label) { index.labels.set(url, record); index.labelBytes += record.bytes; }
+  index.nextExpiry = Math.min(index.nextExpiry, record.expiresAt);
+}
+function flushTouches(index) {
+  for (const url of touches) {
+    const record = index.records.get(url); if (!record) continue;
+    index.records.delete(url); index.records.set(url, record);
+    if (record.label) { index.labels.delete(url); index.labels.set(url, record); }
+  }
+  touches.clear();
+}
+async function trim(cache, index) {
+  const now = Date.now();
+  if (index.nextExpiry <= now) {
+    index.nextExpiry = Infinity;
+    for (const [url, record] of index.records) {
+      if (record.expiresAt <= now) { await cache.delete(url); forget(index, url); }
+      else index.nextExpiry = Math.min(index.nextExpiry, record.expiresAt);
+    }
+  }
+  while (index.bytes > MAX_BYTES || index.records.size > MAX_ENTRIES
+    || index.labelBytes > LABEL_BYTES || index.labels.size > LABEL_ENTRIES) {
+    const pool = index.labelBytes > LABEL_BYTES || index.labels.size > LABEL_ENTRIES ? index.labels : index.records;
+    const url = pool.keys().next().value;
+    await cache.delete(url); forget(index, url);
+  }
+}
+function cacheIndex(cache) {
+  if (!indexPromise) indexPromise = (async () => {
+    const index = { records: new Map(), labels: new Map(), bytes: 0, labelBytes: 0, nextExpiry: Infinity };
+    // Existing v1 entries survive worker restarts. Read their headers once;
+    // subsequent writes and touches use this bounded in-memory index.
+    for (const key of await cache.keys()) {
+      const entry = await cache.match(key), bytes = Number(entry?.headers.get('x-gefly-cache-bytes'));
+      const expiresAt = Number(entry?.headers.get('x-gefly-cache-expires'));
+      if (!Number.isInteger(bytes) || bytes <= 0 || bytes > MAX_TILE_BYTES || !Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+        await cache.delete(key); continue;
+      }
+      remember(index, key.url, { bytes, expiresAt, label: isLabel(key.url) });
+      await trim(cache, index);
+    }
+    return index;
+  })().catch(error => { indexPromise = undefined; throw error; });
+  return indexPromise;
+}
+function touch(cache, url) {
+  if (touches.size < MAX_ENTRIES) touches.add(url);
+  if (!touchTask) {
+    const task = Promise.resolve().then(() => cacheIndex(cache)).then(flushTouches).catch(() => {});
+    touchTask = task;
+    void task.finally(() => { if (touchTask === task) touchTask = undefined; });
+  }
+  return touchTask;
+}
 async function store(cache, request, response) {
   const ttl = lifetime(response), expiresAt = Date.now() + ttl, mime = response.headers.get('content-type') || '';
   if (!ttl || response.status !== 200 || response.redirected || response.type === 'opaque'
@@ -47,59 +108,45 @@ async function store(cache, request, response) {
   headers.set('x-gefly-cache-expires', String(expiresAt));
   headers.set('x-gefly-cache-bytes', String(size));
   await serial(async () => {
-    // Cache API key order is insertion order; delete/put on a hit refreshes LRU.
-    await cache.delete(request);
+    const index = await cacheIndex(cache);
+    flushTouches(index);
     await cache.put(request, new Response(new Blob(parts), { headers }));
-    const keys = await cache.keys(), records = [];
-    let total = 0, labels = 0, labelCount = 0;
-    for (const key of keys) {
-      const entry = await cache.match(key);
-      const bytes = Number(entry?.headers.get('x-gefly-cache-bytes')) || 0;
-      if (!bytes || Number(entry?.headers.get('x-gefly-cache-expires')) <= Date.now()) { await cache.delete(key); continue; }
-      const label = isLabel(key.url); total += bytes;
-      if (label) { labels += bytes; labelCount++; }
-      records.push({ key, bytes, label });
-    }
-    let count = records.length;
-    for (const record of records) {
-      if (total <= MAX_BYTES && count <= MAX_ENTRIES && (!record.label || labels <= LABEL_BYTES && labelCount <= LABEL_ENTRIES)) continue;
-      await cache.delete(record.key); total -= record.bytes; count--;
-      if (record.label) { labels -= record.bytes; labelCount--; }
-    }
+    remember(index, request.url, { bytes: size, expiresAt, label: isLabel(request.url) });
+    await trim(cache, index);
   });
 }
-async function resource(request, background = false) {
+async function resource(request, background = false, planSignal) {
   let cache;
   try {
     cache = await caches.open(CACHE);
     const hit = await cache.match(request);
     if (hit && Number(hit.headers.get('x-gefly-cache-expires')) > Date.now()) {
-      // Queue touch before later inserts; cache bookkeeping never delays a hit.
-      retain(serial(async () => {
-        const current = await cache.match(request);
-        if (!current || Number(current.headers.get('x-gefly-cache-expires')) <= Date.now()) return;
-        await cache.delete(request); await cache.put(request, current);
-      }).catch(() => {}));
-      return hit;
+      // Recency is batched in memory; neither index initialization nor a tile
+      // rewrite delays a cache hit. Restart recency falls back to insertion order.
+      return { response: hit, saved: touch(cache, request.url) };
     }
   } catch { /* Disabled storage / quota must not prevent ordinary fetching. */ }
+  planSignal?.throwIfAborted();
   // Foreground demand must reach the proxy so it can promote an already queued
   // warm tile. The proxy still coalesces both HTTP requests into one upstream load.
-  const pendingKey = request.headers.get('x-gefly-scenery-priority') === 'visible' ? `visible:${request.url}` : request.url;
+  const visible = request.headers.get('x-gefly-scenery-priority') === 'visible';
+  // Demand cancellation belongs to its caller, not to another consumer of the
+  // same URL. The server still coalesces their upstream work.
+  const pendingKey = visible || background ? Symbol(request.url) : request.url;
   let work = pending.get(pendingKey);
   if (!work) {
     work = (async () => {
-      const response = await fetch(request, { signal: AbortSignal.timeout(15000),
-        ...(pendingKey !== request.url && pending.has(request.url) ? { cache: 'no-store' } : {}) });
-      if (cache) retain(store(cache, request, response.clone()).catch(() => {}));
-      return response;
-    })();
+      const signal = AbortSignal.any([AbortSignal.timeout(15000), ...(visible ? [request.signal] : []), ...(planSignal ? [planSignal] : [])]);
+      const response = await fetch(request, { signal,
+        ...(visible ? { cache: 'no-store' } : {}) });
+      const saved = cache ? store(cache, request, response.clone()).catch(() => {}) : Promise.resolve();
+      return { response, saved };
+    })().catch(error => { if (pending.get(pendingKey) === work) pending.delete(pendingKey); throw error; });
     pending.set(pendingKey, work);
-    void work.then(() => Promise.all([...saves])).finally(() => pending.delete(pendingKey)).catch(() => {});
+    void work.then(result => result.saved).finally(() => { if (pending.get(pendingKey) === work) pending.delete(pendingKey); }).catch(() => {});
   }
-  const response = await work;
-  if (background) await Promise.all([...saves]);
-  return response.clone();
+  const result = await work;
+  return { response: result.response.clone(), saved: result.saved };
 }
 function notify(client, plan) {
   client.postMessage({ type: 'scenery-cache-status', queued: plan.queue.length, active: plan.active,
@@ -113,8 +160,9 @@ function pump(client, plan) {
       if (!plan.queue.length) break;
       const url = plan.queue.shift(), generation = plan.generation; plan.active++; notify(client, plan);
       try {
-        const response = await resource(new Request(url, { credentials: 'same-origin', redirect: 'error' }), true);
-        if (!response.ok) throw new Error('Scenery unavailable');
+        const result = await resource(new Request(url, { credentials: 'same-origin', redirect: 'error' }), true, plan.controller.signal);
+        if (!result.response.ok) throw new Error('Scenery unavailable');
+        await result.saved;
         if (plan.generation === generation) plan.completed++;
       } catch { if (plan.generation === generation) plan.failed++; }
       finally { plan.active--; notify(client, plan); }
@@ -130,22 +178,29 @@ self.addEventListener('activate', event => event.waitUntil((async () => {
 })()));
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET' || event.request.headers.has('range') || !eligible(event.request.url)) return;
+  // Chrome does not relay an aborted page fetch to a service worker's network
+  // fetch. Keep visible photographs on the browser's cancellable HTTP/cache
+  // path; stale views must not occupy every connection until the SW timeout.
+  const path = new URL(event.request.url).pathname;
+  if (event.request.headers.get('x-gefly-scenery-priority') === 'visible'
+      && (path.startsWith('/scenery/imagery/') || path.startsWith('/imagery/rhein-main/tiles/'))) return;
   const result = resource(event.request);
-  event.respondWith(result);
-  event.waitUntil(result.then(() => Promise.all([...saves])).catch(() => {}));
+  event.respondWith(result.then(value => value.response));
+  event.waitUntil(result.then(value => value.saved).catch(() => {}));
 });
 self.addEventListener('message', event => {
   const client = event.source, data = event.data;
   if (!client?.id || data?.type !== 'scenery-cache-focus' || !Array.isArray(data.urls) || data.urls.length > 200) return;
   let plan = plans.get(client.id);
   if (!plan) { plan = { queue: [], active: 0, generation: 0, completed: 0, failed: 0 }; plans.set(client.id, plan); }
+  plan.controller?.abort(); plan.controller = new AbortController();
   plan.generation++; plan.completed = 0; plan.failed = 0;
   plan.queue = [...new Set(data.urls.filter(url => typeof url === 'string' && url.length < 200 && eligible(url)))]
     .map(url => new URL(url, self.location.origin).href);
   event.waitUntil(pump(client, plan));
-  // Discard state for closed tabs. Already active requests may finish, but no old queue restarts.
+  // Discard closed tabs and stop their obsolete background network work.
   event.waitUntil(self.clients.matchAll().then(clients => {
     const live = new Set(clients.map(value => value.id));
-    for (const [id, old] of plans) if (!live.has(id)) { old.queue = []; plans.delete(id); }
+    for (const [id, old] of plans) if (!live.has(id)) { old.controller.abort(); old.queue = []; plans.delete(id); }
   }));
 });

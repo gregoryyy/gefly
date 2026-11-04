@@ -32,7 +32,7 @@ import { loadRegionalManifest, TerrainStream, sampleAtlas, sampleAtlasGradient }
 import { pressureAltitude_m, indicatedAltitude_m, validSetting } from './altimeter.js';
 import { stallFields, controlFields, cockpitFields, pitchTrimFields, groundFields } from './cockpit.js';
 import { autopilotCommand, engineFields, engineSwitchFields } from './engine.js';
-import { groundCollisionContact, collisionRecord, collisionStateFields, contactOutcome, EMPTY_COLLISION } from './collision.js';
+import { groundCollisionContact, collisionRecord, collisionStateFields, contactOutcome, unacknowledgedContact, EMPTY_COLLISION } from './collision.js';
 import { createKap140, validKapCommand, validKapState } from './kap140.js';
 import { resumeProblem, resumeValues } from './continue-flight.js';
 import { validLoading, loadingValues, loadingFromState, loadingFields, LOADING_FIELDS } from './loading.js';
@@ -132,6 +132,8 @@ function requestTerrain(lat, lon) {
 }
 let groundCollisionEnabled = false;
 let collision = EMPTY_COLLISION;
+let acknowledgedContacts = 0;
+let continuedCollision = null;
 // Contact-data availability from the latest ground sample. When contact
 // telemetry is unavailable the collision group is omitted from state/stats
 // (never published as collision_mask 0, which would read as a definitive clear).
@@ -522,11 +524,15 @@ function stepOnce() {
   lastStepCostUs = (b - a) * 1000;
   if (costCount < costs.length) costs[costCount++] = lastStepCostUs;
   if (groundCollisionEnabled) {
-    const contact = sampleContact();
-    collisionAvailable = contact.available;
+    const sampled = sampleContact();
+    const filtered = unacknowledgedContact(sampled, acknowledgedContacts);
+    acknowledgedContacts = filtered.acknowledgedMask;
+    const contact = filtered.contact;
+    collisionAvailable = sampled.available;
     const record = contact.mask ? collisionRecord(contact.mask, stepIndex, readState()[0], previousGround) : null;
-    const outcome = contactOutcome(contact, record);
-    // A detected contact is never dropped: without valid pre-step motion
+    const outcome = contactOutcome(contact, record, previousGround);
+    // Airborne first contacts remain active; wheel support must predate this
+    // native step to count as a ground roll. Without valid pre-step motion
     // there is no truthful record, so the flight stops with an explicit error.
     if (outcome === 'fail') { fail(`Ground contact detected at step ${stepIndex} but its pre-step motion is unavailable; flight stopped.`); return false; }
     if (outcome === 'latch') {
@@ -679,7 +685,7 @@ async function onInit(msg) {
   stepIndex = resume ? resume.step : 0; pending = []; lastInputWallMs = null; lastStepCostUs = 0;
   missedSteps = 0; droppedSteps = 0; maxLagSteps = 0; maxLagMs = 0; lateInputs = 0; appliedInputs = 0; maxBatch = 0; ticks = 0;
   costs = new Float32Array(COST_CAPACITY); costCount = 0; runWallMs = 0;
-  groundCollisionEnabled = msg.ground_collision === true; collision = EMPTY_COLLISION;
+  groundCollisionEnabled = msg.ground_collision === true; collision = EMPTY_COLLISION; acknowledgedContacts = 0; continuedCollision = null;
   collisionAvailable = groundCollisionEnabled && sampleContact().available;
   initializeAltimeter();
   if(resume){altimeterSettingPa=resume.altimeter_setting_pa;altimeterReferences={altimeter_qnh_pa:resume.altimeter_qnh_pa,altimeter_qfe_pa:resume.altimeter_qfe_pa,altimeter_qfe_datum_m:resume.altimeter_qfe_datum_m};updateAltimeter();}
@@ -753,6 +759,26 @@ function onHalt() {
   if (timer !== null) { clearTimeout(timer); timer = null; }
 }
 
+function onCollisionContinue(msg) {
+  // Retrying an acknowledgement after a delayed/lost reply is idempotent while
+  // the same native frame is still paused; it cannot acknowledge a later hit.
+  if (!collision.collision_mask && continuedCollision && msg.step === stepIndex
+      && msg.step === continuedCollision.collision_step && !running) {
+    postMessage({ type: 'collision-continued', collision_step: continuedCollision.collision_step, state: stateMessage() }); return;
+  }
+  if (!groundCollisionEnabled || !collision.collision_mask || msg.step !== stepIndex || running || terrainFault) {
+    postMessage({ type: 'collision-continue-rejected', message: 'The stopped contact is no longer available to continue.' }); return;
+  }
+  const contact = sampleContact();
+  if (!contact.available) {
+    postMessage({ type: 'collision-continue-rejected', message: 'Ground contact is unavailable at this position.' }); return;
+  }
+  const previous = collision; continuedCollision = previous;
+  acknowledgedContacts |= contact.mask;
+  collisionAvailable = true; collision = EMPTY_COLLISION;
+  postMessage({ type: 'collision-continued', collision_step: previous.collision_step, state: stateMessage() });
+}
+
 function onBurst(msg) {
   if (running) { postMessage({ type: 'error', message: 'burst while running' }); return; }
   const steps = Number.isInteger(msg.steps) && msg.steps > 0 ? msg.steps : 2400;
@@ -777,10 +803,11 @@ self.onmessage = (ev) => {
         postMessage({ type: 'terrain-rejected', command: msg.type, message: 'Terrain coverage unavailable; restart inside the region.' }); return;
       }
       if (collision.collision_mask && ['input', 'altimeter', 'autopilot', 'autopilot-capture', 'simulation-rate', 'kap140', 'navigation', 'run', 'burst'].includes(msg.type)) {
-        postMessage({ type: 'collision-rejected', command: msg.type, message: 'Ground contact latched; restart flight to continue.' });
+        postMessage({ type: 'collision-rejected', command: msg.type, message: 'Ground contact latched; acknowledge it to continue or restart flight.' });
         return;
       }
       switch (msg.type) {
+        case 'collision-continue': onCollisionContinue(msg); break;
         case 'input': onInput(msg); break;
         case 'altimeter': onAltimeter(msg); break;
         case 'autopilot': onAutopilot(msg); break;

@@ -63,7 +63,7 @@ try {
   assert(first.terrain_height_msl_m > 100 && first.terrain_geoid_m > 40 && first.ground_agl_m > 200);
   assert.equal((await page.evaluate(() => window.worldReady.at(-1))).build.terrain.sha256, '7123539a37bda7d7770d0f5e9662e5e48a350273bc68836ee34f1bf4b50ed7a9');
   assert.equal(await page.locator('#scene').getAttribute('data-terrain'), 'public-grid');
-  await page.locator('#flight-menu > summary').click(); await page.locator('#taunus-practice').click();
+  await page.locator('#flight-menu > summary').click(); await page.locator('#flight-research').evaluate(element => { element.open = true; }); await page.locator('#taunus-practice').click();
   await page.waitForFunction(() => Math.abs(window.worldStates.at(-1)?.lat_rad - 50.20 * Math.PI / 180) < 1e-8);
   await ready(page); datum(await state(page));
   assert((await state(page)).terrain_height_msl_m > 300, 'ridge flight actually starts above the public hills');

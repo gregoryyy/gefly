@@ -50,17 +50,11 @@ try {
   assert.equal(await opacity('#practice-map-panel'), '1');
   await page.keyboard.press('i');
   assert(await page.locator('.topbar').isVisible());
-  await page.keyboard.press('Alt+Shift+KeyM');
-  assert(await page.evaluate(() => window.hits.includes('toggle-map')));
-  assert.equal(await page.locator('#toggle-map').getAttribute('aria-keyshortcuts'), 'M Alt+Shift+M');
-  await page.keyboard.press('Alt+Shift+KeyI');
-  assert(await page.evaluate(() => window.hits.includes('eddf-ils-practice')));
-  assert(await page.locator('.topbar').isVisible(), 'the ILS chord does not toggle the title bar');
-  await page.keyboard.press('Alt+Shift+KeyO');
-  assert(await page.evaluate(() => window.hits.includes('controls-settings')));
-  assert(await page.locator('.topbar').isVisible(), 'legacy Options chord does not toggle the title bar');
-  await page.keyboard.press('Alt+Shift+KeyR');
-  assert(!await page.evaluate(() => window.hits.includes('reset')));
+  const beforeRemoved = await page.evaluate(() => window.hits.length);
+  for (const key of ['M','I','O','R','F','J']) await page.keyboard.press(`Alt+Shift+Key${key}`);
+  assert.equal(await page.evaluate(() => window.hits.length), beforeRemoved, 'removed Alt+Shift chords invoke no fixture commands');
+  assert.equal(await page.locator('#toggle-map').getAttribute('aria-keyshortcuts'), null);
+  assert(await page.locator('.topbar').isVisible(), 'modifier chords do not toggle the title bar');
   await page.locator('#typing').focus();
   await page.keyboard.press('o'); await page.keyboard.press('i');
   assert(await page.locator('.topbar').isVisible());
@@ -107,9 +101,14 @@ try {
   await flight.keyboard.press('o'); await flight.locator('#control-settings').waitFor({ state: 'visible' });
   assert(await flight.locator('.topbar').isVisible(), 'O does not toggle a visible title bar');
   await flight.locator('#settings-close').click();
-  for (const selector of ['#cockpit', '#chase', '#toggle-map', '#toggle-flight-data', '#toggle-stall-awareness', '#toggle-controls', '#handbook-open', '#controls-settings', '#reset', '[data-landing="normal"]', '[data-landing="hard"]', '[data-landing="side"]', '[data-landing="banked"]', '#airborne-practice', '#taunus-practice', '#eddf-ils-practice', '[data-region="darmstadt"]', '[data-region="odenwald"]', '[data-region="spessart"]', '#engine-open', '#radio-nav-open', '#navigation-open', '#autopilot-open', '#pause', '#review-flight']) {
-    assert(await flight.locator(selector).getAttribute('aria-keyshortcuts'), `${selector} missing shortcut`);
+  for (const [selector, key] of [['#controls-settings','O'],['#toggle-map','M'],['#cycle-landmarks','.'],['#pause','Space']])
+    assert.equal(await flight.locator(selector).getAttribute('aria-keyshortcuts'), key);
+  for (const selector of ['#reset','#toggle-controls','#handbook-open','#eddf-ils-practice']) {
+    assert.equal(await flight.locator(selector).getAttribute('aria-keyshortcuts'), null, `${selector} has no assigned shortcut`);
+    assert.equal(await flight.locator(`${selector} kbd`).count(), 0);
   }
+  assert.equal(await flight.locator('.topbar [aria-keyshortcuts*="Alt"]').count(), 0);
+  assert(!(await flight.locator('.topbar kbd').allTextContents()).some(text => /Alt.*Shift|⌥⇧/.test(text)));
   assert(await flight.locator('#review-flight').isDisabled());
   await flight.keyboard.press('r');
   assert.notEqual(await flight.locator('.flight-app').getAttribute('data-review'), 'true');
@@ -120,7 +119,8 @@ try {
   assert.equal(await flight.locator('.topbar').isVisible(), false);
   await flight.keyboard.press('i');
   await flight.locator('#start').click();
-  await flight.keyboard.press('Alt+Shift+KeyF');
+  await flight.locator('#view-menu > summary').click();
+  await flight.locator('#toggle-controls').click();
   assert(await flight.locator('#flight-controls-panel').isVisible());
   assert.equal(await flight.locator('#flight-controls-panel').evaluate(e => getComputedStyle(e).opacity), '0.5');
   const button = flight.locator('#roll-left');
@@ -135,7 +135,7 @@ try {
   await flight.waitForFunction(() => document.querySelector('#roll-left').classList.contains('held'));
   await flight.mouse.up();
   await flight.keyboard.press('Space');
-  await flight.keyboard.press('Alt+Shift+KeyM');
+  await flight.locator('#scene').focus(); await flight.keyboard.press('m');
   const map = flight.locator('#practice-map-panel');
   await map.waitFor({ state: 'visible' });
   await flight.getByRole('button', { name: 'Zoom map in' }).waitFor({ state: 'visible' });

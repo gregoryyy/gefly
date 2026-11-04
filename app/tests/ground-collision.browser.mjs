@@ -1,7 +1,7 @@
 // Actual Chrome/JSBSim fixed-step contact and stopped-flight UI. No injected impact telemetry.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { installSceneryFixture, prepareFlightUI, startOrResume } from './flight-actions.mjs';
@@ -231,7 +231,7 @@ try {
   assert(await page.locator('.topbar').isVisible(), 'collision Flight menu action reveals the header');
   assert(await page.locator('#flight-menu').evaluate(el => el.open));
   assert(await page.locator('#reset').isVisible());
-  assert(await page.locator('#reset').evaluate(el => el === document.activeElement), 'visible Restart receives keyboard focus');
+  assert(await page.locator('#practice-takeoff').evaluate(el => el === document.activeElement), 'visible takeoff practice receives keyboard focus');
   await page.evaluate(() => { window.__collisionFixture = false; });
   const previousWorker = await page.evaluate(() => window.__collisionWorkerId);
   await page.locator('#reset').click();
@@ -243,13 +243,32 @@ try {
   await page.locator('#pause').click();
   checks.push('opaque banner fits desktop/mobile/landscape without hiding header/deck; Flight menu restart clears collision');
 
+  // Continue the same actual native worker/frame through the close action.
+  await restart(true);await startOrResume(page);await page.keyboard.down('ArrowUp');
+  await page.waitForFunction(()=>window.__collisionStates.at(-1)?.collision_mask>0);await page.keyboard.up('ArrowUp');
+  const continuedImpact=await state(), continuingWorker=await page.evaluate(()=>window.__collisionWorkerId);
+  await page.locator('#collision-close').click();
+  await page.waitForFunction(step=>window.__collisionMessages.some(m=>m.type==='collision-continued'&&m.collision_step===step),continuedImpact.step);
+  const ack=await page.evaluate(step=>window.__collisionMessages.find(m=>m.type==='collision-continued'&&m.collision_step===step).state,continuedImpact.step);
+  for(const key of ['step','t_s','lat_rad','lon_rad','alt_msl_m','roll_rad','pitch_rad','heading_rad','tas_mps','fuel_left_m3','fuel_right_m3','mass_total_kg'])assert.equal(ack[key],continuedImpact[key],`Continue preserves ${key}`);
+  await page.waitForFunction(({id,step})=>window.__collisionStates.some(s=>s.__worker_id===id&&s.step>step),{id:continuingWorker,step:continuedImpact.step});
+  const resumed=await page.evaluate(({id,step})=>window.__collisionStates.find(s=>s.__worker_id===id&&s.step>step),{id:continuingWorker,step:continuedImpact.step});
+  assert.equal(await page.evaluate(()=>window.__collisionWorkerId),continuingWorker,'Continue never creates another native worker');
+  assert.equal(resumed.collision_mask&continuedImpact.collision_mask,0,'the acknowledged persistent contact does not immediately re-latch');
+  await page.locator('#scene').focus();await page.keyboard.press('r');await page.locator('#flight-review').waitFor({state:'visible'});
+  const downloading=page.waitForEvent('download');await page.locator('#review-save').click();const download=await downloading;
+  const recording=JSON.parse(await readFile(await download.path(),'utf8'));
+  assert(recording.samples.some(s=>s.state.step===continuedImpact.step&&s.state.collision_mask===continuedImpact.collision_mask),'recording retains the actual impact');
+  assert(recording.samples.some(s=>s.state.step>continuedImpact.step),'recording also retains subsequent native continuation');
+  observations.continued={impact:continuedImpact,ack,resumed};checks.push('closing collision panel continues the same native frame/worker and preserves impact plus continued recording history');
+
   // Presentation-only compatibility check: legacy groups remain unavailable,
   // never inferred from altitude or wheel state. No worker telemetry is altered.
   const compatibility = await page.evaluate(async () => {
     const { createGroundCollisionPanel } = await import('/src/ground-collision-panel.ts');
     const container = document.createElement('aside'); document.body.append(container);
     let reviewed = 0, menu = 0;
-    const panel = createGroundCollisionPanel({ container, onReview() { reviewed++; }, onFlightMenu() { menu++; } });
+    const panel = createGroundCollisionPanel({ container, onReview() { reviewed++; }, onFlightMenu() { menu++; }, onContinue() {} });
     const actual = { ...window.__collisionStates.at(-1) };
     for (const key of ['collision_mask', 'collision_step', 'collision_t_s', 'collision_down_mps', 'collision_groundspeed_mps']) delete actual[key];
     panel.update(actual, false, true); const missingHidden = container.hidden;

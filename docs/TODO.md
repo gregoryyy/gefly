@@ -149,7 +149,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [ ] 2.0.39 Research source-applicable nose-strut travel/end-stop and ground-braking reference cases for the project-owned aircraft; validate full-command response and propeller clearance before changing generic-model coefficients. The input preference in 2.0.38 does not complete gear/brake fidelity. R-REUSE-1/R-SIM-8/R-DATA-1.
 
-- [x] 2.0.40 Deliver source-scoped KAP 140 two-axis/preselect operating controls, native VS/ALT and heading guidance, DG arming/capture/source-loss logic, altitude alerts, coherent paused/Review state and validated input boundaries. R-AP-1/R-INPUT-1/R-REVIEW-1; reference cases declare generic servo/capture tuning and current fictional NAV1 coverage. Independent quality/25-group browser validation and shared CI pass; see [review](reviews/2026-11-03-kap140.md). Deeper installed-aircraft fidelity remains in 2.0.14; physical sound delivery is unverified and peer pending.
+- [x] 2.0.40 Deliver source-scoped KAP 140 two-axis/preselect operating controls, native VS/ALT and heading guidance, DG arming/capture/source-loss logic, altitude alerts, coherent paused/Review state and validated input boundaries. R-AP-1/R-INPUT-1/R-REVIEW-1; reference cases declare generic servo/capture tuning and current fictional NAV1 coverage. Independent quality/25-group browser validation and shared CI pass; see [review](reviews/2026-11-03-kap140.md). Deeper installed-aircraft fidelity remains in 2.0.14; physical sound delivery is unverified and peer pending. Historical bounded fixture delivery; current integrated KAP usability is tracked in2.0.111, not accepted by these earlier results.
 
 - [x] 2.0.41 Add a source-pinned historical Rhein-Main VOR/LOC/GS/DME inventory, dual-receiver station directory, common instrument/AP signals and an EDDF 25C geometric practice preset. R-NAV-4/R-NAV-1/R-NAV-2/R-DATA-1/R-REVIEW-1. Source edition 2013.10, approximate extent around a community EDDF coordinate; no current AIRAC/procedure or complete R-REGION-1 claim. Independent source/code/actual-browser validation and shared CI pass; see [review](reviews/2026-11-03-rhein-main-navigation.md). Peer pending.
 
@@ -216,7 +216,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.71 Restore the last live flight location across starts until explicit reset; keep reload paused and exclude Review/collision states. R-UX-5/R-REVIEW-1. See [integrated review](reviews/2026-11-04-flight-location-kap140-cws.md).
 
-- [x] 2.0.72 Correct measured KAP140 climb/capture response and altitude/VS display, and add optional momentary CWS with safe manual override and mode/reference synchronization. R-AP-1/R-INPUT-1/R-REVIEW-1.
+- [x] 2.0.72 Correct measured KAP140 climb/capture response and altitude/VS display, and add optional momentary CWS with safe manual override and mode/reference synchronization. R-AP-1/R-INPUT-1/R-REVIEW-1. Historical bounded fixture delivery; current integrated KAP usability is tracked in2.0.111, not accepted by these earlier results.
 
 - [x] 2.0.73 Research world authoring from public map/elevation/building data into high-resolution 3D scenes; compare traditional procedural, LLM-assisted and captured/neural routes. R-WORLD-8/R-WORLD-3/R-AUTHOR-1. [Research](research/2026-11-04-world-authoring.md); [documentation review](reviews/2026-11-04-world-authoring.md). Research completion does not complete the implementation tasks below.
   - [ ] 2.0.73.1 Freeze and build a 2 × 2 km EDFE demonstrator from licensed real terrain/building geometry and curated geotypical materials/vegetation; fly it through the existing renderer, with photographic/map fallback and measured alignment/streaming budgets.
@@ -258,6 +258,39 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 - [x] 2.0.89 Drag zoomed cockpit backgrounds/headers to reach all edges, including lower controls; remove automatic focus panning and preserve native control gestures, bounds and double-click reset. R-PANEL-1/R-INPUT-1.
 
 - [x] 2.0.90 Remove duplicate View → Aircraft systems; retain the left systems panel and its collapsed direct opener on narrow screens. R-SYS-1.
+
+- [x] 2.0.91 Restore camera-visible photography under caching: retain native photo cancellation, cancel obsolete warming, isolate foreground demand and verify real public photo loading. R-WORLD-5/R-WORLD-9.
+- [x] 2.0.92 Fix the generic autopilot overwriting nosewheel steering; retain source gear geometry/friction and verify actual low-speed turns plus runway takeoff. R-INPUT-1/R-PLAY-1.
+- [x] 2.0.93 Restore real map-terrain rendering by protecting worker downloads; expose View and Alt+Shift+J, synchronized with Options and Flight map. R-AIRPORT-1/R-INPUT-1.
+- [x] 2.0.94 Show actual ARM/ARMED state and explain selector autoarming/cancel behavior; verify native panel engagement, arming and VS commands. R-AP-1.
+
+- [x] 2.0.95 Let collision ×/Continue resume the same native aircraft state; acknowledge current contact bits until separation, preserve recording history and re-arm new/later contacts. R-SIM-8/R-REVIEW-1.
+- [x] 2.0.96 Put Takeoff, Landing and Fly a circuit first in Flight with runway choice, real launch actions and secondary research tools; preserve the selected landing setup on Restart. R-PLAY-1/R-UX-2.
+- [x] 2.0.97 Organize Options into Controls, Scenery, Sound and collapsed Advanced; retain settings, Save/cancel rollback and desktop/mobile access. R-UX-2/R-INPUT-1.
+
+- [x] 2.0.98 Suppress collision stopping when native wheel support already existed before the current step; retain airborne first-impact detection, raw diagnostics and native ground reactions. R-SIM-8. Fourteen contact cases and the existing ten-group actual braking browser pass; full-brake flat/public rolls match unchanged native state exactly. Peer pending.
+
+- [x] 2.0.99 Keep the steering-center circle and selected yoke reference through Start/resume, pause, AP capture and routine menu/panel interactions; neutralize axes separately from explicit steering cancellation. R-INPUT-1.
+
+- [x] 2.0.100 Keep AP engaged when moving the touchpad from A capture to ARM/other cockpit controls, including the acknowledgement interval; retain steering marker, explicit manual takeover and CWS. Surface rejected AP commands. R-AP-1/R-INPUT-1.
+
+- [x] 2.0.101 Default the steering neutral point and circle to the center of the visible flight window, excluding cockpit and docked map; preserve explicit relative-mode choice and AP/control retention. Record unpredictable regressions and inadequate module isolation in Insights. R-INPUT-1.
+
+- [x] 2.0.102 Fix edited-altitude → ARM losing its own auto-arm on the same click while HDG/ALT stay engaged; preserve subsequent ARMED cancellation and knob/keyboard semantics. R-AP-1.
+
+- [x] 2.0.103 Make A toggle AP: capture current heading/altitude when off, disconnect when engaged or capture is pending; keep P/panel controls and input guards. R-AP-2.
+
+- [x] 2.0.108 Remove the generated Option/Alt–Shift shortcut catalogue; comma opens/closes the map, period cycles landmarks, and overlap remains click-only. Correct menu/help text and preserve assigned flight keys. Supersedes shortcut assignments in2.0.55/2.0.93. R-WORLD-6/R-WORLD-7/R-UX-2.
+- [x] 2.0.109 Apply exclusive vector/photo terrain to the running checkout, restore independently owned dependencies, and verify real cartography with all photo layers hidden across late arrival. R-AIRPORT-1.
+
+- [x] 2.0.110 Correct the reproduced paused A/ALT stale-VS display: ALT immediately restores editable selected altitude while preserving intentional BARO timing. Verify direct altitude entry → ALT → UP/DN, visible VS/FPM/ALT ARM and a powered native climb/capture through actual cockpit controls. R-AP-1/R-AP-2; bounded engineering fixture, not complete KAP acceptance. It observed the temporary VS page and did not resolve the persistent numeric VS requirement in2.0.112.
+- [ ] 2.0.111 Resolve the broader current KAP usability report against source-backed user workflows and the running app. Earlier injected-panel, direct-native and limited browser passes do not establish complete integrated behavior. Keep active/armed modes, display, commands and manual/servo handover coherent; full installed fidelity remains in2.0.14. R-AP-1/R-AP-2.
+
+- [x] 2.0.112 Keep a readable numeric commanded VS visible throughout active VS flight, alongside target altitude after the temporary shared page expires. Verify actual display after sustained flight, not only immediately after UP/DN. Prior2.0.110 does not resolve this persistent-display requirement. R-AP-1.
+
+- [x] 2.0.113 Apply the user’s exact map bindings: M map, comma larger map, period terrain labels, US slash vector/photo. Preserve guards and trim reset button, remove the conflicting slash trim binding, and record AI overreach in settled UI/UX decisions in Insights. Supersedes the key assignment in2.0.108. R-WORLD-6/R-WORLD-7/R-UX-2.
+
+- [x] 2.0.114 Improve scenery cache reuse: incremental persistent-cache bookkeeping, no per-hit rewrites/global save waits, stable nearby warm plans, visible-vector queue promotion and bounded64MiB coalesced render reuse. R-WORLD-9/R-WORLD-4. Browser/source evidence covers repeat loading; remaining cold upstream/rendering time is not declared resolved.
 
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
   - [x] 2.1.1 Deliver a bounded EDFE runway-practice briefing and sensed flight-event log: north/right-hand 26 and north/left-hand 08, explicit idle/parked setup, native wheel-contact takeoff/landing observations and ground stop/collision, retained with cursor-correct Review. R-PLAY-1/R-TRAIN-2/R-REVIEW-1. No checklist, circuit grading, official route or complete scenario/weather briefing acceptance; those remain open in 2.1 and 1.5. Peer pending.

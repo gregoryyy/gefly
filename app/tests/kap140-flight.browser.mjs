@@ -21,6 +21,150 @@ try {
   }
   assert(ready, `KAP flight server timed out: ${serverOutput}`); await mkdir(output, { recursive: true });
   browser = await chromium.launch({ headless: true, ...(process.env.CHROME ? { executablePath: process.env.CHROME } : { channel: 'chrome' }) });
+  // A real shortcut-to-panel-to-native path. Unlike the isolated panel fixture,
+  // neither controller state nor aircraft telemetry is supplied by this test.
+  const capturePage = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  const captureErrors = [], captureEvidence = { gestures: [], rows: [] };
+  capturePage.on('pageerror', error => captureErrors.push(String(error)));
+  await capturePage.addInitScript(() => {
+    const Native = Worker; window.kapA = null; window.kapARows = []; window.kapACommands = [];
+    let bucket = -1;
+    window.Worker = class extends Native {
+      constructor(...args) {
+        super(...args); if (!String(args[0]).includes('/sim/worker.js')) return;
+        bucket=-1; window.kapARows=[];
+        this.addEventListener('message', ({data}) => {
+          if (data.type !== 'state') return;
+          window.kapA = data;
+          if (Math.floor(data.t_s) > bucket) {
+            bucket = Math.floor(data.t_s);
+            window.kapARows.push({t_s:data.t_s,step:data.step,pressure_altitude_m:data.kap_indicated_altitude_m,
+              vs_fpm:-data.ground_down_mps*60/.3048,pitch_deg:data.pitch_rad*180/Math.PI,
+              selected_altitude_m:data.kap_selected_altitude_m,vertical:data.kap_vertical,
+              armed:data.kap_alt_arm,engaged:data.kap_engaged,throttle_norm:data.throttle_norm});
+          }
+        });
+      }
+      postMessage(message,...args) {
+        if (message?.type === 'kap140' || message?.type === 'autopilot-capture') window.kapACommands.push(structuredClone(message));
+        return super.postMessage(message,...args);
+      }
+    };
+  });
+  const observeCapture = async label => {
+    const observation = await capturePage.evaluate(label => ({label,state:window.kapA,
+      focus:document.activeElement?.id,engaged:document.querySelector('#ap-engaged-label').textContent,
+      lateral:document.querySelector('#ap-lateral').textContent,vertical:document.querySelector('#ap-vertical').textContent,
+      arm:document.querySelector('#ap-vertical-armed').textContent,
+      armVisible:document.querySelector('#ap-vertical-armed').getBoundingClientRect().width>0
+        && getComputedStyle(document.querySelector('#ap-vertical-armed')).visibility==='visible'
+        && Number(getComputedStyle(document.querySelector('#ap-vertical-armed')).opacity)>0,
+      vsReadout:document.querySelector('#ap-vs-command').textContent,
+      button:document.querySelector('#ap-arm').textContent,value:document.querySelector('#ap-selector-value').value,
+      unit:document.querySelector('#ap-selector-unit').textContent,readOnly:document.querySelector('#ap-selector-value').readOnly}),label);
+    captureEvidence.gestures.push(observation); return observation;
+  };
+  const assertPersistentVs = async expected => {
+    const readout=capturePage.locator('#ap-vs-command'); await readout.waitFor({state:'visible'});
+    const rounded=Math.round(expected),number=rounded>0?`+${rounded}`:String(rounded);
+    assert.equal(await readout.textContent(),`VS ${number} FPM`);
+    assert(await readout.evaluate(element => {const box=element.getBoundingClientRect(),style=getComputedStyle(element);
+      return box.width>0&&box.height>0&&style.visibility==='visible'&&Number(style.opacity)>0;}));
+  };
+  try {
+    await installSceneryFixture(capturePage); await capturePage.goto(origin);
+    await capturePage.waitForFunction(() => !document.querySelector('#start').disabled && window.kapA?.kap_profile === 1,null,{timeout:60000});
+    // Physical engagement starts in VS with current rate and no altitude arm.
+    await capturePage.locator('#scene').focus(); await capturePage.keyboard.press('p');
+    await capturePage.waitForFunction(() => window.kapA?.kap_engaged===1&&window.kapA.kap_vertical===0);
+    await startOrResume(capturePage);
+    await capturePage.waitForFunction(() => window.kapA?.t_s>4);
+    await capturePage.locator('#scene').focus(); await capturePage.keyboard.press('Space');
+    const physical=await observeCapture('physical P keeps commanded VS readable after shared selector expires');
+    assert.equal(physical.vertical,'VS'); assert.equal(physical.arm,''); assert.equal(physical.state.kap_alt_arm,0);
+    assert.equal(physical.unit,'FT','shared selector returned to target altitude after three simulation seconds');
+    await assertPersistentVs(physical.state.kap_vs_target_mps*60/.3048);
+    await prepareFlightUI(capturePage,{controls:false});
+    await capturePage.locator('#flight-menu > summary').click(); await capturePage.locator('#reset').click();
+    await capturePage.waitForFunction(() => !document.querySelector('#start').disabled&&window.kapA?.t_s===0&&window.kapA.kap_engaged===0,null,{timeout:60000});
+    await capturePage.locator('#scene').focus(); await capturePage.keyboard.press('a');
+    await capturePage.waitForFunction(() => window.kapA?.kap_engaged === 1 && window.kapA.kap_vertical === 1);
+    const captured = await observeCapture('A captures HDG/ALT while paused');
+    assert.equal(captured.lateral,'HDG'); assert.equal(captured.vertical,'ALT');
+    assert.equal(captured.unit,'FT','A in ALT must leave altitude selection visible immediately, including while paused');
+    assert.equal(captured.readOnly,false,'A in ALT must allow immediate altitude entry');
+    const targetFeet = Math.ceil((captured.state.kap_indicated_altitude_m/.3048+1000)/100)*100;
+    await capturePage.locator('#ap-selector-value').fill(String(targetFeet));
+    assert.equal(await capturePage.evaluate(() => document.activeElement.id),'ap-selector-value');
+    // The ALT click itself blurs/commits the typed altitude: do not pre-blur.
+    await capturePage.locator('#ap-alt').click();
+    await capturePage.waitForFunction(target => window.kapA?.kap_vertical === 0 && window.kapA.kap_alt_arm === 1
+      && Math.abs(window.kapA.kap_selected_altitude_m-target)<1e-8
+      && document.querySelector('#ap-selector-unit').textContent === 'FPM',targetFeet*.3048);
+    const vs = await observeCapture('direct altitude entry then ALT enters VS and retains ALT ARM');
+    assert.equal(vs.vertical,'VS'); assert.equal(vs.arm,'ALT ARM'); assert(vs.armVisible); assert.equal(vs.button,'ARMED');
+    const initialFpm=vs.state.kap_vs_target_mps*60/.3048;
+    assert(Math.abs(initialFpm)<.01,'paused initial fixture captures zero native VS');
+    const rate = async (button,expected) => {
+      await capturePage.locator(button).click();
+      await capturePage.waitForFunction(expected => Math.abs(window.kapA.kap_vs_target_mps*60/.3048-expected)<.01
+        && document.querySelector('#ap-selector-unit').textContent==='FPM'
+        && Number(document.querySelector('#ap-selector-value').value)===Math.round(expected),expected);
+    };
+    for(let i=1;i<=5;i++) await rate('#ap-up',i*100);
+    await rate('#ap-down',400); await rate('#ap-up',500);
+    const selectedRate=await observeCapture('UP/DN shows confirmed 500 FPM with visible ALT ARM');
+    assert.equal(selectedRate.arm,'ALT ARM'); assert(selectedRate.armVisible); assert.equal(selectedRate.vertical,'VS');
+    await capturePage.locator('#throttle').focus(); await capturePage.keyboard.press('End');
+    assert.equal(await capturePage.locator('#throttle').inputValue(),'100','pilot supplies full power; no autothrottle');
+    await capturePage.locator('#scene').focus();
+    for(let i=0;i<4;i++) await capturePage.keyboard.press('Equal');
+    await capturePage.waitForFunction(() => window.kapA?.simulation_rate===10);
+    await startOrResume(capturePage);
+    for(const time of [30,90]) {
+      await capturePage.waitForFunction(time=>window.kapA?.t_s>=time,time,{timeout:30000});
+      await capturePage.waitForFunction(() => document.querySelector('#ap-selector-unit').textContent==='FT');
+      await assertPersistentVs(500);
+      const persistent=await observeCapture(`commanded 500 FPM stays visible at ${time}s with editable selected altitude`);
+      assert.equal(persistent.value,String(targetFeet)); assert.equal(persistent.readOnly,false);
+      assert.equal(persistent.vertical,'VS'); assert.equal(persistent.arm,'ALT ARM');
+      if(time===30) await capturePage.screenshot({path:`${output}/kap140-VS-persistent.png`});
+    }
+    await capturePage.waitForFunction(() => window.kapA?.t_s>=240,null,{timeout:60000});
+    await capturePage.locator('#scene').focus(); await capturePage.keyboard.press('Space');
+    await capturePage.waitForFunction(() => document.querySelector('#status').textContent==='Paused');
+    captureEvidence.rows=await capturePage.evaluate(() => window.kapARows);
+    const final=await observeCapture('after 240 simulation seconds and preselected capture');
+    const climb=captureEvidence.rows.filter(row=>row.t_s>30&&row.t_s<90);
+    assert(climb.length>=50,'actual native states cover the sustained climb interval');
+    const mean=climb.reduce((sum,row)=>sum+row.vs_fpm,0)/climb.length;
+    const range=[Math.min(...climb.map(row=>row.vs_fpm)),Math.max(...climb.map(row=>row.vs_fpm))];
+    captureEvidence.metrics={mean_vs_fpm:mean,range_vs_fpm:range,final_error_m:final.state.kap_indicated_altitude_m-targetFeet*.3048,
+      final_vs_fpm:-final.state.ground_down_mps*60/.3048,target_m:targetFeet*.3048};
+    // Generic-servo engineering gates shared with kap140-climb-native.mjs,
+    // not aircraft or installed KAP performance tolerances.
+    assert(mean>400&&mean<600,`500 FPM climb mean ${mean}`);
+    assert(range[1]-range[0]<150,`sustained surging ${JSON.stringify(range)}`);
+    const capture=captureEvidence.rows.find(row=>row.t_s>0&&row.vertical===1);
+    assert(capture&&capture.t_s<180,'actual preselected altitude captures by 180s');
+    captureEvidence.metrics.capture_s=capture.t_s;
+    assert(captureEvidence.rows.filter(row=>row.t_s>180).every(row=>row.vertical===1&&row.armed===0),'ALT stays captured with ARM cleared');
+    assert(Math.abs(captureEvidence.metrics.final_error_m)<10,`settled altitude error ${captureEvidence.metrics.final_error_m}m`);
+    assert(Math.abs(captureEvidence.metrics.final_vs_fpm)<30,`settled VS ${captureEvidence.metrics.final_vs_fpm}FPM`);
+    assert.equal(final.vertical,'ALT'); assert.equal(final.arm,''); assert.equal(final.button,'ARM');
+    assert.deepEqual(captureErrors,[]);
+    captureEvidence.result='pass';
+    checks.push('physical P displays commanded VS after selector expiry without ARM; A/direct altitude entry/ALT/UP/DN show persistent 500 FPM at 30/90s beside editable target altitude, and actual powered climb/capture meets bounded engineering gates');
+  } catch(error) { captureEvidence.result='fail'; captureEvidence.error=String(error); throw error; }
+  finally {
+    captureEvidence.commands=await capturePage.evaluate(() => window.kapACommands).catch(()=>[]);
+    if(!captureEvidence.rows.length) captureEvidence.rows=await capturePage.evaluate(() => window.kapARows).catch(()=>[]);
+    await capturePage.screenshot({path:`${output}/kap140-A-capture.png`}).catch(()=>{});
+    await writeFile(`${output}/kap140-A-capture-browser.json`,JSON.stringify(captureEvidence,null,2)+'\n');
+    await capturePage.close();
+  }
+  if(process.env.KAP_CAPTURE_ONLY==='1') console.log(JSON.stringify({result:'pass',checks,metrics:captureEvidence.metrics},null,2));
+  else {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } }), errors = [], hosts = new Set();
   page.on('pageerror', error => errors.push(String(error)));
   page.on('request', request => { const u = new URL(request.url()); if (['http:', 'https:'].includes(u.protocol)) hosts.add(u.hostname); });
@@ -202,6 +346,7 @@ try {
   assert.deepEqual(errors, []); assert.deepEqual([...hosts], ['127.0.0.1']);
   await writeFile(`${output}/kap140-flight-browser.json`, JSON.stringify({ result: 'pass', checks, observations }, null, 2) + '\n');
   console.log(JSON.stringify({ result: 'pass', checks, observations }, null, 2));
+  }
 } catch (error) {
   await writeFile(`${output}/kap140-flight-browser.json`, JSON.stringify({ result: 'fail', checks, observations, error: String(error) }, null, 2) + '\n');
   throw error;

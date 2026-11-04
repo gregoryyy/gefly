@@ -46,7 +46,9 @@ export function createKap140(initial) {
   // engagement (generic simulator scoping; alert timing is not sourced).
   const disconnect = () => {engaged=0; cws=0; lat=0; latArm=0; vert=0; altArm=0; gsArm=0; gesture=0; gsInhibited=false; latAlert=0; vertAlert=0; hdgPromptUntil=0;};
   const setVS = (s, display=false) => {vert=0; vs=clamp(s.vertical_speed_mps,VS_MIN,VS_MAX); if (display) show(1,s.t_s);};
-  const captureAlt = s => {vert=1; hold=s.pressure_altitude_m; altArm=0;};
+  // End the stale VS display on ALT capture, including while paused. An
+  // intentionally displayed BARO page keeps its existing expiry.
+  const captureAlt = (s, target=s.pressure_altitude_m) => {vert=1; hold=target; altArm=0; if(page===1){page=0;pageUntil=0;}};
   const sourceOK = (mode,s) => s.nav.valid && s.nav.kind !== 0 && (mode !== 4 || s.nav.kind === 2);
   const setNav = (mode,s) => {
     if (latAlert === mode) {latAlert=0; return;}
@@ -132,7 +134,7 @@ export function createKap140(initial) {
     if (vert===0 && altArm) {
       const target=selected+pressureAltitude_m(baro), diff=target-s.pressure_altitude_m;
       // Explicit simulator anticipation, not a published KAP 140 capture law.
-      if (diff*vs>=0 && vs!==0 && diff*s.vertical_speed_mps>=0 && Math.abs(diff)<=Math.max(20*FT,Math.abs(vs)*3)) {vert=1;hold=target;altArm=0;}
+      if (diff*vs>=0 && vs!==0 && diff*s.vertical_speed_mps>=0 && Math.abs(diff)<=Math.max(20*FT,Math.abs(vs)*3)) {captureAlt(s,target);}
     }
     return true;
   }
