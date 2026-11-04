@@ -5,6 +5,9 @@ import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { chromium } from 'playwright';
 import { gzipSync } from 'node:zlib';
+import { stripTypeScriptTypes } from 'node:module';
+const clientModules = new Map(await Promise.all(['scenery-cache','scenery-coverage','map-terrain-style'].map(async name =>
+  [`/app/src/${name}.ts`,stripTypeScriptTypes(await readFile(new URL(`../src/${name}.ts`,import.meta.url),'utf8'))])));
 const source = await readFile(new URL('../public/scenery-cache-sw.js', import.meta.url));
 // Observe the real Cache API in this fixture worker; no cache behavior is replaced.
 const worker = Buffer.concat([Buffer.from(`
@@ -14,6 +17,10 @@ self.addEventListener('message',event=>{if(event.data?.type==='cache-bench-stats
 `),source]);
 const counts = new Map(), aborted = new Set(); let active = 0, peak = 0;
 const server = createServer((req, res) => {
+  if (clientModules.has(req.url)) { res.setHeader('Content-Type','text/javascript'); res.end(clientModules.get(req.url)); return; }
+  if (req.url === '/studies/e1-browser/sim/terrain-stream.js') {
+    res.setHeader('Content-Type','text/javascript');res.end('export const loadRegionalManifest=()=>new Promise(resolve=>{window.resolveClientTerrain=resolve;});');return;
+  }
   if (req.url === '/') { res.setHeader('Content-Type', 'text/html'); res.end('<!doctype html><title>Cache</title>'); return; }
   if (req.url === '/scenery-cache-sw.js') { res.setHeader('Content-Type', 'text/javascript'); res.end(worker); return; }
   counts.set(req.url, (counts.get(req.url) ?? 0) + 1); active++; peak = Math.max(peak, active);
@@ -111,5 +118,51 @@ try {
   await mkdir(new URL('../../output/flight/',import.meta.url),{recursive:true});
   await writeFile(new URL(`../../output/flight/scenery-cache-${benchmark.baseline?'before':'after'}.json`,import.meta.url),JSON.stringify(benchmark,null,2)+'\n');
   console.log(JSON.stringify(benchmark));
+  // The actual client, with registration/manifest delivery controlled separately
+  // from the real service-worker/cache tests above. No scenery or flight is faked
+  // into the application; these assertions inspect its existing focus messages.
+  const client=await browser.newPage();await client.goto(`http://127.0.0.1:${server.address().port}`);
+  await client.evaluate(async()=>{
+    window.clientMessages=[];
+    const active={postMessage(message){window.clientMessages.push(structuredClone(message));}};
+    const registration={active},worker=new EventTarget();window.clientWorker=worker;
+    let resolveRegistration;const pending=new Promise(resolve=>{resolveRegistration=resolve;});
+    worker.register=()=>pending;worker.ready=Promise.resolve(registration);
+    Object.defineProperty(navigator,'serviceWorker',{value:worker});
+    const {createSceneryCache}=await import('/app/src/scenery-cache.ts');
+    const {planStartupSceneryPrefetch,planSceneryPrefetch}=await import('/app/src/scenery-coverage.ts');
+    const lat=49.96*Math.PI/180,lon=8.643*Math.PI/180;
+    window.clientFocus={lat,lon};window.clientSeeds=planStartupSceneryPrefetch(lat,lon);
+    window.clientTerrainPath=planSceneryPrefetch(lat,lon,false).find(path=>path.startsWith('/terrain/region/'));
+    window.clientCache=createSceneryCache(document.body);
+    clientCache.update(lat,lon,false,true,false);clientCache.preload(lat,lon,false,true);
+    window.resolveClientRegistration=()=>resolveRegistration(registration);
+  });
+  assert.equal(await client.evaluate(()=>clientMessages.length),0,'startup is retained while registration is pending');
+  await client.evaluate(()=>resolveClientRegistration());
+  await client.waitForFunction(()=>clientMessages.length>0&&typeof resolveClientTerrain==='function');
+  const firstPlan=await client.evaluate(()=>clientMessages.at(-1).urls),seeds=await client.evaluate(()=>clientSeeds);
+  assert.deepEqual(firstPlan.slice(0,seeds.length),seeds,'startup seeds lead the existing plan before the view settles');
+  assert(firstPlan.length<=200&&new Set(firstPlan).size===firstPlan.length);
+  const firstCount=await client.evaluate(()=>clientMessages.length);
+  await client.evaluate(()=>clientCache.update(clientFocus.lat+.00001,clientFocus.lon,false,true,false));
+  assert.equal(await client.evaluate(()=>clientMessages.length),firstCount,'nearby unsettled updates preserve the startup batch');
+  await client.evaluate(()=>resolveClientTerrain(new Map([['fixture',{asset:clientTerrainPath.split('/').at(-1),sha256:'a'.repeat(64)}]])));
+  await client.waitForFunction(count=>clientMessages.length>count,firstCount);
+  assert.deepEqual((await client.evaluate(()=>clientMessages.at(-1).urls)).slice(0,seeds.length),seeds,'manifest completion retains startup ordering');
+  assert((await client.evaluate(()=>clientMessages.at(-1).urls)).some(url=>url.endsWith(`sha256=${'a'.repeat(64)}`)));
+  await client.evaluate(()=>clientWorker.dispatchEvent(new Event('controllerchange')));
+  assert.deepEqual((await client.evaluate(()=>clientMessages.at(-1).urls)).slice(0,seeds.length),seeds,'controller activation retains startup ordering');
+  await client.evaluate(()=>clientCache.update(clientFocus.lat,clientFocus.lon,true,true,false));
+  assert.deepEqual(await client.evaluate(()=>clientMessages.at(-1).urls),[],'mode change cancels obsolete startup work');
+  await client.evaluate(()=>{clientCache.preload(clientFocus.lat,clientFocus.lon,true,true);clientCache.update(clientFocus.lat+.0001,clientFocus.lon,true,true,false);});
+  assert.deepEqual(await client.evaluate(()=>clientMessages.at(-1).urls),[],'moving beyond 500m clears the startup seed');
+  await client.evaluate(()=>{clientCache.preload(clientFocus.lat,clientFocus.lon,true,true);clientCache.update(clientFocus.lat,clientFocus.lon,true,false,false);});
+  assert.deepEqual(await client.evaluate(()=>clientMessages.at(-1).urls),[],'disable clears startup work');
+  await client.evaluate(()=>clientCache.dispose());const disposedCount=await client.evaluate(()=>clientMessages.length);
+  await client.evaluate(()=>{clientCache.preload(clientFocus.lat,clientFocus.lon,false,true);clientWorker.dispatchEvent(new Event('controllerchange'));});
+  assert.equal(await client.evaluate(()=>clientMessages.length),disposedCount,'disposed client cannot restart warming');
+  await client.close();
+  console.log('PASS: startup seeds survive async registration/manifest and nearby updates, stay bounded, and clear on mode/move/disable/dispose.');
   console.log('PASS: real browser cache deduplication, reload reuse, expiry, exclusions, terrain identity, concurrency and eviction.');
 } finally { await browser?.close(); await new Promise(resolve => server.close(resolve)); }

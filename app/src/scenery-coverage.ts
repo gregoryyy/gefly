@@ -81,3 +81,22 @@ export function planSceneryPrefetch(lat_rad: number, lon_rad: number, vector: bo
   items.sort((a,b)=>a.distance-b.distance || a.tier-b.tier || a.url.localeCompare(b.url));
   return items.map(item=>item.url);
 }
+
+/** Small startup warmup for both selectable map modes, not full radius coverage.
+ * All URLs remain within the existing providers' declared coverage and budgets. */
+export function planStartupSceneryPrefetch(lat_rad: number, lon_rad: number): readonly string[] {
+  if (!valid(lat_rad, lon_rad)) return [];
+  const urls: string[] = [];
+  const layer = (prefix: string, suffix: string, z: number, radius: number, cap: number, bounds: Rectangle) => {
+    const tiles = tilesWithinRadius(lat_rad, lon_rad, z, radius, 512).filter(tile => {
+      const [west, south, east, north] = rectangle(tile);
+      return east >= bounds[0] * DEG && west <= bounds[2] * DEG
+        && north >= bounds[1] * DEG && south <= bounds[3] * DEG;
+    }).slice(0, cap);
+    for (const tile of tiles) urls.push(`${prefix}/${tile.key}.${suffix}`);
+  };
+  layer('/scenery/map', 'png', 15, 2000, 8, [6,47,14,51.75]);
+  layer('/scenery/vector', 'pbf', 14, 2000, 4, MAP_TERRAIN_BOUNDS);
+  layer('/scenery/vector', 'pbf', 11, 20000, 4, MAP_TERRAIN_BOUNDS);
+  return urls;
+}

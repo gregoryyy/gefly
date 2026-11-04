@@ -3,6 +3,52 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 22:05 — Full-height flight map, point actions and startup preloading
+
+TODO: 2.0.115–2.0.117; R-WORLD-6/R-WORLD-9/R-NAV-3/R-UX-2.
+Agent: Codex integration and unmocked running-app checks; glide_model startup
+planner and map layout; glide_cases cache client, point popup/search and independent
+integration review; glide_housekeeping source package and independent layout/preload
+review. Reviewers excluded their own authored slices; Codex independently checked
+the compressed data loader and retained source coordinates.
+
+**Implementation notes**
+
+The compact right map fills almost the whole front-window height. Comma opens
+search/details below it over the right cockpit panels without resizing the map.
+Airport, NAV and fix markers open on-map popups with supported COM1/2 and NAV1/2
+standby actions. GPS targets draw a bearing/distance line without aircraft commands.
+The licensed FlightGear 2013.10 inventory retains 2,739 regional fix rows, source
+coordinates and duplicate identities; compressed delivery is 50,948 bytes.
+Startup warming seeds up to 16 nearby map/vector tiles after actual native readiness,
+using existing background limits without opening the map or blocking Start.
+
+TypeScript, eight coverage tests, three fix-loader test groups and the scenery
+cache browser case pass. The existing right-map browser case passes eleven groups,
+including desktop/mobile layout, below-map menu, direct marker selection, standby
+isolation, GPS coordinates and read-only Review. Its scenery is a fixture.
+Unmocked port 5173 checks separately show real map/terrain, retained HDG/ALT flight,
+ASKIK selection and the below-map drawer without page errors. At 1600×1000 the
+map viewport is 580 of 612 available pixels. A fresh saved-location startup sends
+the expected 16 leading URLs while native step remains zero and Start is enabled.
+Evidence: ignored output/flight/flight-map-full-height-live.png,
+flight-map-menu-gps-live.png and right-flight-map-layout-browser.log.
+Independent scoped quality/validation reviews pass; cross-provider peer pending.
+
+**Deviations**
+
+The fix inventory is historical 2013.10, not current AIRAC. GPS is a visual map
+target, not an installed receiver or AP navigation mode. Standby tuning does not
+activate a channel. First-ever downloads still depend on upstream services.
+Ground/AP use is typical context, not a lock on the extended menu. No flight
+dynamics or AP controller code changed in this increment.
+
+**Insights**
+
+Preserve the user's explicit below-map placement and bindings. Keep view controls
+on the canvas so search and source detail cannot consume the compact map height.
+Use actual running-app evidence alongside fixtures and preserve source ages.
+
 ## 2026-11-04 21:02 — Improve persistent and rendered scenery cache reuse
 
 TODO: 2.0.114; R-WORLD-9/R-WORLD-4.

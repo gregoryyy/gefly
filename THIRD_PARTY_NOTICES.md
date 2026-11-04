@@ -307,3 +307,14 @@ and [pbf license](LICENSES/pbf-BSD-3-Clause.txt), and copied into UI build outpu
 The decoder also bundles `@mapbox/point-geometry` 1.1.0 (Copyright 2024 Mapbox),
 under ISC; its [complete notice](LICENSES/point-geometry-ISC.txt) is retained and
 copied into UI build output.
+
+
+## Historical navigation fixes
+
+The regional fix inventory derives from Robin A.Peel's FIX2013.10 data,
+copyright ©2013 Robin A.Peel, under GPL-2.0-or-later. The consumed source is
+FlightGear fgdata commit5371094f6cc81d39b5cc7d9052ba13ba4a8b8e95. The modified
+regional subset, preserved original rows, notice and full license are described
+in [the fix source notice](app/public/mapdata/fixes-README.md). The binary asset
+contains gzip-compressed JSON; the source remains readable. This historical
+inventory does not establish current navigation availability or AIRAC accuracy.

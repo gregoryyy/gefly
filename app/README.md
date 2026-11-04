@@ -67,7 +67,7 @@ unavailable. Returning to live restores pending control settings.
 | A | Engage autopilot HDG + ALT at current heading/pressure altitude |
 | = | Cycle simulation rate 1× → 1.5× → 2× → 5× → 10× → 1× |
 | M | Open / close the flight map |
-| , | Toggle the larger map view |
+| , | Toggle the extended menu below the map |
 | . | Cycle terrain landmark labels: Off / Places / Landmarks / Detailed |
 | I | Show / hide the top title/menu bar |
 | O | Open Options |
@@ -201,7 +201,7 @@ configured value returns after disconnect.
 Q is left rudder and W right rudder. Positive `rudder_cmd_norm` yaws left in the
 pinned generic model.
 
-**M** opens and closes the flight map. **Comma (,)** toggles its larger view.
+**M** opens and closes the flight map. **Comma (,)** opens the extended menu below it over the right cockpit panels.
 **Period (.)** cycles terrain landmark labels. **/** (Slash on a US keyboard)
 toggles vector/photo terrain. **O** opens Options and **I** toggles the title/menu bar. Unassigned menu
 actions remain clickable; no Option/Alt–Shift combinations are installed.
@@ -304,12 +304,13 @@ without changing it. Holding changes VS at 300 ft/min/s. In ALT, taps change the
 hold reference by 20 ft; holding requests 500 ft/min, then release captures the
 actual altitude. VS commands use the source-scoped −2000 to +1500 ft/min range.
 
-Example in this simulator: to move from a 1,300 ft hold to 2,000 ft, enter
-**2,000 FT**, press **ALT** to switch from ALT to VS, use **UP** to select a
+Example in this simulator: to move from a 1,300 ft hold to 5,000 ft, enter
+**5,000 FT**, press **ALT** to switch from ALT to VS, use **UP** to select a
 positive rate such as **+500 FPM**, then check **ALT ARM**. Press **ARM** only
 if that annunciation is absent; pressing it when already armed cancels capture.
-The first UP/DN press may only reveal the VS display; subsequent presses change
-its value. The autopilot captures the selected altitude and returns to ALT.
+If already in VS, skip ALT after selecting the new target. The first UP/DN
+press may only reveal the shared VS page; subsequent presses change its value.
+The separate commanded-VS readout stays visible throughout VS mode. The autopilot captures the selected altitude and returns to ALT.
 Changing the selected number alone does not start a climb. **A** holds the
 current altitude/heading; it does not command flight to the selected number.
 Throttle remains manual; this example describes control logic, not calibrated
@@ -800,15 +801,16 @@ adjoining states; ILS references remain historical 2013.10. This map-only invent
 does not replace the aircraft’s separately validated radio-navigation package.
 
 During Review the aircraft marker follows the selected historical frame while
-the whole retained flight path remains visible. These layers do not tune radios,
-move the aircraft or provide current airspace/NOTAM/procedure information.
+the whole retained flight path remains visible. Displaying these layers does not tune radios or move the aircraft. Explicit
+marker actions load supported standby channels; the map does not provide current
+airspace/NOTAM/procedure information.
 Failures while loading optional map layers are disclosed independently. The
 separate required flight-startup packages retain their fail-closed behavior. See
 [source research](../docs/research/2026-11-03-flight-map.md).
 
 Recordings can be saved and loaded as version 1 JSON using **Flight → Save/Load recording JSON** or the replay bar. Loading opens a validated, read-only state trace and preserves the current live flight; **Back to live** restores its previous flying/paused state. Files retain at most ten minutes/36,000 samples (256 MB import limit), in SI units; they are not native physics checkpoints.
 
-Use **Comma (,)** or **Larger map** in the flight map to toggle the larger map view. **M** opens/closes the map and **N** remains the parking brake.
+Use **Comma (,)** or **Map menu** to show search and details below the full-height map, over the right cockpit panels. The map itself does not resize. **M** opens/closes the map and **N** remains the parking brake.
 
 Flight map → **Charts** opens the official OFM Germany VFR viewer and DFS AIP
 airport/approach chart access. The selected airport identifier remains visible.
@@ -821,3 +823,19 @@ whole cache per tile. Nearby preloading survives brief camera loading, visible
 vector requests take priority, and a bounded 64 MiB rendered-tile cache shares
 duplicate work. This improves reuse; first visits still depend on public services
 and rendering. See [cache design](../docs/design/scenery-cache.md).
+
+The collapsed flight map keeps almost all front-window height for the map, with
+compact view controls over it. Click an airport, aid or fix for an on-map popup;
+supported channel buttons load COM1/2 or NAV1/2 **standby**, with activation still
+on the radio stack. Search, filters and full source details are in the comma menu
+below the map. Tuning is read-only during Review. GPS target draws a map line and
+shows true bearing/distance; it does not command the aircraft or an installed GPS.
+Fixes are the pinned historical 2013.10 regional inventory, including duplicate
+identifiers at separate coordinates. Original rows and license are retained in
+[the source package](public/mapdata/fixes-README.md).
+
+After native initialization, startup preloading warms up to 16 map/vector tiles
+near the actual starting position, including saved locations. It uses the same
+two background slots and bounded cache, does not open the map, and never delays
+the Start button. Downloads still take time on a first-ever visit; the start
+screen gives them a head start.

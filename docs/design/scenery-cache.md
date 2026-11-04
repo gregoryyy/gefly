@@ -14,7 +14,13 @@ remain applicable; caching does not change image dates or navigation authority.
 Warm near tiles before farther tiles, with at most 200 planned URLs and two
 background requests at a time. Current targets: maps z10/30km; photo and vector
 z11/20km plus z14/2km; regional terrain 35km. Labels use only enabled levels:
-places 60km, notable features 20km, detailed features 2km. A new warm plan waits until camera-visible globe tiles settle. Brief camera
+places 60km, notable features 20km, detailed features 2km. Ordinary new warm plans wait until camera-visible globe tiles settle. After native
+readiness, a startup preload can lead the plan with up to 16 nearby map/vector
+seed tiles at the actual acknowledged starting position, including saved
+locations. These seeds may start while visible tiles are still loading; they
+share the same two background slots and 200-URL limit. They survive delayed
+service-worker registration and manifest loading without opening the map or
+changing photo/vector mode. Start remains enabled and physics remains paused. Brief camera
 loading retains nearby progress instead of rebuilding the same plan. Movement
 of 500 m, a mode change or disabling terrain cancels obsolete work. Foreground
 demand is isolated from warm cancellation, including identical URLs. Visible

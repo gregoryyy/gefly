@@ -515,6 +515,9 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   observer.observe(container);
   update(initialVisual, 'cockpit');
   const flightScene: FlightScene = {
+    preloadScenery(state) {
+      if (!disposed) sceneryCache.preload(state.lat_rad, state.lon_rad, vectorScenery, state.terrain_profile === 1);
+    },
     setLandmarkLevel(level) {
       landmarkLabels.setLevel(level);
       landmarkLabels.update(lastState, lastState.terrain_profile === 1);

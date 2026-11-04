@@ -275,7 +275,8 @@ AI overreach has changed user-decided UI/UX without consent and broken working
 interactions. The user owns interface decisions and key bindings; agents must
 not silently reinterpret or reassign them. Do not generate modifier-key catalogs
 or invent replacements for unassigned commands. Current bindings: M toggles the
-map, comma toggles its larger view, period cycles terrain landmark labels, and
+map, comma opens the extended menu below it over the right cockpit panels,
+period cycles terrain landmark labels, and
 Slash (/) toggles vector/photo terrain on a US keyboard. Keep menu labels,
 actual handlers and documentation consistent with the user's decisions.
 

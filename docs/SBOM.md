@@ -404,3 +404,14 @@ landmark database is bundled. [Source/rights/limits](research/2026-11-04-osm-lan
 
 The decoder imports transitive `@mapbox/point-geometry` 1.1.0 under ISC; its
 complete notice is retained in `LICENSES/point-geometry-ISC.txt` and UI output.
+
+
+## Historical regional map fixes
+
+[Fix data](../app/public/mapdata/fixes-README.md): Robin A.Peel FIX2013.10,
+FlightGear fgdata commit5371094f6cc81d39b5cc7d9052ba13ba4a8b8e95, GPL-2.0-or-later.
+The regional2739-row subset preserves exact source coordinates and source-line
+identities, including duplicated names. A50,948-byte gzip binary carries a
+271,162-byte JSON payload, both bounded and manifest/hash checked. Original source
+rows, notice and full GPL license accompany the package. No current AIRAC,
+receiver database, published procedure or aircraft guidance is implied.
