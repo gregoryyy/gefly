@@ -3,6 +3,31 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 12:07 — Aircraft dynamics and cockpit feasibility
+
+TODO: 2.0.81; R-SCOPE-1/R-REUSE-1.
+Agent: Codex integration; glide_cases gliders; glide_model light aircraft;
+glide_housekeeping airliners and scoped independent review.
+
+**Implementation notes**
+
+Compare all requested types for exact variants, primary manuals, open FDM/system
+reuse, cockpit scope, license limits and missing whole-envelope data. Preserve
+C172-first scope and link the study from ROAD and the research/input indexes.
+Independent documentation review is recorded in the [report](reviews/2026-11-04-aircraft-feasibility.md).
+`just check` passes; assurance reports zero errors (existing warnings retained).
+No runtime tests or aircraft validation. Peer pending.
+
+**Deviations**
+
+Some current manuals and vendor SDK/rights terms were unavailable; these remain
+explicit gaps. No aircraft package or copyrighted manual was imported.
+
+**Insights**
+
+Available look-alike models can be the wrong variant. Public performance tables
+and complete-looking panels do not establish full-envelope flight fidelity.
+
 ## 2026-11-04 10:33 — Native browser fullscreen
 
 TODO: 2.0.76; R-VIEW-1/R-INPUT-1/R-REVIEW-1.

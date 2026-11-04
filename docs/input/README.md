@@ -115,3 +115,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-04 — Direction-marker visibility and vertical look poles](2026-11-04-view-marker-visibility-poles.md)
 
 - [2026-11-04 — Browser fullscreen](2026-11-04-browser-fullscreen.md)
+
+- [2026-11-04 — Aircraft dynamics and cockpit feasibility study](2026-11-04-aircraft-feasibility.md)
