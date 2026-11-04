@@ -1,0 +1,40 @@
+import assert from 'node:assert/strict';
+import {spawn} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
+import {chromium} from 'playwright';
+import {installSceneryFixture,prepareFlightUI} from './flight-actions.mjs';
+import {EMPTY_MASS_KG,FUEL_DENSITY_KGPM3} from '../../studies/e1-browser/sim/loading.js';
+const app=fileURLToPath(new URL('..',import.meta.url)),origin='http://127.0.0.1:5360';
+const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','5360','--strictPort'],{cwd:app,stdio:'pipe'});
+let browser;
+try{
+  for(let i=0;i<100;i++){try{if((await fetch(origin)).ok)break;}catch{}await new Promise(r=>setTimeout(r,100));}
+  browser=await chromium.launch({headless:true,channel:'chrome'});
+  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];
+  page.on('pageerror',error=>errors.push(String(error)));
+  await page.addInitScript(()=>{const Native=Worker;window.loadingStates=[];window.loadingWorkers=0;window.Worker=class extends Native{constructor(...args){super(...args);if(!String(args[0]).includes('/sim/worker.js'))return;const id=++window.loadingWorkers;window.loadingStates=[];this.addEventListener('message',({data})=>{if(data.type==='state'&&id===window.loadingWorkers)window.loadingStates.push(data);});}};});
+  await installSceneryFixture(page);await page.goto(origin);
+  await page.waitForFunction(()=>!document.querySelector('#start').disabled&&window.loadingStates.at(-1)?.mass_total_kg>0);
+  await prepareFlightUI(page,{controls:false});await page.locator('#flight-menu > summary').click();await page.locator('#loading-open').click();
+  await page.locator('#loading-dialog').waitFor({state:'visible'});
+  for(const [id,value] of Object.entries({pilot:100,copilot:80,rear_left:0,rear_right:0,baggage:10,external:0,fuel_left:20,fuel_right:30}))await page.locator(`#loading-${id}`).fill(String(value));
+  const total=EMPTY_MASS_KG+190+.05*FUEL_DENSITY_KGPM3;
+  assert(Math.abs(Number.parseFloat(await page.locator('#loading-takeoff').textContent())-total)<.06);
+  await page.locator('#loading-apply').click();
+  await page.waitForFunction(()=>window.loadingWorkers===2&&!document.querySelector('#start').disabled&&window.loadingStates.at(-1)?.payload_pilot_kg===100);
+  const initial=await page.evaluate(()=>window.loadingStates.at(-1));
+  assert(Math.abs(initial.mass_total_kg-total)<.01);assert(Math.abs(initial.fuel_left_m3-.02)<1e-9);assert(Math.abs(initial.fuel_right_m3-.03)<1e-9);
+  assert.equal(initial.payload_external_kg,0);
+  await page.locator('#start').click();await page.waitForFunction(()=>window.loadingStates.at(-1)?.step>240);
+  await page.locator('#scene').focus();await page.keyboard.press('Space');
+  const flown=await page.evaluate(()=>window.loadingStates.at(-1));
+  assert(flown.fuel_left_m3+flown.fuel_right_m3<.05);assert(flown.mass_total_kg<initial.mass_total_kg);
+  await page.locator('#flight-menu > summary').click();await page.locator('#loading-open').click();
+  assert(Math.abs(Number.parseFloat(await page.locator('#loading-current').textContent())-flown.mass_total_kg)<.06);
+  assert(Number.parseFloat(await page.locator('#loading-flow').textContent())>0);
+  await page.locator('#loading-close').click();await page.locator('#flight-menu > summary').click();await page.locator('#reset').click();
+  await page.waitForFunction(()=>window.loadingWorkers===3&&!document.querySelector('#start').disabled&&window.loadingStates.at(-1)?.payload_pilot_kg===100);
+  const restarted=await page.evaluate(()=>window.loadingStates.at(-1));assert(Math.abs(restarted.fuel_left_m3-.02)<1e-9);assert.equal(restarted.payload_baggage_kg,10);
+  assert.deepEqual(errors,[]);
+  console.log(JSON.stringify({result:'pass',takeoff_mass_kg:initial.mass_total_kg,fuel_used_l:(.05-flown.fuel_left_m3-flown.fuel_right_m3)*1000,checks:['loading dialog applies actual native stations/tanks only through restart','native powered flight consumes fuel and reduces actual mass','ordinary restart retains selected takeoff configuration']}));
+}finally{await browser?.close();server.kill();}

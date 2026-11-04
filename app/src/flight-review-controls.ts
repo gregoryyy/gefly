@@ -2,7 +2,7 @@ import './flight-review-controls.css';
 import { reviewTransportView, type ReviewTransportInput } from './review-transport';
 import { MAX_RECORDING_BYTES } from './flight-trace';
 
-export type ReviewTransportState = ReviewTransportInput & { playbackRate: number; continuationUnavailable?: string | null; continuing?: boolean };
+export type ReviewTransportState = ReviewTransportInput & { playbackRate: number; continuationUnavailable?: string | null; continuationNote?: string; continuing?: boolean };
 
 interface FlightReviewControlsOptions {
   buttonContainer: HTMLElement;
@@ -139,7 +139,7 @@ export function createFlightReviewControls(options: FlightReviewControlsOptions)
       continueButton.disabled = !active || continuing || !!continuationReason || !options.onContinue;
       continueButton.textContent = continuing ? 'Preparing flight…' : 'Continue live';
       continueButton.title = continuationReason ?? 'Continue from the selected recorded time';
-      continuationNote.textContent = continuationReason ?? 'Start a new flight from the selected time.';
+      continuationNote.textContent = continuationReason ?? state.continuationNote ?? 'Start a new flight from the selected time.';
       exit.disabled = load.disabled = loadMenu.disabled = continuing;
       rate.textContent = `Speed ${state.playbackRate}× · =`;
       available = state.available;

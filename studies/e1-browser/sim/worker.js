@@ -35,6 +35,7 @@ import { autopilotCommand, engineFields, engineSwitchFields } from './engine.js'
 import { groundCollisionContact, collisionRecord, collisionStateFields, contactOutcome, EMPTY_COLLISION } from './collision.js';
 import { createKap140, validKapCommand, validKapState } from './kap140.js';
 import { resumeProblem, resumeValues } from './continue-flight.js';
+import { validLoading, loadingValues, loadingFromState, loadingFields, LOADING_FIELDS } from './loading.js';
 import { createAltitudeAlert } from './altitude-alert.js';
 import { DEFAULT_NAVIGATION, NAVIGATION_FIELDS, validNavigation, navigationSignal, loadNavigationPackage } from './navigation.js';
 import { validSimulationRate, pacedStepMilliseconds } from './simulation-rate.js';
@@ -252,6 +253,12 @@ function readEngineFields() {
   return engineFields(M.HEAPF64.subarray(pointer, pointer + 13));
 }
 
+function readLoadingFields() {
+  if (typeof M._gf_loading_state !== 'function') return {};
+  const pointer = M._gf_loading_state() >> 3;
+  return loadingFields(M.HEAPF64.subarray(pointer, pointer + LOADING_FIELDS.length));
+}
+
 function readEngineSwitchFields() {
   if (typeof M._gf_engine_switch_state !== 'function') return {};
   const pointer = M._gf_engine_switch_state() >> 3;
@@ -436,7 +443,7 @@ function stateMessage() {
     type: 'state', step: stepIndex, simulation_rate: simulationRate, t_s: s[0], lat_rad: s[1], lon_rad: s[2],
     alt_msl_m: s[3], roll_rad: s[4], pitch_rad: s[5], heading_rad: s[6], tas_mps: s[7],
     last_input_wall_ms: lastInputWallMs, step_cost_us: lastStepCostUs, ...altimeterFields,
-    ...readStallFields(), ...readControlFields(), ...readCockpitFields(), ...readPitchTrimFields(), ...readGroundFields(), ...readEngineFields(), ...readEngineSwitchFields(), ...terrainFields(), ...kapFields(), ...((kap || navigationPackage) ? navigation : {}), ...collisionFields(),
+    ...readLoadingFields(), ...readStallFields(), ...readControlFields(), ...readCockpitFields(), ...readPitchTrimFields(), ...readGroundFields(), ...readEngineFields(), ...readEngineSwitchFields(), ...terrainFields(), ...kapFields(), ...((kap || navigationPackage) ? navigation : {}), ...collisionFields(),
   };
 }
 
@@ -596,6 +603,16 @@ async function onInit(msg) {
     if(problem){fail(`Continuation unavailable: ${problem}`);return;}
     if(msg.landing_preset!==undefined||msg.runway_start||!msg.kap140||typeof M._gf_init_resume!=='function') {fail('Continuation requires the updated native engine and exclusive resume initialization.');return;}
     if((resume.terrain_profile===1)!==(msg.terrain===true)){fail('Continuation terrain profile does not match the selected frame.');return;}
+  }
+  const loading=resume?loadingFromState(resume):msg.loading;
+  if(resume&&LOADING_FIELDS.some(key=>Object.hasOwn(resume,key))&&!loading){fail('Recorded loading group is incomplete or invalid.');return;}
+  if(msg.loading!==undefined&&!validLoading(msg.loading)){fail('init: invalid loading configuration');return;}
+  if(loading&&typeof M._gf_configure_loading!=='function'){fail('Loading requires the updated native engine.');return;}
+  if(typeof M._gf_configure_loading==='function'){
+    let rc;
+    if(loading){const base=loadingValues(loading),values=resume&&Number.isFinite(resume.loading_initial_fuel_m3)?new Float64Array([...base,resume.loading_initial_fuel_m3]):base;const pointer=M._malloc(values.byteLength);if(!pointer){fail('Cannot allocate loading configuration.');return;}try{M.HEAPF64.set(values,pointer/8);rc=M._gf_configure_loading(pointer,values.length);}finally{M._free(pointer);}}
+    else rc=M._gf_configure_loading(0,0);
+    if(rc!==0){fail(`Loading configuration rejected: ${rc}`);return;}
   }
   const ic = resume ? {lat_rad:resume.lat_rad,lon_rad:resume.lon_rad,alt_msl_m:resume.alt_msl_m,heading_rad:resume.heading_rad,tas_mps:resume.tas_mps} : msg.ic || {};
   const dt = msg.dt_s;

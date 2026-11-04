@@ -37,6 +37,7 @@
 
 namespace {
 
+constexpr double kLbToKg = 0.45359237;
 constexpr double kFtToM = 0.3048;            // exact
 constexpr double kKtToMps = 1852.0 / 3600.0; // exact
 constexpr double kPi = 3.141592653589793;
@@ -77,6 +78,9 @@ double g_ap_heading_target = 0.0;
 std::shared_ptr<gefly::TerrainAtlas> g_pending_terrain;
 std::shared_ptr<gefly::TerrainAtlas> g_active_terrain;
 bool g_terrain_query_failed = false;
+bool g_loading_pending = false;
+double g_loading_values[8] = {};
+double g_pending_fuel_baseline = -1, g_initial_fuel_m3 = 0;
 
 class GridGroundCallback final : public JSBSim::FGGroundCallback {
  public:
@@ -235,18 +239,44 @@ int load_model(double dt_s, double lat_rad, double lon_rad, double heading_rad) 
     auto inertial = f.GetInertial();
     inertial->SetGroundCallback(new GridGroundCallback(g_active_terrain, inertial->GetSemimajor(), inertial->GetSemiminor()));
   }
+  if(g_loading_pending){
+    for(int i=0;i<6;++i){const auto name="inertia/pointmass-weight-lbs["+std::to_string(i)+"]";if(!f.GetPropertyManager()->HasNode(name))return kErrLoad;f.SetPropertyValue(name,g_loading_values[i]/kLbToKg);}
+    for(int i=0;i<2;++i){const auto tank=f.GetPropulsion()->GetTank(i);const double mass=g_loading_values[6+i]/kUsGalToM3*tank->GetDensity();if(mass>tank->GetCapacity()+1e-8)return kErrRange;tank->SetContents(mass);}
+  }
   return 0;
 }
 
 void reset_study_state() {
   g_hash = 1469598103934665603ULL;
   g_steps = 0.0;
+  g_initial_fuel_m3=g_pending_fuel_baseline>=0?g_pending_fuel_baseline:0;
+  if(g_pending_fuel_baseline<0)for(int i=0;i<2;++i){const auto tank=g_fdm->GetPropulsion()->GetTank(i);g_initial_fuel_m3+=tank->GetContents()/tank->GetDensity()*kUsGalToM3;}
   read_state();
 }
 
 }  // namespace
 
 extern "C" {
+
+// Pending launch configuration only: no live mass or fuel teleportation.
+EMSCRIPTEN_KEEPALIVE int gf_configure_loading(const double* values, double count) {
+  if(count==0){g_loading_pending=false;g_pending_fuel_baseline=-1;return 0;}
+  const uintptr_t address=reinterpret_cast<uintptr_t>(values);
+  if((count!=8&&count!=9)||!address||address%alignof(double)||address>emscripten_get_heap_size()||count*sizeof(double)>emscripten_get_heap_size()-address)return kErrRange;
+  for(int i=0;i<count;++i)if(!std::isfinite(values[i]))return kErrNonFinite;
+  for(int i=0;i<6;++i)if(values[i]<0||values[i]>250)return kErrRange;
+  for(int i=6;i<8;++i)if(values[i]<0||values[i]>.2)return kErrRange;
+  if(count==9&&(values[8]<0||values[8]>.4))return kErrRange;
+  std::copy(values,values+8,g_loading_values);g_loading_pending=true;g_pending_fuel_baseline=count==9?values[8]:-1;return 0;
+}
+
+EMSCRIPTEN_KEEPALIVE double* gf_loading_state() {
+  static double v[13];for(double& x:v)x=std::numeric_limits<double>::quiet_NaN();if(!g_fdm)return v;
+  auto& f=*g_fdm;v[0]=property_or_nan("inertia/weight-lbs")*kLbToKg;v[1]=property_or_nan("inertia/empty-weight-lbs")*kLbToKg;v[2]=0;
+  for(int i=0;i<6;++i)v[3+i]=property_or_nan(("inertia/pointmass-weight-lbs["+std::to_string(i)+"]").c_str())*kLbToKg;
+  for(int i=0;i<2;++i){const auto tank=f.GetPropulsion()->GetTank(i);v[2]+=tank->GetContents()*kLbToKg;v[9+i]=tank->GetCapacityGallons()*kUsGalToM3;}
+  v[11]=f.GetPropulsion()->GetTank(0)->GetDensity()*kLbToKg/kUsGalToM3;v[12]=g_initial_fuel_m3;return v;
+}
 
 // Caller-owned Float64 metres are copied; staged data affects the next init only.
 EMSCRIPTEN_KEEPALIVE int gf_configure_terrain_grid(double west, double south, double east, double north,

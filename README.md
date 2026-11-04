@@ -170,7 +170,7 @@ yoke control; hold-drag to look around. Two-finger vertical scrolling
 over the scenery adjusts camera FOV; over the cockpit it zooms the panel around
 the pointer. **[ / ]** selects flaps, **B** holds
 wheel brakes, and **1–9** selects 10–90% throttle (**0** idle). The engine panel
-adds mixture, RPM, manifold pressure, oil and fuel readouts. **P** toggles the two-axis autopilot. Its KAP 140 operating controls include VS,
+adds mixture, RPM, manifold pressure, oil and fuel readouts. **Flight → Weight & fuel** (**Alt+Shift+W**) sets occupants, baggage, auxiliary load and initial fuel in litres; Apply restarts the flight. Fuel use reduces both tank contents and native aircraft mass. **P** toggles the two-axis autopilot. Its KAP 140 operating controls include VS,
 current-altitude hold, selected-altitude capture and source-aware navigation;
 generic servo response and real navigation-data coverage remain limited.
 To climb to a preselected altitude, set climb power, select the altitude and confirm ALT ARM, switch ALT to VS if needed, then use UP/DN to set the rate. The first press reveals a hidden VS value; subsequent taps change 100 FPM. Hold **CWS** to hand-fly and release to capture current VS or held altitude. CWS is an optional KAP140 control; this particular C172 installation is unverified.

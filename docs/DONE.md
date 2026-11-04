@@ -3,6 +3,33 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 11:44 — Takeoff loading and native fuel consumption
+
+TODO: 2.0.80; R-SIM-11/R-REVIEW-1.
+Agent: Codex integration; glide_cases native loading/fuel; glide_model dialog and
+session/trace; glide_housekeeping scoped independent review.
+
+**Implementation notes**
+
+Flight → Weight & fuel (Alt+Shift+W) edits six source-model loads and initial
+left/right fuel, with explicit Apply/restart. Show native mass, remaining/used
+fuel and flow. Restart preserves the selection; modern recordings preserve
+loading, and legacy continuation explicitly uses original model payload.
+Native proof shows 300 kg added payload reduces acceleration; 30 s powered operation
+uses 0.388 L and reduces mass 0.307 kg. One browser case verifies real configuration,
+fuel/mass decrease and retained restart settings. TypeScript passes; no broad CI
+rerun. [Review](reviews/2026-11-04-aircraft-loading-fuel.md); peer pending.
+
+**Deviations**
+
+Source defaults, including the generic model's auxiliary load, are retained;
+no certified 172S loading limits or fuel-performance calibration are claimed.
+
+**Insights**
+
+Reuse native fuel delivery and mass balance. Ignition off alone does not imply
+zero fuel flow when the model's propeller is windmilling.
+
 ## 2026-11-04 11:26 — Collision-panel Flight menu
 
 TODO: 2.0.79; R-UX-2.

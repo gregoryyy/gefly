@@ -443,3 +443,20 @@ simulation-time controller behavior; CPU overload can reduce achieved speed.
 Pause/loading/reset and Review remain distinct from accelerated live integration.
 The on-screen indicator uses the worker-confirmed rate; no requested rate is a
 claim of measured real-time throughput.
+
+## Aircraft loading and fuel
+
+The pinned generic c172x model supplies six point-mass stations, including its
+auxiliary external load, plus 1454 lb empty weight and two 130 lb tanks at the source
+6.6 lb/USgal density. Preserve those defaults rather than silently retuning the
+existing aircraft. `loading.js` defines the shared kg/m³ contract and model/editor
+bounds; these are not certified C172S limits. Native loading applies before trim
+or runway settling. JSBSim supplies mass, CG, fuel delivery and tank depletion;
+no presentation-side burn model is added. Ignition-off windmilling can still
+meter fuel, while mixture cutoff and starvation follow the native engine.
+
+An optional atomic loading snapshot travels with state traces. Continuation
+restores recorded modern payload and original fuel baseline; old traces without
+that group use pinned original payload with an explicit UI disclosure, never the
+current custom takeoff configuration. Weight & fuel edits apply only through an
+explicit restart; ordinary restarts retain the selected configuration.
