@@ -3,6 +3,98 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 07:28 — Bring merged flight-control and circuit increments to main
+
+TODO: 2.0.67/2.1.4; R-INPUT-1/R-VIEW-1/R-PLAY-1/R-TRAIN-5.
+Agent: Codex orchestrator integration; glide_housekeeping independent merge audit.
+
+**Implementation notes**
+
+GitHub merged PR70 into the map-terrain branch and PR71 into the flying-controls
+branch; main at e2bef5a contained only PR69. Merge the completed branch b87e022
+onto current main without conflicts, preserving complete DONE entries and all
+previous source/review evidence. The integration tree before this log entry is
+byte-identical to b87e022; no product implementation changes are introduced.
+Publish the consolidated result with main as its explicit PR target.
+
+**Deviations**
+
+The two GitHub merged states did not establish delivery to main. Existing scoped
+quality/validation reports still cover identical source bytes; full circuit and
+cross-provider acceptance remain unclaimed. Re-run shared CI and assurance on
+the integrated revision.
+
+**Insights**
+
+Verify actual main ancestry after stacked merges. Retarget dependent PRs to main
+once their parent is merged before asking for the next merge.
+
+## 2026-11-04 03:13 — Optional north-circuit guide on the flight map
+
+TODO: 2.1.4; R-PLAY-1/R-TRAIN-5/R-WORLD-6/R-REVIEW-1. Agent: Codex
+orchestrator integration; glide_cases pure circuit geometry/tests, glide_model
+map controls/rendering/browser checks, glide_housekeeping provenance and
+independent quality/specification review.
+
+**Implementation notes**
+
+Add an initially off Circuit guide and Fit circuit action for prepared EDFE
+08/26 practice. Draw five north-side legs with direction labels over the existing
+map, preserve the flown path, and highlight the nearest finite segment from the
+selected live or recorded position. Current flight context outranks map selectors;
+unknown recordings do not borrow live context. Invalid positions clear the cues.
+Reuse the approximate runway geometry, including the displaced 26 threshold.
+Keep cue generation and map fitting independent of native physics and recorded
+context. Geometry checks and existing airport/map regressions pass; the
+[bounded review](reviews/2026-11-04-practice-circuit.md) records final browser
+observations, quality and separate criterion outcomes.
+
+**Deviations**
+
+The one-nautical-mile width and departure/final extensions are instructional
+proposals. This generated schematic is not EDFE's published route and supplies
+no altitude, speed or obstacle-clearance instruction. Nearest leg does not mean
+flown leg, circuit completion or a grade. This does not complete milestone 2,
+the source-geometry research or aircraft/exercise validation. Peer pending.
+
+**Insights**
+
+A useful practice aid can show the circuit structure while keeping generated
+geometry distinct from the actual flight path and published navigation data.
+Review must resolve its own runway context before choosing a guide.
+
+## 2026-11-04 02:58 — Taller flying view and retained drag look
+
+TODO: 2.0.67; R-INPUT-1/R-VIEW-1. Agent: Codex orchestrator integration;
+glide_cases pointer behavior/tests, glide_model cockpit layout/browser checks,
+glide_housekeeping independent quality and specification validation.
+
+**Implementation notes**
+
+Reserve 60% of application height for the flying scene on supported desktop
+windows, fit both cockpit rows with the same scale and constrain panel zoom to
+that reserve. Relative and centered touchpad modes now retain and accumulate
+camera look after release, toggles, pause and focus loss. Preserve yoke anchors,
+neutral release and authoritative pointer re-entry; Escape/restart explicitly
+center the view. Update the flight-view hint and size the narrow Review stack
+from the playback bar’s measured height instead of a fixed offset. Actual browser checks exercise
+default-mode retained look and unchanged native paused state, alongside the
+responsive panel, centered-mode and FOV/zoom regressions. Scoped outcomes and
+limits are in the [review](reviews/2026-11-04-flying-view-controls.md).
+
+**Deviations**
+
+The vertical-area request is interpreted as the flying scene above the cockpit;
+the optional circular stick overlay retains its size. Instruments scale down on
+short windows to provide that space. No flight dynamics or control gains change.
+Cross-provider peer pending.
+
+**Insights**
+
+Camera retention must be independent of the selected yoke reference mode. A
+small fixed scenery reserve can leave insufficient vertical flying room when
+panels are sized primarily by window width.
+
 ## 2026-11-04 02:42 — Regional map texture without terrain labels
 
 TODO: 2.0.66.1; R-AIRPORT-1/R-WORLD-3/R-WORLD-6/R-DATA-1.

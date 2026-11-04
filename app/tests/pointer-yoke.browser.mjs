@@ -28,7 +28,16 @@ try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const errors = [];
   page.on('pageerror', error => errors.push(String(error)));
+  // Observe the real camera handoff; no production hook or synthetic state.
+  await page.route('**/src/main.ts*', async route => {
+    const response = await route.fetch();
+    const source = await response.text();
+    const assignment = /cameraLook\s*=\s*\{\s*yaw_rad\s*,\s*pitch_rad\s*,?\s*\}\s*;?/;
+    assert(assignment.test(source), 'camera observation binds to the real handoff');
+    await route.fulfill({ response, body: source.replace(assignment, value => `${value}; window.__pointerLook = { ...cameraLook }`) });
+  });
   await page.addInitScript(() => {
+    window.__pointerLook = { yaw_rad: 0, pitch_rad: 0 };
     const Native = window.Worker;
     window.__pointerInputs = []; window.__pointerStats = [];
     window.Worker = class extends Native {
@@ -58,19 +67,33 @@ try {
     return page.evaluate(() => window.__pointerStats.at(-1));
   };
   const frozen = (a, b) => { assert.equal(a.step, b.step); assert.equal(a.digest, b.digest); assert.deepEqual(a.final_state, b.final_state); };
+  const look = () => page.evaluate(() => ({ ...window.__pointerLook }));
   const hold = async (x, y) => {
     await page.mouse.down(); await page.waitForTimeout(300); await mode('look');
-    await page.mouse.move(x, y, { steps: 3 }); await page.mouse.up(); await mode('yoke');
+    await page.mouse.move(x, y, { steps: 3 }); const during = await look();
+    await page.mouse.up(); await mode('yoke');
+    assert.deepEqual(await look(), during, 'release keeps the dragged camera orientation');
+    return during;
   };
   const before = await stats();
   await page.mouse.click(1000, 160); await mode('yoke');
   await page.mouse.move(1075, 130);
   const original = await axes(); assert(original[0] > 0 && original[1] > 0);
-  await hold(1250, 230);
+  const firstLook = await hold(1250, 230);
+  assert(Math.abs(firstLook.yaw_rad - .7) < .001 && Math.abs(firstLook.pitch_rad + .4) < .001);
+  const secondLook = await hold(1200, 180);
+  assert(Math.abs(secondLook.yaw_rad - .5) < .001 && Math.abs(secondLook.pitch_rad + .2) < .001,
+    'the next default-relative drag accumulates from the retained view');
   await page.mouse.move(1075, 130);
   assert.deepEqual(await axes(), original, 'paused look release preserves both original-axis references');
   await page.mouse.move(1000, 160);
   const neutral = await axes(); assert.equal(neutral[1], 0);
+  frozen(before, await stats());
+  await page.locator('#controls-settings').click();
+  assert.equal(await page.locator('#centered-touchpad').isChecked(), false, 'retained look needs no centered-yoke opt in');
+  assert.deepEqual(await look(), secondLook);
+  await page.locator('#settings-close').click();
+  assert.deepEqual(await look(), secondLook, 'Options never resets the view');
   frozen(before, await stats());
 
   await startOrResume(page);
@@ -99,6 +122,7 @@ try {
   await page.mouse.click(1100, 160); await mode('yoke');
   await page.mouse.move(1175, 130); assert.deepEqual(await axes(), liveAxes, 'a short click can intentionally establish a new midpoint');
   await page.keyboard.press('Escape'); await mode('off');
+  assert.deepEqual(await look(), { yaw_rad: 0, pitch_rad: 0 }, 'Escape explicitly centers the view');
   await page.locator('#pause').click();
   const paused = await stats(); await page.waitForTimeout(100); frozen(paused, await stats());
   assert.deepEqual(errors, []);
@@ -106,6 +130,7 @@ try {
     'paused hold-look preserves original midpoint without advancing actual JSBSim',
     'live hold-look preserves original midpoint and actual aileron/elevator commands',
     'outside release/re-entry and short-click toggle retain their separate behavior',
+    'default-relative look retains and accumulates after release and Options; Escape explicitly centers it',
   ], originalCommands };
   await mkdir(output, { recursive: true });
   await writeFile(`${output}/pointer-yoke-browser.json`, `${JSON.stringify(result, null, 2)}\n`);

@@ -109,3 +109,8 @@
 .airport-play-actions select { flex: 1; min-width: 0; }
 .airport-play-actions button, .airport-play-actions select { font-size: 10px; padding: 4px; }
 .airport-play small { display: block; font-size: 9px; color: #afc4cf; }
+
+.practice-map-circuit-note, .practice-map-circuit-readout { margin: 3px 10px; font-size: 9px; line-height: 1.35; color: #efd296; }
+.practice-map-circuit-label { display: flex; align-items: center; gap: 3px; padding: 2px 4px; border: 1px dashed #d9bd7b; border-radius: 3px; background: #2a281de8; color: #f5dda4; font-size: 9px; white-space: nowrap; pointer-events: none; }
+.practice-map-circuit-arrow { display: inline-block; font-size: 13px; line-height: 14px; }
+.practice-map-circuit-label[data-nearest=true] { border-color: #fff3a8; color: #fff9d8; background: #5b4c20ed; }
