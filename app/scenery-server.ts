@@ -8,9 +8,9 @@ const WORLD = 20037508.342789244;
 // WGS84 [west, south, east, north]. Public cartography covers the five-state
 // inventory; photography remains within its separately reviewed regional area.
 const MAP_BOUNDS = [6, 47, 14, 51.75] as const;
-const IMAGERY_BOUNDS = [8, 49, 10, 50.75] as const;
+const IMAGERY_BOUNDS = [7, 49, 10, 51.5] as const;
 const SOURCES = {
-  map: ['https://sgx.geodatenzentrum.de/wms_topplus_open', 'web'],
+  map: ['https://sgx.geodatenzentrum.de/wmts_topplus_open', 'web'],
   hessen: ['https://www.gds-srv.hessen.de/cgi-bin/lika-services/ogc-free-images.ows', 'he_dop_rgb'],
   bavaria: ['https://geoservices.bayern.de/od/wms/dop/v1/dop40', 'by_dop40c'],
   bw: ['https://owsproxy.lgl-bw.de/owsproxy/ows/WMS_LGL-BW_ATKIS_DOP_20_C', 'IMAGES_DOP_20_RGB'],
@@ -22,13 +22,19 @@ export interface SceneryOptions { fetcher?: Fetcher; cacheBytes?: number; python
 
 class Semaphore {
   private active = 0;
-  private queue: Array<() => void> = [];
+  private queue: Array<{ resolve: () => void; priority: () => number }> = [];
   private readonly max: number;
   constructor(max: number) { this.max = max; }
-  async run<T>(work: () => Promise<T>): Promise<T> {
+  async run<T>(work: () => Promise<T>, priority: () => number = () => 0): Promise<T> {
     if (this.active < this.max) this.active++;
-    else await new Promise<void>((resolve) => this.queue.push(resolve));
-    try { return await work(); } finally { const next = this.queue.shift(); if (next) next(); else this.active--; }
+    else await new Promise<void>((resolve) => this.queue.push({ resolve, priority }));
+    try { return await work(); } finally {
+      if (this.queue.length) {
+        let first = 0;
+        for (let i = 1; i < this.queue.length; i++) if (this.queue[i].priority() > this.queue[first].priority()) first = i;
+        this.queue.splice(first, 1)[0].resolve();
+      } else this.active--;
+    }
   }
 }
 
@@ -43,7 +49,8 @@ function pngValid(data: Uint8Array, size: number): boolean {
   return b.length >= 33 && b.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10])) &&
     b.toString('ascii', 12, 16) === 'IHDR' && b.readUInt32BE(16) === size && b.readUInt32BE(20) === size;
 }
-function urlFor(source: Source, box: number[], size: number): string {
+function urlFor(source: Source, box: number[], size: number, tile: { z: number; x: number; y: number }): string {
+  if (source === 'map') return `${SOURCES.map[0]}/tile/1.0.0/web/default/WEBMERCATOR/${tile.z}/${tile.y}/${tile.x}.png`;
   const [base, layer] = SOURCES[source];
   const url = new URL(base);
   const params: Record<string, string> = { SERVICE: 'WMS', REQUEST: 'GetMap', VERSION: '1.1.1', LAYERS: layer,
@@ -86,24 +93,28 @@ export function sceneryMiddleware(options: SceneryOptions = {}) {
   const vectorMap = createVectorMapMiddleware(options);
   const fetcher = options.fetcher || fetch, python = options.python || 'python3';
   const capacity = Math.max(0, Math.min(32 * 1024 * 1024, options.cacheBytes ?? 32 * 1024 * 1024));
-  const network = new Semaphore(4), composers = new Semaphore(2), jobs = new Semaphore(8);
+  // Visible cartography never waits for regional photography or composition.
+  const mapNetwork = new Semaphore(4), photoNetwork = new Semaphore(4), composers = new Semaphore(2);
+  const mapJobs = new Semaphore(4), photoJobs = new Semaphore(4);
+  const priorities = new Map<string, { value: number }>();
   const cache = new Map<string, Result>(), pending = new Map<string, Promise<Result>>(); let cacheSize = 0;
-  async function acquire(source: Source, box: number[], size: number): Promise<Buffer> {
-    return network.run(async () => {
-      const response = await fetcher(urlFor(source, box, size), { redirect: 'error', signal: AbortSignal.timeout(15000) });
+  async function acquire(source: Source, box: number[], size: number, tile: { z: number; x: number; y: number }, priority: () => number): Promise<Buffer> {
+    return (source === 'map' ? mapNetwork : photoNetwork).run(async () => {
+      const response = await fetcher(urlFor(source, box, size, tile), { redirect: 'error', signal: AbortSignal.timeout(15000) });
       const bytes = await readBounded(response);
       if (!pngValid(bytes, size)) throw new Error('invalid PNG dimensions');
       return bytes;
-    });
+    }, priority);
   }
-  async function generate(kind: string, box: number[]): Promise<Result> {
-    if (kind === 'map') return { bytes: await acquire('map', box, 256), type: 'image/png', sources: 'BKG', partial: false, expires: Date.now() + 3600000 };
+  async function generate(kind: string, box: number[], tile: { z: number; x: number; y: number }, priority: () => number): Promise<Result> {
+    if (kind === 'map') return { bytes: await acquire('map', box, 256, tile, priority), type: 'image/png', sources: 'BKG', partial: false, expires: Date.now() + 3600000 };
     const [west, south, east, north] = [longitude(box[0]), latitude(box[1]), longitude(box[2]), latitude(box[3])];
     const selected: Source[] = [];
-    if (north >= 49.35) selected.push('hessen');
-    if (east >= 8.96) selected.push('bavaria');
-    if (south <= 49.8) selected.push('bw');
-    const results = await Promise.allSettled(selected.map((source) => acquire(source, box, 512)));
+    // Query envelopes bound providers; actual state footprints remain transparent.
+    if (east >= 7.41867 && west <= 10.5 && north >= 49.25 && south <= 51.7596) selected.push('hessen');
+    if (east >= 8.96 && north >= 49 && south <= 50.75) selected.push('bavaria');
+    if (east >= 8 && west <= 10 && north >= 49 && south <= 49.8) selected.push('bw');
+    const results = await Promise.allSettled(selected.map((source) => acquire(source, box, 512, tile, priority)));
     const images: Buffer[] = [], sources: string[] = [];
     results.forEach((result, i) => { if (result.status === 'fulfilled') { images.push(result.value); sources.push(selected[i]); } });
     if (!images.length) throw new Error('imagery unavailable');
@@ -126,16 +137,20 @@ export function sceneryMiddleware(options: SceneryOptions = {}) {
     if (result && result.expires <= Date.now()) { cache.delete(key); cacheSize -= result.bytes.length; result = undefined; }
     if (result) { cache.delete(key); cache.set(key, result); }
     let task = result ? Promise.resolve(result) : pending.get(key);
+    const visible = req.headers['x-gefly-scenery-priority'] === 'visible';
+    if (visible && priorities.has(key)) priorities.get(key)!.value = 1;
     if (!task) {
       if (pending.size >= 128) { res.writeHead(503, { 'Cache-Control': 'no-store' }).end(); return; }
-      task = jobs.run(() => generate(kind, box)).then((value) => {
+      const rank = { value: visible ? 1 : 0 }; priorities.set(key, rank);
+      const priority = () => rank.value;
+      task = (kind === 'map' ? mapJobs : photoJobs).run(() => generate(kind, box, { z, x, y }, priority), priority).then((value) => {
         if (value.bytes.length <= capacity) {
           while (cacheSize + value.bytes.length > capacity) { const oldest = cache.keys().next().value as string; cacheSize -= cache.get(oldest)!.bytes.length; cache.delete(oldest); }
           cache.set(key, value); cacheSize += value.bytes.length;
         }
         return value;
       });
-      pending.set(key, task); task.finally(() => pending.delete(key)).catch(() => {});
+      pending.set(key, task); task.finally(() => { pending.delete(key); priorities.delete(key); }).catch(() => {});
     }
     task.then((value) => {
       res.writeHead(200, { 'Content-Type': value.type, 'Content-Length': value.bytes.length, 'Cache-Control': 'private, max-age=300', 'X-Scenery-Sources': value.sources, 'X-Scenery-Partial': String(value.partial), 'X-Content-Type-Options': 'nosniff' });

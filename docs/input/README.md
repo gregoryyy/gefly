@@ -115,3 +115,17 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-04 — Direction-marker visibility and vertical look poles](2026-11-04-view-marker-visibility-poles.md)
 
 - [2026-11-04 — Browser fullscreen](2026-11-04-browser-fullscreen.md)
+
+- [2026-11-04 — Continue live from replay](2026-11-04-replay-continue-live.md)
+
+- [2026-11-04 — Ground-collision grace zone](2026-11-04-ground-collision-grace.md)
+
+- [2026-11-04 — Collision-panel Flight menu](2026-11-04-collision-flight-menu.md)
+
+- [2026-11-04 — Takeoff loading and fuel consumption](2026-11-04-aircraft-loading-fuel.md)
+
+- [2026-11-04 — Step down simulation speed](2026-11-04-simulation-slower.md)
+
+- [2026-11-04 — Map loading delay](2026-11-04-map-loading-delay.md)
+
+- [2026-11-04 — Terrain and aeronautical charts beyond the Taunus](2026-11-04-beyond-taunus.md)

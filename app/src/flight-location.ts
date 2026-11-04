@@ -1,3 +1,4 @@
+import { REGIONAL_TERRAIN } from '../../studies/e1-browser/sim/terrain-stream.js';
 import type { FlightLocation, FlightState } from './types.ts';
 
 export const FLIGHT_LOCATION_KEY = 'gefly.flight-location.v1';
@@ -14,8 +15,8 @@ export function validFlightLocation(value: unknown): value is FlightLocation {
   return Object.keys(v).length === FIELDS.length && FIELDS.every(key => Object.hasOwn(v, key))
     && v.version === 1 && (v.mode === 'airborne' || v.mode === 'ground')
     && [v.lat_rad, v.lon_rad, v.alt_msl_m, v.heading_rad].every(n => typeof n === 'number' && Number.isFinite(n))
-    && (v.lat_rad as number) > 49.25 * DEG && (v.lat_rad as number) < 50.75 * DEG
-    && (v.lon_rad as number) > 8.25 * DEG && (v.lon_rad as number) < 10 * DEG
+    && (v.lat_rad as number) > REGIONAL_TERRAIN.south * DEG && (v.lat_rad as number) < REGIONAL_TERRAIN.north * DEG
+    && (v.lon_rad as number) > REGIONAL_TERRAIN.west * DEG && (v.lon_rad as number) < REGIONAL_TERRAIN.east * DEG
     && (v.alt_msl_m as number) >= -500 && (v.alt_msl_m as number) <= 6000
     && (v.heading_rad as number) >= 0 && (v.heading_rad as number) < 2 * Math.PI;
 }

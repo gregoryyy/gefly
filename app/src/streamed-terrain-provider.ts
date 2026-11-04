@@ -1,8 +1,9 @@
 import { Credit, CustomHeightmapTerrainProvider, Ellipsoid, GeographicTilingScheme, Rectangle, type TerrainProvider } from 'cesium';
 import { validateTerrainGrid, type TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
-import { sampleAtlas, type RegionalTile } from '../../studies/e1-browser/sim/terrain-stream.js';
+import { REGIONAL_TERRAIN, sampleAtlas, type RegionalTile } from '../../studies/e1-browser/sim/terrain-stream.js';
 
-const RAD = Math.PI / 180, WEST = 8.25, SOUTH = 49.25, COLS = 7, ROWS = 6, STEP = .25;
+const RAD = Math.PI / 180;
+const { west: WEST, south: SOUTH, cols: COLS, rows: ROWS, step: STEP } = REGIONAL_TERRAIN;
 const WIDTH = 129, CELLS = WIDTH - 1;
 const rad = (degrees: number) => degrees * RAD;
 
@@ -19,7 +20,7 @@ export function createStreamedTerrainProvider(fine: TerrainGrid, tiles: readonly
   for (const grid of tiles) {
     if (!validateTerrainGrid(grid) || grid.width !== WIDTH || grid.height !== WIDTH) continue;
     const x = Math.round((grid.west_rad / RAD - WEST) / STEP), y = Math.round((grid.south_rad / RAD - SOUTH) / STEP);
-    const id = `e${825 + x * 25}-n${4925 + y * 25}`;
+    const id = `e${WEST * 100 + x * STEP * 100}-n${SOUTH * 100 + y * STEP * 100}`;
     if (x < 0 || x >= COLS || y < 0 || y >= ROWS || grid.id !== id
       || Math.abs(grid.west_rad - rad(WEST + x * STEP)) > 1e-12
       || Math.abs(grid.east_rad - rad(WEST + (x + 1) * STEP)) > 1e-12

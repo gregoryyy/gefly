@@ -94,7 +94,7 @@ test('F39: a detected contact without a valid record fails explicitly instead of
   assert(contact.mask);
   assert.equal(contactOutcome(contact, collisionRecord(contact.mask, 2, .02, null)), 'fail');
   assert.equal(contactOutcome(contact, collisionRecord(contact.mask, 2, .02, { ground_down_mps: NaN, ground_forward_mps: 0, ground_side_mps: 0 })), 'fail');
-  assert.equal(contactOutcome(contact, collisionRecord(contact.mask, 2, .02, { ground_down_mps: 1, ground_forward_mps: 0, ground_side_mps: 0 })), 'latch');
+  assert.equal(contactOutcome(contact, collisionRecord(contact.mask, 2, .02, { ground_down_mps: 2, ground_forward_mps: 0, ground_side_mps: 0 })), 'latch');
   assert.equal(contactOutcome(groundCollisionContact(3, 0, 0, 0), null), 'clear');
   const nativeOnly = groundCollisionContact(3, 0, 0, 2, { north_slope: NaN, east_slope: 0, heading_rad: 0 });
   assert.equal(nativeOnly.available, false); assert.equal(nativeOnly.mask, 2);
@@ -115,4 +115,25 @@ test('near-rest wheel-supported prop proxy tolerates settling, not impacts or de
   assert(contact(undefined).mask & 16, 'missing motion never hides contact');
   assert.equal(contact(supported, 1.02, 2).mask, 18, 'native wing contact remains authoritative');
   assert(contact(supported, .5).mask & 8, 'body collision is unchanged');
+});
+
+
+test('collision grace requires both strict pre-step speed limits and preserves raw contact masks', () => {
+  const horizontal = 10 * 1852 / 3600, down = 2.5 * 1852 / 3600;
+  const cases = [
+    [horizontal - 1e-6, 0, down - 1e-6, 'clear'],
+    [horizontal, 0, 0, 'latch'], [0, 0, down, 'latch'],
+    [horizontal + 1, 0, 0, 'latch'], [0, 0, down + 1, 'latch'],
+    [0, horizontal, 0, 'latch'], [3, 4, 0, 'clear'],
+    [0, 0, -2, 'clear'],
+  ];
+  for (const mask of [1, 2, 4, 8, 16, 32, 64, 127]) {
+    const contact = Object.freeze({ available: true, mask, clearance_m: -.1 });
+    for (const [forward, side, vertical, expected] of cases) {
+      const record = collisionRecord(mask, 1, 1 / 120, { ground_forward_mps: forward, ground_side_mps: side, ground_down_mps: vertical });
+      assert.equal(contactOutcome(contact, record), expected, JSON.stringify({ mask, forward, side, vertical }));
+      assert.equal(contact.mask, mask); assert.equal(record.collision_mask, mask);
+    }
+    assert.equal(contactOutcome(contact, null), 'fail', 'missing pre-step motion cannot become a safe zero');
+  }
 });

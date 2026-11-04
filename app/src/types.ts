@@ -1,3 +1,6 @@
+import { LOADING_FIELDS, validLoadingState } from '../../studies/e1-browser/sim/loading.js';
+import type { LoadingConfiguration, LoadingSnapshot } from '../../studies/e1-browser/sim/loading.js';
+export { LOADING_FIELDS, validLoadingState };
 import { validSystemsMask } from './aircraft-systems.ts';
 import type { TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
 import { ALERT_FIELDS, validAlertState } from '../../studies/e1-browser/sim/altitude-alert.js';
@@ -147,7 +150,7 @@ export function validCollisionState(input: object): boolean {
 export function validSystemsState(state: { systems_switch_mask?: number }): boolean {
   return state.systems_switch_mask === undefined || validSystemsMask(state.systems_switch_mask);
 }
-export interface FlightState extends Partial<Record<keyof AltitudeAlertSnapshot, number>>, Partial<KapSnapshot>, TerrainState, AltimeterState, CockpitState, EngineState, PitchTrimState, GroundState, ControlState, StallState, CollisionState, Partial<RadioNavSnapshot> {
+export interface FlightState extends LoadingSnapshot, Partial<Record<keyof AltitudeAlertSnapshot, number>>, Partial<KapSnapshot>, TerrainState, AltimeterState, CockpitState, EngineState, PitchTrimState, GroundState, ControlState, StallState, CollisionState, Partial<RadioNavSnapshot> {
   step: number; t_s: number; lat_rad: number; lon_rad: number;
   alt_msl_m: number; roll_rad: number; pitch_rad: number; heading_rad: number; tas_mps: number;
   /** Requested wall-clock pacing; fixed simulation dt is unchanged. */
@@ -166,8 +169,10 @@ export interface FlightScene {
 }
 export interface FlightLocation { version: 1; lat_rad: number; lon_rad: number; alt_msl_m: number; heading_rad: number; mode: 'airborne' | 'ground' }
 export interface RunwayStart { airport: string; runway: string; lat_rad: number; lon_rad: number; heading_rad: number }
-export type AirborneSite = 'edfe' | 'taunus' | 'eddf-ils' | 'darmstadt' | 'odenwald' | 'spessart';
+export type AirborneSite = 'edfe' | 'taunus' | 'eddf-ils' | 'darmstadt' | 'odenwald' | 'spessart' | 'westerwald' | 'marburg' | 'kassel';
 export interface FlightSession {
+  setLoading(config: LoadingConfiguration): boolean;
+  restoreFromReview(state: Readonly<FlightState>): Promise<FlightState>;
   captureAutopilot(): void;
   setSimulationRate(rate: number): void;
   setKap140(command: KapCommand): void;

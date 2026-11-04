@@ -89,8 +89,22 @@ try {
   await page.waitForFunction(() => document.querySelector('#status').textContent === 'Flying');
   await page.waitForFunction(step => window.fileStates.at(-1).step > step + 5, reviewing.step);
   assert.equal(await page.evaluate(() => window.flightWorkerCount), 1, 'Back to live resumes the same native worker');
+  await page.locator('#scene').focus(); await page.keyboard.press('Space');
+  await page.setInputFiles('#recording-file', { name: 'continue-flight.json', mimeType: 'application/json', buffer: Buffer.from(json) });
+  await page.waitForFunction(() => document.querySelector('#status').textContent === 'Review');
+  const selected = saved.samples[Math.floor(saved.samples.length / 2)].state;
+  await page.locator('#review-time').evaluate((input,time) => { input.value=String(time); input.dispatchEvent(new Event('input',{bubbles:true})); },selected.t_s);
+  await page.waitForFunction(() => !document.querySelector('#review-continue').disabled);
+  const frameCount=await page.evaluate(()=>window.fileStates.length);
+  await page.locator('#review-continue').click();
+  await page.waitForFunction(() => window.flightWorkerCount===2 && document.querySelector('#status').textContent==='Flying',null,{timeout:60000});
+  const initialBranch=await page.evaluate(({count,time,step})=>window.fileStates.slice(count).find(frame=>frame.t_s===time&&frame.step===step),{count:frameCount,time:selected.t_s,step:selected.step});
+  assert(initialBranch,'new worker returns an actual initial frame at the selected recorded time');
+  assert(Math.abs(initialBranch.lat_rad-selected.lat_rad)<1e-8&&Math.abs(initialBranch.lon_rad-selected.lon_rad)<1e-8);
+  await page.waitForFunction(step=>window.fileStates.at(-1).step>step+30,selected.step);
   assert.deepEqual(errors, []);
   console.log(JSON.stringify({ result: 'pass', checks: ['real flight JSON download/import/seek preserves frozen native state',
     'invalid JSON leaves the live flight unchanged', 'Back to live restores flying or paused intent using the same worker',
+    'Continue live starts a new native worker from an imported selected frame and advances',
     'comma toggles map overlap while N retains parking brake'], samples: saved.samples.length }, null, 2));
 } finally { await browser?.close(); server.kill(); }

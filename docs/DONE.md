@@ -3,6 +3,175 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 13:10 — Terrain beyond the Taunus and chart access
+
+TODO: 2.0.84/2.0.85; R-WORLD-5/R-CHART-1. Agent: Codex integration;
+glide_cases terrain compiler/data and chart sources; glide_model runtime;
+glide_housekeeping independent review.
+
+**Implementation notes**
+
+Add 66 actual height tiles for 108 total (14,377,824 bytes), west to 7°E and
+north to 51.5°N. Original 42 tile hashes remain unchanged; all 195 shared edges
+match. Native WASM rebuilt; six-location native comparison has zero H mismatch,
+with at most nine resident tiles. New Flight presets and location persistence
+cover Westerwald/Lahn/Marburg/Kassel; northern Hessen photography retains source
+footprints and map fallback. Flight map Charts opens OFM VFR and DFS AIP sources.
+TypeScript, 51 focused terrain/session/location cases and nine proxy cases pass.
+The existing native/Cesium browser case passes all six presets, 0.25 m mesh
+agreement, map/Review isolation, chart links and missing/corrupt fail-closed paths.
+[Review](reviews/2026-11-04-beyond-taunus.md); peer pending.
+
+**Deviations**
+
+Aeronautical charts remain publisher-hosted. Working OFM raster tiles do not
+establish product reuse rights; full current terms and publication metadata were
+unavailable. Embedded chart/airspace/procedure layers remain TODO 2.0.85.1.
+DGM200 is broad relief, not surveyed airport/obstacle detail.
+
+**Insights**
+
+Keep source geometry and old tile bytes stable while extending the streaming
+matrix, and update the native ID limit, rendering and saved-location fences together.
+
+## 2026-11-04 12:48 — Prioritize visible map loading
+
+TODO: 2.0.83; R-WORLD-6/R-WORLD-5. Agent: Codex integration; glide_cases proxy;
+glide_model map request priority; glide_housekeeping independent review.
+
+**Implementation notes**
+
+Use BKG WMTS tiles; separate map and aerial job/network pools and promote
+queued visible requests, including deduplicated loads. Eight proxy cases and
+TypeScript pass. Actual MapLibre map readiness observed at 2.138 s on the running
+local server. [Review](reviews/2026-11-04-map-loading-delay.md); peer pending.
+
+**Deviations**
+
+One map-renderer timing is not a full cold-app budget or reproduction of every
+40-second case. Tests use existing Python 3.11/Pillow dependencies; no new package.
+
+**Insights**
+
+Cached background requests must still allow urgent demand to promote proxy work.
+The related browser-cache fix is in PR #78.
+
+## 2026-11-04 12:35 — Step down simulation speed
+
+TODO: 2.0.47; R-SIM-9. Agent: Codex implementation; glide_housekeeping review.
+
+**Implementation notes**
+
+Shift+= / + steps 10× → 5× → 2× → 1.5× → 1×, clamped at 1×,
+for live and Review. Flight menu shows the shortcut; Shift-click also decrements.
+German Shift+0 producing = remains speed-up. TypeScript and the existing actual
+native-worker flight-assists browser check pass, including guards and paused-state
+invariance. Independent glide_housekeeping source/coverage review passes with no
+findings; peer pending.
+
+**Deviations**
+
+No new rates or broad test suite; fixed-step dynamics remain unchanged.
+
+**Insights**
+
+Character and physical-key matching must distinguish shifted US + from German =.
+
+## 2026-11-04 11:44 — Takeoff loading and native fuel consumption
+
+TODO: 2.0.80; R-SIM-11/R-REVIEW-1.
+Agent: Codex integration; glide_cases native loading/fuel; glide_model dialog and
+session/trace; glide_housekeeping scoped independent review.
+
+**Implementation notes**
+
+Flight → Weight & fuel (Alt+Shift+W) edits six source-model loads and initial
+left/right fuel, with explicit Apply/restart. Show native mass, remaining/used
+fuel and flow. Restart preserves the selection; modern recordings preserve
+loading, and legacy continuation explicitly uses original model payload.
+Native proof shows 300 kg added payload reduces acceleration; 30 s powered operation
+uses 0.388 L and reduces mass 0.307 kg. One browser case verifies real configuration,
+fuel/mass decrease and retained restart settings. TypeScript passes; no broad CI
+rerun. [Review](reviews/2026-11-04-aircraft-loading-fuel.md); peer pending.
+
+**Deviations**
+
+Source defaults, including the generic model's auxiliary load, are retained;
+no certified 172S loading limits or fuel-performance calibration are claimed.
+
+**Insights**
+
+Reuse native fuel delivery and mass balance. Ignition off alone does not imply
+zero fuel flow when the model's propeller is windmilling.
+
+## 2026-11-04 11:26 — Collision-panel Flight menu
+
+TODO: 2.0.79; R-UX-2.
+Agent: Codex integration; glide_cases one-line fix; glide_model existing browser
+regression; glide_housekeeping scoped review.
+
+**Implementation notes**
+
+Reveal the top bar before opening Flight and focusing Restart. The existing
+collision browser passes visibility/focus and actual restart. [Review](reviews/2026-11-04-collision-flight-menu.md).
+
+**Deviations**
+
+None; no physics or input change. Peer pending.
+
+**Insights**
+
+An open details element is still invisible inside a hidden header.
+
+## 2026-11-04 11:14 — Low-speed ground-collision grace zone
+
+TODO: 2.0.78; R-SIM-8.
+Agent: Codex integration; glide_cases policy; glide_model existing test;
+glide_housekeeping scoped review.
+
+**Implementation notes**
+
+Ignore collision stopping only when pre-impact groundspeed is below 10 kt and
+downward speed below 2.5 kt. Raw contacts and wheel physics are unchanged.
+Existing collision module: 12 tests pass; no new harness or broad suite.
+[Scoped review](reviews/2026-11-04-ground-collision-grace.md); peer pending.
+
+**Deviations**
+
+None. The bounds are simulator policy, not real-aircraft damage limits.
+
+**Insights**
+
+Use pre-impact speed so an impact slowing the aircraft cannot conceal itself.
+
+## 2026-11-04 11:06 — Continue live from a replay frame
+
+TODO: 2.0.77; R-REVIEW-1/R-SIM-4.
+Agent: Codex orchestrator integration; glide_cases native reconstruction;
+glide_model session/trace/controls; glide_housekeeping independent scoped review.
+
+**Implementation notes**
+
+Continue live starts a new native branch from selected pose, velocities/rates,
+controls, fuel, engine and supported avionics state. Retain the earlier trace,
+drop its future and accept complete imported frames. A candidate worker must
+initialize successfully before replacing the original paused flight. Back to
+live keeps its existing behavior; unavailable frames explain why.
+Native cases, TypeScript and the existing replay browser check pass, including
+an imported middle frame and actual subsequent flight. [Scoped review](reviews/2026-11-04-replay-continue-live.md)
+passes. Full CI was not rerun after the user's request for less unnecessary
+process; peer remains pending.
+
+**Deviations**
+
+This reconstructs initial conditions, not hidden integrator/thermal/contact
+history. Incomplete, damaged and unsupported transient frames stay view-only.
+
+**Insights**
+
+Use the native first frame, preserve applied controls without reapplying UI gains,
+and keep the original worker until reconstruction succeeds.
+
 ## 2026-11-04 10:33 — Native browser fullscreen
 
 TODO: 2.0.76; R-VIEW-1/R-INPUT-1/R-REVIEW-1.
