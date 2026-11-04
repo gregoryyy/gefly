@@ -67,10 +67,13 @@ start reference. **Events** shows the sensed flight log. Missing data and checks
 the simulator cannot verify stay explicit; no aircraft settings change.
 
 Sharp runway markings, taxiways and apron overlays sit on the public terrain.
-In **Options**, select **Vector map and terrain** for the bounded OSM airport
-surroundings, or enable **Practice PAPI / runway lights**. These light aids are
-illustrative, not a surveyed EDFE installation. The map's Vector/Map/Aerial buttons
-also update the shared scenery choice.
+In **Options**, select **Map terrain** to drape official German cartography
+without text over the terrain. Roads, fields, woodland, water and building
+footprints extend beyond the airport; photography stays underneath while tiles
+load or if the service fails. The flight map keeps its **Map/Aerial** background;
+its **Map terrain** button changes only the 3D texture. **Practice PAPI / runway
+lights** are separate illustrative aids, not a surveyed EDFE installation.
+[Map terrain source and limits](docs/research/2026-11-04-label-free-map-terrain.md).
 
 Select an airport on the map and open **Airport COM** to load a service into
 **COM1/COM2 standby**, then swap on the radio stack. The directory contains 631

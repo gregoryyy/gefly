@@ -1,0 +1,384 @@
+{
+  "schema_version": 1,
+  "source_revision": "18e52fe0697eff6d8dccb3a450d63977f24cee5a + recorded working-tree source pins",
+  "scope": "Actual label-free official map cartography on the existing 3D terrain and independent 2D background; bounded regional rendering, fallback and paused-state isolation.",
+  "environment": {
+    "node": "v26.13.0",
+    "platform": "macOS-26.2-arm64-arm-64bit",
+    "browser": "156.0.8078.80"
+  },
+  "build_info": {
+    "jsbsim_tag": "v1.3.3",
+    "jsbsim_commit": "66f7fafc07fe13e7ede9db20873030fed2881713",
+    "emsdk": "6.0.13",
+    "emsdk_rev": "d7b4130688bfa348392b921ab04015aa15c4f154",
+    "emcc": "emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 6.0.13 (e13ee988ce3d87a738dd8f3661d02223308c412a)",
+    "flags": "-O2 -fwasm-exceptions",
+    "wasm_bytes": 1758848,
+    "wasm_sha256": "06f044fd1176c52e3f0d2da38a542cc69c0d312ffa296db6e0d0d96cc13a4ddf",
+    "aircraft_adapter": {
+      "adapter_id": "gefly-c172x-mixture-pitch-ap-v2",
+      "adapter_script_sha256": "5f9dcf09a1d004351bb5faf165c037f9f3b3433ba10f52f7957374b2ab745487",
+      "ap_prepared_sha256": "e128be7673cd6fd29e8a0bab4ff7392e62974ff236e44a23861d3f4ffc8ebd9c",
+      "ap_source_sha256": "1e83fec37beabf33e1a1bdd7a30fb5d4aeca79ddb52a2dca58a7bcfc1d20e570",
+      "prepared_sha256": "f0dad1b5a4c17f8ac607da1709d38f2de77119aeb82c272dd7cedefccad69219",
+      "source_path": "aircraft/c172x/c172x.xml",
+      "source_sha256": "b736f4b7560d5aab4d2a69026798be1d369b2b2bb5ddcf627aebfd441ba71840"
+    },
+    "propeller_adapter": {
+      "adaptations": [
+        "Direct-drive design RPM replaces Aero-Matic tip-speed/gearbox heuristic",
+        "Retain pinned propeller geometry, inertia and Mach corrections; replace only fixed-pitch CP/CT tables",
+        "No tuning to a C172 glide ratio or aircraft-specific reference curve"
+      ],
+      "adapter_id": "gefly-generic-fixed-pitch-windmilling-v1",
+      "adapter_script_sha256": "d0b185544637898b9478fc00b810cc3bbebdf1d2ce445a95854f9b56d6a9318d",
+      "inputs": {
+        "blades": 2,
+        "cp0": 0.04258269989766735,
+        "ct0": 0.05961577985673429,
+        "design_density_slug_ft3": 0.002378,
+        "diameter_in": 75.0,
+        "engine_design_rpm": 2700.0,
+        "engine_max_power_hp": 160.0,
+        "fixed_pitch_deg": 22,
+        "gear_ratio": 1,
+        "inertia_slug_ft2": 1.67,
+        "propeller_design_rpm": 2700.0,
+        "table_decimal_places": 4
+      },
+      "prepared_sha256": "fc3163d3a8ee885af513aa80950f1b4ef6c85a00e7ebeafd4d31b0c5dc6d4e40",
+      "scope": "generic research fixed-pitch windmilling; not accepted aircraft data",
+      "source_jsbsim_commit": "66f7fafc07fe13e7ede9db20873030fed2881713",
+      "sources": [
+        {
+          "path": "engine/eng_io320.xml",
+          "sha256": "0cedc1e356a7a572a175f351a4abb952ba91081219a37dc7192bce3a2181d8c6"
+        },
+        {
+          "path": "engine/prop_75in2f.xml",
+          "sha256": "6481edf1da940fdea5358913d226c3e25d3e6b8209b4805370258a9a65ca7403"
+        },
+        {
+          "path": "utils/aeromatic/prop2.php",
+          "sha256": "658eb2c7a409fe7793514a6e0add07ff6b693b0161ee205379d3606f0117dab6"
+        }
+      ]
+    }
+  },
+  "source_pins": [
+    {
+      "path": "app/vector-map-server.ts",
+      "sha256": "dfd662e966964fd7910b6ddfea883b3cb5d8524b555e53f5944c658ecfcee191"
+    },
+    {
+      "path": "app/vector-map-server.test.ts",
+      "sha256": "63d96944f952168221f2415c8c2395f1812e30d6e306877f56171926f409de19"
+    },
+    {
+      "path": "app/src/map-terrain-imagery.ts",
+      "sha256": "a2fdc28c1eb5063d0e76c20b820c3206fdb58a760c22379f0344cede84f757e5"
+    },
+    {
+      "path": "app/src/map-terrain-style.ts",
+      "sha256": "d743b304b55dcf3f30031e5bbc530d1796f014c924b8ef0029206ed06a81d5ef"
+    },
+    {
+      "path": "app/public/mapdata/terrain-style.json",
+      "sha256": "f6ed255e627a3dbc74dcb0a27cc982c75872c20a31d5c7815b717ac5c150b048"
+    },
+    {
+      "path": "app/src/scene.ts",
+      "sha256": "0a2b0e768868a07064cdcf0d5b8a3956ecdd42e22130eea86286cc78ef28ce4a"
+    },
+    {
+      "path": "app/src/practice-map.ts",
+      "sha256": "ee864855a96ea3d4294341154e8223451d74958ec59a8cc7b011f0b1059bb632"
+    },
+    {
+      "path": "app/scenery-server.ts",
+      "sha256": "0e3a17a95e4f0cdee222a9fe74fb385079df35c7382e668691b22e3906739250"
+    },
+    {
+      "path": "app/src/control-settings-panel.ts",
+      "sha256": "7d24f08ffaee6aa09fafe661921e602a2fff23fec3950571bcc0c8d5665fe210"
+    },
+    {
+      "path": "app/tests/map-terrain-imagery.browser.mjs",
+      "sha256": "cd58c90811307367df0a3a93b6ece7685f1b7d2d3f1ad71b9781af596353d81e"
+    },
+    {
+      "path": "app/tests/map-terrain.browser.mjs",
+      "sha256": "58e5d46a26695f02b3c7e082086d0b7674985c54c8e6901f815d3a7716116a0e"
+    },
+    {
+      "path": "app/tests/map-terrain-fallback.browser.mjs",
+      "sha256": "b0b37b5c1c63a75a2394244f3db6c1fe94768df905ea4fa23fdbbe55948c615c"
+    },
+    {
+      "path": "app/tests/airport-play.browser.mjs",
+      "sha256": "981e0f613763150de79c81cc98f8897a45eeaa2985dbc1a21e822075104f425c"
+    },
+    {
+      "path": "app/package.json",
+      "sha256": "ca38c90838491eff19fcb8acd2909d7f34af3bcad10f6748010f73864719237b"
+    }
+  ],
+  "runs": {
+    "provider": {
+      "command": "node app/tests/map-terrain-imagery.browser.mjs",
+      "exit_code": 0,
+      "stdout": "Official tile observations {\"tile\":{\"x\":8584,\"y\":5562,\"z\":14},\"first\":{\"width\":512,\"height\":512,\"colors\":4410,\"visible\":262144,\"hash\":\"be5aba096982625f67c1fa19757bd640fe1c7c2556834e4772c643091a61f1a3\"},\"second\":{\"width\":512,\"height\":512,\"colors\":7285,\"visible\":262144,\"hash\":\"d77ef9fdc772a9f149e71fd6cb78a85ad77a32f85a1344fee39b34a2a7a71a9b\"},\"firstAfter\":{\"width\":512,\"height\":512,\"colors\":4410,\"visible\":262144,\"hash\":\"be5aba096982625f67c1fa19757bd640fe1c7c2556834e4772c643091a61f1a3\"},\"cachedSame\":true,\"stats\":{\"loadedTiles\":2,\"failedTiles\":0,\"queuedTiles\":0,\"cacheSize\":2},\"statuses\":[\"loading\",\"loading\",\"ready\",\"loading\",\"ready\",\"ready\"],\"rendererCount\":1,\"rendererErrors\":[],\"renderedFeatures\":1553,\"sourceTypes\":[\"vector\"],\"layerTypes\":[\"fill\",\"line\",\"circle\"]}\n{\n  \"result\": \"pass\",\n  \"checks\": [\n    \"actual official PBF cartography renders outside EDFE; label-free 512px canvases retain independent pixels and a bounded reusable cache\",\n    \"level-16 imagery overzooms the declared native source ceiling of 15\",\n    \"34 controlled tile jobs evict old canvases at the 32-image cap while retaining one renderer\",\n    \"serial work queue stays at 48, dropped/view-cancelled requests use Cesium cancellation, and cancellation creates no extra WebGL contexts\",\n    \"network errors produce transparent fallback and degraded status instead of a false ready tile\",\n    \"disposal cancels active/queued work, removes the renderer and releases cache references\",\n    \"AbortSignal cancels active and queued jobs and removes the hidden renderer\",\n    \"style tampering is rejected before creating a renderer and imported style cannot fetch fonts or external resources\"\n  ],\n  \"observations\": {\n    \"real\": {\n      \"tile\": {\n        \"x\": 8584,\n        \"y\": 5562,\n        \"z\": 14\n      },\n      \"first\": {\n        \"width\": 512,\n        \"height\": 512,\n        \"colors\": 4410,\n        \"visible\": 262144,\n        \"hash\": \"be5aba096982625f67c1fa19757bd640fe1c7c2556834e4772c643091a61f1a3\"\n      },\n      \"second\": {\n        \"width\": 512,\n        \"height\": 512,\n        \"colors\": 7285,\n        \"visible\": 262144,\n        \"hash\": \"d77ef9fdc772a9f149e71fd6cb78a85ad77a32f85a1344fee39b34a2a7a71a9b\"\n      },\n      \"firstAfter\": {\n        \"width\": 512,\n        \"height\": 512,\n        \"colors\": 4410,\n        \"visible\": 262144,\n        \"hash\": \"be5aba096982625f67c1fa19757bd640fe1c7c2556834e4772c643091a61f1a3\"\n      },\n      \"cachedSame\": true,\n      \"stats\": {\n        \"loadedTiles\": 2,\n        \"failedTiles\": 0,\n        \"queuedTiles\": 0,\n        \"cacheSize\": 2\n      },\n      \"statuses\": [\n        \"loading\",\n        \"loading\",\n        \"ready\",\n        \"loading\",\n        \"ready\",\n        \"ready\"\n      ],\n      \"rendererCount\": 1,\n      \"rendererErrors\": [],\n      \"renderedFeatures\": 1553,\n      \"sourceTypes\": [\n        \"vector\"\n      ],\n      \"layerTypes\": [\n        \"fill\",\n        \"line\",\n        \"circle\"\n      ]\n    },\n    \"overzoom\": {\n      \"tile\": {\n        \"x\": 34339,\n        \"y\": 22251,\n        \"z\": 16\n      },\n      \"image\": {\n        \"width\": 512,\n        \"height\": 512,\n        \"colors\": 2225,\n        \"visible\": 262144,\n        \"hash\": \"79e3c9093b90f3f4529b7d5284f1104f5ebcdf28439cf5d3573b330e2bf7d4b4\"\n      },\n      \"stats\": {\n        \"loadedTiles\": 3,\n        \"failedTiles\": 0,\n        \"queuedTiles\": 0,\n        \"cacheSize\": 3\n      }\n    },\n    \"cache\": {\n      \"stats\": {\n        \"loadedTiles\": 37,\n        \"failedTiles\": 0,\n        \"queuedTiles\": 0,\n        \"cacheSize\": 32\n      },\n      \"rendererCount\": 1\n    },\n    \"queue\": {\n      \"queued\": 48,\n      \"cancelled\": 48,\n      \"rejected\": 70,\n      \"cancelledStates\": 70,\n      \"stats\": {\n        \"loadedTiles\": 37,\n        \"failedTiles\": 0,\n        \"queuedTiles\": 0,\n        \"cacheSize\": 32\n      },\n      \"rendererCount\": 1\n    },\n    \"failure\": {\n      \"image\": {\n        \"width\": 512,\n        \"height\": 512,\n        \"colors\": 1,\n        \"visible\": 0,\n        \"hash\": \"30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58\"\n      },\n      \"stats\": {\n        \"loadedTiles\": 37,\n        \"failedTiles\": 1,\n        \"queuedTiles\": 0,\n        \"cacheSize\": 32\n      },\n      \"status\": \"degraded\"\n    },\n    \"cleanup\": {\n      \"stats\": {\n        \"loadedTiles\": 37,\n        \"failedTiles\": 1,\n        \"queuedTiles\": 0,\n        \"cacheSize\": 0\n      },\n      \"rendererCount\": 0,\n      \"afterDispose\": true\n    },\n    \"signal\": {\n      \"rejected\": 2,\n      \"stats\": {\n        \"loadedTiles\": 0,\n        \"failedTiles\": 0,\n        \"queuedTiles\": 0,\n        \"cacheSize\": 0\n      },\n      \"renderers\": 0\n    }\n  },\n  \"browser\": \"156.0.8078.80\"\n}\n",
+      "result": {
+        "result": "pass",
+        "checks": [
+          "actual official PBF cartography renders outside EDFE; label-free 512px canvases retain independent pixels and a bounded reusable cache",
+          "level-16 imagery overzooms the declared native source ceiling of 15",
+          "34 controlled tile jobs evict old canvases at the 32-image cap while retaining one renderer",
+          "serial work queue stays at 48, dropped/view-cancelled requests use Cesium cancellation, and cancellation creates no extra WebGL contexts",
+          "network errors produce transparent fallback and degraded status instead of a false ready tile",
+          "disposal cancels active/queued work, removes the renderer and releases cache references",
+          "AbortSignal cancels active and queued jobs and removes the hidden renderer",
+          "style tampering is rejected before creating a renderer and imported style cannot fetch fonts or external resources"
+        ],
+        "observations": {
+          "real": {
+            "tile": {
+              "x": 8584,
+              "y": 5562,
+              "z": 14
+            },
+            "first": {
+              "width": 512,
+              "height": 512,
+              "colors": 4410,
+              "visible": 262144,
+              "hash": "be5aba096982625f67c1fa19757bd640fe1c7c2556834e4772c643091a61f1a3"
+            },
+            "second": {
+              "width": 512,
+              "height": 512,
+              "colors": 7285,
+              "visible": 262144,
+              "hash": "d77ef9fdc772a9f149e71fd6cb78a85ad77a32f85a1344fee39b34a2a7a71a9b"
+            },
+            "firstAfter": {
+              "width": 512,
+              "height": 512,
+              "colors": 4410,
+              "visible": 262144,
+              "hash": "be5aba096982625f67c1fa19757bd640fe1c7c2556834e4772c643091a61f1a3"
+            },
+            "cachedSame": true,
+            "stats": {
+              "loadedTiles": 2,
+              "failedTiles": 0,
+              "queuedTiles": 0,
+              "cacheSize": 2
+            },
+            "statuses": [
+              "loading",
+              "loading",
+              "ready",
+              "loading",
+              "ready",
+              "ready"
+            ],
+            "rendererCount": 1,
+            "rendererErrors": [],
+            "renderedFeatures": 1553,
+            "sourceTypes": [
+              "vector"
+            ],
+            "layerTypes": [
+              "fill",
+              "line",
+              "circle"
+            ]
+          },
+          "overzoom": {
+            "tile": {
+              "x": 34339,
+              "y": 22251,
+              "z": 16
+            },
+            "image": {
+              "width": 512,
+              "height": 512,
+              "colors": 2225,
+              "visible": 262144,
+              "hash": "79e3c9093b90f3f4529b7d5284f1104f5ebcdf28439cf5d3573b330e2bf7d4b4"
+            },
+            "stats": {
+              "loadedTiles": 3,
+              "failedTiles": 0,
+              "queuedTiles": 0,
+              "cacheSize": 3
+            }
+          },
+          "cache": {
+            "stats": {
+              "loadedTiles": 37,
+              "failedTiles": 0,
+              "queuedTiles": 0,
+              "cacheSize": 32
+            },
+            "rendererCount": 1
+          },
+          "queue": {
+            "queued": 48,
+            "cancelled": 48,
+            "rejected": 70,
+            "cancelledStates": 70,
+            "stats": {
+              "loadedTiles": 37,
+              "failedTiles": 0,
+              "queuedTiles": 0,
+              "cacheSize": 32
+            },
+            "rendererCount": 1
+          },
+          "failure": {
+            "image": {
+              "width": 512,
+              "height": 512,
+              "colors": 1,
+              "visible": 0,
+              "hash": "30e14955ebf1352266dc2ff8067e68104607e750abb9d3b36582b8af909fcb58"
+            },
+            "stats": {
+              "loadedTiles": 37,
+              "failedTiles": 1,
+              "queuedTiles": 0,
+              "cacheSize": 32
+            },
+            "status": "degraded"
+          },
+          "cleanup": {
+            "stats": {
+              "loadedTiles": 37,
+              "failedTiles": 1,
+              "queuedTiles": 0,
+              "cacheSize": 0
+            },
+            "rendererCount": 0,
+            "afterDispose": true
+          },
+          "signal": {
+            "rejected": 2,
+            "stats": {
+              "loadedTiles": 0,
+              "failedTiles": 0,
+              "queuedTiles": 0,
+              "cacheSize": 0
+            },
+            "renderers": 0
+          }
+        },
+        "browser": "156.0.8078.80"
+      }
+    },
+    "scene": {
+      "command": "node app/tests/map-terrain.browser.mjs",
+      "exit_code": 0,
+      "stdout": "{\n  \"result\": \"pass\",\n  \"browser\": \"156.0.8078.80\",\n  \"position\": [\n    49.9116,\n    8.6348\n  ],\n  \"vector_responses\": 214,\n  \"shown\": {\n    \"pointerMode\": \"off\",\n    \"imagery\": \"ready\",\n    \"airportScenery\": \"ready\",\n    \"terrainStreamed\": \"true\",\n    \"terrainCached\": \"9\",\n    \"terrain\": \"public-grid\",\n    \"terrainId\": \"hessen-edfe-taunus-dgm32-gcg2016v2023-v1\",\n    \"terrainHeightEllipsoidM\": \"168.28315517319268\",\n    \"terrainRelief\": \"dem-derived\",\n    \"imageryRegional\": \"outside-coverage\",\n    \"imageryRegionalLevel\": \"\",\n    \"imageryRegionalLoadedLevel\": \"\",\n    \"imageryRegionalLoaded\": \"10\",\n    \"imageryRegionalCache\": \"10\",\n    \"imageryRegionalInflight\": \"0\",\n    \"imageryRegionalFailed\": \"0\",\n    \"mapTerrain\": \"ready\",\n    \"mapTerrainLoaded\": \"103\",\n    \"mapTerrainQueued\": \"0\",\n    \"mapTerrainFailed\": \"0\",\n    \"aircraftHeightEllipsoidM\": \"547.8102022083216\",\n    \"aircraftShadow\": \"cockpit\",\n    \"shadowGroundHeightM\": \"\",\n    \"shadowEnabled\": \"false\",\n    \"fovDeg\": \"60.0\",\n    \"sceneryMode\": \"vector\",\n    \"practicePapi\": \"false\",\n    \"imageryTiles\": \"3\",\n    \"imageryDetail\": \"ready\",\n    \"imageryAirportDetail\": \"ready\",\n    \"imageryCoverage\": \"airport:8.628,49.954,8.66,49.966;detail:8.62,49.95,8.66,49.975;overview:8.4,49.8,8.9,50.1\",\n    \"liveImagery\": \"ready\",\n    \"aircraftVisual\": \"ready\"\n  },\n  \"checks\": [\n    \"live label-free official terrain outside EDFE\",\n    \"normal flight-map background retained\",\n    \"no font glyph requests\",\n    \"2D imagery choice independent\",\n    \"mode toggles preserve paused native step/digest/state and worker\",\n    \"standard/terrain/restored screenshots captured\"\n  ]\n}\n",
+      "result": {
+        "result": "pass",
+        "browser": "156.0.8078.80",
+        "position": [
+          49.9116,
+          8.6348
+        ],
+        "vector_responses": 214,
+        "shown": {
+          "pointerMode": "off",
+          "imagery": "ready",
+          "airportScenery": "ready",
+          "terrainStreamed": "true",
+          "terrainCached": "9",
+          "terrain": "public-grid",
+          "terrainId": "hessen-edfe-taunus-dgm32-gcg2016v2023-v1",
+          "terrainHeightEllipsoidM": "168.28315517319268",
+          "terrainRelief": "dem-derived",
+          "imageryRegional": "outside-coverage",
+          "imageryRegionalLevel": "",
+          "imageryRegionalLoadedLevel": "",
+          "imageryRegionalLoaded": "10",
+          "imageryRegionalCache": "10",
+          "imageryRegionalInflight": "0",
+          "imageryRegionalFailed": "0",
+          "mapTerrain": "ready",
+          "mapTerrainLoaded": "103",
+          "mapTerrainQueued": "0",
+          "mapTerrainFailed": "0",
+          "aircraftHeightEllipsoidM": "547.8102022083216",
+          "aircraftShadow": "cockpit",
+          "shadowGroundHeightM": "",
+          "shadowEnabled": "false",
+          "fovDeg": "60.0",
+          "sceneryMode": "vector",
+          "practicePapi": "false",
+          "imageryTiles": "3",
+          "imageryDetail": "ready",
+          "imageryAirportDetail": "ready",
+          "imageryCoverage": "airport:8.628,49.954,8.66,49.966;detail:8.62,49.95,8.66,49.975;overview:8.4,49.8,8.9,50.1",
+          "liveImagery": "ready",
+          "aircraftVisual": "ready"
+        },
+        "checks": [
+          "live label-free official terrain outside EDFE",
+          "normal flight-map background retained",
+          "no font glyph requests",
+          "2D imagery choice independent",
+          "mode toggles preserve paused native step/digest/state and worker",
+          "standard/terrain/restored screenshots captured"
+        ]
+      }
+    },
+    "fallback": {
+      "command": "node app/tests/map-terrain-fallback.browser.mjs",
+      "exit_code": 0,
+      "stdout": "{\n  \"result\": \"pass\",\n  \"browser\": \"156.0.8078.80\",\n  \"checks\": [\n    \"blocked vector service retains photography and normal 2D map\",\n    \"degraded status is explicit\",\n    \"failure does not advance or replace the paused native flight\"\n  ]\n}\n",
+      "result": {
+        "result": "pass",
+        "browser": "156.0.8078.80",
+        "checks": [
+          "blocked vector service retains photography and normal 2D map",
+          "degraded status is explicit",
+          "failure does not advance or replace the paused native flight"
+        ]
+      }
+    },
+    "airport": {
+      "command": "node app/tests/airport-play.browser.mjs",
+      "exit_code": 0,
+      "stdout": "{\n  \"checks\": [\n    \"EDFE26 and08 start stationary with all gear supported; full parking hold does not collide\",\n    \"COM8.33 selection loads standby, explicit swap changes active\",\n    \"Options select vector terrain/map and practice lights\",\n    \"release brake and power produces actual native ground acceleration\",\n    \"map Stop preserves Review and locks start/COM during Review\",\n    \"source-scoped runway briefing, actual ground state, runway change and recorded Review card\",\n    \"portable runway context survives save/load, rejects malformed metadata and restores live context; legacy files remain unknown\"\n  ],\n  \"browser\": \"156.0.8078.80\"\n}\n",
+      "result": {
+        "checks": [
+          "EDFE26 and08 start stationary with all gear supported; full parking hold does not collide",
+          "COM8.33 selection loads standby, explicit swap changes active",
+          "Options select vector terrain/map and practice lights",
+          "release brake and power produces actual native ground acceleration",
+          "map Stop preserves Review and locks start/COM during Review",
+          "source-scoped runway briefing, actual ground state, runway change and recorded Review card",
+          "portable runway context survives save/load, rejects malformed metadata and restores live context; legacy files remain unknown"
+        ],
+        "browser": "156.0.8078.80"
+      }
+    },
+    "unit": {
+      "command": "npm --prefix app run test:scenery",
+      "exit_code": 0,
+      "passed": 12,
+      "stdout": "\n> gefly-flight-prototype@0.1.0 test:scenery\n> node --test scenery-server.test.ts vector-map-server.test.ts\n\n\u2714 fixed paths, region bounds, cache, HEAD and upstream validation (16.560667ms)\n\u2714 R-WORLD-6 public map covers southern Germany while imagery stays regional (1.147666ms)\n\u2714 imagery accepts Cesium level 7 parent tiles (159.617167ms)\n\u2714 imagery composition reports successful sources and partial upstream failure (161.441167ms)\n\u2714 limits upstream concurrency and evicts within a small byte budget (36.248042ms)\n\u2714 preserves transparent photographic gaps and rejects oversized upstream bytes (463.877125ms)\n\u2714 fixed BKG vector routes cover Germany, enforce canonical XYZ and forward no query or credential (16.333334ms)\n\u2714 sprite endpoints accept bounded JSON/PNG including fixed @2x paths and HEAD uses cached bytes (1.124541ms)\n\u2714 upstream failures, invalid MIME, streaming limits and malformed sprite data remain unavailable (1.832917ms)\n\u2714 four upstream jobs, bounded pending queue, duplicate sharing and byte LRU prevent unbounded work (3.426875ms)\n\u2714 a disconnected response does not cancel the same finite tile needed by another waiter (0.174208ms)\n\u2714 derived terrain style is pinned, label/extrusion free and restricted to fixed same-origin data (3.975584ms)\n\u2139 tests 12\n\u2139 suites 0\n\u2139 pass 12\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 1272.384459\n"
+    }
+  },
+  "limitations": [
+    "basemap.de cartography preserves regional map features but is not pixel-identical to TopPlusOpen; the existing raster has baked-in labels.",
+    "Germany vector data and sprites are live upstream editions; the local style is hash-pinned but no complete frozen geography snapshot is claimed.",
+    "The scene comparison uses actual public cartography/photography near the user point, after a short flight to dismiss the start card and then with a fixed paused pose.",
+    "The failure case deliberately uses fixture live WMS pixels, actual bundled starter photographs and a blocked vector service. It tests fallback, not real-service recovery or full world coverage.",
+    "Native physical heights, navigation and flight coefficients are unchanged. Embedded aircraft/runtime closure is not redistributed.",
+    "No global scenery, surveyed runway/obstacle, aircraft-performance, regulatory or training acceptance is claimed; peer remains pending."
+  ]
+}

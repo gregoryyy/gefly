@@ -155,10 +155,15 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   let airportLayer: ImageryLayer | null = null;
   let localRegionalLayer: ImageryLayer | null = null;
   let livePhotoLayer: ImageryLayer | null = null;
+  let mapTerrain: Awaited<ReturnType<typeof import('./map-terrain-imagery').createMapTerrainImagery>> | null = null;
+  let mapTerrainLayer: ImageryLayer | null = null;
+  let mapTerrainLoad: Promise<void> | null = null;
+  let mapTerrainStatus: 'loading' | 'ready' | 'degraded' = 'loading';
   function orderPhotographs() {
     if(livePhotoLayer)scene.imageryLayers.raiseToTop(livePhotoLayer);
     if(localRegionalLayer)scene.imageryLayers.raiseToTop(localRegionalLayer);
     if(airportLayer)scene.imageryLayers.raiseToTop(airportLayer);
+    if(mapTerrainLayer)scene.imageryLayers.raiseToTop(mapTerrainLayer);
   }
   let loadSlow = false;
   const creditObserver = new ResizeObserver(() => {
@@ -201,13 +206,22 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     container.dataset.imageryRegionalFailed = String(regionalStats?.failedTiles ?? 0);
     const liveImagery = !liveLayers ? undefined : container.dataset.liveImagery === 'degraded' ? 'degraded'
       : scene.globe.tilesLoaded ? 'ready' : 'loading';
-    const { outcome, text } = imageryStatusText({
+    const { outcome, text: photographText } = imageryStatusText({
       settled: imagerySettled, slow: loadSlow, detailLoaded, overviewLoaded, airportLoaded,
       insideDetail: inside(DETAIL, state), insideOverview: inside(OVERVIEW, state), insideAirport: inside(AIRPORT_DETAIL, state),
       regional: !regionalSettled ? 'loading' : regionalImagery ? 'ready' : 'failed', regionalLevel,
       regionalFailedTiles: regionalStats?.failedTiles ?? 0, tilesLoaded: scene.globe.tilesLoaded,
       liveImagery,
     });
+    const text = vectorScenery && state.terrain_profile === 1
+      ? mapTerrainStatus === 'ready' ? '' : mapTerrainStatus === 'degraded'
+        ? 'Map terrain unavailable in parts of this view; photography retained underneath.'
+        : 'Loading map terrain without labels; photography retained underneath.'
+      : photographText;
+    container.dataset.mapTerrain = vectorScenery && state.terrain_profile === 1 ? mapTerrainStatus : vectorScenery ? 'flat-study' : 'off';
+    container.dataset.mapTerrainLoaded = String(mapTerrain?.getStats().loadedTiles ?? 0);
+    container.dataset.mapTerrainQueued = String(mapTerrain?.getStats().queuedTiles ?? 0);
+    container.dataset.mapTerrainFailed = String(mapTerrain?.getStats().failedTiles ?? 0);
     if (liveImagery === 'ready') container.dataset.liveImagery = 'ready';
     if (status.textContent !== text) status.textContent = text;
     status.hidden = !text;
@@ -216,6 +230,25 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   // Load the same photograph for every view. A cached source snapshot makes
   // the first practice scene independent of WMS latency and adaptive tile LOD.
   const photographAbort = new AbortController();
+  function ensureMapTerrain(): void {
+    if (mapTerrainLoad || disposed) return;
+    mapTerrainStatus = 'loading';
+    mapTerrainLoad = import('./map-terrain-imagery').then(module => module.createMapTerrainImagery({
+      signal: photographAbort.signal,
+      onStatus(value) {
+        if (disposed) return;
+        mapTerrainStatus = value; imageryStatus(lastState); scene.requestRender();
+      },
+    })).then(handle => {
+      if (disposed) { handle.dispose(); return; }
+      mapTerrain = handle;
+      mapTerrainLayer = new ImageryLayer(handle.provider);
+      mapTerrainLayer.show = vectorScenery && lastState.terrain_profile === 1;
+      scene.imageryLayers.add(mapTerrainLayer); orderPhotographs(); scene.requestRender();
+    }).catch(() => {
+      if (!disposed) { mapTerrainStatus = 'degraded'; imageryStatus(lastState); }
+    });
+  }
   async function loadPhotograph(path: string, rectangle: Rectangle): Promise<SingleTileImageryProvider> {
     const response = await fetch(path, {
       signal: AbortSignal.any([photographAbort.signal, AbortSignal.timeout(10000)]),
@@ -319,12 +352,13 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     }
     const useTerrain = state.terrain_profile === 1;
     airportScenery.setVisible(useTerrain);
-    airportScenery.setVectorVisible(vectorScenery && useTerrain);
+    airportScenery.setVectorVisible(false);
+    if (vectorScenery && useTerrain) ensureMapTerrain();
     airportScenery.update(state);
     container.dataset.airportScenery = airportScenery.status;
     for (let i = 0; i < scene.imageryLayers.length; i++) {
       const layer = scene.imageryLayers.get(i);
-      layer.show = layer === reliefLayer ? useTerrain : !vectorScenery || i === 0;
+      layer.show = layer === reliefLayer ? useTerrain : layer === mapTerrainLayer ? vectorScenery && useTerrain : true;
     }
     const terrainSample = useTerrain ? atlasSample(state.lat_rad, state.lon_rad) : null;
     if (useTerrain && (!terrainSample || !Number.isFinite(state.ground_height_ellipsoid_m))) {
@@ -441,7 +475,14 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   observer.observe(container);
   update(initialVisual, 'cockpit');
   const flightScene: FlightScene = {
-    setSceneryMode(vector) { vectorScenery = vector; airportScenery.setVectorVisible(vector); container.dataset.sceneryMode = vector ? 'vector' : 'imagery'; },
+    setSceneryMode(vector) {
+      vectorScenery = vector; airportScenery.setVectorVisible(false);
+      if (vector && !mapTerrain && mapTerrainStatus === 'degraded') mapTerrainLoad = null;
+      if (vector && lastState.terrain_profile === 1) ensureMapTerrain();
+      if (!vector) mapTerrain?.cancelQueued();
+      if (mapTerrainLayer) mapTerrainLayer.show = vector && lastState.terrain_profile === 1;
+      container.dataset.sceneryMode = vector ? 'vector' : 'imagery'; imageryStatus(lastState); scene.requestRender();
+    },
     setPracticePapi(enabled) { airportScenery.setPracticePapi(enabled); container.dataset.practicePapi = String(enabled); },
     update,
     async prepareRecording(states) {
@@ -483,6 +524,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       photographAbort.abort();
       removeCameraListener?.(); removeCameraListener = null;
       regionalImagery?.dispose();
+      mapTerrain?.dispose();
       observer.disconnect();
       creditObserver.disconnect();
       clearTimeout(loadTimeout);

@@ -81,7 +81,7 @@ changed confirmation endpoints become stale. There is no ledger-edit command.
 Reads use fixed Git argument arrays with inherited `GIT_*` variables removed,
 no lazy fetch, no prompts and a ten-second timeout per Git read. Limits are 2 MiB
 per text file, 24 MiB per Git output, 12,000 paths, fewer than 5,000 commits,
-48 JSON levels/12,000 fields per generic file, 60,000 nodes and 200,000 facts.
+48 JSON levels/20,000 fields per generic file, 60,000 nodes and 200,000 facts.
 Impact closure reports truncation at 5,000 nodes. Paths reject absolute/traversal
 forms; working-tree symlinks must remain inside the checkout, and committed
 symlinks are unsupported. Binary/non-UTF-8 selected inputs fail explicitly.
