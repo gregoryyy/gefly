@@ -24,3 +24,5 @@ export function collisionRecord(mask: number, step: number, t_s: number,
   previousGround: { ground_down_mps: number; ground_forward_mps: number; ground_side_mps: number }): typeof EMPTY_COLLISION | null;
 export function collisionStateFields(enabled: boolean, available: boolean, latched: typeof EMPTY_COLLISION | null | undefined): Partial<typeof EMPTY_COLLISION>;
 export function contactOutcome(contact: { available: boolean; mask: number } | null | undefined, record: typeof EMPTY_COLLISION | null): 'clear' | 'latch' | 'fail' | 'unavailable';
+
+export function unacknowledgedContact<T extends { available: boolean; mask: number }>(contact: T, acknowledgedMask: number): { contact: Omit<T, 'mask'> & { mask: number }; acknowledgedMask: number };

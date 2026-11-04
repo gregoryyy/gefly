@@ -3,8 +3,9 @@ const commands = [
   ['#toggle-flight-data', 'D'], ['#toggle-stall-awareness', 'A'], ['#toggle-controls', 'F'],
   ['#save-recording', 'S'], ['#load-recording', 'L'], ['#handbook-open', 'H'], ['#loading-open', 'W'], ['#controls-settings', 'O'], ['#reset', 'R'],
   ['#engine-open', 'G'], ['#radio-nav-open', 'B'], ['#navigation-open', 'N'], ['#autopilot-open', 'P'],
-  ['[data-landing="normal"]', '1'], ['[data-landing="hard"]', '2'],
-  ['[data-landing="side"]', '3'], ['[data-landing="banked"]', '4'],
+  ['#practice-takeoff', '1'], ['#practice-landing', '2'], ['#practice-circuit', '3'],
+  ['[data-landing="normal"]', '4'], ['[data-landing="hard"]', '5'],
+  ['[data-landing="side"]', '9'], ['[data-landing="banked"]', '0'],
   ['#airborne-practice', 'E'], ['#taunus-practice', 'T'], ['#eddf-ils-practice', 'I'],
   ['[data-region="darmstadt"]', '6'], ['[data-region="odenwald"]', '7'], ['[data-region="spessart"]', '8'],
 ] as const;

@@ -503,3 +503,32 @@ test('unsupported or duplicate continuation never allocates an extra worker or r
   const pending=f.session.restoreFromReview(continuationFrame());await assert.rejects(f.session.restoreFromReview(continuationFrame()),/already/);assert.equal(MockWorker.instances.length,2);
   const rejected=assert.rejects(pending,/native failure/);MockWorker.instances[1].emit({type:'error',message:'native failure'});await rejected;
 });
+
+
+test('collision continuation preserves the native worker/frame and unlocks only an exact explicit acknowledgement', async t => {
+  const { session, states, errors, statuses } = fixture(t); session.start();
+  const worker = MockWorker.instances[0]; worker.emit(ready);
+  const impact = { ...state, collision_mask: 16, collision_step: state.step, collision_t_s: state.t_s,
+    collision_down_mps: 4, collision_groundspeed_mps: 28 };
+  worker.emit(impact); const pending = session.continueAfterCollision();
+  assert.deepEqual(worker.messages.at(-1), { type: 'collision-continue', step: state.step });
+  const clear = { ...impact, collision_mask: 0, collision_step: 0, collision_t_s: 0, collision_down_mps: 0, collision_groundspeed_mps: 0 };
+  worker.emit({ type: 'collision-continued', collision_step: state.step, state: clear });
+  const continued = await pending; assert.equal(continued.step, impact.step); assert.equal(continued.alt_msl_m, impact.alt_msl_m);
+  assert.equal(MockWorker.instances.length, 1); assert.equal(worker.terminated, false); assert.equal(statuses.at(-1), 'Paused');
+  assert.equal((states[0] as FlightState).collision_mask, 16, 'the prior impact snapshot remains unchanged');
+  session.start(); assert.equal(worker.messages.at(-1)?.type, 'run');
+  worker.emit({ ...clear, step: state.step + 1, t_s: state.t_s + 1/120 });
+  assert.deepEqual(errors, []); assert.equal((states.at(-1) as FlightState).collision_mask, 0);
+});
+
+test('collision continuation rejects worker refusal and cancels on reset without unlocking a later flight', async t => {
+  const { session, errors } = fixture(t); session.start(); const worker = MockWorker.instances[0]; worker.emit(ready);
+  worker.emit({ ...state, collision_mask: 16, collision_step: state.step, collision_t_s: state.t_s,
+    collision_down_mps: 4, collision_groundspeed_mps: 28 });
+  let pending = session.continueAfterCollision(); worker.emit({ type: 'collision-continue-rejected', message: 'Contact unavailable' });
+  await assert.rejects(pending, /Contact unavailable/); const count = worker.messages.length; session.start(); assert.equal(worker.messages.length, count);
+  pending = session.continueAfterCollision(); const rejection = assert.rejects(pending, /cancelled/); session.reset(); await rejection;
+  worker.emit({ type: 'collision-continued', collision_step: state.step, state }); assert.deepEqual(errors, []);
+  assert.equal(MockWorker.instances.length, 2);
+});

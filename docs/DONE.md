@@ -3,6 +3,45 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 17:03 — Continue collisions and prioritize ordinary flying
+
+TODO: 2.0.95–2.0.97; R-SIM-8/R-REVIEW-1/R-PLAY-1/R-UX-2/R-INPUT-1.
+Agent: Codex panel/menu integration; glide_model collision worker/session/tests;
+glide_cases Options layout and existing browser updates; glide_housekeeping
+independent source quality and actual flight-launch validation.
+
+**Implementation notes**
+
+Collision ×/Continue acknowledges the current contact without resetting native
+pose, time, fuel or history. Same-part contact is ignored only until separation;
+new/later contacts remain active. 49 focused cases and the existing actual Chrome
+collision case pass: impact303 is retained in JSON, acknowledgement preserves
+its native frame and the same worker advances to304 without immediate re-latch.
+
+Flight begins with runway choice, Takeoff, Landing and Fly a circuit. Research
+fixtures are secondary; normal practice clears stale research presets. Actual
+Takeoff08/26, Landing08/26 initial geometry, landing Restart, Circuit08/26 fitted
+guides and research-to-Landing transition pass. Landing is an approximate3NM,
+90kt clean initial condition at threshold terrain plus geometric3-degree height;
+power/configuration remain manual, with no published-approach or grading claim.
+
+Options has compact Controls/Scenery/Sound and collapsed Advanced groups.
+Desktop/mobile screenshots inspected; actual Save, Escape/outside rollback,
+advanced-control access and sound enable/mute rollback pass. TypeScript and
+shared CI pass (nine optional Python study checks remain skipped). Independent
+source quality/scoped validation pass; cross-provider peer pending.
+
+**Deviations**
+
+Collision acknowledgement does not repair or teleport the aircraft. Recorded
+collision × only dismisses information; it never resumes the live simulation.
+No new native build, physics coefficients, data sources or dependencies.
+
+**Insights**
+
+Ordinary flight actions must precede research fixtures. Explicit preset clearing
+prevents a selected contact study from silently changing the next practice start.
+
 ## 2026-11-04 16:27 — Repair imagery loading and manual nosewheel steering
 
 TODO: 2.0.91–2.0.94; R-WORLD-5/R-WORLD-9/R-AIRPORT-1/R-INPUT-1/R-PLAY-1/R-AP-1.

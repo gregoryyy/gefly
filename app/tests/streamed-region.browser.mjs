@@ -65,7 +65,7 @@ try {
   checks.push('initial worker downloads nine regional tiles on demand');
   for(const [id,lat,lon] of [['darmstadt',49.87,8.65],['odenwald',49.65,8.85],['spessart',50,9.5],['westerwald',50.45,7.8],['marburg',50.8,8.77],['kassel',51.3,9.4]]){
     const before=fetched.length,sceneryBefore=fixtureRequests,worker=await page.evaluate(()=>window.regionalWorkers.length);
-    await page.locator('#flight-menu > summary').click();await page.locator(`[data-region="${id}"]`).click();await waitReady(worker);
+    await page.locator('#flight-menu > summary').click();await page.locator('#flight-research').evaluate(element => { element.open = true; }); await page.locator(`[data-region="${id}"]`).click();await waitReady(worker);
     const s=await latest();assert(Math.abs(s.lat_rad-lat*Math.PI/180)<1e-8&&Math.abs(s.lon_rad-lon*Math.PI/180)<1e-8);
     assert(fetched.length-before<=9&&fetched.length-before>0);
     const resident=await page.evaluate(worker=>{const set=new Set();let max=0;for(const m of window.regionalMessages.filter(m=>m.worker===worker)){if(m.type==='terrain-tile')set.add(m.id);if(m.type==='terrain-remove')set.delete(m.id);max=Math.max(max,set.size);}return max;},worker);assert(resident<=9);

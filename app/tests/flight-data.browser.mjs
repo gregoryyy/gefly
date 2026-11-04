@@ -117,7 +117,9 @@ try {
   checks.push('modeless panel keeps live flight running, contains flight shortcuts and closes with Escape/focus restore');
 
   const previousWorker = await page.evaluate(() => window.__dataWorkerId);
-  await page.locator('#flight-menu > summary').click(); await page.locator('[data-landing="hard"]').click();
+  await page.locator('#flight-menu > summary').click();
+  if (!await page.locator('#flight-research').evaluate(element => element.open)) await page.locator('#flight-research > summary').click();
+  await page.locator('[data-landing="hard"]').click();
   await page.waitForFunction(previous => window.__dataStates.at(-1)?.__worker_id > previous, previousWorker); await waitReady();
   await page.waitForFunction(() => { const s = window.__dataStates.at(-1); return s.gear_nose_wow + s.gear_left_wow + s.gear_right_wow > 0; });
   const contact = await page.evaluate(() => window.__dataStates.findLast(s => s.__worker_id === window.__dataWorkerId && s.gear_nose_wow + s.gear_left_wow + s.gear_right_wow > 0));

@@ -220,7 +220,8 @@ try {
   const optionsDialog=page.locator('#control-settings'), optionInputs=['#sensitivity-roll','#audio-volume','#roll-offset'];
   const optionValues=()=>Promise.all(optionInputs.map(selector=>page.locator(selector).inputValue()));
   const openingValues=await optionValues();
-  await optionsDialog.locator('.control-options > summary').click();
+  assert.deepEqual(await optionsDialog.locator('fieldset > legend').allTextContents(), ['Controls', 'Scenery', 'Sound']);
+  await optionsDialog.locator('#settings-advanced > summary').click();
   for(const selector of optionInputs){await page.locator(selector).focus();await page.keyboard.press('End');}
   const dialogBox=await optionsDialog.boundingBox();await page.mouse.click(dialogBox.x+4,dialogBox.y+4);
   assert(await optionsDialog.isVisible(),'dialog padding does not dismiss Options');

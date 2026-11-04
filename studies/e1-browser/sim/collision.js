@@ -109,3 +109,13 @@ export function contactOutcome(contact, record) {
   }
   return contact && contact.available === true ? 'clear' : 'unavailable';
 }
+
+
+/** A continued contact is acknowledged only until that part separates. New
+ * contact bits remain active; unavailable geometry cannot prove separation. */
+export function unacknowledgedContact(contact, acknowledgedMask) {
+  if (!contact || typeof contact.available !== 'boolean' || !Number.isInteger(contact.mask) || contact.mask < 0 || contact.mask > 127
+    || !Number.isInteger(acknowledgedMask) || acknowledgedMask < 0 || acknowledgedMask > 127) throw new RangeError('Invalid acknowledged contact mask');
+  const retained = contact.available ? acknowledgedMask & contact.mask : acknowledgedMask;
+  return { contact: { ...contact, mask: contact.mask & ~retained }, acknowledgedMask: retained };
+}

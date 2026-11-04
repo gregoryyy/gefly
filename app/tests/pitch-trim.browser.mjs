@@ -212,7 +212,7 @@ try {
   await page.locator('#control-settings').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#status').textContent(), 'Paused');
   assert.equal(await page.locator('#control-settings .control-options').count(), 1);
-  await page.locator('#control-settings .control-options summary').click();
+  await page.locator('#settings-advanced > summary').click();
   assert(await page.locator('#roll-offset').isVisible());
   await page.locator('#limits').click(); assert(await page.locator('#limitations').isVisible());
   await page.locator('#settings-close').click();

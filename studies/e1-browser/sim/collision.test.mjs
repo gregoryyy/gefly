@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { VISUAL_AIRFRAME, EMPTY_COLLISION, groundCollisionContact, collisionRecord, collisionStateFields, contactOutcome } from './collision.js';
+import { VISUAL_AIRFRAME, EMPTY_COLLISION, groundCollisionContact, collisionRecord, collisionStateFields, contactOutcome, unacknowledgedContact } from './collision.js';
 
 test('ordinary wheel-supported clearance is not a crash and shared visual dimensions are immutable', () => {
   assert.equal(groundCollisionContact(1.4, 0, 0, 0).mask, 0);
@@ -136,4 +136,20 @@ test('collision grace requires both strict pre-step speed limits and preserves r
     }
     assert.equal(contactOutcome(contact, null), 'fail', 'missing pre-step motion cannot become a safe zero');
   }
+});
+
+
+test('continuing acknowledges only persistent parts, re-arms separated parts and never hides new contacts', () => {
+  const sample = mask => Object.freeze({ available: true, mask, clearance_m: -.1 });
+  let next = unacknowledgedContact(sample(24), 24);
+  assert.equal(next.contact.mask, 0); assert.equal(next.acknowledgedMask, 24);
+  next = unacknowledgedContact(sample(16), next.acknowledgedMask);
+  assert.equal(next.contact.mask, 0); assert.equal(next.acknowledgedMask, 16);
+  next = unacknowledgedContact(sample(24), next.acknowledgedMask);
+  assert.equal(next.contact.mask, 8, 'body re-contact stops even while the acknowledged prop still touches');
+  assert.equal(unacknowledgedContact(sample(48), 16).contact.mask, 32, 'a newly hit fin remains active');
+  assert.equal(unacknowledgedContact(sample(0), 16).acknowledgedMask, 0);
+  assert.equal(unacknowledgedContact(sample(16), 0).contact.mask, 16, 'prop re-contact re-arms');
+  assert.equal(unacknowledgedContact({ available: false, mask: 0 }, 16).acknowledgedMask, 16, 'unknown geometry cannot establish separation');
+  assert.throws(() => unacknowledgedContact(sample(0), 128), RangeError);
 });

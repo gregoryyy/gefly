@@ -47,7 +47,9 @@ try {
   await page.locator('#view-menu > summary').click(); await page.locator('#chase').click();
   await page.waitForFunction(() => document.querySelector('#scene').dataset.aircraftShadow === 'too-high');
   assert.equal(await page.locator('#scene').getAttribute('data-shadow-enabled'), 'false', 'high airborne state fades out ground shadow');
-  await page.locator('#flight-menu > summary').click(); await page.locator('[data-landing=normal]').click();
+  await page.locator('#flight-menu > summary').click();
+  if (!await page.locator('#flight-research').evaluate(element => element.open)) await page.locator('#flight-research > summary').click();
+  await page.locator('[data-landing=normal]').click();
   await page.waitForFunction(() => !document.querySelector('#start').disabled && document.querySelector('#scene').dataset.shadowEnabled === 'true');
   await page.waitForFunction(() => document.querySelector('#scene').dataset.imagery === 'ready' && document.querySelector('#scene').dataset.aircraftVisual === 'ready');
   await page.waitForTimeout(1500);

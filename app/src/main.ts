@@ -6,7 +6,7 @@ import { createOverlayPresentation } from './overlay-presentation';
 import { installMenuShortcuts } from './menu-shortcuts';
 import { installFullscreenControls } from './fullscreen';
 import { createFlightAssists } from './flight-assists';
-import type { TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
+import { loadTerrainPackage, sampleTerrain, type TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
 import './style.css';
 import './practice-map.css';
 import { createCockpitLayout } from './cockpit-layout';
@@ -45,7 +45,7 @@ import { createControlSettingsPanel } from './control-settings-panel';
 import { reviewKeyAction, snapReviewTime } from './review-transport';
 import { checkNavdata, eddfPracticeReady, workerNavdata, type NavdataCheck, type NavdataSide } from './navdata-identity';
 import { pilotAxes, recordedControlView, recordedHeldKeys } from './pilot-controls';
-import type { Controls, FlightState, FlightScene, LandingPreset, AirborneSite } from './types';
+import type { Controls, FlightState, FlightScene, LandingPreset, AirborneSite, FlightLocation } from './types';
 import type { PracticeMap } from './practice-map';
 import { practiceMapUpdateDue } from './practice-map-data';
 import { LANDMARK_LEVEL_NAMES, type LandmarkLevel } from './landmark-data';
@@ -61,7 +61,17 @@ root.innerHTML = `
     <details id="view-menu" class="top-menu"><summary>View</summary><nav class="menu-content view-controls" aria-label="Flight views"><button id="cockpit" class="selected" aria-pressed="true">Cockpit</button><button id="chase" aria-pressed="false">Chase <kbd>V</kbd></button><button id="toggle-fullscreen" type="button" aria-keyshortcuts="F" aria-pressed="false"><span data-fullscreen-label>Full screen</span> <kbd>F</kbd></button><button id="toggle-map-terrain" type="button" aria-pressed="false">Terrain: photos</button><button id="toggle-map" aria-pressed="false" aria-controls="practice-map-panel">Flight map <kbd>M</kbd></button><button id="cycle-landmarks" type="button" aria-keyshortcuts="." title=". · Cycle landmark labels">Landmarks: Off <kbd>.</kbd></button><button id="toggle-flight-data" aria-pressed="false" aria-controls="flight-data-panel">Flight data</button><button id="toggle-stall-awareness" aria-pressed="false" aria-controls="stall-awareness-panel">Stall awareness</button><button id="toggle-controls" aria-pressed="true" aria-controls="flight-controls-panel">Flight controls</button></nav></details>
     <span id="review-button-slot"></span>
     <button id="controls-settings" class="settings-trigger" aria-haspopup="dialog">Options</button>
-    <details id="flight-menu" class="top-menu"><summary>Flight</summary><nav class="menu-content" aria-label="Flight session"><button id="reset">Restart flight</button><span class="menu-label">FLAT-GROUND LANDING STUDY</span><button data-landing="normal">Baseline touchdown</button><button data-landing="hard">Fast descent</button><button data-landing="side">Sideways touchdown</button><button data-landing="banked">Banked touchdown</button><span class="menu-label">PUBLIC TERRAIN FLIGHTS</span><button id="airborne-practice">Egelsbach airborne practice</button><button id="taunus-practice">Taunus ridge flight</button><button data-region="darmstadt">Darmstadt flight</button><button data-region="odenwald">Odenwald ridge flight</button><button data-region="spessart">Spessart flight</button><button data-region="westerwald">Westerwald flight</button><button data-region="marburg">Marburg / Lahn flight</button><button data-region="kassel">Kassel flight</button><button id="eddf-ils-practice" disabled>EDDF 25C ILS practice · historical</button></nav></details>
+    <details id="flight-menu" class="top-menu"><summary>Flight</summary><nav class="menu-content" aria-label="Flight session">
+      <label class="practice-runway-choice">Egelsbach runway <select id="practice-runway" aria-label="Practice runway"><option value="26">26</option><option value="08">08</option></select></label>
+      <button id="practice-takeoff" disabled>Takeoff</button>
+      <button id="practice-landing" disabled title="Start 3 NM before the selected threshold at a geometric 3-degree height, 90 kt, flaps up. Set power and configuration manually; approximate practice geometry, not a published approach.">Landing · 3 NM final</button>
+      <button id="practice-circuit" disabled title="Start on the runway with the generated north-circuit map guide. Not a published circuit or graded exercise.">Fly a circuit</button>
+      <details id="flight-research" class="flight-research"><summary>Research & other locations</summary>
+        <span class="menu-label">REGIONAL FLIGHTS</span><button id="airborne-practice">Egelsbach airborne practice</button><button id="taunus-practice">Taunus ridge flight</button><button data-region="darmstadt">Darmstadt flight</button><button data-region="odenwald">Odenwald ridge flight</button><button data-region="spessart">Spessart flight</button><button data-region="westerwald">Westerwald flight</button><button data-region="marburg">Marburg / Lahn flight</button><button data-region="kassel">Kassel flight</button><button id="eddf-ils-practice" disabled>EDDF 25C ILS practice · historical</button>
+        <span class="menu-label">FLAT-GROUND CONTACT STUDIES</span><button data-landing="normal">Baseline touchdown</button><button data-landing="hard">Fast descent</button><button data-landing="side">Sideways touchdown</button><button data-landing="banked">Banked touchdown</button>
+      </details>
+      <span class="menu-label">FLIGHT TOOLS</span><button id="reset">Restart flight</button>
+    </nav></details>
     <button id="pause" disabled>Pause <kbd>SPACE</kbd></button>
   </header>
   <section id="notice" class="notice" role="status" aria-live="polite" hidden></section>
@@ -128,11 +138,12 @@ const landingFeedback = createLandingFeedback(el('landing-feedback'));
 const groundCollisionPanel = createGroundCollisionPanel({
   container: el('ground-collision-panel'),
   onReview: () => enterReview(),
+  onContinue: () => { void continueAfterGroundCollision(); },
   onFlightMenu() {
     if (reviewing) exitReview();
     document.querySelector<HTMLElement>('.topbar')!.hidden = false;
     closeViewMenu(); el<HTMLDetailsElement>('flight-menu').open = true;
-    el('reset').focus({ preventScroll: true });
+    el('practice-takeoff').focus({ preventScroll: true });
   },
 });
 const flightData = createFlightPathGroundPanel({ container: el('flight-data-panel'), onClose: () => setFlightDataVisible(false) });
@@ -164,6 +175,8 @@ let restoredFlightLocationActive = !!initialFlightLocation;
 let engineCommand: boolean | null = null;
 let parkingBrake = false;
 let runwayStart: RunwayStart | null = null;
+let practiceInitialLocation: FlightLocation | undefined;
+let practiceLaunchPending = false;
 let exerciseActive = false;
 const runwayPractice = createRunwayPracticeMonitor();
 let practiceReviewCache: { trace: FlightTrace; time: number; count: number; progress: PracticeProgress } | null = null;
@@ -180,6 +193,7 @@ let recordingLoadVersion = 0;
 const recordedTrace = () => loadedTrace ?? flightTrace;
 let reviewing = false, reviewPlaying = false, reviewTime_s = 0;
 let continuingReplay = false;
+let continuingCollision = false;
 let continuedAxes: Pick<Controls, 'elevator' | 'aileron' | 'rudder' | 'brake_norm'> | null = null;
 let reviewRate = 1;
 let liveStatus = 'Loading flight…';
@@ -199,6 +213,15 @@ const editing = (target: EventTarget | null) => target instanceof HTMLElement &&
 const notice = (message: string) => { el('notice').textContent = message; el('notice').hidden = !message; };
 
 function groundCollisionStopped() { return (latest?.collision_mask ?? 0) > 0; }
+async function continueAfterGroundCollision(): Promise<void> {
+  if (continuingCollision || reviewing || !groundCollisionStopped()) return;
+  continuingCollision = true;
+  try {
+    await session.continueAfterCollision();
+    notice(''); startFlight();
+  } catch (error) { notice(`Cannot continue flight: ${error instanceof Error ? error.message : String(error)}`); }
+  finally { continuingCollision = false; }
+}
 function controlsAvailable() { return ready && !failed && !sceneFailed && !reviewing && !groundCollisionStopped(); }
 function updateSessionUI() {
   if (mapDisposed) return;
@@ -209,6 +232,8 @@ function updateSessionUI() {
   el<HTMLButtonElement>('start').disabled = unavailable || reviewing || collided;
   el<HTMLButtonElement>('pause').disabled = unavailable || reviewing || collided;
   el<HTMLButtonElement>('reset').disabled = reviewing;
+  for (const id of ['practice-takeoff', 'practice-landing', 'practice-circuit']) el<HTMLButtonElement>(id).disabled = unavailable || reviewing || practiceLaunchPending;
+  el<HTMLSelectElement>('practice-runway').disabled = reviewing || practiceLaunchPending;
   el<HTMLButtonElement>('airborne-practice').disabled = reviewing;
   el<HTMLButtonElement>('taunus-practice').disabled = reviewing;
   document.querySelectorAll<HTMLButtonElement>('[data-region]').forEach(button=>button.disabled=reviewing);
@@ -322,15 +347,16 @@ const session = createSession({
   },
 });
 
-let openingOptions = { rollOffset, volume: engineAudio.getStatus().volume };
+let openingOptions = { rollOffset, volume: engineAudio.getStatus().volume, muted: engineAudio.getStatus().muted };
 const controlSettingsPanel = createControlSettingsPanel({
   container: root, initial: controlSettings,
-  onOpen() { openingOptions = { rollOffset, volume: engineAudio.getStatus().volume }; pauseFlight(); },
+  onOpen() { openingOptions = { rollOffset, volume: engineAudio.getStatus().volume, muted: engineAudio.getStatus().muted }; pauseFlight(); },
   onClose(saved) {
     if (!saved) {
       rollOffset = openingOptions.rollOffset;
       el<HTMLInputElement>('roll-offset').value = String(rollOffset);
       engineAudio.setVolume(openingOptions.volume);
+      engineAudio.setMuted(openingOptions.muted);
       publishInput();
     }
     focusFlight();
@@ -354,16 +380,19 @@ el('toggle-map-terrain').onclick = () => {
 };
 renderTerrainMode();
 // Options belong to the top menu; preserve the existing controls and their IDs.
-const optionsDialog = el<HTMLDialogElement>('control-settings');
 el('control-settings-title').textContent = 'Options';
-optionsDialog.insertBefore(document.querySelector('.control-options')!, el('settings-close'));
+const keyboardOptions = document.querySelector('.control-options')!;
+const rollCorrection = keyboardOptions.querySelector('#roll-offset')!;
+const correctionLabel = keyboardOptions.querySelector('label[for="roll-offset"]')!;
+const correctionNote = rollCorrection.nextElementSibling!;
+el('settings-advanced-slot').append(correctionLabel, rollCorrection, correctionNote, keyboardOptions.querySelector('.roll-correction-presets')!);
+el('settings-controls-extra').append(keyboardOptions);
 const limitsButton = document.createElement('button');
 limitsButton.id = 'limits'; limitsButton.type = 'button';
 limitsButton.textContent = 'Model & systems information'; limitsButton.setAttribute('aria-expanded', 'false');
-optionsDialog.insertBefore(limitsButton, el('settings-close'));
-optionsDialog.insertBefore(el('limitations'), el('settings-close'));
+el('settings-advanced-slot').append(limitsButton, el('limitations'));
 const audioSettingsSlot = document.createElement('div'); audioSettingsSlot.id = 'audio-settings-slot';
-optionsDialog.insertBefore(audioSettingsSlot, el('settings-close'));
+el('settings-sound-slot').append(audioSettingsSlot);
 audioControls = createAudioControls({
   buttonContainer: el('audio-button-slot'), settingsContainer: audioSettingsSlot,
   onToggleMute() {
@@ -551,7 +580,7 @@ navigationMedia.addEventListener('change', placeNavigationOpener); placeNavigati
 const loadingPanel = createLoadingPanel({
   buttonContainer: el('flight-menu').querySelector<HTMLElement>('nav')!,
   onOpen() { closeViewMenu(); neutralize(); }, onClose: focusFlight,
-  onApply(config) { if (!reviewing && session.setLoading(config)) reset(); },
+  onApply(config) { if (!reviewing && session.setLoading(config)) reset(landingPreset, runwayStart, practiceInitialLocation); },
 });
 const aircraftHandbook = createAircraftHandbook({
   buttonContainer: viewMenu.querySelector<HTMLElement>('nav')!,
@@ -654,7 +683,7 @@ async function setMapVisible(visible: boolean) {
         const runway = EDFE_RUNWAYS.find(r => r.id === id); if (!runway || reviewing) return;
         pauseFlight(); airborneSite = 'edfe';
         const start = airportOffset(runway, Math.sin(runway.heading_true_rad) * 20, Math.cos(runway.heading_true_rad) * 20);
-        reset(undefined, { airport: 'EDFE', runway: id, ...start, heading_rad: runway.heading_true_rad });
+        reset(null, { airport: 'EDFE', runway: id, ...start, heading_rad: runway.heading_true_rad });
         exerciseActive = true; startWhenReady = true;
       },
       onStopExercise() { pauseFlight(); exerciseActive = false; notice('Exercise stopped. Review remains available; Start at runway begins a new flight.'); },
@@ -904,14 +933,14 @@ function startFlight() {
   neutralize(); running = true; hasFlown = true; session.start(); updateSessionUI(); focusFlight();
 }
 function togglePause() { if (running) pauseFlight(); else startFlight(); }
-function reset(preset = landingPreset, start: RunwayStart | null = runwayStart) {
+function reset(preset: LandingPreset | null | undefined = landingPreset, start: RunwayStart | null = runwayStart, location?: FlightLocation) {
   closeViewMenu();
   if (reviewing) return;
   flightLocationStore.clear(); restoredFlightLocationActive = false;
-  runwayStart = start;
+  runwayStart = start; practiceInitialLocation = location;
   runwayPractice.reset(); practiceReviewCache = null;
   if (sceneFailed) { notice('The 3D scene is unavailable. Reload with WebGL enabled.'); return; }
-  landingPreset = preset;
+  landingPreset = preset ?? undefined;
   flightAssists.reset();
   liveWarningMonitor.reset(); reviewWarningMonitor.reset(); liveWarnings = unavailableWarnings;
   flightWarningsPanel.update(unavailableWarnings, false);
@@ -937,16 +966,42 @@ function reset(preset = landingPreset, start: RunwayStart | null = runwayStart) 
   radioPanel.update(null, false, false); navigationGauges.update(null, false, false); landingFeedback.update(null, false);
   updateConfiguration(null, false);
   engineNavdata = { settled: false, sha256: null, error: null }; applyNavdataCheck();
-  notice(''); session.reset(landingPreset, airborneSite, runwayStart ?? undefined); updateSessionUI(); focusFlight();
+  notice(''); session.reset(landingPreset, airborneSite, runwayStart ?? undefined, location); updateSessionUI(); focusFlight();
 }
 function setView(next: typeof view) {
   closeViewMenu(); view = next;
   for (const name of ['cockpit', 'chase']) { el(name).classList.toggle('selected', name === view); el(name).setAttribute('aria-pressed', String(name === view)); }
   el('view-label').textContent = `${view.toUpperCase()} VIEW`;
 }
+async function launchPractice(kind: 'takeoff' | 'landing' | 'circuit'): Promise<void> {
+  if (!ready || reviewing || practiceLaunchPending) return;
+  const runway = EDFE_RUNWAYS.find(r => r.id === el<HTMLSelectElement>('practice-runway').value)!;
+  practiceLaunchPending = true; pauseFlight(); closeViewMenu();
+  try {
+    airborneSite = 'edfe';
+    if (kind === 'landing') {
+      const ground = sampleTerrain(await loadTerrainPackage(), runway.lat_rad, runway.lon_rad);
+      if (!ground) throw new Error('The selected runway terrain is unavailable.');
+      const distance = 3 * 1852;
+      const point = airportOffset(runway, -Math.sin(runway.heading_true_rad) * distance, -Math.cos(runway.heading_true_rad) * distance);
+      reset(null, null, { version: 1, ...point, alt_msl_m: ground.physical_m + Math.tan(3 * Math.PI / 180) * distance,
+        heading_rad: runway.heading_true_rad, mode: 'airborne' });
+      exerciseActive = false;
+    } else {
+      const point = airportOffset(runway, Math.sin(runway.heading_true_rad) * 20, Math.cos(runway.heading_true_rad) * 20);
+      reset(null, { airport: 'EDFE', runway: runway.id, ...point, heading_rad: runway.heading_true_rad });
+      exerciseActive = true;
+    }
+    startWhenReady = true;
+    if (kind === 'circuit') { await setMapVisible(true); practiceMap?.setCircuitGuide(true); }
+  } catch (error) { notice(`Cannot start practice: ${error instanceof Error ? error.message : String(error)}`); }
+  finally { practiceLaunchPending = false; updateSessionUI(); }
+}
+for (const [id, kind] of [['practice-takeoff', 'takeoff'], ['practice-landing', 'landing'], ['practice-circuit', 'circuit']] as const)
+  el(id).onclick = () => { void launchPractice(kind); };
 el('start').onclick = startFlight;
 el('pause').onclick = () => { togglePause(); focusFlight(); };
-el('reset').onclick = () => reset();
+el('reset').onclick = () => reset(landingPreset, runwayStart, practiceInitialLocation);
 document.querySelectorAll<HTMLButtonElement>('[data-landing]').forEach(button => {
   button.onclick = () => { if (!reviewing) { runwayStart = null; exerciseActive = false; airborneSite = 'edfe'; reset(button.dataset.landing as LandingPreset); } };
 });

@@ -222,6 +222,12 @@ footer { display: flex; justify-content: space-between; border-top: 1px solid #8
 .top-menu > summary { cursor: pointer; border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; font-size: 11px; }
 .top-menu .menu-content { position: absolute; top: calc(100% + 8px); right: 0; min-width: 185px; display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 7px; background: #142633; box-shadow: 0 9px 25px #0007; }
 .top-menu .menu-content button { text-align: left; padding: 10px 12px; font-size: 12px; }
+#flight-menu .menu-content { min-width: 260px; max-height: calc(100dvh - 110px); overflow-y: auto; overscroll-behavior: contain; }
+.practice-runway-choice { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 10px; font-size: 12px; color: #c6d6de; }
+.practice-runway-choice select { padding: 5px 9px; background: #0d202c; color: #eef3f5; border: 1px solid #617684; border-radius: 4px; }
+.flight-research { border-block: 1px solid #8fa5b933; margin-block: 4px; padding-block: 4px; }
+.flight-research > summary { cursor: pointer; padding: 8px 10px; font-size: 11px; color: #b2c6d0; }
+.flight-research button, .flight-research .menu-label { display: block; width: 100%; }
 .top-menu button[aria-pressed=true]::after { content: ' ✓'; color: var(--accent); }
 .top-menu button.selected[aria-pressed=true]::after { color: #172631; }
 #reset { white-space: nowrap; font-size: 11px; }

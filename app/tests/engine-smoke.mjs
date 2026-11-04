@@ -166,14 +166,14 @@ try {
   await page.keyboard.press('Digit7');
   await page.waitForFunction(() => window.__engineInputs.at(-1)?.throttle === .7);
   await page.locator('#controls-settings').click();
-  await page.locator('.control-options summary').click();
+  await page.locator('#settings-advanced > summary').click();
   await page.locator('#roll-correction-off').click();
   await page.waitForFunction(() => document.querySelector('#offset-value').textContent.includes('0.0%'));
   assert.equal(Number(await page.locator('#roll-offset').inputValue()),0);
   await page.locator('#roll-correction-default').click();
   await page.waitForFunction(() => document.querySelector('#offset-value').textContent.includes('10.9% left'));
   assert(Math.abs(Number(await page.locator('#roll-offset').inputValue())+.109375)<.00051,'range displays the nearest supported UI step');
-  await page.locator('.control-options summary').click();
+  await page.locator('#settings-advanced > summary').click();
   await page.locator('#settings-close').click(); await resume();
   await page.waitForFunction(()=>window.__engineInputs.at(-1)?.aileron===-.109375);
   checks.push('digit and numpad throttle commands reach the flight worker');

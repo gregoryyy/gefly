@@ -32,10 +32,27 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
   dialog.setAttribute('aria-describedby', 'control-settings-description');
   dialog.innerHTML = `
     <div class="control-settings-heading">
-      <span class="eyebrow">MAKE IT YOURS</span>
-      <h2 id="control-settings-title">Flight controls</h2>
-      <p id="control-settings-description">Flight is paused while you adjust controls.</p>
+      <h2 id="control-settings-title">Options</h2>
+      <p id="control-settings-description">Flight is paused. Preview changes, then Save for this session.</p>
     </div>
+    <div class="control-settings-sections">
+    <fieldset class="control-settings-controls">
+      <legend>Controls</legend>
+      <div class="control-settings-toggles">
+        <div>
+          <label class="control-settings-toggle" for="coordinated-rudder">
+            <input type="checkbox" id="coordinated-rudder" aria-describedby="coordinated-rudder-note">Link rudder to aileron
+          </label>
+          <p class="control-settings-note" id="coordinated-rudder-note">Bank input also steers rudder and nosewheel. Q/W takes priority.</p>
+        </div>
+        <div>
+          <label class="control-settings-toggle" for="centered-touchpad">
+            <input type="checkbox" id="centered-touchpad" aria-describedby="centered-touchpad-note">Centered touchpad controls
+          </label>
+          <p class="control-settings-note" id="centered-touchpad-note">Flight-view center is neutral. Hold-drag looks around; Escape centers the view.</p>
+        </div>
+      </div>
+    <h3 class="control-settings-subheading">Input gain</h3>
     <div class="control-settings-axes">
       ${([
         ['pitch', 'Pitch', 'Nose up / down'],
@@ -51,25 +68,30 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
         </div>
       `).join('')}
     </div>
-    <label class="control-settings-note control-settings-toggle" for="coordinated-rudder">
-      <input type="checkbox" id="coordinated-rudder" aria-describedby="coordinated-rudder-note">
-      Link rudder to aileron
-    </label>
-    <p class="control-settings-note" id="coordinated-rudder-note">On by default: touchpad and keyboard bank input also command rudder and nosewheel steering. Q/W takes priority; roll correction is excluded.</p>
-    <label class="control-settings-note control-settings-toggle" for="centered-touchpad">
-      <input type="checkbox" id="centered-touchpad" aria-describedby="centered-touchpad-note">
-      Centered touchpad controls
-    </label>
-    <p class="control-settings-note" id="centered-touchpad-note">Flight-view center is neutral. Hold-drag sets the view; release keeps it. Escape resets the view.</p>
-    <label class="control-settings-note control-settings-toggle"><input id="vector-scenery" type="checkbox"> Map terrain · cartography without labels</label>
-    <label class="control-settings-note control-settings-toggle"><input id="practice-papi" type="checkbox"> Practice PAPI / runway lights · illustrative</label>
-    <p class="control-settings-note">Map terrain uses official German vector cartography without text. Photography remains underneath if a tile is unavailable. Practice lights are generic aids, not an installed EDFE lighting survey.</p>
     <div class="control-settings-presets">
-      <span>Quick presets</span>
+      <span>Presets</span>
       <button type="button" id="settings-gentle">Gentle</button>
       <button type="button" id="settings-default">Default</button>
     </div>
-    <p class="control-settings-note">Input sensitivity, not aircraft response calibration.<br>Settings apply to this session only.</p>
+    <p class="control-settings-note">Gains change input commands, not aircraft calibration.</p>
+    <div id="settings-controls-extra"></div>
+    </fieldset>
+    <fieldset>
+      <legend>Scenery</legend>
+      <label class="control-settings-toggle"><input id="vector-scenery" type="checkbox">Map terrain · no labels</label>
+      <p class="control-settings-note">Cartography with photography underneath as fallback.</p>
+      <label class="control-settings-toggle"><input id="practice-papi" type="checkbox">Practice PAPI / runway lights</label>
+      <p class="control-settings-note">Illustrative lights, not surveyed EDFE equipment.</p>
+    </fieldset>
+    <fieldset>
+      <legend>Sound</legend>
+      <div id="settings-sound-slot"></div>
+    </fieldset>
+    <details class="control-settings-advanced" id="settings-advanced">
+      <summary>Advanced</summary>
+      <div id="settings-advanced-slot"></div>
+    </details>
+    </div>
     <button type="button" id="settings-close" class="primary">Save</button>
   `;
   options.container.append(dialog);

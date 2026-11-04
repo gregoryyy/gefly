@@ -49,8 +49,13 @@ interaction direction.
 
 ## Airport play
 
-Open the flight map with **M**, choose **EDFE 26 or 08**, and select **Start at
-runway**. The aircraft starts at rest with the engine idling and parking brake
+In **Flight**, choose runway **26 or 08**, then **Takeoff**, **Landing · 3 NM final**
+or **Fly a circuit** (**Alt+Shift+1 / 2 / 3**). Circuit opens and fits the generated
+map guide. Landing is a clean 90 kt visual-practice start at a geometric 3-degree
+height above the threshold; set power/flaps yourself. It is not a published approach.
+Research flights and contact studies are in the secondary group.
+
+Alternatively, open the flight map with **M**, choose **EDFE 26 or 08**, and select **Start at runway**. The aircraft starts at rest with the engine idling and parking brake
 set. Press **N** to release the brake, add power with **1–9**, and fly the circuit
 manually. **Stop exercise** on the map pauses the flight and keeps Review available.
 Other airports can be inspected, but their runway starts are not prepared yet.
@@ -58,7 +63,8 @@ Other airports can be inspected, but their runway starts are not prepared yet.
 Expand the runway's **north circuit** card for the practice objective and start
 configuration. It logs sensed lift-off, touchdown, ground stop and collision
 events, with available ground speed and contact vertical speed. **R** opens Review;
-the card follows the selected recording time. These are observations, not a
+the card follows the selected recording time. After a collision, **Continue flight**
+or **×** resumes the same aircraft state; the impact stays in the recording. These are observations, not a
 landing grade or a validated C172S lesson.
 **Save JSON** retains the declared EDFE runway so **Load JSON** restores this card
 and its recorded observations. Older files without that context keep it unknown.
@@ -93,7 +99,7 @@ just stop                 # stop this checkout's flight server
 
 Select **Start flight**, then click the scene for touchpad yoke control or use the keyboard.
 The top menu/title bar and floating flight controls start hidden: **I** toggles
-the menu, **O** opens Options, and **Alt+Shift+F** shows the flight controls. **F** toggles browser fullscreen (also in View); the browser’s **Esc** action exits it. Floating controls, map,
+the menu, **O** opens Options (Controls, Scenery, Sound and Advanced), and **Alt+Shift+F** shows the flight controls. **F** toggles browser fullscreen (also in View); the browser’s **Esc** action exits it. Floating controls, map,
 flight-data and stall-awareness panels are half opaque until clicked; their
 first click activates the panel, and subsequent gestures operate it.
 Arrow keys control pitch/roll, Q/W rudder, 0 throttle idle and 1–9 throttle.

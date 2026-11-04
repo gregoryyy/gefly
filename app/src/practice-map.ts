@@ -19,6 +19,7 @@ export interface PracticeMap {
   update(state: Readonly<FlightState>, path: readonly Readonly<FlightState>[], mode: 'live' | 'review'): void;
   setVisible(visible: boolean): void;
   setVector(enabled: boolean): void;
+  setCircuitGuide(enabled: boolean): void;
   toggleOverlap(): void;
   dispose(): void;
 }
@@ -205,7 +206,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   let navigationVisible = true;
   let airports: Airport[] = [];
   let selectedAirport = 'EDFE';
-  let circuitEnabled = false, circuitDataKey = '', circuitLabelKey = '', circuitLegKey = '';
+  let circuitEnabled = false, circuitFitPending = false, circuitDataKey = '', circuitLabelKey = '', circuitLegKey = '';
   let circuitGuide: CircuitGuide | null = null;
   let circuitState: Readonly<FlightState> | null = null;
   const circuitMarkers: Marker[] = [];
@@ -298,6 +299,11 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       : practice?.runway ?? (selectedAirport === 'EDFE' ? playControls.selectedRunway() : null);
     if (runway !== circuitGuide?.runway) circuitGuide = runway ? makePracticeCircuit(runway) : null;
     paintCircuit();
+    if (circuitFitPending && ready && map && circuitGuide && frame) {
+      circuitFitPending = false;
+      const [west, south, east, north] = circuitGuide.bounds;
+      setFollowing(false); map.fitBounds([[west, south], [east, north]], { padding: 48, maxZoom: 14, duration: 0 });
+    }
   }
   function paintCircuit(): void {
     circuitNote.hidden = !circuitEnabled;
@@ -517,6 +523,10 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       paint();
     },
     setVector,
+    setCircuitGuide(enabled) {
+      circuitEnabled = enabled; circuitFitPending = enabled;
+      circuitToggle.setAttribute('aria-pressed', String(enabled)); refreshCircuit();
+    },
     setVisible(value) {
       if (disposed) return;
       visible = value;

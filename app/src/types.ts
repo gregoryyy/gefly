@@ -173,6 +173,7 @@ export type AirborneSite = 'edfe' | 'taunus' | 'eddf-ils' | 'darmstadt' | 'odenw
 export interface FlightSession {
   setLoading(config: LoadingConfiguration): boolean;
   restoreFromReview(state: Readonly<FlightState>): Promise<FlightState>;
+  continueAfterCollision(): Promise<FlightState>;
   captureAutopilot(): void;
   setSimulationRate(rate: number): void;
   setKap140(command: KapCommand): void;

@@ -264,6 +264,10 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 - [x] 2.0.93 Restore real map-terrain rendering by protecting worker downloads; expose View and Alt+Shift+J, synchronized with Options and Flight map. R-AIRPORT-1/R-INPUT-1.
 - [x] 2.0.94 Show actual ARM/ARMED state and explain selector autoarming/cancel behavior; verify native panel engagement, arming and VS commands. R-AP-1.
 
+- [x] 2.0.95 Let collision ×/Continue resume the same native aircraft state; acknowledge current contact bits until separation, preserve recording history and re-arm new/later contacts. R-SIM-8/R-REVIEW-1.
+- [x] 2.0.96 Put Takeoff, Landing and Fly a circuit first in Flight with runway choice, real launch actions and secondary research tools; preserve the selected landing setup on Restart. R-PLAY-1/R-UX-2.
+- [x] 2.0.97 Organize Options into Controls, Scenery, Sound and collapsed Advanced; retain settings, Save/cancel rollback and desktop/mobile access. R-UX-2/R-INPUT-1.
+
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
   - [x] 2.1.1 Deliver a bounded EDFE runway-practice briefing and sensed flight-event log: north/right-hand 26 and north/left-hand 08, explicit idle/parked setup, native wheel-contact takeoff/landing observations and ground stop/collision, retained with cursor-correct Review. R-PLAY-1/R-TRAIN-2/R-REVIEW-1. No checklist, circuit grading, official route or complete scenario/weather briefing acceptance; those remain open in 2.1 and 1.5. Peer pending.
   - [x] 2.1.2 Preserve declared EDFE runway context in version-1 JSON recordings; restore the imported briefing/event log from its own trace, keep legacy context unknown, reject malformed metadata and return to the unchanged live flight. R-PLAY-1/R-REVIEW-1. Aircraft/weather provenance, other airports and complete scenario packages remain separate; peer pending.
