@@ -913,7 +913,8 @@ function publishInput() {
 function neutralize() {
   continuedAxes = null;
   if (latest?.kap_profile === 1) session.setKap140({action:'vertical', value:0});
-  if (!reviewing || failed || sceneFailed) pointerYoke?.cancel();
+  if (failed || sceneFailed || groundCollisionStopped()) pointerYoke?.cancel();
+  else if (!reviewing) pointerYoke?.neutralize();
   keys.clear(); pointerControls.clear(); keyboardControls.clear(); stickX = stickY = 0;
   if (stickPointer !== null) {
     const pointer = stickPointer; stickPointer = null;

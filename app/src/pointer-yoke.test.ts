@@ -29,7 +29,7 @@ function fixture(centered = false) {
     onLook: (yaw,pitch) => looks.push([yaw,pitch]), onMode: mode => modes.push(mode) });
   const click = (x = 200, y = 200) => { surface.dispatchEvent(pointer('pointerdown',x,y)); surface.dispatchEvent(pointer('pointerup',x,y)); };
   return { surface, controller, yokes, looks, modes, click,
-    disable: () => { enabled = false; }, review: () => { lookOnly = true; } };
+    disable: () => { enabled = false; }, enable: () => { enabled = true; }, review: () => { lookOnly = true; } };
 }
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -157,7 +157,7 @@ test('hold-drag looks without yoke input; release preserves the original yoke mi
   f.controller.dispose();
 });
 
-test('hold while off does not enable yoke; interruption and disabled flight cancel gestures', async () => {
+test('hold while off does not enable yoke; interruption cancels and disabled flight neutralizes gestures', async () => {
   const f = fixture();
   f.surface.dispatchEvent(pointer('pointerdown'));
   await sleep(280);
@@ -171,11 +171,47 @@ test('hold while off does not enable yoke; interruption and disabled flight canc
   f.surface.dispatchEvent(Object.assign(new Event('keydown',{cancelable:true}),{code:'Escape'}));
   assert.equal(f.modes.at(-1),'off');
   f.click(); f.disable(); f.surface.dispatchEvent(pointer('pointermove',400,200));
-  assert.equal(f.modes.at(-1),'off');
+  assert.equal(f.modes.at(-1),'yoke'); assert.deepEqual(f.yokes.at(-1),[0,0]);
+  f.controller.dispose();
   const counts=[f.yokes.length,f.looks.length,f.modes.length];
-  f.controller.dispose(); f.click();
+  f.click();
   await sleep(280);
   assert.deepEqual([f.yokes.length,f.looks.length,f.modes.length],counts);
+});
+
+test('temporary neutralization retains the selected reference and look without residual input', async () => {
+  const f = fixture(); f.click(200, 200);
+  f.surface.dispatchEvent(pointer('pointermove', 275, 125));
+  f.controller.neutralize();
+  assert.deepEqual(f.yokes.at(-1), [0, 0]);
+  assert.deepEqual(f.controller.getCenter(), { clientX: 200, clientY: 200 });
+  const count = f.yokes.length;
+  f.surface.dispatchEvent(pointer('pointermove', 275, 125));
+  assert.equal(f.yokes.length, count, 'unchanged position cannot restore residual input');
+  f.surface.dispatchEvent(pointer('pointerenter', 275, 125));
+  assert.deepEqual(f.yokes.at(-1), [.5, .5], 're-entry remains authoritative');
+  f.surface.dispatchEvent(pointer('pointerdown', 275, 125)); await sleep(280);
+  f.surface.dispatchEvent(pointer('pointermove', 325, 175));
+  const look = [...f.looks.at(-1)!]; f.controller.neutralize();
+  assert.equal(f.surface.captures.size, 0); assert.equal(f.modes.at(-1), 'yoke');
+  assert.deepEqual(f.looks.at(-1), look);
+  f.surface.dispatchEvent(pointer('pointerup', 325, 175));
+  f.surface.dispatchEvent(pointer('pointermove', 325, 175));
+  assert.deepEqual(f.yokes.at(-1), [0, 0], 'interrupted look release stays neutral');
+  f.disable(); f.surface.dispatchEvent(pointer('pointermove', 300, 200)); f.enable();
+  assert.deepEqual(f.controller.getCenter(), { clientX: 200, clientY: 200 });
+  f.surface.dispatchEvent(pointer('pointermove', 300, 200));
+  assert.deepEqual(f.yokes.at(-1), [0, 0], 'menu closure alone does not apply old pointer input');
+  f.surface.dispatchEvent(pointer('pointermove', 275, 125));
+  assert.deepEqual(f.yokes.at(-1), [.5, .5]);
+  // Disabling during a pending press must not complete its click toggle.
+  f.surface.dispatchEvent(pointer('pointerdown', 275, 125)); f.disable();
+  f.surface.dispatchEvent(pointer('pointerup', 300, 200)); f.enable();
+  assert.deepEqual(f.controller.getCenter(), { clientX: 200, clientY: 200 });
+  f.controller.cancel(); assert.equal(f.controller.getCenter(), null);
+  f.surface.dispatchEvent(pointer('pointerenter', 275, 125));
+  assert.deepEqual(f.yokes.at(-1), [0, 0], 'explicit cancellation cannot revive the selected mode');
+  f.controller.dispose();
 });
 
 test('default relative look retains and accumulates each drag and click toggle while keeping the yoke anchor', async () => {
@@ -201,7 +237,7 @@ test('default relative look retains and accumulates each drag and click toggle w
   f.click(200, 200); assert.equal(f.modes.at(-1), 'yoke');
   assert.deepEqual(f.looks.at(-1), [.4, 0], 'short clicks do not center look');
   f.disable(); f.surface.dispatchEvent(pointer('pointermove', 300, 200));
-  assert.equal(f.modes.at(-1), 'off'); assert.deepEqual(f.yokes.at(-1), [0, 0]);
+  assert.equal(f.modes.at(-1), 'yoke'); assert.deepEqual(f.yokes.at(-1), [0, 0]);
   assert.deepEqual(f.looks.at(-1), [.4, 0], 'pause/disabled controls neutralize yoke while retaining look');
   f.controller.dispose();
 });

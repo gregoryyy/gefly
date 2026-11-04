@@ -3,6 +3,33 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 17:28 — Retain the steering center through routine controls
+
+TODO: 2.0.99; R-INPUT-1.
+Agent: Codex main integration; glide_model pointer controller; glide_cases actual
+browser regression; glide_housekeeping independent source review.
+
+**Implementation notes**
+
+Routine neutralization now zeros axes while retaining selected yoke mode,
+reference and view. Disabled menu/dialog handling does the same. Explicit Off,
+focus loss, restart, failure/collision and Review still cancel steering. Unchanged
+pointer coordinates cannot restore stale commands; actual re-entry remains
+authoritative. Twenty pointer cases and TypeScript pass. Actual Chrome confirms
+the same marker through Start, pause/resume, menu dismissal, Options Save and AP
+capture without re-clicking steering on. Root inspected the live screenshot;
+independent source review passes. Cross-provider peer pending.
+
+**Deviations**
+
+No physics, camera scaling or marker appearance changes.
+
+**Insights**
+
+One shared helper conflated releasing inputs with forgetting the user's selected
+steering mode. The previous browser check clicked steering back on after Start,
+masking that loss; it now verifies retention directly through real transitions.
+
 ## 2026-11-04 17:19 — Keep grounded flight running through contact proxies
 
 TODO: 2.0.98; R-SIM-8.

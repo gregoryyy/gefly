@@ -57,7 +57,8 @@ try {
   });
   await installSceneryFixture(page); await page.goto(origin);
   await page.waitForFunction(() => !document.querySelector('#start').disabled);
-  await prepareFlightUI(page);
+  // This exercises the scene yoke independently of the optional stick overlay.
+  await prepareFlightUI(page, { controls: false });
   const marker = page.locator('#yoke-center-marker');
   const markerCenter = async () => { await marker.waitFor({state:'visible'}); const box=await marker.boundingBox(); return {x:box.x+box.width/2,y:box.y+box.height/2}; };
   const markerAt = async (x,y) => { const center=await markerCenter(); assert(Math.abs(center.x-x)<1&&Math.abs(center.y-y)<1,JSON.stringify({center,expected:{x,y}})); };
@@ -71,6 +72,17 @@ try {
     return page.evaluate(() => window.__pointerStats.at(-1));
   };
   const frozen = (a, b) => { assert.equal(a.step, b.step); assert.equal(a.digest, b.digest); assert.deepEqual(a.final_state, b.final_state); };
+  const markerObservations = [];
+  const observeMarker = async label => {
+    const native = await stats();
+    markerObservations.push(await marker.evaluate((element, data) => {
+      const style = getComputedStyle(element), box = element.getBoundingClientRect();
+      return { ...data, hidden: element.hidden, display: style.display, opacity: style.opacity,
+        zIndex: style.zIndex, pointerEvents: style.pointerEvents,
+        width: box.width, height: box.height, x: box.x, y: box.y,
+        mode: document.querySelector('#scene').dataset.pointerMode };
+    }, { label, nativeStep: native.step }));
+  };
   const look = () => page.evaluate(() => ({ ...window.__pointerLook }));
   const hold = async (x, y) => {
     const centerBefore=await markerCenter();
@@ -98,13 +110,14 @@ try {
   const neutral = await axes(); assert.equal(neutral[1], 0);
   frozen(before, await stats());
   await page.locator('#controls-settings').click();
+  await marker.waitFor({ state: 'hidden' });
   assert.equal(await page.locator('#centered-touchpad').isChecked(), false, 'retained look needs no centered-yoke opt in');
   assert.deepEqual(await look(), secondLook);
   await page.locator('#settings-close').click();
+  await mode('yoke'); await markerAt(1000, 160);
   assert.deepEqual(await look(), secondLook, 'Options never resets the view');
   frozen(before, await stats());
 
-  await page.mouse.click(1000, 160); await mode('yoke');
   await page.mouse.dblclick(1200, 220); await mode('yoke');
   assert.deepEqual(await look(), { yaw_rad: 0, pitch_rad: 0 }, 'trusted browser double-click centers retained look');
   assert.deepEqual(await axes(), neutral, 'double-click ends with neutral controls');
@@ -112,8 +125,10 @@ try {
     'the browser pair restores the original relative anchor rather than the double-click location');
   await page.mouse.move(1000, 160); frozen(before, await stats());
 
+  await observeMarker('active yoke before starting');
   await startOrResume(page);
-  await page.mouse.click(1000, 160); await mode('yoke');
+  await mode('yoke'); await markerAt(1000, 160);
+  await observeMarker('Start retains selected yoke reference');
   await page.mouse.move(1075, 130);
   const liveAxes = await axes();
   await page.waitForFunction(() => window.__pointerInputs.length > 0);
@@ -170,15 +185,42 @@ try {
   assert.deepEqual(await look(), { yaw_rad: 0, pitch_rad: 0 });
   await page.mouse.move(sample.x, sample.y); assert.deepEqual(await axes(), centeredAxes);
   frozen(paused, await stats());
+  // Cover actual live presentation: the earlier marker assertions were mainly
+  // paused. Starting and AP capture have separate input-neutralization routes.
+  await startOrResume(page);
+  await mode('yoke');
+  await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2);
+  await markerAt(rect.x + rect.width / 2, rect.y + rect.height / 2);
+  await observeMarker('centered yoke while flying');
+  await page.locator('#scene').focus(); await page.keyboard.press('Space');
+  await mode('yoke'); await markerAt(rect.x + rect.width / 2, rect.y + rect.height / 2);
+  const stoppedWithYoke = await stats(); await page.waitForTimeout(80); frozen(stoppedWithYoke, await stats());
+  await startOrResume(page); await mode('yoke');
+  await markerAt(rect.x + rect.width / 2, rect.y + rect.height / 2);
+  await observeMarker('pause and resume retain centered reference');
+  await page.locator('#view-menu > summary').click(); await marker.waitFor({ state: 'hidden' });
+  await page.locator('#view-menu > summary').click(); await mode('yoke');
+  await markerAt(rect.x + rect.width / 2, rect.y + rect.height / 2);
+  await observeMarker('menu dismissal restores retained marker');
+  await page.locator('#scene').focus(); await page.keyboard.press('a');
+  await page.waitForFunction(() => document.querySelector('#ap-engage').getAttribute('aria-pressed') === 'true');
+  await mode('yoke');
+  await markerAt(rect.x + rect.width / 2, rect.y + rect.height / 2);
+  await observeMarker('AP capture retains selected centered reference');
+  const liveMarker = markerObservations.at(-1);
+  assert(!liveMarker.hidden && Number(liveMarker.opacity) > 0 && liveMarker.width > 0 && liveMarker.pointerEvents === 'none');
+  assert(liveMarker.nativeStep > paused.step, 'marker check observes an advancing native flight');
+  await page.screenshot({ path: `${output}/pointer-yoke-live-center.png` });
   assert.deepEqual(errors, []);
   const result = { result: 'pass', checks: [
     'faint neutral marker follows the authoritative relative/centered yoke reference, retains it through look, and hides off/in Review',
+    'Start, pause/resume, menu dismissal, Options Save and AP capture retain the selected yoke mode and neutral marker',
     'paused hold-look preserves original midpoint without advancing actual JSBSim',
     'live hold-look preserves original midpoint and actual aileron/elevator commands',
     'outside release/re-entry and short-click toggle retain their separate behavior',
     'default-relative look retains and accumulates after release and Options; Escape explicitly centers it',
     'trusted double-click centers relative/centered/Review look, preserves pre-pair mode and relative anchor, and leaves paused native state unchanged',
-  ], originalCommands };
+  ], originalCommands, markerObservations };
   await mkdir(output, { recursive: true });
   await writeFile(`${output}/pointer-yoke-browser.json`, `${JSON.stringify(result, null, 2)}\n`);
   console.log(JSON.stringify(result));
