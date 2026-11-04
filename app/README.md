@@ -66,6 +66,7 @@ unavailable. Returning to live restores pending control settings.
 | P | Autopilot on / off (simulator shortcut) |
 | A | Engage autopilot HDG + ALT at current heading/pressure altitude |
 | = | Cycle simulation rate 1× → 1.5× → 2× → 5× → 10× → 1× |
+| . | Cycle landmark labels: Off / Places / Landmarks / Detailed |
 | I | Show / hide the top title/menu bar |
 | O | Open Options |
 | Space | Start / pause / resume |

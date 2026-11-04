@@ -1,0 +1,2 @@
+.landmark-label-status { position: absolute; right: 12px; top: 116px; max-width: min(310px, calc(100% - 24px)); padding: 5px 8px; border: 1px solid #c4dce34d; border-radius: 4px; background: #10272cdd; color: #e2f0f4; font: 10px/1.35 system-ui, sans-serif; pointer-events: none; z-index: 2; }
+.landmark-label-status[hidden] { display: none; }

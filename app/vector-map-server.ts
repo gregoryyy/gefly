@@ -2,21 +2,31 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { MAP_TERRAIN_BOUNDS, MAP_TERRAIN_MAX_ZOOM } from './src/map-terrain-style.ts';
 
 const UPSTREAM = 'https://sgx.geodatenzentrum.de/gdz_basemapde_vektor/';
+const LANDMARK_UPSTREAM = 'https://tiles.openfreemap.org/planet/20261101_080013_pt/';
 const MAX_CACHE_BYTES = 32 * 1024 * 1024;
 const MAX_PENDING = 64;
+const MAX_SOURCE_PENDING = 48;
 const TTL_MS = 60 * 60 * 1000;
 type Fetcher = typeof fetch;
 type Kind = 'tile' | 'sprite-json' | 'sprite-png';
-interface Resource { key: string; upstream: string; kind: Kind; limit: number }
+interface Resource { key: string; upstream: string; kind: Kind; limit: number; source: string }
 interface Result { bytes: Buffer; mime: string; expires: number }
 export interface VectorMapOptions { fetcher?: Fetcher; cacheBytes?: number }
 
 function resourceFor(path: string): Resource | null {
+  const landmark = /^\/scenery\/landmarks\/([7-9]|1[0-4])\/(0|[1-9]\d{0,4})\/(0|[1-9]\d{0,4})\.pbf$/.exec(path);
+  if (landmark) {
+    const [z, x, y] = landmark.slice(1).map(Number);
+    if (x >= 2 ** z || y >= 2 ** z) return null;
+    const key = `${z}/${x}/${y}.pbf`;
+    return { key: `landmarks/${key}`, upstream: LANDMARK_UPSTREAM + key, kind: 'tile',
+      limit: 2 * 1024 * 1024, source: 'OpenFreeMap-OSM-20261101_080013_pt' };
+  }
   const sprite = /^\/scenery\/vector\/sprite(@2x)?\.(json|png)$/.exec(path);
   if (sprite) {
     const extension = sprite[2], scale = sprite[1] || '';
     return { key: `sprite${scale}.${extension}`, upstream: `${UPSTREAM}sprites/v2/bm_web_col_sprite${scale}.${extension}`,
-      kind: extension === 'json' ? 'sprite-json' : 'sprite-png', limit: extension === 'json' ? 1024 * 1024 : 4 * 1024 * 1024 };
+      kind: extension === 'json' ? 'sprite-json' : 'sprite-png', limit: extension === 'json' ? 1024 * 1024 : 4 * 1024 * 1024, source: 'BKG-basemap.de' };
   }
   const tile = /^\/scenery\/vector\/(0|[1-9]\d?)\/(0|[1-9]\d{0,4})\/(0|[1-9]\d{0,4})\.pbf$/.exec(path);
   if (!tile) return null;
@@ -28,7 +38,7 @@ function resourceFor(path: string): Resource | null {
   const [coverageWest, coverageSouth, coverageEast, coverageNorth] = MAP_TERRAIN_BOUNDS;
   if (east <= coverageWest || west >= coverageEast || north <= coverageSouth || south >= coverageNorth) return null;
   const key = `${z}/${x}/${y}.pbf`;
-  return { key, upstream: `${UPSTREAM}tiles/v2/bm_web_de_3857/${key}`, kind: 'tile', limit: 2 * 1024 * 1024 };
+  return { key, upstream: `${UPSTREAM}tiles/v2/bm_web_de_3857/${key}`, kind: 'tile', limit: 2 * 1024 * 1024, source: 'BKG-basemap.de' };
 }
 
 function contentType(response: Response, kind: Kind): string {
@@ -74,10 +84,11 @@ function validateBytes(bytes: Buffer, kind: Kind): void {
   }
 }
 
-/** Fixed public BKG vector tiles and sprites only. Neither incoming URL text nor
+/** Fixed public BKG cartography and pinned OpenFreeMap landmark tiles. Neither incoming URL text nor
  * provider response metadata can select a host, filesystem path or credential.
  * Disconnected responses detach from shared jobs; their finite upstream fetch is
- * retained for concurrent users/cache. At most four fetches and 64 jobs exist.
+ * retained for concurrent users/cache. Each fixed host has four fetch slots and
+ * at most 48 pending jobs; 64 jobs and 32 MB cache are shared across both hosts.
  */
 export function createVectorMapMiddleware(options: VectorMapOptions = {}) {
   const fetcher = options.fetcher ?? fetch;
@@ -85,13 +96,19 @@ export function createVectorMapMiddleware(options: VectorMapOptions = {}) {
   if (!Number.isSafeInteger(requested) || requested < 0) throw new RangeError('cacheBytes must be a nonnegative safe integer');
   const capacity = Math.min(MAX_CACHE_BYTES, requested);
   const cache = new Map<string, Result>(), pending = new Map<string, Promise<Result>>();
-  let cacheSize = 0, active = 0;
-  const queue: Array<() => void> = [];
+  let cacheSize = 0;
+  const pools = {
+    bkg: { active: 0, pending: 0, queue: [] as Array<() => void> },
+    landmarks: { active: 0, pending: 0, queue: [] as Array<() => void> },
+  };
+  const poolFor = (resource: Resource) => pools[resource.key.startsWith('landmarks/') ? 'landmarks' : 'bkg'];
   async function acquire(resource: Resource): Promise<Result> {
-    if (active < 4) active++;
-    else await new Promise<void>(resolve => queue.push(resolve));
+    const pool = poolFor(resource);
+    if (pool.active < 4) pool.active++;
+    else await new Promise<void>(resolve => pool.queue.push(resolve));
     try {
-      const response = await fetcher(resource.upstream, { redirect: 'error', signal: AbortSignal.timeout(15000), credentials: 'omit' });
+      const response = await fetcher(resource.upstream, { redirect: 'error', signal: AbortSignal.timeout(15000), credentials: 'omit',
+        headers: { 'User-Agent': 'Gefly/0.2 (+https://github.com/gregoryyy/gefly)' } });
       let mime: string, bytes: Buffer;
       try {
         mime = contentType(response, resource.kind); bytes = await boundedBytes(response, resource.limit);
@@ -105,11 +122,11 @@ export function createVectorMapMiddleware(options: VectorMapOptions = {}) {
         cache.set(resource.key, result); cacheSize += bytes.length;
       }
       return result;
-    } finally { const next = queue.shift(); if (next) next(); else active--; }
+    } finally { const next = pool.queue.shift(); if (next) next(); else pool.active--; }
   }
   return (req: IncomingMessage, res: ServerResponse, next: () => void): void => {
     const path = req.url || '';
-    if (!path.startsWith('/scenery/vector/')) { next(); return; }
+    if (!path.startsWith('/scenery/vector/') && !path.startsWith('/scenery/landmarks/')) { next(); return; }
     const resource = resourceFor(path);
     if (!resource || !['GET', 'HEAD'].includes(req.method || '')) { res.writeHead(404).end(); return; }
     let cached = cache.get(resource.key);
@@ -117,14 +134,16 @@ export function createVectorMapMiddleware(options: VectorMapOptions = {}) {
     if (cached) { cache.delete(resource.key); cache.set(resource.key, cached); }
     let task = cached ? Promise.resolve(cached) : pending.get(resource.key);
     if (!task) {
-      if (pending.size >= MAX_PENDING) { res.writeHead(503, { 'Cache-Control': 'no-store' }).end(); return; }
+      const pool = poolFor(resource);
+      if (pending.size >= MAX_PENDING || pool.pending >= MAX_SOURCE_PENDING) { res.writeHead(503, { 'Cache-Control': 'no-store' }).end(); return; }
+      pool.pending++;
       task = acquire(resource); pending.set(resource.key, task);
-      task.finally(() => pending.delete(resource.key)).catch(() => {});
+      task.finally(() => { pending.delete(resource.key); pool.pending--; }).catch(() => {});
     }
     task.then(value => {
       if (res.destroyed || res.writableEnded) return;
       res.writeHead(200, { 'Content-Type': value.mime, 'Content-Length': value.bytes.length, 'Cache-Control': 'private, max-age=300',
-        'X-Scenery-Sources': 'BKG-basemap.de', 'X-Content-Type-Options': 'nosniff' });
+        'X-Scenery-Sources': resource.source, 'X-Content-Type-Options': 'nosniff' });
       res.end(req.method === 'HEAD' ? undefined : value.bytes);
     }).catch(() => { if (!res.destroyed && !res.writableEnded && !res.headersSent) res.writeHead(502, { 'Cache-Control': 'no-store' }).end(); });
   };

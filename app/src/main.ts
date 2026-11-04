@@ -43,6 +43,7 @@ import { pilotAxes, recordedControlView, recordedHeldKeys } from './pilot-contro
 import type { Controls, FlightState, FlightScene, LandingPreset, AirborneSite } from './types';
 import type { PracticeMap } from './practice-map';
 import { practiceMapUpdateDue } from './practice-map-data';
+import { LANDMARK_LEVEL_NAMES, type LandmarkLevel } from './landmark-data';
 
 const root = document.querySelector<HTMLDivElement>('#app')!;
 root.innerHTML = `
@@ -52,7 +53,7 @@ root.innerHTML = `
     <a class="brand" href="https://github.com/gregoryyy/gefly" target="_blank" rel="noreferrer">gefly<span>FLIGHT LAB</span></a>
     <div class="location"><strong>EGELSBACH</strong><span>C172 research aircraft · airborne practice</span></div>
     <div class="session-status"><i id="status-dot"></i><span id="status" role="status">Loading flight…</span><span id="clock">00:00</span><span id="audio-button-slot"></span></div>
-    <details id="view-menu" class="top-menu"><summary>View</summary><nav class="menu-content view-controls" aria-label="Flight views"><button id="cockpit" class="selected" aria-pressed="true">Cockpit</button><button id="chase" aria-pressed="false">Chase <kbd>V</kbd></button><button id="systems-open" type="button">Aircraft systems</button><button id="toggle-map" aria-pressed="false" aria-controls="practice-map-panel">Flight map <kbd>M</kbd></button><button id="toggle-flight-data" aria-pressed="false" aria-controls="flight-data-panel">Flight data</button><button id="toggle-stall-awareness" aria-pressed="false" aria-controls="stall-awareness-panel">Stall awareness</button><button id="toggle-controls" aria-pressed="true" aria-controls="flight-controls-panel">Flight controls</button></nav></details>
+    <details id="view-menu" class="top-menu"><summary>View</summary><nav class="menu-content view-controls" aria-label="Flight views"><button id="cockpit" class="selected" aria-pressed="true">Cockpit</button><button id="chase" aria-pressed="false">Chase <kbd>V</kbd></button><button id="systems-open" type="button">Aircraft systems</button><button id="toggle-map" aria-pressed="false" aria-controls="practice-map-panel">Flight map <kbd>M</kbd></button><button id="cycle-landmarks" type="button" aria-keyshortcuts="." title=". · Cycle landmark labels">Landmarks: Off <kbd>.</kbd></button><button id="toggle-flight-data" aria-pressed="false" aria-controls="flight-data-panel">Flight data</button><button id="toggle-stall-awareness" aria-pressed="false" aria-controls="stall-awareness-panel">Stall awareness</button><button id="toggle-controls" aria-pressed="true" aria-controls="flight-controls-panel">Flight controls</button></nav></details>
     <span id="review-button-slot"></span>
     <button id="controls-settings" class="settings-trigger" aria-haspopup="dialog">Options</button>
     <details id="flight-menu" class="top-menu"><summary>Flight</summary><nav class="menu-content" aria-label="Flight session"><button id="reset">Restart flight</button><span class="menu-label">FLAT-GROUND LANDING STUDY</span><button data-landing="normal">Baseline touchdown</button><button data-landing="hard">Fast descent</button><button data-landing="side">Sideways touchdown</button><button data-landing="banked">Banked touchdown</button><span class="menu-label">PUBLIC TERRAIN FLIGHTS</span><button id="airborne-practice">Egelsbach airborne practice</button><button id="taunus-practice">Taunus ridge flight</button><button data-region="darmstadt">Darmstadt flight</button><button data-region="odenwald">Odenwald ridge flight</button><button data-region="spessart">Spessart flight</button><button id="eddf-ils-practice" disabled>EDDF 25C ILS practice · historical</button></nav></details>
@@ -138,6 +139,7 @@ const sceneContainer = el('scene');
 const focusFlight = () => sceneContainer.focus({ preventScroll: true });
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 let view: 'cockpit' | 'chase' = 'cockpit';
+let landmarkLevel: LandmarkLevel = 0;
 let pointerYoke: ReturnType<typeof createPointerYoke> | null = null;
 let cameraLook = { yaw_rad: 0, pitch_rad: 0 };
 let cameraFov_rad = DEFAULT_FOV_RAD;
@@ -545,6 +547,19 @@ function flightMapShortcut(event: KeyboardEvent): void {
   event.preventDefault(); event.stopPropagation(); el<HTMLButtonElement>('toggle-map').click();
 }
 document.addEventListener('keydown', flightMapShortcut, true);
+function cycleLandmarks(): void {
+  landmarkLevel = (landmarkLevel + 1) % LANDMARK_LEVEL_NAMES.length as LandmarkLevel;
+  el('cycle-landmarks').firstChild!.textContent = `Landmarks: ${LANDMARK_LEVEL_NAMES[landmarkLevel]} `;
+  scene?.setLandmarkLevel?.(landmarkLevel);
+}
+el('cycle-landmarks').onclick = () => { cycleLandmarks(); closeViewMenu(); focusFlight(); };
+function landmarkShortcut(event: KeyboardEvent): void {
+  if (event.code !== 'Period' || event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
+    || editing(event.target) || menuOpen() || document.querySelector('dialog[open]')) return;
+  event.preventDefault(); event.stopPropagation(); cycleLandmarks();
+}
+document.addEventListener('keydown', landmarkShortcut, true);
+
 
 function mapUnavailable() {
   practiceMap?.dispose(); practiceMap = null;
@@ -1007,10 +1022,10 @@ const flightAssists = createFlightAssists({
     focusFlight();
   },
 });
-sceneContainer.setAttribute('aria-description','Press O for the menu. Alt Shift F shows flight controls.');
+sceneContainer.setAttribute('aria-description','I toggles the menu. O opens Options. Period cycles landmark labels. Alt Shift F shows flight controls.');
 
 const sceneReady = createScene(sceneContainer).then(result => {
-  scene = result; scene.setSceneryMode?.(!!controlSettings.vectorScenery); scene.setPracticePapi?.(!!controlSettings.practicePapi);
+  scene = result; scene.setLandmarkLevel?.(landmarkLevel); scene.setSceneryMode?.(!!controlSettings.vectorScenery); scene.setPracticePapi?.(!!controlSettings.practicePapi);
   scene.setTerrainTiles?.([...regionalTiles.values()]); session.reset();
 }).catch((error: unknown) => {
   sceneFailed = true; running = false; startWhenReady = false;
@@ -1087,5 +1102,5 @@ function animate(now: number) {
   requestAnimationFrame(animate);
 }
 publishInput(); updateSessionUI(); requestAnimationFrame(animate);
-addEventListener('pagehide', () => { document.removeEventListener('keydown', reviewSeekShortcut, true); document.removeEventListener('keydown', flightMapShortcut, true); flightAssists.dispose(); overlayPresentation.dispose();disposeMenuShortcuts(); mapDisposed = true; engineAudio.dispose(); audioControls?.dispose(); document.removeEventListener('click', activateEngineAudio, true); document.removeEventListener('keydown', activateEngineAudio, true); document.removeEventListener('keydown', soundShortcut, true); document.removeEventListener('keydown', engineShortcut, true); document.removeEventListener('keydown', parkingBrakeShortcut, true); groundCollisionPanel.dispose(); aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); flightWarningsPanel.dispose(); liveWarningMonitor.reset(); reviewWarningMonitor.reset(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); systemsPanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
+addEventListener('pagehide', () => { document.removeEventListener('keydown', reviewSeekShortcut, true); document.removeEventListener('keydown', flightMapShortcut, true); document.removeEventListener('keydown', landmarkShortcut, true); flightAssists.dispose(); overlayPresentation.dispose();disposeMenuShortcuts(); mapDisposed = true; engineAudio.dispose(); audioControls?.dispose(); document.removeEventListener('click', activateEngineAudio, true); document.removeEventListener('keydown', activateEngineAudio, true); document.removeEventListener('keydown', soundShortcut, true); document.removeEventListener('keydown', engineShortcut, true); document.removeEventListener('keydown', parkingBrakeShortcut, true); groundCollisionPanel.dispose(); aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); flightWarningsPanel.dispose(); liveWarningMonitor.reset(); reviewWarningMonitor.reset(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); systemsPanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
 void sceneReady;

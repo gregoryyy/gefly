@@ -115,6 +115,10 @@ scroll up to focus on instruments around the pointer (up to 3×). The panel stay
 the same size while the enlarged content is cropped inside it; horizontal scroll
 moves between columns. Double-click panel housing or a noninteractive instrument
 face to restore normal fit. Scroll down or resize also restores the fit.
+Press **.** to cycle floating OSM names: **Off → Places → Landmarks → Detailed**.
+The same setting is in View. Labels sit above their mapped locations on either
+map terrain or photography; source coverage and label density are bounded.
+
 Public terrain now streams across **8.25–10.00°E / 49.25–50.75°N**, including
 Darmstadt, Odenwald and Spessart, with named Flight-menu demonstrations. The
 bounded 200 m BKG relief surrounds the finer Egelsbach–Frankfurt–Taunus package;

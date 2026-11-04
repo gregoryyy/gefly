@@ -3,6 +3,47 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 09:13 — Floating OSM labels over the terrain
+
+TODO: 2.0.70; R-WORLD-7/R-INPUT-1/R-REVIEW-1/R-DATA-1.
+Agent: Codex orchestrator integration; glide_cases OSM decoder/source/proxy,
+glide_model Cesium labels/scene and browser evidence, glide_housekeeping source
+research and independent quality/specification review.
+
+**Implementation notes**
+
+Period and View cycle Off, Places, Landmarks and Detailed. Render source-marked
+names above terrain-sampled coordinates with ground dots, bounded density,
+collision/horizon/depth culling and linked attribution. Off makes no name-tile
+requests; cancellation/epoch guards prevent stale results. A fixed OpenFreeMap
+OSM edition supplies bounded cumulative neighborhoods through reused vector-tile
+decoders; preserve their notices in source and UI builds.
+
+Separate four-request BKG/OpenFreeMap pools prevent terrain loading from starving
+names, with shared cache/job bounds and reserved queue capacity. Rank bounded
+candidates before applying the cap so nearby objects are retained. Independent
+data/proxy tests, actual browser live/Review/off/failure checks and shared CI pass.
+The final Darmstadt capture shows 57 actual street/POI names over visible BKG
+vector streets/buildings/parks. Source and separate outcomes are recorded in the
+[review](reviews/2026-11-04-osm-landmark-labels.md).
+
+**Deviations**
+
+The public capture has 22 name tiles loaded and five unavailable, explicitly
+marked degraded. BKG has 32 loaded and zero failed; 20 farther requests remain
+queued while visible foreground is cartographic. This is bounded on-demand
+mapping, not all OSM names, verified obstacle heights, a historical Review map or
+an offline database. No native aircraft, terrain elevation or navigation state
+changes. Peer pending. The main-targeted PR also contains the still-pending PR73
+view/zoom/shortcut work, avoiding another feature-branch-only merge.
+
+**Insights**
+
+Independent map services need independent bounded queues. A label source can be
+correct yet fail to appear when blocked behind unrelated texture requests.
+Preserve a warm view when checking cartography; cold early captures can show
+fallback imagery despite a correctly enabled map layer.
+
 ## 2026-11-04 08:13 — O for Options, I for the menu bar
 
 TODO: 2.0.69; R-UX-2/R-INPUT-1. Agent: Codex orchestrator integration;

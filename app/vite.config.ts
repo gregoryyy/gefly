@@ -47,6 +47,9 @@ export default defineConfig({
       const packageRoot = resolve(import.meta.dirname, 'node_modules/cesium');
       await Promise.all(['LICENSE.md', 'ThirdParty.json', 'ThirdParty.extra.json'].map(file => cp(resolve(packageRoot, file), resolve(output, file))));
       await cp(resolve(import.meta.dirname, 'node_modules/maplibre-gl/LICENSE.txt'), resolve(output, '../MapLibre-LICENSE.txt'));
+      await cp(resolve(import.meta.dirname, 'node_modules/@mapbox/vector-tile/LICENSE.txt'), resolve(output, '../vector-tile-LICENSE.txt'));
+      await cp(resolve(import.meta.dirname, 'node_modules/pbf/LICENSE'), resolve(output, '../pbf-LICENSE.txt'));
+      await cp(resolve(import.meta.dirname, 'node_modules/@mapbox/point-geometry/LICENSE'), resolve(output, '../point-geometry-LICENSE.txt'));
     },
   }],
 });

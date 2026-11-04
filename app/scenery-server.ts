@@ -112,7 +112,7 @@ export function sceneryMiddleware(options: SceneryOptions = {}) {
   }
   return (req: IncomingMessage, res: ServerResponse, next: () => void): void => {
     const url = req.url || '';
-    if (url.startsWith('/scenery/vector/')) { vectorMap(req, res, next); return; }
+    if (url.startsWith('/scenery/vector/') || url.startsWith('/scenery/landmarks/')) { vectorMap(req, res, next); return; }
     if (!url.startsWith('/scenery/')) { next(); return; }
     const match = /^\/scenery\/(map|imagery)\/(\d{1,2})\/(\d{1,6})\/(\d{1,6})\.(png|jpg)$/.exec(url);
     if (!match || !['GET', 'HEAD'].includes(req.method || '') || match[5] !== 'png') { res.writeHead(404).end(); return; }

@@ -103,3 +103,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-04 — View resets, direction markers and instrument-focused zoom](2026-11-04-view-markers-panel-focus.md)
 
 - [2026-11-04 — Options and menu-bar shortcuts](2026-11-04-options-menu-keys.md)
+
+- [2026-11-04 — Floating landmark labels](2026-11-04-osm-landmark-labels.md)
