@@ -32,6 +32,7 @@ try {
     window.Worker = class extends Native {
       constructor(...args) {
         super(...args); if (!String(args[0]).includes('/sim/worker.js')) return;
+        bucket=-1; window.kapARows=[];
         this.addEventListener('message', ({data}) => {
           if (data.type !== 'state') return;
           window.kapA = data;
@@ -58,13 +59,34 @@ try {
       armVisible:document.querySelector('#ap-vertical-armed').getBoundingClientRect().width>0
         && getComputedStyle(document.querySelector('#ap-vertical-armed')).visibility==='visible'
         && Number(getComputedStyle(document.querySelector('#ap-vertical-armed')).opacity)>0,
+      vsReadout:document.querySelector('#ap-vs-command').textContent,
       button:document.querySelector('#ap-arm').textContent,value:document.querySelector('#ap-selector-value').value,
       unit:document.querySelector('#ap-selector-unit').textContent,readOnly:document.querySelector('#ap-selector-value').readOnly}),label);
     captureEvidence.gestures.push(observation); return observation;
   };
+  const assertPersistentVs = async expected => {
+    const readout=capturePage.locator('#ap-vs-command'); await readout.waitFor({state:'visible'});
+    const rounded=Math.round(expected),number=rounded>0?`+${rounded}`:String(rounded);
+    assert.equal(await readout.textContent(),`VS ${number} FPM`);
+    assert(await readout.evaluate(element => {const box=element.getBoundingClientRect(),style=getComputedStyle(element);
+      return box.width>0&&box.height>0&&style.visibility==='visible'&&Number(style.opacity)>0;}));
+  };
   try {
     await installSceneryFixture(capturePage); await capturePage.goto(origin);
     await capturePage.waitForFunction(() => !document.querySelector('#start').disabled && window.kapA?.kap_profile === 1,null,{timeout:60000});
+    // Physical engagement starts in VS with current rate and no altitude arm.
+    await capturePage.locator('#scene').focus(); await capturePage.keyboard.press('p');
+    await capturePage.waitForFunction(() => window.kapA?.kap_engaged===1&&window.kapA.kap_vertical===0);
+    await startOrResume(capturePage);
+    await capturePage.waitForFunction(() => window.kapA?.t_s>4);
+    await capturePage.locator('#scene').focus(); await capturePage.keyboard.press('Space');
+    const physical=await observeCapture('physical P keeps commanded VS readable after shared selector expires');
+    assert.equal(physical.vertical,'VS'); assert.equal(physical.arm,''); assert.equal(physical.state.kap_alt_arm,0);
+    assert.equal(physical.unit,'FT','shared selector returned to target altitude after three simulation seconds');
+    await assertPersistentVs(physical.state.kap_vs_target_mps*60/.3048);
+    await prepareFlightUI(capturePage,{controls:false});
+    await capturePage.locator('#flight-menu > summary').click(); await capturePage.locator('#reset').click();
+    await capturePage.waitForFunction(() => !document.querySelector('#start').disabled&&window.kapA?.t_s===0&&window.kapA.kap_engaged===0,null,{timeout:60000});
     await capturePage.locator('#scene').focus(); await capturePage.keyboard.press('a');
     await capturePage.waitForFunction(() => window.kapA?.kap_engaged === 1 && window.kapA.kap_vertical === 1);
     const captured = await observeCapture('A captures HDG/ALT while paused');
@@ -99,6 +121,15 @@ try {
     for(let i=0;i<4;i++) await capturePage.keyboard.press('Equal');
     await capturePage.waitForFunction(() => window.kapA?.simulation_rate===10);
     await startOrResume(capturePage);
+    for(const time of [30,90]) {
+      await capturePage.waitForFunction(time=>window.kapA?.t_s>=time,time,{timeout:30000});
+      await capturePage.waitForFunction(() => document.querySelector('#ap-selector-unit').textContent==='FT');
+      await assertPersistentVs(500);
+      const persistent=await observeCapture(`commanded 500 FPM stays visible at ${time}s with editable selected altitude`);
+      assert.equal(persistent.value,String(targetFeet)); assert.equal(persistent.readOnly,false);
+      assert.equal(persistent.vertical,'VS'); assert.equal(persistent.arm,'ALT ARM');
+      if(time===30) await capturePage.screenshot({path:`${output}/kap140-VS-persistent.png`});
+    }
     await capturePage.waitForFunction(() => window.kapA?.t_s>=240,null,{timeout:60000});
     await capturePage.locator('#scene').focus(); await capturePage.keyboard.press('Space');
     await capturePage.waitForFunction(() => document.querySelector('#status').textContent==='Paused');
@@ -123,7 +154,7 @@ try {
     assert.equal(final.vertical,'ALT'); assert.equal(final.arm,''); assert.equal(final.button,'ARM');
     assert.deepEqual(captureErrors,[]);
     captureEvidence.result='pass';
-    checks.push('plain A permits immediate unblurred altitude entry; ALT/UP/DN visibly show confirmed VS/FPM/ALT ARM, and actual powered native climb/capture meets bounded engineering gates');
+    checks.push('physical P displays commanded VS after selector expiry without ARM; A/direct altitude entry/ALT/UP/DN show persistent 500 FPM at 30/90s beside editable target altitude, and actual powered climb/capture meets bounded engineering gates');
   } catch(error) { captureEvidence.result='fail'; captureEvidence.error=String(error); throw error; }
   finally {
     captureEvidence.commands=await capturePage.evaluate(() => window.kapACommands).catch(()=>[]);

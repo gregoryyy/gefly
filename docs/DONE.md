@@ -3,6 +3,38 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 20:24 — Keep commanded VS visible throughout VS flight
+
+TODO: 2.0.112; R-AP-1.
+Agent: Codex panel implementation, integration and actual port5173 reproduction;
+glide_cases actual browser regression; glide_housekeeping independent source and
+visual review. glide_model was interrupted before panel edits.
+
+**Implementation notes**
+
+Added a compact signed commanded-VS readout in the existing KAP header. It remains
+visible in engaged VS independently of the temporary shared-selector page, so
+selected altitude and rate are available together. It clears in ALT/GS/OFF,
+CWS and unavailable/legacy state. No controller, servo, input or physics change;
+unit height remains140px. The unmocked running5173 browser showed VS+500FPM beside
+2300FT and ALT ARM at31.5s and90.8s; the actual182×141px crop is readable and
+unclipped. TypeScript passes. The existing actual-flight browser case passes physical P engagement without
+ARM, persistent readout at30/90s, and the240s powered climb/capture gates. Its
+scenery is a UI fixture; flight/controller state is actual native output.
+Independent source and visual review pass. Peer pending.
+
+**Deviations**
+
+This persistent readout is an explicit simulator UI extension. The hardware-style
+shared selector still has its three-second page behavior. The preceding narrow
+fix did not satisfy the repeated persistent-display request; broader KAP usability
+remains open in2.0.111.
+
+**Insights**
+
+Checking a transient value immediately after a press misses the disappearance
+the user is reporting. Verify it after the timeout and during actual flight.
+
 ## 2026-11-04 20:08 — Correct KAP evidence scope, stale ALT display, shortcuts and terrain mode
 
 TODO: 2.0.108–2.0.111; R-AP-1/R-AP-2/R-WORLD-6/R-WORLD-7/R-UX-2/R-AIRPORT-1.

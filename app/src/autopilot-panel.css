@@ -3,6 +3,7 @@
 .autopilot-heading { display: flex; align-items: center; gap: 5px; height: 11px; margin: 0 0 3px; padding: 0 7px; line-height: 11px; }
 .autopilot-heading strong { margin-right: auto; font-size: 8px; letter-spacing: .5px; }
 .autopilot-heading span { font-size: var(--cockpit-label-min, 7px); color: #96acb7; }
+.autopilot-heading output { flex: none; white-space: nowrap; font: 10px/11px ui-monospace, monospace; color: #e5cd85; }
 .autopilot-heading b { font: 8px ui-monospace, monospace; color: #e9ce8f; }
 .autopilot-panel .kap-lcd { display: grid; grid-template-columns: 1fr 1fr 1.6fr; gap: 3px; height: 35px; min-height: 0; padding: 3px; color: #e5cd85; background: #080e0d; font-family: ui-monospace, monospace; letter-spacing: 0; }
 .kap-axis { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px; }

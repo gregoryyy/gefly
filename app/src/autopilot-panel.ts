@@ -30,7 +30,7 @@ export function createAutopilotPanel(options: AutopilotOptions): {
   content.className = 'autopilot-content'; content.setAttribute('aria-label', 'KAP 140 style two-axis autopilot');
   content.innerHTML = `
     <div class="kap-unit">
-      <div class="autopilot-heading"><strong>KAP 140</strong><span id="ap-state-label">LIVE</span><b id="ap-engaged-label">INOP</b></div>
+      <div class="autopilot-heading"><strong>KAP 140</strong><output id="ap-vs-command" aria-label="Commanded vertical speed" hidden></output><span id="ap-state-label">LIVE</span><b id="ap-engaged-label">INOP</b></div>
       <div class="kap-lcd" id="ap-status" role="status" aria-live="polite">
         <div class="kap-axis"><span><b id="ap-lateral">—</b><i id="ap-lateral-alert"></i></span><small><span id="ap-lateral-armed"></span><i id="ap-heading-prompt"></i></small></div>
         <div class="kap-axis"><span><b id="ap-vertical">—</b><i id="ap-vertical-alert"></i></span><small id="ap-vertical-armed"></small></div>
@@ -114,6 +114,10 @@ export function createAutopilotPanel(options: AutopilotOptions): {
     element('ap-engaged-label').title = fault ? 'Autopilot sensors invalid; autopilot disconnected (simulator safety substitution)' : '';
     text('ap-lateral', state?.kap_engaged ? lateral[state.kap_lateral] : '—');
     text('ap-vertical', state?.kap_engaged ? vertical[state.kap_vertical] : '—');
+    const vsCommand = element<HTMLOutputElement>('ap-vs-command');
+    vsCommand.hidden = !state?.kap_engaged || state.kap_vertical !== 0 || !!state.kap_cws;
+    const vsFpm = state ? Math.round(state.kap_vs_target_mps / FT_M * 60) : 0;
+    text('ap-vs-command', vsCommand.hidden ? '' : `VS ${vsFpm > 0 ? '+' : ''}${vsFpm} FPM`);
     text('ap-lateral-armed', state?.kap_lateral_arm ? `${lateral[state.kap_lateral_arm]} ARM` : '');
     text('ap-heading-prompt', state?.kap_hdg_prompt ? 'HDG' : '');
     const alert = element('ap-altitude-alert'), alertState = altitudeAlert?.kap_alert_state;
