@@ -2,6 +2,7 @@
 import { createAirportPlayControls } from './airport-play-controls';
 import { createRunwayPracticePanel } from './runway-practice-panel';
 import type { PracticeProgress } from './runway-practice';
+import { makePracticeCircuit, locateOnCircuit, type CircuitGuide } from './practice-circuit';
 import { loadAirportComDirectory } from './airport-com';
 import { createAirportComPanel } from './airport-com-panel';
 import { LngLatBounds, Map as LibreMap, Marker, ScaleControl, setWorkerUrl, type GeoJSONSource, type StyleSpecification } from 'maplibre-gl';
@@ -91,6 +92,15 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     return button;
   });
   const [mapLayer, aerialLayer, navigationLayer, vectorLayer] = layerButtons;
+  const circuitToggle = document.createElement('button');
+  circuitToggle.type = 'button'; circuitToggle.textContent = 'Circuit guide';
+  circuitToggle.setAttribute('aria-pressed', 'false'); circuitToggle.disabled = true;
+  const circuitFit = document.createElement('button');
+  circuitFit.type = 'button'; circuitFit.textContent = 'Fit circuit'; circuitFit.disabled = true;
+  layers.append(circuitToggle, circuitFit);
+  const circuitNote = document.createElement('p'); circuitNote.className = 'practice-map-circuit-note'; circuitNote.hidden = true;
+  circuitNote.textContent = 'Generated practice guide · not published EDFE route · no altitude/speed/obstacle guidance';
+  const circuitReadout = document.createElement('p'); circuitReadout.className = 'practice-map-circuit-readout'; circuitReadout.hidden = true;
   const navigationStatus = document.createElement('p');
   navigationStatus.className = 'practice-map-navigation-status';
   navigationStatus.setAttribute('role', 'status');
@@ -142,7 +152,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   airportDetail.className = 'practice-map-airport-detail';
   airportDetail.setAttribute('aria-live', 'polite');
   airportsSection.append(summary, search, airportType, airportStatus, airportList, airportDetail);
-  container.replaceChildren(header, viewport, status, toolbar, layers, readout, legend, navigationStatus, navigationKey, navigationDetail, airportsSection, credit, caption);
+  container.replaceChildren(header, viewport, status, toolbar, layers, circuitNote, circuitReadout, readout, legend, navigationStatus, navigationKey, navigationDetail, airportsSection, credit, caption);
 
   let map: LibreMap | undefined;
   let aircraft: Marker | undefined;
@@ -178,6 +188,10 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   let navigationVisible = true;
   let airports: Airport[] = [];
   let selectedAirport = 'EDFE';
+  let circuitEnabled = false, circuitDataKey = '', circuitLabelKey = '', circuitLegKey = '';
+  let circuitGuide: CircuitGuide | null = null;
+  let circuitState: Readonly<FlightState> | null = null;
+  const circuitMarkers: Marker[] = [];
   let comPanel: ReturnType<typeof createAirportComPanel> | undefined;
   let reviewing = false;
   const playControls = createAirportPlayControls(options.onStartRunway, options.onStopExercise);
@@ -190,6 +204,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     playControls.update(options.isExerciseActive?.() ?? false, reviewing);
     comPanel?.selectAirport(airport.id);
     if (comPanel) comPanel.element.open = false;
+    refreshCircuit();
     setFollowing(false);
     map?.jumpTo({ center: [airport.lon, airport.lat], zoom: Math.max(map.getZoom(), 11) });
     const elevation = airport.elevation_ft === null ? 'Elevation unavailable' : `Elevation ${airport.elevation_ft} ft (${(airport.elevation_ft * 0.3048).toFixed(0)} m)`;
@@ -257,6 +272,67 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     vectorLayer.setAttribute('aria-pressed', String(enabled));
     updateLayerCaption();
   }
+
+  function refreshCircuit(): void {
+    const practice = options.getRunwayPractice?.();
+    const runway = reviewing ? practice?.runway ?? null
+      : practice?.runway ?? (selectedAirport === 'EDFE' ? playControls.selectedRunway() : null);
+    if (runway !== circuitGuide?.runway) circuitGuide = runway ? makePracticeCircuit(runway) : null;
+    paintCircuit();
+  }
+  function paintCircuit(): void {
+    circuitNote.hidden = !circuitEnabled;
+    circuitReadout.hidden = !circuitEnabled;
+    const guide = circuitEnabled && frame ? circuitGuide : null;
+    circuitFit.disabled = !ready || !guide;
+    if (!ready || !map) return;
+    const key = guide?.runway ?? '';
+    if (key !== circuitDataKey) {
+      circuitDataKey = key;
+      (map.getSource('practice-circuit') as GeoJSONSource).setData({ type: 'FeatureCollection', features: guide ? guide.legs.map(leg => ({
+        type: 'Feature', id: leg.id, properties: { id: leg.id, label: leg.label, runway: guide.runway },
+        geometry: { type: 'LineString', coordinates: [[...leg.start], [...leg.end]] },
+      })) : [] });
+    }
+    const nearest = guide && circuitState ? locateOnCircuit(guide, circuitState) : null;
+    const nearestId = nearest?.legId ?? '';
+    if (nearestId !== circuitLegKey) {
+      circuitLegKey = nearestId;
+      map.setFilter('practice-circuit-nearest', ['==', ['get', 'id'], nearestId]);
+    }
+    circuitReadout.textContent = !circuitGuide
+      ? reviewing ? 'Circuit guide unavailable · recording runway unknown' : 'Circuit guide unavailable · select EDFE or start an EDFE flight'
+      : !frame ? 'Circuit guide unavailable · aircraft position unknown'
+      : nearest ? `EDFE ${circuitGuide.runway} · ${circuitGuide.direction === 'right' ? 'Right' : 'Left'}-hand north circuit · Nearest guide leg: ${circuitGuide.legs.find(leg => leg.id === nearest.legId)!.label} · ${Math.round(nearest.distance_m)} m`
+      : `EDFE ${circuitGuide.runway} · Nearest guide leg unavailable · outside guide area`;
+    if (key !== circuitLabelKey) {
+      circuitLabelKey = key;
+      circuitMarkers.splice(0).forEach(marker => marker.remove());
+      if (guide) for (const leg of guide.legs) {
+        const element = document.createElement('div'); element.className = 'practice-map-circuit-label'; element.dataset.leg = leg.id;
+        const arrow = document.createElement('span'); arrow.className = 'practice-map-circuit-arrow'; arrow.textContent = '➜'; arrow.setAttribute('aria-hidden', 'true');
+        const label = document.createElement('span'); label.textContent = leg.label;
+        element.append(arrow, label);
+        circuitMarkers.push(new Marker({ element }).setLngLat([(leg.start[0] + leg.end[0]) / 2, (leg.start[1] + leg.end[1]) / 2]).addTo(map));
+      }
+    }
+    for (let index = 0; index < circuitMarkers.length && guide; index++) {
+      const leg = guide.legs[index], a = map.project(leg.start), b = map.project(leg.end);
+      const element = circuitMarkers[index].getElement(); element.dataset.nearest = String(leg.id === nearestId);
+      element.querySelector<HTMLElement>('.practice-map-circuit-arrow')!.style.transform = `rotate(${Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI}deg)`;
+    }
+  }
+  listen(circuitToggle, () => {
+    circuitEnabled = !circuitEnabled; circuitToggle.setAttribute('aria-pressed', String(circuitEnabled)); refreshCircuit();
+  });
+  listen(circuitFit, () => {
+    if (!map || !circuitEnabled || !circuitGuide || !frame) return;
+    const [west, south, east, north] = circuitGuide.bounds;
+    setFollowing(false); map.fitBounds([[west, south], [east, north]], { padding: 48, maxZoom: 14, duration: 0 });
+  });
+  const selectedRunway = playControls.element.querySelector('select')!;
+  selectedRunway.addEventListener('change', refreshCircuit);
+  removers.push(() => selectedRunway.removeEventListener('change', refreshCircuit));
 
   // All points remain in GPU layers; only a bounded set of nearby labels uses DOM.
   function nearby<T>(items: T[], coordinates: (item: T) => [number, number]): T[] {
@@ -346,6 +422,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   function paint(): void {
     if (!visible || !ready || !map || !frame || disposed) return;
     paintTrajectory();
+    paintCircuit();
     const pathKey = JSON.stringify(frame.path);
     if (pathKey !== paintedPath) {
       (map.getSource('recorded-path') as GeoJSONSource).setData({
@@ -392,6 +469,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       reviewing = mode === 'review';
       playControls.update(options.isExerciseActive?.() ?? false, reviewing);
       const practice = options.getRunwayPractice?.();
+      circuitState = state;
       practiceCard.update(practice?.progress ?? null,
         selectedAirport !== 'EDFE' || (reviewing && !practice) ? null : practice?.runway ?? playControls.selectedRunway(), reviewing,
         practice && practice.progress.phase !== 'waiting' ? state : null);
@@ -403,7 +481,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
         frame = makePracticeMapFrame(state, path);
       } catch {
         // Invalid flight state: never keep a stale marker, path or readout on screen.
-        frame = undefined; paintedPath = ''; paintTrajectory();
+        frame = undefined; circuitState = null; paintedPath = ''; paintTrajectory(); refreshCircuit();
         aircraft?.remove(); start?.remove();
         if (ready && map) (map.getSource('recorded-path') as GeoJSONSource | undefined)?.setData({ type: 'FeatureCollection', features: [] });
         readout.textContent = 'Aircraft position unavailable';
@@ -412,6 +490,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
         status.textContent = 'Map position unavailable: invalid flight state.';
         return;
       }
+      refreshCircuit();
       const [longitude_deg, latitude_deg] = frame.position;
       readout.textContent = `${Math.abs(latitude_deg).toFixed(4)}° ${latitude_deg < 0 ? 'S' : 'N'}  ${Math.abs(longitude_deg).toFixed(4)}° ${longitude_deg < 0 ? 'W' : 'E'}  ·  ${(Math.round(frame.heading_deg) % 360).toString().padStart(3, '0')}° true`;
       if (ready && !failed) status.hidden = true;
@@ -437,6 +516,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       container.removeEventListener('keyup', stopKey);
       airportMarkers.forEach((marker) => marker.remove());
       navigationMarkers.forEach((marker) => marker.remove());
+      circuitMarkers.forEach((marker) => marker.remove());
       aircraft?.remove();
       start?.remove();
       map?.remove();
@@ -453,6 +533,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
         'recorded-path': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
         airfields: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
         'navigation-aids': { type: 'geojson', data: navigationData },
+        'practice-circuit': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
       },
       layers: [
         { id: 'background', type: 'background', paint: { 'background-color': '#162530' } },
@@ -468,6 +549,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
         { id: 'navigation-components', type: 'circle', source: 'navigation-aids',
           filter: ['!=', ['get', 'component'], 'station'],
           paint: { 'circle-radius': 3, 'circle-color': '#f3a4df', 'circle-stroke-color': '#24202d', 'circle-stroke-width': 1.5 } },
+        { id: 'practice-circuit-guide', type: 'line', source: 'practice-circuit', paint: { 'line-color': '#efcb76', 'line-width': 2, 'line-dasharray': [3, 2] } },
+        { id: 'practice-circuit-nearest', type: 'line', source: 'practice-circuit', filter: ['==', ['get', 'id'], ''], paint: { 'line-color': '#fff3a8', 'line-width': 4, 'line-dasharray': [2, 1.5] } },
         { id: 'path-shadow', type: 'line', source: 'recorded-path', paint: { 'line-color': '#10212c', 'line-width': 6 } },
         { id: 'path', type: 'line', source: 'recorded-path', paint: { 'line-color': '#54e8fa', 'line-width': 3 } },
       ],
@@ -486,7 +569,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     map.on('move', paintTrajectory); map.on('resize', paintTrajectory);
     map.dragRotate.disable();
     map.touchZoomRotate.disableRotation();
-    map.on('moveend', () => { paintAirports(); paintNavigation(); });
+    map.on('moveend', () => { paintAirports(); paintNavigation(); paintCircuit(); });
     map.on('click', 'airfields', event => {
       const airport = airports.find(a => a.id === event.features?.[0]?.properties.id);
       if (airport) selectAirport(airport);
@@ -542,6 +625,9 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       ready = true;
       status.hidden = !failed;
       [...buttons, ...layerButtons].forEach((button) => { button.disabled = false; });
+      circuitToggle.disabled = false;
+      circuitDataKey = ''; circuitLabelKey = ''; circuitLegKey = '';
+      refreshCircuit();
       const savedVector = vector; setAerial(aerial); if (savedVector) setVector(true);
       paintAirports();
       paintNavigation();

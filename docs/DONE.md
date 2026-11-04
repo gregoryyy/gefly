@@ -3,6 +3,40 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 03:13 — Optional north-circuit guide on the flight map
+
+TODO: 2.1.4; R-PLAY-1/R-TRAIN-5/R-WORLD-6/R-REVIEW-1. Agent: Codex
+orchestrator integration; glide_cases pure circuit geometry/tests, glide_model
+map controls/rendering/browser checks, glide_housekeeping provenance and
+independent quality/specification review.
+
+**Implementation notes**
+
+Add an initially off Circuit guide and Fit circuit action for prepared EDFE
+08/26 practice. Draw five north-side legs with direction labels over the existing
+map, preserve the flown path, and highlight the nearest finite segment from the
+selected live or recorded position. Current flight context outranks map selectors;
+unknown recordings do not borrow live context. Invalid positions clear the cues.
+Reuse the approximate runway geometry, including the displaced 26 threshold.
+Keep cue generation and map fitting independent of native physics and recorded
+context. Geometry checks and existing airport/map regressions pass; the
+[bounded review](reviews/2026-11-04-practice-circuit.md) records final browser
+observations, quality and separate criterion outcomes.
+
+**Deviations**
+
+The one-nautical-mile width and departure/final extensions are instructional
+proposals. This generated schematic is not EDFE's published route and supplies
+no altitude, speed or obstacle-clearance instruction. Nearest leg does not mean
+flown leg, circuit completion or a grade. This does not complete milestone 2,
+the source-geometry research or aircraft/exercise validation. Peer pending.
+
+**Insights**
+
+A useful practice aid can show the circuit structure while keeping generated
+geometry distinct from the actual flight path and published navigation data.
+Review must resolve its own runway context before choosing a guide.
+
 ## 2026-11-04 02:58 — Taller flying view and retained drag look
 
 TODO: 2.0.67; R-INPUT-1/R-VIEW-1. Agent: Codex orchestrator integration;

@@ -97,3 +97,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [Map content as terrain texture](2026-11-04-map-terrain-texture.md) — retain regional map geography without terrain labels; correct the sparse Vector view.
 
 - [2026-11-04 — Flying area and retained view](2026-11-04-flying-view-controls.md)
+
+- [2026-11-04 — Continue TODO mode: circuit practice guide](2026-11-04-circuit-guide-increment.md)
