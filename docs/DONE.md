@@ -5,7 +5,7 @@ above previous entries. This log records implementation, not simulator validity.
 
 ## 2026-11-04 12:48 — Let visible maps promote background loads
 
-TODO: 2.0.82; R-WORLD-9. Codex implementation; glide_housekeeping review.
+TODO: 2.0.82; R-WORLD-9. Agent: Codex implementation; glide_housekeeping review.
 
 **Implementation notes**
 
