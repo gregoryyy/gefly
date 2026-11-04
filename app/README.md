@@ -828,7 +828,7 @@ The collapsed flight map keeps almost all front-window height for the map, with
 compact view controls over it. Click an airport, aid or fix for an on-map popup;
 supported channel buttons load COM1/2 or NAV1/2 **standby**, with activation still
 on the radio stack. Search, filters and full source details are in the comma menu
-below the map. Tuning is read-only during Review. GPS target draws a map line and
+below the map. **Location types** checkboxes filter both map markers and search results; airfields, helipads, NAV aids, fixes and other facility types can be toggled independently. Tuning is read-only during Review. GPS target draws a map line and
 shows true bearing/distance; it does not command the aircraft or an installed GPS.
 Fixes are the pinned historical 2013.10 regional inventory, including duplicate
 identifiers at separate coordinates. Original rows and license are retained in

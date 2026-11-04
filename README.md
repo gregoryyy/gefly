@@ -159,7 +159,7 @@ route or an altitude, speed or obstacle-clearance instruction.
 
 **M** or **View → Flight map** opens a right-side map beside the 3D view,
 showing the aircraft and whole retained flight path. **Comma (,)** opens the menu
-below the map over the right cockpit panels. The map has **731 searchable
+below the map over the right cockpit panels. **Location types** checkboxes filter airfields, helipads, NAV aids, fixes and other facilities on both the map and search results. The map has **731 searchable
 community airfield and heliport entries across five southern German states**, including available airport elevations. Choose the
 public map or aerial imagery; a nautical scale and **community radio beacons and historical LOC/ILS
 references (2013.10)** provide source-marked practice context. Pan/zoom,

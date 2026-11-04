@@ -157,3 +157,4 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [Map cache performance](2026-11-04-map-cache-performance.md)
 - [Startup preloading and full-height interactive map](2026-11-04-startup-preload-and-map-menu.md)
 - [Pointer-anchored panel zoom and reachable lower edge](2026-11-04-panel-bottom-zoom.md)
+- [Map location-type checkbox filters](2026-11-04-map-location-filters.md)

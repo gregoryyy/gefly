@@ -257,10 +257,12 @@ try {
   assert.equal(navData.features.length, 277);
   assert.equal(navData.features.filter(feature => feature.properties.component === 'station').length, 210);
   assert((await panel.locator('.practice-map-navigation-marker').count()) <= 80);
-  await panel.getByRole('button',{name:'Show navigation aids',exact:true}).click();
+  const locationTypes=menu.getByRole('group',{name:'Location types',exact:true});
+  const navCheckbox=locationTypes.getByRole('checkbox',{name:'NAV aids',exact:true});
+  await navCheckbox.uncheck();
   assert.equal(await panel.locator('.practice-map-navigation-marker').count(),0);
   assert.equal(await page.evaluate(()=>window.__rightFlightMap.getLayoutProperty('navigation-stations','visibility')),'none');
-  await panel.getByRole('button',{name:'Show navigation aids',exact:true}).click();
+  await navCheckbox.check();
   assert.equal(await page.evaluate(()=>window.__rightFlightMap.getLayoutProperty('navigation-stations','visibility')),'visible');
   assert((await panel.locator('.practice-map-navigation-marker').count()) <= 80);
   assert.match(await panel.locator('.practice-map-navigation-status').filter({hasText:'144 community sources'}).textContent(),/144 community sources.*66 historical LOC\/ILS.*2013\.10.*not current AIS/);
@@ -279,17 +281,18 @@ try {
     assert.deepEqual(await page.locator('#com1-active,#com2-active,#nav1-active,#nav2-active').allTextContents(),activeChannels,'popup tunes standby only');
     assert.equal(await page.evaluate(()=>window.rightMapStates.at(-1).kap_engaged),apBefore);await frozen(paused);
   };
-  assert.equal(await panel.getByRole('button',{name:'Show navigation aids',exact:true}).getAttribute('aria-pressed'),'true','airport marker is reachable with NAV labels still visible');
+  assert(await navCheckbox.isChecked(),'airport marker is reachable with NAV labels still visible');
+  assert.equal(await panel.getByRole('button',{name:'Show navigation aids',exact:true}).count(),0,'location checkbox replaces the duplicate NAV toggle');
   await panel.getByRole('button',{name:'Select Frankfurt-Egelsbach Airport',exact:true}).click();
   await popup.getByRole('button',{name:'COM1 standby',exact:true}).first().waitFor({state:'visible'});
   await tunePopup('com');
   await panel.locator('.maplibregl-popup-close-button').click();
-  const pointSearch=menu.getByLabel('Search map points'),pointType=menu.getByLabel('Point type');
-  await pointType.selectOption('nav');await pointSearch.fill('FFM');
+  const pointSearch=menu.getByLabel('Search map points');
+  await pointSearch.fill('FFM');
   await menu.locator('.map-point-search-row').first().click();await panel.locator('.maplibregl-popup-close-button').click();
   await panel.getByRole('button',{name:/^Show navigation aid FFM, VOR/}).first().click();
   await tunePopup('nav');await panel.locator('.maplibregl-popup-close-button').click();
-  await pointType.selectOption('fix');await pointSearch.fill('ASKIK');
+  await pointSearch.fill('ASKIK');
   await menu.locator('.map-point-search-row').filter({hasText:'ASKIK'}).first().click();
   await popup.getByRole('button',{name:'GPS target',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('#map-gps-readout').textContent.includes('ASKIK'));
@@ -300,6 +303,47 @@ try {
   await frozen(paused);assert.equal(await page.evaluate(()=>window.rightMapStates.at(-1).kap_engaged),apBefore);
   await page.screenshot({path:`${output}/right-map-point-actions.png`});
   checks.push('actual airport/NAV marker popups tune both standby receivers only; ASKIK source fix sets the exact GPS target; AP and paused native state remain unchanged');
+
+  await panel.locator('.maplibregl-popup-close-button').click();await pointSearch.fill('');
+  const typeLabels=['Airfields','Helipads','Seaplane bases','Balloonports','Closed facilities','NAV aids','Fixes'];
+  for(const name of typeLabels) assert(await locationTypes.getByRole('checkbox',{name,exact:true}).isChecked(),`${name} defaults on`);
+  const layerState=()=>page.evaluate(async()=>{
+    const map=window.__rightFlightMap,airports=await map.getSource('airfields').getData(),nav=await map.getSource('navigation-aids').getData(),fixes=await map.getSource('navigation-fixes').getData();
+    return {types:airports.features.map(f=>f.properties.type),navCount:nav.features.length,fixCount:fixes.features.length,
+      navShown:map.getLayoutProperty('navigation-stations','visibility')!=='none'&&nav.features.length>0,
+      fixesShown:map.getLayoutProperty('navigation-fixes','visibility')!=='none'&&fixes.features.length>0};
+  });
+  const allLocations=await layerState(),retainedPath=await pathData();
+  for(const [name,sourceType] of [['Airfields','_airport'],['Helipads','heliport']]){
+    const checkbox=locationTypes.getByRole('checkbox',{name,exact:true});await checkbox.uncheck();const hidden=await layerState();
+    assert(!hidden.types.some(type=>sourceType==='_airport'?type.endsWith(sourceType):type===sourceType),`${name} filters actual airport GPU features`);
+    assert(hidden.types.some(type=>sourceType==='_airport'?type==='heliport':type.endsWith('_airport')),'other airfield categories remain visible');
+    assert.equal(await panel.locator(sourceType==='_airport'?'.practice-map-airport-marker[data-type$="_airport"]':'.practice-map-airport-marker[data-type="heliport"]').count(),0);
+    assert(hidden.navShown&&hidden.fixesShown,'airfield-type changes retain NAV and fixes');
+    await checkbox.check();assert.deepEqual((await layerState()).types,allLocations.types);
+  }
+  for(const [name,field,selector] of [['NAV aids','navShown','.practice-map-navigation-marker'],['Fixes','fixesShown','.practice-map-fix-marker']]){
+    const checkbox=locationTypes.getByRole('checkbox',{name,exact:true});await checkbox.uncheck();const hidden=await layerState();
+    assert.equal(hidden[field],false,`${name} hides GPU features`);assert.equal(await panel.locator(selector).count(),0,`${name} removes DOM labels`);
+    assert.deepEqual(hidden.types,allLocations.types,'airport features remain intact');await checkbox.check();assert.equal((await layerState())[field],true);
+  }
+  await pointSearch.focus();await page.keyboard.type('m,./');assert.equal(await pointSearch.inputValue(),'m,./');
+  for(const name of typeLabels) assert(await locationTypes.getByRole('checkbox',{name,exact:true}).isChecked(),'typing shortcut keys does not change location choices');
+  assert(await panel.isVisible()&&await menu.isVisible());await pointSearch.fill('');
+  for(const name of typeLabels) await locationTypes.getByRole('checkbox',{name,exact:true}).uncheck();
+  const empty=await layerState();assert.equal(empty.types.length,0);assert(!empty.navShown&&!empty.fixesShown);
+  assert.equal(await menu.locator('.map-point-search-row').count(),0,'all-off leaves unified search empty');
+  assert.equal(await panel.locator('.practice-map-airport-marker,.practice-map-navigation-marker,.practice-map-fix-marker').count(),0,'all-off removes all location DOM markers');
+  await page.waitForFunction(()=>window.__rightFlightMap.queryRenderedFeatures({layers:['airfields','navigation-stations','navigation-components','navigation-fixes']}).length===0);
+  assert.deepEqual(await pathData(),retainedPath);assert(await panel.locator('.practice-map-aircraft').isVisible());
+  assert.deepEqual(await page.evaluate(async()=>await window.__rightFlightMap.getSource('gps-target').getData()),gps,'GPS line/target is independent of location visibility');
+  await scene.focus();await page.keyboard.press('m');await panel.waitFor({state:'hidden'});await page.keyboard.press('m');await panel.waitFor({state:'visible'});
+  for(const name of typeLabels) assert(!await locationTypes.getByRole('checkbox',{name,exact:true}).isChecked(),'hide/reopen retains checkbox choices');
+  assert.equal(await menu.locator('.map-point-search-row').count(),0);await frozen(paused);
+  await activate();
+  for(const name of typeLabels) await locationTypes.getByRole('checkbox',{name,exact:true}).check();
+  assert.deepEqual((await layerState()).types,allLocations.types);await frozen(paused);
+  checks.push('location checkboxes independently filter airfields/helipads/NAV/fixes on map and search; all-off retains aircraft/trail/GPS and choices survive reopen');
 
   // A new raster request really fails while the independently held path remains.
   const beforeFailure = await pathData();

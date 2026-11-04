@@ -5,6 +5,7 @@ export interface MapPoint {
   readonly id: string;
   readonly name: string;
   readonly kind: string;
+  readonly airport_type?: string;
   readonly lon_deg: number;
   readonly lat_deg: number;
   readonly source_label: string;
