@@ -3,6 +3,27 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 12:35 — Step down simulation speed
+
+TODO: 2.0.47; R-SIM-9. Agent: Codex implementation; glide_housekeeping review.
+
+**Implementation notes**
+
+Shift+= / + steps 10× → 5× → 2× → 1.5× → 1×, clamped at 1×,
+for live and Review. Flight menu shows the shortcut; Shift-click also decrements.
+German Shift+0 producing = remains speed-up. TypeScript and the existing actual
+native-worker flight-assists browser check pass, including guards and paused-state
+invariance. Independent glide_housekeeping source/coverage review passes with no
+findings; peer pending.
+
+**Deviations**
+
+No new rates or broad test suite; fixed-step dynamics remain unchanged.
+
+**Insights**
+
+Character and physical-key matching must distinguish shifted US + from German =.
+
 ## 2026-11-04 11:44 — Takeoff loading and native fuel consumption
 
 TODO: 2.0.80; R-SIM-11/R-REVIEW-1.

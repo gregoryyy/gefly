@@ -123,3 +123,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-04 — Collision-panel Flight menu](2026-11-04-collision-flight-menu.md)
 
 - [2026-11-04 — Takeoff loading and fuel consumption](2026-11-04-aircraft-loading-fuel.md)
+
+- [2026-11-04 — Step down simulation speed](2026-11-04-simulation-slower.md)

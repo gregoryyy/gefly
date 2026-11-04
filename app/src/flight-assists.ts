@@ -14,7 +14,7 @@ interface FlightAssistsOptions {
 /** Keyboard/menu conveniences; the worker remains authoritative for flight and pacing. */
 export function createFlightAssists(options: FlightAssistsOptions): {
   update(rate: number, reviewing: boolean): void;
-  cycleRate(): void;
+  cycleRate(direction?: 1 | -1): void;
   reset(): void;
   dispose(): void;
 } {
@@ -34,8 +34,8 @@ export function createFlightAssists(options: FlightAssistsOptions): {
   capture.title = 'Simulator shortcut: capture current heading and altitude; KAP 140 panel controls remain separate';
   const speed = document.createElement('button');
   speed.type = 'button'; speed.id = 'simulation-rate';
-  speed.setAttribute('aria-keyshortcuts', '=');
-  speed.append(document.createElement('span'), ' ', shortcut('='));
+  speed.setAttribute('aria-keyshortcuts', '= Shift+=');
+  speed.append(document.createElement('span'), ' ', shortcut('= / Shift+='));
   menu.append(capture, speed);
 
   const overlay = document.createElement('output');
@@ -55,8 +55,7 @@ export function createFlightAssists(options: FlightAssistsOptions): {
     if (overlay.dataset.review !== String(reviewing)) overlay.dataset.review = String(reviewing);
     const ariaLabel = reviewing ? 'Replay speed' : 'Simulation speed';
     if (overlay.getAttribute('aria-label') !== ariaLabel) overlay.setAttribute('aria-label', ariaLabel);
-    const title = reviewing ? 'Replay speed; = cycles 1×, 1.5×, 2×, 5×, 10×'
-      : 'Simulation speed; = cycles 1×, 1.5×, 2×, 5×, 10×';
+    const title = `${reviewing ? 'Replay' : 'Simulation'} speed; = cycles 1×, 1.5×, 2×, 5×, 10×; Shift+= steps down to 1×; Shift-click steps down`;
     if (overlay.title !== title) overlay.title = title;
     const span = speed.querySelector('span')!;
     const menuLabel = `${reviewing ? 'Replay' : 'Simulation'} speed: ${label}`;
@@ -68,12 +67,14 @@ export function createFlightAssists(options: FlightAssistsOptions): {
     if (disposed || reviewing || !options.canCapture()) return;
     options.onCapture();
   }
-  function cycleRate(): void {
+  function cycleRate(direction: 1 | -1 = 1): void {
     if (disposed || !options.canChangeRate()) return;
     // Queue intent without presenting it as acknowledged worker state. An older
     // acknowledgment must not rewind a rapidly repeated user's cycle position.
     const current = requestedRate ?? confirmedRate;
-    const rate = RATES[(RATES.indexOf(current) + 1) % RATES.length];
+    const index = RATES.indexOf(current);
+    const rate = RATES[direction < 0 ? Math.max(0, index - 1) : (index + 1) % RATES.length];
+    if (rate === current) return;
     requestedRate = rate;
     options.onRate(rate);
   }
@@ -89,15 +90,16 @@ export function createFlightAssists(options: FlightAssistsOptions): {
     if (event.code === 'KeyA') {
       if (event.shiftKey || reviewing || !options.canCapture()) return;
       event.preventDefault(); event.stopPropagation(); captureCurrent();
-    } else if (event.key === '=') {
+    } else if (event.key === '=' || event.key === '+' || event.code === 'Equal' && event.shiftKey) {
       // Match the character: German keyboards produce '=' with Shift+Digit0.
       // Consume it before the global digit/throttle handler sees that code.
       if (!options.canChangeRate()) return;
-      event.preventDefault(); event.stopPropagation(); cycleRate();
+      event.preventDefault(); event.stopPropagation();
+      cycleRate(event.key === '+' || event.code === 'Equal' && event.shiftKey ? -1 : 1);
     }
   }
   capture.addEventListener('click', captureCurrent);
-  speed.addEventListener('click', cycleRate);
+  speed.addEventListener('click', event => cycleRate(event.shiftKey ? -1 : 1));
   document.addEventListener('keydown', onKey, true);
   render();
 
