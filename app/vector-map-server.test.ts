@@ -100,13 +100,13 @@ test('four upstream jobs, bounded pending queue, duplicate sharing and byte LRU 
   const handler = createVectorMapMiddleware({ cacheBytes: 0, fetcher: async () => {
     requested++; active++; peak = Math.max(peak, active); await gate; active--; return response();
   } });
-  const paths = Array.from({ length: 65 }, (_, i) => `/scenery/vector/12/${2140 + i}/1390.pbf`);
-  const jobs = paths.slice(0, 64).map(path => call(handler, path));
+  const paths = Array.from({ length: 49 }, (_, i) => `/scenery/vector/12/${2140 + i}/1390.pbf`);
+  const jobs = paths.slice(0, 48).map(path => call(handler, path));
   const duplicate = call(handler, paths[0]);
-  assert.equal((await call(handler, paths[64])).status, 503, '65th distinct pending job rejected');
+  assert.equal((await call(handler, paths[48])).status, 503, '49th distinct pending job for one host rejected');
   assert.equal(requested, 4); release();
   assert((await Promise.all([...jobs, duplicate])).every(result => result.status === 200));
-  assert.equal(requested, 64); assert.equal(peak, 4);
+  assert.equal(requested, 48); assert.equal(peak, 4);
   let calls = 0;
   const small = createVectorMapMiddleware({ cacheBytes: pbf.length, fetcher: async () => { calls++; return response(); } });
   await call(small, paths[0]); await call(small, paths[0], 'HEAD'); assert.equal(calls, 1);
@@ -140,4 +140,76 @@ test('derived terrain style is pinned, label/extrusion free and restricted to fi
   assert.equal(style.layers.length, 360);
   assert(style.layers.every((layer: { type: string }) => ['background', 'fill', 'line', 'circle'].includes(layer.type)));
   assert(!/https?:\/\//.test(bytes.toString('utf8')), 'style cannot trigger direct third-party requests');
+});
+
+test('pinned global landmark routes enforce canonical z7–14 coordinates, identify the client and isolate their cache from BKG', async () => {
+  const seen: string[] = [];
+  const handler = createVectorMapMiddleware({ fetcher: async (input, init) => {
+    const url = String(input); seen.push(url);
+    assert.equal(init?.redirect, 'error'); assert.equal(init?.credentials, 'omit');
+    assert.equal(new Headers(init?.headers).get('User-Agent'), 'Gefly/0.2 (+https://github.com/gregoryyy/gefly)');
+    assert(init?.signal);
+    if (url.includes('openfreemap')) assert.match(url, /^https:\/\/tiles\.openfreemap\.org\/planet\/20261101_080013_pt\/\d+\/\d+\/\d+\.pbf$/);
+    return new Response(url.includes('openfreemap') ? new Uint8Array([26, 1, 8]) : pbf, { headers: { 'content-type': 'application/vnd.mapbox-vector-tile' } });
+  } });
+  const bkg = await call(handler, '/scenery/vector/12/2146/1390.pbf');
+  const landmark = await call(handler, '/scenery/landmarks/12/2146/1390.pbf');
+  assert.notDeepEqual(landmark.data, bkg.data, 'identical XYZ across sources cannot alias cached bytes');
+  assert.equal(landmark.headers['X-Scenery-Sources'], 'OpenFreeMap-OSM-20261101_080013_pt');
+  assert.equal((await call(handler, '/scenery/landmarks/12/2146/1390.pbf', 'HEAD')).data.length, 0);
+  assert.equal(seen.length, 2, 'HEAD reuses only the matching source cache');
+  for (const path of ['/scenery/landmarks/7/0/0.pbf', '/scenery/landmarks/14/16383/16383.pbf',
+    '/scenery/landmarks/9/100/200.pbf']) assert.equal((await call(handler, path)).status, 200, 'global tiles need not intersect Germany');
+  const count = seen.length;
+  for (const path of ['/scenery/landmarks/6/0/0.pbf', '/scenery/landmarks/15/0/0.pbf', '/scenery/landmarks/07/0/0.pbf',
+    '/scenery/landmarks/7/00/0.pbf', '/scenery/landmarks/7/128/0.pbf', '/scenery/landmarks/7/0/128.pbf',
+    '/scenery/landmarks/7/-1/0.pbf', '/scenery/landmarks/../secret', '/scenery/landmarks/9/268/173.pbf?url=https://example.com',
+    '/scenery/landmarks/9/268/173.pbf/extra']) assert.equal((await call(handler, path)).status, 404, path);
+  assert.equal((await call(handler, '/scenery/landmarks/9/268/173.pbf', 'POST')).status, 404);
+  assert.equal(seen.length, count, 'malformed landmark routes never contact any upstream');
+});
+
+test('landmark and cartography traffic have four fetches each and a shared 64-job bound; malformed responses never enter cache', async () => {
+  let release!: () => void; const gate = new Promise<void>(resolve => { release = resolve; });
+  let active = 0, peak = 0, calls = 0;
+  const hosts = { bkg: { active: 0, peak: 0 }, landmarks: { active: 0, peak: 0 } };
+  const handler = createVectorMapMiddleware({ fetcher: async input => {
+    const host = String(input).includes('openfreemap') ? hosts.landmarks : hosts.bkg;
+    calls++; active++; host.active++; peak = Math.max(peak, active); host.peak = Math.max(host.peak, host.active);
+    await gate; active--; host.active--; return response();
+  } });
+  const paths = Array.from({ length: 64 }, (_, i) => i % 2 ? `/scenery/landmarks/12/${2140 + i}/1390.pbf` : `/scenery/vector/12/${2140 + i}/1390.pbf`);
+  const pending = paths.map(path => call(handler, path));
+  assert.equal((await call(handler, '/scenery/landmarks/12/100/100.pbf')).status, 503);
+  assert.equal(calls, 8); release();
+  assert((await Promise.all(pending)).every(result => result.status === 200)); assert.equal(peak, 8);
+  assert.equal(hosts.bkg.peak, 4); assert.equal(hosts.landmarks.peak, 4);
+  for (const fetcher of [async () => new Response('HTML', { headers: { 'content-type': 'text/html' } }),
+    async () => new Response('x', { headers: { 'content-type': 'application/x-protobuf', 'content-length': String(2 * 1024 * 1024 + 1) } }),
+    async () => new Response(pbf, { status: 503, headers: { 'content-type': 'application/x-protobuf' } })]) {
+    assert.equal((await call(createVectorMapMiddleware({ fetcher }), '/scenery/landmarks/9/268/173.pbf')).status, 502);
+  }
+});
+
+test('a saturated cartography host cannot starve landmarks, and either host reserves pending capacity for the other', async () => {
+  for (const saturated of ['bkg', 'landmarks'] as const) {
+    let release!: () => void; const gate = new Promise<void>(resolve => { release = resolve; });
+    let blockedActive = 0, blockedPeak = 0, otherStarted = false;
+    const handler = createVectorMapMiddleware({ cacheBytes: 0, fetcher: async input => {
+      const host = String(input).includes('openfreemap') ? 'landmarks' : 'bkg';
+      if (host === saturated) {
+        blockedActive++; blockedPeak = Math.max(blockedPeak, blockedActive); await gate; blockedActive--;
+      } else otherStarted = true;
+      return response();
+    } });
+    const prefix = saturated === 'bkg' ? 'vector' : 'landmarks', otherPrefix = saturated === 'bkg' ? 'landmarks' : 'vector';
+    const waiting = Array.from({ length: 48 }, (_, i) => call(handler, `/scenery/${prefix}/12/${2140 + i}/1390.pbf`));
+    assert.equal(blockedActive, 4);
+    assert.equal((await call(handler, `/scenery/${prefix}/12/2200/1390.pbf`)).status, 503, 'one host cannot claim a 49th pending slot');
+    const other = await call(handler, `/scenery/${otherPrefix}/12/2146/1390.pbf`);
+    assert.equal(other.status, 200); assert(otherStarted, 'other fixed host completes before the saturated pool is released');
+    assert.equal(blockedActive, 4, 'the saturated requests were still blocked during the other host response');
+    release(); assert((await Promise.all(waiting)).every(result => result.status === 200));
+    assert.equal(blockedPeak, 4);
+  }
 });

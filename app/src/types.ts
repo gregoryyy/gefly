@@ -156,6 +156,7 @@ export interface FlightState extends Partial<Record<keyof AltitudeAlertSnapshot,
 }
 export interface Controls { elevator: number; aileron: number; rudder: number; throttle: number; flap_norm?: number; brake_norm?: number; mixture_norm?: number; mixture_auto?: boolean; pitch_trim_norm?: number; engine_running?: boolean; pilot_override?: boolean }
 export interface FlightScene {
+  setLandmarkLevel?(level: 0 | 1 | 2 | 3): void;
   setSceneryMode?(vector: boolean): void;
   setPracticePapi?(enabled: boolean): void;
   setTerrainTiles?(tiles: readonly TerrainGrid[]): void;

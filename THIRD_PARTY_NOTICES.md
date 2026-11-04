@@ -286,3 +286,24 @@ Source hash, exact changes, upstream terms and live vector/sprite endpoints are 
 is rendered onto the existing terrain, with linked attribution visible in the
 scene. Data licensing is separate from Gefly code. No aircraft model or commercial
 map subscription is added.
+
+## Floating OpenStreetMap landmark labels
+
+The optional label overlay uses OpenStreetMap-derived OpenMapTiles data served
+by [OpenFreeMap](https://openfreemap.org/), pinned to its
+`20261101_080013_pt` edition. Displayed credit links OpenFreeMap, OpenMapTiles
+and [© OpenStreetMap contributors / ODbL](https://www.openstreetmap.org/copyright).
+The OpenMapTiles schema is CC BY 4.0; the hosting software's MIT license does not
+relicense the map data. Tiles are loaded on demand, not redistributed as an
+offline database. Names/positions may be incomplete or stale; these are visual
+landmarks, not authoritative navigation aids or surveyed obstacles. See the
+[source note](docs/research/2026-11-04-osm-landmark-labels.md).
+
+`@mapbox/vector-tile` 3.0.0 (Copyright 2024 Mapbox) and `pbf` 5.1.2
+(Copyright 2026 Mapbox) decode those vector tiles under BSD-3-Clause. Their
+complete notices are retained in [vector-tile license](LICENSES/vector-tile-BSD-3-Clause.txt)
+and [pbf license](LICENSES/pbf-BSD-3-Clause.txt), and copied into UI build output.
+
+The decoder also bundles `@mapbox/point-geometry` 1.1.0 (Copyright 2024 Mapbox),
+under ISC; its [complete notice](LICENSES/point-geometry-ISC.txt) is retained and
+copied into UI build output.

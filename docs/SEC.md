@@ -348,3 +348,16 @@ one offscreen MapLibre context with a bounded queue/cache and disposal. Failed
 tiles are transparent over the existing photographs; data service failure does
 not change physical terrain, navigation or native flight state. See the
 [source note](research/2026-11-04-label-free-map-terrain.md) for coverage/rights.
+
+## Optional landmark names
+
+Period/View label detail enables bounded, on-demand OSM-derived vector reads via
+a fixed OpenFreeMap edition/host. Canonical XYZ paths cannot select arbitrary
+URLs or credentials. The proxy uses separate fixed BKG/OpenFreeMap pools of four concurrent
+fetches each (eight total), with at most 48 pending jobs per provider, 64 total
+and a shared 32 MB cache. Provider-specific cache identities and reserved
+queue capacity prevent terrain loading from starving names. The client bounds
+decode counts, cache, names and rendered labels; obsolete/off/disposed results
+must not repopulate a new view. Names are inert text, not HTML or instructions.
+Service failure leaves scenery and flight independent and reports unavailable
+labels. Current-source labels in Review do not establish historical map state.

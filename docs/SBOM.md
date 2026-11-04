@@ -389,3 +389,18 @@ notice and full license. The final 277-point, 175,504-byte GeoJSON SHA-256 is
 `f485303ecf944d874a7cc7154a6ff0aa0f3de75c9c305372a9bd34bf1d2439d5`.
 This is a separate map-only package; the receiver/worker inventory is unchanged.
 See [source and rebuild instructions](../app/public/mapdata/README.md).
+
+## Optional OSM landmark overlay
+
+Direct pinned decoder dependencies: `@mapbox/vector-tile` 3.0.0 and `pbf` 5.1.2,
+both BSD-3-Clause. They were already installed transitively; direct declarations
+make their use explicit. The lockfile retains exact resolved packages/integrity.
+Full notices are in `LICENSES/` and copied to UI build output.
+
+The fixed OpenFreeMap `20261101_080013_pt` OpenMapTiles/OSM edition supplies
+on-demand names and geometry. It is separate from BKG terrain cartography.
+Linked OpenMapTiles/OSM attribution accompanies rendering; no offline tile or
+landmark database is bundled. [Source/rights/limits](research/2026-11-04-osm-landmark-labels.md).
+
+The decoder imports transitive `@mapbox/point-geometry` 1.1.0 under ISC; its
+complete notice is retained in `LICENSES/point-geometry-ISC.txt` and UI output.

@@ -35,3 +35,5 @@ End with proposed implications, limitations and a handoff to product/orchestrato
 - [Engine-off follow-up, 2026-11-03](2026-11-03-engine-off-followup.md): rejected FlightGear propeller candidate; actual native failures retained, no physics change accepted.
 
 - [Label-free terrain cartography, 2026-11-04](2026-11-04-label-free-map-terrain.md): official vector-map source, label removal, Germany coverage, actual tile probes and attribution.
+
+- [2026-11-04 — OSM landmark source and rights](2026-11-04-osm-landmark-labels.md)

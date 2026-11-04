@@ -1,6 +1,7 @@
+import { createLandmarkLabels, LANDMARK_CREDIT } from './landmark-labels';
 import { createAirportScenery, AIRPORT_VECTOR_CREDIT } from './airport-scenery';
 import {
-  Axis, Cartesian3, CesiumWidget, Color, Credit, Ellipsoid, EllipsoidTerrainProvider,
+  Axis, Cartesian3, Cartographic, CesiumWidget, Color, Credit, Ellipsoid, EllipsoidTerrainProvider,
   ImageryLayer, Ion, JulianDate, UrlTemplateImageryProvider,
   Matrix3, Matrix4, Model, PerspectiveFrustum, Quaternion, Rectangle, ShadowMode, SingleTileImageryProvider, Transforms,
 } from 'cesium';
@@ -113,6 +114,12 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   let vectorScenery = false;
   const airportScenery = createAirportScenery(scene, (lat, lon) => atlasSample(lat, lon)?.ellipsoid_m ?? null);
   widget.creditDisplay.addStaticCredit(new Credit(AIRPORT_VECTOR_CREDIT + ' · <a href="https://www.openstreetmap.org/copyright">Source / licence</a>', true));
+  const landmarkLabels = createLandmarkLabels(scene, container, (lat, lon) => {
+    const height = atlasSample(lat, lon)?.ellipsoid_m ?? scene.globe.getHeight(Cartographic.fromRadians(lon, lat));
+    return typeof height === 'number' && Number.isFinite(height) ? height : null;
+  });
+  const landmarkCredit = new Credit(LANDMARK_CREDIT, true);
+  let landmarkCreditVisible = false;
   const aircraftShadow = createAircraftShadow(scene, container);
   const forwardMarker = createForwardMarker(container);
   const header = container.parentElement?.querySelector<HTMLElement>('.topbar');
@@ -349,6 +356,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   function update(state: FlightState, view: 'cockpit' | 'chase', look?: Readonly<CameraLook>): void {
     if (disposed) return;
     if (![state.lat_rad, state.lon_rad, state.alt_msl_m, state.pitch_rad, state.roll_rad, state.heading_rad].every(Number.isFinite)) {
+      landmarkLabels.update(null, false);
       throw new RangeError('Cannot render a non-finite aircraft state');
     }
     const useTerrain = state.terrain_profile === 1;
@@ -364,6 +372,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     const terrainSample = useTerrain ? atlasSample(state.lat_rad, state.lon_rad) : null;
     if (useTerrain && (!terrainSample || !Number.isFinite(state.ground_height_ellipsoid_m))) {
       container.dataset.terrain = terrainSample ? 'height-unavailable' : 'outside-coverage';
+      landmarkLabels.update(null, false);
       throw new RangeError('Public terrain needs covered coordinates and an explicit converted aircraft height');
     }
     if (useTerrain && streamedTiles.length) {
@@ -471,6 +480,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       insets: { top, left: 36, right: 36, bottom: 18 },
     }) : undefined;
     forwardMarker.update(directions?.forward ?? null, directions);
+    landmarkLabels.update(state, useTerrain);
     widget.render();
 
   }
@@ -481,6 +491,13 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   observer.observe(container);
   update(initialVisual, 'cockpit');
   const flightScene: FlightScene = {
+    setLandmarkLevel(level) {
+      landmarkLabels.setLevel(level);
+      landmarkLabels.update(lastState, lastState.terrain_profile === 1);
+      if (level > 0 && !landmarkCreditVisible) widget.creditDisplay.addStaticCredit(landmarkCredit);
+      if (level === 0 && landmarkCreditVisible) widget.creditDisplay.removeStaticCredit(landmarkCredit);
+      landmarkCreditVisible = level > 0; scene.requestRender();
+    },
     setSceneryMode(vector) {
       vectorScenery = vector; airportScenery.setVectorVisible(false);
       if (vector && !mapTerrain && mapTerrainStatus === 'degraded') mapTerrainLoad = null;
@@ -535,7 +552,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       creditObserver.disconnect();
       clearTimeout(loadTimeout);
       forwardMarker.dispose();
-      aircraftShadow.dispose(); airportScenery.dispose();
+      aircraftShadow.dispose(); airportScenery.dispose(); landmarkLabels.dispose();
       status.remove();
       widget.destroy();
       credits.remove();
