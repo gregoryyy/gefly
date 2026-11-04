@@ -274,6 +274,8 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.100 Keep AP engaged when moving the touchpad from A capture to ARM/other cockpit controls, including the acknowledgement interval; retain steering marker, explicit manual takeover and CWS. Surface rejected AP commands. R-AP-1/R-INPUT-1.
 
+- [x] 2.0.101 Default the steering neutral point and circle to the center of the visible flight window, excluding cockpit and docked map; preserve explicit relative-mode choice and AP/control retention. Record unpredictable regressions and inadequate module isolation in Insights. R-INPUT-1.
+
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
   - [x] 2.1.1 Deliver a bounded EDFE runway-practice briefing and sensed flight-event log: north/right-hand 26 and north/left-hand 08, explicit idle/parked setup, native wheel-contact takeoff/landing observations and ground stop/collision, retained with cursor-correct Review. R-PLAY-1/R-TRAIN-2/R-REVIEW-1. No checklist, circuit grading, official route or complete scenario/weather briefing acceptance; those remain open in 2.1 and 1.5. Peer pending.
   - [x] 2.1.2 Preserve declared EDFE runway context in version-1 JSON recordings; restore the imported briefing/event log from its own trace, keep legacy context unknown, reject malformed metadata and return to the unchanged live flight. R-PLAY-1/R-REVIEW-1. Aircraft/weather provenance, other airports and complete scenario packages remain separate; peer pending.

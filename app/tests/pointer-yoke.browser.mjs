@@ -95,6 +95,31 @@ try {
     await markerAt(centerBefore.x,centerBefore.y);
     return during;
   };
+  const sceneCenter = async label => {
+    await page.waitForFunction(() => {
+      const scene = document.querySelector('#scene').getBoundingClientRect();
+      const marker = document.querySelector('#yoke-center-marker'), box = marker.getBoundingClientRect();
+      return !marker.hidden && Math.abs(box.x + box.width / 2 - (scene.left + scene.right) / 2) < 1
+        && Math.abs(box.y + box.height / 2 - (scene.top + scene.bottom) / 2) < 1;
+    });
+    const rect = await page.locator('#scene').boundingBox();
+    await markerAt(rect.x + rect.width / 2, rect.y + rect.height / 2); await observeMarker(label);
+  };
+  assert(await page.locator('#centered-touchpad').isChecked(), 'fresh session uses fixed visible-scene center');
+  const initialScene = await page.locator('#scene').boundingBox();
+  await page.mouse.click(initialScene.x + initialScene.width * .75, initialScene.y + initialScene.height - 25);
+  await mode('yoke'); await sceneCenter('default activation near bottom still centers the visible scene');
+  await page.setViewportSize({ width: 1280, height: 860 }); await sceneCenter('default center follows resized visible scene');
+  await page.locator('#scene').focus(); await page.keyboard.press('m');
+  await page.locator('#practice-map-panel').waitFor({ state: 'visible' }); await sceneCenter('default center follows scene beside docked map');
+  await page.locator('#scene').focus(); await page.keyboard.press('m');
+  await page.locator('#practice-map-panel').waitFor({ state: 'hidden' });
+  await page.setViewportSize({ width: 1440, height: 900 }); await sceneCenter('default center restores after map and resize');
+  // Explicit opt-out retains the independent relative-anchor regression below.
+  await page.locator('#controls-settings').click(); await page.locator('#centered-touchpad').uncheck();
+  await page.locator('#settings-close').click();
+  await page.waitForFunction(() => !document.querySelector('#control-settings').open && document.activeElement.id === 'scene');
+  await page.keyboard.press('Escape'); await mode('off'); await marker.waitFor({ state: 'hidden' });
   const before = await stats();
   await page.mouse.click(1000, 160); await mode('yoke');
   await markerAt(1000,160);
@@ -104,7 +129,7 @@ try {
   assert(Math.abs(firstLook.yaw_rad - .7) < .001 && Math.abs(firstLook.pitch_rad + .4) < .001);
   const secondLook = await hold(1200, 180);
   assert(Math.abs(secondLook.yaw_rad - .5) < .001 && Math.abs(secondLook.pitch_rad + .2) < .001,
-    'the next default-relative drag accumulates from the retained view');
+    'the next relative-mode drag accumulates from the retained view');
   await page.mouse.move(1075, 130);
   assert.deepEqual(await axes(), original, 'paused look release preserves both original-axis references');
   await page.mouse.move(1000, 160);
@@ -261,12 +286,13 @@ try {
   assert.deepEqual(errors, []);
   const result = { result: 'pass', checks: [
     'faint neutral marker follows the authoritative relative/centered yoke reference, retains it through look, and hides off/in Review',
+    'fresh default activation near the bottom keeps the marker at the visible-scene center through resize and map docking; relative mode remains an explicit option',
     'Start, pause/resume, menu dismissal, Options Save and AP capture retain the selected yoke mode and neutral marker',
     'A capture tolerates immediate/passive pointer movement toward ARM, while explicit keyboard takeover and held CWS retain their manual-control behavior',
     'paused hold-look preserves original midpoint without advancing actual JSBSim',
     'live hold-look preserves original midpoint and actual aileron/elevator commands',
     'outside release/re-entry and short-click toggle retain their separate behavior',
-    'default-relative look retains and accumulates after release and Options; Escape explicitly centers it',
+    'relative-mode look retains and accumulates after release and Options; Escape explicitly centers it',
     'trusted double-click centers relative/centered/Review look, preserves pre-pair mode and relative anchor, and leaves paused native state unchanged',
   ], originalCommands, markerObservations, armObservations };
   await mkdir(output, { recursive: true });

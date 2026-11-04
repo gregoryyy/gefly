@@ -3,6 +3,37 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 17:53 — Center steering in the visible flight window
+
+TODO: 2.0.101; R-INPUT-1.
+Agent: Codex integration; glide_model two preset defaults and existing unit check;
+glide_cases actual geometry/interaction browser check; glide_housekeeping BOOT
+insight and independent source review.
+
+**Implementation notes**
+
+Enable the existing fixed-center mode by default rather than retaining a clicked
+relative anchor near the window bottom. Both marker and neutral input already use
+the same scene rectangle, excluding the cockpit and docked map. Relative mode
+remains an explicit Options choice. Seventeen settings cases, TypeScript and the
+existing browser case pass: bottom activation centers at720,270, resize at640,268,
+and docked map at384.797,268; native step stays0 during geometry checks. Existing
+relative, AP/ARM, keyboard takeover and CWS paths still pass. Source review passes;
+cross-provider peer pending.
+
+**Deviations**
+
+Only the two preset booleans change runtime behavior. No geometry, pointer gesture,
+AP, worker or physics algorithm changes; pointer source edits are comments only.
+
+**Insights**
+
+The user reports unpredictable regressions from small requests, undoing earlier
+work and making the simulator unreliable. Modular design must contain changes
+rather than spreading them through shared UI/input helpers. Record this as a
+design defect, preserve working behavior at adjacent boundaries, and avoid
+unrelated refactors or process expansion. Added the durable lesson to BOOT.
+
 ## 2026-11-04 17:47 — Keep AP engaged while reaching its controls
 
 TODO: 2.0.100; R-AP-1/R-INPUT-1.

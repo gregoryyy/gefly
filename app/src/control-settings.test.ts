@@ -182,9 +182,9 @@ test('R-INPUT-1 brake latch and rudder-link flags reject nonboolean values', () 
 });
 
 
-test('R-INPUT-1 centered touchpad preference defaults off and never remaps commands', () => {
-  assert.equal(DEFAULT_CONTROL_SETTINGS.centeredTouchpad, false);
-  assert.equal(GENTLE_CONTROL_SETTINGS.centeredTouchpad, false);
+test('R-INPUT-1 centered touchpad preference defaults on and never remaps commands', () => {
+  assert.equal(DEFAULT_CONTROL_SETTINGS.centeredTouchpad, true);
+  assert.equal(GENTLE_CONTROL_SETTINGS.centeredTouchpad, true);
   const raw = Object.freeze({ ...neutral, aileron: .4, elevator: -.2, rudder: .1, brake_norm: .5,
     flap_norm: 1 / 3, pitch_trim_norm: .2, mixture_norm: .8, mixture_auto: false, engine_running: true });
   for (const coordinatedRudder of [false, true]) {

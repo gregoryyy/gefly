@@ -264,6 +264,19 @@ Researchers must disclose unavailable deep research skills and use a documented
 primary-source fallback rather than claiming a tool ran. Preserve exact source
 revisions, aircraft/configuration applicability, units and permitted data reuse.
 
+### Insights: preserve working behavior
+
+Small requests have repeatedly broken earlier work through shared UI/input
+helpers, making the simulator unreliable. Treat unpredictable regressions as
+design defects: modular boundaries should contain a change and preserve delivered
+behavior outside its explicit scope. Keep presentation, selected input mode,
+current commands and autopilot authority distinct; clearing commands must not
+silently discard the user's selection or transfer control ownership.
+
+Check the complete user interaction and its nearest adjacent boundary, such as
+capturing AP and then moving to its controls. Use the smallest relevant existing
+check. Avoid unrelated refactors and broad process work for a local repair.
+
 ### Dispatch, parallel work and integration
 
 The orchestrator sends each worker a goal, TODO/requirement IDs, SPEC revision,

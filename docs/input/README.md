@@ -143,3 +143,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-04 — Steering center retention](2026-11-04-steering-center-retention.md)
 
 - [2026-11-04 — Autopilot pointer handoff](2026-11-04-autopilot-pointer-handoff.md)
+
+- [2026-11-04 — Visible steering center and regression drift](2026-11-04-visible-steering-center.md)

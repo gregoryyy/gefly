@@ -7,7 +7,7 @@ interface PointerYokeOptions {
   onMode: (mode: PointerYokeMode) => void;
   enabled: () => boolean;
   lookOnly?: () => boolean;
-  /** Opt-in fixed scene-center yoke; drag look is retained in every mode. */
+  /** Fixed scene-center yoke; drag look is retained in every mode. */
   centered?: () => boolean;
 }
 
@@ -17,7 +17,7 @@ const LOOK_RAD_PER_PX = 0.004;
 const MAX_LOOK_PITCH_RAD = 70 * Math.PI / 180;
 const clamp = (value: number, limit: number) => Math.max(-limit, Math.min(limit, value));
 
-/** Scene-only click/hold gestures; legacy relative or opt-in fixed-center yoke. */
+/** Scene-only click/hold gestures; relative or fixed-center yoke. */
 export function createPointerYoke(options: PointerYokeOptions): {
   getCenter(): { clientX: number; clientY: number } | null;
   neutralize(): void;

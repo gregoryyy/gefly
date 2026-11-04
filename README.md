@@ -147,7 +147,9 @@ Charts remain publisher-hosted; an embedded aeronautical overlay is not included
 Touchpad and keyboard bank input also steer the rudder/nosewheel by default.
 Options → **Link rudder to aileron** can disable this assistance;
 Q/W manual rudder takes priority. Rudder also steers the nosewheel on the ground.
-Options → **Centered touchpad controls** fixes neutral at the flight-view center.
+Steering neutral and its circle default to the visible flight-window center,
+above the cockpit and beside a docked map. Options → **Centered touchpad controls**
+can be disabled for click-relative steering.
 Both touchpad modes retain the camera angle after hold-drag.
 
 For runway practice, **Circuit guide** adds a generated north-circuit schematic
