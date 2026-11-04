@@ -39,7 +39,7 @@ try {
   await page.addInitScript(() => {
     window.__pointerLook = { yaw_rad: 0, pitch_rad: 0 };
     const Native = window.Worker;
-    window.__pointerInputs = []; window.__pointerStats = []; window.__pointerStates = [];
+    window.__pointerInputs = []; window.__pointerStats = []; window.__pointerStates = []; window.__pointerApCommands = [];
     window.Worker = class extends Native {
       constructor(...args) {
         super(...args);
@@ -52,6 +52,7 @@ try {
       }
       postMessage(message, ...args) {
         if (this === window.__pointerWorker && message?.type === 'input') window.__pointerInputs.push(message);
+        if (this === window.__pointerWorker && ['kap140', 'autopilot-capture'].includes(message?.type)) window.__pointerApCommands.push(structuredClone(message));
         return super.postMessage(message, ...args);
       }
     };
@@ -269,6 +270,28 @@ try {
   assert(armObservations.at(-1).selected_altitude_m > armObservations.at(-2).selected_altitude_m);
   await page.locator('#ap-arm').click(); await page.waitForTimeout(100); await observeArm('pressing already-ARMED cancels it');
   assert.equal(armObservations.at(-1).engaged, 1); assert.equal(armObservations.at(-1).armed, 0);
+  const oldSelection = armObservations.at(-1).selected_altitude_m;
+  await page.locator('#scene').focus(); await page.keyboard.press('a');
+  await page.waitForFunction(previous => Math.abs(window.__pointerStates.at(-1)?.kap_selected_altitude_m - previous) > 1, oldSelection);
+  const typingStart = await page.evaluate(() => window.__pointerApCommands.length);
+  await page.locator('#ap-selector-value').fill('2500');
+  assert(await page.locator('#ap-selector-value').evaluate(input => document.activeElement === input), 'altitude text remains focused before ARM');
+  await page.locator('#ap-arm').click();
+  await page.waitForFunction(() => Math.abs(window.__pointerStates.at(-1)?.kap_selected_altitude_m - 2500 * .3048) < 1e-8);
+  await page.waitForTimeout(100); await observeArm('direct unblurred altitude typing then ARM');
+  const directTypingCommands = await page.evaluate(start => window.__pointerApCommands.slice(start), typingStart);
+  assert.equal(armObservations.at(-1).engaged, 1); assert.equal(armObservations.at(-1).armed, 1,
+    'the ARM press committing a new altitude must preserve its automatic arm');
+  assert.deepEqual(directTypingCommands.filter(message => ['select-altitude', 'arm'].includes(message.command?.action)).map(message => message.command),
+    [{ action: 'select-altitude', value: 2500 * .3048 }], 'the same blur/click gesture must not send a duplicate ARM toggle');
+  await page.locator('#ap-arm').click();
+  await page.waitForFunction(() => window.__pointerStates.at(-1)?.kap_alt_arm === 0);
+  await observeArm('next explicit ARMED press cancels typed-altitude capture');
+  assert.equal(armObservations.at(-1).engaged, 1); assert.equal(armObservations.at(-1).armed, 0);
+  const knobStart = await page.evaluate(() => window.__pointerApCommands.length);
+  await page.locator('#ap-selector-increase').click(); await page.waitForTimeout(100); await observeArm('knob selection before ARM');
+  await page.locator('#ap-arm').click(); await page.waitForTimeout(100); await observeArm('ARM after separately committed knob selection');
+  const knobCommands = await page.evaluate(start => window.__pointerApCommands.slice(start), knobStart);
   await page.mouse.click(1000, 160); await mode('yoke');
   await page.locator('#scene').focus(); await page.keyboard.down('ArrowRight');
   await page.waitForFunction(() => window.__pointerStates.at(-1)?.kap_engaged === 0 && window.__pointerInputs.at(-1)?.pilot_override === true);
@@ -294,7 +317,7 @@ try {
     'outside release/re-entry and short-click toggle retain their separate behavior',
     'relative-mode look retains and accumulates after release and Options; Escape explicitly centers it',
     'trusted double-click centers relative/centered/Review look, preserves pre-pair mode and relative anchor, and leaves paused native state unchanged',
-  ], originalCommands, markerObservations, armObservations };
+  ], originalCommands, markerObservations, armObservations, directTypingCommands, knobCommands };
   await mkdir(output, { recursive: true });
   await writeFile(`${output}/pointer-yoke-browser.json`, `${JSON.stringify(result, null, 2)}\n`);
   console.log(JSON.stringify(result));

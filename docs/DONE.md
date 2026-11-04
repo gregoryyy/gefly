@@ -3,6 +3,37 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 18:26 — Keep edited altitude armed after its ARM click
+
+TODO: 2.0.102; R-AP-1.
+Agent: Codex integration and timer-free gesture cleanup; glide_model panel fix;
+glide_cases actual before/after browser; glide_housekeeping independent source review.
+
+**Implementation notes**
+
+Reproduced the clarified symptom: HDG/ALT stay engaged while typing2500 and
+clicking ARM dispatches select-altitude762 followed by arm, cancelling the
+selection's auto-arm. Remember pre-blur button intent within the panel and
+consume only that same gesture's redundant toggle. Retain intent until click,
+with explicit gesture/lifecycle cleanup instead of a timing-dependent expiry.
+TypeScript and the existing nine-group actual Chrome case pass: the edited
+selection stays armed, a subsequent ARMED press cancels, and knob, steering-center,
+AP handoff, keyboard takeover and CWS paths remain passing. Source review passes;
+peer pending.
+
+**Deviations**
+
+Only autopilot-panel behavior changes. No worker, KAP mode law, input-controller,
+flight-physics or aircraft-data edits. Delayed compatibility-click timing was
+not directly simulated; no such runtime acceptance is claimed.
+
+**Insights**
+
+The user's clarification distinguishes this ARM failure from the separate
+pointer-disconnect regression. A knob-based check missed the natural typed-entry
+commit: validate editing the field and clicking the requested action directly,
+including the blur/change/click sequence, before concluding the reported issue is fixed.
+
 ## 2026-11-04 17:53 — Center steering in the visible flight window
 
 TODO: 2.0.101; R-INPUT-1.

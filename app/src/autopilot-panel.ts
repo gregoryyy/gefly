@@ -55,6 +55,10 @@ export function createAutopilotPanel(options: AutopilotOptions): {
   let altitudeAlert: AltitudeAlertSnapshot | null = null;
   let gesture: { button: HTMLButtonElement; pointerId?: number; key?: string; action: 'ap' | 'baro' | 'vertical' | 'cws'; fired: boolean } | null = null;
   let holdTimer: ReturnType<typeof setTimeout> | undefined;
+  let armPress: { pointerId: number; armed: boolean; selectionCommitted: boolean } | null = null;
+  function clearArmPress(): void {
+    armPress = null;
+  }
   // The shared selector is interpreted by the page and units shown when the
   // entry started (first keystroke, or press of a +/− knob button), never by the
   // page shown at commit: BARO/VS pages expire after 3 s while the user types,
@@ -101,7 +105,7 @@ export function createAutopilotPanel(options: AutopilotOptions): {
   }
   function render(): void {
     const enabled = canControl(), state = latest;
-    if (!enabled) stopGesture();
+    if (!enabled) { stopGesture(); clearArmPress(); }
     text('ap-state-label', reviewing ? 'REC' : 'LIVE');
     // Generic simulator fault flag: invalid AP sensors disconnect the AP (F48).
     const fault = state?.kap_sensor_fault === 1;
@@ -174,7 +178,10 @@ export function createAutopilotPanel(options: AutopilotOptions): {
   function click(event: MouseEvent): void {
     if (!event.isTrusted || !(event.target instanceof Element)) return;
     const button = event.target.closest<HTMLButtonElement>('button');
-    if (!button || !canControl()) return;
+    const autoArmedByThisPress = button?.id === 'ap-arm' && event.detail > 0
+      && armPress !== null && !armPress.armed && armPress.selectionCommitted;
+    clearArmPress();
+    if (!button || !canControl() || autoArmedByThisPress) return;
     if ([ap, baro, cws, element('ap-up'), element('ap-down')].includes(button)) { event.preventDefault(); return; }
     const modes: Record<string, KapCommand['action']> = { 'ap-heading': 'hdg', 'ap-nav': 'nav', 'ap-apr': 'apr', 'ap-rev': 'rev', 'ap-alt': 'alt', 'ap-arm': 'arm' };
     if (modes[button.id]) send({ action: modes[button.id] });
@@ -196,16 +203,31 @@ export function createAutopilotPanel(options: AutopilotOptions): {
       : started!.page === 2 ? { action: 'baro-setting', value: value * (started!.units ? INHG_PA : 100) }
         : { action: 'select-altitude', value: value * FT_M };
     if (input.readOnly || !input.checkValidity() || !validKapCommand(command)) { input.setCustomValidity('Enter a value within the simulator setting range.'); input.reportValidity(); return; }
-    input.setCustomValidity(''); if (input === selector) entry = null; send(command);
+    input.setCustomValidity(''); if (input === selector) entry = null;
+    // Blurring a changed selector onto ARM already arms it. The same pointer
+    // press must not immediately toggle that newly armed selection back off.
+    if (armPress && command.action === 'select-altitude' && latest?.kap_engaged) armPress.selectionCommitted = true;
+    send(command);
   }
   function pointerDown(event: PointerEvent): void {
-    if (event.isTrusted && event.button === 0) knobDown(event);
+    if (event.isTrusted && event.button === 0) {
+      clearArmPress();
+      if (event.target instanceof Element && event.target.closest('#ap-arm') && canControl()) {
+        armPress = { pointerId: event.pointerId, armed: !!latest?.kap_alt_arm, selectionCommitted: false };
+      }
+      knobDown(event);
+    }
     if (!event.isTrusted || event.button !== 0 || !(event.target instanceof HTMLButtonElement)) return;
     if (![ap, baro, cws, element('ap-up'), element('ap-down')].includes(event.target)) return;
     event.preventDefault(); event.target.focus(); beginGesture(event.target, event.pointerId);
   }
   function pointerUp(event: PointerEvent): void { if (gesture?.pointerId === event.pointerId) stopGesture(event.type === 'pointerup'); }
+  function endArmPress(event: PointerEvent): void {
+    if (armPress?.pointerId !== event.pointerId) return;
+    if (event.type !== 'pointerup' || !(event.target instanceof Element) || !event.target.closest('#ap-arm')) clearArmPress();
+  }
   function keyDown(event: KeyboardEvent): void {
+    clearArmPress();
     // A held external CWS switch must allow the flight keys to reach the yoke.
     if (gesture?.action === 'cws' && !['Space', 'Enter'].includes(event.code)) return;
     event.stopPropagation();
@@ -231,7 +253,7 @@ export function createAutopilotPanel(options: AutopilotOptions): {
     const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('button') : null;
     if (button?.id.startsWith('ap-selector-')) knobPress = { button, ...shownPage() };
   }
-  function cancel(): void { stopGesture(); }
+  function cancel(): void { stopGesture(); clearArmPress(); }
   function visibility(): void { if (document.hidden) cancel(); }
   function layout(): void {
     if (disposed) return;
@@ -244,6 +266,7 @@ export function createAutopilotPanel(options: AutopilotOptions): {
   function finish(): void { dialog.close(); }
   content.addEventListener('click', click); content.addEventListener('change', change); content.addEventListener('input', clearValidity); content.addEventListener('focusout', selectorBlur);
   content.addEventListener('pointerdown', pointerDown); content.addEventListener('pointerup', pointerUp); content.addEventListener('pointercancel', pointerUp); content.addEventListener('lostpointercapture', pointerUp);
+  window.addEventListener('pointerup', endArmPress); window.addEventListener('pointercancel', endArmPress);
   content.addEventListener('keydown', keyDown); window.addEventListener('keyup', keyUp); window.addEventListener('blur', cancel); document.addEventListener('visibilitychange', visibility);
   opener.addEventListener('click', open); done.addEventListener('click', finish); dialog.addEventListener('close', close); media.addEventListener('change', layout);
   layout(); render();
@@ -256,9 +279,10 @@ export function createAutopilotPanel(options: AutopilotOptions): {
     },
     dispose() {
       if (disposed) return;
-      stopGesture(); disposed = true;
+      cancel(); disposed = true;
       content.removeEventListener('click', click); content.removeEventListener('change', change); content.removeEventListener('input', clearValidity); content.removeEventListener('focusout', selectorBlur);
       content.removeEventListener('pointerdown', pointerDown); content.removeEventListener('pointerup', pointerUp); content.removeEventListener('pointercancel', pointerUp); content.removeEventListener('lostpointercapture', pointerUp);
+      window.removeEventListener('pointerup', endArmPress); window.removeEventListener('pointercancel', endArmPress);
       content.removeEventListener('keydown', keyDown); window.removeEventListener('keyup', keyUp); window.removeEventListener('blur', cancel); document.removeEventListener('visibilitychange', visibility);
       opener.removeEventListener('click', open); done.removeEventListener('click', finish); dialog.removeEventListener('close', close); media.removeEventListener('change', layout);
       if (dialog.open) dialog.close(); dialog.remove(); container.replaceChildren();
