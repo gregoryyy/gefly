@@ -32,6 +32,28 @@ function fixture(centered = false) {
     disable: () => { enabled = false; }, review: () => { lookOnly = true; } };
 }
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+test('center query exposes the authoritative neutral point without changing controls or borrowed look', async () => {
+  const f = fixture(); assert.equal(f.controller.getCenter(), null);
+  f.click(180, 220); assert.deepEqual(f.controller.getCenter(), {clientX:180, clientY:220});
+  const point = f.controller.getCenter()!; point.clientX = 999;
+  assert.deepEqual(f.controller.getCenter(), {clientX:180, clientY:220}, 'query result cannot move the anchor');
+  f.surface.dispatchEvent(pointer('pointerdown',300,300)); await sleep(280);
+  f.surface.dispatchEvent(pointer('pointermove',400,350));
+  const counts = [f.yokes.length,f.looks.length,f.modes.length];
+  assert.deepEqual(f.controller.getCenter(), {clientX:180, clientY:220});
+  assert.deepEqual([f.yokes.length,f.looks.length,f.modes.length],counts, 'query emits no controls or gestures');
+  f.surface.dispatchEvent(pointer('pointerup',400,350));
+  f.surface.rect = {left:250,right:800,top:0,bottom:600}; assert.equal(f.controller.getCenter(), null, 'off-scene anchor is hidden');
+  f.surface.rect.left = 0; f.review(); assert.equal(f.controller.getCenter(), null); f.controller.dispose(); assert.equal(f.controller.getCenter(), null);
+  const centered = fixture(true); centered.click(10,10);
+  assert.deepEqual(centered.controller.getCenter(), {clientX:400,clientY:300});
+  centered.surface.rect = {left:100,right:1000,top:40,bottom:800};
+  assert.deepEqual(centered.controller.getCenter(), {clientX:550,clientY:420}, 'center follows resized scene');
+  centered.disable(); assert.equal(centered.controller.getCenter(), null); centered.controller.dispose();
+  const off = fixture(); off.click(); off.click(); assert.equal(off.controller.getCenter(), null); off.controller.dispose();
+});
+
 function doubleClick(surface: Surface, x: number, y: number): void {
   for (const detail of [1, 2]) {
     surface.dispatchEvent(pointer('pointerdown', x, y)); surface.dispatchEvent(pointer('pointerup', x, y));

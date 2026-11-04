@@ -3,6 +3,31 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 10:10 — Faint active yoke-center marker
+
+TODO: 2.0.74; R-INPUT-1.
+Agent: Codex orchestrator integration; glide_cases neutral-point query;
+glide_model marker/UI and browser checks; glide_housekeeping independent review.
+
+**Implementation notes**
+
+Show a faint 14px ring/dot at the actual active neutral pointer reference. Keep
+the relative anchor through borrowed look; follow scene resizing in centered
+mode. Hide when off, unavailable, outside the scene or in Review. The marker is
+noninteractive and decorative; observing its position changes no control state.
+Focused pointer units pass 18 cases; the real-pointer browser passes six groups
+with native paused-state isolation. [Independent quality/validation](reviews/2026-11-04-yoke-center-marker.md)
+passes; cross-provider peer pending.
+
+**Deviations**
+
+None. No new settings, input semantics or physics changes.
+
+**Insights**
+
+Render the authoritative neutral point separately from the projected aircraft
+nose so looking around cannot suggest a shifted steering reference.
+
 ## 2026-11-04 10:01 — World-authoring research and planned scene pipeline
 
 TODO: 2.0.73; R-WORLD-8/R-WORLD-3/R-AUTHOR-1/R-DATA-1.

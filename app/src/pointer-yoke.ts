@@ -19,6 +19,7 @@ const clamp = (value: number, limit: number) => Math.max(-limit, Math.min(limit,
 
 /** Scene-only click/hold gestures; legacy relative or opt-in fixed-center yoke. */
 export function createPointerYoke(options: PointerYokeOptions): {
+  getCenter(): { clientX: number; clientY: number } | null;
   cancel(): void;
   reset(): void;
   dispose(): void;
@@ -203,6 +204,16 @@ export function createPointerYoke(options: PointerYokeOptions): {
   document.addEventListener('visibilitychange', visibility);
 
   return {
+    getCenter() {
+      if (disposed || !yokeActive || !options.enabled() || options.lookOnly?.()) return null;
+      const rect = element.getBoundingClientRect();
+      if (![rect.left, rect.right, rect.top, rect.bottom].every(Number.isFinite)
+        || rect.right <= rect.left || rect.bottom <= rect.top) return null;
+      const clientX = options.centered?.() ? (rect.left + rect.right) / 2 : anchorX;
+      const clientY = options.centered?.() ? (rect.top + rect.bottom) / 2 : anchorY;
+      return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom
+        ? { clientX, clientY } : null;
+    },
     cancel, reset,
     dispose() {
       if (disposed) return;

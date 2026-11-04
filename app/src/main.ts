@@ -75,6 +75,7 @@ root.innerHTML = `
   <aside id="stall-awareness-panel" aria-label="Spatial stall awareness estimates" hidden></aside>
   <aside id="flight-warnings" aria-label="Flight warnings, simulator cues"></aside>
   <div id="camera-fov" class="camera-fov">60° FOV · two-finger scroll</div>
+  <div id="yoke-center-marker" class="yoke-center-marker" aria-hidden="true" hidden></div>
   <div id="pointer-mode" class="pointer-mode">Click scene: yoke · Hold-drag: look</div>
   <aside id="flight-controls-panel" class="control-panel" aria-label="Flight controls">
     <div class="control-heading"><strong>FLIGHT CONTROLS</strong><span id="control-state">START FLIGHT TO CONTROL</span></div>
@@ -1057,7 +1058,14 @@ const sceneReady = createScene(sceneContainer).then(result => {
   session.pause(); updateSessionUI();
 });
 let lastFrame = performance.now();
+const yokeCenterMarker = el('yoke-center-marker');
 function animate(now: number) {
+  const yokeCenter = pointerYoke?.getCenter() ?? null;
+  yokeCenterMarker.hidden = yokeCenter === null;
+  if (yokeCenter) {
+    yokeCenterMarker.style.left = `${yokeCenter.clientX}px`;
+    yokeCenterMarker.style.top = `${yokeCenter.clientY}px`;
+  }
   if (mapDisposed) return;
   const dt = clamp((now - lastFrame) / 1000, 0, 0.1); lastFrame = now;
   if (controlsAvailable() && pitchTrimTarget !== null && latest?.pitch_trim_norm !== undefined && (held('Quote') || held('Backslash'))) {
