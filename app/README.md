@@ -66,7 +66,9 @@ unavailable. Returning to live restores pending control settings.
 | P | Autopilot on / off (simulator shortcut) |
 | A | Engage autopilot HDG + ALT at current heading/pressure altitude |
 | = | Cycle simulation rate 1× → 1.5× → 2× → 5× → 10× → 1× |
-| . | Cycle landmark labels: Off / Places / Landmarks / Detailed |
+| M | Open / close the flight map |
+| , | Toggle the larger map view |
+| . | Cycle terrain landmark labels: Off / Places / Landmarks / Detailed |
 | I | Show / hide the top title/menu bar |
 | O | Open Options |
 | Space | Start / pause / resume |
@@ -74,7 +76,7 @@ unavailable. Returning to live restores pending control settings.
 | V | Switch cockpit / chase view |
 | S | Toggle sound, including flight-warning cues (off by default) |
 | E | Request engine ignition/starter on or off |
-| / | Restore initial trim |
+| / (US keyboard) | Toggle vector / photographic terrain |
 | [ / ] | Retract / extend flaps one 10° detent |
 | B (hold) | Apply both wheel brakes at the Options command; release to let go |
 | N | Toggle the parking brake on / off |
@@ -199,8 +201,9 @@ configured value returns after disconnect.
 Q is left rudder and W right rudder. Positive `rudder_cmd_norm` yaws left in the
 pinned generic model.
 
-**Comma (,)** opens and closes the flight map. **Period (.)** cycles landmark
-labels. **O** opens Options and **I** toggles the title/menu bar. Unassigned menu
+**M** opens and closes the flight map. **Comma (,)** toggles its larger view.
+**Period (.)** cycles terrain landmark labels. **/** (Slash on a US keyboard)
+toggles vector/photo terrain. **O** opens Options and **I** toggles the title/menu bar. Unassigned menu
 actions remain clickable; no Option/Alt–Shift combinations are installed.
 Keyboard shortcuts keep typing, modal and repeat guards.
 
@@ -220,9 +223,8 @@ does not command the live flight's acceleration or restore physics from history.
 Hold the **'** key for nose-up elevator trim or **\\** for nose-down trim while flying,
 or adjust the vertical trim slider. The flap detents are vertical beside it. The command stays set when the key is released and
 across pause/resume and Review. Adjustment is available while paused, with
-physics unchanged until Resume; recorded Review remains read-only. The **/**
-key or middle keycap restores the command computed when this flight
-started. Restarting the flight computes its initial trim again.
+physics unchanged until Resume; recorded Review remains read-only. The middle
+trim reset button restores the command computed when this flight started. Restarting the flight computes its initial trim again.
 
 This uses the generic c172x model's normalized pitch-trim command, added to the
 pilot's elevator command. Negative trim commands nose up; positive commands nose
@@ -566,7 +568,7 @@ when the handbook opens.
 
 ## Practice map
 
-Press **,** or select **View → Flight map** to show or hide a
+Press **M** or select **View → Flight map** to show or hide a
 north-up practice map. It loads MapLibre on demand and uses bundled photographs
 plus the fixed-source live map/photo service described below. The aircraft marker shows true heading; the plotted route uses up
 to 600 points from the current flight's retained state trace. **Trace start**
@@ -781,7 +783,7 @@ selected recorded position and leaves loading frequencies read-only.
 
 ## Right-side flight map
 
-Press **,** or choose **View → Flight map**. On desktop the
+Press **M** or choose **View → Flight map**. On desktop the
 map opens beside the outside view while the cockpit keeps its full width; smaller
 viewports use a bounded floating map. Its first click activates the panel.
 The default **Map** uses BKG TopPlusOpen; **Aerial** shows the existing public
@@ -806,7 +808,7 @@ separate required flight-startup packages retain their fail-closed behavior. See
 
 Recordings can be saved and loaded as version 1 JSON using **Flight → Save/Load recording JSON** or the replay bar. Loading opens a validated, read-only state trace and preserves the current live flight; **Back to live** restores its previous flying/paused state. Files retain at most ten minutes/36,000 samples (256 MB import limit), in SI units; they are not native physics checkpoints.
 
-Use **Overlap cockpit** in the flight map to change overlap. **Comma (,)** opens/closes the map and **N** remains the parking brake.
+Use **Comma (,)** or **Larger map** in the flight map to toggle the larger map view. **M** opens/closes the map and **N** remains the parking brake.
 
 Flight map → **Charts** opens the official OFM Germany VFR viewer and DFS AIP
 airport/approach chart access. The selected airport identifier remains visible.

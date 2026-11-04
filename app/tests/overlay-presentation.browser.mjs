@@ -101,7 +101,7 @@ try {
   await flight.keyboard.press('o'); await flight.locator('#control-settings').waitFor({ state: 'visible' });
   assert(await flight.locator('.topbar').isVisible(), 'O does not toggle a visible title bar');
   await flight.locator('#settings-close').click();
-  for (const [selector, key] of [['#controls-settings','O'],['#toggle-map',','],['#cycle-landmarks','.'],['#pause','Space']])
+  for (const [selector, key] of [['#controls-settings','O'],['#toggle-map','M'],['#cycle-landmarks','.'],['#pause','Space']])
     assert.equal(await flight.locator(selector).getAttribute('aria-keyshortcuts'), key);
   for (const selector of ['#reset','#toggle-controls','#handbook-open','#eddf-ils-practice']) {
     assert.equal(await flight.locator(selector).getAttribute('aria-keyshortcuts'), null, `${selector} has no assigned shortcut`);
@@ -135,7 +135,7 @@ try {
   await flight.waitForFunction(() => document.querySelector('#roll-left').classList.contains('held'));
   await flight.mouse.up();
   await flight.keyboard.press('Space');
-  await flight.locator('#scene').focus(); await flight.keyboard.press(',');
+  await flight.locator('#scene').focus(); await flight.keyboard.press('m');
   const map = flight.locator('#practice-map-panel');
   await map.waitFor({ state: 'visible' });
   await flight.getByRole('button', { name: 'Zoom map in' }).waitFor({ state: 'visible' });

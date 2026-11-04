@@ -65,24 +65,27 @@ try {
 
   const initialPaused = await stats();
   await scene.focus();
-  for (const key of ['Shift+Comma','Alt+Comma','Control+Comma','Shift+Period','Alt+Period','Control+Period','Alt+Shift+KeyM']) await page.keyboard.press(key);
+  for (const key of ['Shift+KeyM','Alt+KeyM','Control+KeyM','Shift+Comma','Alt+Comma','Control+Comma','Shift+Period','Alt+Period','Control+Period','Shift+Slash','Alt+Slash','Control+Slash','Alt+Shift+KeyM']) await page.keyboard.press(key);
   await scene.evaluate(element => {
-    for (const [code,key] of [['Comma',','],['Period','.']]) for (const guard of ['metaKey','repeat'])
+    for (const [code,key] of [['KeyM','m'],['Comma',','],['Period','.'],['Slash','/']]) for (const guard of ['metaKey','repeat'])
       element.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,code,key,[guard]:true}));
   });
   assert.equal(await panel.isVisible(),false,'modifiers and repeat do not toggle the map');
+  await page.keyboard.press(',');
+  assert.equal(await panel.isVisible(),false,'larger-map comma does not open a closed map');
+  assert.equal(await scene.getAttribute('data-scenery-mode'),'imagery');
   await page.keyboard.press('i');
   await page.locator('#view-menu > summary').click();
-  await page.keyboard.press(',');
-  await page.keyboard.press('.');
-  assert.equal(await panel.isVisible(),false,'open menu guards comma');
+  await page.keyboard.press('m');
+  await page.keyboard.press(','); await page.keyboard.press('.'); await page.keyboard.press('/');
+  assert.equal(await panel.isVisible(),false,'open menu guards presentation keys');
   assert.equal(await scene.getAttribute('data-landmark-level'),'0');
   await page.keyboard.press('i');
   await page.keyboard.press('o');
   await page.locator('#control-settings').waitFor({state:'visible'});
-  await page.keyboard.press(',');
-  await page.keyboard.press('.');
-  assert.equal(await panel.isVisible(),false,'modal dialog guards comma');
+  await page.keyboard.press('m');
+  await page.keyboard.press(','); await page.keyboard.press('.'); await page.keyboard.press('/');
+  assert.equal(await panel.isVisible(),false,'modal dialog guards presentation keys');
   assert.equal(await scene.getAttribute('data-landmark-level'),'0');
   await page.evaluate(()=>{
     window.rightMapOptionsClosed=false;
@@ -92,31 +95,31 @@ try {
   await page.waitForFunction(()=>window.rightMapOptionsClosed&&document.activeElement?.id==='scene');
   await frozen(initialPaused);
   assert.equal(await scene.getAttribute('data-landmark-level'),'0');
-  checks.push('Comma and period ignore repeat/modifiers, open menus and modal dialogs without moving paused physics');
+  checks.push('M/comma/period/slash ignore repeat/modifiers, open menus and modal dialogs; closed comma does not open map');
 
-  await scene.focus(); await page.keyboard.press(',');
+  await scene.focus(); await page.keyboard.press('m');
   await panel.waitFor({ state: 'visible' });
   await page.waitForFunction(() => window.__rightFlightMap?.getSource('recorded-path') && ![...document.querySelectorAll('.practice-map-toolbar button')].some(button => button.disabled));
   await panel.locator('.maplibregl-ctrl-scale').waitFor({state:'visible'});
   assert.match(await panel.locator('.maplibregl-ctrl-scale').textContent(),/nm/i);
   await frozen(initialPaused);
-  await panel.locator('.maplibregl-canvas').focus(); await page.keyboard.press(',');
+  await panel.locator('.maplibregl-canvas').focus(); await page.keyboard.press('m');
   await panel.waitFor({state:'hidden'});
   assert.equal(await page.locator('.flight-app').getAttribute('data-flight-map'),'false');
-  await scene.focus(); await page.keyboard.press(',');
+  await scene.focus(); await page.keyboard.press('m');
   await panel.waitFor({state:'visible'});
   await activate();
   await panel.locator('.practice-map-airports summary').click();
   const airportSearch = panel.getByLabel('Search airports');
-  await airportSearch.focus(); await page.keyboard.press(',');
-  await page.keyboard.press('.');
-  assert.equal(await airportSearch.inputValue(),',.');
+  await airportSearch.focus(); await page.keyboard.press('m');
+  await page.keyboard.press(','); await page.keyboard.press('.'); await page.keyboard.press('/');
+  assert.equal(await airportSearch.inputValue(),'m,./');
   assert.equal(await scene.getAttribute('data-landmark-level'),'0');
-  assert.equal(await panel.isVisible(),true,'typing comma in search does not close the map');
+  assert.equal(await panel.isVisible(),true,'typing map keys in search does not close the map');
   await airportSearch.fill('');
   await panel.locator('.practice-map-airports summary').click();
   await frozen(initialPaused);
-  checks.push('Comma toggles from scene and map focus, search typing stays local, and the map has a nautical scale');
+  checks.push('M toggles from scene and map focus, search typing stays local, and the map has a nautical scale');
 
   const desktop = await page.evaluate(() => {
     const rect = selector => { const r = document.querySelector(selector).getBoundingClientRect(); return { x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom }; };
@@ -133,11 +136,39 @@ try {
   await page.keyboard.press('i');
   checks.push('desktop map docks on the right beside the 3D view and above the full-width cockpit; shown menus remain unobstructed');
 
+  // Make trim deliberately noninitial before testing Slash's reassigned action.
+  const initialTrim=await page.evaluate(()=>window.rightMapStates.at(-1).pitch_trim_norm);
+  await page.locator('#pitch-trim-control').focus(); await page.keyboard.press('ArrowRight');
+  const changedTrim=Number(await page.locator('#pitch-trim-control').inputValue()),beforeSlash=await stats();
+  assert(Math.abs(changedTrim+initialTrim*100)>.01,'trim command is deliberately different from initial');
+  await scene.focus(); await page.keyboard.press('/');
+  await page.waitForFunction(()=>document.querySelector('#scene').dataset.sceneryMode==='vector');
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  assert(Math.abs(Number(await page.locator('#pitch-trim-control').inputValue())-changedTrim)<1e-6,'Slash preserves staged trim command');
+  assert.equal(await page.evaluate(()=>window.rightMapStates.at(-1).pitch_trim_norm),initialTrim,'paused native trim remains unchanged');
+  await page.keyboard.press('/');
+  await page.waitForFunction(()=>document.querySelector('#scene').dataset.sceneryMode==='imagery');
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  assert(Math.abs(Number(await page.locator('#pitch-trim-control').inputValue())-changedTrim)<1e-6,'Slash preserves staged trim command');
+  assert.equal(await page.evaluate(()=>window.rightMapStates.at(-1).pitch_trim_norm),initialTrim,'paused native trim remains unchanged');
+  await frozen(beforeSlash);
+  await page.locator('#pitch-trim-initial').click();
+  checks.push('Slash selects vector/photo without resetting deliberately changed trim command or advancing native physics');
+
   await page.locator('#start').click();
   await scene.focus(); await page.keyboard.press('a');
   await page.waitForFunction(() => window.rightMapStates.at(-1)?.step > 120);
-  await scene.focus(); await page.keyboard.press(','); await panel.waitFor({state:'hidden'});
-  await page.keyboard.press(','); await panel.waitFor({state:'visible'});
+  await scene.focus(); await page.keyboard.press('m'); await panel.waitFor({state:'hidden'});
+  await page.keyboard.press('m'); await panel.waitFor({state:'visible'});
+  const regular=await panel.boundingBox();
+  await scene.focus(); await page.keyboard.press(',');
+  await page.waitForFunction(()=>document.querySelector('#map-overlap').getAttribute('aria-pressed')==='true');
+  assert.equal(await page.locator('#map-overlap').getAttribute('aria-keyshortcuts'),',');
+  assert.match(await page.locator('#map-overlap').textContent(),/Larger map.*,/);
+  await page.waitForFunction(height=>document.querySelector('#practice-map-panel').getBoundingClientRect().height>height+100,regular.height);
+  await page.keyboard.press(',');
+  await page.waitForFunction(()=>document.querySelector('#map-overlap').getAttribute('aria-pressed')==='false');
+  assert.equal(Math.round((await panel.boundingBox()).height),Math.round(regular.height));
   for (const [index, name] of ['Places','Landmarks','Detailed','Off'].entries()) {
     await scene.focus(); await page.keyboard.press('.');
     await page.waitForFunction(level => Number(document.querySelector('#scene').dataset.landmarkLevel) === level, (index+1)%4);
@@ -154,7 +185,7 @@ try {
   assert(await page.locator('#control-settings').isHidden());
   assert.equal(await page.locator('.topbar [aria-keyshortcuts*="Alt"]').count(),0);
   assert(!(await page.locator('.topbar kbd').allTextContents()).some(text=>/Alt.*Shift|⌥⇧/.test(text)));
-  checks.push('comma opens/closes during actual flight; period cycles all landmark levels; removed Alt+Shift chords neither trigger nor advertise commands');
+  checks.push('M opens/closes during actual flight; comma enlarges/restores existing map; period cycles labels; removed Alt+Shift chords neither trigger nor advertise commands');
   const firstPath = await pathData();
   await page.waitForFunction(() => document.querySelector('.practice-map-trajectory polyline')?.getAttribute('points')?.split(' ').length > 1);
   assert(firstPath.features[0]?.geometry.coordinates.length >= 2, 'real flight creates a trail');
@@ -240,7 +271,7 @@ try {
   await panel.getByRole('button', {name:/Close (practice|flight) map/}).click();
   await panel.waitFor({state:'hidden'});
   await page.setViewportSize({width:1440,height:900});
-  await scene.focus(); await page.keyboard.press(',');
+  await scene.focus(); await page.keyboard.press('m');
   await panel.waitFor({state:'visible'});
   await page.waitForFunction(() => document.querySelectorAll('.practice-map-viewport .maplibregl-canvas').length===1);
   assert.equal(await panel.locator('.maplibregl-canvas').count(),1);

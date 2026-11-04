@@ -271,9 +271,13 @@ user can operate the integrated cockpit. Verify the exact trusted-input sequence
 visible indications and sustained aircraft response together before reporting a
 repair. Keep historical observations distinct from current usability acceptance.
 
-User-assigned shortcuts are product requirements. Do not generate modifier-key
-catalogs or invent replacements for unassigned commands. Comma toggles the map;
-period cycles landmarks. Keep menu labels and actual handlers consistent.
+AI overreach has changed user-decided UI/UX without consent and broken working
+interactions. The user owns interface decisions and key bindings; agents must
+not silently reinterpret or reassign them. Do not generate modifier-key catalogs
+or invent replacements for unassigned commands. Current bindings: M toggles the
+map, comma toggles its larger view, period cycles terrain landmark labels, and
+Slash (/) toggles vector/photo terrain on a US keyboard. Keep menu labels,
+actual handlers and documentation consistent with the user's decisions.
 
 Small requests have repeatedly broken earlier work through shared UI/input
 helpers, making the simulator unreliable. Treat unpredictable regressions as

@@ -55,7 +55,7 @@ map guide. Landing is a clean 90 kt visual-practice start at a geometric 3-degre
 height above the threshold; set power/flaps yourself. It is not a published approach.
 Research flights and contact studies are in the secondary group.
 
-Alternatively, open the flight map with **,**, choose **EDFE 26 or 08**, and select **Start at runway**. The aircraft starts at rest with the engine idling and parking brake
+Alternatively, open the flight map with **M**, choose **EDFE 26 or 08**, and select **Start at runway**. The aircraft starts at rest with the engine idling and parking brake
 set. Press **N** to release the brake, add power with **1–9**, and fly the circuit
 manually. **Stop exercise** on the map pauses the flight and keeps Review available.
 Other airports can be inspected, but their runway starts are not prepared yet.
@@ -73,10 +73,10 @@ start reference. **Events** shows the sensed flight log. Missing data and checks
 the simulator cannot verify stay explicit; no aircraft settings change.
 
 Sharp runway markings, taxiways and apron overlays sit on the public terrain.
-Use **View → Terrain** (also **Options → Map terrain**) to drape official German cartography
+Use **/** (Slash on a US keyboard), **View → Terrain** or **Options → Map terrain** to switch between photography and official German cartography
 without text over the terrain. Roads, fields, woodland, water and building
-footprints extend beyond the airport; photography stays underneath while tiles
-load or if the service fails. The flight map keeps its **Map/Aerial** background;
+footprints extend beyond the airport. The modes are exclusive: loading or missing
+vector tiles expose terrain relief, not photography. The flight map keeps its **Map/Aerial** background;
 its **Map terrain** button changes only the 3D texture. **Practice PAPI / runway
 lights** are separate illustrative aids, not a surveyed EDFE installation.
 [Map terrain source and limits](docs/research/2026-11-04-label-free-map-terrain.md).
@@ -157,8 +157,9 @@ for EDFE 08/26; **Fit circuit** shows all five legs. The nearest-leg readout use
 the selected live or recorded position. This is a practice aid, not a published
 route or an altitude, speed or obstacle-clearance instruction.
 
-**,** or **View → Flight map** opens a right-side map beside the 3D view,
-showing the aircraft, whole retained flight path and **731 searchable
+**M** or **View → Flight map** opens a right-side map beside the 3D view,
+showing the aircraft and whole retained flight path. **Comma (,)** toggles the
+larger map view. The map has **731 searchable
 community airfield and heliport entries across five southern German states**, including available airport elevations. Choose the
 public map or aerial imagery; a nautical scale and **community radio beacons and historical LOC/ILS
 references (2013.10)** provide source-marked practice context. Pan/zoom,

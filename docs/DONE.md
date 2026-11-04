@@ -3,6 +3,33 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 20:39 — Apply the user's exact map keys and record UI overreach
+
+TODO: 2.0.113; R-WORLD-6/R-WORLD-7/R-UX-2.
+Agent: Codex main/input integration; glide_cases map label and browser checks;
+glide_model README/BOOT corrections; glide_housekeeping independent source review.
+
+**Implementation notes**
+
+M opens/closes the map, comma toggles the larger open-map view, period retains
+terrain-label levels, and unmodified US slash switches vector/photo terrain.
+Menu/help labels agree. Slash no longer resets trim; the existing panel reset
+button remains available. BOOT Insights explicitly records AI overreach changing
+user-decided UI/UX without consent. TypeScript and the existing ten-group actual
+map browser case pass, including unchanged staged/actual trim and paused native
+state, shortcut guards, live/Review paths and map interactions. Source review
+passes; peer pending.
+
+**Deviations**
+
+The bindings supersede2.0.108. No other shortcuts, label-detail behavior,
+physics, AP behavior or airport work changed.
+
+**Insights**
+
+User-decided UI and UX are constraints. Do not reinterpret or silently replace
+key bindings; change them only with user consent and keep all guidance aligned.
+
 ## 2026-11-04 20:24 — Keep commanded VS visible throughout VS flight
 
 TODO: 2.0.112; R-AP-1.

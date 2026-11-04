@@ -58,7 +58,7 @@ root.innerHTML = `
     <a class="brand" href="https://github.com/gregoryyy/gefly" target="_blank" rel="noreferrer">gefly<span>FLIGHT LAB</span></a>
     <div class="location"><strong>EGELSBACH</strong><span>C172 research aircraft · airborne practice</span></div>
     <div class="session-status"><i id="status-dot"></i><span id="status" role="status">Loading flight…</span><span id="clock">00:00</span><span id="audio-button-slot"></span></div>
-    <details id="view-menu" class="top-menu"><summary>View</summary><nav class="menu-content view-controls" aria-label="Flight views"><button id="cockpit" class="selected" aria-pressed="true">Cockpit</button><button id="chase" aria-pressed="false">Chase <kbd>V</kbd></button><button id="toggle-fullscreen" type="button" aria-keyshortcuts="F" aria-pressed="false"><span data-fullscreen-label>Full screen</span> <kbd>F</kbd></button><button id="toggle-map-terrain" type="button" aria-pressed="false">Terrain: photos</button><button id="toggle-map" aria-pressed="false" aria-controls="practice-map-panel" aria-keyshortcuts=",">Flight map <kbd>,</kbd></button><button id="cycle-landmarks" type="button" aria-keyshortcuts="." title=". · Cycle landmark labels">Landmarks: Off <kbd>.</kbd></button><button id="toggle-flight-data" aria-pressed="false" aria-controls="flight-data-panel">Flight data</button><button id="toggle-stall-awareness" aria-pressed="false" aria-controls="stall-awareness-panel">Stall awareness</button><button id="toggle-controls" aria-pressed="true" aria-controls="flight-controls-panel">Flight controls</button></nav></details>
+    <details id="view-menu" class="top-menu"><summary>View</summary><nav class="menu-content view-controls" aria-label="Flight views"><button id="cockpit" class="selected" aria-pressed="true">Cockpit</button><button id="chase" aria-pressed="false">Chase <kbd>V</kbd></button><button id="toggle-fullscreen" type="button" aria-keyshortcuts="F" aria-pressed="false"><span data-fullscreen-label>Full screen</span> <kbd>F</kbd></button><button id="toggle-map-terrain" type="button" aria-pressed="false" aria-keyshortcuts="/" title="/ · Switch vector/photo terrain (US keyboard)">Terrain: photos <kbd>/</kbd></button><button id="toggle-map" aria-pressed="false" aria-controls="practice-map-panel" aria-keyshortcuts="M">Flight map <kbd>M</kbd></button><button id="cycle-landmarks" type="button" aria-keyshortcuts="." title=". · Cycle landmark labels">Landmarks: Off <kbd>.</kbd></button><button id="toggle-flight-data" aria-pressed="false" aria-controls="flight-data-panel">Flight data</button><button id="toggle-stall-awareness" aria-pressed="false" aria-controls="stall-awareness-panel">Stall awareness</button><button id="toggle-controls" aria-pressed="true" aria-controls="flight-controls-panel">Flight controls</button></nav></details>
     <span id="review-button-slot"></span>
     <button id="controls-settings" class="settings-trigger" aria-haspopup="dialog">Options</button>
     <details id="flight-menu" class="top-menu"><summary>Flight</summary><nav class="menu-content" aria-label="Flight session">
@@ -81,7 +81,7 @@ root.innerHTML = `
     <h1 id="gate-title">Loading aircraft…</h1>
     <p id="gate-copy">The aircraft starts airborne at 90 kt. Flight time stays paused until you start.</p>
     <button id="start" class="primary" disabled>Loading…</button>
-    <span class="gate-hint">I opens the menu · O opens Options · Space starts/pauses · , opens the map · . cycles landmarks.</span>
+    <span class="gate-hint">I opens the menu · O opens Options · Space starts/pauses · M opens the map · , enlarges it · . labels · / vector/photos (US keyboard).</span>
   </section>
   <aside id="landing-feedback" hidden></aside>
   <aside id="ground-collision-panel" hidden></aside>
@@ -633,9 +633,15 @@ el('toggle-map').onclick = () => {
   setFlightDataVisible(false); void setMapVisible(!mapVisible); closeViewMenu(); focusFlight();
 };
 function flightMapShortcut(event: KeyboardEvent): void {
-  if (event.code !== 'Comma' || event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
+  if (!['KeyM', 'Comma', 'Slash'].includes(event.code) || event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
     || editing(event.target) || menuOpen() || document.querySelector('dialog[open]')) return;
-  event.preventDefault(); event.stopPropagation(); el<HTMLButtonElement>('toggle-map').click();
+  if (event.code === 'Slash' && event.key !== '/') return;
+  if (event.code === 'Comma') {
+    if (mapVisible && practiceMap) { event.preventDefault(); event.stopPropagation(); practiceMap.toggleOverlap(); }
+    return;
+  }
+  event.preventDefault(); event.stopPropagation();
+  el<HTMLButtonElement>(event.code === 'Slash' ? 'toggle-map-terrain' : 'toggle-map').click();
 }
 document.addEventListener('keydown', flightMapShortcut, true);
 function cycleLandmarks(): void {
@@ -1195,7 +1201,6 @@ addEventListener('keydown', event => {
   if (['BracketLeft', 'BracketRight'].includes(event.code) && controlsAvailable() && latest?.flap_rad !== undefined) {
     event.preventDefault(); flapTarget_deg = clamp(flapTarget_deg + (event.code === 'BracketLeft' ? -10 : 10), 0, 30); publishInput();
   }
-  if (event.code === 'Slash' && controlsAvailable() && latest?.pitch_trim_initial_norm !== undefined) { event.preventDefault(); pitchTrimTarget = latest.pitch_trim_initial_norm; publishInput(); }
   if (event.code === 'Space') { event.preventDefault(); togglePause(); }
   if (event.code === 'KeyV') setView(view === 'cockpit' ? 'chase' : 'cockpit');
 });
@@ -1230,7 +1235,7 @@ const flightAssists = createFlightAssists({
     focusFlight();
   },
 });
-sceneContainer.setAttribute('aria-description','I toggles the menu. O opens Options. F toggles full screen. Comma toggles the flight map. Period cycles landmark labels.');
+sceneContainer.setAttribute('aria-description','I toggles the menu. O opens Options. F toggles full screen. M toggles the flight map. Comma toggles a larger map. Period cycles terrain labels. Slash switches vector and photo terrain on a US keyboard.');
 
 const sceneReady = createScene(sceneContainer).then(result => {
   scene = result; scene.setLandmarkLevel?.(landmarkLevel); scene.setSceneryMode?.(!!controlSettings.vectorScenery); scene.setPracticePapi?.(!!controlSettings.practicePapi);

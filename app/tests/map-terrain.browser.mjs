@@ -74,7 +74,7 @@ try {
     return page.evaluate(() => window.terrainStats.at(-1));
   };
   const before = await stats(); assert(before.step > 0);
-  await page.locator('#scene').focus(); await page.keyboard.press(',');
+  await page.locator('#scene').focus(); await page.keyboard.press('m');
   await page.locator('.practice-map-heading').click();
   await page.waitForTimeout(200);
   await mkdir(output, { recursive: true });

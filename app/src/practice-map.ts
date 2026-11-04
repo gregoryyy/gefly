@@ -74,9 +74,10 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   });
   const [zoomOut, zoomIn, fit, fitRegion, follow] = buttons;
   const overlap = document.createElement('button');
-  overlap.type = 'button'; overlap.id = 'map-overlap'; overlap.textContent = 'Overlap cockpit';
+  overlap.type = 'button'; overlap.id = 'map-overlap'; overlap.textContent = 'Larger map · ,';
   overlap.setAttribute('aria-pressed', 'false');
-  overlap.title = 'Let the map extend over the cockpit';
+  overlap.setAttribute('aria-keyshortcuts', ',');
+  overlap.title = ', · Toggle larger map over the cockpit';
   toolbar.append(overlap);
   const layers = document.createElement('div');
   layers.className = 'practice-map-layers';
