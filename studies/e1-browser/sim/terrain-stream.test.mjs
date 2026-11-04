@@ -1,19 +1,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
-import { loadRegionalManifest, TerrainStream } from './terrain-stream.js';
+import { loadRegionalManifest, REGIONAL_TERRAIN, TerrainStream } from './terrain-stream.js';
 globalThis.crypto ??= webcrypto;
 const bytes = new ArrayBuffer(129 * 129 * 8);
 const view = new DataView(bytes);
 for (let i = 0; i < 129 * 129; i++) { view.setFloat32(i * 8, 123, true); view.setFloat32(i * 8 + 4, 42, true); }
 const digest = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), n => n.toString(16).padStart(2, '0')).join('');
 const tiles = [];
-for (let row = 0; row < 6; row++) for (let col = 0; col < 7; col++) {
-  const id = `e${825 + col * 25}-n${4925 + row * 25}`, west_deg = 8.25 + col / 4, south_deg = 49.25 + row / 4;
+for (let row = 0; row < 9; row++) for (let col = 0; col < 12; col++) {
+  const id = `e${700 + col * 25}-n${4925 + row * 25}`, west_deg = 7 + col / 4, south_deg = 49.25 + row / 4;
   tiles.push({ id, west_deg, south_deg, east_deg: west_deg + .25, north_deg: south_deg + .25,
     width: 129, height: 129, bytes: bytes.byteLength, asset: id + '.f32', sha256: digest });
 }
-const manifest = { version: 1, id: 'rhein-main-dgm200-gcg-v1', bounds: [8.25,49.25,10,50.75], tile_degrees: .25, tile_nodes: 129,
+const manifest = { version: 1, id: 'rhein-main-dgm200-gcg-v1', bounds: [7,49.25,10,51.5], tile_degrees: .25, tile_nodes: 129,
   rows: 'south-to-north', physical_datum: 'DHHN2016', geoid_model: 'GCG2016v2023_W', encoding: 'float32-le-interleaved-H-zeta', tiles };
 let fetched = 0;
 const response = data => new Response(data);
@@ -28,9 +28,18 @@ test('regional tiles load on demand and remain bounded across movement', async (
   assert.deepEqual(stream.sample(49.6 * rad, 8.6 * rad), { physical_m: 123, geoid_m: 42, ellipsoid_m: 165 });
   await stream.move(49.6 * rad, 8.85 * rad);
   assert.equal(fetched, 12); assert.equal(installed.size, 9);
+  assert.equal(metas.size, REGIONAL_TERRAIN.tileCount);
+  await stream.move(50.9 * rad, 7.1 * rad);
+  assert(stream.sample(50.9 * rad, 7.1 * rad)); assert(installed.size <= 9);
+  await stream.move(51.4 * rad, 9.9 * rad);
+  assert.equal(stream.gridAt(51.4 * rad, 9.9 * rad).slot, 107); assert(installed.size <= 9);
+  assert.equal(stream.center(51.5 * rad, 9 * rad), null);
+  assert.equal(stream.center(50 * rad, 7 * rad), null);
   await assert.rejects(stream.move(49 * rad, 8 * rad), /boundary/);
 });
 test('manifest rejects asset substitution and tile digest is checked', async () => {
+  const old = structuredClone(manifest); old.bounds = [8.25,49.25,10,50.75];
+  await assert.rejects(loadRegionalManifest(async () => response(JSON.stringify(old))), /Unsupported/);
   const corrupt = structuredClone(manifest); corrupt.tiles[0].asset = '../bad.f32';
   await assert.rejects(loadRegionalManifest(async () => response(JSON.stringify(corrupt))), /metadata/);
   const metas = await loadRegionalManifest(fetcher);
@@ -60,7 +69,7 @@ test('fine surface wins; shared coarse boundary resolves to lowest slot', async 
     south_rad: 49.5 * rad, north_rad: 49.75 * rad, width: 2, height: 2,
     physical_m: new Float64Array([200,200,200,200]), geoid_m: new Float64Array([42,42,42,42]) };
   assert.equal(sampleAtlas(fine, stream.tiles, 49.6 * rad, 8.6 * rad).physical_m, 200);
-  assert.equal(atlasGridAt(null, stream.tiles, 49.6 * rad, 8.5 * rad).slot, 7);
+  assert.equal(atlasGridAt(null, stream.tiles, 49.6 * rad, 8.5 * rad).slot, 17);
 });
 test('stalled manifest times out', async () => {
   const original = globalThis.setTimeout;

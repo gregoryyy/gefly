@@ -100,3 +100,14 @@ test('CWS commands validate atomically and old recordings may omit only the opti
 test('altitude selector immediately shows selected altitude, then first UP reveals VS without changing its command',()=>{
  const s=sensor(),a=createKap140(s);cmd(a,'ap',s);assert.equal(a.snapshot(s).kap_display_page,1);cmd(a,'select-altitude',s,1500);assert.equal(a.snapshot(s).kap_display_page,0);const before=a.snapshot(s).kap_vs_target_mps;cmd(a,'vertical',s,1);assert.equal(a.snapshot(s).kap_display_page,1);assert.equal(a.snapshot(s).kap_vs_target_mps,before);cmd(a,'vertical',s,0);cmd(a,'vertical',s,1);assert.equal(a.snapshot(s).kap_vs_target_mps,before+100*FPM);
 });
+
+test('reconstruction restores exposed stable modes and rejects unavailable transient states atomically',()=>{
+ const s=sensor(),a=createKap140(s);cmd(a,'ap',s);cmd(a,'alt',s);cmd(a,'hdg',s);cmd(a,'select-altitude',s,1500);cmd(a,'baro-setting',s,100000);
+ const original=a.snapshot(s),b=createKap140({...s,t_s:20});assert(b.restore(original,{...s,t_s:20}));
+ for(const key of ['kap_engaged','kap_lateral','kap_vertical','kap_alt_arm','kap_heading_bug_rad','kap_selected_altitude_m','kap_vs_target_mps','kap_hold_pressure_altitude_m','kap_baro_setting_pa'])assert.equal(b.snapshot(s)[key],original[key]);
+ const before=b.snapshot(s);for(const change of [{kap_cws:1},{kap_vertical:2,kap_gs_base_mps:undefined},{kap_sensor_fault:1},{kap_hold_pressure_altitude_m:NaN}]){assert.equal(b.restore({...original,...change},s),false);assert.deepEqual(b.snapshot(s),before);}
+});
+
+test('new GS reference records and restores actual guidance; old captured GS remains unavailable',()=>{
+ const s=sensor({nav:{valid:true,kind:2,cdi_norm:0,course_rad:1,gs_valid:true,gs_norm:.1}}),a=createKap140(s);cmd(a,'ap',s);cmd(a,'apr',s);a.step(s);const frame=a.snapshot(s),b=createKap140(s);assert.equal(frame.kap_vertical,2);assert(b.restore(frame,s));assert.deepEqual(b.guidance(s),a.guidance(s));const legacy={...frame};delete legacy.kap_gs_base_mps;assert(validKapState(legacy));assert.equal(b.restore(legacy,s),false);
+});

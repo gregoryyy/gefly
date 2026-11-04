@@ -472,3 +472,17 @@ test('systems switches round-trip, paused edits replace only latest snapshot, ol
   const old = new FlightTrace(); old.record(state(0), 0); old.record(state(1), 0);
   assert.equal(FlightTrace.fromJSON(old.exportJSON()).atTime(0)!.state.systems_switch_mask, undefined);
 });
+
+test('continuation prefix is exclusive, independent and keeps context while discarding the old future',()=>{
+  const original=new FlightTrace({maxSamples:4,context:runwayContext('26')});
+  for(let i=0;i<6;i++)assert(original.record(state(i),i));
+  const before=original.exportJSON(), branch=original.prefixBefore(4);
+  assert.equal(branch.bounds()!.end_s,3);assert.equal(branch.bounds()!.count,2);assert.equal(branch.bounds()!.clipped,true);
+  assert.deepEqual(branch.getContext(),original.getContext());
+  const boundary={...state(4),heading_rad:2};assert(branch.record(boundary,4));boundary.heading_rad=1;
+  assert.equal(branch.atTime(4)!.state.heading_rad,2);assert.equal(original.exportJSON(),before);
+  assert.deepEqual([...branch.recordedStates()].map(s=>s.t_s),[2,3,4]);
+  assert.equal(original.prefixBefore(0).bounds(),null);
+  for(const bad of [NaN,Infinity,-1])assert.throws(()=>original.prefixBefore(bad));
+  assert(Object.isFrozen(branch.atTime(3)!.state));
+});

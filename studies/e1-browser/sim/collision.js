@@ -95,11 +95,17 @@ export function collisionStateFields(enabled, available, latched) {
   return enabled === true && available === true ? EMPTY_COLLISION : {};
 }
 
-/** Outcome of one fixed-step sample. A detected contact is never dropped: with
- * no valid record (missing/non-finite pre-step motion) the result is "fail". */
+/** Outcome of one fixed-step sample. Missing pre-step motion fails closed. */
 export function contactOutcome(contact, record) {
   // An unavailable proxy sample can still carry an actual native structure
   // contact (for example with an invalid terrain plane); that contact counts.
-  if (contact && contact.mask) return record ? 'latch' : 'fail';
+  if (contact && contact.mask) {
+    if (!record) return 'fail';
+    // User-selected simulator grace, based on pre-impact motion, applies to
+    // every contact mask. Geometry telemetry and native wheel physics stay raw.
+    if (record.collision_groundspeed_mps < 10 * 1852 / 3600
+      && record.collision_down_mps < 2.5 * 1852 / 3600) return 'clear';
+    return 'latch';
+  }
   return contact && contact.available === true ? 'clear' : 'unavailable';
 }

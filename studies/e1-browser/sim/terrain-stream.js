@@ -3,8 +3,9 @@ import { validateTerrainGrid, sampleTerrain } from './terrain.js';
 const ROOT = '/terrain/region/';
 const RAD = Math.PI / 180;
 const BYTES = 129 * 129 * 8;
-const WEST = 8.25, SOUTH = 49.25, COLS = 7, ROWS = 6, TILE = .25;
-const idAt = (col, row) => `e${825 + col * 25}-n${4925 + row * 25}`;
+export const REGIONAL_TERRAIN = Object.freeze({ west: 7, south: 49.25, east: 10, north: 51.5, cols: 12, rows: 9, step: .25, tileCount: 108 });
+const { west: WEST, south: SOUTH, east: EAST, north: NORTH, cols: COLS, rows: ROWS, step: TILE } = REGIONAL_TERRAIN;
+const idAt = (col, row) => `e${WEST * 100 + col * TILE * 100}-n${SOUTH * 100 + row * TILE * 100}`;
 
 const TIMEOUT_MS = 15000;
 
@@ -50,7 +51,7 @@ export async function loadRegionalManifest(fetcher = globalThis.fetch, signal) {
   const bytes = await readBounded(ROOT + 'manifest.json', 100000, fetcher, signal);
   const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
   const m = JSON.parse(text);
-  if (m.version !== 1 || m.id !== 'rhein-main-dgm200-gcg-v1' || JSON.stringify(m.bounds) !== '[8.25,49.25,10,50.75]'
+  if (m.version !== 1 || m.id !== 'rhein-main-dgm200-gcg-v1' || JSON.stringify(m.bounds) !== JSON.stringify([WEST, SOUTH, EAST, NORTH])
       || m.tile_degrees !== .25 || m.tile_nodes !== 129 || m.rows !== 'south-to-north'
       || m.physical_datum !== 'DHHN2016' || m.geoid_model !== 'GCG2016v2023_W'
       || m.encoding !== 'float32-le-interleaved-H-zeta' || !Array.isArray(m.tiles) || m.tiles.length !== COLS * ROWS)
@@ -142,7 +143,7 @@ export class TerrainStream {
   }
   center(lat, lon) {
     const x = lon / RAD, y = lat / RAD;
-    if (!Number.isFinite(x) || !Number.isFinite(y) || x <= WEST || x >= 10 || y <= SOUTH || y >= 50.75) return null;
+    if (!Number.isFinite(x) || !Number.isFinite(y) || x <= WEST || x >= EAST || y <= SOUTH || y >= NORTH) return null;
     return [Math.floor((x - WEST) / TILE), Math.floor((y - SOUTH) / TILE)];
   }
   sample(lat, lon) { return sampleAtlas(null, this.tiles, lat, lon); }

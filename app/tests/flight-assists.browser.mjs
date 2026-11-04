@@ -62,7 +62,7 @@ try {
   assert.equal(await overlay.textContent(), 'SIM 1×');
   assert.equal(await overlay.evaluate(element => getComputedStyle(element).pointerEvents), 'none');
   assert.equal(await page.locator('#capture-autopilot').getAttribute('aria-keyshortcuts'), 'A');
-  assert.equal(await page.locator('#simulation-rate').getAttribute('aria-keyshortcuts'), '=');
+  assert.equal(await page.locator('#simulation-rate').getAttribute('aria-keyshortcuts'), '= Shift+=');
 
   const before = await stats();
   const initial = await state();
@@ -107,10 +107,16 @@ try {
   assert.equal(await page.locator('#throttle').inputValue(), throttleBefore, 'German Shift+0 = never reaches throttle idle');
   unchanged(before, await stats());
   checks.push('German-layout Shift+Digit0 = changes rate while preserving throttle');
+  for (const rate of [5, 2, 1.5, 1, 1]) {
+    await page.keyboard.press('Shift+Equal');
+    await page.waitForFunction(rate => window.assistStates.at(-1)?.simulation_rate === rate && document.querySelector('#simulation-rate-overlay').textContent === `SIM ${rate}×`, rate);
+  }
+  unchanged(before, await stats());
+  checks.push('Shift+= steps down 10×→5×→2×→1.5×→1× and stays at 1× without stepping paused physics');
 
   const commandCount = () => page.evaluate(() => window.assistCommands.filter(command => ['simulation-rate', 'autopilot-capture'].includes(command.type)).length);
   const guarded = await commandCount();
-  for (const key of ['Shift+Equal', 'Alt+Equal', 'Control+Equal', 'Meta+Equal', 'Shift+KeyA', 'Alt+KeyA']) await page.keyboard.press(key);
+  for (const key of ['Alt+Equal', 'Control+Equal', 'Meta+Equal', 'Shift+KeyA', 'Alt+KeyA']) await page.keyboard.press(key);
   await scene.evaluate(element => {
     element.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, code: 'Equal', key: '=', repeat: true }));
     element.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, code: 'KeyA', key: 'a', repeat: true }));
@@ -170,6 +176,10 @@ try {
   await page.locator('#review-rate').click();
   await page.waitForFunction(() => document.querySelector('#simulation-rate-overlay').textContent === 'REPLAY 2×');
   await page.locator('#review-rate').click();
+  await page.waitForFunction(() => document.querySelector('#simulation-rate-overlay').textContent === 'REPLAY 5×');
+  await page.keyboard.press('Shift+Equal');
+  await page.waitForFunction(() => document.querySelector('#simulation-rate-overlay').textContent === 'REPLAY 2×');
+  await page.keyboard.press('Equal');
   await page.waitForFunction(() => document.querySelector('#simulation-rate-overlay').textContent === 'REPLAY 5×');
   await page.locator('#review-play').click();
   const timing = await page.evaluate(() => ({ wall: performance.now(), time: Number(document.querySelector('#review-time').value) }));

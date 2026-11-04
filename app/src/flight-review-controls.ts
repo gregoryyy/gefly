@@ -2,13 +2,14 @@ import './flight-review-controls.css';
 import { reviewTransportView, type ReviewTransportInput } from './review-transport';
 import { MAX_RECORDING_BYTES } from './flight-trace';
 
-export type ReviewTransportState = ReviewTransportInput & { playbackRate: number };
+export type ReviewTransportState = ReviewTransportInput & { playbackRate: number; continuationUnavailable?: string | null; continuationNote?: string; continuing?: boolean };
 
 interface FlightReviewControlsOptions {
   buttonContainer: HTMLElement;
   barContainer: HTMLElement;
   onEnter: () => void;
   onExit: () => void;
+  onContinue?: () => void | Promise<void>;
   onSeek: (t_s: number) => void;
   onTogglePlay: () => void;
   onCycleRate: () => void;
@@ -26,6 +27,7 @@ export function createFlightReviewControls(options: FlightReviewControlsOptions)
   let disposed = false;
   let active = false;
   let available = false;
+  let continuationReason: string | null = null, continuing = false;
   let lastCurrent_s: number | undefined;
   let loadSequence = 0;
   const button = document.createElement('button');
@@ -56,14 +58,17 @@ export function createFlightReviewControls(options: FlightReviewControlsOptions)
       <output id="review-progress" for="review-time">00:00 / 00:00</output>
       <button type="button" id="review-exit">Back to live</button>
     </div>
+    <p id="review-continuation-note">Start a new flight from the selected time.</p>
     <p id="review-note">Recorded actuator state, not input-event replay · ← / → Seek 1 s · Space Play/Pause</p>
-    <div class="review-files"><button type="button" id="review-rate" aria-keyshortcuts="=">Speed 1× · =</button><button type="button" id="review-save">Save JSON</button><button type="button" id="review-load">Load JSON</button></div>
+    <div class="review-files"><button type="button" id="review-continue" aria-describedby="review-continuation-note">Continue live</button><button type="button" id="review-rate" aria-keyshortcuts="=">Speed 1× · =</button><button type="button" id="review-save">Save JSON</button><button type="button" id="review-load">Load JSON</button></div>
   `;
   options.barContainer.append(bar);
   const play = bar.querySelector<HTMLButtonElement>('#review-play')!;
   const slider = bar.querySelector<HTMLInputElement>('#review-time')!;
   const progress = bar.querySelector<HTMLOutputElement>('#review-progress')!;
   const exit = bar.querySelector<HTMLButtonElement>('#review-exit')!;
+  const continueButton = bar.querySelector<HTMLButtonElement>('#review-continue')!;
+  const continuationNote = bar.querySelector<HTMLElement>('#review-continuation-note')!;
   const clipped = bar.querySelector<HTMLElement>('#review-clipped')!;
   const save = bar.querySelector<HTMLButtonElement>('#review-save')!;
   const load = bar.querySelector<HTMLButtonElement>('#review-load')!;
@@ -104,6 +109,10 @@ export function createFlightReviewControls(options: FlightReviewControlsOptions)
   function leave(): void {
     if (!disposed && active) options.onExit();
   }
+  function continueLive(): void {
+    if (disposed || !active || continuing || continuationReason || !options.onContinue) return;
+    void Promise.resolve(options.onContinue()).catch(error => { if (!disposed) options.onFileError(error instanceof Error ? error.message : 'Could not continue from the selected frame.'); });
+  }
   function togglePlay(): void {
     if (!disposed && active) options.onTogglePlay();
   }
@@ -113,6 +122,7 @@ export function createFlightReviewControls(options: FlightReviewControlsOptions)
   }
   button.addEventListener('click', enter);
   exit.addEventListener('click', leave);
+  continueButton.addEventListener('click', continueLive);
   play.addEventListener('click', togglePlay);
   rate.addEventListener('click', options.onCycleRate);
   slider.addEventListener('input', seek);
@@ -124,6 +134,13 @@ export function createFlightReviewControls(options: FlightReviewControlsOptions)
     update(state) {
       if (disposed) return;
       active = state.active;
+      continuing = state.continuing === true;
+      continuationReason = state.continuationUnavailable ?? null;
+      continueButton.disabled = !active || continuing || !!continuationReason || !options.onContinue;
+      continueButton.textContent = continuing ? 'Preparing flight…' : 'Continue live';
+      continueButton.title = continuationReason ?? 'Continue from the selected recorded time';
+      continuationNote.textContent = continuationReason ?? state.continuationNote ?? 'Start a new flight from the selected time.';
+      exit.disabled = load.disabled = loadMenu.disabled = continuing;
       rate.textContent = `Speed ${state.playbackRate}× · =`;
       available = state.available;
       const view = reviewTransportView(state);
@@ -144,7 +161,8 @@ export function createFlightReviewControls(options: FlightReviewControlsOptions)
       // Leave the native range untouched when the selected time has not changed.
       if (boundsChanged || current_s !== lastCurrent_s) slider.value = String(current_s);
       lastCurrent_s = current_s;
-      slider.disabled = play.disabled = view.seekDisabled;
+      slider.disabled = play.disabled = continuing || view.seekDisabled;
+      rate.disabled = continuing;
       if (progress.value !== view.progress) progress.value = view.progress;
       slider.setAttribute('aria-valuetext', view.valueText);
     },
@@ -154,6 +172,7 @@ export function createFlightReviewControls(options: FlightReviewControlsOptions)
       loadSequence++;
       button.removeEventListener('click', enter);
       exit.removeEventListener('click', leave);
+      continueButton.removeEventListener('click', continueLive);
       play.removeEventListener('click', togglePlay);
       rate.removeEventListener('click', options.onCycleRate);
       slider.removeEventListener('input', seek);

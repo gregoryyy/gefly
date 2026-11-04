@@ -54,7 +54,7 @@ try {
           if (message?.type === 'input') window.__collisionInputs.push({ ...message });
           // Explicit supported initial-condition fixture: JSBSim still computes
           // every state/contact itself. This does not inject collision messages.
-          if (message?.type === 'init' && window.__collisionFixture) message = { ...message, terrain: false, state_hz: 1000,
+          if (message?.type === 'init' && window.__collisionFixture) message = { ...message, terrain: false, streaming_terrain: false, state_hz: 1000,
             ic: { ...message.ic, alt_msl_m: 30, tas_mps: 45 } };
         }
         return super.postMessage(message, ...rest);
@@ -225,8 +225,13 @@ try {
     await page.screenshot({ path: `${output}/ground-collision-${width}x${height}.png` });
   }
   await page.setViewportSize({ width: 1440, height: 900 });
+  await page.locator('#scene').focus(); await page.keyboard.press('i');
+  assert(await page.locator('.topbar').isHidden(), 'collision menu action starts with the normal hidden header');
   await page.locator('#collision-flight-menu').click();
+  assert(await page.locator('.topbar').isVisible(), 'collision Flight menu action reveals the header');
   assert(await page.locator('#flight-menu').evaluate(el => el.open));
+  assert(await page.locator('#reset').isVisible());
+  assert(await page.locator('#reset').evaluate(el => el === document.activeElement), 'visible Restart receives keyboard focus');
   await page.evaluate(() => { window.__collisionFixture = false; });
   const previousWorker = await page.evaluate(() => window.__collisionWorkerId);
   await page.locator('#reset').click();

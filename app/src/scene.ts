@@ -14,7 +14,7 @@ import { AIRCRAFT_CONTROL_SURFACES, controlSurfaceAngle } from './aircraft-contr
 import { createAircraftShadow } from './aircraft-shadow';
 import { createPublicTerrainProvider } from './terrain-provider';
 import { createStreamedTerrainProvider } from './streamed-terrain-provider';
-import { loadRegionalManifest, TerrainStream, sampleAtlas, type RegionalTile } from '../../studies/e1-browser/sim/terrain-stream.js';
+import { REGIONAL_TERRAIN, loadRegionalManifest, TerrainStream, sampleAtlas, type RegionalTile } from '../../studies/e1-browser/sim/terrain-stream.js';
 import { createRegionalImageryProvider } from './regional-imagery';
 import { imageryStatusText } from './imagery-status';
 import { loadTerrainPackage, sampleTerrain, type TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
@@ -383,7 +383,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     }
     if (useTerrain && streamedTiles.length) {
       const fine = state.lon_rad>=terrainGrid.west_rad && state.lon_rad<=terrainGrid.east_rad && state.lat_rad>=terrainGrid.south_rad && state.lat_rad<=terrainGrid.north_rad;
-      const key=`${terrainRevision}/${Math.floor((state.lon_rad/DEG_RAD-8.25)*4)}/${Math.floor((state.lat_rad/DEG_RAD-49.25)*4)}/${fine}`;
+      const key=`${terrainRevision}/${Math.floor((state.lon_rad/DEG_RAD-REGIONAL_TERRAIN.west)/REGIONAL_TERRAIN.step)}/${Math.floor((state.lat_rad/DEG_RAD-REGIONAL_TERRAIN.south)/REGIONAL_TERRAIN.step)}/${fine}`;
       if(key!==providerKey) {
         const provider=createStreamedTerrainProvider(terrainGrid,streamedTiles,state);
         if(!provider) throw new Error('Required streamed terrain has not loaded.');
@@ -540,7 +540,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       atlasTiles=new Map(streamedTiles.map(grid=>[grid.id,grid as RegionalTile]));terrainRevision++;
       if(tiles.length && !liveLayers) {
         liveLayers=true;
-        const rectangle=Rectangle.fromDegrees(8.25,49.25,10,50.75);
+        const rectangle=Rectangle.fromDegrees(REGIONAL_TERRAIN.west, REGIONAL_TERRAIN.south, REGIONAL_TERRAIN.east, REGIONAL_TERRAIN.north);
         const mapLayer = new ImageryLayer(new UrlTemplateImageryProvider({url:'/scenery/map/{z}/{x}/{y}.png',minimumLevel:5,maximumLevel:12,tileWidth:256,tileHeight:256,rectangle,
           credit:new Credit('© <a href="https://www.bkg.bund.de" target="_blank" rel="noopener noreferrer">BKG</a> (2026) · <a href="https://www.govdata.de/dl-de/by-2-0" target="_blank" rel="noopener noreferrer">dl-de/by-2-0</a> · <a href="https://sgx.geodatenzentrum.de/web_public/gdz/datenquellen/datenquellen_topplusopen.html" target="_blank" rel="noopener noreferrer">TopPlusOpen sources</a> · map fallback',true)}));
         scene.imageryLayers.add(mapLayer,2);
