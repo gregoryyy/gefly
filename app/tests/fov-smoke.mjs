@@ -87,6 +87,8 @@ try {
   assert.equal(await page.evaluate(() => document.elementFromPoint(1000, 180)?.closest('#scene')?.id), 'scene',
     'native scroll point must lie in the unobstructed scene');
   // Panel scrolling magnifies instruments around the pointer, independently of scene FOV.
+  // A tall viewport has room for enlargement while reserving the flying area.
+  await page.setViewportSize({ width: 1440, height: 1300 });
   await page.waitForTimeout(150);
   const ap = page.locator('#ap-engage');
   const box = await ap.boundingBox();

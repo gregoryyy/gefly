@@ -107,7 +107,8 @@ sound (initially off). **A** captures current heading/altitude with the autopilo
 These are simulator conveniences; acceleration preserves the fixed physics step
 and the achieved rate depends on available CPU/rendering capacity.
 Restart is in Flight. Click toggles touchpad yoke control;
-hold-drag looks around while retaining the yoke midpoint, and two-finger vertical
+hold-drag retains the view where you release it and preserves the yoke midpoint;
+Escape centers the view. Two-finger vertical
 scroll over the scenery changes field of view. Over the cockpit panel, scroll up
 to enlarge the instruments (up to 3×, limited by screen height). The panel grows
 upward so both gauge rows stay visible; horizontal scrolling moves between columns
@@ -124,8 +125,8 @@ research aircraft remains experimental; see
 **N** toggles the parking brake beside the **B** wheel-brake button.
 Options → **Link rudder to aileron** adds optional yaw/steering assistance;
 Q/W manual rudder takes priority. Rudder also steers the nosewheel on the ground.
-Options → **Centered touchpad controls** fixes neutral at the flight-view center
-and retains the camera angle after hold-drag; Escape resets the view.
+Options → **Centered touchpad controls** fixes neutral at the flight-view center.
+Both touchpad modes retain the camera angle after hold-drag.
 
 **M** or **View → Flight map** opens a right-side map beside the 3D view,
 showing the aircraft, whole retained flight path and **731 searchable

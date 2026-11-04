@@ -889,7 +889,7 @@ function updatePointerHint(mode = sceneContainer.dataset.pointerMode ?? 'off'): 
   const centered = controlSettings.centeredTouchpad === true;
   el('pointer-mode').textContent = groundCollisionStopped() && !reviewing ? 'COLLISION VIEW · hold-drag to inspect'
     : reviewing ? (mode === 'look' ? 'REVIEW LOOK · release to keep view' : 'REVIEW · hold-drag to set view · Escape to center')
-    : mode === 'look' ? (centered ? 'LOOKING · release keeps view · Escape to center' : 'LOOKING · release to return')
+    : mode === 'look' ? 'LOOKING · release keeps view · Escape to center'
     : centered ? (mode === 'yoke' ? 'CENTERED YOKE · click off · hold-drag to look' : 'CENTERED YOKE · click on · hold-drag to look')
     : mode === 'yoke' ? 'YOKE ACTIVE · click to release · hold-drag to look' : 'Click scene: yoke · Hold-drag: look';
 }

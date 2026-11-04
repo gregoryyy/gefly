@@ -3,6 +3,38 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 02:58 — Taller flying view and retained drag look
+
+TODO: 2.0.67; R-INPUT-1/R-VIEW-1. Agent: Codex orchestrator integration;
+glide_cases pointer behavior/tests, glide_model cockpit layout/browser checks,
+glide_housekeeping independent quality and specification validation.
+
+**Implementation notes**
+
+Reserve 60% of application height for the flying scene on supported desktop
+windows, fit both cockpit rows with the same scale and constrain panel zoom to
+that reserve. Relative and centered touchpad modes now retain and accumulate
+camera look after release, toggles, pause and focus loss. Preserve yoke anchors,
+neutral release and authoritative pointer re-entry; Escape/restart explicitly
+center the view. Update the flight-view hint and size the narrow Review stack
+from the playback bar’s measured height instead of a fixed offset. Actual browser checks exercise
+default-mode retained look and unchanged native paused state, alongside the
+responsive panel, centered-mode and FOV/zoom regressions. Scoped outcomes and
+limits are in the [review](reviews/2026-11-04-flying-view-controls.md).
+
+**Deviations**
+
+The vertical-area request is interpreted as the flying scene above the cockpit;
+the optional circular stick overlay retains its size. Instruments scale down on
+short windows to provide that space. No flight dynamics or control gains change.
+Cross-provider peer pending.
+
+**Insights**
+
+Camera retention must be independent of the selected yoke reference mode. A
+small fixed scenery reserve can leave insufficient vertical flying room when
+panels are sized primarily by window width.
+
 ## 2026-11-04 02:42 — Regional map texture without terrain labels
 
 TODO: 2.0.66.1; R-AIRPORT-1/R-WORLD-3/R-WORLD-6/R-DATA-1.
