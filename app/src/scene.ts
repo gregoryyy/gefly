@@ -1,3 +1,4 @@
+import { createSceneryCache } from './scenery-cache';
 import { createLandmarkLabels, LANDMARK_CREDIT } from './landmark-labels';
 import { createAirportScenery, AIRPORT_VECTOR_CREDIT } from './airport-scenery';
 import {
@@ -73,6 +74,7 @@ function elevationRelief(grid: TerrainGrid): HTMLCanvasElement {
  */
 export async function createScene(container: HTMLElement): Promise<FlightScene> {
   const terrainGrid = await loadTerrainPackage();
+  const sceneryCache = createSceneryCache(container);
   const publicTerrain = createPublicTerrainProvider(terrainGrid);
   let activeTerrain = publicTerrain;
   const recordingTiles = new Map<string, TerrainGrid>();
@@ -363,6 +365,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       throw new RangeError('Cannot render a non-finite aircraft state');
     }
     const useTerrain = state.terrain_profile === 1;
+    sceneryCache.update(state.lat_rad, state.lon_rad, vectorScenery, useTerrain);
     airportScenery.setVisible(useTerrain);
     airportScenery.setVectorVisible(false);
     if (vectorScenery && useTerrain) ensureMapTerrain();
@@ -552,6 +555,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     dispose() {
       if (disposed) return;
       disposed = true;
+      sceneryCache.dispose();
       photographAbort.abort();
       removeCameraListener?.(); removeCameraListener = null;
       regionalImagery?.dispose();
