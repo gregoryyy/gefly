@@ -56,6 +56,16 @@ Base: `de8cc08e4506940d6fffe33320c61bcfed181929` plus the reviewed working tree.
 The ignored inventory `output/flight/flying-view-controls-review-packet.json`
 lists 13 exact source/specification/test files. Its packet hash uses sorted
 `path + NUL + file SHA-256 + newline`:
-`fa39de78c71639f8086124c5c82f48fbf630799c617c949a0d91c91e14bf6be4`.
+`6598a3e77a3f5474c0bd4d8d58b9d39f2cae32a6107308128f8e88b64dd687e5`.
 Shared status, catalog, this report and the reviewer's other notes are
 outside independent acceptance scope.
+
+Affected renewal, **2026-11-04 03:05 Europe/Berlin**: reviewed the final lazy
+transport-observer attachment on each fit. A transport created after cockpit
+initialization is observed once when found; replacements unobserve the previous
+element, and disposal disconnects the observer. The final layout source SHA-256
+is `8928772893f290feacd3fb1383da0ad574cc6e76498f9a418c219c35fa0f7f21`.
+The implementation agent's clean rerun at `df6890e` passed all 13 viewport cases
+plus zoom, docking, Review and fresh-mobile checks in the same recorded log.
+Quality and scoped validation remain pass; the packet above supersedes the
+earlier packet for this affected change.
