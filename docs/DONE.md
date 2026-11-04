@@ -3,6 +3,36 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 19:03 — Make A switch autopilot off
+
+TODO: 2.0.103; R-AP-2.
+Agent: Codex integration and airport-work isolation; glide_model two-file toggle;
+glide_cases actual keyboard/menu/native checks; glide_housekeeping source review.
+
+**Implementation notes**
+
+A now captures current heading/altitude when AP is off, and explicitly disconnects
+when engaged or capture is pending. The menu names the actual on/off action.
+Existing P/panel behavior, input guards and steering reference remain intact.
+TypeScript and the existing seven-group flight-assists Chrome case pass: native
+on/off/on, both servo outputs zero and LCD OFF, paused state unchanged, panel and
+menu actions, and shortcut/Review guards. The nine-group pointer case also passes
+A-off servo release with center-marker retention, typed ARM, takeover and CWS.
+Independent source review passes;
+cross-provider peer pending.
+
+**Deviations**
+
+No KAP mode law, worker, servo or aircraft-physics changes. Pending airfield and
+terrain work is preserved in an isolated checkout, outside the running AP fix.
+
+**Insights**
+
+A was implemented as repeated capture, while the user's explicit requirement is
+an on/off toggle. Validate the actual shortcut sequence, not just the underlying
+capture API. Keep unfinished scenery out of the user's working simulator while
+repairing controls.
+
 ## 2026-11-04 18:26 — Keep edited altitude armed after its ARM click
 
 TODO: 2.0.102; R-AP-1.

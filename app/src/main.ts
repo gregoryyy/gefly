@@ -1217,11 +1217,14 @@ const disposeFullscreen = installFullscreenControls({
 const flightAssists = createFlightAssists({
   root,
   canCapture: () => controlsAvailable() && latest?.kap_profile === 1,
+  isAutopilotEngaged: () => autopilotCapturePending || latest?.kap_engaged === 1,
   canChangeRate: () => !continuingReplay && (reviewing || controlsAvailable()),
   onCapture() {
-    autopilotCapturePending = true;
+    const disconnect = autopilotCapturePending || latest?.kap_engaged === 1;
+    autopilotCapturePending = !disconnect;
     closeViewMenu(); neutralize();
-    if (!session.captureAutopilot()) autopilotCapturePending = false;
+    if (disconnect) session.setKap140({action: 'disconnect'});
+    else if (!session.captureAutopilot()) autopilotCapturePending = false;
     updatePointerHint(); focusFlight();
   },
   onRate(rate) {

@@ -108,7 +108,7 @@ In Review, **← / →** seek backward/forward one second, with repeated keys su
 of live-flight speed. The overlay shows **REPLAY** speed.
 
 Space pauses, R opens Review, V changes view, E toggles the engine and S toggles
-sound (initially off). **A** captures current heading/altitude with the autopilot;
+sound (initially off). **A** toggles the autopilot, capturing current heading/altitude when engaging;
 **=** cycles **1×, 1.5×, 2×, 5×, 10×**, with an on-screen simulation-rate indicator.
 These are simulator conveniences; acceleration preserves the fixed physics step
 and the achieved rate depends on available CPU/rendering capacity.

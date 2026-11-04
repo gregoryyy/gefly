@@ -4,10 +4,11 @@ const RATES = Object.freeze([1, 1.5, 2, 5, 10]);
 
 interface FlightAssistsOptions {
   root: HTMLElement;
-  /** Simulator convenience: capture the worker's current heading and altitude. */
+  /** Toggle AP; engagement captures the worker's current heading and altitude. */
   onCapture(): void;
   onRate(rate: number): void;
   canCapture(): boolean;
+  isAutopilotEngaged(): boolean;
   canChangeRate(): boolean;
 }
 
@@ -29,9 +30,9 @@ export function createFlightAssists(options: FlightAssistsOptions): {
 
   const capture = document.createElement('button');
   capture.type = 'button'; capture.id = 'capture-autopilot';
-  capture.append('Hold current heading + altitude ', shortcut('A'));
+  const captureLabel = document.createElement('span');
+  capture.append(captureLabel, ' ', shortcut('A'));
   capture.setAttribute('aria-keyshortcuts', 'A');
-  capture.title = 'Simulator shortcut: capture current heading and altitude; KAP 140 panel controls remain separate';
   const speed = document.createElement('button');
   speed.type = 'button'; speed.id = 'simulation-rate';
   speed.setAttribute('aria-keyshortcuts', '= Shift+=');
@@ -60,6 +61,11 @@ export function createFlightAssists(options: FlightAssistsOptions): {
     const span = speed.querySelector('span')!;
     const menuLabel = `${reviewing ? 'Replay' : 'Simulation'} speed: ${label}`;
     if (span.textContent !== menuLabel) span.textContent = menuLabel;
+    const engaged = options.isAutopilotEngaged();
+    const captureText = engaged ? 'Autopilot off' : 'Autopilot on · current heading + altitude';
+    if (captureLabel.textContent !== captureText) captureLabel.textContent = captureText;
+    capture.setAttribute('aria-label', engaged ? 'Disconnect autopilot' : 'Engage autopilot at current heading and altitude');
+    capture.title = engaged ? 'A: disconnect autopilot' : 'A: engage autopilot and hold current heading and altitude';
     capture.disabled = reviewing || !options.canCapture();
     speed.disabled = !options.canChangeRate();
   }

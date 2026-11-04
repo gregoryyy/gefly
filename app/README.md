@@ -292,8 +292,8 @@ a long press also works. Click **AP** to engage ROL plus current vertical speed;
 press AP to disconnect. **P** is
 a simulator shortcut for AP on/off. **A** is a separate simulator convenience:
 with manual axes released, it engages **HDG + ALT** at the worker's current true
-heading and pressure altitude. It captures again when already engaged rather
-than disconnecting. This is not a physical KAP 140 button. **HDG** follows the separate **DG BUG · TRUE**
+heading and pressure altitude. Press A again to disconnect; pressing it while
+capture is pending also cancels the engagement. This is not a physical KAP 140 button. **HDG** follows the separate **DG BUG · TRUE**
 control; HDG alone does not engage a disconnected unit.
 
 **ALT captures the current pressure altitude**, independent of the altitude

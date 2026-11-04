@@ -235,6 +235,19 @@ try {
   await page.waitForFunction(() => document.querySelector('#ap-engage').getAttribute('aria-pressed') === 'true');
   await mode('yoke');
   await markerAt(rect.x + rect.width / 2, rect.y + rect.height / 2);
+  await page.keyboard.press('a');
+  await page.waitForFunction(() => {
+    const state = window.__pointerStates.at(-1);
+    return state?.kap_engaged === 0 && state.ap_mode === 0 && state.ap_aileron_norm === 0 && state.kap_elevator_norm === 0
+      && document.querySelector('#ap-engaged-label').textContent === 'OFF';
+  });
+  await mode('yoke'); await markerAt(rect.x + rect.width / 2, rect.y + rect.height / 2);
+  await observeMarker('A disconnect retains selected reference with both native servo outputs off');
+  await page.keyboard.press('a'); await page.waitForFunction(() => window.__pointerStates.at(-1)?.kap_engaged === 1);
+  await page.locator('#ap-engage').click(); await page.waitForFunction(() => window.__pointerStates.at(-1)?.kap_engaged === 0);
+  await mode('yoke'); await markerAt(rect.x + rect.width / 2, rect.y + rect.height / 2);
+  await page.locator('#scene').focus(); await page.keyboard.press('a');
+  await page.waitForFunction(() => window.__pointerStates.at(-1)?.kap_engaged === 1);
   await observeMarker('AP capture retains selected centered reference');
   const liveMarker = markerObservations.at(-1);
   assert(!liveMarker.hidden && Number(liveMarker.opacity) > 0 && liveMarker.width > 0 && liveMarker.pointerEvents === 'none');
@@ -260,6 +273,7 @@ try {
   assert.equal(armObservations.at(-1).engaged, 1); assert.equal(armObservations.at(-1).armed, 1);
   await markerAt(rect.x + rect.width / 2, rect.y + rect.height / 2);
   await page.locator('#scene').focus(); await page.keyboard.press('Escape'); await mode('off');
+  await page.keyboard.press('p'); await page.waitForFunction(() => window.__pointerStates.at(-1)?.kap_engaged === 0);
   await page.keyboard.press('a');
   await page.waitForFunction(() => window.__pointerStates.at(-1)?.kap_engaged === 1 && window.__pointerStates.at(-1)?.kap_alt_arm === 0);
   await observeArm('A engaged with yoke off');
@@ -271,7 +285,9 @@ try {
   await page.locator('#ap-arm').click(); await page.waitForTimeout(100); await observeArm('pressing already-ARMED cancels it');
   assert.equal(armObservations.at(-1).engaged, 1); assert.equal(armObservations.at(-1).armed, 0);
   const oldSelection = armObservations.at(-1).selected_altitude_m;
-  await page.locator('#scene').focus(); await page.keyboard.press('a');
+  await page.locator('#scene').focus(); await page.keyboard.press('p');
+  await page.waitForFunction(() => window.__pointerStates.at(-1)?.kap_engaged === 0);
+  await page.keyboard.press('a');
   await page.waitForFunction(previous => Math.abs(window.__pointerStates.at(-1)?.kap_selected_altitude_m - previous) > 1, oldSelection);
   const typingStart = await page.evaluate(() => window.__pointerApCommands.length);
   await page.locator('#ap-selector-value').fill('2500');
