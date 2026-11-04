@@ -58,7 +58,7 @@ root.innerHTML = `
     <a class="brand" href="https://github.com/gregoryyy/gefly" target="_blank" rel="noreferrer">gefly<span>FLIGHT LAB</span></a>
     <div class="location"><strong>EGELSBACH</strong><span>C172 research aircraft · airborne practice</span></div>
     <div class="session-status"><i id="status-dot"></i><span id="status" role="status">Loading flight…</span><span id="clock">00:00</span><span id="audio-button-slot"></span></div>
-    <details id="view-menu" class="top-menu"><summary>View</summary><nav class="menu-content view-controls" aria-label="Flight views"><button id="cockpit" class="selected" aria-pressed="true">Cockpit</button><button id="chase" aria-pressed="false">Chase <kbd>V</kbd></button><button id="toggle-fullscreen" type="button" aria-keyshortcuts="F" aria-pressed="false"><span data-fullscreen-label>Full screen</span> <kbd>F</kbd></button><button id="systems-open" type="button">Aircraft systems</button><button id="toggle-map" aria-pressed="false" aria-controls="practice-map-panel">Flight map <kbd>M</kbd></button><button id="cycle-landmarks" type="button" aria-keyshortcuts="." title=". · Cycle landmark labels">Landmarks: Off <kbd>.</kbd></button><button id="toggle-flight-data" aria-pressed="false" aria-controls="flight-data-panel">Flight data</button><button id="toggle-stall-awareness" aria-pressed="false" aria-controls="stall-awareness-panel">Stall awareness</button><button id="toggle-controls" aria-pressed="true" aria-controls="flight-controls-panel">Flight controls</button></nav></details>
+    <details id="view-menu" class="top-menu"><summary>View</summary><nav class="menu-content view-controls" aria-label="Flight views"><button id="cockpit" class="selected" aria-pressed="true">Cockpit</button><button id="chase" aria-pressed="false">Chase <kbd>V</kbd></button><button id="toggle-fullscreen" type="button" aria-keyshortcuts="F" aria-pressed="false"><span data-fullscreen-label>Full screen</span> <kbd>F</kbd></button><button id="toggle-map" aria-pressed="false" aria-controls="practice-map-panel">Flight map <kbd>M</kbd></button><button id="cycle-landmarks" type="button" aria-keyshortcuts="." title=". · Cycle landmark labels">Landmarks: Off <kbd>.</kbd></button><button id="toggle-flight-data" aria-pressed="false" aria-controls="flight-data-panel">Flight data</button><button id="toggle-stall-awareness" aria-pressed="false" aria-controls="stall-awareness-panel">Stall awareness</button><button id="toggle-controls" aria-pressed="true" aria-controls="flight-controls-panel">Flight controls</button></nav></details>
     <span id="review-button-slot"></span>
     <button id="controls-settings" class="settings-trigger" aria-haspopup="dialog">Options</button>
     <details id="flight-menu" class="top-menu"><summary>Flight</summary><nav class="menu-content" aria-label="Flight session"><button id="reset">Restart flight</button><span class="menu-label">FLAT-GROUND LANDING STUDY</span><button data-landing="normal">Baseline touchdown</button><button data-landing="hard">Fast descent</button><button data-landing="side">Sideways touchdown</button><button data-landing="banked">Banked touchdown</button><span class="menu-label">PUBLIC TERRAIN FLIGHTS</span><button id="airborne-practice">Egelsbach airborne practice</button><button id="taunus-practice">Taunus ridge flight</button><button data-region="darmstadt">Darmstadt flight</button><button data-region="odenwald">Odenwald ridge flight</button><button data-region="spessart">Spessart flight</button><button data-region="westerwald">Westerwald flight</button><button data-region="marburg">Marburg / Lahn flight</button><button data-region="kassel">Kassel flight</button><button id="eddf-ils-practice" disabled>EDDF 25C ILS practice · historical</button></nav></details>
@@ -104,7 +104,7 @@ root.innerHTML = `
   <section class="flight-deck" aria-label="Flight instruments">
     <div class="deck-heading"><span class="eyebrow">CLASSIC INSTRUMENTS <b>EXPERIMENTAL</b></span><span id="view-label">COCKPIT VIEW</span></div>
     <div class="instruments">
-      <aside id="aircraft-systems" class="aircraft-systems-panel" aria-label="Aircraft systems"></aside>
+      <aside id="aircraft-systems" class="aircraft-systems-panel" aria-label="Aircraft systems"><button id="systems-open" type="button" class="systems-open">Aircraft systems</button></aside>
       <div class="primary-instruments"><div id="six-pack"></div><div id="navigation-gauges"></div></div>
       <div class="avionics-stack cockpit-engine"><div id="engine-systems"></div></div>
       <aside class="engine-controls" aria-label="Aircraft controls"><div id="autopilot-systems"></div>
@@ -322,10 +322,19 @@ const session = createSession({
   },
 });
 
+let openingOptions = { rollOffset, volume: engineAudio.getStatus().volume };
 const controlSettingsPanel = createControlSettingsPanel({
   container: root, initial: controlSettings,
-  onOpen: pauseFlight,
-  onClose: focusFlight,
+  onOpen() { openingOptions = { rollOffset, volume: engineAudio.getStatus().volume }; pauseFlight(); },
+  onClose(saved) {
+    if (!saved) {
+      rollOffset = openingOptions.rollOffset;
+      el<HTMLInputElement>('roll-offset').value = String(rollOffset);
+      engineAudio.setVolume(openingOptions.volume);
+      publishInput();
+    }
+    focusFlight();
+  },
   onChange(settings) { controlSettings = { ...settings }; scene?.setSceneryMode?.(!!settings.vectorScenery); scene?.setPracticePapi?.(!!settings.practicePapi); practiceMap?.setVector?.(!!settings.vectorScenery); neutralize(); updateConfiguration(latest, reviewing); updatePointerHint(); },
 });
 // Options belong to the top menu; preserve the existing controls and their IDs.

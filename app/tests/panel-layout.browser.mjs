@@ -43,6 +43,11 @@ try {
       engineOpen: !document.querySelector('#engine-open').hidden, radioOpen: !document.querySelector('#radio-nav-open').hidden,
       appScroll: document.documentElement.scrollWidth };
   });
+  const unchangedSurface=(before,after,message)=>assert(['x','y','right','bottom'].every(key=>Math.abs(before.surface[key]-after.surface[key])<.1),message);
+  const dragPanel=async(dx,dy)=>{
+    const box=await page.locator('.deck-heading').boundingBox(), x=box.x+box.width/2, y=box.y+box.height/2;
+    await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+dx,y+dy,{steps:3});await page.mouse.up();await page.waitForTimeout(60);
+  };
   let reference;
   for (const [width, height] of [[1440, 900], [1440, 800], [1280, 720], [1200, 800], [901, 800], [900, 800], [880, 800], [621, 800], [620, 844], [390, 844], [1440, 600], [1440, 480], [1440, 400]]) {
     await page.setViewportSize({ width, height });
@@ -116,6 +121,7 @@ try {
     assert.equal(focused.deck.height, before.deck.height, 'zoom never grows the cockpit');
     assert.equal(focused.scene.height, before.scene.height, 'zoom never shrinks the flying area');
     await ap.focus(); await ap.dblclick();
+    unchangedSurface(focused,await geometry(),'focusing and clicking AP controls never moves the panel');
     assert(Number(await page.locator('.flight-deck').getAttribute('data-panel-zoom')) > 1.3, `double-clicking a native AP control does not reset zoom at ${width}×${height}`);
     for (let i = 0; i < 4; i++) { await page.mouse.move(anchor.x, anchor.y); await page.mouse.wheel(0, -200); }
     await page.waitForTimeout(100); focused = await geometry();
@@ -126,10 +132,32 @@ try {
       await page.mouse.wheel(dx, 0); await page.waitForTimeout(80); focused = await geometry();
       assert(focused.surface.x <= focused.viewport.x + 1 && focused.surface.right >= focused.viewport.right - 1, 'horizontal pan cannot reveal blank margins');
     }
-    // Keyboard focus pans a clipped actual control into view without a layout change.
-    await page.locator('#pitch-trim-control').focus(); await page.waitForTimeout(60); focused = await geometry();
-    assert(focused.trim.y >= focused.viewport.y - 1 && focused.trim.bottom <= focused.viewport.bottom + 1, 'keyboard-focused lower control remains visible');
-    assert.equal(focused.deck.height, before.deck.height); assert.equal(focused.scene.height, before.scene.height);
+    const beforeFocus=await geometry();
+    await page.locator('#pitch-trim-control').focus();await page.waitForTimeout(60);
+    unchangedSurface(beforeFocus,await geometry(),'focusing a clipped control does not reposition the panel');
+    await dragPanel(0,-10000);focused=await geometry();
+    assert(Math.abs(focused.surface.bottom-focused.viewport.bottom)<1,'dragging housing reaches the content bottom');
+    await page.mouse.move(focused.viewport.x+focused.viewport.width/2,focused.viewport.y+focused.viewport.height/2);
+    unchangedSurface(focused,await geometry(),'pointer re-entry after release never moves the panel');
+    if(height===800) await page.screenshot({path:`${output}/panel-drag-bottom.png`});
+    await dragPanel(0,10000);focused=await geometry();
+    assert(Math.abs(focused.surface.y-focused.viewport.y)<1,'dragging housing reaches the content top');
+    for(const dx of [-10000,10000]){
+      await dragPanel(dx,0);focused=await geometry();
+      assert(focused.surface.x<=focused.viewport.x+1&&focused.surface.right>=focused.viewport.right-1,'housing drag cannot expose blank horizontal margins');
+      assert(Math.abs((dx<0?focused.surface.right:focused.surface.x)-(dx<0?focused.viewport.right:focused.viewport.x))<1,'housing drag reaches either horizontal edge');
+    }
+    if(width===1440&&height===800) for(const selector of ['#pitch-trim-control','#nav1-gauge .navigation-gauge-face','#ap-engage']){
+      const control=page.locator(selector), target=await control.boundingBox();focused=await geometry();
+      await dragPanel(focused.viewport.x+focused.viewport.width/2-target.x-target.width/2,focused.viewport.y+focused.viewport.height/2-target.y-target.height/2);
+      const visible=await control.boundingBox(), stable=await geometry();
+      const x=Math.max(stable.viewport.x+3,Math.min(stable.viewport.right-3,visible.x+visible.width/2));
+      const y=Math.max(stable.viewport.y+3,Math.min(stable.viewport.bottom-3,visible.y+visible.height/2));
+      assert(await page.evaluate(({x,y,selector})=>!!document.elementFromPoint(x,y)?.closest(selector),{x,y,selector}),`${selector} is actually reachable`);
+      await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+12,y+10,{steps:3});await page.mouse.up();
+      unchangedSurface(stable,await geometry(),`${selector} interaction cannot drag the panel`);
+    }
+    assert.equal(focused.deck.height,before.deck.height);assert.equal(focused.scene.height,before.scene.height);
     // Restore fit through the noninteractive housing, then focus a lower face.
     await page.locator('.deck-heading').dblclick(); await page.waitForTimeout(80);
     assert.equal(Number(await page.locator('.flight-deck').getAttribute('data-panel-zoom')), 1);

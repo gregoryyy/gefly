@@ -87,7 +87,7 @@ test('wheel brake input gain has inclusive zero/full bounds and leaves other com
   const raw = Object.freeze({ ...neutral, flap_norm: .6, brake_norm: .8,
     mixture_norm: .7, mixture_auto: false, pitch_trim_norm: -.2, engine_running: false });
   for (const brake of [0, .25, .5, 1]) {
-    const settings = Object.freeze({ ...DEFAULT_CONTROL_SETTINGS, brake });
+    const settings = Object.freeze({ ...DEFAULT_CONTROL_SETTINGS, brake, coordinatedRudder: false });
     assert.deepEqual(applyControlSettings(raw, settings, 0), { ...raw, brake_norm: .8 * brake });
   }
   const oldSettings = { pitch: 1, roll: 1, rudder: 1 };
@@ -127,8 +127,8 @@ test('engine ignition selection survives control settings without a fabricated d
 });
 
 test('R-INPUT-1 linked rudder follows deliberate bank direction, sensitivity and manual priority', () => {
-  assert.equal(DEFAULT_CONTROL_SETTINGS.coordinatedRudder, false);
-  assert.equal(GENTLE_CONTROL_SETTINGS.coordinatedRudder, false);
+  assert.equal(DEFAULT_CONTROL_SETTINGS.coordinatedRudder, true);
+  assert.equal(GENTLE_CONTROL_SETTINGS.coordinatedRudder, true);
   const settings = Object.freeze({ ...DEFAULT_CONTROL_SETTINGS, roll: .5, rudder: .7, coordinatedRudder: true });
   const rightBank = Object.freeze({ ...neutral, aileron: .8 });
   const right = applyControlSettings(rightBank, settings, -.2);
@@ -150,8 +150,10 @@ test('R-INPUT-1 rudder link excludes study correction and clamps combined sensit
   const strong = { ...linked, roll: 1.5, rudder: 1.5 };
   assert.equal(applyControlSettings({ ...neutral, aileron: 1 }, strong, 0).rudder, -1);
   assert.equal(applyControlSettings({ ...neutral, aileron: -1 }, strong, 0).rudder, 1);
-  assert.equal(applyControlSettings({ ...neutral, aileron: 1 }, DEFAULT_CONTROL_SETTINGS, 0).rudder, 0,
-    'linking stays opt-in');
+  assert.equal(applyControlSettings({ ...neutral, aileron: 1 }, DEFAULT_CONTROL_SETTINGS, 0).rudder, -1,
+    'default bank input also commands rudder and nosewheel steering');
+  assert.equal(applyControlSettings({ ...neutral, aileron: 1 }, { ...DEFAULT_CONTROL_SETTINGS, coordinatedRudder: false }, 0).rudder, 0,
+    'the explicit unlink option retains independent rudder');
   assert.equal(applyControlSettings({ ...neutral, aileron: 1 }, { pitch: 1, roll: 1, rudder: 1 }, 0).rudder, 0,
     'older settings retain independent rudder');
 });
@@ -159,7 +161,7 @@ test('R-INPUT-1 rudder link excludes study correction and clamps combined sensit
 test('R-INPUT-1 parking brake holds full native braking independently of wheel-brake gain', () => {
   const heldWheelBrake = Object.freeze({ ...neutral, brake_norm: 1 });
   for (const brake of [0, .25, 1]) {
-    const settings = { ...DEFAULT_CONTROL_SETTINGS, brake };
+    const settings = { ...DEFAULT_CONTROL_SETTINGS, brake, coordinatedRudder: false };
     assert.deepEqual(applyControlSettings(neutral, settings, 0, true), { ...neutral, brake_norm: 1 });
     assert.equal(applyControlSettings(heldWheelBrake, settings, 0, true).brake_norm, 1);
     assert.equal(applyControlSettings(heldWheelBrake, settings, 0, false).brake_norm, brake,

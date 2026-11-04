@@ -3,6 +3,116 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 14:41 — Consolidate merged cockpit fixes for main
+
+TODO: 2.0.87–2.0.90. Agent: Codex integration.
+
+**Implementation notes**
+
+PRs #80/#81 were merged into feature branches; main still lacked their fixes.
+Prepare one direct-main integration PR with the identical reviewed product bytes.
+TypeScript passes; prior scoped browser evidence remains applicable.
+
+**Deviations**
+
+No new feature or code change. Main delivery still awaits this integration PR.
+
+**Insights**
+
+Target main directly for subsequent independent fixes; merged PR status alone
+cannot establish that its changes reached main.
+
+## 2026-11-04 14:22 — Remove duplicate Aircraft systems menu
+
+TODO: 2.0.90; R-SYS-1. Agent: Codex implementation/integration;
+glide_model existing browser checks; glide_housekeeping independent source review.
+
+**Implementation notes**
+
+Remove Systems from View; keep inline left controls on desktop and a direct
+collapsed panel opener on narrow screens. TypeScript and all five existing
+systems browser groups pass, including mobile access and Review invariance.
+Independent source review passes; cross-provider peer pending.
+
+**Deviations**
+
+No systems-model change or broad suite rerun; include this cleanup in cockpit PR #81.
+
+**Insights**
+
+Responsive access belongs to the same panel rather than a duplicate menu entry.
+
+## 2026-11-04 14:17 — Drag zoomed cockpit content without control jumps
+
+TODO: 2.0.89; R-PANEL-1/R-INPUT-1. Agent: Codex implementation/integration;
+glide_model existing browser checks; glide_housekeeping independent review.
+
+**Implementation notes**
+
+Drag enlarged panel backgrounds/headers to any content edge. Remove automatic
+focus panning; buttons, levers and OBS faces keep their own gestures. Existing
+zoom bounds, fixed deck/flight-view height and double-click reset remain usable.
+TypeScript and the existing Chrome layout case pass across 13 viewports and fresh
+mobile loading, including bottom access, controls retaining position and pointer
+release/re-entry. Bottom-access screenshot inspected. Independent source quality
+and scoped validation pass; cross-provider peer pending.
+
+**Deviations**
+
+Only the existing affected browser case ran, without a broad flight/CI rerun.
+No dynamics, aircraft data or dependencies changed.
+
+**Insights**
+
+Focus-triggered panning moved controls during interaction. Explicit background
+dragging provides access without repositioning the control being operated.
+
+## 2026-11-04 14:00 — Touchpad rudder and nosewheel linked by default
+
+TODO: 2.0.88; R-INPUT-1. Agent: Codex implementation/integration;
+glide_model existing tests; glide_housekeeping independent source review.
+
+**Implementation notes**
+
+Enable the existing bank/rudder assist by default, preserving manual rudder
+priority and the option to disable it. TypeScript, 21 focused input tests and all
+five existing parking/rudder Chrome groups pass, including actual touchpad inputs
+reaching native rudder. Independent source review passes; cross-provider peer pending.
+
+**Deviations**
+
+No dynamics or wheel coefficients changed; this fixes input linking, without
+claiming new low-speed taxi calibration. Broad flight/CI suites were not rerun.
+
+**Insights**
+
+The touchpad supplied bank alone while the existing rudder/nosewheel link was off.
+
+## 2026-11-04 13:56 — Options dismissal without saving
+
+TODO: 2.0.87; R-UX-2. Agent: Codex implementation/integration;
+glide_model existing regression; glide_housekeeping independent review.
+
+**Implementation notes**
+
+Options retains live previews, with explicit Save. Outside clicks and Escape
+restore the opening gains/preferences, roll correction and audio volume. Both
+press and release must be outside: padding clicks and slider drag-out stay open.
+TypeScript and the focused existing Options regression pass in actual Chrome;
+a separate Chrome probe confirms Escape rollback. `just check` and
+`just assure check` pass. Independent source quality and scoped validation pass;
+cross-provider peer pending.
+
+**Deviations**
+
+Only the affected browser block ran; the full flight suite and broad CI were not
+rerun for this dialog change. No aircraft dynamics or dependencies changed.
+
+**Insights**
+
+Dismissal must restore controls added by the main application as well as settings
+owned by the dialog itself.
+
 ## 2026-11-04 13:37 — Reconcile caching with merged flight and terrain work
 
 TODO: 2.0.82; R-WORLD-9. Agent: Codex integration; glide_housekeeping review.

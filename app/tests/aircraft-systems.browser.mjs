@@ -35,6 +35,9 @@ try {
     await page.waitForFunction(n => window.systemStats.length > n, n);
     return page.evaluate(() => window.systemStats.at(-1));
   };
+  assert.equal(await page.locator('#view-menu #systems-open').count(),0,'View has no duplicate Aircraft systems entry');
+  assert(await page.locator('#aircraft-systems .aircraft-systems-content').isVisible(),'desktop systems switches remain in the left panel');
+  assert(await page.locator('#systems-open').isHidden(),'desktop does not show the collapsed opener');
   const initial = await stats();
   assert.equal(await value('volts'), '28.0');
   await page.locator('#systems-alternator').click(); assert.equal(await value('volts'), '24.0');
@@ -75,11 +78,15 @@ try {
   await mkdir(new URL('../../output/flight/', import.meta.url), { recursive: true });
   await page.screenshot({ path: fileURLToPath(new URL('../../output/flight/aircraft-systems.png', import.meta.url)), clip: await page.locator('.flight-deck').boundingBox() });
   await page.setViewportSize({ width: 390, height: 844 });
-  assert.equal(await page.locator('#aircraft-systems').isVisible(), false);
-  await page.locator('#scene').focus(); await page.keyboard.press('Alt+Shift+y');
+  await page.locator('#aircraft-systems #systems-open').waitFor({state:'visible'});
+  assert(await page.locator('#aircraft-systems').isVisible(),'mobile retains the collapsed systems panel');
+  await page.locator('#aircraft-systems #systems-open').click();
   await page.locator('#aircraft-systems-dialog').waitFor({ state: 'visible' });
   assert(await page.locator('#systems-landing').isVisible());
   await page.locator('#aircraft-systems-dialog > button').click();
+  await page.locator('#scene').focus();await page.keyboard.press('Alt+Shift+y');
+  await page.locator('#aircraft-systems-dialog').waitFor({state:'visible'});
+  await page.locator('#aircraft-systems-dialog > button').click();
   assert.deepEqual(errors, []);
-  console.log(JSON.stringify({ checks: ['BAT/ALT interlock, circuit selection and estimated volts/current respond while paused', 'native physics unchanged by switches', 'left panel matches instrument height and fits at desktop widths', 'read-only replay follows recorded switches and restores live state', 'mobile shortcut opens systems dialog'], browser: browser.version() }, null, 2));
+  console.log(JSON.stringify({ checks: ['BAT/ALT interlock, circuit selection and estimated volts/current respond while paused', 'native physics unchanged by switches', 'left panel matches instrument height and fits at desktop widths', 'read-only replay follows recorded switches and restores live state', 'View has no duplicate entry; mobile panel opener and existing shortcut open the systems dialog'], browser: browser.version() }, null, 2));
 } finally { await browser?.close(); server.kill(); }

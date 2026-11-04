@@ -125,3 +125,11 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-04 — Terrain and aeronautical charts beyond the Taunus](2026-11-04-beyond-taunus.md)
 
 - [2026-11-04 — Right-click place lookup](2026-11-04-place-lookup.md)
+
+- [2026-11-04 — Options dismissal](2026-11-04-options-dismiss.md)
+
+- [2026-11-04 — Touchpad ground steering](2026-11-04-touchpad-ground-steering.md)
+
+- [2026-11-04 — Dragging the zoomed cockpit panel](2026-11-04-cockpit-panel-drag.md)
+
+- [2026-11-04 — Remove the duplicate systems menu](2026-11-04-remove-systems-menu.md)
