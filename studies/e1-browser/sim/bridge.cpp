@@ -18,6 +18,9 @@
 #include <models/FGGroundReactions.h>
 #include <models/FGInertial.h>
 #include <models/FGPropagate.h>
+#include <models/FGPropulsion.h>
+#include <models/propulsion/FGPropeller.h>
+#include <models/propulsion/FGTank.h>
 #include <input_output/FGGroundCallback.h>
 #include <simgear/misc/sg_path.hxx>
 #include <emscripten/emscripten.h>
@@ -337,6 +340,58 @@ EMSCRIPTEN_KEEPALIVE int gf_init(double dt_s, double lat_rad, double lon_rad,
   g_trim_throttle = f.GetPropertyValue("fcs/throttle-cmd-norm");
   g_trim_pitch = f.GetPropertyValue("fcs/pitch-trim-cmd-norm");
   reset_study_state();
+  return 0;
+}
+
+// Reconstruct exposed trace state. Integrators, engine thermal transients and
+// contact histories are fresh; this is deliberately not a serialized checkpoint.
+EMSCRIPTEN_KEEPALIVE int gf_init_resume(double dt_s, const double* v, double count) {
+  const uintptr_t address = reinterpret_cast<uintptr_t>(v);
+  if (count != 32 || !address || address % alignof(double) || address > emscripten_get_heap_size()
+      || 32*sizeof(double) > emscripten_get_heap_size()-address) return kErrRange;
+  for (int i=0;i<32;++i) if (!std::isfinite(v[i])) return kErrNonFinite;
+  if (!(dt_s>=1e-4 && dt_s<=1.0/60) || v[0]<0 || v[0]>1e9 || v[1]<0 || v[1]>1e9 || std::floor(v[1])!=v[1]
+      || std::fabs(v[2])>kPi/2 || std::fabs(v[3])>kPi || v[4]<-1000 || v[4]>11000
+      || std::fabs(v[5])>kPi || std::fabs(v[6])>kPi/2 || std::fabs(v[7])>2*kPi) return kErrRange;
+  for (int i=8;i<11;++i) if(std::fabs(v[i])>200) return kErrRange;
+  for (int i=11;i<14;++i) if(std::fabs(v[i])>20) return kErrRange;
+  for (int i=14;i<17;++i) if(std::fabs(v[i])>1) return kErrRange;
+  if(v[17]<0||v[17]>1||std::fabs(v[18])>1||std::fabs(v[19])>1||v[20]<0||v[20]>1
+      ||v[21]<-1e-6||v[21]>kPi/6+1e-6||v[22]<0||v[22]>1||v[23]<0||v[23]>1||v[24]<0||v[24]>1
+      ||(v[25]!=0&&v[25]!=1)||(v[26]!=0&&v[26]!=1)||(v[27]!=0&&v[27]!=1)
+      ||v[28]<0||v[28]>500||v[29]<0||v[29]>.2||v[30]<0||v[30]>.2) return kErrRange;
+  if(g_pending_terrain&&!g_pending_terrain->contains(v[3],v[2]))return kErrTerrainCoverage;
+  const int rc=load_model(dt_s,v[2],v[3],v[7]);if(rc)return rc;
+  auto& f=*g_fdm;
+  if(g_active_terrain){
+    const auto sample=g_active_terrain->sample(v[3],v[2]);if(!sample)return kErrTerrainCoverage;
+    f.SetPropertyValue("ic/h-agl-ft",(v[4]-sample->height_m)/kFtToM);
+  }else f.SetPropertyValue("ic/h-sl-ft",v[4]/kFtToM);
+  f.SetPropertyValue("ic/phi-rad",v[5]);f.SetPropertyValue("ic/theta-rad",v[6]);f.SetPropertyValue("ic/psi-true-rad",v[7]);
+  const char* velocity[]={"ic/u-fps","ic/v-fps","ic/w-fps","ic/p-rad_sec","ic/q-rad_sec","ic/r-rad_sec"};
+  for(int i=0;i<6;++i)f.SetPropertyValue(velocity[i],v[i+8]/(i<3?kFtToM:1));
+  const char* controls[]={"fcs/elevator-cmd-norm","fcs/aileron-cmd-norm","fcs/rudder-cmd-norm","fcs/throttle-cmd-norm","fcs/pitch-trim-cmd-norm"};
+  for(int i=0;i<5;++i)f.SetPropertyValue(controls[i],v[i+14]);
+  f.SetPropertyValue("fcs/steer-cmd-norm",-v[16]);
+  f.SetPropertyValue("fcs/flap-cmd-norm",v[20]);
+  f.SetPropertyValue("fcs/left-brake-cmd-norm",v[22]);f.SetPropertyValue("fcs/right-brake-cmd-norm",v[23]);
+  g_mixture_auto=static_cast<int>(v[25]);f.SetPropertyValue("systems/automatic-mixture-enabled",v[25]);f.SetPropertyValue("fcs/mixture-cmd-norm",v[24]);
+  for(int i=0;i<2;++i){
+    const auto tank=f.GetPropulsion()->GetTank(i);
+    const double mass=v[29+i]/kUsGalToM3*tank->GetDensity();
+    if(mass>tank->GetCapacity()+1e-8)return kErrRange;
+    tank->SetContents(mass);
+  }
+  f.SetPropertyValue("propulsion/magneto_cmd",v[27]?3:0);
+  if(!f.RunIC())return kErrRunIc;
+  if(g_active_terrain&&!terrain_support_available())return kErrTerrainCoverage;
+  f.SetPropertyValue("fcs/flap-pos-rad",std::max(0.0,v[21]));
+  auto engine=f.GetPropulsion()->GetEngine(0);engine->SetRunning(v[26]==1);
+  auto prop=dynamic_cast<JSBSim::FGPropeller*>(engine->GetThruster());if(!prop)return kErrLoad;
+  prop->SetRPM(v[28]*60/(2*kPi));
+  g_engine_switch_controlled=true;g_engine_command_on=v[27]==1;g_engine_start_requested=false;
+  g_trim_ok=0;g_trim_throttle=v[17];g_trim_pitch=v[19];
+  f.Setsim_time(v[0]);reset_study_state();g_steps=v[1];
   return 0;
 }
 

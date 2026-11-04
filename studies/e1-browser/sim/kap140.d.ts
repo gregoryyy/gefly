@@ -13,6 +13,8 @@ export interface KapSnapshot {
   kap_sensor_fault: number;
   /** Optional in older recordings. 1 temporarily releases both servo channels. */
   kap_cws?: number;
+  /** Optional in older traces; retained generic GS capture reference for reconstruction. */
+  kap_gs_base_mps?: number;
 }
 export const KAP_FIELDS: readonly (keyof KapSnapshot)[];
 export function validKapState(value: object): boolean;
@@ -24,6 +26,8 @@ export interface KapSensors {
 }
 export function validSensors(value: unknown): value is KapSensors;
 export interface KapController {
+  /** Reconstruct exposed modes; transient timers/servo integration restart. */
+  restore(snapshot:Readonly<KapSnapshot>, sensors:KapSensors):boolean;
   command(command: KapCommand, sensors: KapSensors): boolean;
   /** False when sensors are invalid; an engaged AP disconnects and kap_sensor_fault is set. */
   step(sensors: KapSensors): boolean;

@@ -23,7 +23,7 @@
 #review-time { flex: 1; min-width: 60px; height: 24px; margin: 0; }
 #review-progress { min-width: 88px; font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #d5e1e7; }
 #review-exit { border-color: #e4bb7966; }
-.review-files { display: flex; gap: 6px; margin-top: 7px; }
+.review-files { flex-wrap: wrap; display: flex; gap: 6px; margin-top: 7px; }
 .review-files button { padding: 4px 8px; font-size: 10px; }
 #review-note { margin: 8px 0 0; color: #9db2c0; font-size: 10px; }
 @media (max-width: 620px) {
@@ -35,3 +35,6 @@
   #review-progress { text-align: center; }
   #review-exit { justify-self: end; }
 }
+
+#review-continue { border-color: #e4bb7966; }
+#review-continuation-note { margin: 7px 0 0; color: #c4b58d; font-size: 10px; line-height: 1.3; }

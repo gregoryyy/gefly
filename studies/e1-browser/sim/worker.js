@@ -34,6 +34,7 @@ import { stallFields, controlFields, cockpitFields, pitchTrimFields, groundField
 import { autopilotCommand, engineFields, engineSwitchFields } from './engine.js';
 import { groundCollisionContact, collisionRecord, collisionStateFields, contactOutcome, EMPTY_COLLISION } from './collision.js';
 import { createKap140, validKapCommand, validKapState } from './kap140.js';
+import { resumeProblem, resumeValues } from './continue-flight.js';
 import { createAltitudeAlert } from './altitude-alert.js';
 import { DEFAULT_NAVIGATION, NAVIGATION_FIELDS, validNavigation, navigationSignal, loadNavigationPackage } from './navigation.js';
 import { validSimulationRate, pacedStepMilliseconds } from './simulation-rate.js';
@@ -589,7 +590,14 @@ async function onInit(msg) {
   terrainStream?.cancel();
   initialized = false; terrainGeneration++; terrainLoad = null; resumeAfterTerrain = false; terrainStream = null; terrainFault = false; kap = null; altitudeAlert = null; pilotOverrideActive = false; navigation = { ...DEFAULT_NAVIGATION }; navigationPackage = null; navdataError = null; collisionAvailable = false; kapSensorsInvalid = false;
   await modulePromise;
-  const ic = msg.ic || {};
+  const resume = msg.resume_state;
+  if (resume !== undefined) {
+    const problem=resumeProblem(resume,msg.dt_s);
+    if(problem){fail(`Continuation unavailable: ${problem}`);return;}
+    if(msg.landing_preset!==undefined||msg.runway_start||!msg.kap140||typeof M._gf_init_resume!=='function') {fail('Continuation requires the updated native engine and exclusive resume initialization.');return;}
+    if((resume.terrain_profile===1)!==(msg.terrain===true)){fail('Continuation terrain profile does not match the selected frame.');return;}
+  }
+  const ic = resume ? {lat_rad:resume.lat_rad,lon_rad:resume.lon_rad,alt_msl_m:resume.alt_msl_m,heading_rad:resume.heading_rad,tas_mps:resume.tas_mps} : msg.ic || {};
   const dt = msg.dt_s;
   const hz = msg.state_hz === undefined ? 60 : msg.state_hz;
   if (!finiteIn(dt, 1e-4, 0.1) || !finiteIn(hz, 1, 1000)) { fail('init: bad dt_s or state_hz'); return; }
@@ -603,6 +611,7 @@ async function onInit(msg) {
     const merged = { ...DEFAULT_NAVIGATION, ...msg.navigation };
     navigation = Object.fromEntries(NAVIGATION_FIELDS.map(k => [k, merged[k]]));
   }
+  if(resume)navigation=Object.fromEntries(NAVIGATION_FIELDS.map(k=>[k,resume[k]??DEFAULT_NAVIGATION[k]]));
   if (msg.kap140 !== undefined && typeof msg.kap140 !== 'boolean') { fail('init: invalid kap140 capability flag'); return; }
   const presets = { normal: 1, hard: 2, side: 3, banked: 4 };
   const preset = msg.landing_preset;
@@ -643,19 +652,23 @@ async function onInit(msg) {
       grid => { if (generation === terrainGeneration) removeTile(grid); });
     await terrainStream.move(ic.lat_rad, ic.lon_rad);
   }
-  const rc = msg.runway_start ? M._gf_init_runway(dt, ic.lat_rad, ic.lon_rad, ic.heading_rad) : preset === undefined
+  let resumeRc=null;
+  if(resume){const values=resumeValues(resume,dt),pointer=M._malloc(values.byteLength);if(!pointer){fail('Cannot allocate continuation state.');return;}try{M.HEAPF64.set(values,pointer/8);resumeRc=M._gf_init_resume(dt,pointer,values.length);}finally{M._free(pointer);}}
+  const rc = resume ? resumeRc : msg.runway_start ? M._gf_init_runway(dt, ic.lat_rad, ic.lon_rad, ic.heading_rad) : preset === undefined
     ? M._gf_init(dt, ic.lat_rad, ic.lon_rad, ic.alt_msl_m, ic.heading_rad, ic.tas_mps)
     : M._gf_init_landing(dt, ic.lat_rad, ic.lon_rad, ic.heading_rad, presets[preset]);
   if (rc !== 0) { fail(`init rc=${rc}`); return; }
   dtS = dt; simulationRate = 1; statePeriodMs = 1000 / hz;
-  stepIndex = 0; pending = []; lastInputWallMs = null; lastStepCostUs = 0;
+  stepIndex = resume ? resume.step : 0; pending = []; lastInputWallMs = null; lastStepCostUs = 0;
   missedSteps = 0; droppedSteps = 0; maxLagSteps = 0; maxLagMs = 0; lateInputs = 0; appliedInputs = 0; maxBatch = 0; ticks = 0;
   costs = new Float32Array(COST_CAPACITY); costCount = 0; runWallMs = 0;
   groundCollisionEnabled = msg.ground_collision === true; collision = EMPTY_COLLISION;
   collisionAvailable = groundCollisionEnabled && sampleContact().available;
   initializeAltimeter();
+  if(resume){altimeterSettingPa=resume.altimeter_setting_pa;altimeterReferences={altimeter_qnh_pa:resume.altimeter_qnh_pa,altimeter_qfe_pa:resume.altimeter_qfe_pa,altimeter_qfe_datum_m:resume.altimeter_qfe_datum_m};updateAltimeter();}
   if (msg.kap140 && typeof M._gf_set_autopilot_vertical === 'function' && typeof M._gf_autopilot_vertical_state === 'function' && typeof M._gf_static_pressure_pa === 'function') {
     kap = createKap140(kapSensors());
+    if(resume&&!kap.restore(resume,kapSensors())){fail('Recorded autopilot modes cannot be reconstructed.');return;}
     altitudeAlert = createAltitudeAlert(alertSensors());
     if (!applyKapGuidance()) return;
   }

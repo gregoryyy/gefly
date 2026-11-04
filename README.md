@@ -97,7 +97,7 @@ the menu, **O** opens Options, and **Alt+Shift+F** shows the flight controls. **
 flight-data and stall-awareness panels are half opaque until clicked; their
 first click activates the panel, and subsequent gestures operate it.
 Arrow keys control pitch/roll, Q/W rudder, 0 throttle idle and 1–9 throttle.
-In Review, **← / →** seek backward/forward one second, with repeated keys supported.
+In Review, **← / →** seek backward/forward one second, with repeated keys supported. **Continue live** flies from the selected frame and keeps the earlier path; **Back to live** returns to the original flight. Continuation starts a new simulation branch; older recordings without enough state remain viewable.
 **=** or the replay speed button cycles **1×, 1.5×, 2×, 5×, 10×**, independently
 of live-flight speed. The overlay shows **REPLAY** speed.
 

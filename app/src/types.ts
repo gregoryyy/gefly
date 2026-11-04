@@ -168,6 +168,7 @@ export interface FlightLocation { version: 1; lat_rad: number; lon_rad: number; 
 export interface RunwayStart { airport: string; runway: string; lat_rad: number; lon_rad: number; heading_rad: number }
 export type AirborneSite = 'edfe' | 'taunus' | 'eddf-ils' | 'darmstadt' | 'odenwald' | 'spessart';
 export interface FlightSession {
+  restoreFromReview(state: Readonly<FlightState>): Promise<FlightState>;
   captureAutopilot(): void;
   setSimulationRate(rate: number): void;
   setKap140(command: KapCommand): void;

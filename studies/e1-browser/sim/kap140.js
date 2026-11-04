@@ -4,8 +4,8 @@ const FT = 0.3048, FPM = FT / 60, TAU = 2 * Math.PI;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const heading = v => ((v % TAU) + TAU) % TAU;
 const VS_MIN = -2000 * FPM, VS_MAX = 1500 * FPM;
-export const KAP_FIELDS = Object.freeze(['kap_profile','kap_engaged','kap_lateral','kap_lateral_arm','kap_vertical','kap_alt_arm','kap_gs_arm','kap_lateral_alert','kap_vertical_alert','kap_hdg_prompt','kap_heading_bug_rad','kap_selected_altitude_m','kap_vs_target_mps','kap_hold_pressure_altitude_m','kap_baro_setting_pa','kap_baro_units','kap_display_page','kap_indicated_altitude_m','kap_nav_valid','kap_nav_kind','kap_gs_valid','kap_elevator_norm','kap_sensor_fault','kap_cws']);
-const REQUIRED_KAP_FIELDS = KAP_FIELDS.filter(key => key !== 'kap_cws');
+export const KAP_FIELDS = Object.freeze(['kap_profile','kap_engaged','kap_lateral','kap_lateral_arm','kap_vertical','kap_alt_arm','kap_gs_arm','kap_lateral_alert','kap_vertical_alert','kap_hdg_prompt','kap_heading_bug_rad','kap_selected_altitude_m','kap_vs_target_mps','kap_hold_pressure_altitude_m','kap_baro_setting_pa','kap_baro_units','kap_display_page','kap_indicated_altitude_m','kap_nav_valid','kap_nav_kind','kap_gs_valid','kap_elevator_norm','kap_sensor_fault','kap_cws','kap_gs_base_mps']);
+const REQUIRED_KAP_FIELDS = KAP_FIELDS.filter(key => key !== 'kap_cws' && key !== 'kap_gs_base_mps');
 const valueless = new Set(['ap','disconnect','hdg','nav','apr','rev','alt','arm','baro','baro-units']);
 export function validKapCommand(c) {
   if (!c || typeof c !== 'object' || Array.isArray(c) || Object.keys(c).some(k => k !== 'action' && k !== 'value')) return false;
@@ -25,6 +25,7 @@ export function validKapState(s) {
   if (!KAP_FIELDS.some(k => Object.hasOwn(s, k))) return true;
   if (REQUIRED_KAP_FIELDS.some(k => !Object.hasOwn(s, k) || !Number.isFinite(s[k]))) return false;
   if (Object.hasOwn(s, 'kap_cws') && s.kap_cws !== 0 && s.kap_cws !== 1) return false;
+  if (Object.hasOwn(s,'kap_gs_base_mps') && (!Number.isFinite(s.kap_gs_base_mps) || s.kap_gs_base_mps<VS_MIN || s.kap_gs_base_mps>VS_MAX)) return false;
   const member = (k, values) => values.includes(s[k]);
   return member('kap_profile',[1]) && member('kap_engaged',[0,1]) && member('kap_lateral',[0,1,2,3,4]) && member('kap_lateral_arm',[0,2,3,4]) && member('kap_vertical',[0,1,2]) && member('kap_alt_arm',[0,1]) && member('kap_gs_arm',[0,1]) && member('kap_lateral_alert',[0,1,2,3,4]) && member('kap_vertical_alert',[0,2]) && member('kap_hdg_prompt',[0,1]) && s.kap_heading_bug_rad >= 0 && s.kap_heading_bug_rad < TAU && s.kap_selected_altitude_m >= -1000 && s.kap_selected_altitude_m <= 20000 && s.kap_vs_target_mps >= VS_MIN && s.kap_vs_target_mps <= VS_MAX && s.kap_hold_pressure_altitude_m >= -2000 && s.kap_hold_pressure_altitude_m <= 20000 && validSetting(s.kap_baro_setting_pa) && member('kap_baro_units',[0,1]) && member('kap_display_page',[0,1,2]) && s.kap_indicated_altitude_m >= -5000 && s.kap_indicated_altitude_m <= 25000 && member('kap_nav_valid',[0,1]) && member('kap_nav_kind',[0,1,2,3]) && member('kap_gs_valid',[0,1]) && Math.abs(s.kap_elevator_norm) <= 1 && member('kap_sensor_fault',[0,1]);
 }
@@ -139,7 +140,7 @@ export function createKap140(initial) {
     // Invalid sensors are reported as a fault with invalid NAV/GS, never as
     // fresh values; the other displayed values are the last validated ones.
     const valid=validSensors(input), s=valid?input:lastValid, fault=+(sensorFault || !valid);
-    return {kap_profile:1,kap_engaged:engaged,kap_lateral:lat,kap_lateral_arm:latArm,kap_vertical:vert,kap_alt_arm:altArm,kap_gs_arm:gsArm,kap_lateral_alert:latAlert,kap_vertical_alert:vertAlert,kap_hdg_prompt:+(s.t_s<hdgPromptUntil),kap_heading_bug_rad:bug,kap_selected_altitude_m:selected,kap_vs_target_mps:vs,kap_hold_pressure_altitude_m:hold,kap_baro_setting_pa:baro,kap_baro_units:units,kap_display_page:cws?1:page,kap_indicated_altitude_m:s.pressure_altitude_m-pressureAltitude_m(baro),kap_nav_valid:valid?+s.nav.valid:0,kap_nav_kind:s.nav.kind,kap_gs_valid:valid?+s.nav.gs_valid:0,kap_elevator_norm:s.elevator_norm??0,kap_sensor_fault:fault,kap_cws:cws};
+    return {kap_profile:1,kap_engaged:engaged,kap_lateral:lat,kap_lateral_arm:latArm,kap_vertical:vert,kap_alt_arm:altArm,kap_gs_arm:gsArm,kap_lateral_alert:latAlert,kap_vertical_alert:vertAlert,kap_hdg_prompt:+(s.t_s<hdgPromptUntil),kap_heading_bug_rad:bug,kap_selected_altitude_m:selected,kap_vs_target_mps:vs,kap_hold_pressure_altitude_m:hold,kap_baro_setting_pa:baro,kap_baro_units:units,kap_display_page:cws?1:page,kap_indicated_altitude_m:s.pressure_altitude_m-pressureAltitude_m(baro),kap_nav_valid:valid?+s.nav.valid:0,kap_nav_kind:s.nav.kind,kap_gs_valid:valid?+s.nav.gs_valid:0,kap_elevator_norm:s.elevator_norm??0,kap_sensor_fault:fault,kap_cws:cws,kap_gs_base_mps:gsBase};
   }
   function guidance(input) {
     const s=validSensors(input)?input:lastValid;
@@ -150,5 +151,15 @@ export function createKap140(initial) {
     const v=vert===2 ? clamp(gsBase+s.nav.gs_norm*3,VS_MIN,VS_MAX) : vs;
     return {lateral_mode:engaged && !cws?(lat===0?1:2):0,heading_rad:h,vertical_mode:engaged && !cws?(vert===1 && !(gesture && gestureMoved)?2:1):0,vertical_target:vert===1 && !(gesture && gestureMoved)?s.physical_altitude_m+hold-s.pressure_altitude_m:v};
   }
-  return {command,step,snapshot,guidance};
+  function restore(recorded,s) {
+    if (!recorded || recorded.kap_profile!==1 || !validKapState(recorded) || !validSensors(s)
+      || recorded.kap_cws===1 || (recorded.kap_vertical===2 && !Number.isFinite(recorded.kap_gs_base_mps)) || recorded.kap_sensor_fault) return false;
+    engaged=recorded.kap_engaged;lat=recorded.kap_lateral;latArm=recorded.kap_lateral_arm;vert=recorded.kap_vertical;
+    altArm=recorded.kap_alt_arm;gsArm=recorded.kap_gs_arm;latAlert=recorded.kap_lateral_alert;vertAlert=recorded.kap_vertical_alert;
+    bug=recorded.kap_heading_bug_rad;selected=recorded.kap_selected_altitude_m;vs=recorded.kap_vs_target_mps;hold=recorded.kap_hold_pressure_altitude_m;
+    baro=recorded.kap_baro_setting_pa;units=recorded.kap_baro_units;page=recorded.kap_display_page;pageUntil=s.t_s+3;
+    gsBase=recorded.kap_gs_base_mps??0;hdgPromptUntil=recorded.kap_hdg_prompt?s.t_s+5:0;gesture=0;gestureMoved=false;cws=0;sensorFault=0;lastValid=s;
+    return true;
+  }
+  return {command,step,snapshot,guidance,restore};
 }

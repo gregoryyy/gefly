@@ -120,6 +120,19 @@ export class FlightTrace {
     this.context = nextContext;
   }
 
+  /** Exclusive immutable branch prefix; caller appends the reconstructed boundary. */
+  prefixBefore(t_s: number): FlightTrace {
+    if (!Number.isFinite(t_s) || t_s < 0) throw new RangeError('Branch time must be finite and nonnegative.');
+    const prefix = new FlightTrace({ maxSamples: this.samples.length, maxDuration_s: this.maxDuration_s,
+      ...(this.context ? { context: this.context } : {}) });
+    for (let i=0;i<this.count;i++) {
+      const sample = this.sample(i); if (sample.state.t_s >= t_s) break;
+      prefix.record(sample.state, sample.vertical_speed_mps);
+    }
+    prefix.clipped = this.clipped;
+    return prefix;
+  }
+
   getContext(): Readonly<RunwayPracticeContext> | null { return this.context; }
 
   bounds(): TraceBounds | null {

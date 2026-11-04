@@ -1,4 +1,5 @@
 import { validFlightLocation } from './flight-location.ts';
+import { resumeProblem } from '../../studies/e1-browser/sim/continue-flight.js';
 import { validateTerrainGrid, type TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
 import { eddfApproachPractice } from './navigation-approach.ts';
 import { getNavigationCatalogue } from './radio-nav.ts';
@@ -80,6 +81,34 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
   let initialLocation: FlightLocation | undefined;
   let inputTimer: ReturnType<typeof setInterval> | undefined;
   let loadTimer: ReturnType<typeof setTimeout> | undefined;
+  type Attempt = { worker: Worker | null; selected: Readonly<FlightState>; tiles: (TerrainGrid & {slot:number})[];
+    ready?: {trim: {throttle:number;pitch_trim:number;status:number}; navdata: NavdataIdentity}; state?: FlightState;
+    timer?: ReturnType<typeof setTimeout>; resolve: (state: FlightState) => void; reject: (error: Error) => void };
+  let restoring: Attempt | null = null;
+  function cancelRestore(message: string): void {
+    const attempt = restoring; if (!attempt) return;
+    restoring = null; clearTimeout(attempt.timer); attempt.worker?.terminate(); attempt.reject(new Error(message));
+  }
+  function commitRestore(attempt: Attempt): void {
+    if (restoring !== attempt || !attempt.ready || !attempt.state || !attempt.worker) return;
+    const state = attempt.state;
+    if (state.step !== attempt.selected.step || Math.abs(state.t_s-attempt.selected.t_s)>1e-9 || resumeProblem(state)) {
+      cancelRestore('The reconstructed aircraft did not return a supported frame at the selected time.'); return;
+    }
+    restoring = null; clearTimeout(attempt.timer); clearTimers();
+    const old = worker; worker = attempt.worker; ready = true; wantedRunning = false;
+    latestStep = state.step; collided = false; collisionState = null;
+    initialLocation = undefined; landingPreset = undefined; runwayStart = undefined;
+    controls = { elevator: state.elevator_cmd_norm!, aileron: state.aileron_cmd_norm!, rudder: state.rudder_cmd_norm!,
+      throttle: state.throttle_norm!, flap_norm: state.flap_command_norm!, brake_norm: Math.max(state.brake_left_norm!,state.brake_right_norm!),
+      mixture_norm: state.mixture_norm!, mixture_auto: state.mixture_auto===1, engine_running: state.engine_command_on===1,
+      pitch_trim_norm: state.pitch_trim_norm!, pilot_override: false };
+    userControls = true; controlsChanged = true; old?.terminate();
+    for (const grid of attempt.tiles) callbacks.onTerrainTile?.(grid);
+    callbacks.onTerrainLoading?.(false);
+    callbacks.onReady(attempt.ready.trim, attempt.ready.navdata);
+    callbacks.onState(state); callbacks.onStatus('Paused'); attempt.resolve({ ...state });
+  }
 
   function clearTimers(): void {
     clearInterval(inputTimer);
@@ -123,79 +152,90 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
     callbacks.onStatus('Flying');
   }
 
-  function initialize(): void {
-    destroyWorker();
-    latestStep = 0; collided = false; collisionState = null;
-    callbacks.onStatus('Loading JSBSim…');
+  function initialize(resumeState?: Readonly<FlightState>): void {
+    const attempt = resumeState ? restoring : null;
+    const failCurrent = (message: string): void => {
+      if (attempt && restoring === attempt) cancelRestore(message);
+      else if (!attempt || worker === attempt.worker) fail(message);
+    };
+    if (!attempt) { cancelRestore('Continuation cancelled by restart.'); destroyWorker();
+      latestStep = 0; collided = false; collisionState = null; callbacks.onStatus('Loading JSBSim…'); }
+
     let current: Worker;
     try {
       current = new Worker('/studies/e1-browser/sim/worker.js', { type: 'module' });
-      worker = current;
+      if (attempt) attempt.worker = current; else worker = current;
     } catch {
-      fail('Cannot start the JSBSim worker. Serve the project using just fly.');
+      failCurrent('Cannot start the JSBSim worker. Serve the project using just fly.');
       return;
     }
-    loadTimer = setTimeout(() => {
-      if (worker === current) fail('JSBSim did not finish loading. Build the local runtime with just build-flight-engine, then reset.');
+    const timer = setTimeout(() => {
+      if (worker === current || restoring === attempt && attempt?.worker === current) failCurrent('JSBSim did not finish loading. Build the local runtime with just build-flight-engine, then reset.');
     }, LOAD_TIMEOUT_MS);
+    if (attempt) attempt.timer = timer; else loadTimer = timer;
     current.onerror = (event) => {
-      if (disposed || worker !== current) return;
+      if (disposed || worker !== current && restoring?.worker !== current) return;
       event.preventDefault();
-      fail('JSBSim runtime could not load. Run just build-flight-engine, then reset. No simulated flight is running.');
+      failCurrent('JSBSim runtime could not load. Run just build-flight-engine, then reset. No simulated flight is running.');
     };
     current.onmessageerror = () => {
-      if (!disposed && worker === current) fail('The flight worker returned an unreadable message. Reset to restart.');
+      if (!disposed && (worker === current || restoring?.worker === current)) failCurrent('The flight worker returned an unreadable message. Reset to restart.');
     };
     current.onmessage = (event: MessageEvent<unknown>) => {
-      if (disposed || worker !== current) return;
+      if (disposed || worker !== current && restoring?.worker !== current) return;
       const message = event.data;
-      if (!message || typeof message !== 'object') { fail('Invalid flight worker response.'); return; }
+      if (!message || typeof message !== 'object') { failCurrent('Invalid flight worker response.'); return; }
       const m = message as Record<string, unknown>;
       if (m.type === 'terrain-tile') {
         const grid = m.grid as TerrainGrid & {slot:number};
-        if (!validateTerrainGrid(grid) || grid.width !== 129 || grid.height !== 129 || !Number.isInteger(grid.slot) || grid.slot < 0 || grid.slot >= 42) { fail('Invalid regional terrain message.'); return; }
+        if (!validateTerrainGrid(grid) || grid.width !== 129 || grid.height !== 129 || !Number.isInteger(grid.slot) || grid.slot < 0 || grid.slot >= 42) { failCurrent('Invalid regional terrain message.'); return; }
         const col = grid.slot % 7, row = Math.floor(grid.slot / 7);
         const expectedBounds = [8.25 + col * .25, 49.25 + row * .25, 8.5 + col * .25, 49.5 + row * .25];
         if (grid.id !== `e${825 + col * 25}-n${4925 + row * 25}`
           || [grid.west_rad, grid.south_rad, grid.east_rad, grid.north_rad].some((value, i) => Math.abs(value - expectedBounds[i] * DEG_RAD) > 1e-12)) {
-          fail('Regional terrain identity or bounds mismatch.'); return;
+          failCurrent('Regional terrain identity or bounds mismatch.'); return;
         }
-        callbacks.onTerrainTile?.(grid);
+        if (attempt && restoring === attempt) {
+          const previous = attempt.tiles.findIndex(tile => tile.slot === grid.slot);
+          if (previous < 0) attempt.tiles.push(grid); else attempt.tiles[previous] = grid;
+        } else callbacks.onTerrainTile?.(grid);
       } else if (m.type === 'terrain-loading') {
-        if (typeof m.loading !== 'boolean') { fail('Invalid terrain loading state.'); return; }
+        if (typeof m.loading !== 'boolean') { failCurrent('Invalid terrain loading state.'); return; }
+        if (attempt && restoring === attempt) return;
         callbacks.onTerrainLoading?.(m.loading);
         callbacks.onStatus(m.loading ? 'Loading terrain…' : wantedRunning ? 'Flying' : 'Paused');
       } else if (m.type === 'ready') {
         const trim = m.trim as Record<string, unknown> | undefined;
         if (!trim || ![trim.throttle, trim.pitch_trim, trim.status].every((value) => typeof value === 'number' && Number.isFinite(value))
           || (trim.throttle as number) < 0 || (trim.throttle as number) > 1) {
-          fail('The aircraft returned invalid trim settings.');
+          failCurrent('The aircraft returned invalid trim settings.');
           return;
         }
         const sha = m.navdata_sha256, navError = m.navdata_error;
         if (!(sha === undefined || sha === null || (typeof sha === 'string' && /^[0-9a-f]{64}$/.test(sha)))
           || !(navError === undefined || navError === null || (typeof navError === 'string' && navError.length > 0 && navError.length <= 500))
           || (typeof sha === 'string' && typeof navError === 'string')) {
-          fail('The flight worker returned an invalid navigation database identity.');
+          failCurrent('The flight worker returned an invalid navigation database identity.');
           return;
         }
-        clearTimeout(loadTimer);
-        loadTimer = undefined;
-        ready = true;
         const result = { throttle: trim.throttle as number, pitch_trim: trim.pitch_trim as number, status: trim.status as number };
+        const navdata = { navdata_sha256: sha as string | null | undefined, navdata_error: navError as string | null | undefined };
+        if (attempt && restoring === attempt) { attempt.ready = { trim: result, navdata }; commitRestore(attempt); return; }
+        clearTimeout(loadTimer); loadTimer = undefined; ready = true;
         if (!userControls) controls = { ...controls, throttle: result.throttle };
         callbacks.onReady(result, { navdata_sha256: sha as string | null | undefined, navdata_error: navError as string | null | undefined });
         // Callbacks may pause, reset or dispose the session.
-        if (disposed || worker !== current) return;
+        if (disposed || worker !== current && restoring?.worker !== current) return;
         if (wantedRunning) run();
         else callbacks.onStatus('Paused');
       } else if (m.type === 'state') {
-        if (!validState(m)) { fail('The flight model returned an invalid state. Flight stopped; reset to restart.'); return; }
+        if (!validState(m)) { failCurrent('The flight model returned an invalid state. Flight stopped; reset to restart.'); return; }
         const fields = [...STATE_FIELDS, ...['simulation_rate', ...ALERT_FIELDS, ...KAP_FIELDS, ...NAVIGATION_FIELDS, ...TERRAIN_FIELDS, ...COLLISION_FIELDS, ...STALL_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...ENGINE_SWITCH_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS].filter((key) => m[key] !== undefined)];
         const state = Object.fromEntries(fields.map(key => [key, m[key]])) as unknown as FlightState;
+        if (attempt && restoring === attempt) { attempt.state = state; commitRestore(attempt); return; }
         if (collisionState && Object.keys({ ...collisionState, ...state })
           .some(key => state[key as keyof FlightState] !== collisionState![key as keyof FlightState])) {
-          fail('The stopped collision state changed before restart.'); return;
+          failCurrent('The stopped collision state changed before restart.'); return;
         }
         latestStep = state.step;
         if (state.collision_mask) {
@@ -206,30 +246,40 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
         }
         callbacks.onState(state);
       } else if (m.type === 'error') {
-        fail(`JSBSim stopped: ${typeof m.message === 'string' ? m.message : 'unknown worker failure'}`);
+        failCurrent(`JSBSim stopped: ${typeof m.message === 'string' ? m.message : 'unknown worker failure'}`);
       }
     };
     let approach: ReturnType<typeof eddfApproachPractice> | null = null;
-    try { if (airborneSite === 'eddf-ils' && !landingPreset && !runwayStart && !initialLocation) approach = eddfApproachPractice(getNavigationCatalogue()); }
-    catch { fail('Historical approach source unavailable. Reload before selecting EDDF practice.'); return; }
+    try { if (!attempt && airborneSite === 'eddf-ils' && !landingPreset && !runwayStart && !initialLocation) approach = eddfApproachPractice(getNavigationCatalogue()); }
+    catch { failCurrent('Historical approach source unavailable. Reload before selecting EDDF practice.'); return; }
     // Every mode requests the regional database so tuned NAV sources match the
     // instruments; a worker load failure degrades NAV and is reported in ready
     // (navdata_error) instead of stopping the flight.
-    current.postMessage({
+    try { current.postMessage({
       ...(approach ? { navigation: approach.navigation } : {}),
-      type: 'init', ...(runwayStart || initialLocation?.mode === 'ground' ? { runway_start: true } : {}), kap140: true, regional_navigation: true, streaming_terrain: landingPreset === undefined, terrain: landingPreset === undefined, ...(landingPreset ? { landing_preset: landingPreset } : {}), ground_collision: true, dt_s: 1 / 120, aircraft: 'c172x', state_hz: 60,
-      ic: (initialLocation ? { lat_rad: initialLocation.lat_rad, lon_rad: initialLocation.lon_rad,
+      type: 'init', ...(resumeState ? { resume_state: { ...resumeState } } : {}), ...(!resumeState && (runwayStart || initialLocation?.mode === 'ground') ? { runway_start: true } : {}), kap140: true, regional_navigation: true, streaming_terrain: resumeState ? resumeState.terrain_profile === 1 : landingPreset === undefined, terrain: resumeState ? resumeState.terrain_profile === 1 : landingPreset === undefined, ...(!resumeState && landingPreset ? { landing_preset: landingPreset } : {}), ground_collision: true, dt_s: 1 / 120, aircraft: 'c172x', state_hz: 60,
+      ic: (resumeState ? { lat_rad: resumeState.lat_rad, lon_rad: resumeState.lon_rad, alt_msl_m: resumeState.alt_msl_m, heading_rad: resumeState.heading_rad, tas_mps: resumeState.tas_mps } : null) ?? (initialLocation ? { lat_rad: initialLocation.lat_rad, lon_rad: initialLocation.lon_rad,
         alt_msl_m: initialLocation.alt_msl_m, heading_rad: initialLocation.heading_rad, tas_mps: initialLocation.mode === 'ground' ? 0 : 90 * 1852 / 3600 } : null) ?? (runwayStart ? { ...runwayStart, alt_msl_m: 0, tas_mps: 0 } : null) ?? approach?.ic ?? regionalInitialCondition(airborneSite) ?? {
         lat_rad: (airborneSite === 'taunus' ? 50.20 : 49.96) * DEG_RAD, lon_rad: (airborneSite === 'taunus' ? 8.52 : 8.643) * DEG_RAD,
         alt_msl_m: airborneSite === 'taunus' ? 1100 : 1300 * 0.3048, heading_rad: (airborneSite === 'taunus' ? 300 : 82) * DEG_RAD,
         tas_mps: 90 * 1852 / 3600,
       },
-    });
+    }); } catch { failCurrent('Cannot send the aircraft initialization request.'); }
   }
 
   return {
+    restoreFromReview(state) {
+      const problem = resumeProblem(state);
+      if (problem) return Promise.reject(new Error(problem));
+      if (disposed || !worker || !ready || wantedRunning) return Promise.reject(new Error('Pause a ready live flight before continuing from Review.'));
+      if (restoring) return Promise.reject(new Error('A continuation is already being prepared.'));
+      return new Promise<FlightState>((resolve, reject) => {
+        restoring = {worker: null, selected: { ...state }, tiles: [], resolve, reject};
+        initialize(restoring.selected);
+      });
+    },
     captureAutopilot() {
-      if (disposed || collided || !ready || !worker || controls.pilot_override !== false) return;
+      if (disposed || restoring || collided || !ready || !worker || controls.pilot_override !== false) return;
       // The explicit convenience hands control to AP. Clear the separate study
       // roll correction as well, and flush release before capture even if paused.
       controls = { ...controls, elevator: 0, aileron: 0, rudder: 0, pilot_override: false };
@@ -239,12 +289,12 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       worker.postMessage({ type: 'autopilot-capture' });
     },
     setSimulationRate(rate) {
-      if (disposed || collided || !ready || !worker || !validSimulationRate(rate)) return;
+      if (disposed || restoring || collided || !ready || !worker || !validSimulationRate(rate)) return;
       worker.postMessage({ type: 'simulation-rate', rate });
     },
     start() {
       if (collided) return;
-      if (disposed || wantedRunning) return;
+      if (disposed || restoring || wantedRunning) return;
       wantedRunning = true;
       if (!worker) initialize();
       else if (ready) run();
@@ -274,7 +324,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       initialize();
     },
     setKap140(command) {
-      if (disposed || collided || !ready || !worker || !validKapCommand(command)) return;
+      if (disposed || restoring || collided || !ready || !worker || !validKapCommand(command)) return;
       if (command.action === 'cws' && command.value === 0) {
         worker.postMessage({ type: 'input', step: latestStep,
           wall_ms: performance.timeOrigin + performance.now(), ...controls });
@@ -283,22 +333,22 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       worker.postMessage({ type: 'kap140', command: { ...command } });
     },
     setNavigation(config) {
-      if (disposed || collided || !ready || !worker || !validNavigation(config)) return;
+      if (disposed || restoring || collided || !ready || !worker || !validNavigation(config)) return;
       worker.postMessage({ type: 'navigation', config: Object.fromEntries(NAVIGATION_FIELDS.filter(k => config[k] !== undefined).map(k => [k, config[k]])) });
     },
     setAutopilot(mode, target_heading_rad) {
-      if (disposed || collided || !ready || !worker || ![0,1,2].includes(mode)) return;
+      if (disposed || restoring || collided || !ready || !worker || ![0,1,2].includes(mode)) return;
       if (target_heading_rad !== undefined && !Number.isFinite(target_heading_rad)) return;
       worker.postMessage({ type: 'autopilot', mode,
         ...(target_heading_rad === undefined ? {} : { target_heading_rad: ((target_heading_rad % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI) }) });
     },
     setAltimeter(setting_pa) {
-      if (disposed || collided || !ready || !worker || !Number.isFinite(setting_pa)
+      if (disposed || restoring || collided || !ready || !worker || !Number.isFinite(setting_pa)
         || setting_pa < 80_000 || setting_pa > 110_000) return;
       worker.postMessage({ type: 'altimeter', setting_pa });
     },
     input(value) {
-      if (disposed || collided) return;
+      if (disposed || restoring || collided) return;
       if (!validControls(value)) {
         fail('Control input must be finite: axes −1 to +1; throttle 0 to 1.');
         return;
@@ -309,6 +359,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
     },
     dispose() {
       if (disposed) return;
+      cancelRestore('Continuation cancelled because the flight session closed.');
       disposed = true;
       wantedRunning = false;
       destroyWorker();

@@ -3,6 +3,34 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 11:06 — Continue live from a replay frame
+
+TODO: 2.0.77; R-REVIEW-1/R-SIM-4.
+Agent: Codex orchestrator integration; glide_cases native reconstruction;
+glide_model session/trace/controls; glide_housekeeping independent scoped review.
+
+**Implementation notes**
+
+Continue live starts a new native branch from selected pose, velocities/rates,
+controls, fuel, engine and supported avionics state. Retain the earlier trace,
+drop its future and accept complete imported frames. A candidate worker must
+initialize successfully before replacing the original paused flight. Back to
+live keeps its existing behavior; unavailable frames explain why.
+Native cases, TypeScript and the existing replay browser check pass, including
+an imported middle frame and actual subsequent flight. [Scoped review](reviews/2026-11-04-replay-continue-live.md)
+passes. Full CI was not rerun after the user's request for less unnecessary
+process; peer remains pending.
+
+**Deviations**
+
+This reconstructs initial conditions, not hidden integrator/thermal/contact
+history. Incomplete, damaged and unsupported transient frames stay view-only.
+
+**Insights**
+
+Use the native first frame, preserve applied controls without reapplying UI gains,
+and keep the original worker until reconstruction succeeds.
+
 ## 2026-11-04 10:33 — Native browser fullscreen
 
 TODO: 2.0.76; R-VIEW-1/R-INPUT-1/R-REVIEW-1.

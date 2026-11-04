@@ -33,6 +33,7 @@ import { createFieldOfViewControl, DEFAULT_FOV_RAD } from './field-of-view';
 import { createPressureAltimeterPanel } from './pressure-altimeter-panel';
 import { createScene } from './scene';
 import { createSession } from './session';
+import { resumeProblem } from '../../studies/e1-browser/sim/continue-flight.js';
 import { createFlightLocationStore } from './flight-location';
 import { FlightTrace } from './flight-trace';
 import { createRunwayPracticeMonitor, type PracticeProgress } from './runway-practice';
@@ -169,12 +170,14 @@ let hasFlown = false, startWhenReady = false;
 let latest: FlightState | null = null, previous: FlightState | null = null;
 let collisionUnavailableNoticed = false;
 let verticalSpeedFpm = 0, throttle = 0.69, stickX = 0, stickY = 0;
-const flightTrace = new FlightTrace();
+let flightTrace = new FlightTrace();
 let loadedTrace: FlightTrace | null = null;
 let resumeAfterReview = false;
 let recordingLoadVersion = 0;
 const recordedTrace = () => loadedTrace ?? flightTrace;
 let reviewing = false, reviewPlaying = false, reviewTime_s = 0;
+let continuingReplay = false;
+let continuedAxes: Pick<Controls, 'elevator' | 'aileron' | 'rudder' | 'brake_norm'> | null = null;
 let reviewRate = 1;
 let liveStatus = 'Loading flight…';
 let practiceMap: PracticeMap | null = null;
@@ -253,6 +256,7 @@ const session = createSession({
   onTerrainTile(grid) { regionalTiles.set(grid.id,grid); },
   onTerrainLoading(loading) { terrainLoading=loading; if (!loading) scene?.setTerrainTiles?.([...regionalTiles.values()]); },
   onState(workerState) {
+    if (continuingReplay) return;
     const state = { ...radioPanel.snapshot(), ...workerState, systems_switch_mask: systemsPanel.snapshot() };
     if (!reviewing && ready) flightLocationStore.observe(state);
     const oldAp = latest?.ap_mode ?? 0;
@@ -280,6 +284,7 @@ const session = createSession({
   onReady(trim, reply?: { navdata_sha256?: string | null; navdata_error?: string | null }) {
     // session.ts forwards the worker's ready {navdata_sha256, navdata_error}; undefined = older worker.
     engineNavdata = workerNavdata(reply); const navdataStatus = applyNavdataCheck();
+    if (continuingReplay) return;
     ready = true; failed = false; throttle = trim.throttle;
     if (runwayStart || (restoredFlightLocationActive && initialFlightLocation?.mode === 'ground')) parkingBrake = true;
     terrainLoading=false; scene?.setTerrainTiles?.([...regionalTiles.values()]);
@@ -383,6 +388,7 @@ function parkingBrakeShortcut(event: KeyboardEvent): void {
 document.addEventListener('keydown', parkingBrakeShortcut, true);
 function toggleParkingBrake(): void {
   if (!controlsAvailable() || latest?.brake_left_norm === undefined) return;
+  if (continuedAxes) continuedAxes.brake_norm = 0;
   parkingBrake = !parkingBrake;
   publishInput();
 }
@@ -452,6 +458,7 @@ const autopilotPanel = createAutopilotPanel({
       if (command.value === 0) { neutralize(); return; }
       neutralize(); cwsHeld = true;
     }
+    if (continuedAxes && command.action === 'ap') { continuedAxes = null; publishInput(); }
     apDisconnectPending = false; session.setKap140(command);
   },
   onOpen: neutralize, onClose: focusFlight,
@@ -660,8 +667,10 @@ const reviewControls = createFlightReviewControls({
   fileContainer: el('flight-menu').querySelector<HTMLElement>('nav')!,
   onEnter: enterReview,
   onExit: exitReview,
+  onContinue: continueLiveFromReview,
   onSave: () => recordedTrace().exportJSON(),
   async onLoad(text) {
+    if (continuingReplay) throw new Error('Wait for the selected flight to finish loading.');
     const version = ++recordingLoadVersion;
     if (!ready || failed || sceneFailed) throw new Error('Wait for the flight to be ready before loading a recording.');
     const recording = FlightTrace.fromJSON(text);
@@ -677,7 +686,7 @@ const reviewControls = createFlightReviewControls({
   onFileError: message => notice(`Recording: ${message}`),
   onSeek(time_s) {
     const selected_s = snapReviewTime(time_s, recordedTrace().bounds());
-    if (!reviewing || selected_s === null) return;
+    if (!reviewing || continuingReplay || selected_s === null) return;
     reviewPlaying = false; engineAudio.update(null, false); reviewTime_s = selected_s;
     lastMapUpdate_ms = -Infinity;
     updateReviewControls();
@@ -687,11 +696,13 @@ const reviewControls = createFlightReviewControls({
 });
 function updateReviewControls() {
   const bounds = recordedTrace().bounds();
+  const selected = reviewing ? recordedTrace().atTime(reviewTime_s) : null;
   reviewControls.update({
     available: !!bounds && bounds.count >= 2 && ready && !failed && !sceneFailed,
     active: reviewing, playing: reviewPlaying, playbackRate: reviewRate,
     start_s: bounds?.start_s ?? 0, end_s: bounds?.end_s ?? 0,
     current_s: reviewing ? reviewTime_s : (bounds?.end_s ?? 0), clipped: bounds?.clipped ?? false,
+    continuing: continuingReplay, continuationUnavailable: selected ? resumeProblem(selected.state) : 'Select a recorded frame.',
   });
 }
 function enterReview() {
@@ -706,7 +717,7 @@ function enterReview() {
   pauseFlight(); el('status').textContent = 'Review'; focusFlight();
 }
 function exitReview() {
-  if (!reviewing) return;
+  if (!reviewing || continuingReplay) return;
   recordingLoadVersion++;
   engineAudio.update(null, false);
   reviewing = reviewPlaying = false; lastMapUpdate_ms = -Infinity;
@@ -723,7 +734,63 @@ function exitReview() {
   const resume = resumeAfterReview; resumeAfterReview = false;
   if (resume && !document.hidden) startFlight();
 }
+async function continueLiveFromReview() {
+  if (!reviewing || continuingReplay || !ready || failed || sceneFailed) return;
+  const source = recordedTrace(), selected = source.atTime(reviewTime_s);
+  if (!selected || resumeProblem(selected.state)) return;
+  continuingReplay = true; recordingLoadVersion++; reviewPlaying = false; updateReviewControls();
+  try {
+    const actual = await session.restoreFromReview(selected.state);
+    if (mapDisposed) return;
+    const initial: FlightState = { ...selected.state, ...actual };
+    flightTrace = source.prefixBefore(selected.state.t_s);
+    loadedTrace = null; recordingLoadVersion++; resumeAfterReview = false;
+    flightTrace.record(initial, selected.vertical_speed_mps);
+    previous = null; latest = initial; verticalSpeedFpm = selected.vertical_speed_mps * 60 / .3048;
+    keys.clear(); keyboardControls.clear(); pointerControls.clear(); pointerYoke?.cancel();
+    stickX = stickY = 0; cwsHeld = apDisconnectPending = false;
+    continuedAxes = { elevator: initial.elevator_cmd_norm!, aileron: initial.aileron_cmd_norm!,
+      rudder: initial.rudder_cmd_norm!, brake_norm: Math.max(initial.brake_left_norm!, initial.brake_right_norm!) };
+    throttle = initial.throttle_norm!; flapTarget_deg = initial.flap_command_norm! * 30;
+    pitchTrimTarget = initial.pitch_trim_norm!; mixtureCommand = initial.mixture_norm!;
+    mixtureAutomatic = initial.mixture_auto === 1; engineCommand = initial.engine_command_on === 1;
+    parkingBrake = false; restoredFlightLocationActive = false; landingPreset = undefined; airborneSite = 'edfe';
+    const context = source.getContext(), runway = context && EDFE_RUNWAYS.find(item => item.id === context.runway);
+    runwayStart = runway ? { airport: 'EDFE', runway: runway.id, lat_rad: runway.lat_rad,
+      lon_rad: runway.lon_rad, heading_rad: runway.heading_true_rad } : null;
+    exerciseActive = !!context; runwayPractice.reset();
+    if (runwayStart) for (const frame of flightTrace.recordedStates()) runwayPractice.update(frame);
+    practiceReviewCache = null; lastMapUpdate_ms = -Infinity; collisionUnavailableNoticed = false;
+    liveWarningMonitor.reset(); reviewWarningMonitor.reset(); liveWarnings = liveWarningMonitor.update(initial);
+    if (initial.systems_switch_mask !== undefined) systemsPanel.restore(initial.systems_switch_mask);
+    else systemsPanel.reset();
+    reviewing = false; ready = true; failed = false;
+    radioPanel.update(initial, false, true, false);
+    const radios = { ...radioPanel.snapshot() };
+    for (const key of Object.keys(radios) as (keyof typeof radios)[]) {
+      const value = initial[key]; if (value !== undefined) radios[key] = value;
+    }
+    radioPanel.setConfiguration(radios);
+    flightLocationStore.clear(); flightLocationStore.observe(initial);
+    document.querySelector('.location strong')!.textContent = 'CONTINUED FLIGHT';
+    document.querySelector('.location span')!.textContent = `From recording · ${initial.t_s.toFixed(1)} s`;
+    el<HTMLInputElement>('throttle').value = String(throttle * 100);
+    pressureAltimeter.update(initial, false); updateConfiguration(initial, false);
+    hasFlown = true; startWhenReady = false;
+    running = !document.hidden && document.hasFocus();
+    if (running) session.start();
+    el('status').textContent = running ? 'Flying' : 'Paused';
+    notice(`Continuing from ${initial.t_s.toFixed(1)} s${running ? '.' : ' · paused.'}`);
+    updateSessionUI(); focusFlight();
+  } catch (error) {
+    if (!mapDisposed) notice(`Could not continue: ${error instanceof Error ? error.message : String(error)}`);
+  } finally {
+    continuingReplay = false;
+    if (!mapDisposed) updateReviewControls();
+  }
+}
 function toggleReviewPlayback() {
+  if (continuingReplay) return;
   const bounds = recordedTrace().bounds();
   if (!reviewing || !bounds) return;
   if (!reviewPlaying && reviewTime_s >= bounds.end_s) reviewTime_s = bounds.start_s;
@@ -738,6 +805,7 @@ function reviewSeekShortcut(event: KeyboardEvent): void {
   const action = reviewKeyAction(event.code, { editing: false, timeline: false, nativeButton: false }, event.repeat);
   if (action !== 'seek-back' && action !== 'seek-forward') return;
   event.preventDefault(); event.stopImmediatePropagation();
+  if (continuingReplay) return;
   const selected = snapReviewTime(reviewTime_s + (action === 'seek-back' ? -1 : 1), recordedTrace().bounds());
   if (selected === null) return;
   reviewTime_s = selected;
@@ -763,6 +831,11 @@ function publishInput() {
   }
   raw.pilot_override = raw.elevator !== 0 || raw.aileron !== 0 || raw.rudder !== 0;
   const controls = applyControlSettings(raw, controlSettings, latest?.ap_mode ? 0 : rollOffset, parkingBrake);
+  if (continuedAxes) {
+    Object.assign(controls, continuedAxes);
+    controls.brake_norm = Math.max(continuedAxes.brake_norm ?? 0, parkingBrake ? 1 : 0);
+    controls.pilot_override = false;
+  }
   const direction = rollOffset < 0 ? 'left' : rollOffset > 0 ? 'right' : 'off';
   el('offset-value').textContent = `${Math.abs(rollOffset * 100).toFixed(1)}% ${direction}${latest?.ap_mode ? ' · suspended by AP' : ''}`;
   session.input(controls);
@@ -776,6 +849,7 @@ function publishInput() {
   document.querySelectorAll<HTMLElement>('[data-code]').forEach(button => button.classList.toggle('held', held(button.dataset.code!)));
 }
 function neutralize() {
+  continuedAxes = null;
   if (latest?.kap_profile === 1) session.setKap140({action:'vertical', value:0});
   if (!reviewing || failed || sceneFailed) pointerYoke?.cancel();
   keys.clear(); pointerControls.clear(); keyboardControls.clear(); stickX = stickY = 0;
@@ -939,7 +1013,7 @@ pointerYoke = createPointerYoke({
   lookOnly: () => reviewing || groundCollisionStopped(),
   centered: () => controlSettings.centeredTouchpad === true,
   enabled: () => (controlsAvailable() || reviewing || groundCollisionStopped()) && !menuOpen() && !controlSettingsPanel.isOpen() && !document.querySelector('dialog[open]'),
-  onYoke(x, y) { stickX = x; stickY = y; publishInput(); },
+  onYoke(x, y) { continuedAxes = null; stickX = x; stickY = y; publishInput(); },
   onLook(yaw_rad, pitch_rad) { cameraLook = { yaw_rad, pitch_rad }; },
   onMode(mode) {
     updatePointerHint(mode);
@@ -953,7 +1027,7 @@ function moveStick(event: PointerEvent) {
   let x = (event.clientX - rect.left - rect.width / 2) / (rect.width * 0.32);
   let y = (rect.top + rect.height / 2 - event.clientY) / (rect.height * 0.32);
   const length = Math.max(1, Math.hypot(x, y)); x /= length; y /= length;
-  stickX = x; stickY = y; publishInput();
+  continuedAxes = null; stickX = x; stickY = y; publishInput();
 }
 joystick.addEventListener('pointerdown', event => {
   if (!controlsAvailable() || stickPointer !== null) return;
@@ -974,7 +1048,7 @@ for (const button of Array.from(document.querySelectorAll<HTMLButtonElement>('[d
   button.addEventListener('pointerdown', event => {
     if (!controlsAvailable()) return;
     event.preventDefault(); focusFlight(); button.setPointerCapture(event.pointerId);
-    pointerControls.set(event.pointerId, code); publishInput();
+    continuedAxes = null; pointerControls.set(event.pointerId, code); publishInput();
   });
   const release = (event: PointerEvent) => {
     if (pointerControls.delete(event.pointerId)) publishInput();
@@ -982,7 +1056,7 @@ for (const button of Array.from(document.querySelectorAll<HTMLButtonElement>('[d
   };
   for (const name of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(name, event => release(event as PointerEvent));
   button.addEventListener('keydown', event => {
-    if (controlsAvailable() && (event.code === 'Space' || event.code === 'Enter')) { event.preventDefault(); event.stopPropagation(); keyboardControls.add(code); publishInput(); }
+    if (controlsAvailable() && (event.code === 'Space' || event.code === 'Enter')) { event.preventDefault(); event.stopPropagation(); continuedAxes = null; keyboardControls.add(code); publishInput(); }
   });
   button.addEventListener('keyup', event => {
     if (event.code === 'Space' || event.code === 'Enter') { event.preventDefault(); event.stopPropagation(); keyboardControls.delete(code); publishInput(); }
@@ -1012,7 +1086,7 @@ addEventListener('keydown', event => {
   if (editing(event.target)) return;
   if (event.code === 'Space' && event.target instanceof HTMLElement && event.target.closest('button,a,summary')) return;
   if (flightKeys.has(event.code)) {
-    event.preventDefault(); if (controlsAvailable()) { keys.add(event.code); publishInput(); }
+    event.preventDefault(); if (controlsAvailable()) { continuedAxes = null; keys.add(event.code); publishInput(); }
   }
   if (event.repeat) return;
   if (controlsAvailable() && /^(Digit|Numpad)[0-9]$/.test(event.code)) {
@@ -1043,7 +1117,7 @@ const disposeFullscreen = installFullscreenControls({
 const flightAssists = createFlightAssists({
   root,
   canCapture: () => controlsAvailable() && latest?.kap_profile === 1,
-  canChangeRate: () => reviewing || controlsAvailable(),
+  canChangeRate: () => !continuingReplay && (reviewing || controlsAvailable()),
   onCapture() { closeViewMenu(); neutralize(); session.captureAutopilot(); focusFlight(); },
   onRate(rate) {
     closeViewMenu();
