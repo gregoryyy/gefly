@@ -5,7 +5,7 @@ above previous entries. This log records implementation, not simulator validity.
 
 ## 2026-11-04 12:48 — Prioritize visible map loading
 
-TODO: 2.0.83; R-WORLD-6/R-WORLD-5. Codex integration; glide_cases proxy;
+TODO: 2.0.83; R-WORLD-6/R-WORLD-5. Agent: Codex integration; glide_cases proxy;
 glide_model map request priority; glide_housekeeping independent review.
 
 **Implementation notes**
