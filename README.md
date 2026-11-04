@@ -113,7 +113,9 @@ show the aircraft’s left, right, up, down and backward directions. Two-finger
 vertical scroll over the scenery changes field of view. Over the cockpit panel,
 scroll up to focus on instruments around the pointer (up to 3×). The panel stays
 the same size while the enlarged content is cropped inside it; horizontal scroll
-moves between columns. Double-click panel housing or a noninteractive instrument
+moves between columns. Drag the panel background or a header to reach enlarged
+controls above, below or to either side; operating controls does not move the
+panel. Double-click panel housing or a noninteractive instrument
 face to restore normal fit. Scroll down or resize also restores the fit.
 Press **.** to cycle floating OSM names: **Off → Places → Landmarks → Detailed**.
 The same setting is in View. Labels sit above their mapped locations on either

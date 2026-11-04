@@ -15,6 +15,9 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
   let fitted = 1, naturalHeight = 0, naturalWidth = 0, headingHeight = 0, verticalPadding = 0;
   const maxZoom = 3;
   let fitKey = '';
+  const controls = 'button,input,select,textarea,a,label,summary,[contenteditable],[role=button],[role=slider],[role=spinbutton],#nav1-gauge .navigation-gauge-face,#nav2-gauge .navigation-gauge-face';
+  let drag: { id: number; x: number; y: number; panX: number; panY: number; active: boolean } | null = null;
+  let suppressClick = false;
 
   function paintZoom(): void {
     if (!deck || !instruments) return;
@@ -32,19 +35,51 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
     deck.dataset.zoomed = String(zoom > 1);
     deck.dataset.panelZoom = String(zoom);
   }
-  function resetZoom(): void { zoom = 1; panX = panY = 0; paintZoom(); }
+  function resetZoom(): void { stopDrag(); zoom = 1; panX = panY = 0; paintZoom(); }
   function doubleClick(event: MouseEvent): void {
-    if (event.button !== 0 || !(event.target instanceof Element)
-      || event.target.closest('button,input,select,textarea,a,[role=button],[role=slider],[role=spinbutton],#nav1-gauge .navigation-gauge-face,#nav2-gauge .navigation-gauge-face')) return;
+    if (suppressClick || event.button !== 0 || !(event.target instanceof Element)
+      || event.target.closest(controls)) return;
     event.preventDefault(); event.stopPropagation(); resetZoom();
   }
 
-  function focusControl(event: FocusEvent): void {
-    if (zoom === 1 || !(event.target instanceof Element)) return;
-    const target = event.target.getBoundingClientRect(), box = viewport.getBoundingClientRect();
-    panX += target.left < box.left ? box.left - target.left : target.right > box.right ? box.right - target.right : 0;
-    panY += target.top < box.top ? box.top - target.top : target.bottom > box.bottom ? box.bottom - target.bottom : 0;
+  function pointerDown(event: PointerEvent): void {
+    if (event.button !== 0 || !event.isPrimary) return;
+    stopDrag();
+    suppressClick = false;
+    if (zoom === 1 || event.defaultPrevented
+      || !(event.target instanceof Element) || event.target.closest(controls)
+      || container.ownerDocument.querySelector('dialog[open]')) return;
+    drag = { id: event.pointerId, x: event.clientX, y: event.clientY, panX, panY, active: false };
+    event.preventDefault();
+  }
+
+  function pointerMove(event: PointerEvent): void {
+    if (!drag || event.pointerId !== drag.id || !deck) return;
+    if ((event.buttons & 1) === 0) { stopDrag(); return; }
+    const dx = event.clientX - drag.x, dy = event.clientY - drag.y;
+    if (!drag.active) {
+      if (Math.hypot(dx, dy) < 5) return;
+      drag.active = true;
+      deck.setPointerCapture(event.pointerId);
+      deck.dataset.panelDragging = 'true';
+    }
+    event.preventDefault();
+    panX = drag.panX + dx; panY = drag.panY + dy;
     paintZoom();
+  }
+
+  function stopDrag(event?: PointerEvent): void {
+    if (!drag || event && event.pointerId !== drag.id) return;
+    const previous = drag; drag = null;
+    suppressClick = previous.active && event?.type === 'pointerup';
+    if (deck?.hasPointerCapture(previous.id)) deck.releasePointerCapture(previous.id);
+    if (deck) delete deck.dataset.panelDragging;
+  }
+
+  function click(event: MouseEvent): void {
+    if (!suppressClick) return;
+    suppressClick = false;
+    if (event.detail > 0) { event.preventDefault(); event.stopPropagation(); }
   }
 
   function wheel(event: WheelEvent): void {
@@ -123,26 +158,41 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
   const observer = new ResizeObserver(schedule);
   observer.observe(container);
   observer.observe(instruments);
-  const controls = container.querySelector<HTMLElement>('.control-panel');
-  if (controls) observer.observe(controls);
+  const controlPanel = container.querySelector<HTMLElement>('.control-panel');
+  if (controlPanel) observer.observe(controlPanel);
   const reviewObserver = new MutationObserver(schedule);
   reviewObserver.observe(container, { attributes: true, attributeFilter: ['data-review'] });
   window.addEventListener('resize', schedule);
   viewport.addEventListener('wheel', wheel, { passive: false, capture: true });
   deck.addEventListener('dblclick', doubleClick);
-  viewport.addEventListener('focusin', focusControl);
+  deck.addEventListener('pointerdown', pointerDown);
+  deck.addEventListener('click', click, true);
+  window.addEventListener('pointermove', pointerMove, { passive: false });
+  window.addEventListener('pointerup', stopDrag);
+  window.addEventListener('pointercancel', stopDrag);
+  deck.addEventListener('lostpointercapture', stopDrag);
+  window.addEventListener('blur', cancelDrag);
   fit();
+
+  function cancelDrag(): void { stopDrag(); }
 
   return {
     dispose() {
       disposed = true;
+      stopDrag();
       cancelAnimationFrame(frame);
       observer.disconnect();
       reviewObserver.disconnect();
       window.removeEventListener('resize', schedule);
       viewport.removeEventListener('wheel', wheel, { capture: true });
       deck.removeEventListener('dblclick', doubleClick);
-      viewport.removeEventListener('focusin', focusControl);
+      deck.removeEventListener('pointerdown', pointerDown);
+      deck.removeEventListener('click', click, true);
+      window.removeEventListener('pointermove', pointerMove);
+      window.removeEventListener('pointerup', stopDrag);
+      window.removeEventListener('pointercancel', stopDrag);
+      deck.removeEventListener('lostpointercapture', stopDrag);
+      window.removeEventListener('blur', cancelDrag);
       viewport.before(instruments); viewport.remove();
       instruments.style.removeProperty('transform');
       instruments.style.removeProperty('transform-origin');

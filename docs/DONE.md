@@ -3,6 +3,31 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 14:17 — Drag zoomed cockpit content without control jumps
+
+TODO: 2.0.89; R-PANEL-1/R-INPUT-1. Agent: Codex implementation/integration;
+glide_model existing browser checks; glide_housekeeping independent review.
+
+**Implementation notes**
+
+Drag enlarged panel backgrounds/headers to any content edge. Remove automatic
+focus panning; buttons, levers and OBS faces keep their own gestures. Existing
+zoom bounds, fixed deck/flight-view height and double-click reset remain usable.
+TypeScript and the existing Chrome layout case pass across 13 viewports and fresh
+mobile loading, including bottom access, controls retaining position and pointer
+release/re-entry. Bottom-access screenshot inspected. Independent source quality
+and scoped validation pass; cross-provider peer pending.
+
+**Deviations**
+
+Only the existing affected browser case ran, without a broad flight/CI rerun.
+No dynamics, aircraft data or dependencies changed.
+
+**Insights**
+
+Focus-triggered panning moved controls during interaction. Explicit background
+dragging provides access without repositioning the control being operated.
+
 ## 2026-11-04 14:00 — Touchpad rudder and nosewheel linked by default
 
 TODO: 2.0.88; R-INPUT-1. Agent: Codex implementation/integration;
