@@ -3,6 +3,26 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 12:48 — Let visible maps promote background loads
+
+TODO: 2.0.82; R-WORLD-9. Codex implementation; glide_housekeeping review.
+
+**Implementation notes**
+
+Separate visible pending requests from warming and bypass HTTP coalescing only
+when the same background URL is pending. Preserve cache hits and ordinary dedup;
+allow the proxy's visible priority promotion. Existing real Cache Storage browser
+case passes with the added visible-request observation; independent source review
+passes. Companion proxy/map changes are in PR #76; peer pending.
+
+**Deviations**
+
+No full-map latency guarantee or broad test rerun.
+
+**Insights**
+
+Browser HTTP coalescing can hide request priority even after worker dedup is split.
+
 ## 2026-11-04 12:24 — Distance-based scenery loading and persistent cache
 
 TODO: 2.0.82; R-WORLD-9/R-WORLD-5/R-WORLD-7.

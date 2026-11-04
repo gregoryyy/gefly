@@ -83,15 +83,19 @@ async function resource(request, background = false) {
       return hit;
     }
   } catch { /* Disabled storage / quota must not prevent ordinary fetching. */ }
-  let work = pending.get(request.url);
+  // Foreground demand must reach the proxy so it can promote an already queued
+  // warm tile. The proxy still coalesces both HTTP requests into one upstream load.
+  const pendingKey = request.headers.get('x-gefly-scenery-priority') === 'visible' ? `visible:${request.url}` : request.url;
+  let work = pending.get(pendingKey);
   if (!work) {
     work = (async () => {
-      const response = await fetch(request, { signal: AbortSignal.timeout(15000) });
+      const response = await fetch(request, { signal: AbortSignal.timeout(15000),
+        ...(pendingKey !== request.url && pending.has(request.url) ? { cache: 'no-store' } : {}) });
       if (cache) retain(store(cache, request, response.clone()).catch(() => {}));
       return response;
     })();
-    pending.set(request.url, work);
-    void work.then(() => Promise.all([...saves])).finally(() => pending.delete(request.url)).catch(() => {});
+    pending.set(pendingKey, work);
+    void work.then(() => Promise.all([...saves])).finally(() => pending.delete(pendingKey)).catch(() => {});
   }
   const response = await work;
   if (background) await Promise.all([...saves]);

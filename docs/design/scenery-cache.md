@@ -15,7 +15,10 @@ Warm near tiles before farther tiles, with at most 200 planned URLs and two
 background requests at a time. Current targets: maps z10/30km; photo and vector
 z11/20km plus z14/2km; regional terrain 35km. Labels use only enabled levels:
 places 60km, notable features 20km, detailed features 2km. Replacing the plan or
-switching it off drops obsolete queued work; at most two active loads finish. Visible-demand loading remains available.
+switching it off drops obsolete queued work; at most two active loads finish. Visible-demand loading remains available. Visible map requests may issue a second
+proxy-facing request to promote a tile already warming; the proxy shares the
+upstream fetch. This narrowly bypasses browser HTTP coalescing, preserving normal
+Cache Storage hits.
 
 Persistent storage is bounded by 128MiB and 512 entries with LRU eviction;
 OpenFreeMap landmark data has a tighter 24MiB/96-entry bound. Its

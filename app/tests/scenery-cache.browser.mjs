@@ -20,7 +20,7 @@ const server = createServer((req, res) => {
     const compressed = req.url.startsWith('/scenery/vector/');
     if (compressed) res.setHeader('Content-Encoding', 'gzip');
     active--; res.end(compressed ? gzipSync('fixture') : 'fixture');
-  }, 10);
+  }, req.url === '/scenery/map/10/3/1.png' ? 200 : 10);
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 let browser;
@@ -43,6 +43,12 @@ try {
   assert.equal(await get(compressed), 'fixture'); assert.equal(await get(compressed), 'fixture');
   assert.equal(counts.get(compressed), 1, 'compressed source bytes survive persistent reuse');
   await get('/private.json'); await get('/private.json'); assert.equal(counts.get('/private.json'), 2);
+  const priorityPath = '/scenery/map/10/3/1.png';
+  await page.evaluate(path => navigator.serviceWorker.controller.postMessage({ type: 'scenery-cache-focus', urls: [path] }), priorityPath);
+  for (let i = 0; i < 100 && !counts.has(priorityPath); i++) await new Promise(resolve => setTimeout(resolve, 5));
+  assert(counts.has(priorityPath), 'background warm request started');
+  await page.evaluate(async path => (await fetch(path, { headers: { 'X-Gefly-Scenery-Priority': 'visible' } })).text(), priorityPath);
+  assert.equal(counts.get(priorityPath), 2, 'visible demand reaches proxy to promote a pending background tile');
   peak = 0;
   await page.evaluate(urls => new Promise(resolve => {
     navigator.serviceWorker.addEventListener('message', function handler(e) {
