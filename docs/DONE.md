@@ -45,6 +45,31 @@ inferred from the warm plan alone.
 
 Keep preload extent aligned with installed source manifests and display coverage.
 
+## 2026-11-04 12:07 — Aircraft dynamics and cockpit feasibility
+
+TODO: 2.0.81; R-SCOPE-1/R-REUSE-1.
+Agent: Codex integration; glide_cases gliders; glide_model light aircraft;
+glide_housekeeping airliners and scoped independent review.
+
+**Implementation notes**
+
+Compare all requested types for exact variants, primary manuals, open FDM/system
+reuse, cockpit scope, license limits and missing whole-envelope data. Preserve
+C172-first scope and link the study from ROAD and the research/input indexes.
+Independent documentation review is recorded in the [report](reviews/2026-11-04-aircraft-feasibility.md).
+`just check` passes; assurance reports zero errors (existing warnings retained).
+No runtime tests or aircraft validation. Peer pending.
+
+**Deviations**
+
+Some current manuals and vendor SDK/rights terms were unavailable; these remain
+explicit gaps. No aircraft package or copyrighted manual was imported.
+
+**Insights**
+
+Available look-alike models can be the wrong variant. Public performance tables
+and complete-looking panels do not establish full-envelope flight fidelity.
+
 ## 2026-11-04 13:10 — Terrain beyond the Taunus and chart access
 
 TODO: 2.0.84/2.0.85; R-WORLD-5/R-CHART-1. Agent: Codex integration;

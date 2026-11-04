@@ -29,6 +29,8 @@ include ILS markers driven by modeled navigation. The same flight should work
 through cockpit, chase and inspection views, with useful flight review and later
 video export.
 
+Future fleet candidates are assessed in the [aircraft feasibility study](research/2026-11-04-aircraft-feasibility.md): Velis Electro, ASK 21, LS4, original Twin Astir, Extra 330SC/330LX, Pitts S-1S, Warrior/Arrow and 737/A320/MD-80. Warrior, ASK 21 and Velis are the proposed next investigations after current C172 work; this research does not select another implementation. Full controls and flight-envelope realism require exact configurations, reusable source rights and aircraft-specific validation data.
+
 ## The complete pilot experience
 
 | Experience | What the pilot should be able to do |
