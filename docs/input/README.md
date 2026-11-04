@@ -137,3 +137,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-04 — Restore the flying experience](2026-11-04-flight-stabilization.md)
 
 - [2026-11-04 — Collision recovery and ordinary flight workflows](2026-11-04-flight-workflow.md)
+
+- [2026-11-04 — Already-grounded collision stopping](2026-11-04-ground-supported-collision.md)

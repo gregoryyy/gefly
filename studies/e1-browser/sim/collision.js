@@ -95,11 +95,14 @@ export function collisionStateFields(enabled, available, latched) {
   return enabled === true && available === true ? EMPTY_COLLISION : {};
 }
 
-/** Outcome of one fixed-step sample. Missing pre-step motion fails closed. */
-export function contactOutcome(contact, record) {
+/** Outcome of one fixed-step sample. Known pre-step wheel support makes this
+ * a ground roll; airborne contact still needs valid pre-step motion. */
+export function contactOutcome(contact, record, previousGround) {
   // An unavailable proxy sample can still carry an actual native structure
   // contact (for example with an invalid terrain plane); that contact counts.
   if (contact && contact.mask) {
+    const wheels = ['gear_nose_wow', 'gear_left_wow', 'gear_right_wow'].map(key => previousGround?.[key]);
+    if (wheels.every(value => value === 0 || value === 1) && wheels.some(value => value === 1)) return 'clear';
     if (!record) return 'fail';
     // User-selected simulator grace, based on pre-impact motion, applies to
     // every contact mask. Geometry telemetry and native wheel physics stay raw.

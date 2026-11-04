@@ -3,6 +3,32 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 17:19 — Keep grounded flight running through contact proxies
+
+TODO: 2.0.98; R-SIM-8.
+Agent: Codex integration; glide_model collision policy; glide_cases existing
+braking browser; glide_housekeeping independent source review.
+
+**Implementation notes**
+
+Use native wheel support from before each step to suppress collision stopping
+once a wheel is already on the ground. Missing/invalid support cannot grant the
+exemption; all wheels airborne re-arms detection. Raw contact geometry and native
+forces stay unchanged. Fourteen contact cases, TypeScript and the existing
+ten-group actual Chrome braking case pass. Full-brake flat/public rolls finish
+3600 steps with exactly matching native state/digest; a direct airborne impact
+still latches at296 with pre-step wheel flags all zero. Independent source review
+passes; cross-provider peer pending.
+
+**Deviations**
+
+This changes the stopping policy, not the aircraft's damage or wheel physics.
+
+**Insights**
+
+A proxy overlap during ground roll must not be treated as a new landing impact.
+Pre-step support distinguishes those cases without a new speed threshold.
+
 ## 2026-11-04 17:03 — Continue collisions and prioritize ordinary flying
 
 TODO: 2.0.95–2.0.97; R-SIM-8/R-REVIEW-1/R-PLAY-1/R-UX-2/R-INPUT-1.

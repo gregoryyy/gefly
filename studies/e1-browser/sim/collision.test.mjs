@@ -153,3 +153,20 @@ test('continuing acknowledges only persistent parts, re-arms separated parts and
   assert.equal(unacknowledgedContact({ available: false, mask: 0 }, 16).acknowledgedMask, 16, 'unknown geometry cannot establish separation');
   assert.throws(() => unacknowledgedContact(sample(0), 128), RangeError);
 });
+
+
+test('already-grounded native support suppresses stops while airborne samples re-arm impact detection', () => {
+  const raw = Object.freeze({ available: true, mask: 127, clearance_m: -.4 });
+  const record = collisionRecord(raw.mask, 100, 1, { ground_forward_mps: 40, ground_side_mps: 4, ground_down_mps: 6 });
+  for (let bits = 0; bits < 8; bits++) {
+    const previous = { gear_nose_wow: bits & 1 ? 1 : 0, gear_left_wow: bits & 2 ? 1 : 0, gear_right_wow: bits & 4 ? 1 : 0 };
+    assert.equal(contactOutcome(raw, record, previous), bits ? 'clear' : 'latch');
+  }
+  const supported = { gear_nose_wow: 1, gear_left_wow: 0, gear_right_wow: 0 };
+  assert.equal(contactOutcome(raw, record, supported), 'clear');
+  assert.equal(contactOutcome(raw, record, { gear_nose_wow: 0, gear_left_wow: 0, gear_right_wow: 0 }), 'latch', 'takeoff re-arms without a new timer or threshold');
+  for (const previous of [null, {}, { ...supported, gear_left_wow: undefined }, { ...supported, gear_right_wow: NaN }, { ...supported, gear_nose_wow: true }, { ...supported, gear_right_wow: 2 }]) {
+    assert.equal(contactOutcome(raw, record, previous), 'latch', 'invalid or missing support cannot invent a ground state');
+  }
+  assert.equal(raw.mask, 127); assert.equal(raw.clearance_m, -.4); assert.equal(record.collision_mask, 127, 'raw contact and pre-impact diagnostics remain unchanged');
+});

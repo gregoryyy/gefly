@@ -530,8 +530,9 @@ function stepOnce() {
     const contact = filtered.contact;
     collisionAvailable = sampled.available;
     const record = contact.mask ? collisionRecord(contact.mask, stepIndex, readState()[0], previousGround) : null;
-    const outcome = contactOutcome(contact, record);
-    // A detected contact is never dropped: without valid pre-step motion
+    const outcome = contactOutcome(contact, record, previousGround);
+    // Airborne first contacts remain active; wheel support must predate this
+    // native step to count as a ground roll. Without valid pre-step motion
     // there is no truthful record, so the flight stops with an explicit error.
     if (outcome === 'fail') { fail(`Ground contact detected at step ${stepIndex} but its pre-step motion is unavailable; flight stopped.`); return false; }
     if (outcome === 'latch') {
