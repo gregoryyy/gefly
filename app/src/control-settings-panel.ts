@@ -55,7 +55,7 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
       <input type="checkbox" id="coordinated-rudder" aria-describedby="coordinated-rudder-note">
       Link rudder to aileron
     </label>
-    <p class="control-settings-note" id="coordinated-rudder-note">Input assist: bank input also commands rudder and nosewheel steering. Manual rudder takes priority; roll correction is excluded.</p>
+    <p class="control-settings-note" id="coordinated-rudder-note">On by default: touchpad and keyboard bank input also command rudder and nosewheel steering. Q/W takes priority; roll correction is excluded.</p>
     <label class="control-settings-note control-settings-toggle" for="centered-touchpad">
       <input type="checkbox" id="centered-touchpad" aria-describedby="centered-touchpad-note">
       Centered touchpad controls

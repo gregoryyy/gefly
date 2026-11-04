@@ -136,7 +136,8 @@ and DFS AIP airport/approach chart access, with the selected airport identifier.
 Charts remain publisher-hosted; an embedded aeronautical overlay is not included.
 
 **N** toggles the parking brake beside the **B** wheel-brake button.
-Options → **Link rudder to aileron** adds optional yaw/steering assistance;
+Touchpad and keyboard bank input also steer the rudder/nosewheel by default.
+Options → **Link rudder to aileron** can disable this assistance;
 Q/W manual rudder takes priority. Rudder also steers the nosewheel on the ground.
 Options → **Centered touchpad controls** fixes neutral at the flight-view center.
 Both touchpad modes retain the camera angle after hold-drag.

@@ -68,7 +68,7 @@ try {
   await parked(true); await frozen(initial);
   await page.locator('#controls-settings').click();
   const link = page.getByLabel('Link rudder to aileron', { exact: true });
-  assert.equal(await link.isChecked(), false);
+  assert.equal(await link.isChecked(), true, 'rudder and nosewheel linking starts enabled');
   await link.focus(); await page.keyboard.press('n'); await parked(true);
   await page.locator('#settings-close').click();
   for (const key of ['Shift+n', 'Control+n', 'Alt+n', 'Meta+n']) { await scene.focus(); await page.keyboard.press(key); await parked(true); }
@@ -95,7 +95,18 @@ try {
   await link.check(); await page.locator('#settings-gentle').click(); assert.equal(await link.isChecked(), true);
   await page.locator('#settings-default').click(); assert.equal(await link.isChecked(), true);
   await frozen(beforeOptions); await page.locator('#settings-close').click();
-  await startOrResume(page); await scene.focus(); await page.keyboard.down('ArrowRight');
+  await startOrResume(page);
+  const yokeBox=await scene.boundingBox(), yokeX=yokeBox.x+yokeBox.width*.65, yokeY=yokeBox.y+yokeBox.height*.5;
+  await page.mouse.click(yokeX,yokeY);
+  await page.waitForFunction(()=>document.querySelector('#scene').dataset.pointerMode==='yoke');
+  await page.mouse.move(yokeX+80,yokeY);
+  await page.waitForFunction(()=>window.groundInputs.at(-1)?.aileron>0&&window.groundStates.at(-1)?.rudder_cmd_norm<-.05);
+  await page.mouse.move(yokeX-80,yokeY);
+  await page.waitForFunction(()=>window.groundInputs.at(-1)?.aileron<0&&window.groundStates.at(-1)?.rudder_cmd_norm>.05);
+  await page.mouse.move(yokeX,yokeY);
+  await page.waitForFunction(()=>window.groundStates.at(-1)?.rudder_cmd_norm===0&&window.groundStates.at(-1)?.aileron_cmd_norm!==0);
+  await page.mouse.click(yokeX,yokeY);await page.waitForFunction(()=>document.querySelector('#scene').dataset.pointerMode==='off');
+  await scene.focus(); await page.keyboard.down('ArrowRight');
   await page.waitForFunction(() => window.groundInputs.at(-1)?.rudder === -.45 && window.groundStates.at(-1)?.rudder_cmd_norm === -.45);
   await page.keyboard.down('q');
   await page.waitForFunction(() => window.groundInputs.at(-1)?.rudder === .35 && window.groundStates.at(-1)?.rudder_cmd_norm === .35);
@@ -108,7 +119,7 @@ try {
   await startOrResume(page); await scene.focus(); await page.keyboard.down('ArrowRight');
   await page.waitForFunction(() => window.groundInputs.at(-1)?.aileron > 0 && window.groundStates.at(-1)?.aileron_cmd_norm > 0 && window.groundStates.at(-1)?.rudder_cmd_norm === 0);
   await page.keyboard.up('ArrowRight'); await page.locator('#pause').click(); await page.waitForTimeout(100);
-  checks.push('link defaults off, survives sensitivity presets, sends correctly signed native rudder with deliberate bank, gives explicit Q priority and excludes the centered study offset; switching off restores independent rudder');
+  checks.push('link defaults on, survives sensitivity presets, sends correctly signed native rudder from actual touchpad and keyboard bank, gives explicit Q priority and excludes the centered study offset; switching off restores independent rudder');
 
   await scene.focus(); await page.keyboard.press('n'); await parked(true);
   await page.keyboard.press('r'); await page.locator('#flight-review').waitFor({ state: 'visible' });

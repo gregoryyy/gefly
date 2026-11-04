@@ -3,6 +3,27 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 14:00 — Touchpad rudder and nosewheel linked by default
+
+TODO: 2.0.88; R-INPUT-1. Agent: Codex implementation/integration;
+glide_model existing tests; glide_housekeeping independent source review.
+
+**Implementation notes**
+
+Enable the existing bank/rudder assist by default, preserving manual rudder
+priority and the option to disable it. TypeScript, 21 focused input tests and all
+five existing parking/rudder Chrome groups pass, including actual touchpad inputs
+reaching native rudder. Independent source review passes; cross-provider peer pending.
+
+**Deviations**
+
+No dynamics or wheel coefficients changed; this fixes input linking, without
+claiming new low-speed taxi calibration. Broad flight/CI suites were not rerun.
+
+**Insights**
+
+The touchpad supplied bank alone while the existing rudder/nosewheel link was off.
+
 ## 2026-11-04 13:56 — Options dismissal without saving
 
 TODO: 2.0.87; R-UX-2. Agent: Codex implementation/integration;

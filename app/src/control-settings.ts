@@ -3,8 +3,8 @@ import type { Controls } from './types';
 /** Dimensionless command gains; these do not change the aircraft model. */
 export interface ControlSettings { pitch: number; roll: number; rudder: number; brake?: number; coordinatedRudder?: boolean; centeredTouchpad?: boolean; vectorScenery?: boolean; practicePapi?: boolean }
 
-export const DEFAULT_CONTROL_SETTINGS = Object.freeze({ pitch: 1, roll: 1, rudder: 1, brake: 0.25, coordinatedRudder: false, centeredTouchpad: false });
-export const GENTLE_CONTROL_SETTINGS = Object.freeze({ pitch: 0.5, roll: 0.5, rudder: 0.7, brake: 0.25, coordinatedRudder: false, centeredTouchpad: false });
+export const DEFAULT_CONTROL_SETTINGS = Object.freeze({ pitch: 1, roll: 1, rudder: 1, brake: 0.25, coordinatedRudder: true, centeredTouchpad: false });
+export const GENTLE_CONTROL_SETTINGS = Object.freeze({ pitch: 0.5, roll: 0.5, rudder: 0.7, brake: 0.25, coordinatedRudder: true, centeredTouchpad: false });
 
 function requireRange(name: string, value: number, min: number, max: number): void {
   if (!Number.isFinite(value) || value < min || value > max) {
