@@ -171,8 +171,8 @@ practice reference, not airport elevation. Review retains the recorded setting.
 The left **Systems** panel adds BAT/ALT, avionics, light and pitot-heat buttons,
 with digital bus volts, battery amps and load. **MODEL** marks simplified electrical
 estimates; these controls do not yet drive native avionics outages, icing or external
-lights. Switch positions are recorded for Review. On narrow screens use
-**View → Aircraft systems** or **Alt+Shift+Y**.
+lights. Switch positions are recorded for Review. On narrow screens use the collapsed
+**Aircraft systems** panel button or **Alt+Shift+Y**.
 
 The classic **six-pack** now shows airspeed, attitude, pressure altitude, ideal
 turn/slip, true heading and vertical speed. Click the scene to toggle touchpad

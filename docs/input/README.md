@@ -137,3 +137,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-04 — Touchpad ground steering](2026-11-04-touchpad-ground-steering.md)
 
 - [2026-11-04 — Dragging the zoomed cockpit panel](2026-11-04-cockpit-panel-drag.md)
+
+- [2026-11-04 — Remove the duplicate systems menu](2026-11-04-remove-systems-menu.md)

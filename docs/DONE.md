@@ -3,6 +3,26 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 14:22 — Remove duplicate Aircraft systems menu
+
+TODO: 2.0.90; R-SYS-1. Agent: Codex implementation/integration;
+glide_model existing browser checks; glide_housekeeping independent source review.
+
+**Implementation notes**
+
+Remove Systems from View; keep inline left controls on desktop and a direct
+collapsed panel opener on narrow screens. TypeScript and all five existing
+systems browser groups pass, including mobile access and Review invariance.
+Independent source review passes; cross-provider peer pending.
+
+**Deviations**
+
+No systems-model change or broad suite rerun; include this cleanup in cockpit PR #81.
+
+**Insights**
+
+Responsive access belongs to the same panel rather than a duplicate menu entry.
+
 ## 2026-11-04 14:17 — Drag zoomed cockpit content without control jumps
 
 TODO: 2.0.89; R-PANEL-1/R-INPUT-1. Agent: Codex implementation/integration;
