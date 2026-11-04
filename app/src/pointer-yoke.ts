@@ -38,6 +38,8 @@ export function createPointerYoke(options: PointerYokeOptions): {
   let yokeX = 0, yokeY = 0, lookYaw = 0, lookPitch = 0;
   let holdTimer: ReturnType<typeof setTimeout> | undefined;
   let neutralUntilMoveFrom: { x: number; y: number } | undefined;
+  type ClickState = { yokeActive: boolean; anchorX: number; anchorY: number };
+  let pressState: ClickState | undefined, completedClick: ClickState | undefined, clickPair: ClickState | undefined;
 
   function setYoke(x: number, y: number): void {
     if (disposed || (x === yokeX && y === yokeY)) return;
@@ -63,6 +65,7 @@ export function createPointerYoke(options: PointerYokeOptions): {
   function cancel(): void {
     if (disposed) return;
     clearPress(); looking = false; yokeActive = false;
+    pressState = completedClick = clickPair = undefined;
     neutralUntilMoveFrom = undefined;
     setYoke(0, 0);
     setMode('off');
@@ -91,6 +94,7 @@ export function createPointerYoke(options: PointerYokeOptions): {
   function down(event: PointerEvent): void {
     if (disposed || !options.enabled() || event.button !== 0 || event.isPrimary === false || activePointer !== null) return;
     event.preventDefault(); element.focus({ preventScroll: true });
+    pressState = { yokeActive, anchorX, anchorY };
     pressLookOnly = options.lookOnly?.() === true;
     previousYokeActive = !pressLookOnly && yokeActive;
     pressLookYaw = lookYaw;
@@ -140,6 +144,8 @@ export function createPointerYoke(options: PointerYokeOptions): {
     event.preventDefault();
     if (!options.enabled()) { cancel(); return; }
     const wasLooking = looking;
+    completedClick = wasLooking ? undefined : pressState;
+    if (wasLooking) clickPair = undefined;
     clearPress(); looking = false;
     yokeActive = !pressLookOnly && (wasLooking ? previousYokeActive : !previousYokeActive);
     // A look gesture borrows the pointer, not the yoke's reference position.
@@ -148,6 +154,26 @@ export function createPointerYoke(options: PointerYokeOptions): {
       anchorX = event.clientX; anchorY = event.clientY;
     }
     setYoke(0, 0);
+    neutralUntilMoveFrom = { x: event.clientX, y: event.clientY };
+    setMode(yokeActive ? 'yoke' : 'off');
+  }
+  function click(event: MouseEvent): void {
+    if (disposed || !options.enabled() || event.button !== 0) return;
+    // Browser click counts identify the pair without delaying ordinary clicks.
+    // Save before the FIRST pointer-down, not after its temporary mode toggle.
+    if (event.detail === 1) clickPair = completedClick;
+    else if (event.detail !== 2) clickPair = undefined;
+    completedClick = undefined;
+  }
+  function doubleClick(event: MouseEvent): void {
+    if (disposed || !options.enabled() || event.button !== 0) return;
+    event.preventDefault(); clearPress(); looking = false;
+    if (clickPair) {
+      yokeActive = !options.lookOnly?.() && clickPair.yokeActive;
+      anchorX = clickPair.anchorX; anchorY = clickPair.anchorY;
+    }
+    pressState = completedClick = clickPair = undefined;
+    setYoke(0, 0); setLook(0, 0);
     neutralUntilMoveFrom = { x: event.clientX, y: event.clientY };
     setMode(yokeActive ? 'yoke' : 'off');
   }
@@ -167,6 +193,8 @@ export function createPointerYoke(options: PointerYokeOptions): {
   element.addEventListener('pointermove', move);
   element.addEventListener('pointerenter', move);
   element.addEventListener('pointerup', up);
+  element.addEventListener('click', click);
+  element.addEventListener('dblclick', doubleClick);
   element.addEventListener('pointercancel', interrupted);
   element.addEventListener('lostpointercapture', interrupted);
   element.addEventListener('pointerleave', leave);
@@ -183,6 +211,8 @@ export function createPointerYoke(options: PointerYokeOptions): {
       element.removeEventListener('pointermove', move);
       element.removeEventListener('pointerenter', move);
       element.removeEventListener('pointerup', up);
+      element.removeEventListener('click', click);
+      element.removeEventListener('dblclick', doubleClick);
       element.removeEventListener('pointercancel', interrupted);
       element.removeEventListener('lostpointercapture', interrupted);
       element.removeEventListener('pointerleave', leave);

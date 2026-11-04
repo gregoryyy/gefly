@@ -32,6 +32,13 @@ function fixture(centered = false) {
     disable: () => { enabled = false; }, review: () => { lookOnly = true; } };
 }
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+function doubleClick(surface: Surface, x: number, y: number): void {
+  for (const detail of [1, 2]) {
+    surface.dispatchEvent(pointer('pointerdown', x, y)); surface.dispatchEvent(pointer('pointerup', x, y));
+    surface.dispatchEvent(Object.assign(new Event('click', { cancelable: true }), { detail, button: 0, clientX: x, clientY: y }));
+  }
+  surface.dispatchEvent(Object.assign(new Event('dblclick', { cancelable: true }), { detail: 2, button: 0, clientX: x, clientY: y }));
+}
 
 test('short clicks toggle relative yoke; input clamps and leaving neutralizes without switching off', () => {
   const f = fixture();
@@ -327,4 +334,37 @@ for (const centered of [false, true]) test(`${centered ? 'centered' : 'default r
   assert.deepEqual(f.looks.at(-1), [.4, 0]); assert.deepEqual(f.yokes, []);
   f.controller.reset(); assert.deepEqual(f.looks.at(-1), [0, 0]);
   f.controller.dispose();
+});
+
+for (const centered of [false, true]) test(`${centered ? 'centered' : 'relative'} double-click centers look while restoring pre-pair yoke mode and anchor`, async () => {
+  const f = fixture(centered); f.click(200, 200);
+  f.surface.dispatchEvent(pointer('pointermove', 475, 225)); const originalAxes = [...f.yokes.at(-1)!];
+  f.surface.dispatchEvent(pointer('pointerdown', 475, 225)); await sleep(280);
+  f.surface.dispatchEvent(pointer('pointermove', 525, 175)); f.surface.dispatchEvent(pointer('pointerup', 525, 175));
+  assert.deepEqual(f.looks.at(-1), [.2, .2]);
+  doubleClick(f.surface, 600, 300);
+  assert.deepEqual(f.looks.at(-1), [0, 0]); assert.equal(f.modes.at(-1), 'yoke');
+  assert.deepEqual(f.yokes.at(-1), [0, 0], 'double-click ends neutral like a look release');
+  const commands = f.yokes.length;
+  f.surface.dispatchEvent(pointer('pointermove', 600, 300)); assert.equal(f.yokes.length, commands);
+  f.surface.dispatchEvent(pointer('pointermove', 475, 225)); assert.deepEqual(f.yokes.at(-1), originalAxes,
+    'both browser click toggles must not replace the original relative anchor');
+  f.click(200, 200); assert.equal(f.modes.at(-1), 'off');
+  doubleClick(f.surface, 600, 300); assert.equal(f.modes.at(-1), 'off', 'initially off stays off');
+  f.controller.dispose();
+});
+
+test('Review double-click centers retained look without yoke input; cancellation cannot revive a saved mode', async () => {
+  const f = fixture(); f.review();
+  f.surface.dispatchEvent(pointer('pointerdown', 200, 200)); await sleep(280);
+  f.surface.dispatchEvent(pointer('pointermove', 250, 150)); f.surface.dispatchEvent(pointer('pointerup', 250, 150));
+  doubleClick(f.surface, 500, 300);
+  assert.deepEqual(f.looks.at(-1), [0, 0]); assert.deepEqual(f.yokes, []); assert.notEqual(f.modes.at(-1), 'yoke');
+  const live = fixture(); live.click(); live.surface.dispatchEvent(pointer('pointermove', 275, 125));
+  live.surface.dispatchEvent(pointer('pointerdown', 500, 300)); live.surface.dispatchEvent(pointer('pointerup', 500, 300));
+  live.surface.dispatchEvent(Object.assign(new Event('click'), { detail: 1, button: 0 }));
+  live.controller.cancel(); live.disable();
+  live.surface.dispatchEvent(Object.assign(new Event('dblclick'), { detail: 2, button: 0 }));
+  assert.equal(live.modes.at(-1), 'off'); assert.deepEqual(live.yokes.at(-1), [0, 0]);
+  f.controller.dispose(); live.controller.dispose();
 });
