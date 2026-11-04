@@ -499,6 +499,9 @@ body .engine-dialog, body .autopilot-dialog, body .radio-nav-dialog, body .navig
 .cockpit-fitted .flight-deck { display: flex; flex-direction: column; align-items: center; padding: 10px 12px 14px; }
 .cockpit-fitted .deck-heading { width: 100%; flex: 0 0 auto; }
 .cockpit-fitted .cockpit-viewport { flex: 1 1 auto; width: 100%; min-height: 0; display: grid; place-items: start center; overflow: clip; }
+.cockpit-fitted .flight-deck[data-zoomed="true"] :is(.deck-heading, .cockpit-viewport) { cursor: grab; touch-action: none; }
+.cockpit-fitted .flight-deck[data-panel-dragging="true"] { cursor: grabbing; user-select: none; }
+.cockpit-fitted .flight-deck[data-panel-dragging="true"] .cockpit-viewport { cursor: grabbing; }
 .cockpit-fitted .instruments {
   zoom: var(--cockpit-scale, 1); width: 1544px; max-width: none; height: 344px;
   flex: 0 0 auto; flex-direction: row; flex-wrap: nowrap; align-items: stretch; gap: 12px; margin: 0;

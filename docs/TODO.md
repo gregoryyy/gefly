@@ -255,6 +255,10 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.88 Enable the existing bank/rudder/nosewheel link by default for touchpad steering; keep manual rudder priority and the option to disable it. R-INPUT-1.
 
+- [x] 2.0.89 Drag zoomed cockpit backgrounds/headers to reach all edges, including lower controls; remove automatic focus panning and preserve native control gestures, bounds and double-click reset. R-PANEL-1/R-INPUT-1.
+
+- [x] 2.0.90 Remove duplicate View → Aircraft systems; retain the left systems panel and its collapsed direct opener on narrow screens. R-SYS-1.
+
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
   - [x] 2.1.1 Deliver a bounded EDFE runway-practice briefing and sensed flight-event log: north/right-hand 26 and north/left-hand 08, explicit idle/parked setup, native wheel-contact takeoff/landing observations and ground stop/collision, retained with cursor-correct Review. R-PLAY-1/R-TRAIN-2/R-REVIEW-1. No checklist, circuit grading, official route or complete scenario/weather briefing acceptance; those remain open in 2.1 and 1.5. Peer pending.
   - [x] 2.1.2 Preserve declared EDFE runway context in version-1 JSON recordings; restore the imported briefing/event log from its own trace, keep legacy context unknown, reject malformed metadata and return to the unchanged live flight. R-PLAY-1/R-REVIEW-1. Aircraft/weather provenance, other airports and complete scenario packages remain separate; peer pending.

@@ -113,7 +113,9 @@ show the aircraft’s left, right, up, down and backward directions. Two-finger
 vertical scroll over the scenery changes field of view. Over the cockpit panel,
 scroll up to focus on instruments around the pointer (up to 3×). The panel stays
 the same size while the enlarged content is cropped inside it; horizontal scroll
-moves between columns. Double-click panel housing or a noninteractive instrument
+moves between columns. Drag the panel background or a header to reach enlarged
+controls above, below or to either side; operating controls does not move the
+panel. Double-click panel housing or a noninteractive instrument
 face to restore normal fit. Scroll down or resize also restores the fit.
 Press **.** to cycle floating OSM names: **Off → Places → Landmarks → Detailed**.
 The same setting is in View. Labels sit above their mapped locations on either
@@ -169,8 +171,8 @@ practice reference, not airport elevation. Review retains the recorded setting.
 The left **Systems** panel adds BAT/ALT, avionics, light and pitot-heat buttons,
 with digital bus volts, battery amps and load. **MODEL** marks simplified electrical
 estimates; these controls do not yet drive native avionics outages, icing or external
-lights. Switch positions are recorded for Review. On narrow screens use
-**View → Aircraft systems** or **Alt+Shift+Y**.
+lights. Switch positions are recorded for Review. On narrow screens use the collapsed
+**Aircraft systems** panel button or **Alt+Shift+Y**.
 
 The classic **six-pack** now shows airspeed, attitude, pressure altitude, ideal
 turn/slip, true heading and vertical speed. Click the scene to toggle touchpad
