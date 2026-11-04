@@ -28,6 +28,7 @@ interface SessionCallbacks {
   onReady(trim: { throttle: number; pitch_trim: number; status: number }, navdata: NavdataIdentity): void;
   onStatus(status: string): void;
   onError(message: string): void;
+  onAutopilotRejected?(message: string): void;
 }
 
 const DEG_RAD = Math.PI / 180;
@@ -272,6 +273,9 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
           callbacks.onStatus('Ground collision');
         }
         callbacks.onState(state);
+      } else if (m.type === 'autopilot-rejected') {
+        if (typeof m.message === 'string' && m.message.length > 0 && m.message.length <= 1000
+          && !(attempt && restoring === attempt)) callbacks.onAutopilotRejected?.(m.message);
       } else if (m.type === 'error') {
         failCurrent(`JSBSim stopped: ${typeof m.message === 'string' ? m.message : 'unknown worker failure'}`);
       }
@@ -311,7 +315,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       });
     },
     captureAutopilot() {
-      if (disposed || restoring || collided || !ready || !worker || controls.pilot_override !== false) return;
+      if (disposed || restoring || collided || !ready || !worker || controls.pilot_override !== false) return false;
       // The explicit convenience hands control to AP. Clear the separate study
       // roll correction as well, and flush release before capture even if paused.
       controls = { ...controls, elevator: 0, aileron: 0, rudder: 0, pilot_override: false };
@@ -319,6 +323,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
         wall_ms: performance.timeOrigin + performance.now(), ...controls });
       controlsChanged = false;
       worker.postMessage({ type: 'autopilot-capture' });
+      return true;
     },
     setSimulationRate(rate) {
       if (disposed || restoring || collided || !ready || !worker || !validSimulationRate(rate)) return;

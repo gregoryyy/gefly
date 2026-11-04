@@ -25,13 +25,14 @@ function fixture(t: TestContext) {
   const original = globalThis.Worker;
   globalThis.Worker = MockWorker as unknown as typeof Worker;
   MockWorker.instances = [];
-  const states: unknown[] = [], errors: string[] = [], statuses: string[] = [], readies: unknown[] = [], tiles: unknown[] = [];
+  const states: unknown[] = [], errors: string[] = [], statuses: string[] = [], readies: unknown[] = [], tiles: unknown[] = [], autopilotRejections: string[] = [];
   const session = createSession({
     onState: (state) => states.push(state), onReady: value => {readies.push(value);}, onTerrainTile: value => {tiles.push(value);},
+    onAutopilotRejected: message => autopilotRejections.push(message),
     onError: (error) => errors.push(error), onStatus: (status) => statuses.push(status),
   });
   t.after(() => { session.dispose(); globalThis.Worker = original; });
-  return { session, states, errors, statuses, readies, tiles };
+  return { session, states, errors, statuses, readies, tiles, autopilotRejections };
 }
 
 const ready = { type: 'ready', trim: { throttle: 0.693, pitch_trim: 0.168, status: 1 } };
@@ -42,7 +43,8 @@ const state = {
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 test('rate changes are bounded worker messages and autopilot capture flushes deliberate neutral handoff while paused', t => {
-  const { session, errors } = fixture(t);
+  const { session, errors, autopilotRejections } = fixture(t);
+  assert.equal(session.captureAutopilot(), false, 'not ready cannot dispatch capture');
   session.reset(); const worker = MockWorker.instances[0]; worker.emit(ready);
   for (const rate of [1, 1.5, 2, 5, 10]) session.setSimulationRate(rate);
   assert.deepEqual(worker.messages.filter(m => m.type === 'simulation-rate').map(m => m.rate), [1, 1.5, 2, 5, 10]);
@@ -50,12 +52,16 @@ test('rate changes are bounded worker messages and autopilot capture flushes del
   for (const rate of [0, -1, 3, NaN, Infinity]) session.setSimulationRate(rate);
   assert.equal(worker.messages.length, count);
   session.input({ elevator: .2, aileron: .3, rudder: 0, throttle: .7, pilot_override: true });
-  session.captureAutopilot(); assert.equal(worker.messages.length, count);
+  assert.equal(session.captureAutopilot(), false); assert.equal(worker.messages.length, count);
   session.input({ elevator: 0, aileron: -.109375, rudder: 0, throttle: .7, pilot_override: false });
-  session.captureAutopilot();
+  assert.equal(session.captureAutopilot(), true);
   assert.equal(worker.messages.at(-2)!.type, 'input');
   assert.equal(worker.messages.at(-2)!.aileron, 0);
   assert.equal(worker.messages.at(-1)!.type, 'autopilot-capture');
+  worker.emit({type: 'autopilot-rejected', message: 'Release manual flight input before engaging autopilot.'});
+  worker.emit({type: 'autopilot-rejected', message: 42});
+  assert.deepEqual(autopilotRejections, ['Release manual flight input before engaging autopilot.']);
+  assert.deepEqual(errors, [], 'command rejection does not stop the flight');
   worker.emit({ ...state, simulation_rate: 5 });
   worker.emit({ ...state, simulation_rate: 3 });
   assert.equal(errors.length, 1);

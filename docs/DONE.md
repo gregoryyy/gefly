@@ -3,6 +3,35 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 17:47 — Keep AP engaged while reaching its controls
+
+TODO: 2.0.100; R-AP-1/R-INPUT-1.
+Agent: Codex pointer/AP integration; glide_model session contract; glide_cases
+actual browser regression; glide_housekeeping independent source review.
+
+**Implementation notes**
+
+Passive touchpad-yoke motion no longer disconnects AP while capture is pending
+or confirmed. Keep the selected steering marker/reference; allow held CWS and
+explicit keyboard/stick takeover. Session capture reports dispatch acceptance,
+and rejected commands clear pending handoff and show the worker's reason.
+Thirty-six session cases, TypeScript and the existing eight-group Chrome pointer
+case pass. Immediate motion after A, crossing the scene to ARM, actual arming,
+selector auto-arm/cancellation, keyboard takeover and held CWS/release all pass.
+Assurance integrity passes; independent source review passes; peer pending.
+
+**Deviations**
+
+The shared CI attempt did not complete (exit101 while disk space was critically
+low); it is not a pass. Reclaimed disposable ignored build/GIS dependencies;
+source and simulator runtime remain intact. No KAP mode logic or physics changes.
+
+**Insights**
+
+Retaining yoke selection also retained pointer authority, allowing the next
+ordinary pointer movement to disconnect AP. Verify the user's complete action
+sequence through the next cockpit interaction, rather than stopping at capture.
+
 ## 2026-11-04 17:28 — Retain the steering center through routine controls
 
 TODO: 2.0.99; R-INPUT-1.

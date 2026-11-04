@@ -141,3 +141,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-04 — Already-grounded collision stopping](2026-11-04-ground-supported-collision.md)
 
 - [2026-11-04 — Steering center retention](2026-11-04-steering-center-retention.md)
+
+- [2026-11-04 — Autopilot pointer handoff](2026-11-04-autopilot-pointer-handoff.md)

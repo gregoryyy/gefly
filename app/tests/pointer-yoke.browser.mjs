@@ -39,7 +39,7 @@ try {
   await page.addInitScript(() => {
     window.__pointerLook = { yaw_rad: 0, pitch_rad: 0 };
     const Native = window.Worker;
-    window.__pointerInputs = []; window.__pointerStats = [];
+    window.__pointerInputs = []; window.__pointerStats = []; window.__pointerStates = [];
     window.Worker = class extends Native {
       constructor(...args) {
         super(...args);
@@ -47,6 +47,7 @@ try {
         window.__pointerWorker = this;
         this.addEventListener('message', event => {
           if (event.data?.type === 'stats') window.__pointerStats.push(event.data);
+          if (event.data?.type === 'state') { window.__pointerStates.push(event.data); if (window.__pointerStates.length > 2000) window.__pointerStates.shift(); }
         });
       }
       postMessage(message, ...args) {
@@ -202,7 +203,9 @@ try {
   await page.locator('#view-menu > summary').click(); await mode('yoke');
   await markerAt(rect.x + rect.width / 2, rect.y + rect.height / 2);
   await observeMarker('menu dismissal restores retained marker');
-  await page.locator('#scene').focus(); await page.keyboard.press('a');
+  await page.locator('#scene').focus(); await page.keyboard.down('a');
+  await page.mouse.move(rect.x + rect.width / 2 + 30, rect.y + rect.height / 2 - 15);
+  await page.keyboard.up('a');
   await page.waitForFunction(() => document.querySelector('#ap-engage').getAttribute('aria-pressed') === 'true');
   await mode('yoke');
   await markerAt(rect.x + rect.width / 2, rect.y + rect.height / 2);
@@ -211,16 +214,61 @@ try {
   assert(!liveMarker.hidden && Number(liveMarker.opacity) > 0 && liveMarker.width > 0 && liveMarker.pointerEvents === 'none');
   assert(liveMarker.nativeStep > paused.step, 'marker check observes an advancing native flight');
   await page.screenshot({ path: `${output}/pointer-yoke-live-center.png` });
+  const armObservations = [];
+  const observeArm = async label => armObservations.push(await page.evaluate(label => {
+    const state = window.__pointerStates.at(-1), input = window.__pointerInputs.at(-1);
+    return { label, step: state.step, engaged: state.kap_engaged, armed: state.kap_alt_arm,
+      selected_altitude_m: state.kap_selected_altitude_m, vertical: state.kap_vertical,
+      yokeMode: document.querySelector('#scene').dataset.pointerMode,
+      armLabel: document.querySelector('#ap-arm').textContent,
+      input: { elevator: input.elevator, aileron: input.aileron, pilot_override: input.pilot_override } };
+  }, label));
+  await observeArm('A engaged with active centered yoke');
+  const armBox = await page.locator('#ap-arm').boundingBox();
+  await page.mouse.move((rect.x + rect.width / 2 + armBox.x + armBox.width / 2) / 2,
+    Math.min(rect.y + rect.height - 20, (rect.y + rect.height / 2 + armBox.y) / 2), { steps: 5 });
+  await page.waitForTimeout(100); await observeArm('pointer crosses scene toward ARM');
+  assert.equal(armObservations.at(-1).engaged, 1, 'immediate/passive pointer movement must not disconnect captured AP');
+  assert.equal(armObservations.at(-1).input.pilot_override, false);
+  await page.locator('#ap-arm').click(); await page.waitForTimeout(100); await observeArm('ARM clicked after crossing scene');
+  assert.equal(armObservations.at(-1).engaged, 1); assert.equal(armObservations.at(-1).armed, 1);
+  await markerAt(rect.x + rect.width / 2, rect.y + rect.height / 2);
+  await page.locator('#scene').focus(); await page.keyboard.press('Escape'); await mode('off');
+  await page.keyboard.press('a');
+  await page.waitForFunction(() => window.__pointerStates.at(-1)?.kap_engaged === 1 && window.__pointerStates.at(-1)?.kap_alt_arm === 0);
+  await observeArm('A engaged with yoke off');
+  await page.locator('#ap-arm').click(); await page.waitForTimeout(100); await observeArm('ARM clicked with yoke off');
+  assert.equal(armObservations.at(-1).engaged, 1); assert.equal(armObservations.at(-1).armed, 1);
+  await page.locator('#ap-selector-increase').click(); await page.waitForTimeout(100); await observeArm('altitude preselection auto-arms');
+  assert.equal(armObservations.at(-1).armed, 1);
+  assert(armObservations.at(-1).selected_altitude_m > armObservations.at(-2).selected_altitude_m);
+  await page.locator('#ap-arm').click(); await page.waitForTimeout(100); await observeArm('pressing already-ARMED cancels it');
+  assert.equal(armObservations.at(-1).engaged, 1); assert.equal(armObservations.at(-1).armed, 0);
+  await page.mouse.click(1000, 160); await mode('yoke');
+  await page.locator('#scene').focus(); await page.keyboard.down('ArrowRight');
+  await page.waitForFunction(() => window.__pointerStates.at(-1)?.kap_engaged === 0 && window.__pointerInputs.at(-1)?.pilot_override === true);
+  await observeArm('explicit keyboard takeover still disconnects AP'); await page.keyboard.up('ArrowRight');
+  await page.keyboard.press('a'); await page.waitForFunction(() => window.__pointerStates.at(-1)?.kap_engaged === 1);
+  await page.locator('#ap-cws').hover(); await page.mouse.down();
+  await page.waitForFunction(() => window.__pointerStates.at(-1)?.kap_cws === 1);
+  await page.keyboard.down('ArrowDown');
+  await page.waitForFunction(() => window.__pointerInputs.at(-1)?.elevator < 0 && window.__pointerStates.at(-1)?.kap_cws === 1);
+  await observeArm('held CWS permits manual keyboard input without disconnect');
+  assert.equal(armObservations.at(-1).engaged, 1);
+  await page.keyboard.up('ArrowDown'); await page.mouse.up();
+  await page.waitForFunction(() => window.__pointerStates.at(-1)?.kap_cws === 0 && window.__pointerStates.at(-1)?.kap_engaged === 1);
+  await observeArm('CWS release reacquires AP');
   assert.deepEqual(errors, []);
   const result = { result: 'pass', checks: [
     'faint neutral marker follows the authoritative relative/centered yoke reference, retains it through look, and hides off/in Review',
     'Start, pause/resume, menu dismissal, Options Save and AP capture retain the selected yoke mode and neutral marker',
+    'A capture tolerates immediate/passive pointer movement toward ARM, while explicit keyboard takeover and held CWS retain their manual-control behavior',
     'paused hold-look preserves original midpoint without advancing actual JSBSim',
     'live hold-look preserves original midpoint and actual aileron/elevator commands',
     'outside release/re-entry and short-click toggle retain their separate behavior',
     'default-relative look retains and accumulates after release and Options; Escape explicitly centers it',
     'trusted double-click centers relative/centered/Review look, preserves pre-pair mode and relative anchor, and leaves paused native state unchanged',
-  ], originalCommands, markerObservations };
+  ], originalCommands, markerObservations, armObservations };
   await mkdir(output, { recursive: true });
   await writeFile(`${output}/pointer-yoke-browser.json`, `${JSON.stringify(result, null, 2)}\n`);
   console.log(JSON.stringify(result));

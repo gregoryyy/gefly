@@ -169,6 +169,7 @@ let airborneSite: AirborneSite = 'edfe';
 const regionalTiles = new Map<string,TerrainGrid>();
 let terrainLoading = false;
 let mixtureCommand = 1, mixtureAutomatic = true, apDisconnectPending = false, cwsHeld = false;
+let autopilotCapturePending = false;
 const flightLocationStore = createFlightLocationStore();
 const initialFlightLocation = flightLocationStore.read();
 let restoredFlightLocationActive = !!initialFlightLocation;
@@ -295,6 +296,7 @@ const session = createSession({
       verticalSpeedFpm += (1 - Math.exp(-dt / 0.5)) * (raw - verticalSpeedFpm);
     }
     previous = state; latest = state;
+    if (state.kap_engaged) autopilotCapturePending = false;
     liveWarnings = liveWarningMonitor.update(state);
     if (!reviewing) {
       flightTrace.record(state, verticalSpeedFpm * 0.3048 / 60);
@@ -341,7 +343,9 @@ const session = createSession({
     updateSessionUI();
   },
   onStatus(message) { liveStatus = message; el('status').textContent = reviewing ? 'Review' : groundCollisionStopped() ? 'Ground collision' : message; },
+  onAutopilotRejected(message) { autopilotCapturePending = false; notice(message); updatePointerHint(); },
   onError(message) {
+    autopilotCapturePending = false;
     failed = true; running = false; ready = false; startWhenReady = false; engineAudio.update(null, false);
     neutralize(); notice(`Flight stopped. ${message}`); updateSessionUI();
   },
@@ -935,6 +939,7 @@ function startFlight() {
 }
 function togglePause() { if (running) pauseFlight(); else startFlight(); }
 function reset(preset: LandingPreset | null | undefined = landingPreset, start: RunwayStart | null = runwayStart, location?: FlightLocation) {
+  autopilotCapturePending = false;
   closeViewMenu();
   if (reviewing) return;
   flightLocationStore.clear(); restoredFlightLocationActive = false;
@@ -1093,6 +1098,7 @@ function updatePointerHint(mode = sceneContainer.dataset.pointerMode ?? 'off'): 
   const centered = controlSettings.centeredTouchpad === true;
   el('pointer-mode').textContent = groundCollisionStopped() && !reviewing ? 'COLLISION VIEW · hold-drag to inspect'
     : reviewing ? (mode === 'look' ? 'REVIEW LOOK · release to keep view' : 'REVIEW · hold-drag: look · double-click: front')
+    : (autopilotCapturePending || latest?.kap_engaged) && !cwsHeld ? 'AUTOPILOT · P disconnects · CWS to hand-fly'
     : mode === 'look' ? 'LOOKING · release keeps view · double-click: front'
     : centered ? (mode === 'yoke' ? 'CENTERED YOKE · click off · hold-drag to look' : 'CENTERED YOKE · click on · hold-drag to look')
     : mode === 'yoke' ? 'YOKE ACTIVE · hold-drag: look · double-click: front' : 'Click: yoke · hold-drag: look · double-click: front';
@@ -1102,7 +1108,12 @@ pointerYoke = createPointerYoke({
   lookOnly: () => reviewing || groundCollisionStopped(),
   centered: () => controlSettings.centeredTouchpad === true,
   enabled: () => (controlsAvailable() || reviewing || groundCollisionStopped()) && !menuOpen() && !controlSettingsPanel.isOpen() && !document.querySelector('dialog[open]'),
-  onYoke(x, y) { continuedAxes = null; stickX = x; stickY = y; publishInput(); },
+  onYoke(x, y) {
+    // The pointer also travels to cockpit buttons. That is not a request to
+    // override AP; keyboard/stick input and held CWS remain deliberate controls.
+    if ((autopilotCapturePending || latest?.kap_engaged) && !cwsHeld) return;
+    continuedAxes = null; stickX = x; stickY = y; publishInput();
+  },
   onLook(yaw_rad, pitch_rad) { cameraLook = { yaw_rad, pitch_rad }; },
   onMode(mode) {
     updatePointerHint(mode);
@@ -1207,7 +1218,12 @@ const flightAssists = createFlightAssists({
   root,
   canCapture: () => controlsAvailable() && latest?.kap_profile === 1,
   canChangeRate: () => !continuingReplay && (reviewing || controlsAvailable()),
-  onCapture() { closeViewMenu(); neutralize(); session.captureAutopilot(); focusFlight(); },
+  onCapture() {
+    autopilotCapturePending = true;
+    closeViewMenu(); neutralize();
+    if (!session.captureAutopilot()) autopilotCapturePending = false;
+    updatePointerHint(); focusFlight();
+  },
   onRate(rate) {
     closeViewMenu();
     if (reviewing) { reviewRate = rate; flightAssists.update(reviewRate, true); updateReviewControls(); }
