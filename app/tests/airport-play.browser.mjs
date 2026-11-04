@@ -34,7 +34,7 @@ try {
   assert.equal(state.collision_mask,0);assert.equal(state.gear_nose_wow,1);assert.equal(state.gear_left_wow,1);assert.equal(state.gear_right_wow,1);
   assert.equal(await page.locator('#parking-brake').getAttribute('aria-pressed'),'true');
   await page.waitForFunction(()=>document.querySelector('.runway-practice-status').dataset.phase==='ground');
-  assert.equal(await practiceCard.locator('li').count(),0,'parking at the start is not a landing');
+  assert.equal(await practiceCard.locator('.runway-practice-events li').count(),0,'parking at the start is not a landing');
   await page.locator('#airport-play-stop').click();
   await page.waitForFunction(()=>document.querySelector('#status').textContent==='Paused');
   await page.locator('.airport-com > summary').click();

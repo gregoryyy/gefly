@@ -1,11 +1,25 @@
-.runway-practice { margin: 3px 10px; border-top: 1px solid #536a73; padding: 5px 0; color: #e7eff3; font-size: 10px; line-height: 1.4; }
+.runway-practice { position: relative; margin: 3px 10px; border-top: 1px solid #536a73; padding: 5px 0; color: #e7eff3; font-size: 10px; line-height: 1.4; }
 .runway-practice[hidden] { display: none; }
 .runway-practice summary { cursor: pointer; font-weight: 650; }
 .runway-practice-title { overflow-wrap: anywhere; }
 .runway-practice-badge { margin-left: 7px; color: #edcb91; font-size: 8px; white-space: nowrap; }
-.runway-practice-body { max-height: 120px; overflow-y: auto; overscroll-behavior: contain; padding-right: 5px; }
+.runway-practice-body { max-height: min(300px, 45vh); overflow-y: auto; overscroll-behavior: contain; padding-right: 5px; }
+.runway-practice[open] > .runway-practice-body { position: absolute; left: 0; right: 0; bottom: calc(100% + 4px); z-index: 8; padding: 8px; border: 1px solid #839ca8; border-radius: 5px; background: #142632fa; box-shadow: 0 5px 20px #0008; }
 .runway-practice-body p { margin: 5px 0; }
 .runway-practice-limits, .runway-practice-note { color: #afc4cf; font-size: 9px; }
 .runway-practice-status { color: #edcb91; }
 .runway-practice-events { margin: 5px 0; padding-left: 20px; font-variant-numeric: tabular-nums; }
 .runway-practice-events li { padding: 2px 0; }
+
+.runway-practice [hidden] { display: none; }
+.runway-practice-tabs { display: flex; gap: 4px; margin: 4px 0; }
+.runway-practice-tabs button { padding: 3px 8px; font: inherit; border: 1px solid #617d89; border-radius: 3px; color: #d9e8ee; background: #142632; }
+.runway-practice-tabs button[aria-selected=true] { color: #142632; background: #d3e0e4; }
+.runway-practice-tabs button:focus-visible, .runway-practice [role=tabpanel]:focus-visible { outline: 2px solid #edcb91; outline-offset: 1px; }
+.runway-practice-setup table { border-collapse: collapse; width: 100%; font-size: 9px; }
+.runway-practice-setup th, .runway-practice-setup td { text-align: left; vertical-align: top; padding: 3px; border-bottom: 1px solid #536a7355; overflow-wrap: anywhere; }
+.runway-practice-setup th[scope=row] { font-weight: 500; }
+.runway-practice-setup tr[data-status=match] td:nth-child(2) { color: #b1d9c2; }
+.runway-practice-setup tr[data-status=different] td:nth-child(2) { color: #edcb91; }
+.runway-practice-setup tr[data-status=unavailable] td:nth-child(2), .runway-practice-setup tr[data-status=unsupported] td:nth-child(2) { color: #afc4cf; }
+.runway-practice-setup-source { font-size: 8px; color: #afc4cf; }
