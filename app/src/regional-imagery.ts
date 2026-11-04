@@ -6,7 +6,7 @@ const SIZE = 512;
 const MAX_TILE_BYTES = 1024 * 1024;
 const MAX_MANIFEST_BYTES = 512 * 1024;
 const CACHE_LIMIT = 64;
-const CONCURRENCY = 6;
+const CONCURRENCY = 2;
 /** Queued (not yet fetching) tile loads beyond this are dropped oldest-first. */
 export const MAX_QUEUED_TILES = 48;
 const CANCELLED = Symbol('cancelled');
@@ -117,7 +117,7 @@ export async function createRegionalImageryProvider(options: { onStatus?: (messa
       } else active++;
       if (disposed) { active--; return null; }
       try {
-        const bytes = await boundedBytes(await fetch(`${ROOT}/tiles/${key}.jpg?sha256=${tile.sha256}`, { signal: requestSignal(), redirect: 'error' }), Math.min(MAX_TILE_BYTES, tile.bytes));
+        const bytes = await boundedBytes(await fetch(`${ROOT}/tiles/${key}.jpg?sha256=${tile.sha256}`, { signal: requestSignal(), redirect: 'error', headers: { 'X-Gefly-Scenery-Priority': 'visible' } }), Math.min(MAX_TILE_BYTES, tile.bytes));
         if (bytes.length !== tile.bytes || bytes[0] !== 0xff || bytes[1] !== 0xd8 || bytes[bytes.length - 2] !== 0xff || bytes[bytes.length - 1] !== 0xd9) throw new Error('Invalid JPEG bytes');
         const digest = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), n => n.toString(16).padStart(2, '0')).join('');
         if (digest !== tile.sha256) throw new Error('Imagery hash mismatch');

@@ -14,7 +14,7 @@ FIXTURE = (b'<!-- Synthetic author/license notice -->\n<fdm_config>\n'
            b'  <aerodynamics><coefficient>0.123456</coefficient></aerodynamics>\n'
            + module.SYSTEM + b'      <!-- Preserve the automatic-mixture formula exactly. -->\n'
            + module.CHANNEL + b'        <value>0.987654</value>\n      </channel>\n'
-           b'    </system>\n  <autopilot file="upstream-unchanged"/>\n</fdm_config>\n')
+           b'    </system>\n    <flight_control>\n    </flight_control>\n  <autopilot file="upstream-unchanged"/>\n</fdm_config>\n')
 
 AP_FIXTURE = (b'<!-- Synthetic AP notice -->\n<autopilot>\n'
               b'  <property> ap/altitude_hold     </property>\n'
@@ -22,16 +22,19 @@ AP_FIXTURE = (b'<!-- Synthetic AP notice -->\n<autopilot>\n'
               + module.AP_PID + b'\n' + module.AP_HDOT_INPUT + b'\n' + module.AP_ELEVATOR + b'\n</autopilot>')
 
 class PrepareAircraftTests(unittest.TestCase):
-    def test_patch_changes_only_default_on_gate_wiring_and_is_idempotent(self):
+    def test_patch_changes_only_mixture_gate_and_manual_steering_wiring_and_is_idempotent(self):
         changed = module.patch_xml(FIXTURE)
         self.assertEqual(changed.count(module.PROPERTY), 1)
         self.assertEqual(changed.count(module.GATED_CHANNEL), 1)
-        self.assertEqual(changed.replace(module.PROPERTY, b'', 1).replace(module.GATED_CHANNEL, module.CHANNEL, 1), FIXTURE)
+        self.assertEqual(changed.count(module.STEERING_CHANNEL + module.FLIGHT_CONTROL_END), 1)
+        self.assertEqual(changed.replace(module.STEERING_CHANNEL, b'', 1).replace(module.PROPERTY, b'', 1).replace(module.GATED_CHANNEL, module.CHANNEL, 1), FIXTURE)
         self.assertEqual(module.patch_xml(changed), changed)
 
     def test_requires_exactly_one_target_and_rejects_partial_or_different_wiring(self):
         for value in (FIXTURE.replace(module.CHANNEL, b''), FIXTURE + module.CHANNEL,
-                      FIXTURE.replace(module.SYSTEM, b''), FIXTURE + module.PROPERTY):
+                      FIXTURE.replace(module.SYSTEM, b''), FIXTURE + module.PROPERTY,
+                      FIXTURE.replace(module.FLIGHT_CONTROL_END, b''), FIXTURE + module.FLIGHT_CONTROL_END,
+                      FIXTURE.replace(module.FLIGHT_CONTROL_END, b'<pure_gain name="' + module.STEERING_COMPONENT + b'"/>' + module.FLIGHT_CONTROL_END)):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 module.patch_xml(value)
 
@@ -50,6 +53,7 @@ class PrepareAircraftTests(unittest.TestCase):
             self.assertEqual((source / 'c172x.xml').read_bytes(), FIXTURE)
             self.assertEqual((source / 'c172ap.xml').read_bytes(), AP_FIXTURE)
             self.assertEqual((output / 'c172ap.xml').read_bytes(), module.patch_autopilot(AP_FIXTURE))
+            self.assertEqual(first['adapter_id'], 'gefly-c172x-mixture-pitch-ap-v4')
             self.assertEqual(first['ap_source_sha256'], module.sha256(AP_FIXTURE))
             self.assertEqual((output / 'copyright.txt').read_bytes(), b'unchanged license notice\n')
             self.assertEqual((output / 'systems' / 'ap.xml').read_bytes(), b'unchanged coefficients\n')

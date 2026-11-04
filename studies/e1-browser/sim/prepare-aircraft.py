@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare an ignored c172x copy with switchable mixture and pitch AP wiring.
+"""Prepare an ignored c172x copy with switchable mixture, pitch AP and manual nosewheel steering wiring.
 
 The pinned source checkout is never modified; aircraft aerodynamic coefficients remain intact.
 Pitch-servo gains are an explicit generic simulator adaptation, not KAP 140 tuning.
@@ -13,13 +13,27 @@ from pathlib import Path
 import shutil
 import tempfile
 
-ADAPTER_ID = "gefly-c172x-mixture-pitch-ap-v3"
+ADAPTER_ID = "gefly-c172x-mixture-pitch-ap-v4"
 SOURCE_AP_SHA256 = "1e83fec37beabf33e1a1bdd7a30fb5d4aeca79ddb52a2dca58a7bcfc1d20e570"
 SOURCE_XML_SHA256 = "b736f4b7560d5aab4d2a69026798be1d369b2b2bb5ddcf627aebfd441ba71840"
 SYSTEM = b'    <system name="Mixture control">\n'
 PROPERTY = b'      <property value="1"> systems/automatic-mixture-enabled </property>\n'
 CHANNEL = b'      <channel name="Automatic Mixture Control">\n'
 GATED_CHANNEL = b'      <channel name="Automatic Mixture Control" execute="systems/automatic-mixture-enabled">\n'
+
+FLIGHT_CONTROL_END = b'    </flight_control>'
+STEERING_COMPONENT = b'fcs/gefly-manual-nosewheel-steering'
+# The reused generic Autopilot system writes zero steering even while off.
+# Aircraft flight_control channels run after that system: preserve the existing
+# manual sign convention every step, without changing source gear geometry.
+STEERING_CHANNEL = b"""        <channel name="Gefly manual nosewheel steering">
+            <pure_gain name="fcs/gefly-manual-nosewheel-steering">
+                <input>fcs/rudder-cmd-norm</input>
+                <gain>-1</gain>
+                <output>fcs/steer-cmd-norm</output>
+            </pure_gain>
+        </channel>
+"""
 
 
 def sha256(data: bytes) -> str:
@@ -29,10 +43,18 @@ def sha256(data: bytes) -> str:
 def patch_xml(data: bytes) -> bytes:
     """Byte-preserving structural patch; production entry also checks the source hash."""
     if data.count(PROPERTY) == 1 and data.count(GATED_CHANNEL) == 1 and data.count(CHANNEL) == 0:
-        return data
-    if data.count(SYSTEM) != 1 or data.count(CHANNEL) != 1 or PROPERTY in data or GATED_CHANNEL in data:
-        raise ValueError("Expected one unmodified automatic-mixture system/channel")
-    return data.replace(SYSTEM, SYSTEM + PROPERTY, 1).replace(CHANNEL, GATED_CHANNEL, 1)
+        changed = data
+    elif data.count(SYSTEM) == 1 and data.count(CHANNEL) == 1 and PROPERTY not in data and GATED_CHANNEL not in data:
+        changed = data.replace(SYSTEM, SYSTEM + PROPERTY, 1).replace(CHANNEL, GATED_CHANNEL, 1)
+    else:
+        raise ValueError("Expected one automatic-mixture system/channel")
+    if changed.count(FLIGHT_CONTROL_END) != 1:
+        raise ValueError("Expected one aircraft flight-control closing tag")
+    if changed.count(STEERING_COMPONENT):
+        if changed.count(STEERING_COMPONENT) != 1 or changed.count(STEERING_CHANNEL + FLIGHT_CONTROL_END) != 1:
+            raise ValueError("Unexpected manual nosewheel steering wiring")
+        return changed
+    return changed.replace(FLIGHT_CONTROL_END, STEERING_CHANNEL + FLIGHT_CONTROL_END, 1)
 
 
 # Generic simulator servo adaptation: stronger VS feedback plus body pitch-rate

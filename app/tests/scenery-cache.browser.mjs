@@ -5,11 +5,12 @@ import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 import { gzipSync } from 'node:zlib';
 const worker = await readFile(new URL('../public/scenery-cache-sw.js', import.meta.url));
-const counts = new Map(); let active = 0, peak = 0;
+const counts = new Map(), aborted = new Set(); let active = 0, peak = 0;
 const server = createServer((req, res) => {
   if (req.url === '/') { res.setHeader('Content-Type', 'text/html'); res.end('<!doctype html><title>Cache</title>'); return; }
   if (req.url === '/scenery-cache-sw.js') { res.setHeader('Content-Type', 'text/javascript'); res.end(worker); return; }
   counts.set(req.url, (counts.get(req.url) ?? 0) + 1); active++; peak = Math.max(peak, active);
+  res.on('close', () => { if (!res.writableEnded) aborted.add(req.url); });
   setTimeout(() => {
     res.setHeader('Content-Type', req.url.includes('.png') ? 'image/png' : 'application/octet-stream');
     const map = req.url.startsWith('/scenery/map/');
@@ -20,7 +21,7 @@ const server = createServer((req, res) => {
     const compressed = req.url.startsWith('/scenery/vector/');
     if (compressed) res.setHeader('Content-Encoding', 'gzip');
     active--; res.end(compressed ? gzipSync('fixture') : 'fixture');
-  }, req.url === '/scenery/map/10/3/1.png' ? 200 : 10);
+  }, req.url.startsWith('/scenery/imagery/14/10') ? 1000 : req.url === '/scenery/map/10/3/1.png' ? 200 : 10);
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 let browser;
@@ -49,6 +50,27 @@ try {
   assert(counts.has(priorityPath), 'background warm request started');
   await page.evaluate(async path => (await fetch(path, { headers: { 'X-Gefly-Scenery-Priority': 'visible' } })).text(), priorityPath);
   assert.equal(counts.get(priorityPath), 2, 'visible demand reaches proxy to promote a pending background tile');
+  const obsolete = '/scenery/imagery/14/100/100.png';
+  await page.evaluate(path => navigator.serviceWorker.controller.postMessage({ type: 'scenery-cache-focus', urls: [path] }), obsolete);
+  for (let i = 0; i < 100 && !counts.has(obsolete); i++) await new Promise(resolve => setTimeout(resolve, 5));
+  assert(counts.has(obsolete));
+  await page.evaluate(path => { window.keepDemand = fetch(path, { cache: 'no-store' }).then(response => response.text()); }, obsolete);
+  for (let i = 0; i < 100 && counts.get(obsolete) !== 2; i++) await new Promise(resolve => setTimeout(resolve, 5));
+  assert.equal(counts.get(obsolete), 2, 'warm cancellation does not own a normal demand for the same asset');
+  await page.evaluate(() => navigator.serviceWorker.controller.postMessage({ type: 'scenery-cache-focus', urls: [] }));
+  for (let i = 0; i < 100 && !aborted.has(obsolete); i++) await new Promise(resolve => setTimeout(resolve, 5));
+  assert(aborted.has(obsolete), 'a superseded warm fetch releases its network connection promptly');
+  assert.equal(await page.evaluate(() => window.keepDemand), 'fixture', 'superseded warming cannot cancel a demanded terrain/map resource');
+  const foreground = '/scenery/imagery/14/101/100.png';
+  await page.evaluate(path => {
+    window.foregroundAbort = new AbortController();
+    window.foregroundResult = fetch(path, { signal: window.foregroundAbort.signal, headers: { 'X-Gefly-Scenery-Priority': 'visible' } }).catch(error => error.name);
+  }, foreground);
+  for (let i = 0; i < 100 && !counts.has(foreground); i++) await new Promise(resolve => setTimeout(resolve, 5));
+  assert(counts.has(foreground)); await page.evaluate(() => window.foregroundAbort.abort());
+  for (let i = 0; i < 100 && !aborted.has(foreground); i++) await new Promise(resolve => setTimeout(resolve, 5));
+  assert(aborted.has(foreground), 'visible photograph cancellation reaches the server instead of lingering in SW fetch');
+  await new Promise(resolve => setTimeout(resolve, 1000));
   peak = 0;
   await page.evaluate(urls => new Promise(resolve => {
     navigator.serviceWorker.addEventListener('message', function handler(e) {

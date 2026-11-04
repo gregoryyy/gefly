@@ -767,6 +767,13 @@ EMSCRIPTEN_KEEPALIVE double* gf_pitch_trim_state() {
 // CG AGL/native geodetic height (m), horizontal heading-aligned forward and
 // rightward velocities, NED down velocity (m/s), structure mask (tail/left/right
 // bits 1/2/4); then nose/left/right WOW, compression m, strut load N, slip rad.
+// Read the actual steerable wheel, rather than inferring steering from rudder.
+EMSCRIPTEN_KEEPALIVE double gf_nose_steering_rad() {
+  unsigned contact[6];
+  if (!g_fdm || !resolve_contacts(contact)) return std::numeric_limits<double>::quiet_NaN();
+  return g_fdm->GetGroundReactions()->GetGearUnit(contact[0])->GetSteerAngleDeg() * kPi / 180.0;
+}
+
 // Actual upstream contact quantities: no damage thresholds or added forces.
 // With Q18 terrain enabled, geodetic height is physical DHHN2016; the worker
 // converts it to rendering ellipsoid height outside the dynamics.

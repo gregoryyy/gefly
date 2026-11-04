@@ -67,7 +67,7 @@ start reference. **Events** shows the sensed flight log. Missing data and checks
 the simulator cannot verify stay explicit; no aircraft settings change.
 
 Sharp runway markings, taxiways and apron overlays sit on the public terrain.
-In **Options**, select **Map terrain** to drape official German cartography
+Use **View → Terrain** or **Alt+Shift+J** (also **Options → Map terrain**) to drape official German cartography
 without text over the terrain. Roads, fields, woodland, water and building
 footprints extend beyond the airport; photography stays underneath while tiles
 load or if the service fails. The flight map keeps its **Map/Aerial** background;
@@ -183,7 +183,7 @@ wheel brakes, and **1–9** selects 10–90% throttle (**0** idle). The engine p
 adds mixture, RPM, manifold pressure, oil and fuel readouts. **Flight → Weight & fuel** (**Alt+Shift+W**) sets occupants, baggage, auxiliary load and initial fuel in litres; Apply restarts the flight. Fuel use reduces both tank contents and native aircraft mass. **P** toggles the two-axis autopilot. Its KAP 140 operating controls include VS,
 current-altitude hold, selected-altitude capture and source-aware navigation;
 generic servo response and real navigation-data coverage remain limited.
-To climb to a preselected altitude, set climb power, select the altitude and confirm ALT ARM, switch ALT to VS if needed, then use UP/DN to set the rate. The first press reveals a hidden VS value; subsequent taps change 100 FPM. Hold **CWS** to hand-fly and release to capture current VS or held altitude. CWS is an optional KAP140 control; this particular C172 installation is unverified.
+To climb to a preselected altitude, engage AP, set climb power and select the altitude. Selection automatically arms capture: **ARMED** and **ALT ARM** confirm it. Pressing **ARMED** cancels capture. Switch ALT to VS if needed, then use UP/DN to set the rate. The first press reveals a hidden VS value; subsequent taps change 100 FPM. Hold **CWS** to hand-fly and release to capture current VS or held altitude. CWS is an optional KAP140 control; this particular C172 installation is unverified.
 
 On narrow screens, open **Engine & autopilot** for those controls.
 

@@ -61,7 +61,27 @@ try {
   state=await page.evaluate(()=>window.airportStates.at(-1));assert.equal(state.collision_mask,0);assert(Math.hypot(state.ground_forward_mps,state.ground_side_mps)<.05);
   assert.match(await practiceCard.locator('summary').textContent(),/08.*Left-hand north circuit/);
   await page.locator('#scene').focus();await page.keyboard.press('n');await page.keyboard.press('9');
-  await page.waitForFunction(()=>window.airportStates.at(-1)?.ground_forward_mps>1,null,{timeout:20000});
+  await page.waitForFunction(()=>window.airportStates.at(-1)?.ground_forward_mps>2,null,{timeout:20000});
+  await page.keyboard.press('2');
+  const taxiTurns=[];
+  for(const [key,command,direction] of [['q',.35,-1],['w',-.35,1]]){
+    await page.keyboard.down(key);await page.waitForFunction(command=>window.airportStates.at(-1)?.rudder_cmd_norm===command,command);
+    const before=await page.evaluate(()=>window.airportStates.at(-1));
+    await page.waitForFunction(t=>window.airportStates.at(-1)?.t_s>=t+1.5,before.t_s);
+    const after=await page.evaluate(()=>window.airportStates.at(-1));await page.keyboard.up(key);
+    const turn=Math.atan2(Math.sin(after.heading_rad-before.heading_rad),Math.cos(after.heading_rad-before.heading_rad));
+    assert(turn*direction>0,`${key} steers the actual taxiing aircraft in the requested direction`);
+    assert.equal(after.gear_nose_wow,1);taxiTurns.push({key,elapsed_s:after.t_s-before.t_s,heading_change_deg:turn*180/Math.PI});
+  }
+  // A fresh real runway start isolates takeoff from the preceding taxi turns.
+  await page.locator('.practice-map-heading').click();await page.locator('#airport-play-start').click();
+  await page.waitForFunction(()=>document.querySelector('#status').textContent==='Flying'&&window.airportStates.at(-1)?.step>60&&window.airportStates.at(-1)?.t_s<4,null,{timeout:60000});
+  await page.locator('#scene').focus();await page.keyboard.press('n');await page.locator('#throttle').focus();await page.keyboard.press('End');await page.locator('#scene').focus();
+  for(let i=0;i<4;i++)await page.keyboard.press('=');
+  await page.waitForFunction(()=>window.airportStates.at(-1)?.ground_forward_mps>50*1852/3600,null,{timeout:20000});
+  await page.keyboard.down('ArrowDown');
+  await page.waitForFunction(()=>{const s=window.airportStates.at(-1);return s?.gear_nose_wow===0&&s.gear_left_wow===0&&s.gear_right_wow===0&&s.ground_agl_m>5},null,{timeout:20000});
+  await page.keyboard.up('ArrowDown');state=await page.evaluate(()=>window.airportStates.at(-1));assert.equal(state.collision_mask,0);
   await page.locator('#airport-play-stop').click();
   await page.locator('#scene').focus();await page.keyboard.press('r');
   await page.waitForFunction(()=>document.querySelector('#status').textContent==='Review');
@@ -147,5 +167,5 @@ try {
   assert.match(await practiceCard.locator('summary').textContent(),/08.*Left-hand north circuit/,'legacy Back to live restores session runway context');
   await assertNativeUnchanged();
   assert.deepEqual(errors,[]);
-  console.log(JSON.stringify({checks:['EDFE26 and08 start stationary with all gear supported; full parking hold does not collide','COM8.33 selection loads standby, explicit swap changes active','Options select vector terrain/map and practice lights','release brake and power produces actual native ground acceleration','map Stop preserves Review and locks start/COM during Review','source-scoped runway briefing, actual ground state, runway change and recorded Review card','portable runway context survives save/load, rejects malformed metadata and restores live context; legacy files remain unknown'],browser:browser.version()},null,2));
+  console.log(JSON.stringify({taxiTurns,checks:['actual runway taxi responds to heldQ/W, then a fresh full-power start lifts off through app controls','EDFE26 and08 start stationary with all gear supported; full parking hold does not collide','COM8.33 selection loads standby, explicit swap changes active','Options select vector terrain/map and practice lights','release brake and power produces actual native ground acceleration','map Stop preserves Review and locks start/COM during Review','source-scoped runway briefing, actual ground state, runway change and recorded Review card','portable runway context survives save/load, rejects malformed metadata and restores live context; legacy files remain unknown'],browser:browser.version()},null,2));
 }finally{await browser?.close();server.kill();}

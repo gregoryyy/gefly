@@ -15,10 +15,14 @@ Warm near tiles before farther tiles, with at most 200 planned URLs and two
 background requests at a time. Current targets: maps z10/30km; photo and vector
 z11/20km plus z14/2km; regional terrain 35km. Labels use only enabled levels:
 places 60km, notable features 20km, detailed features 2km. Replacing the plan or
-switching it off drops obsolete queued work; at most two active loads finish. Visible-demand loading remains available. Visible map requests may issue a second
+switching it off drops queued work and aborts obsolete active warming. Warming waits until camera-visible globe tiles have settled. Foreground demand is isolated from warm cancellation, including identical URLs. Visible-demand loading remains available. Visible map requests may issue a second
 proxy-facing request to promote a tile already warming; the proxy shares the
 upstream fetch. This narrowly bypasses browser HTTP coalescing, preserving normal
 Cache Storage hits.
+
+Visible live photographs and hashed regional JPEGs bypass service-worker interception, retaining browser cancellation and ordinary HTTP caching. Chrome does not relay cancellation of a page request into the service worker’s separate network fetch; stale photo requests otherwise exhaust connections and cause detail timeouts. Background photo reuse through Cache Storage is not promised to visible demand. Existing JPEG digest validation remains mandatory.
+
+Camera-visible Cesium requests and packaged regional imagery each have two concurrent loads, leaving local HTTP/1.1 capacity for renderer workers and terrain assets. Map-renderer code is imported before photography starts; the renderer itself is created only when selected. These limits prevent starvation rather than guaranteeing a fixed loading time.
 
 Persistent storage is bounded by 128MiB and 512 entries with LRU eviction;
 OpenFreeMap landmark data has a tighter 24MiB/96-entry bound. Its

@@ -1,5 +1,5 @@
 const commands = [
-  ['#systems-open', 'Y'], ['#cockpit', 'C'], ['#chase', 'V'], ['#toggle-map', 'M'],
+  ['#toggle-map-terrain', 'J'], ['#systems-open', 'Y'], ['#cockpit', 'C'], ['#chase', 'V'], ['#toggle-map', 'M'],
   ['#toggle-flight-data', 'D'], ['#toggle-stall-awareness', 'A'], ['#toggle-controls', 'F'],
   ['#save-recording', 'S'], ['#load-recording', 'L'], ['#handbook-open', 'H'], ['#loading-open', 'W'], ['#controls-settings', 'O'], ['#reset', 'R'],
   ['#engine-open', 'G'], ['#radio-nav-open', 'B'], ['#navigation-open', 'N'], ['#autopilot-open', 'P'],

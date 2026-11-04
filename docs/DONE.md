@@ -3,6 +3,52 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 16:27 — Repair imagery loading and manual nosewheel steering
+
+TODO: 2.0.91–2.0.94; R-WORLD-5/R-WORLD-9/R-AIRPORT-1/R-INPUT-1/R-PLAY-1/R-AP-1.
+Agent: Codex UI/integration; glide_cases actual imagery/cache repair;
+glide_model steering adapter and native/browser cases; glide_housekeeping
+independent source quality and actual AP/terrain-control validation.
+
+**Implementation notes**
+
+Visible photo requests bypass SW interception, obsolete background loads abort
+without cancelling foreground demand, and warming waits for visible scenery.
+Reserve HTTP capacity for workers and import map-renderer code before photography.
+Real cache-enabled photography loads 54 regional JPEGs plus live photos without
+failures. Real map textures render from nine BKG vector tile URLs with zero
+failures; remaining tiles continue streaming. Root inspected the actual map screenshot. Map renderer code loads before photo traffic; browser connections remain available for worker downloads.
+
+The generic upstream Autopilot system overwrote manual nose steering every FCS
+step. Prepared adapter v4 appends manual steering after it, preserving the source
+10-degree geometry, friction and aerodynamic coefficients. Actual wheel angle
+now retains the commanded ±3.5 degrees; symmetric 5 kt coasts turn about ±12 degrees
+in three seconds. Six adapter cases, eight actual runway/browser groups and five
+parking/rudder groups pass, including taxi turns and a full-power takeoff.
+
+View → Terrain / Alt+Shift+J synchronizes with Options and the map. Actual AP
+panel engagement, selector autoarming, ARM cancellation/rearming and VS commands
+pass; ARM/ARMED state and titles now explain the source-prescribed toggle. Seven
+regional imagery units, the cache cancellation browser case and TypeScript pass.
+Independent source quality and scoped validation pass. Shared CI passes with local
+server permissions; the earlier default-sandbox run could not bind its runtime
+test listeners. Cross-provider peer pending.
+
+**Deviations**
+
+No new feature or aircraft-performance calibration. Imagery uses native HTTP
+caching for visible photographs; complete offline/photo coverage is not claimed.
+The user's intermittent no-acceleration report stopped reproducing during this
+work; both fresh and saved-ground runs accelerate in the actual app. No invented
+startup fix is claimed. Local WASM was rebuilt; other checkouts need the normal
+flight-engine build to obtain steering adapter v4.
+
+**Insights**
+
+Command telemetry and high-speed aerodynamic yaw hid failed wheel steering.
+Verify low-speed motion through complete physics steps. Real tile rendering,
+cancellation and worker loading matter beyond UI flags or mocked imagery.
+
 ## 2026-11-04 14:41 — Consolidate merged cockpit fixes for main
 
 TODO: 2.0.87–2.0.90. Agent: Codex integration.

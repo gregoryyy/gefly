@@ -152,7 +152,14 @@ export function createAutopilotPanel(options: AutopilotOptions): {
     element('ap-up').title = element('ap-down').title = state?.kap_vertical === 1
       ? 'ALT: tap adjusts held altitude 20 ft; hold requests 500 FPM. For a preselected climb, press ALT to enter VS first.'
       : 'VS: first press reveals a hidden rate; subsequent taps change 100 FPM. Hold changes 300 FPM per second. Set climb power manually.';
-    element('ap-alt').title = 'Toggle current-altitude hold and vertical-speed mode; select an altitude and confirm ALT ARM for automatic capture from VS.';
+    element('ap-alt').title = 'Toggle current-altitude hold and vertical-speed mode. Changing the selected altitude while AP is on automatically arms capture; climb or descend in VS with power set manually.';
+    const armed = !!state?.kap_alt_arm;
+    const arm = element<HTMLButtonElement>('ap-arm');
+    arm.textContent = armed ? 'ARMED' : 'ARM';
+    arm.setAttribute('aria-label', armed ? 'Cancel armed altitude capture' : 'Arm selected altitude capture');
+    arm.title = `${armed ? 'Altitude capture is armed; pressing again cancels it.' : 'Arm capture of the selected altitude.'} ${state?.kap_engaged ? 'Use VS and UP/DN to approach the target; ALT hold does not start a climb.' : 'Engage AP first; engagement initializes VS and clears a previous arm selection.'}`;
+    selector.title = page === 2 ? 'Set autopilot barometric pressure.'
+      : 'Changing selected altitude with AP engaged automatically arms capture. ARMED means capture is already armed; pressing it cancels.';
     for (const [id, pressed] of [['ap-engage', !!state?.kap_engaged], ['ap-heading', !!state?.kap_engaged && state.kap_lateral === 1],
       ['ap-nav', !!state?.kap_engaged && state.kap_lateral === 2 || state?.kap_lateral_arm === 2], ['ap-apr', !!state?.kap_engaged && state.kap_lateral === 3 || state?.kap_lateral_arm === 3],
       ['ap-rev', !!state?.kap_engaged && state.kap_lateral === 4 || state?.kap_lateral_arm === 4], ['ap-alt', !!state?.kap_engaged && state.kap_vertical === 1], ['ap-arm', !!state?.kap_alt_arm]] as const)
