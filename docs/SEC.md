@@ -361,3 +361,7 @@ decode counts, cache, names and rendered labels; obsolete/off/disposed results
 must not repopulate a new view. Names are inert text, not HTML or instructions.
 Service failure leaves scenery and flight independent and reports unavailable
 labels. Current-source labels in Review do not establish historical map state.
+
+## Local launch position
+
+The browser stores a versioned last live latitude, longitude, MSL altitude, heading and ground/airborne flag in localStorage. It stays on the browser origin; no account or location-upload service is added. Restart flight removes it. Reads are size/schema/finite/range bounded, writes are throttled, and denied storage falls back to ordinary launch. This is simulated flight location, not device geolocation.

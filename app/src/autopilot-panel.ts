@@ -39,7 +39,7 @@ export function createAutopilotPanel(options: AutopilotOptions): {
       <div class="kap-mode-keys">${[['engage', 'AP'], ['heading', 'HDG'], ['nav', 'NAV'], ['apr', 'APR'], ['rev', 'REV'], ['alt', 'ALT']].map(([id, label]) => `<button type="button" id="ap-${id}" aria-pressed="false">${label}</button>`).join('')}</div>
       <div class="kap-adjust-keys"><button type="button" id="ap-arm" aria-pressed="false">ARM</button><button type="button" id="ap-baro">BARO</button><button type="button" id="ap-up" aria-label="Increase autopilot vertical command">UP</button><button type="button" id="ap-down" aria-label="Decrease autopilot vertical command">DN</button><button type="button" id="ap-selector-decrease" aria-label="Turn altitude selector down 100 feet, simulator knob">−</button><button type="button" id="ap-selector-increase" aria-label="Turn altitude selector up 100 feet, simulator knob">+</button></div>
     </div>
-    <div class="kap-dg-bug" role="group" aria-label="External directional gyro heading bug, true reference simulator control"><label for="ap-heading-target">DG BUG · TRUE</label><button type="button" id="ap-heading-decrease" aria-label="Decrease external heading bug ten degrees">−</button><input id="ap-heading-target" type="number" min="0" max="359.9" step="0.1" aria-label="External directional gyro true heading bug in degrees"><button type="button" id="ap-heading-increase" aria-label="Increase external heading bug ten degrees">+</button></div>
+    <div class="kap-dg-bug" role="group" aria-label="External control wheel steering and directional gyro controls"><button type="button" id="ap-cws" aria-label="Hold control wheel steering" aria-pressed="false" title="Hold to hand-fly; release captures the current altitude in ALT or vertical speed in VS. Optional KAP 140 control; installed C172 fit unverified.">CWS</button><label for="ap-heading-target">DG BUG · TRUE</label><button type="button" id="ap-heading-decrease" aria-label="Decrease external heading bug ten degrees">−</button><input id="ap-heading-target" type="number" min="0" max="359.9" step="0.1" aria-label="External directional gyro true heading bug in degrees"><button type="button" id="ap-heading-increase" aria-label="Increase external heading bug ten degrees">+</button></div>
   `;
   const dialog = document.createElement('dialog');
   dialog.id = 'autopilot-dialog'; dialog.className = 'autopilot-dialog'; dialog.setAttribute('aria-labelledby', 'autopilot-title');
@@ -47,13 +47,13 @@ export function createAutopilotPanel(options: AutopilotOptions): {
   const slot = dialog.querySelector<HTMLElement>('.autopilot-dialog-slot')!;
   const done = dialog.querySelector<HTMLButtonElement>('#autopilot-close')!;
   const element = <T extends HTMLElement = HTMLElement>(id: string) => content.querySelector<T>(`#${id}`)!;
-  const ap = element<HTMLButtonElement>('ap-engage'), baro = element<HTMLButtonElement>('ap-baro');
+  const ap = element<HTMLButtonElement>('ap-engage'), baro = element<HTMLButtonElement>('ap-baro'), cws = element<HTMLButtonElement>('ap-cws');
   const selector = element<HTMLInputElement>('ap-selector-value'), heading = element<HTMLInputElement>('ap-heading-target');
   const buttons = [...content.querySelectorAll<HTMLButtonElement>('button')];
   const media = window.matchMedia('(max-width: 0px)');
   let latest: KapSnapshot | null = null, reviewing = false, available = false, readOnly = false, disposed = false;
   let altitudeAlert: AltitudeAlertSnapshot | null = null;
-  let gesture: { button: HTMLButtonElement; pointerId?: number; key?: string; action: 'ap' | 'baro' | 'vertical'; fired: boolean } | null = null;
+  let gesture: { button: HTMLButtonElement; pointerId?: number; key?: string; action: 'ap' | 'baro' | 'vertical' | 'cws'; fired: boolean } | null = null;
   let holdTimer: ReturnType<typeof setTimeout> | undefined;
   // The shared selector is interpreted by the page and units shown when the
   // entry started (first keystroke, or press of a +/− knob button), never by the
@@ -78,6 +78,7 @@ export function createAutopilotPanel(options: AutopilotOptions): {
     if (!previous) return;
     previous.button.classList.remove('kap-held');
     if (previous.action === 'vertical') options.onCommand({ action: 'vertical', value: 0 });
+    if (previous.action === 'cws') options.onCommand({ action: 'cws', value: 0 });
     // A completed browser click represents the physical AP press. Long holds
     // still fire at 250 ms; release must never send a duplicate engagement.
     if (commitBaro && previous.action === 'ap' && !previous.fired) send({ action: 'ap' });
@@ -87,11 +88,12 @@ export function createAutopilotPanel(options: AutopilotOptions): {
   function beginGesture(button: HTMLButtonElement, pointerId?: number, key?: string): void {
     if (!canControl() || button.disabled) return;
     stopGesture();
-    const action = button === ap ? 'ap' : button === baro ? 'baro' : 'vertical';
+    const action = button === ap ? 'ap' : button === baro ? 'baro' : button === cws ? 'cws' : 'vertical';
     if (action === 'ap' && latest!.kap_engaged) { send({ action: 'disconnect' }); return; }
     gesture = { button, pointerId, key, action, fired: false }; button.classList.add('kap-held');
     if (pointerId !== undefined) button.setPointerCapture(pointerId);
-    if (action === 'vertical') send({ action: 'vertical', value: button.id === 'ap-up' ? 1 : -1 });
+    if (action === 'cws') send({ action: 'cws', value: 1 });
+    else if (action === 'vertical') send({ action: 'vertical', value: button.id === 'ap-up' ? 1 : -1 });
     else holdTimer = setTimeout(() => {
       if (!gesture || gesture.button !== button || !canControl()) return;
       gesture.fired = true; send({ action: action === 'ap' ? 'ap' : 'baro-units' });
@@ -121,6 +123,10 @@ export function createAutopilotPanel(options: AutopilotOptions): {
       text(id, label); element(id).classList.toggle('kap-flashing', !!label);
     }
     for (const button of buttons) button.disabled = !enabled;
+    cws.disabled = !enabled || !state?.kap_engaged;
+    cws.setAttribute('aria-pressed', reviewing && state?.kap_cws === undefined ? 'mixed' : String(state?.kap_cws === 1));
+    cws.title = reviewing && state?.kap_cws === undefined ? 'CWS state was not recorded in this older recording.'
+      : 'Hold to hand-fly; release captures the current altitude in ALT or vertical speed in VS. Optional KAP 140 control; installed C172 fit unverified.';
     element<HTMLButtonElement>('ap-rev').disabled = !enabled || state?.kap_nav_kind !== 2 && state?.kap_lateral_alert !== 4;
     selector.disabled = heading.disabled = !enabled;
     const page = state?.kap_display_page ?? 0;
@@ -143,6 +149,10 @@ export function createAutopilotPanel(options: AutopilotOptions): {
     ap.setAttribute('aria-label', state?.kap_engaged ? 'Disconnect autopilot' : 'Engage autopilot');
     ap.title = state?.kap_engaged ? 'Disconnect autopilot' : 'Click to engage; a browser click represents the physical 0.25-second AP press';
     baro.title = 'Press to display BARO; hold 2 seconds to change pressure units';
+    element('ap-up').title = element('ap-down').title = state?.kap_vertical === 1
+      ? 'ALT: tap adjusts held altitude 20 ft; hold requests 500 FPM. For a preselected climb, press ALT to enter VS first.'
+      : 'VS: first press reveals a hidden rate; subsequent taps change 100 FPM. Hold changes 300 FPM per second. Set climb power manually.';
+    element('ap-alt').title = 'Toggle current-altitude hold and vertical-speed mode; select an altitude and confirm ALT ARM for automatic capture from VS.';
     for (const [id, pressed] of [['ap-engage', !!state?.kap_engaged], ['ap-heading', !!state?.kap_engaged && state.kap_lateral === 1],
       ['ap-nav', !!state?.kap_engaged && state.kap_lateral === 2 || state?.kap_lateral_arm === 2], ['ap-apr', !!state?.kap_engaged && state.kap_lateral === 3 || state?.kap_lateral_arm === 3],
       ['ap-rev', !!state?.kap_engaged && state.kap_lateral === 4 || state?.kap_lateral_arm === 4], ['ap-alt', !!state?.kap_engaged && state.kap_vertical === 1], ['ap-arm', !!state?.kap_alt_arm]] as const)
@@ -158,7 +168,7 @@ export function createAutopilotPanel(options: AutopilotOptions): {
     if (!event.isTrusted || !(event.target instanceof Element)) return;
     const button = event.target.closest<HTMLButtonElement>('button');
     if (!button || !canControl()) return;
-    if ([ap, baro, element('ap-up'), element('ap-down')].includes(button)) { event.preventDefault(); return; }
+    if ([ap, baro, cws, element('ap-up'), element('ap-down')].includes(button)) { event.preventDefault(); return; }
     const modes: Record<string, KapCommand['action']> = { 'ap-heading': 'hdg', 'ap-nav': 'nav', 'ap-apr': 'apr', 'ap-rev': 'rev', 'ap-alt': 'alt', 'ap-arm': 'arm' };
     if (modes[button.id]) send({ action: modes[button.id] });
     else if (button.id.startsWith('ap-heading-')) send({ action: 'heading', value: ((degrees(latest!.kap_heading_bug_rad) + (button.id.endsWith('decrease') ? -10 : 10) + 360) % 360) * Math.PI / 180 });
@@ -184,16 +194,18 @@ export function createAutopilotPanel(options: AutopilotOptions): {
   function pointerDown(event: PointerEvent): void {
     if (event.isTrusted && event.button === 0) knobDown(event);
     if (!event.isTrusted || event.button !== 0 || !(event.target instanceof HTMLButtonElement)) return;
-    if (![ap, baro, element('ap-up'), element('ap-down')].includes(event.target)) return;
+    if (![ap, baro, cws, element('ap-up'), element('ap-down')].includes(event.target)) return;
     event.preventDefault(); event.target.focus(); beginGesture(event.target, event.pointerId);
   }
   function pointerUp(event: PointerEvent): void { if (gesture?.pointerId === event.pointerId) stopGesture(event.type === 'pointerup'); }
   function keyDown(event: KeyboardEvent): void {
+    // A held external CWS switch must allow the flight keys to reach the yoke.
+    if (gesture?.action === 'cws' && !['Space', 'Enter'].includes(event.code)) return;
     event.stopPropagation();
     if (event.repeat) { event.preventDefault(); return; }
     if (event.isTrusted && ['Space', 'Enter'].includes(event.code)) knobDown(event);
     if (!event.isTrusted || !['Space', 'Enter'].includes(event.code) || !(event.target instanceof HTMLButtonElement)) return;
-    if (![ap, baro, element('ap-up'), element('ap-down')].includes(event.target)) return;
+    if (![ap, baro, cws, element('ap-up'), element('ap-down')].includes(event.target)) return;
     event.preventDefault(); beginGesture(event.target, undefined, event.code);
   }
   function keyUp(event: KeyboardEvent): void { if (gesture?.key === event.code) { event.preventDefault(); stopGesture(true); } }

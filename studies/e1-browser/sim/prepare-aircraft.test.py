@@ -19,7 +19,7 @@ FIXTURE = (b'<!-- Synthetic author/license notice -->\n<fdm_config>\n'
 AP_FIXTURE = (b'<!-- Synthetic AP notice -->\n<autopilot>\n'
               b'  <property> ap/altitude_hold     </property>\n'
               + module.AP_AGL + b'\n' + module.AP_ERROR + b'\n'
-              + module.AP_HDOT_INPUT + b'\n' + module.AP_ELEVATOR + b'\n</autopilot>')
+              + module.AP_PID + b'\n' + module.AP_HDOT_INPUT + b'\n' + module.AP_ELEVATOR + b'\n</autopilot>')
 
 class PrepareAircraftTests(unittest.TestCase):
     def test_patch_changes_only_default_on_gate_wiring_and_is_idempotent(self):
@@ -62,7 +62,11 @@ class PrepareAircraftTests(unittest.TestCase):
         self.assertIn(b'<!-- Synthetic AP notice -->', changed)
         self.assertIn(module.AP_MSL, changed)
         self.assertIn(module.AP_ELEVATOR_GATE, changed)
-        for token in (module.AP_AGL, module.AP_HDOT_INPUT, module.AP_ERROR, module.AP_ELEVATOR):
+        self.assertIn(module.AP_GENERIC_PID, changed)
+        self.assertNotIn(module.AP_PID, changed)
+        # Positive q (nose rising) adds positive elevator (nose down): damping.
+        self.assertIn(b'<input> velocities/q-rad_sec </input>\n    <gain> 20.0 </gain>', changed)
+        for token in (module.AP_PID, module.AP_AGL, module.AP_HDOT_INPUT, module.AP_ERROR, module.AP_ELEVATOR):
             with self.subTest(token=token), self.assertRaises(ValueError):
                 module.patch_autopilot(AP_FIXTURE.replace(token, b''))
 

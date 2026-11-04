@@ -1,3 +1,4 @@
+import { validFlightLocation } from './flight-location.ts';
 import { validateTerrainGrid, type TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
 import { eddfApproachPractice } from './navigation-approach.ts';
 import { getNavigationCatalogue } from './radio-nav.ts';
@@ -5,7 +6,7 @@ import { validKapCommand } from '../../studies/e1-browser/sim/kap140.js';
 import { validSimulationRate } from '../../studies/e1-browser/sim/simulation-rate.js';
 import { NAVIGATION_FIELDS, validNavigation } from '../../studies/e1-browser/sim/navigation.js';
 import { ALERT_FIELDS, validAlertState, KAP_FIELDS, validKapState, TERRAIN_FIELDS, validTerrainState, COLLISION_FIELDS, validCollisionState, STALL_FIELDS, validStallState, CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, ENGINE_SWITCH_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
-import type { Controls, FlightSession, FlightState, LandingPreset, AirborneSite, RunwayStart } from './types';
+import type { Controls, FlightSession, FlightState, LandingPreset, AirborneSite, RunwayStart, FlightLocation } from './types';
 
 /** Worker navdata identity from `ready` (see studies/e1-browser/sim/README.md).
  * `undefined` means an older worker that does not report it. */
@@ -76,6 +77,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
   let landingPreset: LandingPreset | undefined;
   let airborneSite: AirborneSite = 'edfe';
   let runwayStart: RunwayStart | undefined;
+  let initialLocation: FlightLocation | undefined;
   let inputTimer: ReturnType<typeof setInterval> | undefined;
   let loadTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -208,15 +210,16 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       }
     };
     let approach: ReturnType<typeof eddfApproachPractice> | null = null;
-    try { if (airborneSite === 'eddf-ils' && !landingPreset && !runwayStart) approach = eddfApproachPractice(getNavigationCatalogue()); }
+    try { if (airborneSite === 'eddf-ils' && !landingPreset && !runwayStart && !initialLocation) approach = eddfApproachPractice(getNavigationCatalogue()); }
     catch { fail('Historical approach source unavailable. Reload before selecting EDDF practice.'); return; }
     // Every mode requests the regional database so tuned NAV sources match the
     // instruments; a worker load failure degrades NAV and is reported in ready
     // (navdata_error) instead of stopping the flight.
     current.postMessage({
       ...(approach ? { navigation: approach.navigation } : {}),
-      type: 'init', ...(runwayStart ? { runway_start: true } : {}), kap140: true, regional_navigation: true, streaming_terrain: landingPreset === undefined, terrain: landingPreset === undefined, ...(landingPreset ? { landing_preset: landingPreset } : {}), ground_collision: true, dt_s: 1 / 120, aircraft: 'c172x', state_hz: 60,
-      ic: (runwayStart ? { ...runwayStart, alt_msl_m: 0, tas_mps: 0 } : null) ?? approach?.ic ?? regionalInitialCondition(airborneSite) ?? {
+      type: 'init', ...(runwayStart || initialLocation?.mode === 'ground' ? { runway_start: true } : {}), kap140: true, regional_navigation: true, streaming_terrain: landingPreset === undefined, terrain: landingPreset === undefined, ...(landingPreset ? { landing_preset: landingPreset } : {}), ground_collision: true, dt_s: 1 / 120, aircraft: 'c172x', state_hz: 60,
+      ic: (initialLocation ? { lat_rad: initialLocation.lat_rad, lon_rad: initialLocation.lon_rad,
+        alt_msl_m: initialLocation.alt_msl_m, heading_rad: initialLocation.heading_rad, tas_mps: initialLocation.mode === 'ground' ? 0 : 90 * 1852 / 3600 } : null) ?? (runwayStart ? { ...runwayStart, alt_msl_m: 0, tas_mps: 0 } : null) ?? approach?.ic ?? regionalInitialCondition(airborneSite) ?? {
         lat_rad: (airborneSite === 'taunus' ? 50.20 : 49.96) * DEG_RAD, lon_rad: (airborneSite === 'taunus' ? 8.52 : 8.643) * DEG_RAD,
         alt_msl_m: airborneSite === 'taunus' ? 1100 : 1300 * 0.3048, heading_rad: (airborneSite === 'taunus' ? 300 : 82) * DEG_RAD,
         tas_mps: 90 * 1852 / 3600,
@@ -254,21 +257,29 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       if (ready && worker) worker.postMessage({ type: 'pause' });
       callbacks.onStatus(collided ? 'Ground collision' : 'Paused');
     },
-    reset(preset, site, runway) {
+    reset(preset, site, runway, location) {
+      if (location !== undefined && (!validFlightLocation(location) || preset !== undefined || runway !== undefined)) return;
       if (runway && (!/^[A-Z0-9-]{2,12}$/.test(runway.airport) || (!/^[0-3][0-9][LRC]?$/.test(runway.runway) || Number(runway.runway.slice(0,2)) < 1 || Number(runway.runway.slice(0,2)) > 36) || ![runway.lat_rad, runway.lon_rad, runway.heading_rad].every(Number.isFinite) || Math.abs(runway.lat_rad) > Math.PI/2 || Math.abs(runway.lon_rad) > Math.PI)) return;
       if (disposed) return;
       if (preset !== undefined && !['normal', 'hard', 'side', 'banked'].includes(preset)) return;
       if (site !== undefined && !['edfe', 'taunus', 'eddf-ils', 'darmstadt', 'odenwald', 'spessart'].includes(site)) return;
       airborneSite = site ?? airborneSite;
+      initialLocation = location ? { ...location } : undefined;
+      if (location) wantedRunning = false;
       runwayStart = runway ? { ...runway } : undefined;
       landingPreset = runway ? undefined : preset;
-      controls = { elevator: 0, aileron: 0, rudder: 0, throttle: runway ? 0 : 0.7, ...(runway ? { brake_norm: 1 } : {}) };
+      controls = { elevator: 0, aileron: 0, rudder: 0, throttle: runway || location?.mode === 'ground' ? 0 : 0.7, ...(runway || location?.mode === 'ground' ? { brake_norm: 1 } : {}) };
       userControls = false;
       controlsChanged = true;
       initialize();
     },
     setKap140(command) {
       if (disposed || collided || !ready || !worker || !validKapCommand(command)) return;
+      if (command.action === 'cws' && command.value === 0) {
+        worker.postMessage({ type: 'input', step: latestStep,
+          wall_ms: performance.timeOrigin + performance.now(), ...controls });
+        controlsChanged = false;
+      }
       worker.postMessage({ type: 'kap140', command: { ...command } });
     },
     setNavigation(config) {

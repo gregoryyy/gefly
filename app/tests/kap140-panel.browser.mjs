@@ -45,6 +45,22 @@ try {
   await state({ kap_engaged: 0 }); await clear(); await page.locator('#ap-engage').focus(); await page.keyboard.down('Enter'); await page.waitForTimeout(310); await page.keyboard.down('Enter'); await page.keyboard.up('Enter');
   assert.deepEqual(await commands(), [{ action: 'ap' }], 'held keyboard activation engages once despite repeat');
   checks.push('AP accepts a trusted normal click or held pointer/keyboard activation exactly once, accepted state comes from snapshots, disconnect is immediate');
+  await state({ kap_engaged: 1 }); await clear();
+  await page.locator('#ap-cws').hover(); await page.mouse.down();
+  await page.keyboard.press('ArrowDown');
+  assert((await page.evaluate(() => window.leakedKeys)).includes('ArrowDown'), 'CWS permits keyboard hand-flying');
+  await page.mouse.up();
+  assert.deepEqual(await commands(), [{ action: 'cws', value: 1 }, { action: 'cws', value: 0 }]);
+  await clear(); await page.locator('#ap-cws').focus(); await page.keyboard.down('Space');
+  await page.evaluate(() => window.dispatchEvent(new Event('blur'))); await page.keyboard.up('Space');
+  assert.deepEqual(await commands(), [{ action: 'cws', value: 1 }, { action: 'cws', value: 0 }], 'blur releases CWS exactly once');
+  await state({ kap_cws: 1 }); assert.equal(await page.locator('#ap-cws').getAttribute('aria-pressed'), 'true');
+  await state({ kap_cws: 0 }, true); await clear(); assert(await page.locator('#ap-cws').isDisabled());
+  await page.evaluate(() => { delete window.fixture.kap_cws; window.setState({}, true); });
+  assert.equal(await page.locator('#ap-cws').getAttribute('aria-pressed'), 'mixed', 'legacy recordings do not invent a recorded CWS-off state');
+  await state({ kap_cws: 0, kap_engaged: 0 }); assert(await page.locator('#ap-cws').isDisabled());
+  checks.push('momentary external CWS supports pointer and keyboard holds, flight keys, release on blur, authoritative pressed state and Review/OFF inhibition');
+  await page.evaluate(() => { window.leakedKeys.length = 0; });
 
   await clear(); await page.evaluate(() => { document.querySelector('#ap-heading').click(); document.querySelector('#ap-engage').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 })); });
   await page.waitForTimeout(300); assert.deepEqual(await commands(), [], 'synthetic actions cannot command the unit');

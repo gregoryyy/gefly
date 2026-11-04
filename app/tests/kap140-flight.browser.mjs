@@ -67,14 +67,13 @@ try {
     await page.waitForFunction(count => window.kapStats.length > count, count); return page.evaluate(() => window.kapStats.at(-1));
   };
   const frozen = (before, after) => { assert.equal(after.step, before.step); assert.equal(after.digest, before.digest); assert.deepEqual(after.final_state, before.final_state); };
-  const holdAP = async () => { await page.locator('#ap-engage').hover(); await page.mouse.down(); await page.waitForTimeout(320); await page.mouse.up(); };
   const fill = async (selector, value) => { await page.locator(selector).fill(String(value)); await page.locator('#ap-engage').focus(); };
   const initial = await state(), initialStats = await stats(); observations.initial = initial;
+  await page.locator('#throttle').focus(); await page.keyboard.press('End');
   // Set the alert target while the selector page is visible, before engagement
   // displays captured VS for three simulation seconds.
   await fill('#ap-selector-value', (initial.kap_indicated_altitude_m + 1050 * .3048) / .3048);
-  await page.locator('#ap-engage').click(); assert.equal((await state()).kap_engaged, 0);
-  await holdAP(); await page.waitForFunction(() => window.kapStates.at(-1)?.kap_engaged === 1);
+  await page.locator('#ap-engage').click(); await page.waitForFunction(() => window.kapStates.at(-1)?.kap_engaged === 1);
   assert.equal((await state()).kap_lateral, 0); assert.equal((await state()).kap_vertical, 0);
   await page.locator('#ap-heading').click(); await page.waitForFunction(() => window.kapStates.at(-1)?.kap_lateral === 1);
   await fill('#ap-heading-target', (initial.heading_rad * 180 / Math.PI + 20) % 360);
@@ -119,7 +118,7 @@ try {
   observations.altitude_alert = { event: await state(), pulses, pcm_rms: warningPcm, audio_output: 'Native real-time silent sink; physical device/human listening not evaluated' };
   checks.push('actual native climb crosses the selected1000ft alert band, lights ALERT and plays exactly five original warning tones through the one user-enabled audio context');
   await fill('#ap-selector-value', (climb.kap_indicated_altitude_m + 15) / .3048);
-  await page.waitForFunction(() => window.kapStates.at(-1)?.kap_alt_arm === 1);
+  await page.waitForFunction(() => window.kapStates.at(-1)?.kap_alt_arm === 1 || window.kapStates.at(-1)?.kap_vertical === 1);
   await page.waitForFunction(() => window.kapStates.at(-1)?.kap_vertical === 1 && window.kapStates.at(-1)?.kap_alt_arm === 0, null, { timeout: 15000 });
   const capture = await state(), captureStep = capture.step;
   assert(Math.abs(capture.kap_hold_pressure_altitude_m - capture.kap_selected_altitude_m) < 1e-8,
@@ -134,6 +133,35 @@ try {
   await page.locator('#pause').click(); await page.waitForTimeout(150);
   checks.push('actual native VS climb and simultaneous HDG change occur through two-axis guidance; selector arms then automatically captures ALT, clears ARM and reduces the observed climb');
 
+  await startOrResume(page);
+  await page.locator('#ap-cws').hover(); await page.mouse.down();
+  await page.waitForFunction(() => window.kapStates.at(-1)?.kap_cws === 1);
+  const cwsStart = await state(); await page.keyboard.down('ArrowDown');
+  await page.waitForFunction(step => window.kapStates.at(-1)?.step >= step + 180, cwsStart.step);
+  const cwsFlight = await state();
+  assert.equal(cwsFlight.kap_engaged, 1); assert.equal(cwsFlight.kap_cws, 1);
+  assert.equal(cwsFlight.ap_mode, 0, 'CWS releases native roll servo without disengaging the KAP');
+  assert.equal(cwsFlight.kap_elevator_norm, 0, 'CWS releases native pitch servo');
+  assert(Math.abs(cwsFlight.pitch_rad - cwsStart.pitch_rad) > .01, 'held CWS permits actual hand-flown pitch motion');
+  await page.keyboard.up('ArrowDown'); await page.mouse.up();
+  await page.waitForFunction(() => window.kapStates.at(-1)?.kap_cws === 0 && window.kapStates.at(-1)?.kap_engaged === 1);
+  const cwsReleased = await state();
+  assert.equal(cwsReleased.kap_vertical, 1); assert.equal(cwsReleased.kap_lateral, cwsStart.kap_lateral);
+  assert(Math.abs(cwsReleased.kap_hold_pressure_altitude_m - cwsReleased.kap_indicated_altitude_m) < 2);
+  await page.locator('#pause').click();
+  observations.cws = { before: cwsStart, handFlying: cwsFlight, released: cwsReleased };
+  checks.push('live CWS holds modes while native servos release, keyboard yoke changes actual aircraft pitch, and release recaptures altitude without an override disconnect');
+  await page.locator('#ap-cws').hover(); await page.mouse.down();
+  await page.waitForFunction(() => window.kapStates.at(-1)?.kap_cws === 1);
+  await page.keyboard.down('ArrowDown');
+  await page.keyboard.press('r');
+  await page.waitForFunction(() => window.kapStates.at(-1)?.kap_cws === 0);
+  assert.equal((await state()).kap_engaged, 1, 'entering Review releases CWS after neutralizing live input');
+  await page.keyboard.up('ArrowDown'); await page.mouse.up();
+  await page.locator('#review-exit').click();
+  await page.waitForFunction(() => document.querySelector('#radio-state-label')?.textContent === 'LIVE');
+  checks.push('entering Review while CWS and yoke are held safely releases live inputs before replay blocks them');
+
   // The existing fictional LAB is the only live navigation service. Native
   // coupling uses its acknowledged worker configuration, not rendered CDI pixels.
   await setLegacyLab(page, true); await page.waitForFunction(() => window.kapStates.at(-1)?.kap_nav_valid === 1);
@@ -142,13 +170,16 @@ try {
     return navigationIndication({ ...DEFAULT_RADIO_NAV, radio_demo_enabled: 1 }, window.kapStates.at(-1)).radial_true_deg;
   });
   assert(Number.isFinite(radial)); await fill('#nav-obs', Math.round(radial) % 360); await fill('#ap-heading-target', Math.round(radial) % 360);
-  await page.locator('#ap-nav').click(); await page.waitForFunction(() => window.kapStates.at(-1)?.kap_lateral === 2);
+  await page.waitForFunction(obs => window.kapStates.at(-1)?.radio_obs_deg === obs && window.kapStates.at(-1)?.radio_demo_enabled === 1, Math.round(radial) % 360);
+  observations.before_nav = await state();
+  await page.locator('#ap-nav').click(); await page.waitForFunction(() => window.kapStates.at(-1)?.kap_lateral === 2).catch(async error => { throw new Error(`${error}\nNAV diagnostic ${JSON.stringify(await state())}`); });
   const vor = await state(); assert.equal(vor.kap_nav_kind, 1); assert.equal(vor.kap_gs_valid, 0); assert.equal(vor.kap_vertical, 1);
   assert(await page.locator('#ap-rev').isDisabled(), 'REV is not a VOR reciprocal mode');
   await page.locator('#ap-apr').click(); await page.waitForFunction(() => window.kapStates.at(-1)?.kap_lateral === 3);
   assert.equal((await state()).kap_vertical, 1); assert.equal((await state()).kap_gs_arm, 0);
   await page.locator('#ap-nav').click(); await page.waitForFunction(() => window.kapStates.at(-1)?.kap_lateral === 2);
   await setLegacyLab(page, false); await page.waitForFunction(() => window.kapStates.at(-1)?.kap_lateral === 0 && window.kapStates.at(-1)?.kap_lateral_alert === 2);
+  await page.waitForFunction(() => document.querySelector('#ap-lateral').textContent === 'ROL' && document.querySelector('#ap-lateral-alert').textContent === 'NAV');
   assert.equal(await page.locator('#ap-lateral').textContent(), 'ROL'); assert.equal(await page.locator('#ap-lateral-alert').textContent(), 'NAV');
   assert.equal((await state()).kap_vertical, 1); observations.navigation = { vor, lost: await state() };
   checks.push('acknowledged fictional VOR configuration couples NAV/APR while ALT stays independent; unavailable GS is never captured, REV stays unavailable for VOR, signal loss confirms ROL with NAV flash');

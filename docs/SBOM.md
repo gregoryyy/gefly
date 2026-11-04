@@ -276,7 +276,7 @@ complete 100 NM coverage remain later work.
 The KAP 140 operating model adds project-authored worker modules `kap140.js` and
 `navigation.js`; `terrain-stream.js` extends the explicit runtime allowlist for
 regional loading. The prepared
-`c172ap.xml` preserves upstream gains/notices and records source/prepared hashes;
+`c172ap.xml` preserves upstream notices and records source/prepared hashes. The v3 adapter changes generic pitch PID gains and adds pitch-rate damping to reduce measured climb oscillation; these are simulator tuning, not manufacturer KAP140 coefficients;
 generated aircraft/runtime files remain local and are not redistributed. Native
 VS/ALT output is separate from the legacy engine/AP group. Manufacturer manuals
 are source references only: no PDF, figure or extract is bundled. See

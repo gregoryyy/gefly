@@ -106,7 +106,7 @@ sound (initially off). **A** captures current heading/altitude with the autopilo
 **=** cycles **1×, 1.5×, 2×, 5×, 10×**, with an on-screen simulation-rate indicator.
 These are simulator conveniences; acceleration preserves the fixed physics step
 and the achieved rate depends on available CPU/rendering capacity.
-Restart is in Flight. Click toggles touchpad yoke control;
+Restart is in Flight. The last live location is saved locally and restored paused on reload; Restart clears it. Airborne restores use the normal 90 kt launch speed, rather than a saved physics checkpoint. Click toggles touchpad yoke control;
 hold-drag retains the view where you release it and preserves the yoke midpoint;
 Double-click the scenery or press Escape to center the view. L/R/U/D/B markers
 show the aircraft’s left, right, up, down and backward directions. Two-finger
@@ -173,6 +173,8 @@ wheel brakes, and **1–9** selects 10–90% throttle (**0** idle). The engine p
 adds mixture, RPM, manifold pressure, oil and fuel readouts. **P** toggles the two-axis autopilot. Its KAP 140 operating controls include VS,
 current-altitude hold, selected-altitude capture and source-aware navigation;
 generic servo response and real navigation-data coverage remain limited.
+To climb to a preselected altitude, set climb power, select the altitude and confirm ALT ARM, switch ALT to VS if needed, then use UP/DN to set the rate. The first press reveals a hidden VS value; subsequent taps change 100 FPM. Hold **CWS** to hand-fly and release to capture current VS or held altitude. CWS is an optional KAP140 control; this particular C172 installation is unverified.
+
 On narrow screens, open **Engine & autopilot** for those controls.
 
 **Radio stack → Stations** loads a historical Rhein-Main VOR/LOC/DME frequency into

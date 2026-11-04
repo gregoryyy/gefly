@@ -405,3 +405,30 @@ test('runway start uses real terrain, zero-speed IC and brake hold without inher
   session.reset(undefined,'edfe',{...runway,runway:'00'});assert.equal(MockWorker.instances.length,count);
   session.reset(undefined,'edfe');assert.equal(MockWorker.instances.at(-1)!.messages[0].runway_start,undefined);
 });
+
+test('saved regional location starts paused through native airborne or settled ground initialization', t => {
+  const { session } = fixture(t);
+  session.start(); const old = MockWorker.instances[0]; old.emit(ready);
+  const location = { version: 1 as const, lat_rad: 49.87 * Math.PI / 180, lon_rad: 8.65 * Math.PI / 180, alt_msl_m: 900, heading_rad: 2.5, mode: 'airborne' as const };
+  session.reset(undefined, 'eddf-ils', undefined, location);
+  const restored = MockWorker.instances.at(-1)!; const ic = restored.messages[0].ic as Record<string, number>;
+  assert.equal(ic.lat_rad, location.lat_rad); assert.equal(ic.lon_rad, location.lon_rad); assert.equal(ic.alt_msl_m, 900); assert.equal(ic.heading_rad, 2.5);
+  assert.equal(restored.messages[0].terrain, true); assert.equal(restored.messages[0].streaming_terrain, true); assert.equal(restored.messages[0].runway_start, undefined);
+  restored.emit(ready); assert(!restored.messages.some(m => m.type === 'run'));
+  location.alt_msl_m = 1200; assert.equal(ic.alt_msl_m, 900);
+  session.reset(undefined, 'edfe', undefined, { ...location, mode: 'ground' });
+  const ground = MockWorker.instances.at(-1)!; assert.equal(ground.messages[0].runway_start, true); assert.equal((ground.messages[0].ic as Record<string, number>).tas_mps, 0);
+  ground.emit(ready); session.start(); const input = ground.messages.find(m => m.type === 'input')!; assert.equal(input.brake_norm, 1); assert.equal(input.throttle, .693);
+  const count = MockWorker.instances.length;
+  session.reset(undefined, 'edfe', undefined, { ...location, lon_rad: 0 }); assert.equal(MockWorker.instances.length, count);
+  session.reset('hard', 'edfe', undefined, location); assert.equal(MockWorker.instances.length, count);
+  session.reset(); assert.equal(MockWorker.instances.at(-1)!.messages[0].runway_start, undefined);
+});
+
+test('CWS release flushes the cached neutral controls before release even while paused', t => {
+  const { session } = fixture(t); session.reset(); const worker = MockWorker.instances[0]; worker.emit(ready);
+  session.input({ elevator: 0, aileron: 0, rudder: 0, throttle: .7, pilot_override: false });
+  session.setKap140({ action: 'cws', value: 0 });
+  assert.equal(worker.messages.at(-2)!.type, 'input'); assert.equal(worker.messages.at(-2)!.pilot_override, false);
+  assert.deepEqual(worker.messages.at(-1), { type: 'kap140', command: { action: 'cws', value: 0 } });
+});

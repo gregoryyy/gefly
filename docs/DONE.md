@@ -3,6 +3,50 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 09:46 — Stable KAP climbs, CWS and saved flight location
+
+TODO: 2.0.71/2.0.72; R-AP-1/R-INPUT-1/R-REVIEW-1/R-UX-5.
+Agent: Codex orchestrator UI/integration; glide_cases controller/native response;
+glide_model location/session implementation and independent UI review;
+glide_housekeeping primary research and independent integrated quality/validation.
+
+**Implementation notes**
+
+Persist a bounded last live regional position/altitude/heading and ground/airborne
+mode locally. Reload restores paused through native initialization; airborne
+launch uses 90 kt, ground launch settles the gear at rest with brakes set.
+Restart clears the saved location. Review/import/collision frames cannot replace
+it; corrupt or denied storage falls back safely.
+
+The v3 generic pitch adapter adds rate damping and changes PID gains. In the
+powered calm-air 500 FPM fixture, the 30–90 s climb range improves from 264–737 to
+453–481 FPM. Preselect captures ALT at 125 s; pressure-altitude error near 240 s
+improves from +13.66 to +2.47 m. The selector immediately restores the altitude
+page; UP first reveals a hidden VS and later taps adjust it. Optional held CWS
+releases native servos while retaining modes; release synchronizes current VS or
+ALT. Clear live axes before CWS release and before Review inhibits live input.
+Older recordings show missing CWS state as unknown.
+
+[Independent review](reviews/2026-11-04-flight-location-kap140-cws.md) records
+quality and specification validation. Native climb/reset, CWS/worker, existing
+AP/descent/MSL, panel/live browser, location reload, units, build and shared CI
+pass. Nine existing JSBSim study cases remain skipped, not passed. Assurance
+check reports zero errors; lineage diff is inspected before publication.
+
+**Deviations**
+
+This is location persistence, not a dynamics checkpoint. CWS is an optional
+KAP140 fit with primary generic-system evidence; installation on this selected
+172 is unverified. Generic servo tuning is not installed-aircraft calibration.
+Cross-provider peer remains pending; no milestone or training acceptance claimed.
+
+**Insights**
+
+Measure the aircraft trajectory as well as mode annunciations: lit VS/ALT alone
+did not reveal sustained surging. Native target capture may complete between UI
+observations; browser tests must accept that valid transition and await rendered
+LIVE state before changing an independent radio fixture after Review.
+
 ## 2026-11-04 09:13 — Floating OSM labels over the terrain
 
 TODO: 2.0.70; R-WORLD-7/R-INPUT-1/R-REVIEW-1/R-DATA-1.

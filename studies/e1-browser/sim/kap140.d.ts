@@ -1,5 +1,5 @@
 /** KAP 140 two-axis/altitude-preselect operational model; generic research servos. */
-export type KapAction = 'ap' | 'disconnect' | 'hdg' | 'nav' | 'apr' | 'rev' | 'alt' | 'arm' | 'baro' | 'baro-units' | 'heading' | 'select-altitude' | 'baro-setting' | 'vertical';
+export type KapAction = 'ap' | 'disconnect' | 'hdg' | 'nav' | 'apr' | 'rev' | 'alt' | 'arm' | 'baro' | 'baro-units' | 'heading' | 'select-altitude' | 'baro-setting' | 'vertical' | 'cws';
 export interface KapCommand { action: KapAction; value?: number }
 export interface KapSnapshot {
   kap_profile: number; kap_engaged: number; kap_lateral: number; kap_lateral_arm: number;
@@ -11,6 +11,8 @@ export interface KapSnapshot {
   kap_elevator_norm: number;
   /** 1 while sensors are invalid, latched after a fault disconnect until the next AP/disconnect press. Generic simulator flag. */
   kap_sensor_fault: number;
+  /** Optional in older recordings. 1 temporarily releases both servo channels. */
+  kap_cws?: number;
 }
 export const KAP_FIELDS: readonly (keyof KapSnapshot)[];
 export function validKapState(value: object): boolean;
