@@ -18,8 +18,8 @@ const fixtures = [
   { id: 2, name: 'Fixture Behind', class: 'city', layer: 'place', z: 9, ...point(-2000, -300) },
   { id: 3, name: 'Fixture Overlap', class: 'village', layer: 'place', z: 9, ...point(2005, 305) },
   { id: 4, name: 'Fixture Hill', class: 'peak', layer: 'mountain_peak', z: 12, ...point(3500, -600) },
-  { id: 5, name: 'Fixture Avenue', class: 'primary', layer: 'transportation_name', z: 14, ...point(2300, 900) },
-  { id: 6, name: 'Fixture Cafe', class: 'cafe', layer: 'poi', z: 14, ...point(2800, -100) },
+  { id: 5, name: 'Fixture Avenue', class: 'primary', layer: 'transportation_name', z: 14, ...point(1300, 900) },
+  { id: 6, name: 'Fixture Cafe', class: 'cafe', layer: 'poi', z: 14, ...point(1800, -100) },
 ];
 const zigzag = value => value < 0 ? -value * 2 - 1 : value * 2;
 function fixtureTile(z, x, y) {

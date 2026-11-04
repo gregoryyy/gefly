@@ -3,6 +3,48 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 13:37 — Reconcile caching with merged flight and terrain work
+
+TODO: 2.0.82; R-WORLD-9. Agent: Codex integration; glide_housekeeping review.
+
+**Implementation notes**
+
+Merge main through PR #76 into caching PR #78. Preserve the complete main browser
+check list plus cache checks, the 108-tile terrain specification and chart access,
+and sorted tasks 77–85. All 138 parent DONE entries retain their complete bodies.
+TypeScript, 15 focused cases, actual Cache Storage browser, scaffold and assurance
+checks pass (zero assurance errors; existing warnings retained).
+
+**Deviations**
+
+PR #79 still reports open on GitHub; no unmerged place-lookup code is pulled into
+this integration. No broad CI or aircraft-fidelity acceptance.
+
+**Insights**
+
+Resolve conflicting records by task/requirement identity, preserving complete
+entries rather than interleaving headings and paragraphs.
+
+## 2026-11-04 13:13 — Warm the expanded northern and western region
+
+TODO: 2.0.82; R-WORLD-9. Agent: Codex integration.
+
+**Implementation notes**
+
+Extend imagery candidates to 7–10°E / 49–51.5°N and terrain candidates to
+7–10°E / 49.25–51.5°N. Existing manifests still filter unavailable terrain
+assets before requests. Five focused coverage tests pass; the actual 108-tile
+terrain and provider extension are in PR #76.
+
+**Deviations**
+
+No expanded source rights, physical coverage or full-radius availability is
+inferred from the warm plan alone.
+
+**Insights**
+
+Keep preload extent aligned with installed source manifests and display coverage.
+
 ## 2026-11-04 12:07 — Aircraft dynamics and cockpit feasibility
 
 TODO: 2.0.81; R-SCOPE-1/R-REUSE-1.
@@ -59,6 +101,26 @@ DGM200 is broad relief, not surveyed airport/obstacle detail.
 Keep source geometry and old tile bytes stable while extending the streaming
 matrix, and update the native ID limit, rendering and saved-location fences together.
 
+## 2026-11-04 12:48 — Let visible maps promote background loads
+
+TODO: 2.0.82; R-WORLD-9. Agent: Codex implementation; glide_housekeeping review.
+
+**Implementation notes**
+
+Separate visible pending requests from warming and bypass HTTP coalescing only
+when the same background URL is pending. Preserve cache hits and ordinary dedup;
+allow the proxy's visible priority promotion. Existing real Cache Storage browser
+case passes with the added visible-request observation; independent source review
+passes. Companion proxy/map changes are in PR #76; peer pending.
+
+**Deviations**
+
+No full-map latency guarantee or broad test rerun.
+
+**Insights**
+
+Browser HTTP coalescing can hide request priority even after worker dedup is split.
+
 ## 2026-11-04 12:48 — Prioritize visible map loading
 
 TODO: 2.0.83; R-WORLD-6/R-WORLD-5. Agent: Codex integration; glide_cases proxy;
@@ -101,6 +163,35 @@ No new rates or broad test suite; fixed-step dynamics remain unchanged.
 **Insights**
 
 Character and physical-key matching must distinguish shifted US + from German =.
+
+## 2026-11-04 12:24 — Distance-based scenery loading and persistent cache
+
+TODO: 2.0.82; R-WORLD-9/R-WORLD-5/R-WORLD-7.
+Agent: Codex integration/cache; glide_cases geographic planner and independent
+cache review; glide_model labels; glide_housekeeping design and scoped review.
+
+**Implementation notes**
+
+Warm map/imagery/vector and hash-identified terrain tiles around the simulated
+position; use 60/20/2 km enabled label tiers. Replan after movement, stop old
+queued warming and bound persistent public responses to 128 MiB/512 entries
+(landmarks 24 MiB/96), with source freshness and LRU eviction.
+TypeScript and 29 focused unit cases pass. Actual Cache Storage browser checks
+pass reuse/reload, sharing, expiry, exclusions, hash identity, two warm slots and
+label eviction. Real Vite terrain headers/hash rejection/storage smoke passes;
+existing Cesium/native landmark flight/replay browser passes (67 name requests).
+[Review](reviews/2026-11-04-scenery-cache.md); cross-provider peer pending.
+
+**Deviations**
+
+No broad CI rerun. Radius targets remain subject to source coverage and budgets;
+this is not offline application support or expanded physical terrain coverage.
+
+**Insights**
+
+Persistent caching must honor source freshness and validate actual server headers.
+Content-hash URLs preserve terrain integrity across deployments; cache persistence
+must not delay visible-demand responses.
 
 ## 2026-11-04 11:44 — Takeoff loading and native fuel consumption
 

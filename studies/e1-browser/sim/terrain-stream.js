@@ -72,7 +72,7 @@ export async function loadRegionalManifest(fetcher = globalThis.fetch, signal) {
 }
 
 async function readTile(meta, fetcher, signal) {
-  const bytes = await readBounded(ROOT + meta.asset, BYTES, fetcher, signal);
+  const bytes = await readBounded(ROOT + meta.asset + '?sha256=' + meta.sha256, BYTES, fetcher, signal);
   if (bytes.byteLength !== BYTES) throw new Error('Regional terrain tile size mismatch.');
   const hash = Array.from(new Uint8Array(await globalThis.crypto.subtle.digest('SHA-256', bytes)), x => x.toString(16).padStart(2, '0')).join('');
   if (hash !== meta.sha256) throw new Error('Regional terrain tile integrity check failed.');

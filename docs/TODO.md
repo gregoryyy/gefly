@@ -240,6 +240,8 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.81 Research the requested electric, glider, aerobatic, PA-28 and airliner candidates for realistic dynamics and complete cockpit implementation. R-SCOPE-1/R-REUSE-1. [Study](research/2026-11-04-aircraft-feasibility.md); [documentation review](reviews/2026-11-04-aircraft-feasibility.md). Research only: no new aircraft selected, integrated or fidelity-accepted.
 
+- [x] 2.0.82 Add bounded distance-based scenery warming and persistent public-tile caching, including terrain hash identities and enabled-level landmark radii. R-WORLD-9/R-WORLD-5/R-WORLD-7. [Design](design/scenery-cache.md); [review](reviews/2026-11-04-scenery-cache.md). Actual cache and existing native landmark browser checks pass; no expanded source or physical terrain coverage.
+
 - [x] 2.0.83 Use fixed BKG WMTS tiles and independent prioritized map/photo work so visible Flight map requests bypass background queues. R-WORLD-6/R-WORLD-5. Eight focused proxy cases and TypeScript pass; actual Flight map readiness observed at 2.138 s on the local server, not a guaranteed cold-application budget.
 
 - [x] 2.0.84 Expand physical terrain to 108 actual DGM200/GCG tiles over 7–10°E / 49.25–51.5°N, update streaming/rendering/persistence and add Westerwald, Marburg/Lahn and Kassel Flight presets. Extend Hessen photography with honest map fallbacks. R-WORLD-5. Original 42 tile bytes remain unchanged; new manifest/seams and native heights verified.
