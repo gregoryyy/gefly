@@ -1,0 +1,9 @@
+# Replay Continue live: scoped review
+
+Reviewed 2026-11-04 11:05 Europe/Berlin by Codex subagent `glide_housekeeping`, independently of implementation; own exact input excluded.
+**Quality: pass; no unresolved blocking findings.** Repaired candidate lifecycle forwarding and terrain-height initialization were independently reviewed. Atomic handoff waits for ready plus a genuine native frame; failure/cancellation preserves the original flight. Main restores recorded settings and applied commands without applying control gains twice.
+**Validation: pass for reconstructed continuation.** Independently executed 68 session/trace tests, 17 KAP tests and actual native reconstruction cases: banked motion/rates, engine-off/flaps/mixture/fuel/RPM, parked contact/stability, control response and terrain-callback first-frame agreement.
+Inspected final author-run `output/ci/replay-continue-browser.log`: five groups passed, including imported middle-frame continuation in a second actual worker and more than 30 subsequent native steps. Original Back to live retains its worker and paused/flying intent; Review/import preserve the original state.
+Main's exclusive prefix discards the recorded future, appends genuine native state and blocks seek/load/exit/rate during preparation. Missing/unsupported/collision frames show an unavailable reason. Final UI/session/native sources were reviewed; no additional broad checks were run.
+WASM: `e80039c545363d9fe8b45bf52dba2c0495815f7115cf1fc0d46d3c1d3683c7f0`. The terrain numerical case uses a constant-height callback fixture, not geographic-accuracy evidence.
+This initializes a new native branch from exposed telemetry. Hidden integrator, actuator, contact and thermal histories are fresh; it is not an exact checkpoint or aircraft-fidelity acceptance. Cross-provider peer remains pending.

@@ -97,7 +97,7 @@ the menu, **O** opens Options, and **Alt+Shift+F** shows the flight controls. **
 flight-data and stall-awareness panels are half opaque until clicked; their
 first click activates the panel, and subsequent gestures operate it.
 Arrow keys control pitch/roll, Q/W rudder, 0 throttle idle and 1–9 throttle.
-In Review, **← / →** seek backward/forward one second, with repeated keys supported.
+In Review, **← / →** seek backward/forward one second, with repeated keys supported. **Continue live** flies from the selected frame and keeps the earlier path; **Back to live** returns to the original flight. Continuation starts a new simulation branch; older recordings without enough state remain viewable.
 **=** or the replay speed button cycles **1×, 1.5×, 2×, 5×, 10×**, independently
 of live-flight speed. The overlay shows **REPLAY** speed.
 
@@ -119,14 +119,19 @@ Press **.** to cycle floating OSM names: **Off → Places → Landmarks → Deta
 The same setting is in View. Labels sit above their mapped locations on either
 map terrain or photography; source coverage and label density are bounded.
 
-Public terrain now streams across **8.25–10.00°E / 49.25–50.75°N**, including
-Darmstadt, Odenwald and Spessart, with named Flight-menu demonstrations. The
+Public terrain now streams across **7.00–10.00°E / 49.25–51.50°N**, including
+Westerwald, the Lahn valley, Marburg and Kassel, alongside Darmstadt, Odenwald
+and Spessart, with named Flight-menu demonstrations. The
 bounded 200 m BKG relief surrounds the finer Egelsbach–Frankfurt–Taunus package;
 it is not surveyed runway terrain or the full EDDF/100 NM region. Bundled
 approximately 1.5–3 m imagery around Frankfurt is complemented by live public
 Hessen, Bavarian and Baden-Württemberg photography and a map fallback. The generic
 research aircraft remains experimental; see
 [setup, controls and limitations](app/README.md).
+
+Flight map → **Charts** opens the official OpenFlightMaps Germany VFR viewer
+and DFS AIP airport/approach chart access, with the selected airport identifier.
+Charts remain publisher-hosted; an embedded aeronautical overlay is not included.
 
 **N** toggles the parking brake beside the **B** wheel-brake button.
 Options → **Link rudder to aileron** adds optional yaw/steering assistance;
@@ -170,7 +175,7 @@ yoke control; hold-drag to look around. Two-finger vertical scrolling
 over the scenery adjusts camera FOV; over the cockpit it zooms the panel around
 the pointer. **[ / ]** selects flaps, **B** holds
 wheel brakes, and **1–9** selects 10–90% throttle (**0** idle). The engine panel
-adds mixture, RPM, manifold pressure, oil and fuel readouts. **P** toggles the two-axis autopilot. Its KAP 140 operating controls include VS,
+adds mixture, RPM, manifold pressure, oil and fuel readouts. **Flight → Weight & fuel** (**Alt+Shift+W**) sets occupants, baggage, auxiliary load and initial fuel in litres; Apply restarts the flight. Fuel use reduces both tank contents and native aircraft mass. **P** toggles the two-axis autopilot. Its KAP 140 operating controls include VS,
 current-altitude hold, selected-altitude capture and source-aware navigation;
 generic servo response and real navigation-data coverage remain limited.
 To climb to a preselected altitude, set climb power, select the altitude and confirm ALT ARM, switch ALT to VS if needed, then use UP/DN to set the rate. The first press reveals a hidden VS value; subsequent taps change 100 FPM. Hold **CWS** to hand-fly and release to capture current VS or held altitude. CWS is an optional KAP140 control; this particular C172 installation is unverified.

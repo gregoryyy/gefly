@@ -163,7 +163,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.46 Research global dynamic map/terrain/imagery loading, local reconstruction/procedural detail and Google Earth/Maps alternatives. [Research note](research/2026-11-03-global-scenery.md) includes current primary sources and small actual terrain-service probes; [independent research review](reviews/2026-11-03-global-scenery-research.md) passes. No provider activation, global implementation, cost-per-flight or fidelity acceptance; peer pending.
 
-- [x] 2.0.47 Add A current-heading/altitude autopilot capture and = requested pacing 1×/1.5×/2×/5×/10× with a worker-confirmed overlay and captured Review metadata. R-AP-2/R-SIM-9; independent 65-unit/eight-WASM-group/actual-browser checks and shared CI pass, see [review](reviews/2026-11-03-flight-assists.md). README includes an actual live cockpit/terrain screenshot. Aircraft/control gains are unchanged; achievable pacing is best effort and peer remains pending.
+- [x] 2.0.47 Add A current-heading/altitude autopilot capture and = requested pacing 1×/1.5×/2×/5×/10× with a worker-confirmed overlay and captured Review metadata. R-AP-2/R-SIM-9. Follow-up 2026-11-04: Shift+= steps down to 1× in live/Review; focused native browser check and TypeScript pass. Original verification: independent 65-unit/eight-WASM-group/actual-browser checks and shared CI pass, see [review](reviews/2026-11-03-flight-assists.md). README includes an actual live cockpit/terrain screenshot. Aircraft/control gains are unchanged; achievable pacing is best effort and peer remains pending.
 
 - [x] 2.0.48 Research and implement the right-side public-data flight map with M/marked menu access, desktop split view, actual position/retained path, Map/Aerial choice, nautical scale, 731 five-state airfield entries, 144 community beacons plus 66 historical LOC/ILS sources and source/currentness labels. R-WORLD-6/R-NAV-3/R-REVIEW-1. [Source research](research/2026-11-03-flight-map.md); independent source/runtime/browser quality and validation pass, including cold tile/optional-layer failures. [Review](reviews/2026-11-03-right-flight-map.md). Cross-provider peer pending under the existing cadence.
 
@@ -230,7 +230,22 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.76 Add native browser fullscreen through F and View, actual enter/exit labels, whole-app panels/dialogs and resize handling, guarded shortcuts and graceful unsupported/rejected requests without flight/replay reset. R-VIEW-1/R-INPUT-1/R-REVIEW-1. [Review](reviews/2026-11-04-browser-fullscreen.md).
 
+- [x] 2.0.77 Add Continue live from an eligible selected replay frame, reconstructing native pose/motion/settings, preserving the earlier path and keeping the original paused flight if initialization fails. Preserve Back to live and explain unavailable frames. R-REVIEW-1/R-SIM-4. [Review](reviews/2026-11-04-replay-continue-live.md).
+
+- [x] 2.0.78 Suppress ground-collision stopping below both 10 kt groundspeed and 2.5 kt downward speed, using pre-impact motion; retain contact diagnostics and wheel physics. R-SIM-8. [Review](reviews/2026-11-04-ground-collision-grace.md).
+
+- [x] 2.0.79 Reveal the hidden top bar before opening Flight from the ground-collision panel; focus the visible Restart action. R-UX-2. [Review](reviews/2026-11-04-collision-flight-menu.md).
+
+- [x] 2.0.80 Add takeoff payload and initial tank parameters through Flight → Weight & fuel, with explicit Apply/restart, actual native mass/fuel-used readouts, fuel-driven mass reduction and recorded loading continuity. R-SIM-11/R-REVIEW-1. [Review](reviews/2026-11-04-aircraft-loading-fuel.md).
+
 - [x] 2.0.81 Research the requested electric, glider, aerobatic, PA-28 and airliner candidates for realistic dynamics and complete cockpit implementation. R-SCOPE-1/R-REUSE-1. [Study](research/2026-11-04-aircraft-feasibility.md); [documentation review](reviews/2026-11-04-aircraft-feasibility.md). Research only: no new aircraft selected, integrated or fidelity-accepted.
+
+- [x] 2.0.83 Use fixed BKG WMTS tiles and independent prioritized map/photo work so visible Flight map requests bypass background queues. R-WORLD-6/R-WORLD-5. Eight focused proxy cases and TypeScript pass; actual Flight map readiness observed at 2.138 s on the local server, not a guaranteed cold-application budget.
+
+- [x] 2.0.84 Expand physical terrain to 108 actual DGM200/GCG tiles over 7–10°E / 49.25–51.5°N, update streaming/rendering/persistence and add Westerwald, Marburg/Lahn and Kassel Flight presets. Extend Hessen photography with honest map fallbacks. R-WORLD-5. Original 42 tile bytes remain unchanged; new manifest/seams and native heights verified.
+
+- [x] 2.0.85 Add Flight map chart access to OFM Germany VFR and official DFS AIP airport/approach sources, preserving selected airport reference. R-CHART-1. Publisher-hosted access only.
+  - [ ] 2.0.85.1 Obtain complete applicable OFM/product or alternative chart rights and edition metadata, then embed a licensed airspace/chart layer with the flown path; procedure-plate embedding remains source-specific. Database permissions alone do not establish raster/plate rights.
 
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
   - [x] 2.1.1 Deliver a bounded EDFE runway-practice briefing and sensed flight-event log: north/right-hand 26 and north/left-hand 08, explicit idle/parked setup, native wheel-contact takeoff/landing observations and ground stop/collision, retained with cursor-correct Review. R-PLAY-1/R-TRAIN-2/R-REVIEW-1. No checklist, circuit grading, official route or complete scenario/weather briefing acceptance; those remain open in 2.1 and 1.5. Peer pending.

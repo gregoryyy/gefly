@@ -9,7 +9,7 @@ const hash = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('h
 
 test('regional terrain assets retain exact compiler identity, hashes, finite nodes and shared edges', () => {
   assert.equal(manifest.source.compiler_sha256, hash(readFileSync(new URL('../../utils/terrain/build_regional_terrain.py', import.meta.url))));
-  assert.equal(manifest.tiles.length, 42);
+  assert.equal(manifest.tiles.length, 108);
   const tiles = new Map<string, DataView>();
   for (const tile of manifest.tiles) {
     const bytes = readFileSync(new URL(tile.asset, base));
@@ -23,11 +23,11 @@ test('regional terrain assets retain exact compiler identity, hashes, finite nod
     }
     assert(!tiles.has(tile.id)); tiles.set(tile.id, data);
   }
-  for (let row = 0; row < 6; row++) for (let col = 0; col < 7; col++) {
-    const data = tiles.get(`e${825 + col * 25}-n${4925 + row * 25}`)!;
+  for (let row = 0; row < 9; row++) for (let col = 0; col < 12; col++) {
+    const data = tiles.get(`e${700 + col * 25}-n${4925 + row * 25}`)!;
     assert(data);
-    const east = tiles.get(`e${850 + col * 25}-n${4925 + row * 25}`);
-    const north = tiles.get(`e${825 + col * 25}-n${4950 + row * 25}`);
+    const east = tiles.get(`e${725 + col * 25}-n${4925 + row * 25}`);
+    const north = tiles.get(`e${700 + col * 25}-n${4950 + row * 25}`);
     for (let i = 0; i < 129; i++) for (const offset of [0, 4]) {
       if (east) assert.equal(data.getFloat32((i * 129 + 128) * 8 + offset, true), east.getFloat32(i * 129 * 8 + offset, true));
       if (north) assert.equal(data.getFloat32((128 * 129 + i) * 8 + offset, true), north.getFloat32(i * 8 + offset, true));

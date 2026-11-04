@@ -33,30 +33,20 @@ These records preserve the user's original intent. Do not edit accepted input re
 - [2026-11-01 model and effort selection](2026-11-01-model-effort-selection.md): choose model tier and reasoning effort per task.
 - [2026-11-01 Lycoming and OpenVSP](2026-11-01-lycoming-openvsp-decisions.md): selective engine-curve extraction and offline OpenVSP estimation accepted.
 - [2026-11-01 Q3/Q5/Q7/Q10/Q12 answers](2026-11-01-aircraft-license-exercise-answers.md): FR172 and/or 172S engine variants, GPL-3 with permissive-preferred third-party policy, first circuit exercise at Egelsbach, community rules in phase 3.
-
 - [2026-11-01 assurance adoption](2026-11-01-assurance-adoption.md): adopt bounded assurance following the Propeller comparison.
 - [2026-11-01 tool layout](2026-11-01-tool-layout.md): move the assurance tool under utils/ and structure the CI tools under utils/ci/.
-
 - [2026-11-02 elevator trim and menu layout](2026-11-02-elevator-trim-and-menu.md): add trim; move Restart and Options to the top menu, with flight-control visibility under View.
-
 - [2026-11-02 landing, radio and control refinements](2026-11-02-landing-radio-and-control-refinements.md): landing-gear instability, revised keys and pointer re-entry, persistent review look, separate radio/navigation and autopilot controls, and later modern ILS overlay.
-
 - [2026-11-02 cockpit visual reference](2026-11-02-cockpit-reference.md): user-provided C172 poster guides closer NAV-gauge and radio-control arrangement without confirming an installation or copying the bitmap.
 
 These inputs are included in the local repository. Recheck privacy before remote publication.
 
 - [2026-11-02-panel-layout-refinements.md](2026-11-02-panel-layout-refinements.md) — Panel order, equal heights, vertical controls and 2×4 instruments.
-
 - [2026-11-02-paused-controls-and-pr-checkpoint.md](2026-11-02-paused-controls-and-pr-checkpoint.md) — Compact levers, paused editing, OBS gestures and PR-first scope.
-
 - [2026-11-02-next-navigation-layout.md](2026-11-02-next-navigation-layout.md) — Queued NAV/RPM block and engine/AP-column swap after the PR.
-
 - [2026-11-02 aircraft-forward orientation marker](2026-11-02-aircraft-forward-marker.md): project the nose direction into the view so it moves when looking sideways.
-
 - [2026-11-02 Review data and panel scaling](2026-11-02-review-panel-scaling.md): critical airspeed markings, recorded throttle/control data, R for Review, less empty panel height and uniform scaling with main-panel visibility priority.
-
 - [2026-11-02 flight data and handbook](2026-11-02-flight-data-handbook.md): glide-path percentage and ground-reaction panels, plus aircraft load/reference diagrams under View.
-
 - [2026-11-02 handbook loading and flight envelope](2026-11-02-handbook-loading-envelope.md): exact clarification selects loading and flight-envelope diagrams.
 - [2026-11-02 spatial stall awareness](2026-11-02-spatial-stall-awareness.md): show where stalling begins on different aircraft parts; research distinguishes local-airflow estimates from actual separation.
 - [2026-11-02 engine audio](2026-11-02-engine-audio.md): create engine sound; procedural approximation based on actual simulator engine telemetry.
@@ -117,3 +107,17 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-04 — Browser fullscreen](2026-11-04-browser-fullscreen.md)
 
 - [2026-11-04 — Aircraft dynamics and cockpit feasibility study](2026-11-04-aircraft-feasibility.md)
+
+- [2026-11-04 — Continue live from replay](2026-11-04-replay-continue-live.md)
+
+- [2026-11-04 — Ground-collision grace zone](2026-11-04-ground-collision-grace.md)
+
+- [2026-11-04 — Collision-panel Flight menu](2026-11-04-collision-flight-menu.md)
+
+- [2026-11-04 — Takeoff loading and fuel consumption](2026-11-04-aircraft-loading-fuel.md)
+
+- [2026-11-04 — Step down simulation speed](2026-11-04-simulation-slower.md)
+
+- [2026-11-04 — Map loading delay](2026-11-04-map-loading-delay.md)
+
+- [2026-11-04 — Terrain and aeronautical charts beyond the Taunus](2026-11-04-beyond-taunus.md)

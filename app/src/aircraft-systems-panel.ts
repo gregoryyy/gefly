@@ -55,6 +55,7 @@ export function createAircraftSystemsPanel({ container, opener, onChange, onOpen
   render();
   return {
     snapshot: () => mask,
+    restore(value: number) { if (!disposed && validSystemsMask(value)) { mask = value; render(); } },
     update(next: Readonly<FlightState> | null, inReview: boolean, canControl: boolean) {
       if (disposed) return;
       state = next; reviewing = inReview; enabled = canControl; render();

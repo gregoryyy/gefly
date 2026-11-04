@@ -114,3 +114,9 @@
 .practice-map-circuit-label { display: flex; align-items: center; gap: 3px; padding: 2px 4px; border: 1px dashed #d9bd7b; border-radius: 3px; background: #2a281de8; color: #f5dda4; font-size: 9px; white-space: nowrap; pointer-events: none; }
 .practice-map-circuit-arrow { display: inline-block; font-size: 13px; line-height: 14px; }
 .practice-map-circuit-label[data-nearest=true] { border-color: #fff3a8; color: #fff9d8; background: #5b4c20ed; }
+
+.practice-map-charts { margin: 4px 10px; padding: 7px; border: 1px solid #89b9ca55; border-radius: 5px; font-size: 11px; }
+.practice-map-charts[hidden] { display: none; }
+.practice-map-charts p { margin: 0 0 5px; }
+.practice-map-charts a { display: block; margin: 4px 0; color: #a7dbff; }
+.practice-map-charts small { color: #afc4cf; line-height: 1.4; }

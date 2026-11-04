@@ -1,4 +1,5 @@
 import type { TerrainGrid } from './terrain.js';
+export const REGIONAL_TERRAIN: Readonly<{ west: 7; south: 49.25; east: 10; north: 51.5; cols: 12; rows: 9; step: 0.25; tileCount: 108 }>;
 export interface RegionalTileMetadata {
   readonly id: string; readonly slot: number; readonly asset: string; readonly sha256: string;
   readonly west_deg: number; readonly south_deg: number; readonly east_deg: number; readonly north_deg: number;

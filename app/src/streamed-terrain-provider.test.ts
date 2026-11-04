@@ -2,18 +2,19 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { Cartographic, type HeightmapTerrainData } from 'cesium';
 import type { TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
-import { sampleAtlas, sampleAtlasGradient, type RegionalTile } from '../../studies/e1-browser/sim/terrain-stream.js';
+import { REGIONAL_TERRAIN, sampleAtlas, sampleAtlasGradient, type RegionalTile } from '../../studies/e1-browser/sim/terrain-stream.js';
 import { createStreamedTerrainProvider } from './streamed-terrain-provider.ts';
 const rad = Math.PI / 180;
 function tile(x: number, y: number): RegionalTile {
-  const width = 129, west = 8.25 + x * .25, south = 49.25 + y * .25;
+  const col = x + 5, { west: WEST, south: SOUTH, cols, step } = REGIONAL_TERRAIN;
+  const width = 129, west = WEST + col * step, south = SOUTH + y * step;
   const physical_m = new Float64Array(width * width), geoid_m = new Float64Array(width * width);
   for (let r = 0; r < width; r++) for (let c = 0; c < width; c++) {
     physical_m[r * width + c] = 100 + 10 * (west + c / 512) + 4 * (south + r / 512)
       + (((x * 128 + c) % 13 === 12 && (y * 128 + r) % 11 === 5) ? 9 : 0);
     geoid_m[r * width + c] = 40;
   }
-  return { version: 1, id: `e${825 + x * 25}-n${4925 + y * 25}`, slot: y * 7 + x,
+  return { version: 1, id: `e${700 + col * 25}-n${4925 + y * 25}`, slot: y * cols + col,
     west_rad: west * rad, east_rad: (west + .25) * rad, south_rad: south * rad, north_rad: (south + .25) * rad,
     west_deg: west, east_deg: west + .25, south_deg: south, north_deg: south + .25,
     asset: 'fixture.f32', sha256: 'fixture', bytes: 129 * 129 * 8, width: 129, height: 129, physical_m, geoid_m };
@@ -72,4 +73,15 @@ test('holey cache yields only a fully resident rectangle around the focus', asyn
   const nx = provider.tilingScheme.getNumberOfXTilesAtLevel(0), ny = provider.tilingScheme.getNumberOfYTilesAtLevel(0);
   assert(nx * ny < 9);
   for (let y = 0; y < ny; y++) for (let x = 0; x < nx; x++) assert(await provider.requestTileGeometry(x, y, 0));
+});
+
+
+test('expanded west and north terrain render only validated resident tiles', async () => {
+  for (const [x, y, lon, lat] of [[-4, 6, 7.35, 50.9], [6, 8, 9.9, 51.4]]) {
+    const grid = tile(x, y), atlas = new Map([[grid.id, grid]]);
+    const provider = createStreamedTerrainProvider(fine, [grid], { lat_rad: lat * rad, lon_rad: lon * rad });
+    assert(provider);
+    assert(Math.abs(await render(provider, lon, lat, 4) - sampleAtlas(fine, atlas, lat * rad, lon * rad)!.ellipsoid_m) < 1e-8);
+    assert.equal(createStreamedTerrainProvider(fine, [{ ...grid, id: 'wrong' }], { lat_rad: lat * rad, lon_rad: lon * rad }), null);
+  }
 });

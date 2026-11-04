@@ -1,3 +1,6 @@
+import { resumeProblem } from '../../studies/e1-browser/sim/continue-flight.js';
+import { DEFAULT_NAVIGATION } from '../../studies/e1-browser/sim/navigation.js';
+import { ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, ENGINE_SWITCH_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, CONTROL_FIELDS, STALL_FIELDS, COLLISION_FIELDS, TERRAIN_FIELDS, type FlightState } from './types.ts';
 import { createKap140 } from '../../studies/e1-browser/sim/kap140.js';
 import assert from 'node:assert/strict';
 import { test, type TestContext } from 'node:test';
@@ -22,13 +25,13 @@ function fixture(t: TestContext) {
   const original = globalThis.Worker;
   globalThis.Worker = MockWorker as unknown as typeof Worker;
   MockWorker.instances = [];
-  const states: unknown[] = [], errors: string[] = [], statuses: string[] = [];
+  const states: unknown[] = [], errors: string[] = [], statuses: string[] = [], readies: unknown[] = [], tiles: unknown[] = [];
   const session = createSession({
-    onState: (state) => states.push(state), onReady: () => {},
+    onState: (state) => states.push(state), onReady: value => {readies.push(value);}, onTerrainTile: value => {tiles.push(value);},
     onError: (error) => errors.push(error), onStatus: (status) => statuses.push(status),
   });
   t.after(() => { session.dispose(); globalThis.Worker = original; });
-  return { session, states, errors, statuses };
+  return { session, states, errors, statuses, readies, tiles };
 }
 
 const ready = { type: 'ready', trim: { throttle: 0.693, pitch_trim: 0.168, status: 1 } };
@@ -58,13 +61,19 @@ test('rate changes are bounded worker messages and autopilot capture flushes del
   assert.equal(errors.length, 1);
 });
 
-test('regional worker messages reject a valid-shaped grid with inconsistent slot identity', t => {
-  const { session, errors } = fixture(t);
+test('regional worker messages accept expanded edge slots and reject inconsistent identity', t => {
+  const { session, errors, tiles } = fixture(t);
   session.reset(); const worker = MockWorker.instances[0];
   const r = Math.PI / 180;
+  for (const [id, slot, west, south] of [['e700-n4925', 0, 7, 49.25], ['e975-n5125', 107, 9.75, 51.25]] as const) {
+    worker.emit({ type: 'terrain-tile', grid: { version: 1, id, slot, width: 129, height: 129,
+      west_rad: west * r, south_rad: south * r, east_rad: (west + .25) * r, north_rad: (south + .25) * r,
+      physical_m: new Float64Array(129 * 129).fill(100), geoid_m: new Float64Array(129 * 129).fill(48) } });
+  }
+  assert.equal(tiles.length, 2); assert.deepEqual(errors, []);
   worker.emit({ type: 'terrain-tile', grid: {
-    version: 1, id: 'e850-n4925', slot: 0, width: 129, height: 129,
-    west_rad: 8.25 * r, south_rad: 49.25 * r, east_rad: 8.5 * r, north_rad: 49.5 * r,
+    version: 1, id: 'e725-n4925', slot: 0, width: 129, height: 129,
+    west_rad: 7 * r, south_rad: 49.25 * r, east_rad: 7.25 * r, north_rad: 49.5 * r,
     physical_m: new Float64Array(129 * 129).fill(100), geoid_m: new Float64Array(129 * 129).fill(48),
   } });
   assert.equal(errors.length, 1); assert(worker.terminated);
@@ -431,4 +440,66 @@ test('CWS release flushes the cached neutral controls before release even while 
   session.setKap140({ action: 'cws', value: 0 });
   assert.equal(worker.messages.at(-2)!.type, 'input'); assert.equal(worker.messages.at(-2)!.pilot_override, false);
   assert.deepEqual(worker.messages.at(-1), { type: 'kap140', command: { action: 'cws', value: 0 } });
+});
+
+/** Complete synthetic boundary telemetry for ownership tests, not native fidelity. */
+function continuationFrame() {
+  const fields = Object.fromEntries([...ALTIMETER_FIELDS,...COCKPIT_FIELDS,...ENGINE_FIELDS,...ENGINE_SWITCH_FIELDS,...PITCH_TRIM_FIELDS,...GROUND_FIELDS,...CONTROL_FIELDS,...STALL_FIELDS,...COLLISION_FIELDS,...TERRAIN_FIELDS].map(key=>[key,0]));
+  const sensors={t_s:10,dt_s:1/120,heading_rad:1,physical_altitude_m:1000,pressure_altitude_m:1000,vertical_speed_mps:0,
+    nav:{valid:false,kind:0,cdi_norm:0,course_rad:0,gs_valid:false,gs_norm:0}};
+  const frame = {...fields,...state,type:'state',step:1200,t_s:10,alt_msl_m:1000,tas_mps:40,
+    p_static_pa:90000,altimeter_setting_pa:101325,altimeter_qnh_pa:101325,altimeter_qfe_pa:100000,
+    manifold_pressure_pa:80000,oil_temp_k:350,egt_k:900,aero_alpha_max_rad:.3,aero_u_mps:40,
+    prop_radps:200,mixture_norm:1,engine_running:1,engine_command_on:1,fuel_left_m3:.04,fuel_right_m3:.04,
+    throttle_norm:.65,pitch_trim_norm:.168,pitch_trim_initial_norm:.168,terrain_profile:1,
+    ...DEFAULT_NAVIGATION,...createKap140(sensors).snapshot(sensors)} as FlightState;
+  assert.equal(resumeProblem(frame),null);return frame;
+}
+test('continuation commits only after ready and actual state, then forwards future state and errors', async t=>{
+  const f=fixture(t);f.session.reset();const old=MockWorker.instances[0];old.emit(ready);old.emit(state);
+  const selected=continuationFrame(), promise=f.session.restoreFromReview(selected), candidate=MockWorker.instances[1];
+  selected.alt_msl_m=2000;assert.equal((candidate.messages[0].resume_state as FlightState).alt_msl_m,1000,'request is an immutable copy');
+  assert(!old.terminated);const originalCount=f.states.length;candidate.emit(ready);
+  assert(!old.terminated);assert.equal(f.readies.length,1,'candidate ready is staged');
+  f.session.start();assert(!old.messages.some(m=>m.type==='run'),'busy continuation cannot restart old native flight');
+  candidate.emit(continuationFrame());const restored=await promise;assert.equal(restored.t_s,10);assert(old.terminated);
+  assert.equal(f.readies.length,2);assert.equal(f.states.length,originalCount+1);
+  candidate.emit({...continuationFrame(),step:1201,t_s:10+1/120});assert.equal(f.states.length,originalCount+2,'committed worker is no longer treated as staging');
+  f.session.start();assert.equal(candidate.messages.at(-1)!.type,'run');
+  const input=candidate.messages.find(m=>m.type==='input')!;assert.equal(input.throttle,.65);assert.equal(input.pitch_trim_norm,.168);
+  candidate.emit({type:'error',message:'post-commit failure'});assert(candidate.terminated);assert.match(f.errors.at(-1)!,/post-commit failure/);
+});
+test('failed candidate and malformed first state preserve the old ready session and its controls',async t=>{
+  const f=fixture(t);f.session.reset();const old=MockWorker.instances[0];old.emit(ready);old.emit(state);
+  f.session.input({elevator:.2,aileron:0,rudder:0,throttle:.8});
+  const first=f.session.restoreFromReview(continuationFrame()), failure=assert.rejects(first,/native failure/);
+  const candidate=MockWorker.instances.at(-1)!;candidate.emit({type:'error',message:'native failure'});await failure;
+  assert(candidate.terminated&&!old.terminated);assert.deepEqual(f.errors,[]);assert.equal(f.readies.length,1);
+  const second=f.session.restoreFromReview(continuationFrame()), rejected=assert.rejects(second,/invalid state/);
+  const invalid=MockWorker.instances.at(-1)!;invalid.emit(ready);invalid.emit({...continuationFrame(),lat_rad:NaN});await rejected;
+  assert(!old.terminated);f.session.start();const input=old.messages.find(m=>m.type==='input')!;assert.equal(input.elevator,.2);assert.equal(input.throttle,.8);
+});
+test('continuation accepts a safe earlier frame even after current live collision and handles state-before-ready',async t=>{
+  const f=fixture(t);f.session.reset();const old=MockWorker.instances[0];old.emit(ready);
+  old.emit({...state,collision_mask:16,collision_step:3,collision_t_s:.025,collision_down_mps:4,collision_groundspeed_mps:20});
+  const pending=f.session.restoreFromReview(continuationFrame()), candidate=MockWorker.instances.at(-1)!;
+  candidate.emit(continuationFrame());assert(!old.terminated);candidate.emit(ready);await pending;
+  assert(old.terminated);f.session.start();assert.equal(candidate.messages.at(-1)!.type,'run');
+});
+test('continuation reset/dispose/timeout cancel candidate without allowing stale replies to commit',async t=>{
+  const f=fixture(t);f.session.reset();const old=MockWorker.instances[0];old.emit(ready);
+  const pending=f.session.restoreFromReview(continuationFrame()), cancelled=assert.rejects(pending,/restart/),candidate=MockWorker.instances.at(-1)!;
+  f.session.reset();await cancelled;assert(candidate.terminated);const replacement=MockWorker.instances.at(-1)!;replacement.emit(ready);
+  candidate.emit(ready);candidate.emit(continuationFrame());assert(!replacement.terminated);
+  t.mock.timers.enable({apis:['setTimeout']});
+  const timed=f.session.restoreFromReview(continuationFrame()), timedOut=assert.rejects(timed,/finish loading/), slow=MockWorker.instances.at(-1)!;
+  t.mock.timers.tick(30001);await timedOut;assert(slow.terminated&&!replacement.terminated);
+  const disposed=f.session.restoreFromReview(continuationFrame()), closed=assert.rejects(disposed,/session closed/),last=MockWorker.instances.at(-1)!;
+  f.session.dispose();await closed;assert(last.terminated&&replacement.terminated);
+});
+test('unsupported or duplicate continuation never allocates an extra worker or resets live state',async t=>{
+  const f=fixture(t);f.session.reset();MockWorker.instances[0].emit(ready);
+  await assert.rejects(f.session.restoreFromReview(state),/telemetry|configuration/);assert.equal(MockWorker.instances.length,1);
+  const pending=f.session.restoreFromReview(continuationFrame());await assert.rejects(f.session.restoreFromReview(continuationFrame()),/already/);assert.equal(MockWorker.instances.length,2);
+  const rejected=assert.rejects(pending,/native failure/);MockWorker.instances[1].emit({type:'error',message:'native failure'});await rejected;
 });

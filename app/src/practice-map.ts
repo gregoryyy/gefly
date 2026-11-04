@@ -92,6 +92,23 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     return button;
   });
   const [mapLayer, aerialLayer, navigationLayer, vectorLayer] = layerButtons;
+  const chartButton = document.createElement('button');
+  chartButton.type = 'button'; chartButton.textContent = 'Charts';
+  chartButton.setAttribute('aria-controls', 'flight-map-charts'); chartButton.setAttribute('aria-expanded', 'false');
+  layers.append(chartButton);
+  const charts = document.createElement('section'); charts.id = 'flight-map-charts'; charts.className = 'practice-map-charts'; charts.hidden = true;
+  charts.setAttribute('aria-label', 'Aeronautical charts');
+  const chartAirport = document.createElement('p'); chartAirport.textContent = 'Select an airport for its identifier, then open the published charts.';
+  const chartLinks = document.createElement('div');
+  for (const [label, href] of [
+    ['Germany VFR charts · open flightmaps', 'https://openflightmaps.org/downloads/ed/'],
+    ['Airport and approach charts · DFS AIP', 'https://aip.dfs.de/'],
+  ]) {
+    const link = document.createElement('a'); link.textContent = label; link.href = href; link.target = '_blank'; link.rel = 'noopener noreferrer'; chartLinks.append(link);
+  }
+  const chartNote = document.createElement('small'); chartNote.textContent = 'Published charts open with their provider. Check the edition there; the generated circuit guide is separate.';
+  charts.append(chartAirport, chartLinks, chartNote);
+
   const circuitToggle = document.createElement('button');
   circuitToggle.type = 'button'; circuitToggle.textContent = 'Circuit guide';
   circuitToggle.setAttribute('aria-pressed', 'false'); circuitToggle.disabled = true;
@@ -152,7 +169,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   airportDetail.className = 'practice-map-airport-detail';
   airportDetail.setAttribute('aria-live', 'polite');
   airportsSection.append(summary, search, airportType, airportStatus, airportList, airportDetail);
-  container.replaceChildren(header, viewport, status, toolbar, layers, circuitNote, circuitReadout, readout, legend, navigationStatus, navigationKey, navigationDetail, airportsSection, credit, caption);
+  container.replaceChildren(header, viewport, status, toolbar, layers, charts, circuitNote, circuitReadout, readout, legend, navigationStatus, navigationKey, navigationDetail, airportsSection, credit, caption);
 
   let map: LibreMap | undefined;
   let aircraft: Marker | undefined;
@@ -209,6 +226,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     map?.jumpTo({ center: [airport.lon, airport.lat], zoom: Math.max(map.getZoom(), 11) });
     const elevation = airport.elevation_ft === null ? 'Elevation unavailable' : `Elevation ${airport.elevation_ft} ft (${(airport.elevation_ft * 0.3048).toFixed(0)} m)`;
     airportDetail.textContent = `${airport.name} · ${airport.id}${airport.icao ? ` · ICAO ${airport.icao}` : ''}${airport.local ? ` · local ${airport.local}` : ''} · ${airport.type.replaceAll('_', ' ')} · ${airport.iso_region} · ${airport.lat.toFixed(5)}° N, ${airport.lon.toFixed(5)}° E · ${elevation}. OurAirports community data; not a navigation chart.`;
+    chartAirport.textContent = `Charts for ${airport.icao || airport.id} · ${airport.name}`;
     airportsSection.open = true;
     onInteraction();
   };
@@ -247,6 +265,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     removers.push(() => button.removeEventListener('click', handler));
   };
   listen(close, onClose);
+  listen(chartButton, () => { charts.hidden = !charts.hidden; chartButton.setAttribute('aria-expanded', String(!charts.hidden)); });
 
   function setFollowing(value: boolean): void {
     following = value;
@@ -529,7 +548,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       version: 8,
       sources: {
         basemap: { type: 'raster', tiles: ['/scenery/map/{z}/{x}/{y}.png'], tileSize: 256, minzoom: 5, maxzoom: 16, bounds: [...AIRFIELD_BOUNDS] },
-        imagery: { type: 'raster', tiles: ['/scenery/imagery/{z}/{x}/{y}.png'], tileSize: 512, minzoom: 7, maxzoom: 15, bounds: [8, 49, 10, 50.75] },
+        imagery: { type: 'raster', tiles: ['/scenery/imagery/{z}/{x}/{y}.png'], tileSize: 512, minzoom: 7, maxzoom: 15, bounds: [7, 49, 10, 51.5] },
         'recorded-path': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
         airfields: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
         'navigation-aids': { type: 'geojson', data: navigationData },
@@ -563,6 +582,16 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       container: viewport, style, center: [8.64, 49.9625], zoom: 13,
       minZoom: 5, maxZoom: 17, interactive: true, attributionControl: false,
       renderWorldCopies: false, maxPitch: 0, pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+      transformRequest(url, resourceType) {
+        if (visible && resourceType === 'Tile') {
+          try {
+            const target = new URL(url, window.location.href);
+            if (target.origin === window.location.origin && /^\/scenery\/(?:map|imagery)\//.test(target.pathname))
+              return { url, headers: { 'X-Gefly-Scenery-Priority': 'visible' } };
+          } catch { /* Preserve MapLibre's handling of other request URLs. */ }
+        }
+        return { url };
+      },
     });
     map.addControl(new ScaleControl({ unit: 'nautical', maxWidth: 100 }), 'bottom-left');
     viewport.append(trajectory);

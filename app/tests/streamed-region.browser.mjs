@@ -39,7 +39,7 @@ try {
   page.on('pageerror',e=>errors.push(String(e)));
   page.on('request',r=>{const url=new URL(r.url());if(['http:','https:'].includes(url.protocol))hosts.add(url.hostname);if(url.pathname.startsWith('/terrain/region/')&&url.pathname.endsWith('.f32'))fetched.push(url.pathname);});
   const latest=()=>page.evaluate(()=>window.regionalMessages.filter(m=>m.type==='state').at(-1));
-  async function waitReady(id){await page.waitForFunction(id=>window.regionalMessages.some(m=>m.worker===id&&m.type==='ready')&&window.regionalMessages.some(m=>m.worker===id&&m.type==='state')&&!document.querySelector('#start').disabled,id,{timeout:60000});}
+  async function waitReady(id){try{await page.waitForFunction(id=>window.regionalMessages.some(m=>m.worker===id&&m.type==='ready')&&window.regionalMessages.some(m=>m.worker===id&&m.type==='state')&&!document.querySelector('#start').disabled,id,{timeout:20000});}catch(error){console.error(await page.evaluate(()=>({status:document.querySelector('#status').textContent, errors:window.regionalMessages.filter(m=>m.type==='error'), last:window.regionalMessages.slice(-3)})));throw error;}}
   async function stats(){const n=await page.evaluate(()=>window.regionalMessages.length);await page.evaluate(()=>window.regionalWorkers.at(-1).postMessage({type:'stats'}));await page.waitForFunction(n=>window.regionalMessages.slice(n).some(m=>m.type==='stats'),n);return page.evaluate(()=>window.regionalMessages.filter(m=>m.type==='stats').at(-1));}
   async function frozen(before){const after=await stats();assert.equal(after.step,before.step);assert.equal(after.digest,before.digest);assert.deepEqual(after.final_state,before.final_state);}
   async function mesh(finest){return page.evaluate(async finest=>{
@@ -61,9 +61,9 @@ try {
   await page.goto(origin);await waitReady(0);await prepareFlightUI(page,{controls:false});
   assert.equal(fetched.length,9,`initial regional downloads: ${fetched.length}`);
   const first=await page.evaluate(()=>window.regionalMessages.filter(m=>m.worker===0&&m.type==='terrain-tile').map(m=>m.id));
-  assert.equal(new Set(first).size,9);assert(Number(await page.locator('#scene').getAttribute('data-terrain-cached'))<=42);
+  assert.equal(new Set(first).size,9);assert(Number(await page.locator('#scene').getAttribute('data-terrain-cached'))<=108);
   checks.push('initial worker downloads nine regional tiles on demand');
-  for(const [id,lat,lon] of [['darmstadt',49.87,8.65],['odenwald',49.65,8.85],['spessart',50,9.5]]){
+  for(const [id,lat,lon] of [['darmstadt',49.87,8.65],['odenwald',49.65,8.85],['spessart',50,9.5],['westerwald',50.45,7.8],['marburg',50.8,8.77],['kassel',51.3,9.4]]){
     const before=fetched.length,sceneryBefore=fixtureRequests,worker=await page.evaluate(()=>window.regionalWorkers.length);
     await page.locator('#flight-menu > summary').click();await page.locator(`[data-region="${id}"]`).click();await waitReady(worker);
     const s=await latest();assert(Math.abs(s.lat_rad-lat*Math.PI/180)<1e-8&&Math.abs(s.lon_rad-lon*Math.PI/180)<1e-8);
@@ -72,14 +72,18 @@ try {
     const m=await mesh(id==='darmstadt'?5:4);observations[id]={...m,fixtureRequests:fixtureRequests-sceneryBefore};assert.equal(m.provider,'CustomHeightmapTerrainProvider');
     assert(Math.abs(m.finestHeight-m.expected)<=.25,`${id}: finest provider geometry differs from native terrain`);
     assert(Math.abs(m.height-m.expected)<=.25,`${id}: native ${m.expected} versus actual Cesium mesh ${m.height} at level ${m.level}`);
-    assert(Number(await page.locator('#scene').getAttribute('data-terrain-cached'))<=42);
+    assert(Number(await page.locator('#scene').getAttribute('data-terrain-cached'))<=108);
     if(id==='odenwald'){await page.locator('#view-menu > summary').click();await page.locator('#chase').click();await page.screenshot({path:`${output}/streamed-odenwald-fixture-imagery.png`});}
   }
-  checks.push('Darmstadt, Odenwald and Spessart use real native heights and actual Cesium mesh within 0.25 m at the aircraft');
+  checks.push('All six regional presets use real native heights and actual Cesium mesh within 0.25 m at the aircraft');
   await page.locator('#start').click();await page.waitForFunction(()=>window.regionalMessages.filter(m=>m.type==='state').at(-1)?.step>30);
   await page.locator('#pause').click();await page.waitForFunction(()=>document.querySelector('#status').textContent==='Paused');
   const paused=await stats();await page.locator('#view-menu > summary').click();await page.locator('#toggle-map').click();
-  const panel=page.locator('#practice-map-panel');await panel.locator('.practice-map-heading').click();await panel.locator('summary').click();await panel.getByLabel('Search airports').fill('EDFE');
+  const panel=page.locator('#practice-map-panel');await panel.locator('.practice-map-heading').click();
+  await panel.getByRole('button',{name:'Charts',exact:true}).click();
+  assert.equal(await panel.locator('#flight-map-charts a').first().getAttribute('href'),'https://openflightmaps.org/downloads/ed/');
+  assert.equal(await panel.locator('#flight-map-charts a').last().getAttribute('href'),'https://aip.dfs.de/');
+  await panel.getByRole('button',{name:'Charts',exact:true}).click();await panel.locator('.practice-map-airports > summary').click();await panel.getByLabel('Search airports').fill('EDFE');
   await panel.getByRole('button',{name:/EDFE ·/}).click();assert.match(await panel.locator('.practice-map-airport-detail').textContent(),/OurAirports/);
   await panel.locator('.maplibregl-canvas').focus();await page.keyboard.press('ArrowLeft');await frozen(paused);
   await page.screenshot({path:`${output}/streamed-region-airports-fixture-imagery.png`});
@@ -92,7 +96,7 @@ try {
   for (const mode of ['missing','corrupt']) {
     const badContext=await browser.newContext({viewport:{width:1000,height:700}});
     await badContext.route('**/scenery/**',route=>route.fulfill({contentType:'image/png',body:route.request().url().includes('/imagery/')?png512:png256}));
-    await badContext.route('**/terrain/region/*.f32',async route=>{
+    await badContext.route('**/terrain/region/*.f32*',async route=>{
       if(mode==='missing')return route.fulfill({status:404,body:''});
       const response=await route.fetch(), data=Buffer.from(await response.body());data[0]^=1;
       return route.fulfill({response,body:data});
