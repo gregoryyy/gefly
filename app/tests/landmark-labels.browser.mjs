@@ -209,7 +209,9 @@ try {
       labels: Array.from({ length: window.actualLandmarkLabels?.length ?? 0 }, (_, i) => { const label = window.actualLandmarkLabels.get(i); return { id: label.id, text: label.text }; }) }));
     try {
       await observeScene(publicPage); await publicPage.goto(origin); await publicPage.waitForFunction(() => !document.querySelector('#start').disabled && window.actualLandmarkLabels);
-      await publicPage.locator('#scene').focus(); await publicPage.keyboard.press('Alt+Shift+6');
+      await prepareFlightUI(publicPage,{controls:false});
+      await publicPage.locator('#flight-menu > summary').click(); await publicPage.locator('#flight-research > summary').click();
+      await publicPage.locator('[data-region="darmstadt"]').click();
       await publicPage.waitForFunction(() => !document.querySelector('#start').disabled && document.querySelector('#gate-label').textContent.includes('DARMSTADT'));
       await publicPage.locator('#start').click();
       await publicPage.waitForTimeout(500); await publicPage.locator('#scene').focus(); await publicPage.keyboard.press('Space');

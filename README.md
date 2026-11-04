@@ -50,12 +50,12 @@ interaction direction.
 ## Airport play
 
 In **Flight**, choose runway **26 or 08**, then **Takeoff**, **Landing · 3 NM final**
-or **Fly a circuit** (**Alt+Shift+1 / 2 / 3**). Circuit opens and fits the generated
+or **Fly a circuit**. Circuit opens and fits the generated
 map guide. Landing is a clean 90 kt visual-practice start at a geometric 3-degree
 height above the threshold; set power/flaps yourself. It is not a published approach.
 Research flights and contact studies are in the secondary group.
 
-Alternatively, open the flight map with **M**, choose **EDFE 26 or 08**, and select **Start at runway**. The aircraft starts at rest with the engine idling and parking brake
+Alternatively, open the flight map with **,**, choose **EDFE 26 or 08**, and select **Start at runway**. The aircraft starts at rest with the engine idling and parking brake
 set. Press **N** to release the brake, add power with **1–9**, and fly the circuit
 manually. **Stop exercise** on the map pauses the flight and keeps Review available.
 Other airports can be inspected, but their runway starts are not prepared yet.
@@ -73,7 +73,7 @@ start reference. **Events** shows the sensed flight log. Missing data and checks
 the simulator cannot verify stay explicit; no aircraft settings change.
 
 Sharp runway markings, taxiways and apron overlays sit on the public terrain.
-Use **View → Terrain** or **Alt+Shift+J** (also **Options → Map terrain**) to drape official German cartography
+Use **View → Terrain** (also **Options → Map terrain**) to drape official German cartography
 without text over the terrain. Roads, fields, woodland, water and building
 footprints extend beyond the airport; photography stays underneath while tiles
 load or if the service fails. The flight map keeps its **Map/Aerial** background;
@@ -99,7 +99,7 @@ just stop                 # stop this checkout's flight server
 
 Select **Start flight**, then click the scene for touchpad yoke control or use the keyboard.
 The top menu/title bar and floating flight controls start hidden: **I** toggles
-the menu, **O** opens Options (Controls, Scenery, Sound and Advanced), and **Alt+Shift+F** shows the flight controls. **F** toggles browser fullscreen (also in View); the browser’s **Esc** action exits it. Floating controls, map,
+the menu, **O** opens Options (Controls, Scenery, Sound and Advanced), and **View → Flight controls** shows the flight controls. **F** toggles browser fullscreen (also in View); the browser’s **Esc** action exits it. Floating controls, map,
 flight-data and stall-awareness panels are half opaque until clicked; their
 first click activates the panel, and subsequent gestures operate it.
 Arrow keys control pitch/roll, Q/W rudder, 0 throttle idle and 1–9 throttle.
@@ -157,7 +157,7 @@ for EDFE 08/26; **Fit circuit** shows all five legs. The nearest-leg readout use
 the selected live or recorded position. This is a practice aid, not a published
 route or an altitude, speed or obstacle-clearance instruction.
 
-**M** or **View → Flight map** opens a right-side map beside the 3D view,
+**,** or **View → Flight map** opens a right-side map beside the 3D view,
 showing the aircraft, whole retained flight path and **731 searchable
 community airfield and heliport entries across five southern German states**, including available airport elevations. Choose the
 public map or aerial imagery; a nautical scale and **community radio beacons and historical LOC/ILS
@@ -180,7 +180,7 @@ The left **Systems** panel adds BAT/ALT, avionics, light and pitot-heat buttons,
 with digital bus volts, battery amps and load. **MODEL** marks simplified electrical
 estimates; these controls do not yet drive native avionics outages, icing or external
 lights. Switch positions are recorded for Review. On narrow screens use the collapsed
-**Aircraft systems** panel button or **Alt+Shift+Y**.
+**Aircraft systems** panel button.
 
 The classic **six-pack** now shows airspeed, attitude, pressure altitude, ideal
 turn/slip, true heading and vertical speed. Click the scene to toggle touchpad
@@ -188,7 +188,7 @@ yoke control; hold-drag to look around. Two-finger vertical scrolling
 over the scenery adjusts camera FOV; over the cockpit it zooms the panel around
 the pointer. **[ / ]** selects flaps, **B** holds
 wheel brakes, and **1–9** selects 10–90% throttle (**0** idle). The engine panel
-adds mixture, RPM, manifold pressure, oil and fuel readouts. **Flight → Weight & fuel** (**Alt+Shift+W**) sets occupants, baggage, auxiliary load and initial fuel in litres; Apply restarts the flight. Fuel use reduces both tank contents and native aircraft mass. **P** toggles the two-axis autopilot. Its KAP 140 operating controls include VS,
+adds mixture, RPM, manifold pressure, oil and fuel readouts. **Flight → Weight & fuel** sets occupants, baggage, auxiliary load and initial fuel in litres; Apply restarts the flight. Fuel use reduces both tank contents and native aircraft mass. **P** toggles the two-axis autopilot. Its KAP 140 operating controls include VS,
 current-altitude hold, selected-altitude capture and source-aware navigation;
 generic servo response and real navigation-data coverage remain limited.
 To climb to a preselected altitude, engage AP, set climb power and select the altitude. Selection automatically arms capture: **ARMED** and **ALT ARM** confirm it. Pressing **ARMED** cancels capture. Switch ALT to VS if needed, then use UP/DN to set the rate. The first press reveals a hidden VS value; subsequent taps change 100 FPM. Hold **CWS** to hand-fly and release to capture current VS or held altitude. CWS is an optional KAP140 control; this particular C172 installation is unverified.

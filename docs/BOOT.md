@@ -266,6 +266,15 @@ revisions, aircraft/configuration applicability, units and permitted data reuse.
 
 ### Insights: preserve working behavior
 
+A passing injected-panel or direct-native fixture does not establish that the
+user can operate the integrated cockpit. Verify the exact trusted-input sequence,
+visible indications and sustained aircraft response together before reporting a
+repair. Keep historical observations distinct from current usability acceptance.
+
+User-assigned shortcuts are product requirements. Do not generate modifier-key
+catalogs or invent replacements for unassigned commands. Comma toggles the map;
+period cycles landmarks. Keep menu labels and actual handlers consistent.
+
 Small requests have repeatedly broken earlier work through shared UI/input
 helpers, making the simulator unreliable. Treat unpredictable regressions as
 design defects: modular boundaries should contain a change and preserve delivered

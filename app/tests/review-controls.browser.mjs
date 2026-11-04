@@ -72,7 +72,7 @@ try {
   }, value);
   await page.locator('#scene').focus(); await page.keyboard.press('r');
   assert.equal(await text('status'), 'Paused'); assert.equal(await page.evaluate(() => window.__reviewWorkerId), workerId);
-  assert.equal(await page.locator('#reset').getAttribute('aria-keyshortcuts'), 'Alt+Shift+R');
+  assert.equal(await page.locator('#reset').getAttribute('aria-keyshortcuts'), null, 'restart has no invented shortcut');
   await startOrResume(page); await page.waitForFunction(() => window.__reviewStates.at(-1).step > 10);
   await page.locator('#view-menu > summary').click(); await page.keyboard.press('r');
   assert.equal(await text('status'), 'Flying'); await page.keyboard.press('Escape');

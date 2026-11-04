@@ -138,7 +138,7 @@ try {
     || command.type === 'kap140' && command.command?.action === 'disconnect').length > count, guarded);
   await page.waitForFunction(() => window.assistStates.at(-1)?.kap_engaged === 0);
   await page.keyboard.press('i'); // hide header and close details
-  await page.keyboard.press('Alt+Shift+KeyO');
+  await page.keyboard.press('o');
   await page.locator('dialog[open]').waitFor({ state: 'visible' });
   const modalCount = await commandCount();
   await page.keyboard.press('a'); await page.keyboard.press('Equal');
@@ -208,7 +208,9 @@ try {
   await page.waitForFunction(rate => document.querySelector('#simulation-rate-overlay').textContent === `SIM ${rate}×`, liveRateBeforeReview);
   checks.push('Replay arrows seek with timeline/button focus, clamp at bounds; = and playback button cycle all rates, 5× advances the replay clock and native physics stays frozen');
 
-  await page.keyboard.press('Alt+Shift+KeyR');
+  await scene.focus(); await page.keyboard.press('i');
+  await page.locator('#flight-menu > summary').click();
+  await page.locator('#reset').click();
   await page.waitForFunction(() => !document.querySelector('#start').disabled && window.assistStates.at(-1)?.step === 0 && window.assistStates.at(-1)?.simulation_rate === 1 && document.querySelector('#simulation-rate-overlay').textContent === 'SIM 1×', null, { timeout: 60000 });
   assert.equal((await state()).kap_engaged, 0);
   checks.push('Restart restores 1× and disengaged autopilot');

@@ -58,7 +58,7 @@ root.innerHTML = `
     <a class="brand" href="https://github.com/gregoryyy/gefly" target="_blank" rel="noreferrer">gefly<span>FLIGHT LAB</span></a>
     <div class="location"><strong>EGELSBACH</strong><span>C172 research aircraft · airborne practice</span></div>
     <div class="session-status"><i id="status-dot"></i><span id="status" role="status">Loading flight…</span><span id="clock">00:00</span><span id="audio-button-slot"></span></div>
-    <details id="view-menu" class="top-menu"><summary>View</summary><nav class="menu-content view-controls" aria-label="Flight views"><button id="cockpit" class="selected" aria-pressed="true">Cockpit</button><button id="chase" aria-pressed="false">Chase <kbd>V</kbd></button><button id="toggle-fullscreen" type="button" aria-keyshortcuts="F" aria-pressed="false"><span data-fullscreen-label>Full screen</span> <kbd>F</kbd></button><button id="toggle-map-terrain" type="button" aria-pressed="false">Terrain: photos</button><button id="toggle-map" aria-pressed="false" aria-controls="practice-map-panel">Flight map <kbd>M</kbd></button><button id="cycle-landmarks" type="button" aria-keyshortcuts="." title=". · Cycle landmark labels">Landmarks: Off <kbd>.</kbd></button><button id="toggle-flight-data" aria-pressed="false" aria-controls="flight-data-panel">Flight data</button><button id="toggle-stall-awareness" aria-pressed="false" aria-controls="stall-awareness-panel">Stall awareness</button><button id="toggle-controls" aria-pressed="true" aria-controls="flight-controls-panel">Flight controls</button></nav></details>
+    <details id="view-menu" class="top-menu"><summary>View</summary><nav class="menu-content view-controls" aria-label="Flight views"><button id="cockpit" class="selected" aria-pressed="true">Cockpit</button><button id="chase" aria-pressed="false">Chase <kbd>V</kbd></button><button id="toggle-fullscreen" type="button" aria-keyshortcuts="F" aria-pressed="false"><span data-fullscreen-label>Full screen</span> <kbd>F</kbd></button><button id="toggle-map-terrain" type="button" aria-pressed="false">Terrain: photos</button><button id="toggle-map" aria-pressed="false" aria-controls="practice-map-panel" aria-keyshortcuts=",">Flight map <kbd>,</kbd></button><button id="cycle-landmarks" type="button" aria-keyshortcuts="." title=". · Cycle landmark labels">Landmarks: Off <kbd>.</kbd></button><button id="toggle-flight-data" aria-pressed="false" aria-controls="flight-data-panel">Flight data</button><button id="toggle-stall-awareness" aria-pressed="false" aria-controls="stall-awareness-panel">Stall awareness</button><button id="toggle-controls" aria-pressed="true" aria-controls="flight-controls-panel">Flight controls</button></nav></details>
     <span id="review-button-slot"></span>
     <button id="controls-settings" class="settings-trigger" aria-haspopup="dialog">Options</button>
     <details id="flight-menu" class="top-menu"><summary>Flight</summary><nav class="menu-content" aria-label="Flight session">
@@ -81,7 +81,7 @@ root.innerHTML = `
     <h1 id="gate-title">Loading aircraft…</h1>
     <p id="gate-copy">The aircraft starts airborne at 90 kt. Flight time stays paused until you start.</p>
     <button id="start" class="primary" disabled>Loading…</button>
-    <span class="gate-hint">I opens the menu · O opens Options · Space starts/pauses · Alt+Shift+F shows flight controls.</span>
+    <span class="gate-hint">I opens the menu · O opens Options · Space starts/pauses · , opens the map · . cycles landmarks.</span>
   </section>
   <aside id="landing-feedback" hidden></aside>
   <aside id="ground-collision-panel" hidden></aside>
@@ -633,12 +633,8 @@ el('toggle-map').onclick = () => {
   setFlightDataVisible(false); void setMapVisible(!mapVisible); closeViewMenu(); focusFlight();
 };
 function flightMapShortcut(event: KeyboardEvent): void {
-  if (!['KeyM', 'Comma'].includes(event.code) || event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
+  if (event.code !== 'Comma' || event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
     || editing(event.target) || menuOpen() || document.querySelector('dialog[open]')) return;
-  if (event.code === 'Comma') {
-    if (mapVisible && practiceMap) { event.preventDefault(); event.stopPropagation(); practiceMap.toggleOverlap(); }
-    return;
-  }
   event.preventDefault(); event.stopPropagation(); el<HTMLButtonElement>('toggle-map').click();
 }
 document.addEventListener('keydown', flightMapShortcut, true);
@@ -1234,7 +1230,7 @@ const flightAssists = createFlightAssists({
     focusFlight();
   },
 });
-sceneContainer.setAttribute('aria-description','I toggles the menu. O opens Options. F toggles full screen. Period cycles landmark labels. Alt Shift F shows flight controls.');
+sceneContainer.setAttribute('aria-description','I toggles the menu. O opens Options. F toggles full screen. Comma toggles the flight map. Period cycles landmark labels.');
 
 const sceneReady = createScene(sceneContainer).then(result => {
   scene = result; scene.setLandmarkLevel?.(landmarkLevel); scene.setSceneryMode?.(!!controlSettings.vectorScenery); scene.setPracticePapi?.(!!controlSettings.practicePapi);

@@ -23,7 +23,8 @@ try {
   page.on('pageerror', error => errors.push(String(error)));
   await page.addInitScript(() => {
     const NativeWorker = window.Worker;
-    window.rightMapStates = []; window.rightMapStats = [];
+    window.rightMapStates = []; window.rightMapStats = []; window.rightMenuHits = [];
+    document.addEventListener('click', event => { const button = event.target.closest?.('.topbar button'); if (button) window.rightMenuHits.push(button.id); }, true);
     window.Worker = class extends NativeWorker {
       constructor(...args) {
         super(...args);
@@ -64,21 +65,25 @@ try {
 
   const initialPaused = await stats();
   await scene.focus();
-  for (const key of ['Shift+KeyM','Alt+KeyM','Control+KeyM']) await page.keyboard.press(key);
+  for (const key of ['Shift+Comma','Alt+Comma','Control+Comma','Shift+Period','Alt+Period','Control+Period','Alt+Shift+KeyM']) await page.keyboard.press(key);
   await scene.evaluate(element => {
-    element.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,code:'KeyM',key:'m',metaKey:true}));
-    element.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,code:'KeyM',key:'m',repeat:true}));
+    for (const [code,key] of [['Comma',','],['Period','.']]) for (const guard of ['metaKey','repeat'])
+      element.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,code,key,[guard]:true}));
   });
   assert.equal(await panel.isVisible(),false,'modifiers and repeat do not toggle the map');
   await page.keyboard.press('i');
   await page.locator('#view-menu > summary').click();
-  await page.keyboard.press('m');
-  assert.equal(await panel.isVisible(),false,'open menu guards plain M');
+  await page.keyboard.press(',');
+  await page.keyboard.press('.');
+  assert.equal(await panel.isVisible(),false,'open menu guards comma');
+  assert.equal(await scene.getAttribute('data-landmark-level'),'0');
   await page.keyboard.press('i');
-  await page.keyboard.press('Alt+Shift+KeyO');
+  await page.keyboard.press('o');
   await page.locator('#control-settings').waitFor({state:'visible'});
-  await page.keyboard.press('m');
-  assert.equal(await panel.isVisible(),false,'modal dialog guards M');
+  await page.keyboard.press(',');
+  await page.keyboard.press('.');
+  assert.equal(await panel.isVisible(),false,'modal dialog guards comma');
+  assert.equal(await scene.getAttribute('data-landmark-level'),'0');
   await page.evaluate(()=>{
     window.rightMapOptionsClosed=false;
     document.querySelector('#control-settings').addEventListener('close',()=>{window.rightMapOptionsClosed=true;},{once:true});
@@ -86,29 +91,32 @@ try {
   await page.locator('#settings-close').click();
   await page.waitForFunction(()=>window.rightMapOptionsClosed&&document.activeElement?.id==='scene');
   await frozen(initialPaused);
-  checks.push('M ignores repeat/modifiers, open menus and modal dialogs without moving paused physics');
+  assert.equal(await scene.getAttribute('data-landmark-level'),'0');
+  checks.push('Comma and period ignore repeat/modifiers, open menus and modal dialogs without moving paused physics');
 
-  await scene.focus(); await page.keyboard.press('m');
+  await scene.focus(); await page.keyboard.press(',');
   await panel.waitFor({ state: 'visible' });
   await page.waitForFunction(() => window.__rightFlightMap?.getSource('recorded-path') && ![...document.querySelectorAll('.practice-map-toolbar button')].some(button => button.disabled));
   await panel.locator('.maplibregl-ctrl-scale').waitFor({state:'visible'});
   assert.match(await panel.locator('.maplibregl-ctrl-scale').textContent(),/nm/i);
   await frozen(initialPaused);
-  await panel.locator('.maplibregl-canvas').focus(); await page.keyboard.press('m');
+  await panel.locator('.maplibregl-canvas').focus(); await page.keyboard.press(',');
   await panel.waitFor({state:'hidden'});
   assert.equal(await page.locator('.flight-app').getAttribute('data-flight-map'),'false');
-  await scene.focus(); await page.keyboard.press('m');
+  await scene.focus(); await page.keyboard.press(',');
   await panel.waitFor({state:'visible'});
   await activate();
   await panel.locator('.practice-map-airports summary').click();
   const airportSearch = panel.getByLabel('Search airports');
-  await airportSearch.focus(); await page.keyboard.press('m');
-  assert.equal(await airportSearch.inputValue(),'m');
-  assert.equal(await panel.isVisible(),true,'typing M in search does not close the map');
+  await airportSearch.focus(); await page.keyboard.press(',');
+  await page.keyboard.press('.');
+  assert.equal(await airportSearch.inputValue(),',.');
+  assert.equal(await scene.getAttribute('data-landmark-level'),'0');
+  assert.equal(await panel.isVisible(),true,'typing comma in search does not close the map');
   await airportSearch.fill('');
   await panel.locator('.practice-map-airports summary').click();
   await frozen(initialPaused);
-  checks.push('M toggles from scene and map focus, search typing stays local, and the map has a nautical scale');
+  checks.push('Comma toggles from scene and map focus, search typing stays local, and the map has a nautical scale');
 
   const desktop = await page.evaluate(() => {
     const rect = selector => { const r = document.querySelector(selector).getBoundingClientRect(); return { x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom }; };
@@ -128,6 +136,25 @@ try {
   await page.locator('#start').click();
   await scene.focus(); await page.keyboard.press('a');
   await page.waitForFunction(() => window.rightMapStates.at(-1)?.step > 120);
+  await scene.focus(); await page.keyboard.press(','); await panel.waitFor({state:'hidden'});
+  await page.keyboard.press(','); await panel.waitFor({state:'visible'});
+  for (const [index, name] of ['Places','Landmarks','Detailed','Off'].entries()) {
+    await scene.focus(); await page.keyboard.press('.');
+    await page.waitForFunction(level => Number(document.querySelector('#scene').dataset.landmarkLevel) === level, (index+1)%4);
+    assert.match(await page.locator('#cycle-landmarks').textContent(), new RegExp(name));
+  }
+  await scene.focus();
+  const beforeChord = await page.evaluate(() => ({ level:document.querySelector('#scene').dataset.landmarkLevel,
+    map:document.querySelector('.flight-app').dataset.flightMap, hits:window.rightMenuHits.length }));
+  for (const code of ['J','Y','C','V','M','D','A','F','S','L','H','W','O','R','G','B','N','P','E','T','I',...Array.from({length:10},(_,i)=>`Digit${i}`)])
+    await page.keyboard.press(`Alt+Shift+${code.length===1?'Key'+code:code}`);
+  assert.deepEqual(await page.evaluate(() => ({level:document.querySelector('#scene').dataset.landmarkLevel,map:document.querySelector('.flight-app').dataset.flightMap})),
+    {level:beforeChord.level,map:beforeChord.map}, 'removed Alt+Shift chords cannot change map or labels');
+  assert.equal(await page.evaluate(() => window.rightMenuHits.length),beforeChord.hits,'all removed Alt+Shift menu chords dispatch no command');
+  assert(await page.locator('#control-settings').isHidden());
+  assert.equal(await page.locator('.topbar [aria-keyshortcuts*="Alt"]').count(),0);
+  assert(!(await page.locator('.topbar kbd').allTextContents()).some(text=>/Alt.*Shift|⌥⇧/.test(text)));
+  checks.push('comma opens/closes during actual flight; period cycles all landmark levels; removed Alt+Shift chords neither trigger nor advertise commands');
   const firstPath = await pathData();
   await page.waitForFunction(() => document.querySelector('.practice-map-trajectory polyline')?.getAttribute('points')?.split(' ').length > 1);
   assert(firstPath.features[0]?.geometry.coordinates.length >= 2, 'real flight creates a trail');
@@ -153,9 +180,12 @@ try {
   });
   assert(Math.abs(following.lon-following.expectedLon)<1e-7 && Math.abs(following.lat-following.expectedLat)<1e-7);
   const canvas = panel.locator('.maplibregl-canvas'), box = await canvas.boundingBox();
-  await page.mouse.move(box.x+box.width/2,box.y+box.height/2);
-  await page.mouse.down(); await page.mouse.move(box.x+box.width/2+50,box.y+box.height/2,{steps:5}); await page.mouse.up();
-  assert.equal(await panel.getByRole('button', { name:'Follow', exact:true }).getAttribute('aria-pressed'), 'false');
+  // Follow puts ownship/trace DOM markers at the center; drag bare map instead.
+  const panStart = {x:box.x+box.width/4,y:box.y+box.height/4};
+  assert(await canvas.evaluate((element, point) => document.elementFromPoint(point.x,point.y) === element, panStart), 'pan begins on actual map canvas, not a DOM marker');
+  await page.mouse.move(panStart.x,panStart.y);
+  await page.mouse.down(); await page.mouse.move(panStart.x+50,panStart.y,{steps:5}); await page.mouse.up();
+  await page.waitForFunction(() => Array.from(document.querySelectorAll('.practice-map-toolbar button')).find(button=>button.textContent==='Follow').getAttribute('aria-pressed') === 'false');
   await frozen(paused);
   checks.push('trail grows from actual flight states; Fit, Follow and pan preserve paused native state');
 
@@ -210,7 +240,7 @@ try {
   await panel.getByRole('button', {name:/Close (practice|flight) map/}).click();
   await panel.waitFor({state:'hidden'});
   await page.setViewportSize({width:1440,height:900});
-  await scene.focus(); await page.keyboard.press('Alt+Shift+KeyM');
+  await scene.focus(); await page.keyboard.press(',');
   await panel.waitFor({state:'visible'});
   await page.waitForFunction(() => document.querySelectorAll('.practice-map-viewport .maplibregl-canvas').length===1);
   assert.equal(await panel.locator('.maplibregl-canvas').count(),1);

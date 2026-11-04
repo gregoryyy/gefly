@@ -180,6 +180,16 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     if(localRegionalLayer)scene.imageryLayers.raiseToTop(localRegionalLayer);
     if(airportLayer)scene.imageryLayers.raiseToTop(airportLayer);
     if(mapTerrainLayer)scene.imageryLayers.raiseToTop(mapTerrainLayer);
+    applyImageryMode();
+  }
+  function applyImageryMode(useTerrain = lastState.terrain_profile === 1): void {
+    for (let i = 0; i < scene.imageryLayers.length; i++) {
+      const layer = scene.imageryLayers.get(i);
+      // Vector and photography are alternative terrain modes. An empty or
+      // failed vector tile exposes only the neutral base/height relief.
+      layer.show = layer === baseLayer ? true : layer === reliefLayer ? useTerrain
+        : layer === mapTerrainLayer ? vectorScenery && useTerrain : !vectorScenery;
+    }
   }
   let loadSlow = false;
   const creditObserver = new ResizeObserver(() => {
@@ -193,10 +203,11 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   baseCanvas.width = baseCanvas.height = 1;
   const baseContext = baseCanvas.getContext('2d')!;
   baseContext.fillStyle = '#263a37'; baseContext.fillRect(0, 0, 1, 1);
-  scene.imageryLayers.add(new ImageryLayer(new SingleTileImageryProvider({
+  const baseLayer = new ImageryLayer(new SingleTileImageryProvider({
     url: baseCanvas.toDataURL(), tileWidth: 1, tileHeight: 1,
     rectangle: Rectangle.MAX_VALUE,
-  })));
+  }));
+  scene.imageryLayers.add(baseLayer);
   const relief = elevationRelief(terrainGrid);
   const reliefLayer = new ImageryLayer(new SingleTileImageryProvider({
     url: relief.toDataURL('image/png'), tileWidth: relief.width, tileHeight: relief.height,
@@ -231,8 +242,8 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     });
     const text = vectorScenery && state.terrain_profile === 1
       ? mapTerrainStatus === 'ready' ? '' : mapTerrainStatus === 'degraded'
-        ? 'Map terrain unavailable in parts of this view; photography retained underneath.'
-        : 'Loading map terrain without labels; photography retained underneath.'
+        ? 'Map terrain unavailable in parts of this view; terrain relief remains visible.'
+        : 'Loading map terrain without labels; terrain relief remains visible.'
       : photographText;
     container.dataset.mapTerrain = vectorScenery && state.terrain_profile === 1 ? mapTerrainStatus : vectorScenery ? 'flat-study' : 'off';
     container.dataset.mapTerrainLoaded = String(mapTerrain?.getStats().loadedTiles ?? 0);
@@ -376,10 +387,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     if (vectorScenery && useTerrain) ensureMapTerrain();
     airportScenery.update(state);
     container.dataset.airportScenery = airportScenery.status;
-    for (let i = 0; i < scene.imageryLayers.length; i++) {
-      const layer = scene.imageryLayers.get(i);
-      layer.show = layer === reliefLayer ? useTerrain : layer === mapTerrainLayer ? vectorScenery && useTerrain : true;
-    }
+    applyImageryMode(useTerrain);
     const terrainSample = useTerrain ? atlasSample(state.lat_rad, state.lon_rad) : null;
     if (useTerrain && (!terrainSample || !Number.isFinite(state.ground_height_ellipsoid_m))) {
       container.dataset.terrain = terrainSample ? 'height-unavailable' : 'outside-coverage';
@@ -519,7 +527,8 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       if (vector && !mapTerrain && mapTerrainStatus === 'degraded') mapTerrainLoad = null;
       if (vector && lastState.terrain_profile === 1) ensureMapTerrain();
       if (!vector) mapTerrain?.cancelQueued();
-      if (mapTerrainLayer) mapTerrainLayer.show = vector && lastState.terrain_profile === 1;
+      else regionalImagery?.cancelQueued();
+      applyImageryMode();
       container.dataset.sceneryMode = vector ? 'vector' : 'imagery'; imageryStatus(lastState); scene.requestRender();
     },
     setPracticePapi(enabled) { airportScenery.setPracticePapi(enabled); container.dataset.practicePapi = String(enabled); },

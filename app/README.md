@@ -42,7 +42,7 @@ A missing or failed engine build is an error, not a switch to scripted flight.
 ## Controls
 
 The top title/menu bar and flight-control overlay start hidden. **I** toggles the
-top bar; it does not control the central Start/Pause card. **Alt+Shift+F** toggles
+top bar; it does not control the central Start/Pause card. **View → Flight controls** toggles
 the flight controls. Floating controls, map, flight-data and stall-awareness
 panels show at 50% opacity until activated. The first click activates and consumes
 that gesture; click again to operate a control. Clicking elsewhere deactivates
@@ -159,7 +159,7 @@ performance data. See [control sources](../docs/research/2026-11-02-classic-cont
 Use **View → Flight controls** in the top menu to show or hide the on-screen
 flight-control panel. Hiding it releases transient held inputs while retaining
 throttle, trim and the other selected settings. Use **Flight → Restart flight**
-to restart; **Alt+Shift+R** is its shortcut, while **R** enters and leaves
+to restart; **R** enters and leaves
 recorded Review. **Options** is a top-menu
 action. Keyboard remapping is later work.
 
@@ -199,13 +199,10 @@ configured value returns after disconnect.
 Q is left rudder and W right rudder. Positive `rudder_cmd_norm` yaws left in the
 pinned generic model.
 
-Menu commands show their shortcuts. The **Alt+Shift** combinations include
-**C/V** cockpit/chase, **M** map, **D** flight data, **A** stall awareness,
-**F** flight controls, **H** handbook, **O** Options and **R** restart.
-**1–4** choose flat landing studies, **E/T/I** choose Egelsbach/Taunus/historical
-EDDF practice, and **6/7/8** choose Darmstadt/Odenwald/Spessart. Responsive panel
-openers use **G/B/N/P** for Engine/Radio/NAV/Autopilot where available. These
-combinations do not replace the unmodified flight keys.
+**Comma (,)** opens and closes the flight map. **Period (.)** cycles landmark
+labels. **O** opens Options and **I** toggles the title/menu bar. Unassigned menu
+actions remain clickable; no Option/Alt–Shift combinations are installed.
+Keyboard shortcuts keep typing, modal and repeat guards.
 
 ## Simulation rate
 
@@ -569,7 +566,7 @@ when the handbook opens.
 
 ## Practice map
 
-Press **O**, then select **View → Map**, or use **Alt+Shift+M**, to show or hide a
+Press **,** or select **View → Flight map** to show or hide a
 north-up practice map. It loads MapLibre on demand and uses bundled photographs
 plus the fixed-source live map/photo service described below. The aircraft marker shows true heading; the plotted route uses up
 to 600 points from the current flight's retained state trace. **Trace start**
@@ -784,7 +781,7 @@ selected recorded position and leaves loading frequencies read-only.
 
 ## Right-side flight map
 
-Press **M**, **Alt+Shift+M**, or choose **View → Flight map**. On desktop the
+Press **,** or choose **View → Flight map**. On desktop the
 map opens beside the outside view while the cockpit keeps its full width; smaller
 viewports use a bounded floating map. Its first click activates the panel.
 The default **Map** uses BKG TopPlusOpen; **Aerial** shows the existing public
@@ -809,7 +806,7 @@ separate required flight-startup packages retain their fail-closed behavior. See
 
 Recordings can be saved and loaded as version 1 JSON using **Flight → Save/Load recording JSON** or the replay bar. Loading opens a validated, read-only state trace and preserves the current live flight; **Back to live** restores its previous flying/paused state. Files retain at most ten minutes/36,000 samples (256 MB import limit), in SI units; they are not native physics checkpoints.
 
-With the flight map open, **comma (,)** toggles whether it overlaps the cockpit. **M** still opens/closes the map and **N** remains the parking brake.
+Use **Overlap cockpit** in the flight map to change overlap. **Comma (,)** opens/closes the map and **N** remains the parking brake.
 
 Flight map → **Charts** opens the official OFM Germany VFR viewer and DFS AIP
 airport/approach chart access. The selected airport identifier remains visible.

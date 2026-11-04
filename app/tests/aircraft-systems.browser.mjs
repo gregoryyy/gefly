@@ -84,9 +84,9 @@ try {
   await page.locator('#aircraft-systems-dialog').waitFor({ state: 'visible' });
   assert(await page.locator('#systems-landing').isVisible());
   await page.locator('#aircraft-systems-dialog > button').click();
-  await page.locator('#scene').focus();await page.keyboard.press('Alt+Shift+y');
+  await page.locator('#aircraft-systems #systems-open').click();
   await page.locator('#aircraft-systems-dialog').waitFor({state:'visible'});
   await page.locator('#aircraft-systems-dialog > button').click();
   assert.deepEqual(errors, []);
-  console.log(JSON.stringify({ checks: ['BAT/ALT interlock, circuit selection and estimated volts/current respond while paused', 'native physics unchanged by switches', 'left panel matches instrument height and fits at desktop widths', 'read-only replay follows recorded switches and restores live state', 'View has no duplicate entry; mobile panel opener and existing shortcut open the systems dialog'], browser: browser.version() }, null, 2));
+  console.log(JSON.stringify({ checks: ['BAT/ALT interlock, circuit selection and estimated volts/current respond while paused', 'native physics unchanged by switches', 'left panel matches instrument height and fits at desktop widths', 'read-only replay follows recorded switches and restores live state', 'View has no duplicate entry; mobile panel opener reopens the systems dialog'], browser: browser.version() }, null, 2));
 } finally { await browser?.close(); server.kill(); }

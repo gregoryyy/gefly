@@ -41,8 +41,11 @@ try{
   await scene.focus();await page.keyboard.press('f');await full(false);await frozen(before);
   await page.locator('#throttle').focus();await page.keyboard.press('f');assert(!(await active()),'editable controls guard F');
   await scene.focus();for(const key of ['Shift+f','Alt+f','Meta+f'])await page.keyboard.press(key);assert(!(await active()),'modified F is not fullscreen');
-  await page.keyboard.press('Alt+Shift+f');assert(!(await active()));assert(await page.locator('#flight-controls-panel').isVisible(),'existing flight-controls chord remains independent');
-  await page.keyboard.press('Alt+Shift+f');
+  const controlsVisible=await page.locator('#flight-controls-panel').isVisible();
+  await page.keyboard.press('Alt+Shift+f');assert(!(await active()));assert.equal(await page.locator('#flight-controls-panel').isVisible(),controlsVisible,'removed chord does not toggle flight controls');
+  await page.locator('#view-menu > summary').click();await page.locator('#toggle-controls').click();
+  assert.equal(await page.locator('#flight-controls-panel').isVisible(),!controlsVisible);
+  await page.locator('#view-menu > summary').click();await page.locator('#toggle-controls').click();
   await page.locator('#view-menu > summary').click();await page.keyboard.press('f');assert(!(await active()),'open menu guards F');await page.locator('#view-menu > summary').click();
   // Actual running flight remains running through native fullscreen transitions.
   await scene.focus();await page.keyboard.press('Space');await page.waitForFunction(()=>window.fullStates.at(-1)?.step>60);

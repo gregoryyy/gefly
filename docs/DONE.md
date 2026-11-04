@@ -3,6 +3,51 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 20:08 — Correct KAP evidence scope, stale ALT display, shortcuts and terrain mode
+
+TODO: 2.0.108–2.0.111; R-AP-1/R-AP-2/R-WORLD-6/R-WORLD-7/R-UX-2/R-AIRPORT-1.
+Agent: Codex integration and actual port5173 inspection; glide_model controller
+and shortcut changes; glide_cases browser implementation/observations;
+glide_housekeeping independent evidence audit and source quality review.
+
+**Implementation notes**
+
+The running unmocked app reproduced A showing HDG/ALT with a locked0FPM selector
+while paused. ALT now ends that stale VS page immediately, preserving intentional
+BARO timing. Eighteen focused controller tests pass. The renewed actual cockpit
+case uses A, immediate unblurred altitude entry, ALT and UP/DN, asserting visible
+VS/FPM/ALT ARM against worker state before a240sim-second native flight. Full pilot
+power produced mean517.6FPM (range505.3–534.2) for the500FPM command, capture at116s,
+and final altitude error3.01m with −9.72FPM. This is a calm default-fixture
+engineering check, not installed KAP performance. The existing seven-group
+AP/shortcut/Replay case passes with current menu access. Independent source
+quality review passes; cross-provider peer pending.
+
+Removed the generated Option/Alt–Shift catalogue: comma opens/closes the map,
+period cycles landmarks, and overlap is click-only. Existing map and overlay
+browser checks pass. Exclusive vector mode hides every photo/raster layer,
+including late arrivals; the actual official-tile case observed22 rendered vector
+tiles with no failed tiles. Missing tiles expose neutral relief. Dependencies are
+now independently installed in each checkout; the actual5173 server is running
+this source. No new airport models are included here.
+
+**Deviations**
+
+Historical native/panel observations were bounded results, not evidence that all
+current cockpit workflows worked. Their TODO records now say so; broader current
+KAP usability remains open in2.0.111 and full installed fidelity in2.0.14. The
+legacy NAV/audio/CWS browser groups were not rerun for this change. No servo gains,
+worker behavior or flight physics were changed. A second root investigation was
+invalidated by live reload during editing and is not acceptance evidence.
+
+**Insights**
+
+Test displayed modes and sustained native response through the user's exact
+control sequence. Injected displays and direct-native fixtures can miss an
+integrated failure. A dependency-install step through a shared node_modules
+symlink broke the live checkout; never share a mutable install between checkouts.
+Keep builds and checks separate from the user's running dependency tree.
+
 ## 2026-11-04 19:03 — Make A switch autopilot off
 
 TODO: 2.0.103; R-AP-2.

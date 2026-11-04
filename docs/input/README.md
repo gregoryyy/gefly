@@ -149,3 +149,6 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-04 — Autopilot ARM clarification](2026-11-04-autopilot-arm-clarification.md)
 
 - [2026-11-04 — Autopilot A toggle](2026-11-04-autopilot-a-toggle.md)
+
+- [2026-11-04 — Shortcut and vector correction](2026-11-04-shortcut-and-vector-correction.md)
+- [KAP evidence and current usability correction](2026-11-04-kap-evidence-correction.md)
