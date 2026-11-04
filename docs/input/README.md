@@ -99,3 +99,7 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-04 — Flying area and retained view](2026-11-04-flying-view-controls.md)
 
 - [2026-11-04 — Continue TODO mode: circuit practice guide](2026-11-04-circuit-guide-increment.md)
+
+- [2026-11-04 — View resets, direction markers and instrument-focused zoom](2026-11-04-view-markers-panel-focus.md)
+
+- [2026-11-04 — Options and menu-bar shortcuts](2026-11-04-options-menu-keys.md)

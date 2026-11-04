@@ -208,6 +208,10 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.67 Increase the flying-view vertical area on short desktop windows, retain uniformly fitted cockpit rows and constrain panel zoom; make drag look retain and accumulate in both relative and centered yoke modes, with Escape/restart explicit centering. R-INPUT-1/R-VIEW-1. Peer pending.
 
+- [x] 2.0.68 Add double-click front-view and normal-panel-fit resets, projected L/R/U/D/B aircraft-direction markers, and pointer-focused two-dimensional panel zoom within the existing fixed panel area, with bounded empty top space. Preserve yoke references, control interactions and live/Review state. R-INPUT-1/R-PANEL-1/R-VIEW-1/R-REVIEW-1.
+
+- [x] 2.0.69 Use O for Options and I for the menu/title bar; update labels/help and preserve typing, modal, modifier/repeat and disabled Review guards. R-UX-2/R-INPUT-1.
+
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
   - [x] 2.1.1 Deliver a bounded EDFE runway-practice briefing and sensed flight-event log: north/right-hand 26 and north/left-hand 08, explicit idle/parked setup, native wheel-contact takeoff/landing observations and ground stop/collision, retained with cursor-correct Review. R-PLAY-1/R-TRAIN-2/R-REVIEW-1. No checklist, circuit grading, official route or complete scenario/weather briefing acceptance; those remain open in 2.1 and 1.5. Peer pending.
   - [x] 2.1.2 Preserve declared EDFE runway context in version-1 JSON recordings; restore the imported briefing/event log from its own trace, keep legacy context unknown, reject malformed metadata and return to the unchanged live flight. R-PLAY-1/R-REVIEW-1. Aircraft/weather provenance, other airports and complete scenario packages remain separate; peer pending.

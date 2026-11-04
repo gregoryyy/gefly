@@ -44,6 +44,10 @@ try {
   const stats=async()=>{const count=await page.evaluate(()=>window.__forwardStats.length);await page.evaluate(()=>window.__forwardWorker.postMessage({type:'stats'}));await page.waitForFunction(n=>window.__forwardStats.length>n,count);return page.evaluate(()=>window.__forwardStats.at(-1));};
   const baseline=await stats();
   const marker=()=>page.locator('#aircraft-forward-marker').evaluate(e=>({hidden:e.hidden,x:Number(e.dataset.xPx),y:Number(e.dataset.yPx),clipped:e.dataset.clipped==='true',pointer:getComputedStyle(e).pointerEvents}));
+  const bodyMarkers=()=>page.evaluate(()=>Object.fromEntries(['forward','left','right','up','down','back'].map(id=>{
+    const e=document.getElementById(`aircraft-${id}-marker`);
+    return[id,{hidden:e.hidden,x:Number(e.dataset.xPx),y:Number(e.dataset.yPx),clipped:e.dataset.clipped==='true',pointer:getComputedStyle(e).pointerEvents,label:e.textContent}];
+  })));
   const begin=async()=>{await page.mouse.move(1050,200);await page.mouse.down();await page.waitForTimeout(300);};
   await begin(); await page.mouse.move(1050,165); await page.waitForTimeout(70);
   const front=await marker(); assert(!front.hidden && !front.clipped); assert(Math.abs(front.x-720)<2);
@@ -55,8 +59,40 @@ try {
   checks.push('crosshair follows actual body-forward direction opposite horizontal look');
   await page.mouse.move(1300,165);await page.waitForTimeout(70);const edge=await marker();assert(!edge.hidden && edge.clipped);
   await page.mouse.move(1500,165);await page.waitForTimeout(70);assert((await marker()).hidden);
-  await page.mouse.up();await page.waitForTimeout(70);assert(!(await marker()).hidden);
-  checks.push('offscreen front uses bounded edge cue; behind-camera direction hides; release restores live look');
+  await page.mouse.up();await page.waitForTimeout(70);assert((await marker()).hidden, 'release retains a rearward view');
+  await page.mouse.dblclick(1050,200);await page.waitForTimeout(70);assert(!(await marker()).hidden);
+  const centeredAxes=await bodyMarkers(), sceneRect=await page.locator('#scene').boundingBox();
+  assert(Math.abs(centeredAxes.left.x-36)<1&&Math.abs(centeredAxes.right.x-(sceneRect.width-36))<1,
+    'actual body left/right 90° axes project to opposite viewport edges');
+  assert(!centeredAxes.left.hidden&&!centeredAxes.right.hidden&&centeredAxes.back.hidden);
+  assert(Object.values(centeredAxes).every(cue=>cue.pointer==='none'));
+  await page.screenshot({path:`${output}/view-directions-front-reset.png`});
+  await page.mouse.move(900,180);await page.mouse.down();await page.waitForTimeout(300);
+  await page.mouse.move(900+(89.99*Math.PI/180)/.004,180);await page.mouse.up();await page.waitForTimeout(70);
+  const rightAxes=await bodyMarkers();
+  assert(!rightAxes.right.hidden&&!rightAxes.right.clipped&&Math.abs(rightAxes.right.x-sceneRect.width/2)<2,
+    'looking right puts the body R reference at the camera centerline');
+  assert(!rightAxes.forward.hidden&&rightAxes.forward.clipped&&rightAxes.forward.x<40);
+  assert(rightAxes.left.hidden&&rightAxes.right.label==='R');
+  await page.screenshot({path:`${output}/view-directions-looking-right.png`});
+  await page.mouse.dblclick(900,180);await page.waitForTimeout(70);
+  await page.mouse.move(900,180);await page.mouse.down();await page.waitForTimeout(300);
+  await page.mouse.move(900+(179.99*Math.PI/180)/.004,180);await page.mouse.up();await page.waitForTimeout(70);
+  const backAxes=await bodyMarkers(); assert(backAxes.forward.hidden&&!backAxes.back.hidden&&!backAxes.back.clipped);
+  assert(Math.abs(backAxes.back.x-sceneRect.width/2)<2&&backAxes.back.label==='B');
+  await page.screenshot({path:`${output}/view-directions-looking-back.png`});
+  await page.mouse.dblclick(900,180);await page.waitForTimeout(70);
+  await page.mouse.move(900,400);await page.mouse.down();await page.waitForTimeout(300);
+  await page.mouse.move(900,400-(69.9*Math.PI/180)/.004);await page.mouse.up();await page.waitForTimeout(70);
+  const upAxes=await bodyMarkers();assert(!upAxes.up.hidden&&upAxes.up.y<sceneRect.height/2&&upAxes.down.hidden);
+  await page.mouse.dblclick(900,180);await page.waitForTimeout(70);
+  await page.mouse.move(900,160);await page.mouse.down();await page.waitForTimeout(300);
+  await page.mouse.move(900,160+(69.9*Math.PI/180)/.004);await page.mouse.up();await page.waitForTimeout(70);
+  const downAxes=await bodyMarkers();assert(!downAxes.down.hidden&&downAxes.down.y>sceneRect.height/2&&downAxes.up.hidden);
+  await page.mouse.dblclick(900,180);await page.waitForTimeout(70);
+  observations.bodyAxes={centeredAxes,rightAxes,backAxes,upAxes,downAxes};
+  checks.push('offscreen body axes use clipped cues; behind-camera axes hide; trusted double-click restores the forward view');
+  checks.push('actual 90° right/up/down and 180° back references project relative to the retained camera, with pointer-transparent labels');
   const afterLook=await stats();assert.equal(afterLook.step,baseline.step);assert.equal(afterLook.digest,baseline.digest);assert.deepEqual(afterLook.final_state,baseline.final_state);
   checks.push('look and projection leave paused engine state and digest unchanged');
   await page.locator('#review-flight').click(); await page.waitForFunction(()=>document.querySelector('#status').textContent==='Review');
@@ -70,6 +106,10 @@ try {
   // camera follows heading only, so a recorded pitch change must move the marker
   // vertically in the same sense, and seeking back must reproduce the first position.
   await page.locator('#view-menu > summary').click();await page.locator('#chase').click();
+  // Level the heading-only chase gaze for this pitch comparison. Its default
+  // downward orbit can clip both recorded nose directions at a narrow FOV.
+  await page.mouse.move(900,160);await page.mouse.down();await page.waitForTimeout(300);
+  await page.mouse.move(900,160+Math.atan2(11,30)/.004);await page.mouse.up();await page.waitForTimeout(70);
   const recordedPitch=await page.evaluate(()=>{const states=window.__forwardStates.filter(s=>Number.isFinite(s.pitch_rad));return {first:states[0].pitch_rad,last:states.at(-1).pitch_rad};});
   assert(Math.abs(recordedPitch.last-recordedPitch.first)>0.02,`trace attitude differs: ${JSON.stringify(recordedPitch)}`);
   await page.locator('#review-time').focus();

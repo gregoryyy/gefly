@@ -17,7 +17,7 @@ try {
   const page = await browser.newPage();
   await page.route(origin + '/', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><html><head></head><body></body></html>' }));
   await page.goto(origin);
-  await page.setContent(`<main id="fixture"><header class="topbar"><button id="cockpit">Cockpit</button><button id="toggle-map">Map</button><button id="reset" disabled>Restart</button></header><button id="outside">Outside</button><input id="typing"><dialog id="dialog"><input></dialog><aside id="practice-map-panel"><button id="map-action">Map action</button></aside><aside id="flight-controls-panel"><button id="control-action">Control</button></aside></main>`);
+  await page.setContent(`<main id="fixture"><header class="topbar"><button id="cockpit">Cockpit</button><button id="toggle-map">Map</button><button id="reset" disabled>Restart</button><button id="controls-settings">Options</button><button id="eddf-ils-practice">ILS practice</button></header><button id="outside">Outside</button><input id="typing"><dialog id="dialog"><input></dialog><aside id="practice-map-panel"><button id="map-action">Map action</button></aside><aside id="flight-controls-panel"><button id="control-action">Control</button></aside></main>`);
   await page.evaluate(async () => {
     const { createOverlayPresentation } = await import('/src/overlay-presentation.ts');
     const { installMenuShortcuts } = await import('/src/menu-shortcuts.ts');
@@ -48,18 +48,25 @@ try {
   await page.keyboard.press('Tab'); // input
   await page.keyboard.press('Tab'); // map button
   assert.equal(await opacity('#practice-map-panel'), '1');
-  await page.keyboard.press('o');
+  await page.keyboard.press('i');
   assert(await page.locator('.topbar').isVisible());
   await page.keyboard.press('Alt+Shift+KeyM');
   assert(await page.evaluate(() => window.hits.includes('toggle-map')));
   assert.equal(await page.locator('#toggle-map').getAttribute('aria-keyshortcuts'), 'M Alt+Shift+M');
+  await page.keyboard.press('Alt+Shift+KeyI');
+  assert(await page.evaluate(() => window.hits.includes('eddf-ils-practice')));
+  assert(await page.locator('.topbar').isVisible(), 'the ILS chord does not toggle the title bar');
+  await page.keyboard.press('Alt+Shift+KeyO');
+  assert(await page.evaluate(() => window.hits.includes('controls-settings')));
+  assert(await page.locator('.topbar').isVisible(), 'legacy Options chord does not toggle the title bar');
   await page.keyboard.press('Alt+Shift+KeyR');
   assert(!await page.evaluate(() => window.hits.includes('reset')));
   await page.locator('#typing').focus();
-  await page.keyboard.press('o');
+  await page.keyboard.press('o'); await page.keyboard.press('i');
   assert(await page.locator('.topbar').isVisible());
+  assert.equal(await page.locator('#typing').inputValue(), 'oi', 'both shortcut letters remain editable text');
   await page.evaluate(() => document.querySelector('#dialog').showModal());
-  await page.keyboard.press('o');
+  await page.keyboard.press('o'); await page.keyboard.press('i');
   assert(await page.locator('.topbar').isVisible());
   const flight = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const errors = [];
@@ -70,8 +77,36 @@ try {
   await flight.waitForFunction(() => !document.querySelector('#start').disabled, null, { timeout: 60000 });
   assert.equal(await flight.locator('.topbar').isVisible(), false);
   assert.equal(await flight.locator('#flight-controls-panel').isVisible(), false);
+  await flight.locator('#scene').focus();
   await flight.keyboard.press('o');
+  await flight.locator('#control-settings').waitFor({ state: 'visible' });
+  assert.equal(await flight.locator('.topbar').isVisible(), false, 'O opens Options while the title bar stays hidden');
+  assert((await flight.locator('#controls-settings').getAttribute('aria-keyshortcuts')).split(/\s+/).includes('O'));
+  assert.equal(await flight.locator('#controls-settings kbd').textContent(), 'O');
+  await flight.locator('#settings-close').focus(); await flight.keyboard.press('i'); await flight.keyboard.press('o');
+  assert.equal(await flight.locator('.topbar').isVisible(), false, 'an open modal guards both shortcuts');
+  await flight.locator('#settings-close').click(); await flight.locator('#scene').focus();
+  await flight.evaluate(() => {
+    const scene = document.querySelector('#scene');
+    for (const key of ['o', 'i']) for (const guard of ['repeat', 'ctrlKey', 'metaKey', 'altKey', 'shiftKey']) {
+      scene.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key, code: `Key${key.toUpperCase()}`, [guard]: true }));
+    }
+  });
+  assert.equal(await flight.locator('.topbar').isVisible(), false);
+  assert.equal(await flight.locator('#control-settings').isVisible(), false, 'repeat or modifier combinations do not trigger the plain shortcuts');
+  await flight.evaluate(() => {
+    const editable = document.createElement('input'); editable.id = 'shortcut-typing'; document.querySelector('.flight-app').append(editable); editable.focus();
+  });
+  await flight.keyboard.press('o'); await flight.keyboard.press('i');
+  assert.equal(await flight.locator('#shortcut-typing').inputValue(), 'oi');
+  assert.equal(await flight.locator('.topbar').isVisible(), false);
+  assert.equal(await flight.locator('#control-settings').isVisible(), false);
+  await flight.locator('#shortcut-typing').evaluate(element => element.remove());
+  await flight.locator('#scene').focus(); await flight.keyboard.press('i');
   assert(await flight.locator('.topbar').isVisible());
+  await flight.keyboard.press('o'); await flight.locator('#control-settings').waitFor({ state: 'visible' });
+  assert(await flight.locator('.topbar').isVisible(), 'O does not toggle a visible title bar');
+  await flight.locator('#settings-close').click();
   for (const selector of ['#cockpit', '#chase', '#toggle-map', '#toggle-flight-data', '#toggle-stall-awareness', '#toggle-controls', '#handbook-open', '#controls-settings', '#reset', '[data-landing="normal"]', '[data-landing="hard"]', '[data-landing="side"]', '[data-landing="banked"]', '#airborne-practice', '#taunus-practice', '#eddf-ils-practice', '[data-region="darmstadt"]', '[data-region="odenwald"]', '[data-region="spessart"]', '#engine-open', '#radio-nav-open', '#navigation-open', '#autopilot-open', '#pause', '#review-flight']) {
     assert(await flight.locator(selector).getAttribute('aria-keyshortcuts'), `${selector} missing shortcut`);
   }
@@ -80,10 +115,10 @@ try {
   assert.notEqual(await flight.locator('.flight-app').getAttribute('data-review'), 'true');
   await flight.locator('#view-menu > summary').click();
   assert(await flight.locator('#view-menu').evaluate(e => e.open));
-  await flight.keyboard.press('o');
+  await flight.keyboard.press('i');
   assert.equal(await flight.locator('#view-menu').evaluate(e => e.open), false);
   assert.equal(await flight.locator('.topbar').isVisible(), false);
-  await flight.keyboard.press('o');
+  await flight.keyboard.press('i');
   await flight.locator('#start').click();
   await flight.keyboard.press('Alt+Shift+KeyF');
   assert(await flight.locator('#flight-controls-panel').isVisible());
@@ -121,6 +156,13 @@ try {
   await flight.keyboard.press('r');
   await flight.waitForFunction(() => document.querySelector('.flight-app').dataset.review === 'true');
   assert(await flight.locator('#reset').isDisabled());
+  assert(await flight.locator('#controls-settings').isDisabled());
+  await flight.locator('#scene').focus(); await flight.keyboard.press('i');
+  assert.equal(await flight.locator('.topbar').isVisible(), false);
+  await flight.keyboard.press('o');
+  assert.equal(await flight.locator('#control-settings').isVisible(), false, 'O respects disabled Options during Review');
+  assert.equal(await flight.locator('.topbar').isVisible(), false, 'disabled O still never toggles the title bar');
+  await flight.keyboard.press('i'); assert(await flight.locator('.topbar').isVisible(), 'I remains a view action in Review');
   await flight.keyboard.press('Alt+Shift+KeyR');
   assert.equal(await flight.locator('.flight-app').getAttribute('data-review'), 'true');
   assert.deepEqual(errors, []);

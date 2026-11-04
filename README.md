@@ -92,8 +92,8 @@ just stop                 # stop this checkout's flight server
 ```
 
 Select **Start flight**, then click the scene for touchpad yoke control or use the keyboard.
-The top menu/title bar and floating flight controls start hidden: **O** toggles
-the menu, and **Alt+Shift+F** shows the flight controls. Floating controls, map,
+The top menu/title bar and floating flight controls start hidden: **I** toggles
+the menu, **O** opens Options, and **Alt+Shift+F** shows the flight controls. Floating controls, map,
 flight-data and stall-awareness panels are half opaque until clicked; their
 first click activates the panel, and subsequent gestures operate it.
 Arrow keys control pitch/roll, Q/W rudder, 0 throttle idle and 1–9 throttle.
@@ -108,11 +108,13 @@ These are simulator conveniences; acceleration preserves the fixed physics step
 and the achieved rate depends on available CPU/rendering capacity.
 Restart is in Flight. Click toggles touchpad yoke control;
 hold-drag retains the view where you release it and preserves the yoke midpoint;
-Escape centers the view. Two-finger vertical
-scroll over the scenery changes field of view. Over the cockpit panel, scroll up
-to enlarge the instruments (up to 3×, limited by screen height). The panel grows
-upward so both gauge rows stay visible; horizontal scrolling moves between columns
-and stops at the panel edges. Scroll down or resize the window to restore the fit.
+Double-click the scenery or press Escape to center the view. L/R/U/D/B markers
+show the aircraft’s left, right, up, down and backward directions. Two-finger
+vertical scroll over the scenery changes field of view. Over the cockpit panel,
+scroll up to focus on instruments around the pointer (up to 3×). The panel stays
+the same size while the enlarged content is cropped inside it; horizontal scroll
+moves between columns. Double-click panel housing or a noninteractive instrument
+face to restore normal fit. Scroll down or resize also restores the fit.
 Public terrain now streams across **8.25–10.00°E / 49.25–50.75°N**, including
 Darmstadt, Odenwald and Spessart, with named Flight-menu demonstrations. The
 bounded 200 m BKG relief surrounds the finer Egelsbach–Frankfurt–Taunus package;

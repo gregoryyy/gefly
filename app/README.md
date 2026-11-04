@@ -32,7 +32,7 @@ just fly
 Open the local URL printed by the development server, then select **Start flight**.
 The application loads paused so the aircraft cannot fly away while you inspect
 the controls. Starting or resetting uses the same airborne initial state near
-approximate EDFE coordinates: 1,300 ft MSL (DHHN2016 physical height) and 90 kt true airspeed. Press **O** to show the initially hidden menu. Choose **Flight → Taunus ridge flight**, **Darmstadt flight**, **Odenwald ridge flight** or **Spessart flight** for separate airborne demonstrations.
+approximate EDFE coordinates: 1,300 ft MSL (DHHN2016 physical height) and 90 kt true airspeed. Press **I** to show the initially hidden menu. Choose **Flight → Taunus ridge flight**, **Darmstadt flight**, **Odenwald ridge flight** or **Spessart flight** for separate airborne demonstrations.
 
 The engine build reuses the [existing browser study recipe](../studies/e1-browser/sim/README.md).
 Its generated WASM and bundled research-model data stay in ignored local build
@@ -41,7 +41,7 @@ A missing or failed engine build is an error, not a switch to scripted flight.
 
 ## Controls
 
-The top title/menu bar and flight-control overlay start hidden. **O** toggles the
+The top title/menu bar and flight-control overlay start hidden. **I** toggles the
 top bar; it does not control the central Start/Pause card. **Alt+Shift+F** toggles
 the flight controls. Floating controls, map, flight-data and stall-awareness
 panels show at 50% opacity until activated. The first click activates and consumes
@@ -66,7 +66,8 @@ unavailable. Returning to live restores pending control settings.
 | P | Autopilot on / off (simulator shortcut) |
 | A | Engage autopilot HDG + ALT at current heading/pressure altitude |
 | = | Cycle simulation rate 1× → 1.5× → 2× → 5× → 10× → 1× |
-| O | Show / hide the top title/menu bar |
+| I | Show / hide the top title/menu bar |
+| O | Open Options |
 | Space | Start / pause / resume |
 | R | Enter / leave recorded Review |
 | V | Switch cockpit / chase view |

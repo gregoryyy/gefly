@@ -49,3 +49,37 @@
 }
 #aircraft-forward-marker[data-clipped='true'] .forward-marker-crosshair { display: none; }
 #aircraft-forward-marker[data-clipped='true'] .forward-marker-arrow { display: block; }
+
+.aircraft-direction-marker {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 5;
+  color: #f1e9ce;
+  opacity: .75;
+  filter: drop-shadow(0 1px 1px #071018);
+  font: 600 11px/22px system-ui;
+  text-align: center;
+}
+.aircraft-direction-marker[hidden] { display: none; }
+.aircraft-direction-marker .direction-marker-label {
+  display: block;
+  border: 1px solid #f1e9ce88;
+  border-radius: 50%;
+  background: #10212780;
+}
+.aircraft-direction-marker .forward-marker-arrow { display: none; position: absolute; inset: 0; }
+.aircraft-direction-marker .forward-marker-arrow::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: -5px;
+  width: 9px;
+  height: 9px;
+  border-top: 1.5px solid currentColor;
+  border-right: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+}
+.aircraft-direction-marker[data-clipped='true'] .forward-marker-arrow { display: block; }

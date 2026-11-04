@@ -3,6 +3,67 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 08:13 — O for Options, I for the menu bar
+
+TODO: 2.0.69; R-UX-2/R-INPUT-1. Agent: Codex orchestrator integration;
+glide_cases bar shortcut/browser checks, glide_model Options shortcut,
+glide_housekeeping independent affected review.
+
+**Implementation notes**
+
+O opens Options even with the title bar hidden; I toggles that bar. Update the
+visible shortcut, start hint, documentation and browser helpers. The existing
+browser suite passes typing, modal, modifier/repeat, hidden/shown-bar and disabled
+Review guards. The legacy Alt+Shift+O alias remains functional.
+
+**Deviations**
+
+None. Prior view/zoom implementation remains unchanged; peer pending.
+
+**Insights**
+
+Keep the Options opener independent of whether its menu button is visible.
+
+## 2026-11-04 08:06 — View reset, body-direction cues and focused cockpit zoom
+
+TODO: 2.0.68; R-INPUT-1/R-PANEL-1/R-VIEW-1/R-REVIEW-1.
+Agent: Codex orchestrator integration; glide_cases view gestures/projection and
+browser checks, glide_model cockpit zoom/layout and browser checks,
+glide_housekeeping independent quality and specification validation.
+
+**Implementation notes**
+
+Double-click the scenery to center the view while restoring the yoke mode and
+reference from before the click pair; input stays neutral until actual movement.
+Project L/R/U/D at 90 degrees and B at 180 degrees from the aircraft nose against
+the actual camera, retaining the existing forward crosshair and edge cues.
+Markers remain noninteractive and hide behind the camera hemisphere.
+
+Keep the cockpit area and flying-view split fixed while zooming 1–3× around the
+pointer in both dimensions. Clip enlarged instruments below the panel heading,
+clamp pan against blank top space, retain focused controls through unrelated
+layout notifications and reveal keyboard-focused controls. Double-click housing
+or a noninteractive face to restore fit; native controls/OBS gestures retain
+ownership. Both relative/centered touchpad modes, paused state and Review are
+covered by actual browser checks. Independent units, view/gesture, responsive
+focus and FOV/native-state checks pass; source pins and separate review outcomes
+are in the [review](reviews/2026-11-04-view-markers-panel-focus.md).
+
+**Deviations**
+
+This replaces the earlier growing-panel zoom with the user's fixed-area crop.
+Interactive control surfaces are excluded from the panel reset gesture. Ordinary
+pointer presses still neutralize borrowed yoke input; camera reset does not issue
+flight commands or move its reference. No dynamics or training-fidelity change
+is claimed. Cross-provider peer pending.
+
+**Insights**
+
+A useful instrument zoom must preserve the flying area while letting the operator
+focus on a small control. Resize notifications caused by control text must not
+reset that focus unless the actual fitted layout changes. A browser double-click
+contains two prior clicks, so centering alone cannot preserve yoke references.
+
 ## 2026-11-04 07:28 — Bring merged flight-control and circuit increments to main
 
 TODO: 2.0.67/2.1.4; R-INPUT-1/R-VIEW-1/R-PLAY-1/R-TRAIN-5.

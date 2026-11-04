@@ -21,7 +21,7 @@ try {
   });
   await page.goto(origin);
   await page.waitForFunction(() => !document.querySelector('#start').disabled, null, { timeout: 90000 });
-  await page.locator('#scene').focus(); await page.keyboard.press('o');
+  await page.locator('#scene').focus(); await page.keyboard.press('i');
   await page.locator('#controls-settings').click(); await page.locator('#centered-touchpad').check(); await page.locator('#settings-close').click();
   await page.locator('#scene').focus(); await page.keyboard.press('v'); await page.keyboard.press('a');
   await page.keyboard.press('m');
@@ -56,7 +56,7 @@ try {
   await page.waitForTimeout(25000);
   await page.locator('#scene').focus(); await page.keyboard.press('Space');
   await page.waitForFunction(() => document.querySelector('#status').textContent === 'Flying');
-  await page.keyboard.press('o');
+  await page.keyboard.press('i');
   await page.mouse.move(20, 20);
   await page.waitForTimeout(1000);
   await mkdir(new URL('../../output/flight/', import.meta.url), { recursive: true });

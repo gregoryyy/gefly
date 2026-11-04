@@ -70,11 +70,11 @@ try {
     element.dispatchEvent(new KeyboardEvent('keydown',{bubbles:true,code:'KeyM',key:'m',repeat:true}));
   });
   assert.equal(await panel.isVisible(),false,'modifiers and repeat do not toggle the map');
-  await page.keyboard.press('o');
+  await page.keyboard.press('i');
   await page.locator('#view-menu > summary').click();
   await page.keyboard.press('m');
   assert.equal(await panel.isVisible(),false,'open menu guards plain M');
-  await page.keyboard.press('o');
+  await page.keyboard.press('i');
   await page.keyboard.press('Alt+Shift+KeyO');
   await page.locator('#control-settings').waitFor({state:'visible'});
   await page.keyboard.press('m');
@@ -119,10 +119,10 @@ try {
   assert(desktop.map.bottom <= desktop.cockpit.y, 'map stays above the cockpit');
   assert.equal(Math.round(desktop.cockpit.width), 1440, 'cockpit remains full width');
   assert((await panel.locator('.practice-map-viewport').boundingBox()).height >= 180);
-  await scene.focus(); await page.keyboard.press('o');
+  await scene.focus(); await page.keyboard.press('i');
   const headerBox = await page.locator('.topbar').boundingBox();
   assert((await panel.boundingBox()).y >= headerBox.y + headerBox.height, 'visible menu bar stays above the dock');
-  await page.keyboard.press('o');
+  await page.keyboard.press('i');
   checks.push('desktop map docks on the right beside the 3D view and above the full-width cockpit; shown menus remain unobstructed');
 
   await page.locator('#start').click();

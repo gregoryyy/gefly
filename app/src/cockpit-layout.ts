@@ -3,32 +3,48 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
   const deck = container.querySelector<HTMLElement>('.flight-deck');
   const instruments = container.querySelector<HTMLElement>('.instruments');
   if (!deck || !instruments) throw new Error('Cockpit layout requires the flight deck and instruments');
+  const viewport = document.createElement('div');
+  viewport.className = 'cockpit-viewport';
+  instruments.before(viewport); viewport.append(instruments);
   let observedTransport: HTMLElement | null = null;
   container.classList.add('cockpit-fitted');
   let frame = 0;
   let disposed = false;
   let zoom = 1;
-  let panX = 0;
+  let panX = 0, panY = 0;
   let fitted = 1, naturalHeight = 0, naturalWidth = 0, headingHeight = 0, verticalPadding = 0;
-  let maxZoom = 3;
+  const maxZoom = 3;
+  let fitKey = '';
 
   function paintZoom(): void {
     if (!deck || !instruments) return;
-    // Keep both instrument rows inside the growing deck; retain scenery above it.
-    const height = Math.ceil(naturalHeight * fitted * zoom + headingHeight + verticalPadding);
-    container.style.setProperty('--deck-height', `${height}px`);
-    const rect = deck.getBoundingClientRect();
-    const padding = getComputedStyle(deck);
-    const left = rect.left + parseFloat(padding.paddingLeft);
-    const right = rect.right - parseFloat(padding.paddingRight);
-    const width = naturalWidth * fitted;
-    const baseLeft = rect.left + (rect.width - width) / 2;
-    panX = width * zoom <= right - left ? 0
-      : Math.max(right - baseLeft - width * zoom, Math.min(left - baseLeft, panX));
+    // Magnify only the clipped instrument surface. The deck and flying view
+    // retain their fitted height, including while focusing a lower instrument.
+    const width = naturalWidth * fitted, height = naturalHeight * fitted;
+    const baseLeft = (viewport.clientWidth - width) / 2;
+    const scaledWidth = width * zoom, scaledHeight = height * zoom;
+    panX = scaledWidth <= viewport.clientWidth
+      ? Math.max(-baseLeft, Math.min(viewport.clientWidth - baseLeft - scaledWidth, panX))
+      : Math.max(viewport.clientWidth - baseLeft - scaledWidth, Math.min(-baseLeft, panX));
+    panY = Math.max(Math.min(0, viewport.clientHeight - scaledHeight), Math.min(0, panY));
     instruments.style.transformOrigin = '0 0';
-    instruments.style.transform = `translateX(${panX / fitted}px) scale(${zoom})`;
+    instruments.style.transform = `translate(${panX / fitted}px, ${panY / fitted}px) scale(${zoom})`;
     deck.dataset.zoomed = String(zoom > 1);
     deck.dataset.panelZoom = String(zoom);
+  }
+  function resetZoom(): void { zoom = 1; panX = panY = 0; paintZoom(); }
+  function doubleClick(event: MouseEvent): void {
+    if (event.button !== 0 || !(event.target instanceof Element)
+      || event.target.closest('button,input,select,textarea,a,[role=button],[role=slider],[role=spinbutton],#nav1-gauge .navigation-gauge-face,#nav2-gauge .navigation-gauge-face')) return;
+    event.preventDefault(); event.stopPropagation(); resetZoom();
+  }
+
+  function focusControl(event: FocusEvent): void {
+    if (zoom === 1 || !(event.target instanceof Element)) return;
+    const target = event.target.getBoundingClientRect(), box = viewport.getBoundingClientRect();
+    panX += target.left < box.left ? box.left - target.left : target.right > box.right ? box.right - target.right : 0;
+    panY += target.top < box.top ? box.top - target.top : target.bottom > box.bottom ? box.bottom - target.bottom : 0;
+    paintZoom();
   }
 
   function wheel(event: WheelEvent): void {
@@ -47,8 +63,9 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
     const rect = instruments.getBoundingClientRect();
     // Keep the instrument point under the pointer fixed in screen coordinates.
     panX += (event.clientX - rect.left) * (1 - next / zoom);
+    panY += (event.clientY - rect.top) * (1 - next / zoom);
     zoom = next;
-    if (zoom === 1) panX = 0;
+    if (zoom === 1) panX = panY = 0;
     paintZoom();
   }
 
@@ -90,14 +107,15 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
       Math.max(1, deck.clientWidth - horizontalPadding) / naturalWidth,
       Math.max(1, container.clientHeight - sceneReserve - headingHeight - verticalPadding) / naturalHeight);
     fitted = scale;
-    maxZoom = Math.max(1, Math.min(3, (container.clientHeight - sceneReserve - headingHeight - verticalPadding) / (naturalHeight * scale)));
+    container.style.setProperty('--deck-height', `${Math.ceil(naturalHeight * fitted + headingHeight + verticalPadding)}px`);
     if (container.style.getPropertyValue('--cockpit-scale') !== String(scale)) {
       container.style.setProperty('--cockpit-scale', String(scale));
     }
     container.dataset.cockpitScale = String(scale);
-    // A viewport/layout change restores the full, fitted panel.
-    zoom = 1; panX = 0;
-    paintZoom();
+    // Control text can resize an observed overlay without changing this fit.
+    // Keep its current focus; only actual viewport/layout changes restore fit.
+    const key = [scale, naturalWidth, naturalHeight, headingHeight, verticalPadding, container.clientWidth, container.clientHeight, container.dataset.review === 'true'].join('/');
+    if (key !== fitKey) { fitKey = key; resetZoom(); } else paintZoom();
   }
   function schedule(): void {
     if (!disposed && !frame) frame = requestAnimationFrame(fit);
@@ -110,7 +128,9 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
   const reviewObserver = new MutationObserver(schedule);
   reviewObserver.observe(container, { attributes: true, attributeFilter: ['data-review'] });
   window.addEventListener('resize', schedule);
-  deck.addEventListener('wheel', wheel, { passive: false, capture: true });
+  viewport.addEventListener('wheel', wheel, { passive: false, capture: true });
+  deck.addEventListener('dblclick', doubleClick);
+  viewport.addEventListener('focusin', focusControl);
   fit();
 
   return {
@@ -120,7 +140,10 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
       observer.disconnect();
       reviewObserver.disconnect();
       window.removeEventListener('resize', schedule);
-      deck.removeEventListener('wheel', wheel, { capture: true });
+      viewport.removeEventListener('wheel', wheel, { capture: true });
+      deck.removeEventListener('dblclick', doubleClick);
+      viewport.removeEventListener('focusin', focusControl);
+      viewport.before(instruments); viewport.remove();
       instruments.style.removeProperty('transform');
       instruments.style.removeProperty('transform-origin');
       delete deck.dataset.zoomed;

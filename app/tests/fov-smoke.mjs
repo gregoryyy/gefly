@@ -87,27 +87,24 @@ try {
   assert.equal(await page.evaluate(() => document.elementFromPoint(1000, 180)?.closest('#scene')?.id), 'scene',
     'native scroll point must lie in the unobstructed scene');
   // Panel scrolling magnifies instruments around the pointer, independently of scene FOV.
-  // A tall viewport has room for enlargement while reserving the flying area.
-  await page.setViewportSize({ width: 1440, height: 1300 });
+  // Magnification uses a fixed clipped viewport even on an ordinary window.
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.waitForTimeout(150);
   const ap = page.locator('#ap-engage');
   const box = await ap.boundingBox();
   const anchor = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  const originalDeck = await page.locator('.flight-deck').boundingBox(), originalScene = await page.locator('#scene').boundingBox();
   await page.mouse.move(anchor.x, anchor.y);
   await page.mouse.wheel(0, -180);
   await page.waitForTimeout(100);
   const enlarged = await ap.boundingBox();
   assert(enlarged.width > box.width * 1.3, 'AP control visibly enlarges');
-  assert(Math.abs(enlarged.x + enlarged.width / 2 - anchor.x) < 1, 'horizontal pointer anchor stays fixed');
+  assert(Math.abs(enlarged.x + enlarged.width / 2 - anchor.x) < 1.5, 'horizontal pointer anchor stays fixed');
+  assert(Math.abs(enlarged.y + enlarged.height / 2 - anchor.y) < 1.5, 'vertical pointer anchor stays fixed');
   const deckBounds = await page.locator('.flight-deck').boundingBox();
   assert(enlarged.y >= deckBounds.y && enlarged.y + enlarged.height <= deckBounds.y + deckBounds.height);
-  const rowsFit = await page.locator('.primary-instruments').evaluate(panel => {
-    const deck = panel.closest('.flight-deck').getBoundingClientRect();
-    return [...panel.querySelectorAll('canvas, .navigation-gauge-face')].every(gauge => {
-      const r = gauge.getBoundingClientRect(); return r.top >= deck.top && r.bottom <= deck.bottom;
-    });
-  });
-  assert(rowsFit, 'both gauge rows remain vertically visible');
+  assert.equal(deckBounds.height, originalDeck.height, 'panel magnification retains cockpit height');
+  assert.equal((await page.locator('#scene').boundingBox()).height, originalScene.height, 'panel magnification retains flying area');
   assert.equal(await fov(), 60, 'panel zoom does not change camera FOV');
   const wasEngaged = await ap.getAttribute('aria-pressed');
   await ap.click();
@@ -130,11 +127,11 @@ try {
     await page.mouse.move(700, bounds.y + 50); await page.mouse.wheel(dx, 0);
     await page.waitForTimeout(80);
     const coverage = await page.locator('.instruments').evaluate(panel => {
-      const p = panel.getBoundingClientRect(), d = panel.closest('.flight-deck').getBoundingClientRect();
+      const p = panel.getBoundingClientRect(), d = panel.closest('.cockpit-viewport').getBoundingClientRect();
       return { left: p.left, right: p.right, top: p.top, bottom: p.bottom, deck: { left: d.left, right: d.right, top: d.top, bottom: d.bottom } };
     });
     assert(coverage.left <= coverage.deck.left + 13 && coverage.right >= coverage.deck.right - 13);
-    assert(coverage.top >= coverage.deck.top && coverage.bottom <= coverage.deck.bottom + 1);
+    assert(coverage.top <= coverage.deck.top + 1 && coverage.bottom >= coverage.deck.bottom - 1, 'clamped focused content fills the viewport without blank vertical margins');
   }
   for (let i = 0; i < 8; i++) {
     const d = await page.locator('.flight-deck').boundingBox();

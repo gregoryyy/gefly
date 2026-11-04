@@ -96,6 +96,14 @@ try {
   assert.deepEqual(await look(), secondLook, 'Options never resets the view');
   frozen(before, await stats());
 
+  await page.mouse.click(1000, 160); await mode('yoke');
+  await page.mouse.dblclick(1200, 220); await mode('yoke');
+  assert.deepEqual(await look(), { yaw_rad: 0, pitch_rad: 0 }, 'trusted browser double-click centers retained look');
+  assert.deepEqual(await axes(), neutral, 'double-click ends with neutral controls');
+  await page.mouse.move(1075, 130); assert.deepEqual(await axes(), original,
+    'the browser pair restores the original relative anchor rather than the double-click location');
+  await page.mouse.move(1000, 160); frozen(before, await stats());
+
   await startOrResume(page);
   await page.mouse.click(1000, 160); await mode('yoke');
   await page.mouse.move(1075, 130);
@@ -125,12 +133,39 @@ try {
   assert.deepEqual(await look(), { yaw_rad: 0, pitch_rad: 0 }, 'Escape explicitly centers the view');
   await page.locator('#pause').click();
   const paused = await stats(); await page.waitForTimeout(100); frozen(paused, await stats());
+
+  await page.locator('#scene').focus(); await page.keyboard.press('r');
+  await page.waitForFunction(() => document.querySelector('#status').textContent === 'Review');
+  await page.mouse.move(1000, 160); await page.mouse.down(); await page.waitForTimeout(300);
+  await page.mouse.move(1050, 120); await page.mouse.up(); await mode('off');
+  assert.notEqual((await look()).yaw_rad, 0);
+  const reviewInputs = await page.evaluate(() => window.__pointerInputs.length);
+  await page.mouse.dblclick(1200, 220); await mode('off');
+  assert.deepEqual(await look(), { yaw_rad: 0, pitch_rad: 0 });
+  assert.equal(await page.evaluate(() => window.__pointerInputs.length), reviewInputs, 'Review double-click never writes live flight inputs');
+  frozen(paused, await stats());
+  await page.locator('#scene').focus(); await page.keyboard.press('r');
+  await page.waitForFunction(() => document.querySelector('#status').textContent === 'Paused');
+
+  await page.locator('#controls-settings').click(); await page.locator('#centered-touchpad').check();
+  await page.locator('#settings-close').click();
+  const rect = await page.locator('#scene').boundingBox();
+  const sample = { x: rect.x + rect.width / 2 + 75, y: rect.y + rect.height / 2 - 75 };
+  await page.mouse.click(1000, 160); await mode('yoke');
+  await page.mouse.move(sample.x, sample.y); const centeredAxes = await axes();
+  await hold(sample.x + 50, sample.y + 20);
+  assert.notEqual((await look()).yaw_rad, 0);
+  await page.mouse.dblclick(1200, 220); await mode('yoke');
+  assert.deepEqual(await look(), { yaw_rad: 0, pitch_rad: 0 });
+  await page.mouse.move(sample.x, sample.y); assert.deepEqual(await axes(), centeredAxes);
+  frozen(paused, await stats());
   assert.deepEqual(errors, []);
   const result = { result: 'pass', checks: [
     'paused hold-look preserves original midpoint without advancing actual JSBSim',
     'live hold-look preserves original midpoint and actual aileron/elevator commands',
     'outside release/re-entry and short-click toggle retain their separate behavior',
     'default-relative look retains and accumulates after release and Options; Escape explicitly centers it',
+    'trusted double-click centers relative/centered/Review look, preserves pre-pair mode and relative anchor, and leaves paused native state unchanged',
   ], originalCommands };
   await mkdir(output, { recursive: true });
   await writeFile(`${output}/pointer-yoke-browser.json`, `${JSON.stringify(result, null, 2)}\n`);

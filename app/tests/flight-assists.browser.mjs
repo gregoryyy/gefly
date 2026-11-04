@@ -116,13 +116,13 @@ try {
     element.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, code: 'KeyA', key: 'a', repeat: true }));
   });
   assert.equal(await commandCount(), guarded);
-  await page.keyboard.press('o');
+  await page.keyboard.press('i');
   await page.locator('#flight-menu > summary').click();
   await page.keyboard.press('a'); await page.keyboard.press('Equal');
   assert.equal(await commandCount(), guarded, 'open menus keep plain shortcuts inactive');
   await page.locator('#capture-autopilot').click();
   await page.waitForFunction(count => window.assistCommands.filter(command => ['simulation-rate', 'autopilot-capture'].includes(command.type)).length > count, guarded);
-  await page.keyboard.press('o'); // hide header and close details
+  await page.keyboard.press('i'); // hide header and close details
   await page.keyboard.press('Alt+Shift+KeyO');
   await page.locator('dialog[open]').waitFor({ state: 'visible' });
   const modalCount = await commandCount();

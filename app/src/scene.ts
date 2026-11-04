@@ -6,7 +6,7 @@ import {
 } from 'cesium';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 import { createForwardMarker } from './forward-marker';
-import { projectForwardDirection } from './forward-marker-projection';
+import { projectBodyDirections } from './forward-marker-projection';
 import { createAircraftVisual } from './aircraft-visual';
 import { AIRCRAFT_CONTROL_SURFACES, controlSurfaceAngle } from './aircraft-control-surfaces';
 import { createAircraftShadow } from './aircraft-shadow';
@@ -311,6 +311,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   const cameraDirection = new Cartesian3();
   const cameraUp = new Cartesian3();
   const forwardWorld = new Cartesian3();
+  const rightWorld = new Cartesian3(), upWorld = new Cartesian3();
   const local = new Cartesian3();
   const localDirection = new Cartesian3();
   const localUp = new Cartesian3();
@@ -404,6 +405,10 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     const basis = aircraftBasisENU(heading_rad, pitch_rad, roll_rad);
     Cartesian3.fromElements(...basis.forward, localDirection);
     Matrix4.multiplyByPointAsVector(frame, localDirection, forwardWorld);
+    Cartesian3.fromElements(...basis.right, localDirection);
+    Matrix4.multiplyByPointAsVector(frame, localDirection, rightWorld);
+    Cartesian3.fromElements(...basis.up, localDirection);
+    Matrix4.multiplyByPointAsVector(frame, localDirection, upWorld);
     // Cesium's corrected model axes are forward/left/up. Build those columns
     // directly in ENU, then resolve them to Earth-fixed coordinates. This avoids
     // a glTF axis correction being confused with heading/pitch/roll conventions.
@@ -452,19 +457,20 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     frustum.fov = lastFov_rad;
     const fovDeg = (frustum.fov / DEG_RAD).toFixed(1);
     if (container.dataset.fovDeg !== fovDeg) container.dataset.fovDeg = fovDeg;
-    // Project body-forward as a direction at infinity: it must move when the
-    // camera looks away, independently of aircraft position or velocity.
+    // Project actual body axes as directions at infinity, independently of
+    // aircraft position/velocity, in cockpit/chase and every recorded attitude.
     const bounds = container.getBoundingClientRect();
     const top = Math.max(18, (header?.getBoundingClientRect().bottom ?? bounds.top) - bounds.top + 12);
     const fovy = frustum.fovy;
-    forwardMarker.update(typeof fovy === 'number' ? projectForwardDirection({
-      right: Cartesian3.dot(forwardWorld, scene.camera.rightWC),
-      up: Cartesian3.dot(forwardWorld, scene.camera.upWC),
-      forward: Cartesian3.dot(forwardWorld, scene.camera.directionWC),
+    const tuple = (axis: Cartesian3): [number, number, number] => [axis.x, axis.y, axis.z];
+    const directions = typeof fovy === 'number' ? projectBodyDirections({
+      bodyForward: tuple(forwardWorld), bodyRight: tuple(rightWorld), bodyUp: tuple(upWorld),
+      cameraRight: tuple(scene.camera.rightWC), cameraUp: tuple(scene.camera.upWC), cameraForward: tuple(scene.camera.directionWC),
       width_px: container.clientWidth, height_px: container.clientHeight,
       fov_y_rad: fovy,
       insets: { top, left: 36, right: 36, bottom: 18 },
-    }) : null);
+    }) : undefined;
+    forwardMarker.update(directions?.forward ?? null, directions);
     widget.render();
 
   }

@@ -5,11 +5,36 @@ export interface ForwardMarkerProjection {
   angle_rad: number;
   clipped: boolean;
 }
+export type BodyDirectionId = 'forward' | 'left' | 'right' | 'up' | 'down' | 'back';
+export type BodyDirectionProjections = Readonly<Record<BodyDirectionId, ForwardMarkerProjection | null>>;
+type Vector3 = readonly [number, number, number];
 interface ProjectionInput {
   /** Aircraft forward resolved along the actual camera right/up/forward axes. */
   right: number; up: number; forward: number;
   width_px: number; height_px: number; fov_y_rad: number;
   insets?: { top: number; right: number; bottom: number; left: number };
+}
+
+/** Resolve orthonormal body axes against the actual camera axes, in one shared
+ * coordinate frame. Side/up/down axes are 90° and back is 180° from the nose.
+ * Only near-zero dot-product noise at the hemisphere boundary is normalized;
+ * axes genuinely behind the camera remain hidden by the generic projection.
+ */
+export function projectBodyDirections(input: {
+  bodyForward: Vector3; bodyRight: Vector3; bodyUp: Vector3;
+  cameraRight: Vector3; cameraUp: Vector3; cameraForward: Vector3;
+  width_px: number; height_px: number; fov_y_rad: number; insets?: ProjectionInput['insets'];
+}): BodyDirectionProjections {
+  const negate = (axis: Vector3): Vector3 => [-axis[0], -axis[1], -axis[2]];
+  const axes: Record<BodyDirectionId, Vector3> = { forward: input.bodyForward, left: negate(input.bodyRight),
+    right: input.bodyRight, up: input.bodyUp, down: negate(input.bodyUp), back: negate(input.bodyForward) };
+  const dot = (a: Vector3, b: Vector3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  return Object.fromEntries(Object.entries(axes).map(([id, axis]) => {
+    const forward = dot(axis, input.cameraForward);
+    return [id, projectForwardDirection({ right: dot(axis, input.cameraRight), up: dot(axis, input.cameraUp),
+      forward: Math.abs(forward) <= 1e-12 ? 0 : forward, width_px: input.width_px, height_px: input.height_px,
+      fov_y_rad: input.fov_y_rad, insets: input.insets })];
+  })) as unknown as BodyDirectionProjections;
 }
 
 /** View-only perspective projection; inset clipping retains the actual screen direction. */

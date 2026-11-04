@@ -36,7 +36,7 @@ try {
       return { x: r.x, y: r.y, width: r.width, height: r.height, right: r.right, bottom: r.bottom, font: parseFloat(s.fontSize), display: s.display };
     };
     return { width: innerWidth, height: innerHeight, scale: Number(document.querySelector('.flight-app').dataset.cockpitScale),
-      scene: rect('#scene'), deck: rect('.flight-deck'), surface: rect('.instruments'), primary: rect('.primary-instruments'),
+      scene: rect('#scene'), deck: rect('.flight-deck'), viewport: rect('.cockpit-viewport'), vsiFace: rect('#vertical-speed'), surface: rect('.instruments'), primary: rect('.primary-instruments'),
       aircraft: rect('.engine-controls'), face: rect('#airspeed'), nav1: rect('#nav1-gauge .navigation-gauge-face'), nav2: rect('#nav2-gauge .navigation-gauge-face'), bearing: rect('#bearing-gauge .navigation-gauge-face'), rpmFace: rect('#rpm-gauge .navigation-gauge-face'), fuel: rect('#engine-fuel-gauge'), pressure: rect('#altimeter-open'), flaps: rect('#flap-control'), trim: rect('#pitch-trim-control'),
       ap: rect('.autopilot-content'), apButton: rect('#ap-engage'), engine: rect('#engine-systems'), radio: rect('#radio-nav-systems'),
       rpm: rect('#engine-rpm'), frequency: rect('#com1-standby'), throttle: rect('#throttle'), mixture: rect('#mixture-control'),
@@ -100,23 +100,58 @@ try {
     if (width === 1440 && height === 900) assert(g.deck.height <= 390, 'desktop cockpit is shorter than the previous 449px panel');
     if (width === 390 || (width === 1440 && [900, 800, 480].includes(height))) await page.screenshot({ path: `${output}/panel-layout-${width}x${height}.png` });
   }
-  // Zoom can enlarge within available room, but cannot consume the flying
-  // view or move either instrument row outside the fitted deck on short windows.
-  for (const [width, height] of [[1440, 800], [1440, 480], [1440, 1300]]) {
+  // Focused magnification crops other instruments without growing the cockpit
+  // or reducing the flight view, including in short/mobile windows.
+  for (const [width, height] of [[1440, 800], [1440, 480], [390, 844]]) {
     await page.setViewportSize({ width, height }); await page.waitForTimeout(180);
-    const before = await geometry();
-    const ap = await page.locator('#ap-engage').boundingBox();
-    await page.mouse.move(ap.x + ap.width / 2, ap.y + ap.height / 2);
-    await page.mouse.wheel(0, -10000); await page.waitForTimeout(120);
-    const zoomed = await geometry();
-    assert(zoomed.scene.height >= height * .6 - 1, 'panel zoom preserves reserved flying area');
-    for (const key of ['face', 'nav1', 'nav2', 'bearing', 'rpmFace', 'flaps', 'trim', 'ap']) {
-      assert(zoomed[key].y >= zoomed.deck.y - 1 && zoomed[key].bottom <= height + 1, `${key} stays vertically visible after zoom at ${height}px`);
+    const before = await geometry(), ap = page.locator('#ap-engage');
+    const anchor = { x: before.apButton.x + before.apButton.width / 2, y: before.apButton.y + before.apButton.height / 2 };
+    await page.mouse.move(anchor.x, anchor.y); await page.mouse.wheel(0, -180); await page.waitForTimeout(120);
+    let focused = await geometry();
+    assert(focused.apButton.width > before.apButton.width * 1.3, 'short windows retain useful instrument magnification');
+    const anchoredX = Math.abs(focused.apButton.x + focused.apButton.width / 2 - anchor.x) < 1.5;
+    const clampedX = Math.abs(focused.surface.x - focused.viewport.x) < 1 || Math.abs(focused.surface.right - focused.viewport.right) < 1;
+    assert(anchoredX || width <= 620 && clampedX, 'pointer X anchors the instrument, subject only to mobile content-edge clamping');
+    assert(Math.abs(focused.apButton.y + focused.apButton.height / 2 - anchor.y) < 1.5, 'pointer Y anchors the focused instrument');
+    assert.equal(focused.deck.height, before.deck.height, 'zoom never grows the cockpit');
+    assert.equal(focused.scene.height, before.scene.height, 'zoom never shrinks the flying area');
+    await ap.focus(); await ap.dblclick();
+    assert(Number(await page.locator('.flight-deck').getAttribute('data-panel-zoom')) > 1.3, `double-clicking a native AP control does not reset zoom at ${width}×${height}`);
+    for (let i = 0; i < 4; i++) { await page.mouse.move(anchor.x, anchor.y); await page.mouse.wheel(0, -200); }
+    await page.waitForTimeout(100); focused = await geometry();
+    assert.equal(Number(await page.locator('.flight-deck').getAttribute('data-panel-zoom')), 3);
+    assert(focused.surface.y <= focused.viewport.y + 1 && focused.surface.bottom >= focused.viewport.bottom - 1, 'vertical pan clamps keep the instrument viewport filled without a blank top');
+    for (const dx of [10000, -10000]) {
+      await page.mouse.move(focused.viewport.x + focused.viewport.width / 2, focused.viewport.y + focused.viewport.height / 2);
+      await page.mouse.wheel(dx, 0); await page.waitForTimeout(80); focused = await geometry();
+      assert(focused.surface.x <= focused.viewport.x + 1 && focused.surface.right >= focused.viewport.right - 1, 'horizontal pan cannot reveal blank margins');
     }
-    if (height === 1300) assert(zoomed.apButton.width > before.apButton.width * 1.3, 'roomy windows retain useful pointer zoom');
-    await page.mouse.move(zoomed.apButton.x + zoomed.apButton.width / 2, zoomed.apButton.y + zoomed.apButton.height / 2);
-    await page.mouse.wheel(0, 10000); await page.waitForTimeout(120);
+    // Keyboard focus pans a clipped actual control into view without a layout change.
+    await page.locator('#pitch-trim-control').focus(); await page.waitForTimeout(60); focused = await geometry();
+    assert(focused.trim.y >= focused.viewport.y - 1 && focused.trim.bottom <= focused.viewport.bottom + 1, 'keyboard-focused lower control remains visible');
+    assert.equal(focused.deck.height, before.deck.height); assert.equal(focused.scene.height, before.scene.height);
+    // Restore fit through the noninteractive housing, then focus a lower face.
+    await page.locator('.deck-heading').dblclick(); await page.waitForTimeout(80);
     assert.equal(Number(await page.locator('.flight-deck').getAttribute('data-panel-zoom')), 1);
+    const base = await geometry(), vsi = page.locator('#vertical-speed');
+    const lowerAnchor = { x: base.vsiFace.x + base.vsiFace.width / 2, y: base.vsiFace.y + base.vsiFace.height / 2 };
+    await page.mouse.move(lowerAnchor.x, lowerAnchor.y); await page.mouse.wheel(0, -180); await page.waitForTimeout(100);
+    const lower = await geometry();
+    assert(lower.vsiFace.width > base.vsiFace.width * 1.3, 'lower-row gesture actually magnifies the VSI');
+    const lowerX = Math.abs(lower.vsiFace.x + lower.vsiFace.width / 2 - lowerAnchor.x) < 1.5;
+    const lowerClampedX = Math.abs(lower.surface.x - lower.viewport.x) < 1 || Math.abs(lower.surface.right - lower.viewport.right) < 1;
+    assert((lowerX || width <= 620 && lowerClampedX) && Math.abs(lower.vsiFace.y + lower.vsiFace.height / 2 - lowerAnchor.y) < 1.5, 'lower-row focus anchors in both axes subject to mobile content-edge clamping');
+    if (height === 800) await page.screenshot({ path: `${output}/panel-focus-lower.png` });
+    await vsi.dblclick(); await page.waitForTimeout(60);
+    assert.equal(Number(await page.locator('.flight-deck').getAttribute('data-panel-zoom')), 1, 'double-clicking a noninteractive face restores the fitted panel');
+    const restored = await geometry();
+    assert(Math.abs(restored.surface.x - before.surface.x) < 1 && Math.abs(restored.surface.y - before.surface.y) < 1);
+    if (height === 800) {
+      await page.mouse.move(anchor.x, base.viewport.y + 1); await page.mouse.wheel(0, -300); await page.waitForTimeout(80);
+      await page.screenshot({ path: `${output}/panel-focus-autopilot.png` });
+      await page.locator('.deck-heading').dblclick();
+      assert.equal(Number(await page.locator('.flight-deck').getAttribute('data-panel-zoom')), 1, 'double-clicking panel housing restores fit');
+    }
   }
   // Docking the flight map changes width, not the reserved flying height.
   await page.setViewportSize({ width: 1440, height: 800 }); await page.waitForTimeout(180);

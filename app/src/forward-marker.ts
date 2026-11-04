@@ -1,16 +1,18 @@
-import type { ForwardMarkerProjection } from './forward-marker-projection';
+import type { BodyDirectionId, BodyDirectionProjections, ForwardMarkerProjection } from './forward-marker-projection';
 import './forward-marker.css';
 
-/** Displays camera-projected body-forward direction without receiving control input. */
-export function createForwardMarker(container: HTMLElement): {
+function createDirectionMarker(container: HTMLElement, direction: BodyDirectionId): {
   update(projection: ForwardMarkerProjection | null): void;
   dispose(): void;
 } {
   const marker = document.createElement('div');
-  marker.id = 'aircraft-forward-marker';
+  marker.id = `aircraft-${direction}-marker`;
+  if (direction !== 'forward') marker.className = 'aircraft-direction-marker';
+  marker.dataset.direction = direction;
   marker.setAttribute('role', 'img');
-  marker.setAttribute('aria-label', 'Aircraft forward direction');
-  marker.title = 'Aircraft forward direction';
+  const description = `Aircraft ${direction} direction${direction === 'forward' ? '' : ` (${direction === 'back' ? 180 : 90}°)`}`;
+  marker.setAttribute('aria-label', description);
+  marker.title = description;
   marker.hidden = true;
   const crosshair = document.createElement('span');
   crosshair.className = 'forward-marker-crosshair';
@@ -21,7 +23,12 @@ export function createForwardMarker(container: HTMLElement): {
   arrow.className = 'forward-marker-arrow';
   crosshair.setAttribute('aria-hidden', 'true');
   arrow.setAttribute('aria-hidden', 'true');
-  marker.append(crosshair, arrow);
+  if (direction === 'forward') marker.append(crosshair, arrow);
+  else {
+    const label = document.createElement('span'); label.className = 'direction-marker-label';
+    label.textContent = { left: 'L', right: 'R', up: 'U', down: 'D', back: 'B' }[direction];
+    label.setAttribute('aria-hidden', 'true'); marker.append(label, arrow);
+  }
   container.append(marker);
   let lastX_px: number | undefined;
   let lastY_px: number | undefined;
@@ -62,5 +69,22 @@ export function createForwardMarker(container: HTMLElement): {
       disposed = true;
       marker.remove();
     },
+  };
+}
+
+/** The existing nose crosshair plus small body-axis references. Every cue is
+ * camera-projected and pointer-transparent; none receives flight controls. */
+export function createForwardMarker(container: HTMLElement): {
+  update(projection: ForwardMarkerProjection | null, directions?: BodyDirectionProjections): void;
+  dispose(): void;
+} {
+  const ids: BodyDirectionId[] = ['forward', 'left', 'right', 'up', 'down', 'back'];
+  const markers = new Map(ids.map(id => [id, createDirectionMarker(container, id)]));
+  return {
+    update(projection, directions) {
+      markers.get('forward')!.update(projection);
+      for (const id of ids) if (id !== 'forward') markers.get(id)!.update(directions?.[id] ?? null);
+    },
+    dispose() { for (const marker of markers.values()) marker.dispose(); },
   };
 }

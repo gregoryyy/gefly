@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { projectForwardDirection } from './forward-marker-projection.ts';
+import { projectBodyDirections, projectForwardDirection } from './forward-marker-projection.ts';
 import { aircraftBasisENU, cockpitCameraENU, chaseCameraENU, type VectorENU } from './aircraft-orientation.ts';
 
 const base = { right: 0, up: 0, forward: 1, width_px: 800, height_px: 400, fov_y_rad: Math.PI / 2 };
@@ -93,4 +93,39 @@ test('invalid inputs and unusable safe rectangles return null without mutating i
     { top: 0, right: 800, bottom: 0, left: 0 }]) assert.equal(projectForwardDirection({ ...base, insets: inset }), null);
   const input = Object.freeze({ ...base, right: .2, insets: Object.freeze({ top: 20, right: 20, bottom: 20, left: 20 }) });
   const before = structuredClone(input); projectForwardDirection(input); assert.deepEqual(input, before);
+});
+
+test('body direction cues identify 90-degree axes and back while normalizing only unit-axis hemisphere noise', () => {
+  const axes = { bodyForward: [0, 1, 0] as const, bodyRight: [1, 0, 0] as const, bodyUp: [0, 0, 1] as const,
+    cameraRight: [1, 0, 0] as const, cameraUp: [0, 0, 1] as const, cameraForward: [0, 1, 0] as const,
+    width_px: 800, height_px: 400, fov_y_rad: Math.PI / 2 };
+  const front = projectBodyDirections(axes);
+  near(front.forward!.x_px, 400); near(front.forward!.y_px, 200);
+  near(front.left!.x_px, 0); near(front.right!.x_px, 800);
+  near(front.up!.y_px, 0); near(front.down!.y_px, 400);
+  assert.equal(front.back, null);
+  for (const id of ['left', 'right', 'up', 'down'] as const) assert.equal(front[id]!.clipped, true);
+  for (const noise of [-1e-16, 1e-16]) {
+    const noisy = projectBodyDirections({ ...axes, cameraForward: [noise, 1, noise] });
+    for (const id of ['left', 'right', 'up', 'down'] as const) assert(noisy[id], `${id} survives perpendicular dot noise`);
+  }
+  const back = projectBodyDirections({ ...axes, cameraForward: [0, -1, 0], cameraRight: [-1, 0, 0] });
+  assert.equal(back.forward, null); near(back.back!.x_px, 400); near(back.back!.y_px, 200);
+  const rightView = projectBodyDirections({ ...axes, cameraForward: [1, 0, 0], cameraRight: [0, -1, 0] });
+  assert.equal(rightView.left, null); near(rightView.right!.x_px, 400);
+  assert(rightView.forward!.x_px < 400 && rightView.back!.x_px > 400);
+});
+
+test('body-axis cues follow actual rolled chase attitude and reproduce selected recorded geometry', () => {
+  const camera = chaseCameraENU(0), cameraAxes = { cameraRight: cameraRight(camera.direction, camera.up),
+    cameraUp: camera.up, cameraForward: camera.direction, width_px: 800, height_px: 400, fov_y_rad: Math.PI / 2,
+    insets: { top: 60, left: 30, right: 30, bottom: 18 } };
+  const project = (roll: number) => { const body = aircraftBasisENU(0, 0, roll); return projectBodyDirections({ ...cameraAxes,
+    bodyForward: body.forward, bodyRight: body.right, bodyUp: body.up }); };
+  const level = project(0), rolled = project(Math.PI / 2);
+  near(level.right!.x_px, 770); assert.equal(level.up, null);
+  near(rolled.up!.x_px, 770); near(rolled.up!.y_px, 200);
+  near(rolled.right!.y_px, 382); near(rolled.down!.x_px, 30); assert.equal(rolled.left, null);
+  assert.deepEqual(project(0), level, 'seeking back to the same attitude recomputes identical axes');
+  assert(Object.values(rolled).every(cue => cue === null || cue.x_px >= 30 && cue.x_px <= 770 && cue.y_px >= 60 && cue.y_px <= 382));
 });
