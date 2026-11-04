@@ -3,6 +3,27 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 11:14 — Low-speed ground-collision grace zone
+
+TODO: 2.0.78; R-SIM-8.
+Agent: Codex integration; glide_cases policy; glide_model existing test;
+glide_housekeeping scoped review.
+
+**Implementation notes**
+
+Ignore collision stopping only when pre-impact groundspeed is below 10 kt and
+downward speed below 2.5 kt. Raw contacts and wheel physics are unchanged.
+Existing collision module: 12 tests pass; no new harness or broad suite.
+[Scoped review](reviews/2026-11-04-ground-collision-grace.md); peer pending.
+
+**Deviations**
+
+None. The bounds are simulator policy, not real-aircraft damage limits.
+
+**Insights**
+
+Use pre-impact speed so an impact slowing the aircraft cannot conceal itself.
+
 ## 2026-11-04 11:06 — Continue live from a replay frame
 
 TODO: 2.0.77; R-REVIEW-1/R-SIM-4.

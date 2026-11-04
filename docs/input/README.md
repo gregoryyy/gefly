@@ -117,3 +117,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-04 — Browser fullscreen](2026-11-04-browser-fullscreen.md)
 
 - [2026-11-04 — Continue live from replay](2026-11-04-replay-continue-live.md)
+
+- [2026-11-04 — Ground-collision grace zone](2026-11-04-ground-collision-grace.md)
