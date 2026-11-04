@@ -13,7 +13,7 @@ const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host
 let serverOutput = '', browser;
 server.stdout.on('data', chunk => { serverOutput += chunk; });
 server.stderr.on('data', chunk => { serverOutput += chunk; });
-const observations = [];
+const observations = [], bottomZoomObservations = [];
 try {
   for (let attempt = 0; attempt < 100; attempt++) {
     if (server.exitCode !== null) throw new Error(serverOutput);
@@ -109,6 +109,41 @@ try {
   // or reducing the flight view, including in short/mobile windows.
   for (const [width, height] of [[1440, 800], [1440, 480], [390, 844]]) {
     await page.setViewportSize({ width, height }); await page.waitForTimeout(180);
+    // Real lower controls and deck padding were absent from the earlier
+    // AP/VSI-only checks. Pointer entry alone must never reposition the panel.
+    const bottomSelector=width<=620?'#radio-nav-open':'#parking-brake';
+    const bottomBase=await geometry(),bottomControl=await page.locator(bottomSelector).boundingBox();
+    const bottomAnchor={x:bottomControl.x+bottomControl.width/2,y:bottomControl.y+bottomControl.height/2};
+    assert(await page.evaluate(({selector,x,y})=>!!document.elementFromPoint(x,y)?.closest(selector),{selector:bottomSelector,...bottomAnchor}),'bottom-control gesture starts on a visible actual control');
+    await page.mouse.move(bottomAnchor.x,bottomAnchor.y);
+    unchangedSurface(bottomBase,await geometry(),'entering bottom controls does not move the panel');
+    await page.mouse.wheel(0,-180);await page.waitForTimeout(100);
+    const bottomFocused=await geometry(),newBottom=await page.locator(bottomSelector).boundingBox();
+    const bottomError={x:newBottom.x+newBottom.width/2-bottomAnchor.x,y:newBottom.y+newBottom.height/2-bottomAnchor.y};
+    const bottomClampedX=Math.abs(bottomFocused.surface.x-bottomFocused.viewport.x)<1||Math.abs(bottomFocused.surface.right-bottomFocused.viewport.right)<1;
+    assert(Number(await page.locator('.flight-deck').getAttribute('data-panel-zoom'))>1.3,'bottom-control wheel really zooms');
+    assert(Math.abs(bottomError.x)<1.5||width<=620&&bottomClampedX,'bottom control stays under pointer horizontally unless its content edge clamps');
+    assert(Math.abs(bottomError.y)<1.5,'bottom control stays under pointer vertically');
+    assert(bottomFocused.surface.y<=bottomFocused.viewport.y+1&&bottomFocused.surface.bottom>=bottomFocused.viewport.bottom-1,'bottom-control zoom fills both vertical frame edges');
+    bottomZoomObservations.push({width,height,bottomSelector,bottomError,before:bottomBase,after:bottomFocused});
+    await page.locator('.deck-heading').dblclick();
+    const paddingBase=await geometry(),paddingX=paddingBase.viewport.x+paddingBase.viewport.width*.8,paddingY=paddingBase.deck.bottom-2;
+    assert(await page.evaluate(({x,y})=>!!document.elementFromPoint(x,y)?.closest('.flight-deck')&&!document.elementFromPoint(x,y)?.closest('.cockpit-viewport'),{x:paddingX,y:paddingY}),'bottom-padding gesture is outside the old viewport-only listener');
+    for(let i=0;i<4;i++){await page.mouse.move(paddingX,paddingY);await page.mouse.wheel(0,-180);}
+    await page.waitForTimeout(100);
+    const paddingZoom=await geometry();
+    assert.equal(Number(await page.locator('.flight-deck').getAttribute('data-panel-zoom')),3,'repeated bottom-padding wheel reaches maximum zoom');
+    assert(paddingZoom.surface.y<=paddingZoom.viewport.y+1&&Math.abs(paddingZoom.surface.bottom-paddingZoom.viewport.bottom)<1,'bottom-padding zoom aligns the real content bottom and leaves no blank frame edge');
+    await page.mouse.move(paddingX,paddingZoom.viewport.bottom-2);
+    unchangedSurface(paddingZoom,await geometry(),'pointer entry after bottom-edge zoom never pans');
+    await page.locator('.deck-heading').dblclick();
+    const topBase=await geometry();
+    await page.mouse.move(topBase.viewport.x+topBase.viewport.width*.5,topBase.deck.y+2);await page.mouse.wheel(0,-180);await page.waitForTimeout(100);
+    const topZoom=await geometry();
+    assert(Number(await page.locator('.flight-deck').getAttribute('data-panel-zoom'))>1.3,'top-padding wheel also zooms');
+    assert(Math.abs(topZoom.surface.y-topZoom.viewport.y)<1&&topZoom.surface.bottom>=topZoom.viewport.bottom-1,'top-edge zoom aligns top and fills bottom');
+    bottomZoomObservations.push({width,height,paddingZoom,topZoom});
+    await page.locator('.deck-heading').dblclick();
     const before = await geometry(), ap = page.locator('#ap-engage');
     const anchor = { x: before.apButton.x + before.apButton.width / 2, y: before.apButton.y + before.apButton.height / 2 };
     await page.mouse.move(anchor.x, anchor.y); await page.mouse.wheel(0, -180); await page.waitForTimeout(120);
@@ -233,9 +268,10 @@ try {
   assert(await mobile.locator('.engine-controls .autopilot-content').isVisible());
   assert(await mobile.locator('#engine-open').isVisible());
   await mobile.close();
+  await writeFile(`${output}/panel-bottom-zoom.json`, `${JSON.stringify(bottomZoomObservations, null, 2)}\n`);
   await writeFile(`${output}/panel-layout.json`, `${JSON.stringify(observations, null, 2)}\n`);
   assert.deepEqual(errors, []);
-  console.log(`Panel layout: ${observations.length} viewport cases and fresh-mobile portals passed.`);
+  console.log(`Panel layout: ${observations.length} viewport cases, bottom-control/padding zoom and fresh-mobile portals passed.`);
 } finally {
   await browser?.close();
   server.kill();

@@ -3,6 +3,42 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 22:18 — Reach the cockpit bottom when zooming
+
+TODO: 2.0.118; R-PANEL-1/R-INPUT-1.
+Agent: Codex layout fix and unmocked 5173 reproduction; glide_cases independent
+reproduction and existing browser-case extension; glide_housekeeping requirements
+record and independent source quality/criterion review.
+
+**Implementation notes**
+
+Wheel zoom now listens over the whole cockpit housing, including its bottom
+padding. The previous viewport-only listener ignored gestures in that strip.
+Pointer-centered magnification is retained; vertical clamping uses rendered
+surface/frame edges rather than estimated scaled height. The enlarged top cannot
+move below the frame top and its bottom cannot move above the frame bottom.
+Existing drag, control isolation, reset and fixed flight-window height remain.
+
+Real 5173 reproduction confirmed bottom-padding wheel stayed at 1× before the
+fix and reaches 3× afterward, showing the full enlarged bottom buttons. The
+existing panel-layout browser case passes 13 responsive sizes and added actual
+bottom-control/padding checks on desktop, short and mobile windows. Maximum
+measured bottom-control anchor error is 0.386px; repeated lower-edge zoom aligns
+content/frame bottoms exactly. Existing drag/focus/control/Review/portal cases
+pass. TypeScript and scaffold checks pass. Independent source review passes;
+cross-provider peer pending. Evidence: output/flight/panel-bottom-zoom.json,
+panel-bottom-layout-browser.log and panel-bottom-fixed.png (real scenery).
+
+**Deviations**
+
+No physics, AP, camera, panel dimensions, shortcuts or zoom limit changes.
+A point remains under the pointer except where the content edge must clamp.
+
+**Insights**
+
+The earlier center-of-gauge and large-drag checks missed the user's bottom-edge
+wheel gesture. Reproduce the precise pointer location before declaring it fixed.
+
 ## 2026-11-04 22:05 — Full-height flight map, point actions and startup preloading
 
 TODO: 2.0.115–2.0.117; R-WORLD-6/R-WORLD-9/R-NAV-3/R-UX-2.

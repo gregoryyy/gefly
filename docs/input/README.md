@@ -156,3 +156,4 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [User-owned map shortcuts and UI decisions](2026-11-04-user-owned-map-shortcuts.md)
 - [Map cache performance](2026-11-04-map-cache-performance.md)
 - [Startup preloading and full-height interactive map](2026-11-04-startup-preload-and-map-menu.md)
+- [Pointer-anchored panel zoom and reachable lower edge](2026-11-04-panel-bottom-zoom.md)

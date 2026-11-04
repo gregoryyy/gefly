@@ -23,15 +23,24 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
     if (!deck || !instruments) return;
     // Magnify only the clipped instrument surface. The deck and flying view
     // retain their fitted height, including while focusing a lower instrument.
-    const width = naturalWidth * fitted, height = naturalHeight * fitted;
+    const width = naturalWidth * fitted;
     const baseLeft = (viewport.clientWidth - width) / 2;
-    const scaledWidth = width * zoom, scaledHeight = height * zoom;
+    const scaledWidth = width * zoom;
     panX = scaledWidth <= viewport.clientWidth
       ? Math.max(-baseLeft, Math.min(viewport.clientWidth - baseLeft - scaledWidth, panX))
       : Math.max(viewport.clientWidth - baseLeft - scaledWidth, Math.min(-baseLeft, panX));
-    panY = Math.max(Math.min(0, viewport.clientHeight - scaledHeight), Math.min(0, panY));
     instruments.style.transformOrigin = '0 0';
     instruments.style.transform = `translate(${panX / fitted}px, ${panY / fitted}px) scale(${zoom})`;
+    // Clamp the rendered edges, including CSS zoom rounding, rather than an
+    // estimated height. The enlarged surface must keep covering the frame.
+    const surface = instruments.getBoundingClientRect(), bounds = viewport.getBoundingClientRect();
+    const correctionY = surface.height >= bounds.height
+      ? Math.max(bounds.bottom - surface.bottom, Math.min(bounds.top - surface.top, 0))
+      : bounds.top - surface.top;
+    if (correctionY !== 0) {
+      panY += correctionY;
+      instruments.style.transform = `translate(${panX / fitted}px, ${panY / fitted}px) scale(${zoom})`;
+    }
     deck.dataset.zoomed = String(zoom > 1);
     deck.dataset.panelZoom = String(zoom);
   }
@@ -163,7 +172,8 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
   const reviewObserver = new MutationObserver(schedule);
   reviewObserver.observe(container, { attributes: true, attributeFilter: ['data-review'] });
   window.addEventListener('resize', schedule);
-  viewport.addEventListener('wheel', wheel, { passive: false, capture: true });
+  // Include the housing and bottom padding: they are part of the panel too.
+  deck.addEventListener('wheel', wheel, { passive: false, capture: true });
   deck.addEventListener('dblclick', doubleClick);
   deck.addEventListener('pointerdown', pointerDown);
   deck.addEventListener('click', click, true);
@@ -184,7 +194,7 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
       observer.disconnect();
       reviewObserver.disconnect();
       window.removeEventListener('resize', schedule);
-      viewport.removeEventListener('wheel', wheel, { capture: true });
+      deck.removeEventListener('wheel', wheel, { capture: true });
       deck.removeEventListener('dblclick', doubleClick);
       deck.removeEventListener('pointerdown', pointerDown);
       deck.removeEventListener('click', click, true);
