@@ -92,7 +92,7 @@ try {
   for (const mode of ['missing','corrupt']) {
     const badContext=await browser.newContext({viewport:{width:1000,height:700}});
     await badContext.route('**/scenery/**',route=>route.fulfill({contentType:'image/png',body:route.request().url().includes('/imagery/')?png512:png256}));
-    await badContext.route('**/terrain/region/*.f32',async route=>{
+    await badContext.route('**/terrain/region/*.f32*',async route=>{
       if(mode==='missing')return route.fulfill({status:404,body:''});
       const response=await route.fetch(), data=Buffer.from(await response.body());data[0]^=1;
       return route.fulfill({response,body:data});

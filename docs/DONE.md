@@ -3,6 +3,35 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 12:24 — Distance-based scenery loading and persistent cache
+
+TODO: 2.0.82; R-WORLD-9/R-WORLD-5/R-WORLD-7.
+Agent: Codex integration/cache; glide_cases geographic planner and independent
+cache review; glide_model labels; glide_housekeeping design and scoped review.
+
+**Implementation notes**
+
+Warm map/imagery/vector and hash-identified terrain tiles around the simulated
+position; use 60/20/2 km enabled label tiers. Replan after movement, stop old
+queued warming and bound persistent public responses to 128 MiB/512 entries
+(landmarks 24 MiB/96), with source freshness and LRU eviction.
+TypeScript and 29 focused unit cases pass. Actual Cache Storage browser checks
+pass reuse/reload, sharing, expiry, exclusions, hash identity, two warm slots and
+label eviction. Real Vite terrain headers/hash rejection/storage smoke passes;
+existing Cesium/native landmark flight/replay browser passes (67 name requests).
+[Review](reviews/2026-11-04-scenery-cache.md); cross-provider peer pending.
+
+**Deviations**
+
+No broad CI rerun. Radius targets remain subject to source coverage and budgets;
+this is not offline application support or expanded physical terrain coverage.
+
+**Insights**
+
+Persistent caching must honor source freshness and validate actual server headers.
+Content-hash URLs preserve terrain integrity across deployments; cache persistence
+must not delay visible-demand responses.
+
 ## 2026-11-04 10:33 — Native browser fullscreen
 
 TODO: 2.0.76; R-VIEW-1/R-INPUT-1/R-REVIEW-1.
