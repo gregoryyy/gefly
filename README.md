@@ -118,6 +118,8 @@ face to restore normal fit. Scroll down or resize also restores the fit.
 Press **.** to cycle floating OSM names: **Off → Places → Landmarks → Detailed**.
 The same setting is in View. Labels sit above their mapped locations on either
 map terrain or photography; source coverage and label density are bounded.
+With labels on, **right-click** terrain (Mac **Ctrl-click** also works) to look
+for its nearest mapped name. The popup shows distance; it is not an address lookup.
 
 Public terrain now streams across **7.00–10.00°E / 49.25–51.50°N**, including
 Westerwald, the Lahn valley, Marburg and Kassel, alongside Darmstadt, Odenwald

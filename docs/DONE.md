@@ -25,6 +25,32 @@ this integration. No broad CI or aircraft-fidelity acceptance.
 Resolve conflicting records by task/requirement identity, preserving complete
 entries rather than interleaving headings and paragraphs.
 
+## 2026-11-04 13:26 — Right-click place lookup
+
+TODO: 2.0.86; R-WORLD-7/R-INPUT-1. Agent: Codex UI/integration;
+glide_cases source lookup; glide_model existing browser check;
+glide_housekeeping independent source review.
+
+**Implementation notes**
+
+With labels enabled, right-click terrain for the nearest mapped name/distance.
+Use actual globe picking and three bounded source tiles; cache results, cancel
+superseded requests and separate empty data from unavailable names. Off preserves
+the existing context-menu handling; sky sends no query. Mac Ctrl-click does not start a
+pointer-yoke gesture. TypeScript, 11 source cases and 19 existing pointer cases
+pass; independent source review passes. The existing Chrome landmark case passes
+actual ground lookup, sky/Off no-query guards and paused native-state invariance.
+Cross-provider peer pending.
+
+**Deviations**
+
+Lookup samples source anchors, not an exact address or exhaustive reverse geocoder.
+No new public geocoder, dependency, native model change or broad CI run.
+
+**Insights**
+
+Pick rendered ground rather than inventing a location from a sky/ellipsoid hit.
+
 ## 2026-11-04 13:13 — Warm the expanded northern and western region
 
 TODO: 2.0.82; R-WORLD-9. Agent: Codex integration.
@@ -44,31 +70,6 @@ inferred from the warm plan alone.
 **Insights**
 
 Keep preload extent aligned with installed source manifests and display coverage.
-
-## 2026-11-04 12:07 — Aircraft dynamics and cockpit feasibility
-
-TODO: 2.0.81; R-SCOPE-1/R-REUSE-1.
-Agent: Codex integration; glide_cases gliders; glide_model light aircraft;
-glide_housekeeping airliners and scoped independent review.
-
-**Implementation notes**
-
-Compare all requested types for exact variants, primary manuals, open FDM/system
-reuse, cockpit scope, license limits and missing whole-envelope data. Preserve
-C172-first scope and link the study from ROAD and the research/input indexes.
-Independent documentation review is recorded in the [report](reviews/2026-11-04-aircraft-feasibility.md).
-`just check` passes; assurance reports zero errors (existing warnings retained).
-No runtime tests or aircraft validation. Peer pending.
-
-**Deviations**
-
-Some current manuals and vendor SDK/rights terms were unavailable; these remain
-explicit gaps. No aircraft package or copyrighted manual was imported.
-
-**Insights**
-
-Available look-alike models can be the wrong variant. Public performance tables
-and complete-looking panels do not establish full-envelope flight fidelity.
 
 ## 2026-11-04 13:10 — Terrain beyond the Taunus and chart access
 
@@ -101,26 +102,6 @@ DGM200 is broad relief, not surveyed airport/obstacle detail.
 Keep source geometry and old tile bytes stable while extending the streaming
 matrix, and update the native ID limit, rendering and saved-location fences together.
 
-## 2026-11-04 12:48 — Let visible maps promote background loads
-
-TODO: 2.0.82; R-WORLD-9. Agent: Codex implementation; glide_housekeeping review.
-
-**Implementation notes**
-
-Separate visible pending requests from warming and bypass HTTP coalescing only
-when the same background URL is pending. Preserve cache hits and ordinary dedup;
-allow the proxy's visible priority promotion. Existing real Cache Storage browser
-case passes with the added visible-request observation; independent source review
-passes. Companion proxy/map changes are in PR #76; peer pending.
-
-**Deviations**
-
-No full-map latency guarantee or broad test rerun.
-
-**Insights**
-
-Browser HTTP coalescing can hide request priority even after worker dedup is split.
-
 ## 2026-11-04 12:48 — Prioritize visible map loading
 
 TODO: 2.0.83; R-WORLD-6/R-WORLD-5. Agent: Codex integration; glide_cases proxy;
@@ -142,6 +123,26 @@ One map-renderer timing is not a full cold-app budget or reproduction of every
 
 Cached background requests must still allow urgent demand to promote proxy work.
 The related browser-cache fix is in PR #78.
+
+## 2026-11-04 12:48 — Let visible maps promote background loads
+
+TODO: 2.0.82; R-WORLD-9. Agent: Codex implementation; glide_housekeeping review.
+
+**Implementation notes**
+
+Separate visible pending requests from warming and bypass HTTP coalescing only
+when the same background URL is pending. Preserve cache hits and ordinary dedup;
+allow the proxy's visible priority promotion. Existing real Cache Storage browser
+case passes with the added visible-request observation; independent source review
+passes. Companion proxy/map changes are in PR #76; peer pending.
+
+**Deviations**
+
+No full-map latency guarantee or broad test rerun.
+
+**Insights**
+
+Browser HTTP coalescing can hide request priority even after worker dedup is split.
 
 ## 2026-11-04 12:35 — Step down simulation speed
 
@@ -192,6 +193,31 @@ this is not offline application support or expanded physical terrain coverage.
 Persistent caching must honor source freshness and validate actual server headers.
 Content-hash URLs preserve terrain integrity across deployments; cache persistence
 must not delay visible-demand responses.
+
+## 2026-11-04 12:07 — Aircraft dynamics and cockpit feasibility
+
+TODO: 2.0.81; R-SCOPE-1/R-REUSE-1.
+Agent: Codex integration; glide_cases gliders; glide_model light aircraft;
+glide_housekeeping airliners and scoped independent review.
+
+**Implementation notes**
+
+Compare all requested types for exact variants, primary manuals, open FDM/system
+reuse, cockpit scope, license limits and missing whole-envelope data. Preserve
+C172-first scope and link the study from ROAD and the research/input indexes.
+Independent documentation review is recorded in the [report](reviews/2026-11-04-aircraft-feasibility.md).
+`just check` passes; assurance reports zero errors (existing warnings retained).
+No runtime tests or aircraft validation. Peer pending.
+
+**Deviations**
+
+Some current manuals and vendor SDK/rights terms were unavailable; these remain
+explicit gaps. No aircraft package or copyrighted manual was imported.
+
+**Insights**
+
+Available look-alike models can be the wrong variant. Public performance tables
+and complete-looking panels do not establish full-envelope flight fidelity.
 
 ## 2026-11-04 11:44 — Takeoff loading and native fuel consumption
 

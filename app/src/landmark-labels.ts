@@ -3,7 +3,7 @@ import {
   HorizontalOrigin, LabelCollection, LabelStyle, PointPrimitiveCollection,
   SceneTransforms, VerticalOrigin, type Label, type PointPrimitive, type Scene,
 } from 'cesium';
-import { createLandmarkSource, LANDMARK_LEVEL_NAMES, LANDMARK_RANGES_M, type Landmark, type LandmarkLevel } from './landmark-data';
+import { createLandmarkSource, createLandmarkLookup, LANDMARK_LEVEL_NAMES, LANDMARK_RANGES_M, type Landmark, type LandmarkLevel } from './landmark-data';
 import { distanceMeters } from './scenery-coverage.ts';
 import type { FlightState } from './types';
 import './landmark-labels.css';
@@ -34,6 +34,45 @@ export function createLandmarkLabels(scene: Scene, container: HTMLElement,
   const entries = new Map<string, Entry>();
   const status = document.createElement('div'); status.className = 'landmark-label-status'; status.hidden = true;
   status.setAttribute('role', 'status'); container.append(status);
+  const lookup = createLandmarkLookup();
+  const lookupBox = document.createElement('div'); lookupBox.className = 'landmark-lookup'; lookupBox.hidden = true;
+  const lookupText = document.createElement('span'); lookupText.setAttribute('role', 'status');
+  const lookupClose = document.createElement('button'); lookupClose.type = 'button'; lookupClose.textContent = '×'; lookupClose.setAttribute('aria-label', 'Close place lookup');
+  lookupBox.append(lookupText, lookupClose); container.append(lookupBox);
+  let lookupRequest: AbortController | null = null;
+  function hideLookup(): void { lookupRequest?.abort(); lookupRequest = null; lookupBox.hidden = true; }
+  function lookupMessage(text: string, state: string): void {
+    lookupBox.dataset.status = state; lookupText.textContent = text; lookupBox.hidden = false;
+  }
+  lookupClose.addEventListener('click', hideLookup);
+  for (const event of ['pointerdown', 'pointerup', 'pointermove', 'click', 'dblclick', 'wheel', 'contextmenu'])
+    lookupBox.addEventListener(event, e => e.stopPropagation());
+  lookupBox.addEventListener('keydown', event => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); hideLookup(); } });
+  function onContextMenu(event: MouseEvent): void {
+    if (disposed || level === 0 || !terrainAvailable || event.target !== scene.canvas) return;
+    event.preventDefault(); event.stopPropagation(); hideLookup();
+    const bounds = scene.canvas.getBoundingClientRect();
+    const pixel = new Cartesian2(event.clientX - bounds.left, event.clientY - bounds.top);
+    const panel = container.getBoundingClientRect();
+    lookupBox.style.left = `${Math.max(8, Math.min(container.clientWidth - 290, event.clientX - panel.left + 8))}px`;
+    lookupBox.style.top = `${Math.max(8, Math.min(container.clientHeight - 75, event.clientY - panel.top + 8))}px`;
+    let ground: Cartesian3 | undefined;
+    try { const ray = scene.camera.getPickRay(pixel); ground = ray ? scene.globe.pick(ray, scene) : undefined; }
+    catch { /* Unavailable rendered terrain is not an ellipsoid/geocoding fallback. */ }
+    const position = ground && Ellipsoid.WGS84.cartesianToCartographic(ground);
+    if (!position) { lookupMessage('No terrain at this point.', 'unavailable'); return; }
+    const request = new AbortController(); lookupRequest = request;
+    lookupMessage('Looking for a mapped name…', 'loading');
+    void lookup.lookup(position.latitude, position.longitude, request.signal).then(result => {
+      if (disposed || request.signal.aborted || lookupRequest !== request || level === 0) return;
+      lookupMessage(result ? `Nearest mapped label: ${result.item.name} · ${result.distance_m < 1000 ? `${Math.round(result.distance_m)} m` : `${(result.distance_m / 1000).toFixed(1)} km`}`
+        : 'No nearby name in the sampled map tiles.', result ? 'ready' : 'not-found');
+    }).catch(() => {
+      if (!disposed && !request.signal.aborted && lookupRequest === request) lookupMessage('Map names unavailable here.', 'unavailable');
+    });
+  }
+  container.addEventListener('contextmenu', onContextMenu);
+
   const occluder = new EllipsoidalOccluder(Ellipsoid.WGS84, scene.camera.positionWC);
   const offset = new Cartesian3(), normal = new Cartesian3();
   const placeColor = Color.fromCssColorString('#fff1bf'), otherColor = Color.fromCssColorString('#e2f2f6');
@@ -61,7 +100,7 @@ export function createLandmarkLabels(scene: Scene, container: HTMLElement,
     if (disposed) return;
     lastState = state; terrainAvailable = publicTerrain && validPosition(state);
     if (level === 0 || !terrainAvailable) {
-      source.update(state?.lat_rad ?? 0, state?.lon_rad ?? 0, 0); clear(); report(0); return;
+      hideLookup(); source.update(state?.lat_rad ?? 0, state?.lon_rad ?? 0, 0); clear(); report(0); return;
     }
     source.update(state!.lat_rad, state!.lon_rad, level);
     occluder.cameraPosition = scene.camera.positionWC;
@@ -120,11 +159,12 @@ export function createLandmarkLabels(scene: Scene, container: HTMLElement,
     setLevel(next) {
       if (!Number.isInteger(next) || next < 0 || next > 3) throw new RangeError('Landmark label level must be 0–3');
       if (disposed) return;
-      level = next; clear(); update(lastState, terrainAvailable);
+      level = next; hideLookup(); clear(); update(lastState, terrainAvailable);
     },
     update,
     dispose() {
-      if (disposed) return; disposed = true; source.dispose();
+      if (disposed) return; disposed = true; hideLookup(); lookup.dispose(); source.dispose();
+      container.removeEventListener('contextmenu', onContextMenu); lookupBox.remove();
       scene.primitives.remove(labels); scene.primitives.remove(dots); entries.clear(); status.remove();
       delete container.dataset.landmarkLevel; delete container.dataset.landmarkLabels; delete container.dataset.landmarkStatus;
     },

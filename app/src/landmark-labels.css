@@ -1,2 +1,6 @@
 .landmark-label-status { position: absolute; right: 12px; top: 116px; max-width: min(310px, calc(100% - 24px)); padding: 5px 8px; border: 1px solid #c4dce34d; border-radius: 4px; background: #10272cdd; color: #e2f0f4; font: 10px/1.35 system-ui, sans-serif; pointer-events: none; z-index: 2; }
 .landmark-label-status[hidden] { display: none; }
+
+.landmark-lookup { position: absolute; z-index: 4; display: flex; align-items: start; gap: 8px; max-width: min(280px, calc(100% - 16px)); padding: 8px 10px; border: 1px solid #c4dce366; border-radius: 5px; background: #10272ce8; color: #e2f0f4; font: 12px/1.4 system-ui, sans-serif; }
+.landmark-lookup[hidden] { display: none; }
+.landmark-lookup button { flex: none; padding: 0 4px; color: inherit; background: transparent; border: 0; cursor: pointer; font: 18px/1 system-ui, sans-serif; }

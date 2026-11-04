@@ -105,7 +105,7 @@ export function createPointerYoke(options: PointerYokeOptions): {
       && event.clientY >= rect.top && event.clientY <= rect.bottom;
   }
   function down(event: PointerEvent): void {
-    if (disposed || !options.enabled() || event.button !== 0 || event.isPrimary === false || activePointer !== null) return;
+    if (disposed || !options.enabled() || event.button !== 0 || event.ctrlKey || event.isPrimary === false || activePointer !== null) return;
     event.preventDefault(); element.focus({ preventScroll: true });
     pressState = { yokeActive, anchorX, anchorY };
     pressLookOnly = options.lookOnly?.() === true;
@@ -172,7 +172,7 @@ export function createPointerYoke(options: PointerYokeOptions): {
     setMode(yokeActive ? 'yoke' : 'off');
   }
   function click(event: MouseEvent): void {
-    if (disposed || !options.enabled() || event.button !== 0) return;
+    if (disposed || !options.enabled() || event.button !== 0 || event.ctrlKey) return;
     // Browser click counts identify the pair without delaying ordinary clicks.
     // Save before the FIRST pointer-down, not after its temporary mode toggle.
     if (event.detail === 1) clickPair = completedClick;
@@ -180,7 +180,7 @@ export function createPointerYoke(options: PointerYokeOptions): {
     completedClick = undefined;
   }
   function doubleClick(event: MouseEvent): void {
-    if (disposed || !options.enabled() || event.button !== 0) return;
+    if (disposed || !options.enabled() || event.button !== 0 || event.ctrlKey) return;
     event.preventDefault(); clearPress(); looking = false;
     if (clickPair) {
       yokeActive = !options.lookOnly?.() && clickPair.yokeActive;

@@ -57,7 +57,7 @@ async function observeScene(page) {
     const response = await route.fetch(), text = await response.text();
     assert(text.includes('const labels = new LabelCollection({ scene });'));
     await route.fulfill({ response, body: text.replace('const labels = new LabelCollection({ scene });',
-      'const labels = window.actualLandmarkLabels = new LabelCollection({ scene }); window.projectLandmark = p => SceneTransforms.worldToWindowCoordinates(scene, p);')
+      'const labels = window.actualLandmarkLabels = new LabelCollection({ scene }); window.projectLandmark = p => SceneTransforms.worldToWindowCoordinates(scene, p); window.hasLandmarkGround = (x, y) => !!scene.globe.pick(scene.camera.getPickRay(new Cartesian2(x, y)), scene);')
       .replace('const dots = new PointPrimitiveCollection();', 'const dots = window.actualLandmarkDots = new PointPrimitiveCollection();')
       .replace('const source = createLandmarkSource({', 'window.projectLandmarkItem = item => { const h = sampleHeight(item.lat_rad, item.lon_rad); return h === null ? null : SceneTransforms.worldToWindowCoordinates(scene, Cartesian3.fromRadians(item.lon_rad, item.lat_rad, h + 8)); }; const source = window.actualLandmarkSource = createLandmarkSource({')
       .replace('items = next.slice(', 'items = (window.actualLandmarkCandidates = next).slice(') });
@@ -69,7 +69,8 @@ try {
   const page = await browser.newPage({ viewport: { width: 1680, height: 1050 } }), errors = [], requests = [];
   page.on('pageerror', error => errors.push(String(error)));
   await page.addInitScript(() => {
-    const Native = Worker; window.labelStates = []; window.labelStats = [];
+    const Native = Worker; window.labelStates = []; window.labelStats = []; window.landmarkContextEvents = [];
+    document.addEventListener('contextmenu', event => window.landmarkContextEvents.push(event), true);
     window.Worker = class extends Native { constructor(...args) { super(...args); if (!String(args[0]).includes('/sim/worker.js')) return;
       window.labelWorker = this; this.addEventListener('message', ({ data }) => { if (data.type === 'state') window.labelStates.push(data); if (data.type === 'stats') window.labelStats.push(data); });
     } };
@@ -87,6 +88,11 @@ try {
   const cycle = async level => { await scene.focus(); await page.keyboard.press('.'); await page.waitForFunction(value => document.querySelector('#scene').dataset.landmarkLevel === String(value), level); };
   const stats = async () => { const count = await page.evaluate(() => window.labelStats.length); await page.evaluate(() => window.labelWorker.postMessage({ type: 'stats' })); await page.waitForFunction(n => window.labelStats.length > n, count); return page.evaluate(() => window.labelStats.at(-1)); };
   const frozen = async before => { const after = await stats(); assert.equal(after.step, before.step); assert.equal(after.digest, before.digest); assert.deepEqual(after.final_state, before.final_state); };
+  // Start/pause through the real UI so the launch card does not cover the terrain pick.
+  await prepareFlightUI(page, { controls: false }); await page.locator('#start').click();
+  await page.waitForFunction(() => window.labelStates.at(-1)?.step > 0);
+  await scene.focus(); await page.keyboard.press('Space');
+  await page.waitForFunction(() => document.querySelector('#status').textContent === 'Paused');
   const baseline = await stats();
   await scene.focus();
   for (const key of ['Shift+Period', 'Alt+Period', 'Control+Period']) await page.keyboard.press(key);
@@ -103,22 +109,43 @@ try {
   assert.equal(await scene.getAttribute('data-landmark-level'), '0', 'Period ignores repeat, modifiers, editable controls, modal dialogs and open menus');
   assert.equal(requests.length, 0, 'guarded keys make no name requests');
   assert.equal(requests.length, 0, 'Off never requests name tiles'); assert.deepEqual(await names(), []);
+  await page.mouse.click(1100, 350, { button: 'right' });
+  // Cesium already suppresses its canvas context menu; Off adds no lookup or traffic.
+  assert.equal(requests.length, 0); assert.equal(await page.locator('.landmark-lookup:visible').count(), 0);
+  await page.keyboard.press('Escape');
   await cycle(1); await page.waitForFunction(() => Array.from({ length: window.actualLandmarkLabels.length }, (_, i) => window.actualLandmarkLabels.get(i).text).includes('Fixture Egelsbach'));
   assert(!((await names()).includes('Fixture Behind'))); assert(!((await names()).includes('Fixture Overlap')), 'screen declutter rejects overlapping lower-priority text');
   assert((await names()).length <= 24); assert(requests.every(path => path.includes('/9/'))); await frozen(baseline);
   const anchor = await page.evaluate(() => {
     const labels = window.actualLandmarkLabels, label = Array.from({ length: labels.length }, (_, i) => labels.get(i)).find(item => item.text === 'Fixture Egelsbach');
     const dot = Array.from({ length: window.actualLandmarkDots.length }, (_, i) => window.actualLandmarkDots.get(i)).find(item => item.id === label.id);
-    const pixel = window.projectLandmark(label.position);
+    const pixel = window.projectLandmark(label.position), groundPixel = window.projectLandmark(dot.position);
     const a = 6378137, e2 = 6.6943799901413165e-3, lon = Math.atan2(label.position.y, label.position.x), p = Math.hypot(label.position.x, label.position.y);
     let lat = Math.atan2(label.position.z, p * (1 - e2));
     for (let n = 0; n < 6; n++) { const N = a / Math.sqrt(1 - e2 * Math.sin(lat) ** 2); lat = Math.atan2(label.position.z + e2 * N * Math.sin(lat), p); }
-    return { lon, lat, heightDifference: Math.hypot(label.position.x - dot.position.x, label.position.y - dot.position.y, label.position.z - dot.position.z), pixel: { x: pixel.x, y: pixel.y }, pixelOffset: { x: label.pixelOffset.x, y: label.pixelOffset.y }, depth: label.disableDepthTestDistance, terrainDepth: window.labelScene.globe.depthTestAgainstTerrain };
+    return { lon, lat, heightDifference: Math.hypot(label.position.x - dot.position.x, label.position.y - dot.position.y, label.position.z - dot.position.z), pixel: { x: pixel.x, y: pixel.y }, groundPixel: { x: groundPixel.x, y: groundPixel.y }, pixelOffset: { x: label.pixelOffset.x, y: label.pixelOffset.y }, depth: label.disableDepthTestDistance, terrainDepth: window.labelScene.globe.depthTestAgainstTerrain };
   });
   assert(Math.abs(anchor.lon - fixtures[0].lon_rad) < .00001 && Math.abs(anchor.lat - fixtures[0].lat_rad) < .00001, 'Cesium world position follows quantized source coordinates');
   assert(Math.abs(anchor.heightDifference - 7) < .01, 'label floats 7 visual metres above its ground dot');
   assert(anchor.pixel.x > 0 && anchor.pixel.x < 1680 && anchor.pixel.y > 0 && anchor.pixel.y < 630);
   assert.deepEqual(anchor.pixelOffset, { x: 0, y: -14 }); assert.equal(anchor.depth, 0); assert.equal(anchor.terrainDepth, true);
+  await page.waitForFunction(() => window.actualLandmarkSource.getStats().activeRequests === 0 && window.actualLandmarkSource.getStats().queuedTiles === 0);
+  await page.waitForFunction(p => window.hasLandmarkGround(p.x, p.y), anchor.groundPixel);
+  const sceneBox = await scene.boundingBox();
+  assert.equal(await page.evaluate(p => document.elementFromPoint(p.x, p.y) === window.labelScene.canvas, { x: sceneBox.x + anchor.groundPixel.x, y: sceneBox.y + anchor.groundPixel.y }), true, 'the projected ground point is reachable canvas');
+  await page.mouse.click(sceneBox.x + anchor.groundPixel.x, sceneBox.y + anchor.groundPixel.y, { button: 'right' });
+  const lookup = page.locator('.landmark-lookup');
+  await page.waitForFunction(() => ['ready', 'not-found', 'unavailable'].includes(document.querySelector('.landmark-lookup')?.dataset.status));
+  assert.equal(await lookup.getAttribute('data-status'), 'ready', await lookup.textContent());
+  assert.match(await lookup.textContent(), /Nearest mapped label: Fixture Egelsbach/);
+  assert.equal(await page.evaluate(() => window.landmarkContextEvents.at(-1)?.defaultPrevented), true);
+  await frozen(baseline);
+  const beforeSky = requests.length;
+  assert.equal(await page.evaluate(() => window.hasLandmarkGround(840, 10)), false, 'the next click is actual sky, not an ellipsoid fallback');
+  await page.mouse.click(sceneBox.x + 840, sceneBox.y + 10, { button: 'right' });
+  await page.waitForFunction(() => document.querySelector('.landmark-lookup')?.dataset.status === 'unavailable');
+  assert.equal(requests.length, beforeSky, 'sky does not query map-name tiles'); await frozen(baseline);
+  await lookup.getByRole('button', { name: /close/i }).click();
   await cycle(2); await page.waitForFunction(() => Array.from({ length: window.actualLandmarkLabels.length }, (_, i) => window.actualLandmarkLabels.get(i).text).includes('Fixture Hill'));
   assert(!((await names()).includes('Fixture Avenue'))); assert((await names()).length <= 60);
   await cycle(3); await page.waitForFunction(() => Array.from({ length: window.actualLandmarkLabels.length }, (_, i) => window.actualLandmarkLabels.get(i).text).includes('Fixture Avenue'));
@@ -134,7 +161,7 @@ try {
   await cycle(0); await page.waitForTimeout(120); const offCount = requests.length;
   assert.deepEqual(await names(), []); await page.waitForTimeout(120); assert.equal(requests.length, offCount); await frozen(baseline);
   // Record a brief native flight, then inspect source-selected historical positions.
-  await prepareFlightUI(page, { controls: false }); await page.locator('#start').click(); await page.waitForFunction(() => window.labelStates.at(-1)?.step > 60);
+  await prepareFlightUI(page, { controls: false }); await scene.focus(); await page.keyboard.press('Space'); await page.waitForFunction(() => window.labelStates.at(-1)?.step > 60);
   await scene.focus(); await page.keyboard.press('Space'); await page.waitForFunction(() => document.querySelector('#status').textContent === 'Paused');
   const live = await stats(); await page.keyboard.press('r'); await page.waitForFunction(() => document.querySelector('#status').textContent === 'Review');
   await cycle(1); await page.waitForFunction(() => window.actualLandmarkLabels.length > 0); await frozen(live);
@@ -212,5 +239,5 @@ try {
     }
     finally { await publicPage.close(); }
   }
-  console.log(JSON.stringify({ result: 'pass', checks: ['Off makes no name requests; period cycles cumulative tiers with bounded actual Cesium labels', 'source coordinates anchor terrain dots and offset labels with depth testing and screen declutter', 'actual look gestures cull behind-camera names without changing paused native state', 'selected recorded heading controls labels and Back to live restores current view', 'optional name-source failure remains explicit while the real native worker continues flying'], requests: requests.length, browser: browser.version() }, null, 2));
+  console.log(JSON.stringify({ result: 'pass', checks: ['Off makes no name requests; period cycles cumulative tiers with bounded actual Cesium labels', 'source coordinates anchor terrain dots and offset labels with depth testing and screen declutter', 'right-click ground lookup names the nearest mapped feature; Off and sky do not query or advance native physics', 'actual look gestures cull behind-camera names without changing paused native state', 'selected recorded heading controls labels and Back to live restores current view', 'optional name-source failure remains explicit while the real native worker continues flying'], requests: requests.length, browser: browser.version() }, null, 2));
 } finally { await browser?.close(); server.kill(); }

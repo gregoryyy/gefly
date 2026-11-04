@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { PbfWriter } from 'pbf';
 import { tilesWithinRadius } from './scenery-coverage.ts';
-import { createLandmarkSource, decodeLandmarkTile, LANDMARK_RANGES_M, type Landmark } from './landmark-data.ts';
+import { createLandmarkLookup, createLandmarkSource, decodeLandmarkTile, LANDMARK_RANGES_M, type Landmark } from './landmark-data.ts';
 
 interface Feature { id: number; props: Record<string, string>; type?: number; geometry?: number[] }
 function fixture(layers: Record<string, Feature[]>): Uint8Array {
@@ -183,6 +183,63 @@ test('candidate budget preserves nearby detailed names and a late important land
   source.dispose();
 });
 
+function lookupFixture(z: number, latitude: number, longitude: number, name: string): Uint8Array {
+  const n = 2 ** z, x = (longitude + Math.PI) / (2 * Math.PI) * n;
+  const y = (1 - Math.asinh(Math.tan(latitude)) / Math.PI) / 2 * n;
+  const feature = { id: 1, props: z === 9 ? { class: 'city', name } : { name },
+    geometry: [9, Math.round((x % 1) * 4096) * 2, Math.round((y % 1) * 4096) * 2] };
+  return fixture({ [z === 9 ? 'place' : z === 12 ? 'aerodrome_label' : 'poi']: [feature] });
+}
+
+test('lookup searches three containing tiles, selects nearest meters over display priority and reuses decoded cache', async () => {
+  const urls: string[] = []; let active = 0, maxActive = 0;
+  const lookup = createLandmarkLookup({ fetcher: async input => {
+    const url = String(input); urls.push(url); active++; maxActive = Math.max(maxActive, active);
+    await new Promise(resolve => setTimeout(resolve, 1)); active--;
+    const z = Number(url.split('/')[3]);
+    return response(lookupFixture(z, lat + (z === 14 ? 0.00001 : 0.0001), lon, z === 14 ? 'Near POI' : 'Far place or airport'));
+  } });
+  const found = await lookup.lookup(lat, lon, new AbortController().signal);
+  assert.equal(found?.item.name, 'Near POI'); assert(found!.distance_m > 50 && found!.distance_m < 80);
+  assert.equal(urls.length, 3); assert.equal(new Set(urls).size, 3); assert.equal(maxActive, 2);
+  for (const url of urls) {
+    const [, , , zs, xs, ys] = url.split('/'); const z = Number(zs), n = 2 ** z;
+    assert.equal(Number(xs), Math.floor((lon + Math.PI) / (2 * Math.PI) * n));
+    assert.equal(Number(ys.replace('.pbf', '')), Math.floor((1 - Math.asinh(Math.tan(lat)) / Math.PI) / 2 * n));
+  }
+  assert.equal((await lookup.lookup(lat, lon, new AbortController().signal))?.item.name, 'Near POI'); assert.equal(urls.length, 3);
+  assert.equal(await lookup.lookup(NaN, lon, new AbortController().signal), null); assert.equal(urls.length, 3); lookup.dispose();
+});
+
+test('lookup distinguishes known empty coverage from failures and can return a valid partial mapped match', async () => {
+  const empty = createLandmarkLookup({ fetcher: async () => response(fixture({ poi: [] })) });
+  assert.equal(await empty.lookup(lat, lon, new AbortController().signal), null); empty.dispose();
+  const failing = createLandmarkLookup({ fetcher: async () => { throw new Error('offline'); } });
+  await assert.rejects(failing.lookup(lat, lon, new AbortController().signal), /incomplete/); failing.dispose();
+  const partial = createLandmarkLookup({ fetcher: async input => {
+    const z = Number(String(input).split('/')[3]); if (z !== 14) throw new Error('offline');
+    return response(lookupFixture(z, lat, lon, 'Mapped source'));
+  } });
+  assert.equal((await partial.lookup(lat, lon, new AbortController().signal))?.item.name, 'Mapped source'); partial.dispose();
+});
+
+test('lookup abort/disposal reject promptly, discard late data and hold slots until real fetch completion', async () => {
+  const requests: { signal: AbortSignal; release: () => void }[] = [];
+  const lookup = createLandmarkLookup({ fetcher: async (_, init) => {
+    await new Promise<void>(resolve => requests.push({ signal: init!.signal!, release: resolve }));
+    return response(fixture({ poi: [] }));
+  } });
+  const controller = new AbortController(), first = lookup.lookup(lat, lon, controller.signal);
+  const rejected = assert.rejects(first, { name: 'AbortError' });
+  assert.equal(requests.length, 2); controller.abort(); await rejected;
+  const second = lookup.lookup(lat, lon, new AbortController().signal), secondRejected = assert.rejects(second, { name: 'AbortError' });
+  assert.equal(requests.length, 2, 'ignored cancellation cannot release real network slots early');
+  requests[0].release(); requests[1].release(); await flush();
+  assert.equal(requests.length, 4, 'new query starts only after old fetches settle');
+  lookup.dispose(); await secondRejected;
+  requests.slice(2).forEach(request => request.release()); await flush();
+  await assert.rejects(lookup.lookup(lat, lon, new AbortController().signal), { name: 'AbortError' });
+});
 
 test('failed coverage retries only after cooldown without movement or a tight retry loop', async t => {
   let now = 100000, requests = 0;
