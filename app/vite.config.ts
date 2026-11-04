@@ -3,7 +3,9 @@ import { sceneryMiddleware } from './scenery-server';
 import { MOUNT, runtimeMiddleware, runtimeRoot } from './runtime.ts';
 import { resolve, extname, sep } from 'node:path';
 import { createReadStream } from 'node:fs';
-import { stat, cp, mkdir } from 'node:fs/promises';
+import { stat, cp, mkdir, readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 
 const cesiumRoot = resolve(import.meta.dirname, 'node_modules/cesium/Build/Cesium');
 const cesiumDirectories = ['Assets', 'Workers', 'ThirdParty', 'Widgets'];
@@ -13,13 +15,37 @@ const contentTypes: Record<string, string> = {
   '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
   '.svg': 'image/svg+xml', '.ktx2': 'image/ktx2', '.xml': 'application/xml',
 };
+// Only content-identified public scenery is immutable. A wrong digest cannot
+// give a stale/changed height tile an immutable URL or bypass the native checks.
+function hashedSceneryAssets(root: string) {
+  return async (req: IncomingMessage, res: ServerResponse, next: () => void) => {
+    let url: URL;
+    try { url = new URL(req.url || '/', 'http://localhost'); }
+    catch { res.writeHead(400, { 'Cache-Control': 'no-store' }).end(); return; }
+    if (!['GET', 'HEAD'].includes(req.method || '') || !/^\?sha256=[a-f0-9]{64}$/.test(url.search)
+      || !/^(?:\/terrain\/region\/e\d{3,4}-n\d{4}\.f32|\/imagery\/rhein-main\/tiles\/\d{1,2}\/\d{1,5}\/\d{1,5}\.jpg)$/.test(url.pathname)) { next(); return; }
+    try {
+      const bytes = await readFile(resolve(root, '.' + url.pathname));
+      if (createHash('sha256').update(bytes).digest('hex') !== url.searchParams.get('sha256')) {
+        res.writeHead(400, { 'Cache-Control': 'no-store' }).end('Scenery digest mismatch'); return;
+      }
+      res.writeHead(200, { 'Content-Type': url.pathname.endsWith('.f32') ? 'application/octet-stream' : 'image/jpeg',
+        'Content-Length': bytes.length, 'Cache-Control': 'public, max-age=31536000, immutable', 'X-Content-Type-Options': 'nosniff' });
+      res.end(req.method === 'HEAD' ? undefined : bytes);
+    } catch { next(); }
+  };
+}
 export default defineConfig({
   define: { CESIUM_BASE_URL: JSON.stringify('/cesium/') },
   server: { port: 5173, strictPort: true },
   build: { rolldownOptions: { output: { codeSplitting: { groups: [{ name: 'cesium', test: /node_modules\/(?:cesium|@cesium)\// }] } } } },
   plugins: [{
     name: 'local-flight-assets',
+    configurePreviewServer(server) {
+      server.middlewares.use(hashedSceneryAssets(resolve(import.meta.dirname, 'dist')));
+    },
     configureServer(server) {
+      server.middlewares.use(hashedSceneryAssets(resolve(import.meta.dirname, 'public')));
       server.middlewares.use(sceneryMiddleware());
       // The research runtime remains local and is excluded from production output.
       server.middlewares.use(MOUNT, runtimeMiddleware(runtimeRoot()));

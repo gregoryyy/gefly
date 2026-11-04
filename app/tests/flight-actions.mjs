@@ -30,6 +30,11 @@ const fixturePages = new WeakSet();
 export async function installSceneryFixture(page) {
   if (fixturePages.has(page)) return;
   fixturePages.add(page);
+  // Browser routing fixtures cannot intercept requests owned by a service worker.
+  // Cache behavior has its own real-browser fixture; these cases keep direct requests.
+  await page.addInitScript(() => {
+    if ('serviceWorker' in navigator) Object.defineProperty(navigator.serviceWorker, 'register', { value: () => Promise.reject(new Error('Scenery fixture uses direct requests')) });
+  });
   const {deflateSync}=await import('node:zlib');
   const crc32=b=>{let c=0xffffffff;for(const n of b){c^=n;for(let k=0;k<8;k++)c=(c>>>1)^((c&1)?0xedb88320:0);}return(c^0xffffffff)>>>0;};
   const chunk=(name,data)=>{const type=Buffer.from(name),head=Buffer.alloc(4),tail=Buffer.alloc(4);head.writeUInt32BE(data.length);tail.writeUInt32BE(crc32(Buffer.concat([type,data])));return Buffer.concat([head,type,data,tail]);};

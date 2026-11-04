@@ -3,13 +3,13 @@ import {
   HorizontalOrigin, LabelCollection, LabelStyle, PointPrimitiveCollection,
   SceneTransforms, VerticalOrigin, type Label, type PointPrimitive, type Scene,
 } from 'cesium';
-import { createLandmarkSource, createLandmarkLookup, LANDMARK_LEVEL_NAMES, type Landmark, type LandmarkLevel } from './landmark-data';
+import { createLandmarkSource, createLandmarkLookup, LANDMARK_LEVEL_NAMES, LANDMARK_RANGES_M, type Landmark, type LandmarkLevel } from './landmark-data';
+import { distanceMeters } from './scenery-coverage.ts';
 import type { FlightState } from './types';
 import './landmark-labels.css';
 
 export const LANDMARK_CREDIT = '© <a href="https://openfreemap.org/">OpenFreeMap</a> · © <a href="https://openmaptiles.org/">OpenMapTiles</a> · Data from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> · ODbL · names rendered as terrain labels';
 const CAPS = [0, 24, 60, 120] as const;
-const RADIUS_M = 6378137;
 interface Entry { label: Label; dot: PointPrimitive }
 interface Placement { item: Landmark; ground: Cartesian3; above: Cartesian3; font: string; color: Color }
 interface Box { left: number; right: number; top: number; bottom: number }
@@ -110,12 +110,11 @@ export function createLandmarkLabels(scene: Scene, container: HTMLElement,
     const creditHeight = container.querySelector('.cesium-widget-credits')?.getBoundingClientRect().height ?? 0;
     const bottomInset = Math.max(60, creditHeight + 8);
     const boxes: Box[] = [], placements: Placement[] = [];
-    const cosine = Math.cos(state!.lat_rad);
     const candidates = items.filter(item => item.minLevel <= level).map(item => {
-      const distance2 = ((item.lon_rad - state!.lon_rad) * RADIUS_M * cosine) ** 2 + ((item.lat_rad - state!.lat_rad) * RADIUS_M) ** 2;
-      return { item, distance2 };
-    }).filter(({ item, distance2 }) => distance2 <= (item.category === 'place' ? 60000 : 20000) ** 2)
-      .sort((a, b) => b.item.priority - a.item.priority || a.distance2 - b.distance2);
+      const distance_m = distanceMeters(state!.lat_rad, state!.lon_rad, item.lat_rad, item.lon_rad);
+      return { item, distance_m };
+    }).filter(({ item, distance_m }) => distance_m <= LANDMARK_RANGES_M[item.minLevel])
+      .sort((a, b) => b.item.priority - a.item.priority || a.distance_m - b.distance_m);
     for (const { item } of candidates) {
       if (placements.length >= CAPS[level]) break;
       const groundHeight = sampleHeight(item.lat_rad, item.lon_rad);

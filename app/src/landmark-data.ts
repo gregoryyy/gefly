@@ -1,5 +1,6 @@
 import { VectorTile } from '@mapbox/vector-tile';
 import { PbfReader } from 'pbf';
+import { distanceMeters, tilesWithinRadius } from './scenery-coverage.ts';
 
 export type LandmarkLevel = 0 | 1 | 2 | 3;
 export const LANDMARK_LEVEL_NAMES = Object.freeze(['Off', 'Places', 'Landmarks', 'Detailed'] as const);
@@ -8,6 +9,9 @@ export interface Landmark {
   category: 'place' | 'landmark' | 'road' | 'poi'; minLevel: 1 | 2 | 3; priority: number;
 }
 const MAX_BYTES = 2 * 1024 * 1024, MAX_SCANNED = 1000, MAX_SELECTED = 1000, MAX_POINTS = 2048, CACHE_LIMIT = 96;
+// Finite nearest-first coverage; high-latitude circles can be truncated by these caps.
+export const LANDMARK_RANGES_M = Object.freeze([0, 60000, 20000, 2000] as const);
+const TILE_CAPS = [0, 16, 56, 18] as const, RETRY_MS = 30000, PLAN_MOVEMENT_M = 250;
 const MERCATOR_LIMIT = Math.atan(Math.sinh(Math.PI));
 const NOTABLE = new Set(['castle', 'museum', 'monument', 'attraction', 'viewpoint', 'tower', 'stadium', 'university', 'hospital', 'zoo', 'theme_park', 'airport',
   'place_of_worship', 'church', 'station', 'railway_station', 'water_tower', 'communications_tower']);
@@ -153,14 +157,10 @@ export function decodeLandmarkTile(bytes: Uint8Array, tile: { z: 9 | 12 | 14; x:
 
 function tilesAt(lat_rad: number, lon_rad: number, level: LandmarkLevel): Tile[] {
   const result: Tile[] = [];
-  for (const z of ([9, 12, 14] as const).slice(0, level)) {
-    const n = 2 ** z, centerX = Math.min(n - 1, Math.floor((lon_rad + Math.PI) / (2 * Math.PI) * n));
-    const centerY = Math.min(n - 1, Math.max(0, Math.floor((1 - Math.asinh(Math.tan(lat_rad)) / Math.PI) / 2 * n)));
-    const seen = new Set<string>();
-    for (const [dx, dy] of [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, -1], [-1, 1], [1, 1]]) {
-      const x = (centerX + dx + n) % n, y = centerY + dy; if (y < 0 || y >= n) continue;
-      const key = `${z}/${x}/${y}`; if (seen.has(key)) continue; seen.add(key); result.push({ z, x, y, key });
-    }
+  for (const [index, z] of ([9, 12, 14] as const).entries()) {
+    const tier = (index + 1) as 1 | 2 | 3;
+    if (tier > level) break;
+    result.push(...tilesWithinRadius(lat_rad, lon_rad, z, LANDMARK_RANGES_M[tier], TILE_CAPS[tier]) as Tile[]);
   }
   return result;
 }
@@ -254,8 +254,9 @@ export function createLandmarkSource(options: {
   getStats(): { loadedTiles: number; failedTiles: number; activeRequests: number; queuedTiles: number; cacheSize: number; candidates: number };
 } {
   const fetcher = options.fetcher ?? fetch, cache = new Map<string, readonly Landmark[]>(), active = new Map<AbortController, number>();
-  let desired: Tile[] = [], queue: Tile[] = [], failed = new Set<string>(), generation = 0, currentLevel: LandmarkLevel = 0;
+  let desired: Tile[] = [], queue: Tile[] = [], failed = new Map<string, number>(), generation = 0, currentLevel: LandmarkLevel = 0;
   let center: { lat_rad: number; lon_rad: number } | null = null;
+  let planCenter: { lat_rad: number; lon_rad: number } | null = null;
   let signature = '', disposed = false, loadedTiles = 0, failedTiles = 0, candidates = 0;
   const notify = (status: 'off' | 'loading' | 'ready' | 'degraded') => {
     if (disposed) return;
@@ -266,7 +267,7 @@ export function createLandmarkSource(options: {
       if (previous && previous.priority >= item.priority) continue;
       selected.set(item.id, item);
     }
-    // At most 27 decoded tiles × 1000 items enter this selection. Rank the whole
+    // At most 90 decoded tiles × 1000 items enter this selection. Rank the whole
     // bounded set before applying the display budget so arrival/tile order cannot
     // starve a nearby name or a later high-priority landmark. Haversine's term is
     // monotonic with great-circle distance, including across the antimeridian.
@@ -292,7 +293,7 @@ export function createLandmarkSource(options: {
           cache.delete(tile.key); cache.set(tile.key, items); loadedTiles++;
           while (cache.size > CACHE_LIMIT) cache.delete(cache.keys().next().value!);
         } catch {
-          if (!disposed && !controller.signal.aborted && epoch === generation) { failed.add(tile.key); failedTiles++; }
+          if (!disposed && !controller.signal.aborted && epoch === generation) { failed.set(tile.key, Date.now() + RETRY_MS); failedTiles++; }
         } finally {
           active.delete(controller);
           if (!disposed) { pump(); if (epoch === generation) progress(); }
@@ -307,13 +308,23 @@ export function createLandmarkSource(options: {
       if (disposed) return;
       const valid = Number.isInteger(level) && level >= 0 && level <= 3 && Number.isFinite(lat_rad) && Number.isFinite(lon_rad)
         && Math.abs(lat_rad) <= MERCATOR_LIMIT && Math.abs(lon_rad) <= Math.PI;
-      // Updating a position within the same tile set does not sort or refetch;
-      // subsequent source arrivals use the latest selected live/Review center.
       center = valid ? { lat_rad, lon_rad } : null;
+      // Animation updates keep the display center fresh without rebuilding or
+      // cancelling an in-flight coverage plan for every small position change.
+      if (valid && level !== 0 && currentLevel === level && planCenter
+          && distanceMeters(planCenter.lat_rad, planCenter.lon_rad, lat_rad, lon_rad) < PLAN_MOVEMENT_M) {
+        const now = Date.now(); let retry = false;
+        for (const tile of desired) if ((failed.get(tile.key) ?? Infinity) <= now) {
+          failed.delete(tile.key); queue.push(tile); retry = true;
+        }
+        if (retry) { progress(); pump(); }
+        return;
+      }
+      planCenter = valid && level !== 0 ? { lat_rad, lon_rad } : null;
       const tiles = level === 0 || !valid ? [] : tilesAt(lat_rad, lon_rad, level);
       const nextSignature = level === 0 ? 'off' : !valid ? 'invalid' : `${level}:${tiles.map(tile => tile.key).join(',')}`;
-      if (signature === nextSignature) return;
-      signature = nextSignature; cancel(); currentLevel = valid ? level : 0; desired = tiles; failed = new Set();
+      if (signature === nextSignature) { if (valid && level !== 0) progress(); return; }
+      signature = nextSignature; cancel(); currentLevel = valid ? level : 0; desired = tiles; failed = new Map();
       if (level === 0) { notify('off'); return; }
       if (!valid) { notify('degraded'); return; }
       for (const tile of desired) {
@@ -322,7 +333,7 @@ export function createLandmarkSource(options: {
       }
       progress(); pump();
     },
-    dispose() { if (disposed) return; disposed = true; cancel(); cache.clear(); desired = []; center = null; candidates = 0; },
+    dispose() { if (disposed) return; disposed = true; cancel(); cache.clear(); desired = []; center = null; planCenter = null; candidates = 0; },
     getStats: () => ({ loadedTiles, failedTiles, activeRequests: active.size, queuedTiles: queue.length, cacheSize: cache.size, candidates }),
   };
 }
