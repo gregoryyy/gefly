@@ -2,7 +2,7 @@ import { createKap140 } from '../../studies/e1-browser/sim/kap140.js';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { DEFAULT_RADIO_NAV } from './radio-nav.ts';
-import { FlightTrace } from './flight-trace.ts';
+import { FlightTrace, type RunwayPracticeContext } from './flight-trace.ts';
 import { COLLISION_FIELDS, STALL_FIELDS, type FlightState } from './types.ts';
 
 test('JSON recordings round-trip immutable states, controls, VSI and retained bounds', () => {
@@ -31,6 +31,82 @@ test('JSON import rejects malformed, unsupported, non-finite and unordered data 
   }
   assert.throws(() => FlightTrace.fromJSON('{bad json'));
   assert.throws(() => FlightTrace.fromJSON(original.replace(/"alt_msl_m":[^,}]+/, '"alt_msl_m":1e999')));
+});
+
+const runwayContext = (runway: '08' | '26'): RunwayPracticeContext => ({
+  kind: 'runway-practice', version: 1, airport: 'EDFE', runway,
+});
+
+test('R-REVIEW-1 runway recording declarations round-trip for both directions without changing state or frames', () => {
+  for (const runway of ['08', '26'] as const) {
+    const trace = new FlightTrace({ context: runwayContext(runway) });
+    trace.record(state(0), 0); trace.record(state(1), -2);
+    const text = trace.exportJSON(), data = JSON.parse(text);
+    assert.deepEqual(data.context, runwayContext(runway));
+    const loaded = FlightTrace.fromJSON(text);
+    assert.deepEqual(loaded.getContext(), runwayContext(runway));
+    assert.deepEqual([...loaded.recordedStates()], [...trace.recordedStates()]);
+    assert.deepEqual(loaded.atTime(1), trace.atTime(1));
+  }
+});
+
+test('R-REVIEW-1 old version-1 recordings have unknown context and export no invented declaration', () => {
+  const old = new FlightTrace(); old.record(state(0), 0); old.record(state(1), 0);
+  const text = old.exportJSON(); assert.equal(Object.hasOwn(JSON.parse(text), 'context'), false);
+  const loaded = FlightTrace.fromJSON(text); assert.equal(loaded.getContext(), null);
+  assert.equal(Object.hasOwn(JSON.parse(loaded.exportJSON()), 'context'), false);
+});
+
+test('R-REVIEW-1 malformed or extended declared context rejects import while leaving live history/context intact', () => {
+  const live = new FlightTrace({ context: runwayContext('26') });
+  live.record(state(0), 0); live.record(state(1), 1);
+  const original = live.exportJSON();
+  const badContexts: unknown[] = [null, [], 'EDFE', 1, true, {},
+    { ...runwayContext('26'), kind: 'arbitrary-command' },
+    { ...runwayContext('26'), version: 2 }, { ...runwayContext('26'), version: '1' },
+    { ...runwayContext('26'), airport: 'EDDF' }, { ...runwayContext('26'), runway: '09' },
+    { ...runwayContext('26'), runway: 26 }, { ...runwayContext('26'), command: 'start-engine' },
+    { kind: 'runway-practice', version: 1, airport: 'EDFE' },
+    { version: 1, airport: 'EDFE', runway: '26' },
+  ];
+  for (const context of badContexts) {
+    const changed = JSON.parse(original); changed.context = context;
+    assert.throws(() => FlightTrace.fromJSON(JSON.stringify(changed)), /context/);
+    assert.equal(live.exportJSON(), original);
+    assert.throws(() => live.clear(context as RunwayPracticeContext), /context/);
+    assert.equal(live.exportJSON(), original, 'invalid replacement must not clear the live trace');
+    assert.throws(() => new FlightTrace({ context: context as RunwayPracticeContext }), /context/);
+  }
+  const contextFirst = JSON.parse(original); contextFirst.context = null; contextFirst.samples[0] = null;
+  assert.throws(() => FlightTrace.fromJSON(JSON.stringify(contextFirst)), /context/, 'context validation precedes frame validation');
+});
+
+test('R-REVIEW-1 context is copied/frozen and only an atomic clear can change the declaration', () => {
+  const caller = { ...runwayContext('26') };
+  const trace = new FlightTrace({ context: caller });
+  caller.runway = '08';
+  assert.equal(trace.getContext()!.runway, '26');
+  assert.notEqual(trace.getContext(), caller); assert(Object.isFrozen(trace.getContext()));
+  assert.throws(() => { (trace.getContext() as { runway: string }).runway = '08'; }, TypeError);
+  trace.record(state(0), 0); trace.record(state(1), 0);
+  const replacement = { ...runwayContext('08') }; trace.clear(replacement); replacement.runway = '26';
+  assert.equal(trace.bounds(), null); assert.equal(trace.getContext()!.runway, '08');
+  trace.record(state(0), 0); trace.record(state(1), 0);
+  assert.equal(JSON.parse(trace.exportJSON()).context.runway, '08');
+  trace.clear(); assert.equal(trace.bounds(), null); assert.equal(trace.getContext(), null);
+});
+
+test('R-REVIEW-1 declarations remain intact through clipping and exact context keys reject non-JSON extension mechanisms', () => {
+  const trace = new FlightTrace({ maxSamples: 2, context: runwayContext('26') });
+  for (let step = 0; step < 5; step++) trace.record(state(step), 0);
+  const loaded = FlightTrace.fromJSON(trace.exportJSON());
+  assert.equal(loaded.bounds()!.clipped, true); assert.deepEqual(loaded.getContext(), runwayContext('26'));
+  assert.deepEqual([...loaded.recordedStates()].map(s => s.step), [3, 4]);
+  for (const context of [Object.assign(Object.create({ extra: 'command' }), runwayContext('26')),
+    { ...runwayContext('26'), [Symbol('extra')]: 'command' },
+    Object.defineProperty({ ...runwayContext('26') }, 'runway', { get() { throw new Error('must not execute'); } })]) {
+    assert.throws(() => new FlightTrace({ context }), /context/);
+  }
 });
 
 test('recorded collision preserves the final event and rejects malformed or same-clock rewrites', () => {

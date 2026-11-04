@@ -60,6 +60,11 @@ configuration. It logs sensed lift-off, touchdown, ground stop and collision
 events, with available ground speed and contact vertical speed. **R** opens Review;
 the card follows the selected recording time. These are observations, not a
 landing grade or a validated C172S lesson.
+**Save JSON** retains the declared EDFE runway so **Load JSON** restores this card
+and its recorded observations. Older files without that context keep it unknown.
+The card’s **Setup** tab compares actual controls with the simulator’s parked
+start reference. **Events** shows the sensed flight log. Missing data and checks
+the simulator cannot verify stay explicit; no aircraft settings change.
 
 Sharp runway markings, taxiways and apron overlays sit on the public terrain.
 In **Options**, select **Vector map and terrain** for the bounded OSM airport

@@ -398,7 +398,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       playControls.update(options.isExerciseActive?.() ?? false, reviewing);
       const practice = options.getRunwayPractice?.();
       practiceCard.update(practice?.progress ?? null,
-        selectedAirport !== 'EDFE' || (reviewing && !practice) ? null : practice?.runway ?? playControls.selectedRunway(), reviewing);
+        selectedAirport !== 'EDFE' || (reviewing && !practice) ? null : practice?.runway ?? playControls.selectedRunway(), reviewing,
+        practice && practice.progress.phase !== 'waiting' ? state : null);
       comPanel?.setEnabled(!reviewing && !!options.onTuneCom && (options.canTuneCom?.() ?? true));
       comPanel?.updatePosition(state.lat_rad * 180 / Math.PI, state.lon_rad * 180 / Math.PI);
       if (disposed) return;

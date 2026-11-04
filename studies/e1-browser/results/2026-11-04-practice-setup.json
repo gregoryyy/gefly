@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "source_revision": "47cea7c04ea7822a0987f8a8fc857393920c17c3 + recorded working-tree source pins",
+  "scope": "Sensed simulator runway-start reference, live/recorded display and inspection isolation; no aircraft checklist/readiness or procedure acceptance.",
+  "environment": {
+    "node": "v26.13.0",
+    "platform": "macOS-26.2-arm64-arm-64bit",
+    "browser": "156.0.8078.80"
+  },
+  "build_info": {
+    "jsbsim_tag": "v1.3.3",
+    "jsbsim_commit": "66f7fafc07fe13e7ede9db20873030fed2881713",
+    "emsdk": "6.0.13",
+    "emsdk_rev": "d7b4130688bfa348392b921ab04015aa15c4f154",
+    "emcc": "emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 6.0.13 (e13ee988ce3d87a738dd8f3661d02223308c412a)",
+    "flags": "-O2 -fwasm-exceptions",
+    "wasm_bytes": 1758848,
+    "wasm_sha256": "06f044fd1176c52e3f0d2da38a542cc69c0d312ffa296db6e0d0d96cc13a4ddf",
+    "aircraft_adapter": {
+      "adapter_id": "gefly-c172x-mixture-pitch-ap-v2",
+      "adapter_script_sha256": "5f9dcf09a1d004351bb5faf165c037f9f3b3433ba10f52f7957374b2ab745487",
+      "ap_prepared_sha256": "e128be7673cd6fd29e8a0bab4ff7392e62974ff236e44a23861d3f4ffc8ebd9c",
+      "ap_source_sha256": "1e83fec37beabf33e1a1bdd7a30fb5d4aeca79ddb52a2dca58a7bcfc1d20e570",
+      "prepared_sha256": "f0dad1b5a4c17f8ac607da1709d38f2de77119aeb82c272dd7cedefccad69219",
+      "source_path": "aircraft/c172x/c172x.xml",
+      "source_sha256": "b736f4b7560d5aab4d2a69026798be1d369b2b2bb5ddcf627aebfd441ba71840"
+    },
+    "propeller_adapter": {
+      "adaptations": [
+        "Direct-drive design RPM replaces Aero-Matic tip-speed/gearbox heuristic",
+        "Retain pinned propeller geometry, inertia and Mach corrections; replace only fixed-pitch CP/CT tables",
+        "No tuning to a C172 glide ratio or aircraft-specific reference curve"
+      ],
+      "adapter_id": "gefly-generic-fixed-pitch-windmilling-v1",
+      "adapter_script_sha256": "d0b185544637898b9478fc00b810cc3bbebdf1d2ce445a95854f9b56d6a9318d",
+      "inputs": {
+        "blades": 2,
+        "cp0": 0.04258269989766735,
+        "ct0": 0.05961577985673429,
+        "design_density_slug_ft3": 0.002378,
+        "diameter_in": 75.0,
+        "engine_design_rpm": 2700.0,
+        "engine_max_power_hp": 160.0,
+        "fixed_pitch_deg": 22,
+        "gear_ratio": 1,
+        "inertia_slug_ft2": 1.67,
+        "propeller_design_rpm": 2700.0,
+        "table_decimal_places": 4
+      },
+      "prepared_sha256": "fc3163d3a8ee885af513aa80950f1b4ef6c85a00e7ebeafd4d31b0c5dc6d4e40",
+      "scope": "generic research fixed-pitch windmilling; not accepted aircraft data",
+      "source_jsbsim_commit": "66f7fafc07fe13e7ede9db20873030fed2881713",
+      "sources": [
+        {
+          "path": "engine/eng_io320.xml",
+          "sha256": "0cedc1e356a7a572a175f351a4abb952ba91081219a37dc7192bce3a2181d8c6"
+        },
+        {
+          "path": "engine/prop_75in2f.xml",
+          "sha256": "6481edf1da940fdea5358913d226c3e25d3e6b8209b4805370258a9a65ca7403"
+        },
+        {
+          "path": "utils/aeromatic/prop2.php",
+          "sha256": "658eb2c7a409fe7793514a6e0add07ff6b693b0161ee205379d3606f0117dab6"
+        }
+      ]
+    }
+  },
+  "source_pins": [
+    {
+      "path": "app/src/practice-setup.ts",
+      "sha256": "c74f250694399a16003d982c0a36c1407cc1bef5359eb74b1f7df5a82a3c9d26"
+    },
+    {
+      "path": "app/src/practice-setup.test.ts",
+      "sha256": "f963a60628e0b873bef2cea6241586a4609ff495e5ae8dd6b381b69827f8d33d"
+    },
+    {
+      "path": "app/src/runway-practice-panel.ts",
+      "sha256": "f3a76d1bb75877e04a6ab97b45212d3aec0384e6da87f9dda4ff883a0c221e37"
+    },
+    {
+      "path": "app/src/runway-practice-panel.css",
+      "sha256": "b84229191e8726dbeb0513f103b15a576e5eb6a9ccaae70e7fb7e710ffdab54a"
+    },
+    {
+      "path": "app/src/practice-map.ts",
+      "sha256": "301089b9d0ae8b4f62e33d3106d143946c8f25fc834974d50ff7fcaaa9fe5b5c"
+    },
+    {
+      "path": "app/tests/practice-setup.browser.mjs",
+      "sha256": "8fe2cfdad6aaa7f4fb7245ed95b2447b002a7ca577696506b3282f7eb5c6aee1"
+    },
+    {
+      "path": "app/tests/airport-play.browser.mjs",
+      "sha256": "0a7adccbefb9d3797f05b243d8690aaeee2325c17b79ca0ed5405e2ad6607c8c"
+    },
+    {
+      "path": "app/package.json",
+      "sha256": "2fbcef53ddfd9c7d6999ccf587993ed023d966daaa6f4427b004f5ea1567313e"
+    }
+  ],
+  "runs": {
+    "setup": {
+      "command": "node app/tests/practice-setup.browser.mjs",
+      "exit_code": 0,
+      "stdout": "{\n  \"result\": \"pass\",\n  \"checks\": [\n    \"native EDFE runway baseline matches seven sensed simulator-reference rows\",\n    \"actual engine, throttle, flaps and brakes changes differ after native state echoes\",\n    \"accessible three-tab keyboard inspection while paused preserves native state\",\n    \"synthetic imported recorded controls replace live Setup readings without native mutation\",\n    \"legacy missing telemetry remains unavailable and Back to live restores current readings\"\n  ],\n  \"browser\": \"156.0.8078.80\"\n}\n",
+      "result": {
+        "result": "pass",
+        "checks": [
+          "native EDFE runway baseline matches seven sensed simulator-reference rows",
+          "actual engine, throttle, flaps and brakes changes differ after native state echoes",
+          "accessible three-tab keyboard inspection while paused preserves native state",
+          "synthetic imported recorded controls replace live Setup readings without native mutation",
+          "legacy missing telemetry remains unavailable and Back to live restores current readings"
+        ],
+        "browser": "156.0.8078.80"
+      }
+    },
+    "airport": {
+      "command": "node app/tests/airport-play.browser.mjs",
+      "exit_code": 0,
+      "stdout": "{\n  \"checks\": [\n    \"EDFE26 and08 start stationary with all gear supported; full parking hold does not collide\",\n    \"COM8.33 selection loads standby, explicit swap changes active\",\n    \"Options select vector terrain/map and practice lights\",\n    \"release brake and power produces actual native ground acceleration\",\n    \"map Stop preserves Review and locks start/COM during Review\",\n    \"source-scoped runway briefing, actual ground state, runway change and recorded Review card\",\n    \"portable runway context survives save/load, rejects malformed metadata and restores live context; legacy files remain unknown\"\n  ],\n  \"browser\": \"156.0.8078.80\"\n}\n",
+      "result": {
+        "checks": [
+          "EDFE26 and08 start stationary with all gear supported; full parking hold does not collide",
+          "COM8.33 selection loads standby, explicit swap changes active",
+          "Options select vector terrain/map and practice lights",
+          "release brake and power produces actual native ground acceleration",
+          "map Stop preserves Review and locks start/COM during Review",
+          "source-scoped runway briefing, actual ground state, runway change and recorded Review card",
+          "portable runway context survives save/load, rejects malformed metadata and restores live context; legacy files remain unknown"
+        ],
+        "browser": "156.0.8078.80"
+      }
+    },
+    "unit": {
+      "command": "node --test app/src/practice-setup.test.ts",
+      "executed_by": "Independent Codex glide_housekeeping",
+      "exit_code": 0,
+      "passed": 7,
+      "stdout": "\u2714 R-TRAIN-4 initial simulator configuration has seven sensed matches and two explicitly unsensed rows (1.275125ms)\n\u2714 R-TRAIN-4 actual mismatches remain visible despite requested engine/ignition state or unchanged startup values (0.277125ms)\n\u2714 R-TRAIN-4 legacy/missing/null snapshots do not fabricate zero values or complete a sensed row (0.104333ms)\n\u2714 R-TRAIN-4 invalid/nonfinite values and partial required pairs are unavailable rather than match/different (0.828125ms)\n\u2714 R-TRAIN-4 flap/trim agreement follows declared display precision, not a calibrated take-off mark (0.1685ms)\n\u2714 R-TRAIN-4 model electrical checks require BAT/ALT/AV bits while allowing other valid switch choices (0.101625ms)\n\u2714 R-TRAIN-4 paused/Review snapshots are read-only and re-evaluation reflects both changes and undo (0.321667ms)\n\u2139 tests 7\n\u2139 suites 0\n\u2139 pass 7\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 158.235292\n"
+    }
+  },
+  "limitations": [
+    "Seven comparisons describe the simulator launch configuration only; they are not a complete C172P/C172S procedure or pilot confirmation.",
+    "Recorded-control and legacy missing-data cases use explicit synthetic recording fixtures, not native flight observations.",
+    "Browser tests use fixture map/photo pixels with the actual native worker/public terrain; paused inspection and imported data preserve native step, digest and state.",
+    "Wheel-brake indications do not establish parking-latch position; model electrical switch positions do not prove physical electrical-system behavior.",
+    "Embedded aircraft/runtime closure is not redistributed; metadata identifies the observed local binary but cannot establish full aircraft/model fidelity.",
+    "No full checklist, circuit, training/regulatory or cross-provider acceptance is claimed."
+  ]
+}
