@@ -563,6 +563,16 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       container: viewport, style, center: [8.64, 49.9625], zoom: 13,
       minZoom: 5, maxZoom: 17, interactive: true, attributionControl: false,
       renderWorldCopies: false, maxPitch: 0, pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+      transformRequest(url, resourceType) {
+        if (visible && resourceType === 'Tile') {
+          try {
+            const target = new URL(url, window.location.href);
+            if (target.origin === window.location.origin && /^\/scenery\/(?:map|imagery)\//.test(target.pathname))
+              return { url, headers: { 'X-Gefly-Scenery-Priority': 'visible' } };
+          } catch { /* Preserve MapLibre's handling of other request URLs. */ }
+        }
+        return { url };
+      },
     });
     map.addControl(new ScaleControl({ unit: 'nautical', maxWidth: 100 }), 'bottom-left');
     viewport.append(trajectory);

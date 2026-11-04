@@ -9,11 +9,11 @@ const mapPng = makePng(256), photoPng = makePng(512);
 function tile(lat: number, lon: number, z: number): [number, number] {
   return [Math.floor((lon + 180) / 360 * 2 ** z), Math.floor((1 - Math.asinh(Math.tan(lat * Math.PI / 180)) / Math.PI) / 2 * 2 ** z)];
 }
-function call(handler: ReturnType<typeof sceneryMiddleware>, url: string, method = 'GET'): Promise<{ status: number; headers: Record<string, string>; data: Buffer; next: boolean }> {
+function call(handler: ReturnType<typeof sceneryMiddleware>, url: string, method = 'GET', requestHeaders: Record<string, string> = {}): Promise<{ status: number; headers: Record<string, string>; data: Buffer; next: boolean }> {
   return new Promise((resolve) => {
     let status = 0, headers: Record<string, string> = {};
     const res = { writeHead(code: number, h: Record<string, string> = {}) { status = code; headers = h; return this; }, end(data?: Buffer) { resolve({ status, headers, data: data || Buffer.alloc(0), next: false }); } };
-    handler({ url, method } as IncomingMessage, res as unknown as ServerResponse, () => resolve({ status: 0, headers: {}, data: Buffer.alloc(0), next: true }));
+    handler({ url, method, headers: requestHeaders } as IncomingMessage, res as unknown as ServerResponse, () => resolve({ status: 0, headers: {}, data: Buffer.alloc(0), next: true }));
   });
 }
 
@@ -38,10 +38,8 @@ test('R-WORLD-6 public map covers southern Germany while imagery stays regional'
     const url = new URL(String(input));
     seen.push(url);
     assert.equal(url.origin, 'https://sgx.geodatenzentrum.de');
-    assert.equal(url.pathname, '/wms_topplus_open');
-    assert.equal(url.searchParams.get('LAYERS'), 'web');
-    assert.equal(url.searchParams.get('SRS'), 'EPSG:3857');
-    assert.equal(url.searchParams.get('WIDTH'), '256');
+    assert.match(url.pathname, /^\/wmts_topplus_open\/tile\/1\.0\.0\/web\/default\/WEBMERCATOR\/12\/\d+\/\d+\.png$/);
+    assert.equal(url.search, '');
     assert.equal(init?.redirect, 'error');
     assert.ok(init?.signal);
     return new Response(mapPng, { headers: { 'content-type': 'image/png' } });
@@ -110,4 +108,45 @@ test('preserves transparent photographic gaps and rejects oversized upstream byt
   assert.equal((await call(unavailable, `/scenery/imagery/12/${x}/${y}.png`)).status, 502);
   const oversized = sceneryMiddleware({ fetcher: async () => new Response(new Uint8Array(2 * 1024 * 1024 + 1), { headers: { 'content-type': 'image/png' } }) });
   assert.equal((await call(oversized, `/scenery/map/12/${x}/${y}.png`)).status, 502);
+});
+
+
+test('visible map completes while every aerial network slot and job is stalled', async () => {
+  let release!: () => void, saturated!: () => void, aerial = 0;
+  const blocked = new Promise<void>(resolve => { release = resolve; });
+  const started = new Promise<void>(resolve => { saturated = resolve; });
+  const handler = sceneryMiddleware({ fetcher: async input => {
+    if (new URL(String(input)).hostname === 'sgx.geodatenzentrum.de') return new Response(mapPng, { headers: { 'content-type': 'image/png' } });
+    if (++aerial === 4) saturated();
+    await blocked;
+    return new Response(photoPng, { headers: { 'content-type': 'image/png' } });
+  } });
+  const [x, y] = tile(49.96, 8.64, 12);
+  const photography = Array.from({ length: 8 }, (_, i) => call(handler, `/scenery/imagery/12/${x + i}/${y}.png`));
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await started;
+    const result = await Promise.race([call(handler, `/scenery/map/12/${x}/${y}.png`, 'GET', { 'x-gefly-scenery-priority': 'visible' }),
+      new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('map waited behind aerial work')), 1000); })]);
+    assert.equal(result.status, 200);
+  } finally { clearTimeout(timer); release(); await Promise.all(photography); }
+});
+
+test('visible duplicate promotes a queued map ahead of older background tiles', async () => {
+  const started: string[] = [], releases: (() => void)[] = []; let freeAll = false;
+  const handler = sceneryMiddleware({ fetcher: async input => {
+    started.push(new URL(String(input)).pathname);
+    if (!freeAll) await new Promise<void>(resolve => releases.push(resolve));
+    return new Response(mapPng, { headers: { 'content-type': 'image/png' } });
+  } });
+  const [x, y] = tile(49.96, 8.64, 12), path = (i: number) => `/scenery/map/12/${x + i}/${y}.png`;
+  const work = Array.from({ length: 7 }, (_, i) => call(handler, path(i)));
+  const duplicate = call(handler, path(6), 'GET', { 'x-gefly-scenery-priority': 'visible' });
+  try {
+    assert.equal(started.length, 4);
+    releases.shift()!();
+    for (let i = 0; i < 100 && started.length < 5; i++) await new Promise(resolve => setTimeout(resolve, 1));
+    assert.equal(started[4], `/wmts_topplus_open/tile/1.0.0/web/default/WEBMERCATOR/12/${y}/${x + 6}.png`);
+  } finally { freeAll = true; releases.forEach(release => release()); await Promise.all([...work, duplicate]); }
+  assert.equal(started.length, 7, 'duplicate visible demand still shares one upstream fetch');
 });

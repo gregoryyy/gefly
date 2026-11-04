@@ -3,6 +3,28 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 12:48 — Prioritize visible map loading
+
+TODO: 2.0.83; R-WORLD-6/R-WORLD-5. Codex integration; glide_cases proxy;
+glide_model map request priority; glide_housekeeping independent review.
+
+**Implementation notes**
+
+Use BKG WMTS tiles; separate map and aerial job/network pools and promote
+queued visible requests, including deduplicated loads. Eight proxy cases and
+TypeScript pass. Actual MapLibre map readiness observed at 2.138 s on the running
+local server. [Review](reviews/2026-11-04-map-loading-delay.md); peer pending.
+
+**Deviations**
+
+One map-renderer timing is not a full cold-app budget or reproduction of every
+40-second case. Tests use existing Python 3.11/Pillow dependencies; no new package.
+
+**Insights**
+
+Cached background requests must still allow urgent demand to promote proxy work.
+The related browser-cache fix is in PR #78.
+
 ## 2026-11-04 12:35 — Step down simulation speed
 
 TODO: 2.0.47; R-SIM-9. Agent: Codex implementation; glide_housekeeping review.
