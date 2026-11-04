@@ -3,6 +3,38 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 10:23 — Quieter direction cues and full vertical look
+
+TODO: 2.0.75; R-VIEW-1/R-INPUT-1/R-REVIEW-1.
+Agent: Codex orchestrator integration; glide_cases camera/pointer mapping;
+glide_model direction-cue gating/browser checks; glide_housekeeping independent review.
+
+**Implementation notes**
+
+Keep the forward crosshair; show extra L/R/U/D/B cues at 25° actual camera/body
+separation and hide them at 22°, avoiding near-front clutter and threshold
+flicker. Accelerate outer vertical pointer travel toward the scene edges and map
+outer camera angles to true poles while preserving central drag response, default
+views, analytic camera orientation and retained look on release.
+
+Independent pointer/orientation units pass 28 cases. Eight actual Cesium/native
+browser groups pass, including front-only views, hysteresis, centered cockpit
+U/D at the drag limits, FOV/resize and paused/Review native-state isolation.
+Shared CI passes with nine existing study cases skipped, not passed.
+[Independent scoped review](reviews/2026-11-04-view-marker-visibility-poles.md)
+records quality and visual validation; peer remains pending.
+
+**Deviations**
+
+Chase retains its heading/horizon-relative orbit: its poles are world vertical,
+while cockpit poles align with the aircraft's actual U/D axes at any attitude.
+No flight-control, avionics or physics change.
+
+**Insights**
+
+Reaching a real camera pole requires accounting for the default viewing offset
+as well as pointer travel. A nominal angle limit alone left U/D unreachable.
+
 ## 2026-11-04 10:10 — Faint active yoke-center marker
 
 TODO: 2.0.74; R-INPUT-1.

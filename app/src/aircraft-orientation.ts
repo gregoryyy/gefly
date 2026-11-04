@@ -46,11 +46,20 @@ function combine(a: VectorENU, aScale: number, b: VectorENU, bScale: number): Ve
   return [a[0] * aScale + b[0] * bScale, a[1] * aScale + b[1] * bScale, a[2] * aScale + b[2] * bScale];
 }
 
+/** Preserve ordinary look, then smoothly map the outer raw range to the poles. */
+function polePitch(raw: number, neutral: number): number {
+  const core = 30 * Math.PI / 180;
+  const amount = Math.max(0, (Math.abs(raw) - core) / (MAX_LOOK_PITCH_RAD - core));
+  const smooth = amount * amount * (3 - 2 * amount);
+  const sign = Math.sign(raw);
+  return neutral + raw + (sign * Math.PI / 2 - neutral - sign * MAX_LOOK_PITCH_RAD) * smooth;
+}
+
 /** Camera gaze relative to aircraft body axes; zero retains the slight downward view. */
 export function cockpitCameraENU(basis: AircraftBasisENU, look?: Readonly<CameraLook>): CameraPoseENU {
   const bounded = boundedCameraLook(look);
   const cy = Math.cos(bounded.yaw_rad), sy = Math.sin(bounded.yaw_rad);
-  const pitch = bounded.pitch_rad - COCKPIT_LOOK_DOWN_RAD;
+  const pitch = polePitch(bounded.pitch_rad, -COCKPIT_LOOK_DOWN_RAD);
   const cp = Math.cos(pitch), sp = Math.sin(pitch);
   const horizontal = combine(basis.forward, cy, basis.right, sy);
   return {
@@ -65,9 +74,8 @@ export function chaseCameraENU(heading_rad: number, look?: Readonly<CameraLook>)
   const bounded = boundedCameraLook(look);
   const heading = heading_rad + bounded.yaw_rad;
   const radius = Math.hypot(CHASE_HORIZONTAL_M, CHASE_HEIGHT_M);
-  // Keep an orbit clear of the vertical singularity while permitting a view below the aircraft.
-  const elevation = Math.max(-70 * Math.PI / 180, Math.min(80 * Math.PI / 180,
-    Math.atan2(CHASE_HEIGHT_M, CHASE_HORIZONTAL_M) + bounded.pitch_rad));
+  // Analytic direction/up remain perpendicular even at the exact vertical poles.
+  const elevation = polePitch(bounded.pitch_rad, Math.atan2(CHASE_HEIGHT_M, CHASE_HORIZONTAL_M));
   const sh = Math.sin(heading), ch = Math.cos(heading);
   const se = Math.sin(elevation), ce = Math.cos(elevation);
   return {

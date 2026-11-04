@@ -390,3 +390,19 @@ test('Review double-click centers retained look without yoke input; cancellation
   assert.equal(live.modes.at(-1), 'off'); assert.deepEqual(live.yokes.at(-1), [0, 0]);
   f.controller.dispose(); live.controller.dispose();
 });
+
+test('vertical margin boost reaches raw poles within the scene, preserves ordinary rate and has no stationary or release drift', async () => {
+  const f=fixture();f.click(400,300);
+  f.surface.dispatchEvent(pointer('pointerdown',400,300));await sleep(280);
+  f.surface.dispatchEvent(pointer('pointermove',400,250));assert.deepEqual(f.looks.at(-1),[0,.2]);
+  f.surface.dispatchEvent(pointer('pointermove',400,150));const outer=f.looks.at(-1)![1];assert(outer>.6&&outer<70*Math.PI/180);
+  f.surface.dispatchEvent(pointer('pointermove',400,0));assert.deepEqual(f.looks.at(-1),[0,70*Math.PI/180]);
+  const counts=[f.looks.length,f.yokes.length];f.surface.dispatchEvent(pointer('pointermove',400,0));await sleep(30);assert.deepEqual([f.looks.length,f.yokes.length],counts);
+  f.surface.dispatchEvent(pointer('pointerup',400,0));assert.deepEqual(f.looks.at(-1),[0,70*Math.PI/180]);
+  // Repeated drag starts at the retained view and can reach the opposite pole.
+  f.surface.dispatchEvent(pointer('pointerdown',400,300));await sleep(280);
+  assert.deepEqual(f.looks.at(-1),[0,70*Math.PI/180]);
+  f.surface.dispatchEvent(pointer('pointermove',400,350));assert(Math.abs(f.looks.at(-1)![1]-(70*Math.PI/180-.2))<1e-12);
+  f.surface.dispatchEvent(pointer('pointermove',400,600));assert.deepEqual(f.looks.at(-1),[0,-70*Math.PI/180]);
+  f.surface.dispatchEvent(pointer('pointerup',400,600));assert.deepEqual(f.controller.getCenter(),{clientX:400,clientY:300});f.controller.dispose();
+});

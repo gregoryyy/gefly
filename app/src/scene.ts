@@ -122,6 +122,9 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   let landmarkCreditVisible = false;
   const aircraftShadow = createAircraftShadow(scene, container);
   const forwardMarker = createForwardMarker(container);
+  let directionReferencesVisible = false;
+  // View-only hysteresis: 22° also clears the default 20.14° chase orbit.
+  const showDirectionsAt_rad = 25 * Math.PI / 180, hideDirectionsAt_rad = 22 * Math.PI / 180;
   const header = container.parentElement?.querySelector<HTMLElement>('.topbar');
   scene.screenSpaceCameraController.enableInputs = false;
   scene.globe.enableLighting = false;
@@ -479,7 +482,12 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       fov_y_rad: fovy,
       insets: { top, left: 36, right: 36, bottom: 18 },
     }) : undefined;
-    forwardMarker.update(directions?.forward ?? null, directions);
+    const forwardAlignment = Cartesian3.dot(forwardWorld, scene.camera.directionWC)
+      / (Cartesian3.magnitude(forwardWorld) * Cartesian3.magnitude(scene.camera.directionWC));
+    const separation_rad = Math.acos(Math.max(-1, Math.min(1, forwardAlignment)));
+    if (!Number.isFinite(separation_rad) || separation_rad <= hideDirectionsAt_rad) directionReferencesVisible = false;
+    else if (separation_rad >= showDirectionsAt_rad) directionReferencesVisible = true;
+    forwardMarker.update(directions?.forward ?? null, directions, directionReferencesVisible);
     landmarkLabels.update(state, useTerrain);
     widget.render();
 

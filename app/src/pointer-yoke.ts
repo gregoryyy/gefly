@@ -35,6 +35,7 @@ export function createPointerYoke(options: PointerYokeOptions): {
   let pressLookOnly = false, pressLookYaw = 0, pressLookPitch = 0;
   let anchorX = 0, anchorY = 0;
   let pressX = 0, pressY = 0, lastX = 0, lastY = 0;
+  let pressTop = 0, pressBottom = 0;
   let mode: PointerYokeMode = 'off';
   let yokeX = 0, yokeY = 0, lookYaw = 0, lookPitch = 0;
   let holdTimer: ReturnType<typeof setTimeout> | undefined;
@@ -76,8 +77,19 @@ export function createPointerYoke(options: PointerYokeOptions): {
     cancel(); setLook(0, 0);
   }
   function lookAtPointer(): void {
+    const delta = pressY - lastY, sign = Math.sign(delta);
+    const available = sign > 0 ? pressY - pressTop : pressBottom - pressY;
+    let pitchDelta = delta * LOOK_RAD_PER_PX;
+    if (Number.isFinite(available) && available > 0) {
+      // Preserve the central drag rate. Ease the remaining travel into the
+      // available scene margin, without time-driven motion or release changes.
+      const core = Math.min(100, available / 2);
+      const t = Math.max(0, Math.min(1, (Math.abs(delta) - core) / (available - core)));
+      const extra = Math.max(0, MAX_LOOK_PITCH_RAD - sign * pressLookPitch - available * LOOK_RAD_PER_PX);
+      pitchDelta += sign * extra * t * t * (3 - 2 * t);
+    }
     setLook(clamp(pressLookYaw + (lastX - pressX) * LOOK_RAD_PER_PX, Math.PI),
-      clamp(pressLookPitch + (pressY - lastY) * LOOK_RAD_PER_PX, MAX_LOOK_PITCH_RAD));
+      clamp(pressLookPitch + pitchDelta, MAX_LOOK_PITCH_RAD));
   }
   function suspendOutside(): void {
     // Leaving the scene is not a request to switch off click-toggled yoke.
@@ -103,6 +115,7 @@ export function createPointerYoke(options: PointerYokeOptions): {
     neutralUntilMoveFrom = undefined;
     if (pressLookOnly) { yokeActive = false; setMode('off'); }
     pressX = lastX = event.clientX; pressY = lastY = event.clientY;
+    const rect = element.getBoundingClientRect(); pressTop = rect.top; pressBottom = rect.bottom;
     activePointer = event.pointerId; looking = false;
     setYoke(0, 0);
     element.setPointerCapture(event.pointerId);
