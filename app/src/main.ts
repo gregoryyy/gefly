@@ -322,10 +322,19 @@ const session = createSession({
   },
 });
 
+let openingOptions = { rollOffset, volume: engineAudio.getStatus().volume };
 const controlSettingsPanel = createControlSettingsPanel({
   container: root, initial: controlSettings,
-  onOpen: pauseFlight,
-  onClose: focusFlight,
+  onOpen() { openingOptions = { rollOffset, volume: engineAudio.getStatus().volume }; pauseFlight(); },
+  onClose(saved) {
+    if (!saved) {
+      rollOffset = openingOptions.rollOffset;
+      el<HTMLInputElement>('roll-offset').value = String(rollOffset);
+      engineAudio.setVolume(openingOptions.volume);
+      publishInput();
+    }
+    focusFlight();
+  },
   onChange(settings) { controlSettings = { ...settings }; scene?.setSceneryMode?.(!!settings.vectorScenery); scene?.setPracticePapi?.(!!settings.practicePapi); practiceMap?.setVector?.(!!settings.vectorScenery); neutralize(); updateConfiguration(latest, reviewing); updatePointerHint(); },
 });
 // Options belong to the top menu; preserve the existing controls and their IDs.

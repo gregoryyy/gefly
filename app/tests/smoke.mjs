@@ -217,6 +217,26 @@ try {
   await page.waitForFunction(()=>{const step=window.__flightStates.at(-1)?.step;const same=step!==undefined&&window.__drainStep===step;window.__drainStep=step;return same;},null,{polling:100,timeout:5000});
   const settingsPaused=await state();await page.waitForTimeout(200);
   assert.equal((await state()).step,settingsPaused.step,'settings pause the actual engine');
+  const optionsDialog=page.locator('#control-settings'), optionInputs=['#sensitivity-roll','#audio-volume','#roll-offset'];
+  const optionValues=()=>Promise.all(optionInputs.map(selector=>page.locator(selector).inputValue()));
+  const openingValues=await optionValues();
+  await optionsDialog.locator('.control-options > summary').click();
+  for(const selector of optionInputs){await page.locator(selector).focus();await page.keyboard.press('End');}
+  const dialogBox=await optionsDialog.boundingBox();await page.mouse.click(dialogBox.x+4,dialogBox.y+4);
+  assert(await optionsDialog.isVisible(),'dialog padding does not dismiss Options');
+  await page.locator('#sensitivity-roll').scrollIntoViewIfNeeded();const gainBox=await page.locator('#sensitivity-roll').boundingBox();
+  await page.mouse.move(gainBox.x+gainBox.width/2,gainBox.y+gainBox.height/2);await page.mouse.down();
+  await page.mouse.move(dialogBox.x-10,gainBox.y+gainBox.height/2);await page.mouse.up();
+  assert(await optionsDialog.isVisible(),'slider drag released on the backdrop does not dismiss Options');
+  await page.mouse.click(1,1);await optionsDialog.waitFor({state:'hidden'});
+  await page.waitForFunction(()=>document.activeElement.id==='scene');
+  await page.locator('#controls-settings').click();
+  assert.deepEqual(await optionValues(),openingValues,'backdrop dismissal restores opening gain, audio volume and roll correction');
+  for(const selector of optionInputs){await page.locator(selector).focus();await page.keyboard.press('End');}
+  const savedValues=await optionValues();await page.locator('#settings-close').click();
+  await page.locator('#controls-settings').click();
+  assert.deepEqual(await optionValues(),savedValues,'Save retains gain, audio volume and roll correction');
+  await page.locator('#roll-correction-default').click();
   await page.locator('#settings-gentle').click();
   assert.equal(await page.locator('#sensitivity-roll').inputValue(),'50');
   await page.locator('#settings-close').click();
@@ -235,7 +255,7 @@ try {
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#control-settings').isVisible(),false,'Escape closes settings');
   await startOrResume(page);await page.keyboard.down('ArrowUp');
-  assert(Math.abs(Number(await page.locator('#pitch-control').textContent())-0.525)<0.01,'custom sensitivity reaches active controls');
+  assert(Math.abs(Number(await page.locator('#pitch-control').textContent())-0.175)<0.01,'Escape discards unsaved sensitivity changes');
   await page.keyboard.up('ArrowUp');
   await page.locator('#controls-settings').click();await page.locator('#settings-default').click();
   assert.equal(await page.locator('#sensitivity-pitch').inputValue(),'100');
@@ -288,7 +308,7 @@ try {
   await noGL.addInitScript(()=>{const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(kind,...args){return kind.startsWith('webgl')?null:original.call(this,kind,...args);};});
   await installSceneryFixture(noGL); await noGL.goto('http://127.0.0.1:5174');await noGL.waitForFunction(()=>document.querySelector('#notice').textContent.includes('Scene unavailable'));
   await noGL.waitForTimeout(400);assert.equal(await noGL.locator('#pause').isDisabled(),true);assert.deepEqual(noGLErrors,[]);await noGL.close();
-  console.log(JSON.stringify({result:'pass',browser:browser.version(),initial:{step:initial.step,tas_mps:initial.tas_mps},right_bank_delta_rad:after.roll_rad-before.roll_rad,checks:['static-pressure altimeter and launch QFE','pressure units and bounds','paused pressure and modal isolation','recorded pressure review','explicit start','live JSBSim','full-width canvas','loaded deterministic scenery fixture','local practice map and true heading','map path drawn, marker heading and restart clearing','map failure isolation','map focus and history selection','pause','view invariance','reset keyboard focus','right bank','on-screen hold and outside release','draggable stick and outside release','blur pause','state review and seeking','review playback without engine advancement','review return and reset','settings pause and focus','gain presets and defaults','custom gain and reset preservation','local runtime and deterministic imagery fixtures only','missing engine','WebGL failure'],screenshots:'output/flight/{cockpit,chase}.png'},null,2));
+  console.log(JSON.stringify({result:'pass',browser:browser.version(),initial:{step:initial.step,tas_mps:initial.tas_mps},right_bank_delta_rad:after.roll_rad-before.roll_rad,checks:['static-pressure altimeter and launch QFE','pressure units and bounds','paused pressure and modal isolation','recorded pressure review','explicit start','live JSBSim','full-width canvas','loaded deterministic scenery fixture','local practice map and true heading','map path drawn, marker heading and restart clearing','map failure isolation','map focus and history selection','pause','view invariance','reset keyboard focus','right bank','on-screen hold and outside release','draggable stick and outside release','blur pause','state review and seeking','review playback without engine advancement','review return and reset','settings pause and focus','Options backdrop rollback, Save and inside-drag guards','gain presets and defaults','custom gain and reset preservation','local runtime and deterministic imagery fixtures only','missing engine','WebGL failure'],screenshots:'output/flight/{cockpit,chase}.png'},null,2));
 } finally {
   await browser?.close();for(const server of servers)server.kill('SIGTERM');
   await rm(missingRoot,{recursive:true,force:true});

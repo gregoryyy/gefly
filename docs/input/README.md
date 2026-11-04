@@ -131,3 +131,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-04 — Terrain and aeronautical charts beyond the Taunus](2026-11-04-beyond-taunus.md)
 
 - [2026-11-04 — Right-click place lookup](2026-11-04-place-lookup.md)
+
+- [2026-11-04 — Options dismissal](2026-11-04-options-dismiss.md)

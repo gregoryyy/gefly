@@ -3,6 +3,31 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 13:56 — Options dismissal without saving
+
+TODO: 2.0.87; R-UX-2. Agent: Codex implementation/integration;
+glide_model existing regression; glide_housekeeping independent review.
+
+**Implementation notes**
+
+Options retains live previews, with explicit Save. Outside clicks and Escape
+restore the opening gains/preferences, roll correction and audio volume. Both
+press and release must be outside: padding clicks and slider drag-out stay open.
+TypeScript and the focused existing Options regression pass in actual Chrome;
+a separate Chrome probe confirms Escape rollback. `just check` and
+`just assure check` pass. Independent source quality and scoped validation pass;
+cross-provider peer pending.
+
+**Deviations**
+
+Only the affected browser block ran; the full flight suite and broad CI were not
+rerun for this dialog change. No aircraft dynamics or dependencies changed.
+
+**Insights**
+
+Dismissal must restore controls added by the main application as well as settings
+owned by the dialog itself.
+
 ## 2026-11-04 13:26 — Right-click place lookup
 
 TODO: 2.0.86; R-WORLD-7/R-INPUT-1. Agent: Codex UI/integration;

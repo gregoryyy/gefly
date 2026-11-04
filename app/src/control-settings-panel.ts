@@ -10,7 +10,7 @@ interface ControlSettingsPanelOptions {
   initial: ControlSettings;
   onChange: (settings: ControlSettings) => void;
   onOpen: () => void;
-  onClose: () => void;
+  onClose: (saved: boolean) => void;
 }
 
 /** Session-only input gains. Aircraft dynamics and study assists are unchanged. */
@@ -21,6 +21,9 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
   isOpen(): boolean;
 } {
   let settings = { ...options.initial };
+  let openingSettings = { ...settings };
+  let saved = false;
+  let backdropPressed = false;
   let disposed = false;
   const dialog = document.createElement('dialog');
   dialog.id = 'control-settings';
@@ -67,7 +70,7 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
       <button type="button" id="settings-default">Default</button>
     </div>
     <p class="control-settings-note">Input sensitivity, not aircraft response calibration.<br>Settings apply to this session only.</p>
-    <button type="button" id="settings-close" class="primary">Done</button>
+    <button type="button" id="settings-close" class="primary">Save</button>
   `;
   options.container.append(dialog);
 
@@ -112,21 +115,40 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
   }
 
   function onClick(event: MouseEvent): void {
+    if (backdropPressed && outsideDialog(event)) {
+      backdropPressed = false;
+      dialog.close();
+      return;
+    }
+    backdropPressed = false;
     const target = event.target;
     if (!(target instanceof HTMLButtonElement)) return;
     const preferences = { vectorScenery: settings.vectorScenery ?? false, practicePapi: settings.practicePapi ?? false, coordinatedRudder: settings.coordinatedRudder ?? false, centeredTouchpad: settings.centeredTouchpad ?? false };
     if (target.id === 'settings-gentle') change({ ...GENTLE_CONTROL_SETTINGS, ...preferences });
     if (target.id === 'settings-default') change({ ...DEFAULT_CONTROL_SETTINGS, ...preferences });
-    if (target.id === 'settings-close') dialog.close();
+    if (target.id === 'settings-close') { saved = true; dialog.close(); }
+  }
+
+  function outsideDialog(event: MouseEvent): boolean {
+    const rect = dialog.getBoundingClientRect();
+    return event.target === dialog && (event.clientX < rect.left || event.clientX > rect.right
+      || event.clientY < rect.top || event.clientY > rect.bottom);
+  }
+
+  function onPointerDown(event: PointerEvent): void {
+    backdropPressed = event.button === 0 && outsideDialog(event);
   }
 
   function onClose(): void {
-    if (!disposed) options.onClose();
+    if (disposed) return;
+    if (!saved) change(openingSettings);
+    options.onClose(saved);
   }
 
   dialog.addEventListener('input', onInput);
   dialog.addEventListener('click', onClick);
-  // Native Escape cancellation closes the dialog and emits the same close event.
+  dialog.addEventListener('pointerdown', onPointerDown);
+  // Escape and backdrop dismissal share the same rollback path.
   dialog.addEventListener('close', onClose);
   render();
 
@@ -134,6 +156,9 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
     setSettings(next) { if (!disposed) { settings = { ...next }; render(); } },
     open() {
       if (disposed || dialog.open) return;
+      openingSettings = { ...settings };
+      saved = false;
+      backdropPressed = false;
       options.onOpen();
       dialog.showModal();
     },
@@ -143,6 +168,7 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
       disposed = true;
       dialog.removeEventListener('input', onInput);
       dialog.removeEventListener('click', onClick);
+      dialog.removeEventListener('pointerdown', onPointerDown);
       dialog.removeEventListener('close', onClose);
       if (dialog.open) dialog.close();
       dialog.remove();
