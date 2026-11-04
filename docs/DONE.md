@@ -3,6 +3,26 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 13:13 — Warm the expanded northern and western region
+
+TODO: 2.0.82; R-WORLD-9. Agent: Codex integration.
+
+**Implementation notes**
+
+Extend imagery candidates to 7–10°E / 49–51.5°N and terrain candidates to
+7–10°E / 49.25–51.5°N. Existing manifests still filter unavailable terrain
+assets before requests. Five focused coverage tests pass; the actual 108-tile
+terrain and provider extension are in PR #76.
+
+**Deviations**
+
+No expanded source rights, physical coverage or full-radius availability is
+inferred from the warm plan alone.
+
+**Insights**
+
+Keep preload extent aligned with installed source manifests and display coverage.
+
 ## 2026-11-04 12:48 — Let visible maps promote background loads
 
 TODO: 2.0.82; R-WORLD-9. Agent: Codex implementation; glide_housekeeping review.

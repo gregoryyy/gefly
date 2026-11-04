@@ -36,7 +36,7 @@ test('prefetch uses declared source coverage, nearby detail first and bounded co
   assert(urls.some(u=>u.startsWith('/scenery/map/10/')));assert(urls.some(u=>u.startsWith('/terrain/region/e')));
   assert(urls.filter(u=>u.startsWith('/scenery/map/')).length<=48);assert(urls.filter(u=>u.includes('/11/')).length<=64);assert(urls.filter(u=>u.includes('/14/')).length<=64);assert(urls.filter(u=>u.endsWith('.f32')).length<=24);
   assert(urls.every(u=>!u.startsWith(vector?'/scenery/imagery/':'/scenery/vector/')));
-  for(const url of urls.filter(u=>u.endsWith('.f32'))){const match=/e(\d+)-n(\d+)\.f32$/.exec(url)!;assert(+match[1]>=825&&+match[1]<1000&&+match[2]>=4925&&+match[2]<5075);}
+  for(const url of urls.filter(u=>u.endsWith('.f32'))){const match=/e(\d+)-n(\d+)\.f32$/.exec(url)!;assert(+match[1]>=700&&+match[1]<1000&&+match[2]>=4925&&+match[2]<5150);}
  }
  assert.deepEqual(planSceneryPrefetch(0,0,false),[]);assert.deepEqual(planSceneryPrefetch(NaN,0,true),[]);
  assert(!planSceneryPrefetch(52*DEG,13*DEG,false).some(u=>u.startsWith('/scenery/imagery/')),'outside aerial coverage is omitted');

@@ -68,12 +68,12 @@ export function planSceneryPrefetch(lat_rad: number, lon_rad: number, vector: bo
     for (const tile of tiles) items.push({url: `${prefix}/${tile.key}.${suffix}`, distance: rectangleDistance(lat_rad, lon_rad, rectangle(tile)), tier});
   }
   layer('/scenery/map', 'png', 10, 30000, 48, [6,47,14,51.75], 2);
-  const bounds = vector ? MAP_TERRAIN_BOUNDS : [8,49,10,50.75];
+  const bounds = vector ? MAP_TERRAIN_BOUNDS : [7,49,10,51.5];
   const prefix = vector ? '/scenery/vector' : '/scenery/imagery', suffix = vector ? 'pbf' : 'png';
   layer(prefix, suffix, 14, 2000, 64, bounds, 0);
   layer(prefix, suffix, 11, 20000, 64, bounds, 1);
   const terrain = [];
-  for (let west = 8.25; west < 10; west += .25) for (let south = 49.25; south < 50.75; south += .25) {
+  for (let west = 7; west < 10; west += .25) for (let south = 49.25; south < 51.5; south += .25) {
     const distance = rectangleDistance(lat_rad, lon_rad, [west*DEG,south*DEG,(west+.25)*DEG,(south+.25)*DEG]);
     if (distance <= 35000) terrain.push({url:`/terrain/region/e${Math.round(west*100)}-n${Math.round(south*100)}.f32`,distance,tier:3});
   }
