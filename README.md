@@ -128,6 +128,11 @@ Q/W manual rudder takes priority. Rudder also steers the nosewheel on the ground
 Options → **Centered touchpad controls** fixes neutral at the flight-view center.
 Both touchpad modes retain the camera angle after hold-drag.
 
+For runway practice, **Circuit guide** adds a generated north-circuit schematic
+for EDFE 08/26; **Fit circuit** shows all five legs. The nearest-leg readout uses
+the selected live or recorded position. This is a practice aid, not a published
+route or an altitude, speed or obstacle-clearance instruction.
+
 **M** or **View → Flight map** opens a right-side map beside the 3D view,
 showing the aircraft, whole retained flight path and **731 searchable
 community airfield and heliport entries across five southern German states**, including available airport elevations. Choose the
