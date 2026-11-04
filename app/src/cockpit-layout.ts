@@ -3,6 +3,7 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
   const deck = container.querySelector<HTMLElement>('.flight-deck');
   const instruments = container.querySelector<HTMLElement>('.instruments');
   if (!deck || !instruments) throw new Error('Cockpit layout requires the flight deck and instruments');
+  let observedTransport: HTMLElement | null = null;
   container.classList.add('cockpit-fitted');
   let frame = 0;
   let disposed = false;
@@ -54,6 +55,11 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
   function fit(): void {
     frame = 0;
     if (disposed || !deck || !instruments) return;
+    const transport = container.querySelector<HTMLElement>('.flight-review');
+    if (transport && transport !== observedTransport) {
+      if (observedTransport) observer.unobserve(observedTransport);
+      observedTransport = transport; observer.observe(transport);
+    }
     const style = getComputedStyle(deck);
     const horizontalPadding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
     verticalPadding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)
@@ -63,14 +69,23 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
     naturalHeight = instruments.offsetHeight;
     naturalWidth = instruments.offsetWidth;
     if (naturalHeight <= 0 || naturalWidth <= 0) return;
-    let sceneReserve = 180;
+    // Give the flying view about 60% of the window. A 300px practical floor
+    // applies while a compact cockpit still fits; very short windows keep a
+    // proportional split instead of reserving more space than they contain.
+    const viewportHeight = container.clientHeight;
+    const cockpitFloor = Math.min(180, viewportHeight * .4);
+    let sceneReserve = Math.min(Math.max(300, viewportHeight * .6), viewportHeight - cockpitFloor);
     if (container.dataset.review === 'true') {
       const headerBottom = container.querySelector<HTMLElement>('.topbar')?.getBoundingClientRect().bottom ?? 0;
       const controlsHeight = container.querySelector<HTMLElement>('.control-panel')?.offsetHeight ?? 0;
-      const transportHeight = container.querySelector<HTMLElement>('.flight-review')?.offsetHeight ?? 0;
+      const transportHeight = transport?.offsetHeight ?? 0;
+      // The transport can wrap as save/load controls and text resize. Stack
+      // readouts above its measured height instead of an assumed 160px slot.
+      const stackedOffset = transportHeight + (container.clientWidth <= 620 ? 12 : 16) + 16;
+      container.style.setProperty('--review-readouts-offset', `${stackedOffset}px`);
       sceneReserve = Math.max(sceneReserve, headerBottom + 16
-        + (container.clientWidth <= 760 ? 160 + controlsHeight : Math.max(controlsHeight, transportHeight) + 16));
-    }
+        + (container.clientWidth <= 760 ? stackedOffset + controlsHeight : Math.max(controlsHeight, transportHeight) + 16));
+    } else container.style.removeProperty('--review-readouts-offset');
     const scale = Math.min(1,
       Math.max(1, deck.clientWidth - horizontalPadding) / naturalWidth,
       Math.max(1, container.clientHeight - sceneReserve - headingHeight - verticalPadding) / naturalHeight);
@@ -113,6 +128,7 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
       container.classList.remove('cockpit-fitted');
       container.style.removeProperty('--cockpit-scale');
       container.style.removeProperty('--deck-height');
+      container.style.removeProperty('--review-readouts-offset');
       delete container.dataset.cockpitScale;
     },
   };

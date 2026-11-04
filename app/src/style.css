@@ -583,7 +583,7 @@ body .engine-dialog, body .autopilot-dialog, body .radio-nav-dialog, body .navig
 #recorded-control-details { display: block; gap: 4px 12px; margin-top: 7px; font-size: 9px; font-variant-numeric: tabular-nums; color: #b5c8d1; }
 @media (max-width: 760px) {
   .flight-app[data-review=true] .flight-review { left: 10px; width: calc(100% - 20px); }
-  .flight-app[data-review=true] .control-panel { left: 10px; right: 10px; width: auto; bottom: calc(var(--deck-height) + 160px); }
+  .flight-app[data-review=true] .control-panel { left: 10px; right: 10px; width: auto; bottom: calc(var(--deck-height) + var(--review-readouts-offset, 160px)); }
 }
 /* Collapse the secondary units before their columns would make the main panel unreadable. */
 @media (min-width: 621px) and (max-width: 900px) {
