@@ -3,6 +3,25 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 14:41 — Consolidate merged cockpit fixes for main
+
+TODO: 2.0.87–2.0.90. Agent: Codex integration.
+
+**Implementation notes**
+
+PRs #80/#81 were merged into feature branches; main still lacked their fixes.
+Prepare one direct-main integration PR with the identical reviewed product bytes.
+TypeScript passes; prior scoped browser evidence remains applicable.
+
+**Deviations**
+
+No new feature or code change. Main delivery still awaits this integration PR.
+
+**Insights**
+
+Target main directly for subsequent independent fixes; merged PR status alone
+cannot establish that its changes reached main.
+
 ## 2026-11-04 14:22 — Remove duplicate Aircraft systems menu
 
 TODO: 2.0.90; R-SYS-1. Agent: Codex implementation/integration;
