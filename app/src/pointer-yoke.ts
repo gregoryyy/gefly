@@ -7,7 +7,7 @@ interface PointerYokeOptions {
   onMode: (mode: PointerYokeMode) => void;
   enabled: () => boolean;
   lookOnly?: () => boolean;
-  /** Fixed scene-center yoke and persistent drag look; opt-in. */
+  /** Opt-in fixed scene-center yoke; drag look is retained in every mode. */
   centered?: () => boolean;
 }
 
@@ -65,7 +65,6 @@ export function createPointerYoke(options: PointerYokeOptions): {
     clearPress(); looking = false; yokeActive = false;
     neutralUntilMoveFrom = undefined;
     setYoke(0, 0);
-    if (!options.centered?.()) setLook(0, 0);
     setMode('off');
   }
   function reset(): void {
@@ -94,9 +93,8 @@ export function createPointerYoke(options: PointerYokeOptions): {
     event.preventDefault(); element.focus({ preventScroll: true });
     pressLookOnly = options.lookOnly?.() === true;
     previousYokeActive = !pressLookOnly && yokeActive;
-    const persistentLook = pressLookOnly || options.centered?.() === true;
-    pressLookYaw = persistentLook ? lookYaw : 0;
-    pressLookPitch = persistentLook ? lookPitch : 0;
+    pressLookYaw = lookYaw;
+    pressLookPitch = lookPitch;
     neutralUntilMoveFrom = undefined;
     if (pressLookOnly) { yokeActive = false; setMode('off'); }
     pressX = lastX = event.clientX; pressY = lastY = event.clientY;
@@ -122,12 +120,12 @@ export function createPointerYoke(options: PointerYokeOptions): {
     }
     if (options.lookOnly?.() || !yokeActive || event.isPrimary === false) return;
     if (!inside(event)) { suspendOutside(); return; }
+    // A click/drag release cannot introduce a control jump at the drop point.
+    // Pointer entry is authoritative even if its coordinates match the release.
+    if (event.type === 'pointermove' && neutralUntilMoveFrom
+      && event.clientX === neutralUntilMoveFrom.x && event.clientY === neutralUntilMoveFrom.y) return;
+    neutralUntilMoveFrom = undefined;
     if (options.centered?.()) {
-      // A click/drag release cannot introduce a control jump at the drop point.
-      // Pointer entry is authoritative even if its coordinates match the release.
-      if (event.type === 'pointermove' && neutralUntilMoveFrom
-        && event.clientX === neutralUntilMoveFrom.x && event.clientY === neutralUntilMoveFrom.y) return;
-      neutralUntilMoveFrom = undefined;
       const rect = element.getBoundingClientRect();
       const centerX = (rect.left + rect.right) / 2, centerY = (rect.top + rect.bottom) / 2;
       setYoke(clamp((event.clientX - centerX) / YOKE_TRAVEL_PX, 1),
@@ -150,9 +148,7 @@ export function createPointerYoke(options: PointerYokeOptions): {
       anchorX = event.clientX; anchorY = event.clientY;
     }
     setYoke(0, 0);
-    // Review and fixed-center look retain their last orientation between drags.
-    if (!pressLookOnly && !options.centered?.()) setLook(0, 0);
-    if (options.centered?.()) neutralUntilMoveFrom = { x: event.clientX, y: event.clientY };
+    neutralUntilMoveFrom = { x: event.clientX, y: event.clientY };
     setMode(yokeActive ? 'yoke' : 'off');
   }
   function interrupted(event: PointerEvent): void {

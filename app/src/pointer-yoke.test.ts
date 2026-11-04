@@ -109,7 +109,7 @@ test('hold-drag looks without yoke input; release preserves the original yoke mi
   assert.deepEqual(f.yokes.at(-1),[0,0]);
   const releaseCount = f.yokes.length;
   f.surface.dispatchEvent(pointer('pointerup',300,200));
-  assert.equal(f.modes.at(-1),'yoke'); assert.deepEqual(f.looks.at(-1),[0,0]);
+  assert.equal(f.modes.at(-1),'yoke'); assert.deepEqual(f.looks.at(-1),[Math.PI,70*Math.PI/180]);
   assert.equal(f.yokes.length,releaseCount,'release does not introduce another control command');
   f.surface.dispatchEvent(pointer('pointermove',275,125));
   assert.deepEqual(f.yokes.at(-1),[.5,.5]);
@@ -147,6 +147,34 @@ test('hold while off does not enable yoke; interruption and disabled flight canc
   f.controller.dispose(); f.click();
   await sleep(280);
   assert.deepEqual([f.yokes.length,f.looks.length,f.modes.length],counts);
+});
+
+test('default relative look retains and accumulates each drag and click toggle while keeping the yoke anchor', async () => {
+  const f = fixture(); f.click(200, 200);
+  f.surface.dispatchEvent(pointer('pointerdown', 250, 200));
+  await sleep(280);
+  f.surface.dispatchEvent(pointer('pointermove', 300, 150));
+  f.surface.dispatchEvent(pointer('pointerup', 300, 150));
+  assert.deepEqual(f.looks.at(-1), [.2, .2]);
+  const releaseCount = f.yokes.length;
+  f.surface.dispatchEvent(pointer('pointermove', 300, 150));
+  assert.equal(f.yokes.length, releaseCount, 'unchanged release coordinates remain neutral in relative mode too');
+  f.surface.dispatchEvent(pointer('pointermove', 275, 125));
+  assert.deepEqual(f.yokes.at(-1), [.5, .5], 'actual movement uses the original yoke midpoint');
+  f.surface.dispatchEvent(pointer('pointerdown', 275, 125));
+  await sleep(280);
+  f.surface.dispatchEvent(pointer('pointermove', 325, 175));
+  f.surface.dispatchEvent(pointer('pointerup', 325, 175));
+  assert.deepEqual(f.looks.at(-1), [.4, 0]);
+  f.surface.dispatchEvent(pointer('pointerenter', 325, 175));
+  assert.deepEqual(f.yokes.at(-1), [125 / 150, 25 / 150], 'pointer entry stays authoritative, including at release coordinates');
+  f.click(500, 200); assert.equal(f.modes.at(-1), 'off');
+  f.click(200, 200); assert.equal(f.modes.at(-1), 'yoke');
+  assert.deepEqual(f.looks.at(-1), [.4, 0], 'short clicks do not center look');
+  f.disable(); f.surface.dispatchEvent(pointer('pointermove', 300, 200));
+  assert.equal(f.modes.at(-1), 'off'); assert.deepEqual(f.yokes.at(-1), [0, 0]);
+  assert.deepEqual(f.looks.at(-1), [.4, 0], 'pause/disabled controls neutralize yoke while retaining look');
+  f.controller.dispose();
 });
 
 test('review hold-drag retains camera orientation and accumulates later drags without enabling yoke', async () => {
@@ -248,8 +276,8 @@ test('centered re-entry is authoritative from the fixed midpoint after leave or 
   f.controller.dispose();
 });
 
-test('centered cancellation, focus/visibility and pointer interruption retain view; Escape and reset center explicitly', async () => {
-  const f = fixture(true); f.click();
+for (const centered of [false, true]) test(`${centered ? 'centered' : 'default relative'} cancellation, focus/visibility and pointer interruption retain view; Escape and reset center explicitly`, async () => {
+  const f = fixture(centered); f.click();
   f.surface.dispatchEvent(pointer('pointerdown', 200, 200));
   await sleep(280);
   f.surface.dispatchEvent(pointer('pointermove', 250, 150));
@@ -283,8 +311,8 @@ test('centered cancellation, focus/visibility and pointer interruption retain vi
   f.controller.dispose();
 });
 
-test('centered Review look stays cumulative and read only across cancellation, then explicit reset clears it', async () => {
-  const f = fixture(true); f.review(); f.click();
+for (const centered of [false, true]) test(`${centered ? 'centered' : 'default relative'} Review look stays cumulative and read only across cancellation, then explicit reset clears it`, async () => {
+  const f = fixture(centered); f.review(); f.click();
   f.surface.dispatchEvent(pointer('pointermove', 475, 225));
   assert.deepEqual(f.yokes, []);
   f.surface.dispatchEvent(pointer('pointerdown', 200, 200));

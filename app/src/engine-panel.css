@@ -123,3 +123,6 @@
 .engine-dialog .engine-secondary-readouts > div { grid-template-columns: minmax(0, 1fr) auto 50px; gap: 8px; padding: 3px 0; }
 .engine-dialog .engine-secondary-readouts span, .engine-dialog .engine-secondary-readouts small { font-size: 9px; }
 .engine-dialog .engine-secondary-readouts b { font-size: 14px; }
+/* Leave room for the native engine switch when the whole cockpit is fitted
+   into a short window; all controls still share the same surface scale. */
+.cockpit-fitted .engine-switch-row { margin-top: 0; padding-top: 3px; padding-bottom: 0; }

@@ -95,3 +95,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [Existing demonstrable-increments instruction](2026-11-03-demonstrable-increments-record.md) — preserved from the available conversation on this recording date; original send time not reconstructed (Q25).
 - [Compact engine readouts and fuel references](2026-11-03-engine-panel-labels.md) — single-line engine readings and lower-quarter model tank markers; presentation reference only.
 - [Map content as terrain texture](2026-11-04-map-terrain-texture.md) — retain regional map geography without terrain labels; correct the sparse Vector view.
+
+- [2026-11-04 — Flying area and retained view](2026-11-04-flying-view-controls.md)

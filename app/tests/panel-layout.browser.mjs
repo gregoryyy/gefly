@@ -36,7 +36,7 @@ try {
       return { x: r.x, y: r.y, width: r.width, height: r.height, right: r.right, bottom: r.bottom, font: parseFloat(s.fontSize), display: s.display };
     };
     return { width: innerWidth, height: innerHeight, scale: Number(document.querySelector('.flight-app').dataset.cockpitScale),
-      deck: rect('.flight-deck'), surface: rect('.instruments'), primary: rect('.primary-instruments'),
+      scene: rect('#scene'), deck: rect('.flight-deck'), surface: rect('.instruments'), primary: rect('.primary-instruments'),
       aircraft: rect('.engine-controls'), face: rect('#airspeed'), nav1: rect('#nav1-gauge .navigation-gauge-face'), nav2: rect('#nav2-gauge .navigation-gauge-face'), bearing: rect('#bearing-gauge .navigation-gauge-face'), rpmFace: rect('#rpm-gauge .navigation-gauge-face'), fuel: rect('#engine-fuel-gauge'), pressure: rect('#altimeter-open'), flaps: rect('#flap-control'), trim: rect('#pitch-trim-control'),
       ap: rect('.autopilot-content'), apButton: rect('#ap-engage'), engine: rect('#engine-systems'), radio: rect('#radio-nav-systems'),
       rpm: rect('#engine-rpm'), frequency: rect('#com1-standby'), throttle: rect('#throttle'), mixture: rect('#mixture-control'),
@@ -44,7 +44,7 @@ try {
       appScroll: document.documentElement.scrollWidth };
   });
   let reference;
-  for (const [width, height] of [[1440, 900], [1280, 720], [1200, 800], [901, 800], [900, 800], [880, 800], [621, 800], [620, 844], [390, 844], [1440, 600]]) {
+  for (const [width, height] of [[1440, 900], [1440, 800], [1280, 720], [1200, 800], [901, 800], [900, 800], [880, 800], [621, 800], [620, 844], [390, 844], [1440, 600], [1440, 480], [1440, 400]]) {
     await page.setViewportSize({ width, height });
     await page.waitForTimeout(180);
     const g = await geometry(); observations.push(g);
@@ -52,10 +52,14 @@ try {
     assert(g.scale > 0 && g.scale <= 1);
     assert(await page.locator('#altimeter-reference').isVisible(), 'active altimeter pressure reference stays visible');
     assert(g.surface.x >= -1 && g.surface.right <= width + 1, 'entire cockpit surface fits width');
-    assert(g.surface.bottom <= height + 1 && g.deck.y >= 179, 'deck fits while preserving scene height');
+    assert(g.surface.bottom <= height + 1 && g.deck.y >= height * .6 - 1, 'deck fits while preserving at least 60% for flying');
+    assert(g.scene.height >= height * .6 - 1, 'flight view keeps its vertical priority');
+    for (const key of ['face', 'nav1', 'nav2', 'bearing', 'rpmFace', 'flaps', 'trim', 'ap']) {
+      if (g[key].display !== 'none' && g[key].height > 0) assert(g[key].y >= g.deck.y - 1 && g[key].bottom <= height + 1, `${key} remains inside both instrument rows at ${width}×${height}`);
+    }
     assert(g.appScroll <= width, 'no page horizontal overflow');
     for (const key of ['face', 'flaps', 'trim', 'ap']) {
-      assert(Math.abs(g[key].height / g.scale - reference[key].height) < 3, `${key} keeps the shared scale at ${width}`);
+      assert(Math.abs(g[key].height / g.scale - reference[key].height / reference.scale) < 3, `${key} keeps the shared scale at ${width}`);
     }
     assert(Math.abs(g.flaps.height - g.trim.height) < 2, 'paired levers keep matching travel');
     assert(Math.abs(g.flaps.y + g.flaps.height / 2 - g.trim.y - g.trim.height / 2) <= 1, 'paired levers align vertically');
@@ -67,22 +71,22 @@ try {
       assert(Math.abs(g.primary.height - g.aircraft.height) < 2);
       assert(Math.abs(g.primary.height - g.engine.height) < 2);
       assert(Math.abs(g.primary.height - g.radio.height) < 2);
-      for (const key of ['throttle', 'mixture']) assert(Math.abs(g[key].height / g.scale - reference[key].height) < 3);
+      for (const key of ['throttle', 'mixture']) assert(Math.abs(g[key].height / g.scale - reference[key].height / reference.scale) < 3);
       for (const key of ['rpm', 'frequency', 'apButton']) assert(Math.abs(g[key].font - reference[key].font) < .1, `${key} canonical font stays fixed`);
       assert.equal(g.engineOpen, false); assert.equal(g.radioOpen, false);
       assert(g.primary.right <= g.engine.x && g.engine.right <= g.aircraft.x && g.aircraft.right <= g.radio.x, 'engine precedes AP/flaps and radio');
       assert(Math.abs(g.nav1.y - g.nav2.y) < 1 && Math.abs(g.bearing.y - g.rpmFace.y) < 1, 'secondary gauge rows align');
       assert(Math.abs(g.face.y - g.nav1.y) < 1, 'six-pack and NAV top faces align');
       assert(g.nav1.x < g.nav2.x && g.bearing.x < g.rpmFace.x && g.bearing.y > g.nav1.bottom, 'NAV1/NAV2 above BRG/RPM');
-      assert(g.fuel.height > 40 && g.fuel.bottom <= g.engine.bottom + 1, 'distinct round fuel face fits engine column');
+      assert(g.fuel.height / g.scale > 40 && g.fuel.bottom <= g.engine.bottom + 1, 'distinct round fuel face fits engine column');
       assert(g.pressure.bottom <= g.primary.bottom && g.pressure.right <= g.primary.right, 'pressure control remains inside primary panel');
       const overflow = await page.evaluate(() => ['.engine-content', '.engine-controls', '.radio-nav-content'].map(selector => {
         const p = document.querySelector(selector), b = p.getBoundingClientRect();
-        return { selector, overflow: [...p.querySelectorAll('button,input,svg,output')].some(el => {
+        return { selector, overflow: [...p.querySelectorAll('button,input,svg,output')].filter(el => {
           const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && (r.bottom > b.bottom + 1 || r.right > b.right + 1 || r.top < b.top - 1 || r.left < b.left - 1);
-        }) };
+        }).map(el => ({ id: el.id, tag: el.tagName, rect: el.getBoundingClientRect().toJSON(), parent: b.toJSON() })) };
       }));
-      assert(overflow.every(p => !p.overflow), `all controls remain inside compact columns: ${JSON.stringify(overflow)}`);
+      assert(overflow.every(p => p.overflow.length === 0), `all controls remain inside compact columns at ${width}×${height}: ${JSON.stringify(overflow)}`);
     } else {
       assert.equal(g.engineOpen, true); assert.equal(g.radioOpen, true);
       await page.locator('#engine-open').click();
@@ -94,8 +98,37 @@ try {
       await page.locator('#radio-nav-close').click();
     }
     if (width === 1440 && height === 900) assert(g.deck.height <= 390, 'desktop cockpit is shorter than the previous 449px panel');
-    if (width === 390 || (width === 1440 && height === 900)) await page.screenshot({ path: `${output}/panel-layout-${width}.png` });
+    if (width === 390 || (width === 1440 && [900, 800, 480].includes(height))) await page.screenshot({ path: `${output}/panel-layout-${width}x${height}.png` });
   }
+  // Zoom can enlarge within available room, but cannot consume the flying
+  // view or move either instrument row outside the fitted deck on short windows.
+  for (const [width, height] of [[1440, 800], [1440, 480], [1440, 1300]]) {
+    await page.setViewportSize({ width, height }); await page.waitForTimeout(180);
+    const before = await geometry();
+    const ap = await page.locator('#ap-engage').boundingBox();
+    await page.mouse.move(ap.x + ap.width / 2, ap.y + ap.height / 2);
+    await page.mouse.wheel(0, -10000); await page.waitForTimeout(120);
+    const zoomed = await geometry();
+    assert(zoomed.scene.height >= height * .6 - 1, 'panel zoom preserves reserved flying area');
+    for (const key of ['face', 'nav1', 'nav2', 'bearing', 'rpmFace', 'flaps', 'trim', 'ap']) {
+      assert(zoomed[key].y >= zoomed.deck.y - 1 && zoomed[key].bottom <= height + 1, `${key} stays vertically visible after zoom at ${height}px`);
+    }
+    if (height === 1300) assert(zoomed.apButton.width > before.apButton.width * 1.3, 'roomy windows retain useful pointer zoom');
+    await page.mouse.move(zoomed.apButton.x + zoomed.apButton.width / 2, zoomed.apButton.y + zoomed.apButton.height / 2);
+    await page.mouse.wheel(0, 10000); await page.waitForTimeout(120);
+    assert.equal(Number(await page.locator('.flight-deck').getAttribute('data-panel-zoom')), 1);
+  }
+  // Docking the flight map changes width, not the reserved flying height.
+  await page.setViewportSize({ width: 1440, height: 800 }); await page.waitForTimeout(180);
+  const undocked = await geometry();
+  await page.locator('#scene').focus(); await page.keyboard.press('m');
+  await page.locator('#practice-map-panel').waitFor({ state: 'visible' });
+  await page.waitForTimeout(180);
+  const docked = await geometry();
+  assert(Math.abs(docked.scene.height - undocked.scene.height) <= 1, 'map docking retains the flying height');
+  assert(docked.scene.width < undocked.scene.width, 'desktop map docks beside the flight view');
+  assert(docked.scene.height >= 479 && docked.surface.bottom <= 801);
+  await page.locator('#scene').focus(); await page.keyboard.press('m');
   // Portaled controls return to the cockpit if a narrow dialog is open during expansion.
   await page.setViewportSize({ width: 900, height: 900 });
   await page.waitForTimeout(180);
@@ -114,6 +147,8 @@ try {
   await page.locator('#start').click();
   await page.waitForTimeout(350);
   await page.locator('#pause').click();
+  await page.setViewportSize({ width: 1440, height: 800 }); await page.waitForTimeout(180);
+  await page.screenshot({ path: `${output}/flying-view-1440x800.png` });
   await page.locator('#scene').focus();
   await page.keyboard.press('r');
   await page.locator('#flight-review').waitFor({ state: 'visible' });
@@ -125,7 +160,7 @@ try {
     });
     assert(boxes.controls.y >= boxes.header.bottom - 1, `recorded readouts clear header at ${width}`);
     assert(boxes.review.bottom <= boxes.deck.y + 1, 'review transport clears cockpit');
-    assert(boxes.controls.bottom <= boxes.review.y || boxes.controls.x >= boxes.review.right, 'recorded readouts and review transport do not overlap');
+    assert(boxes.controls.bottom <= boxes.review.y || boxes.controls.x >= boxes.review.right, `recorded readouts and review transport do not overlap at ${width}×${height}: ${JSON.stringify(boxes)}`);
     if (width === 390) await page.screenshot({ path: `${output}/panel-layout-review-mobile.png` });
   }
   // A fresh mobile load must not depend on desktop-first portal placement.
