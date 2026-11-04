@@ -93,7 +93,7 @@ just stop                 # stop this checkout's flight server
 
 Select **Start flight**, then click the scene for touchpad yoke control or use the keyboard.
 The top menu/title bar and floating flight controls start hidden: **I** toggles
-the menu, **O** opens Options, and **Alt+Shift+F** shows the flight controls. Floating controls, map,
+the menu, **O** opens Options, and **Alt+Shift+F** shows the flight controls. **F** toggles browser fullscreen (also in View); the browser’s **Esc** action exits it. Floating controls, map,
 flight-data and stall-awareness panels are half opaque until clicked; their
 first click activates the panel, and subsequent gestures operate it.
 Arrow keys control pitch/roll, Q/W rudder, 0 throttle idle and 1–9 throttle.

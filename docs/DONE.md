@@ -3,6 +3,33 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 10:33 — Native browser fullscreen
+
+TODO: 2.0.76; R-VIEW-1/R-INPUT-1/R-REVIEW-1.
+Agent: Codex orchestrator integration; glide_cases fullscreen controller;
+glide_model menu/browser integration; glide_housekeeping independent review.
+
+**Implementation notes**
+
+F and View toggle native document fullscreen, including cockpit/map panels and
+body-mounted dialogs. Labels follow actual browser state; handle busy, rejected
+and unavailable requests, guarded shortcuts and cleanup. Existing responsive
+layout adapts without resetting flight. TypeScript and five actual browser check
+groups pass, including running flight, paused/Review state, instrument bounds and
+failure fixtures. [Scoped independent review](reviews/2026-11-04-browser-fullscreen.md)
+passes; cross-provider peer remains pending.
+
+**Deviations**
+
+Physical browser Escape exit was not evaluated: headless Chrome did not perform
+that browser action. Native fullscreenchange synchronization and F/API exit are
+verified; no CSS fullscreen substitute or keyboard lock is added.
+
+**Insights**
+
+Fullscreen the document rather than just the scene canvas so dialogs and cockpit
+controls stay in the same browser fullscreen context.
+
 ## 2026-11-04 10:23 — Quieter direction cues and full vertical look
 
 TODO: 2.0.75; R-VIEW-1/R-INPUT-1/R-REVIEW-1.
