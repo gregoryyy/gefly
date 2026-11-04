@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {distanceMeters,tilesWithinRadius,planSceneryPrefetch} from './scenery-coverage.ts';
+import {distanceMeters,tilesWithinRadius,planSceneryPrefetch,planStartupSceneryPrefetch} from './scenery-coverage.ts';
 const DEG=Math.PI/180;
 test('spherical distance wraps date line and rejects unavailable positions',()=>{
  assert(Math.abs(distanceMeters(0,179.9*DEG,0,-179.9*DEG)-22238.9853)<.1);
@@ -41,6 +41,32 @@ test('prefetch uses declared source coverage, nearby detail first and bounded co
  assert.deepEqual(planSceneryPrefetch(0,0,false),[]);assert.deepEqual(planSceneryPrefetch(NaN,0,true),[]);
  assert(!planSceneryPrefetch(52*DEG,13*DEG,false).some(u=>u.startsWith('/scenery/imagery/')),'outside aerial coverage is omitted');
  assert(planSceneryPrefetch(52*DEG,13*DEG,true).some(u=>u.startsWith('/scenery/vector/')),'vector declared coverage extends north');
+});
+
+test('startup prefetch warms bounded nearest tiles for both map modes without photos or remote URLs',()=>{
+ const lat=49.96*DEG,lon=8.643*DEG,urls=planStartupSceneryPrefetch(lat,lon);
+ assert.equal(urls.length,16);assert.equal(new Set(urls).size,16);assert.deepEqual(urls,planStartupSceneryPrefetch(lat,lon));
+ for(const [prefix,z,budget,suffix] of [['map',15,8,'png'],['vector',14,4,'pbf'],['vector',11,4,'pbf']] as const){
+  const group=urls.filter(url=>url.startsWith(`/scenery/${prefix}/${z}/`));assert.equal(group.length,budget);
+  const center=tilesWithinRadius(lat,lon,z,0,1)[0].key;
+  assert.equal(group[0],`/scenery/${prefix}/${center}.${suffix}`,'containing tile comes first in each layer');
+ }
+ assert(urls.slice(0,8).every(url=>url.startsWith('/scenery/map/15/')));
+ assert(urls.every(url=>/^\/scenery\/(?:map\/15\/\d+\/\d+\.png|vector\/(?:11|14)\/\d+\/\d+\.pbf)$/.test(url)));
+});
+test('startup prefetch clips existing provider bounds and rejects invalid or uncovered positions',()=>{
+ for(const [lat,lon] of [[NaN,0],[0,Infinity],[91*DEG,0],[0,181*DEG],[0,0],[56*DEG,8*DEG]])assert.deepEqual(planStartupSceneryPrefetch(lat,lon),[]);
+ const north=planStartupSceneryPrefetch(52*DEG,13*DEG);assert(north.length>0&&north.length<=8);assert(north.every(url=>url.startsWith('/scenery/vector/')));
+ for(const [lat,lon] of [[47,6],[51.75,14],[55.1,15.1],[47.2,5.8]]){
+  const urls=planStartupSceneryPrefetch(lat*DEG,lon*DEG);assert(urls.length<=16);
+  for(const url of urls){
+   const match=/\/(map|vector)\/(\d+)\/(\d+)\/(\d+)\./.exec(url)!;
+   const [,kind,z,x,y]=match,n=2**Number(z),west=Number(x)/n*360-180,east=(Number(x)+1)/n*360-180;
+   const south=Math.atan(Math.sinh(Math.PI*(1-2*(Number(y)+1)/n)))/DEG,north=Math.atan(Math.sinh(Math.PI*(1-2*Number(y)/n)))/DEG;
+   const bounds=kind==='map'?[6,47,14,51.75]:[5.8,47.2,15.1,55.1];
+   assert(east>=bounds[0]&&west<=bounds[2]&&north>=bounds[1]&&south<=bounds[3],url);
+  }
+ }
 });
 
 test('nearby warming survives transient visible work; new locations wait and disable cancels', async () => {

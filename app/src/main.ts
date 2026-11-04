@@ -81,7 +81,7 @@ root.innerHTML = `
     <h1 id="gate-title">Loading aircraft…</h1>
     <p id="gate-copy">The aircraft starts airborne at 90 kt. Flight time stays paused until you start.</p>
     <button id="start" class="primary" disabled>Loading…</button>
-    <span class="gate-hint">I opens the menu · O opens Options · Space starts/pauses · M opens the map · , enlarges it · . labels · / vector/photos (US keyboard).</span>
+    <span class="gate-hint">I opens the menu · O opens Options · Space starts/pauses · M opens the map · , opens map menu · . labels · / vector/photos (US keyboard).</span>
   </section>
   <aside id="landing-feedback" hidden></aside>
   <aside id="ground-collision-panel" hidden></aside>
@@ -170,6 +170,7 @@ const regionalTiles = new Map<string,TerrainGrid>();
 let terrainLoading = false;
 let mixtureCommand = 1, mixtureAutomatic = true, apDisconnectPending = false, cwsHeld = false;
 let autopilotCapturePending = false;
+let startupPreloadPending = false;
 const flightLocationStore = createFlightLocationStore();
 const initialFlightLocation = flightLocationStore.read();
 let restoredFlightLocationActive = !!initialFlightLocation;
@@ -296,6 +297,10 @@ const session = createSession({
       verticalSpeedFpm += (1 - Math.exp(-dt / 0.5)) * (raw - verticalSpeedFpm);
     }
     previous = state; latest = state;
+    if (!reviewing && ready && startupPreloadPending && scene) {
+      startupPreloadPending = false;
+      scene.preloadScenery?.(state);
+    }
     if (state.kap_engaged) autopilotCapturePending = false;
     liveWarnings = liveWarningMonitor.update(state);
     if (!reviewing) {
@@ -315,7 +320,7 @@ const session = createSession({
     // session.ts forwards the worker's ready {navdata_sha256, navdata_error}; undefined = older worker.
     engineNavdata = workerNavdata(reply); const navdataStatus = applyNavdataCheck();
     if (continuingReplay) return;
-    ready = true; failed = false; throttle = trim.throttle;
+    ready = true; failed = false; startupPreloadPending = true; throttle = trim.throttle;
     if (runwayStart || (restoredFlightLocationActive && initialFlightLocation?.mode === 'ground')) parkingBrake = true;
     terrainLoading=false; scene?.setTerrainTiles?.([...regionalTiles.values()]);
     pitchTrimTarget = Math.abs(trim.pitch_trim) <= 1 ? trim.pitch_trim : null;
@@ -710,6 +715,12 @@ async function setMapVisible(visible: boolean) {
         }
         return { runway, progress: practiceReviewCache.progress };
       },
+      onTuneNav(receiver, channel) {
+        if (!controlsAvailable()) return;
+        const config = tuneStandby(radioPanel.snapshot(), 'nav', channel, receiver);
+        radioPanel.setConfiguration(config); session.setNavigation(config);
+        if (latest) latest = { ...latest, ...config };
+      },
       canTuneCom: controlsAvailable,
       onTuneCom(receiver, channel) {
         if (!controlsAvailable()) return;
@@ -941,7 +952,7 @@ function startFlight() {
 }
 function togglePause() { if (running) pauseFlight(); else startFlight(); }
 function reset(preset: LandingPreset | null | undefined = landingPreset, start: RunwayStart | null = runwayStart, location?: FlightLocation) {
-  autopilotCapturePending = false;
+  autopilotCapturePending = false; startupPreloadPending = false;
   closeViewMenu();
   if (reviewing) return;
   flightLocationStore.clear(); restoredFlightLocationActive = false;
@@ -1235,7 +1246,7 @@ const flightAssists = createFlightAssists({
     focusFlight();
   },
 });
-sceneContainer.setAttribute('aria-description','I toggles the menu. O opens Options. F toggles full screen. M toggles the flight map. Comma toggles a larger map. Period cycles terrain labels. Slash switches vector and photo terrain on a US keyboard.');
+sceneContainer.setAttribute('aria-description','I toggles the menu. O opens Options. F toggles full screen. M toggles the flight map. Comma toggles the extended menu below the map. Period cycles terrain labels. Slash switches vector and photo terrain on a US keyboard.');
 
 const sceneReady = createScene(sceneContainer).then(result => {
   scene = result; scene.setLandmarkLevel?.(landmarkLevel); scene.setSceneryMode?.(!!controlSettings.vectorScenery); scene.setPracticePapi?.(!!controlSettings.practicePapi);

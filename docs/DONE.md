@@ -3,6 +3,123 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 22:43 — Filter map locations with checkboxes
+
+TODO: 2.0.119; R-WORLD-6.
+Agent: Codex checkbox/search implementation and integration review; glide_model
+map-source/marker integration; glide_cases independent existing-browser validation;
+glide_housekeeping input/requirement records and independent checkbox-source review.
+
+**Implementation notes**
+
+The extended map menu has independently selectable Airfields, Helipads, Seaplane
+bases, Balloonports, Closed facilities, NAV aids and Fixes checkboxes. All start
+checked. One selection filters both the bounded point directory and map GPU/DOM
+markers, including late-loaded sources. Source airport types remain distinct.
+The checkbox replaces the duplicate NAV toggle; M and comma retain their bindings.
+Selections survive map close/reopen. Disabling a selected point's category closes
+its popup while preserving the chosen GPS target, aircraft and flight path.
+
+TypeScript and the existing twelve-group right-map browser case pass. Browser
+checks exercise individual categories, rendered points and labels, all-off empty
+results, retained GPS/path/aircraft, typing guards, close/reopen, Review, standby
+radio actions and native-state invariance. Source/integration review passes;
+cross-provider peer pending. Evidence: output/flight/map-location-checkboxes-browser.log
+and right-map-extended-menu.png. Browser scenery is a fixture, not imagery evidence.
+
+**Deviations**
+
+Filters apply to Gefly's selectable location overlays and lists; they do not erase
+symbols baked into the public raster basemap. No source records, GPS/AP behavior,
+radio tuning, physics, map dimensions or shortcuts changed.
+
+**Insights**
+
+Use one category selection for search and both marker representations, so hiding
+a label cannot leave its underlying point selectable on the map.
+
+## 2026-11-04 22:18 — Reach the cockpit bottom when zooming
+
+TODO: 2.0.118; R-PANEL-1/R-INPUT-1.
+Agent: Codex layout fix and unmocked 5173 reproduction; glide_cases independent
+reproduction and existing browser-case extension; glide_housekeeping requirements
+record and independent source quality/criterion review.
+
+**Implementation notes**
+
+Wheel zoom now listens over the whole cockpit housing, including its bottom
+padding. The previous viewport-only listener ignored gestures in that strip.
+Pointer-centered magnification is retained; vertical clamping uses rendered
+surface/frame edges rather than estimated scaled height. The enlarged top cannot
+move below the frame top and its bottom cannot move above the frame bottom.
+Existing drag, control isolation, reset and fixed flight-window height remain.
+
+Real 5173 reproduction confirmed bottom-padding wheel stayed at 1× before the
+fix and reaches 3× afterward, showing the full enlarged bottom buttons. The
+existing panel-layout browser case passes 13 responsive sizes and added actual
+bottom-control/padding checks on desktop, short and mobile windows. Maximum
+measured bottom-control anchor error is 0.386px; repeated lower-edge zoom aligns
+content/frame bottoms exactly. Existing drag/focus/control/Review/portal cases
+pass. TypeScript and scaffold checks pass. Independent source review passes;
+cross-provider peer pending. Evidence: output/flight/panel-bottom-zoom.json,
+panel-bottom-layout-browser.log and panel-bottom-fixed.png (real scenery).
+
+**Deviations**
+
+No physics, AP, camera, panel dimensions, shortcuts or zoom limit changes.
+A point remains under the pointer except where the content edge must clamp.
+
+**Insights**
+
+The earlier center-of-gauge and large-drag checks missed the user's bottom-edge
+wheel gesture. Reproduce the precise pointer location before declaring it fixed.
+
+## 2026-11-04 22:05 — Full-height flight map, point actions and startup preloading
+
+TODO: 2.0.115–2.0.117; R-WORLD-6/R-WORLD-9/R-NAV-3/R-UX-2.
+Agent: Codex integration and unmocked running-app checks; glide_model startup
+planner and map layout; glide_cases cache client, point popup/search and independent
+integration review; glide_housekeeping source package and independent layout/preload
+review. Reviewers excluded their own authored slices; Codex independently checked
+the compressed data loader and retained source coordinates.
+
+**Implementation notes**
+
+The compact right map fills almost the whole front-window height. Comma opens
+search/details below it over the right cockpit panels without resizing the map.
+Airport, NAV and fix markers open on-map popups with supported COM1/2 and NAV1/2
+standby actions. GPS targets draw a bearing/distance line without aircraft commands.
+The licensed FlightGear 2013.10 inventory retains 2,739 regional fix rows, source
+coordinates and duplicate identities; compressed delivery is 50,948 bytes.
+Startup warming seeds up to 16 nearby map/vector tiles after actual native readiness,
+using existing background limits without opening the map or blocking Start.
+
+TypeScript, eight coverage tests, three fix-loader test groups and the scenery
+cache browser case pass. The existing right-map browser case passes eleven groups,
+including desktop/mobile layout, below-map menu, direct marker selection, standby
+isolation, GPS coordinates and read-only Review. Its scenery is a fixture.
+Unmocked port 5173 checks separately show real map/terrain, retained HDG/ALT flight,
+ASKIK selection and the below-map drawer without page errors. At 1600×1000 the
+map viewport is 580 of 612 available pixels. A fresh saved-location startup sends
+the expected 16 leading URLs while native step remains zero and Start is enabled.
+Evidence: ignored output/flight/flight-map-full-height-live.png,
+flight-map-menu-gps-live.png and right-flight-map-layout-browser.log.
+Independent scoped quality/validation reviews pass; cross-provider peer pending.
+
+**Deviations**
+
+The fix inventory is historical 2013.10, not current AIRAC. GPS is a visual map
+target, not an installed receiver or AP navigation mode. Standby tuning does not
+activate a channel. First-ever downloads still depend on upstream services.
+Ground/AP use is typical context, not a lock on the extended menu. No flight
+dynamics or AP controller code changed in this increment.
+
+**Insights**
+
+Preserve the user's explicit below-map placement and bindings. Keep view controls
+on the canvas so search and source detail cannot consume the compact map height.
+Use actual running-app evidence alongside fixtures and preserve source ages.
+
 ## 2026-11-04 21:02 — Improve persistent and rendered scenery cache reuse
 
 TODO: 2.0.114; R-WORLD-9/R-WORLD-4.

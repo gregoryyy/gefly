@@ -5,7 +5,7 @@ import type { PracticeProgress } from './runway-practice';
 import { makePracticeCircuit, locateOnCircuit, type CircuitGuide } from './practice-circuit';
 import { loadAirportComDirectory } from './airport-com';
 import { createAirportComPanel } from './airport-com-panel';
-import { LngLatBounds, Map as LibreMap, Marker, ScaleControl, setWorkerUrl, type GeoJSONSource, type StyleSpecification } from 'maplibre-gl';
+import { LngLatBounds, Map as LibreMap, Marker, Popup, ScaleControl, setWorkerUrl, type GeoJSONSource, type StyleSpecification } from 'maplibre-gl';
 import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './practice-map.css';
@@ -14,6 +14,11 @@ import { AIRFIELD_BOUNDS, loadAirportCatalogue, type Airport } from './airport-c
 import type { FlightState } from './types';
 import { loadFlightMapCatalogue } from './flight-map-catalogue';
 import type { FlightMapNavigation, FlightMapNavigationFeature } from './flight-map-navigation';
+import { createMapPointPopup, type MapPoint } from './map-point-popup';
+import { createMapPointSearch, MAP_LOCATION_TYPES, mapLocationType, type MapLocationType } from './map-point-search';
+import { loadMapFixes, type MapFix } from './map-fixes';
+import { distanceMeters } from './scenery-coverage';
+import type { AirportComDirectory } from './airport-com';
 
 export interface PracticeMap {
   update(state: Readonly<FlightState>, path: readonly Readonly<FlightState>[], mode: 'live' | 'review'): void;
@@ -35,6 +40,7 @@ interface MapOptions {
   isExerciseActive?: () => boolean;
   canTuneCom?: () => boolean;
   onTuneCom?: (receiver: 1 | 2, channel_khz: number) => void;
+  onTuneNav?: (receiver: 1 | 2, channel_khz: number) => void;
 }
 
 /** A visual aid only; airport data is community maintained and not a chart. */
@@ -74,26 +80,27 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   });
   const [zoomOut, zoomIn, fit, fitRegion, follow] = buttons;
   const overlap = document.createElement('button');
-  overlap.type = 'button'; overlap.id = 'map-overlap'; overlap.textContent = 'Larger map · ,';
+  overlap.type = 'button'; overlap.id = 'map-overlap'; overlap.textContent = 'Map menu · ,';
   overlap.setAttribute('aria-pressed', 'false');
   overlap.setAttribute('aria-keyshortcuts', ',');
-  overlap.title = ', · Toggle larger map over the cockpit';
-  toolbar.append(overlap);
+  overlap.title = ', · Toggle extended map menu';
+  overlap.setAttribute('aria-controls', 'flight-map-extended-menu'); overlap.setAttribute('aria-expanded', 'false');
+  header.insertBefore(overlap, close);
   const layers = document.createElement('div');
   layers.className = 'practice-map-layers';
   layers.setAttribute('role', 'group');
   layers.setAttribute('aria-label', 'Map layers');
-  const layerButtons = ['Map', 'Aerial', 'NAV aids', 'Map terrain'].map((label, index) => {
+  const layerButtons = ['Map', 'Aerial', 'Map terrain'].map((label, index) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.textContent = label;
     button.disabled = true;
-    button.setAttribute('aria-label', ['Show public map', 'Show aerial imagery', 'Show navigation aids', 'Use map without labels as terrain texture'][index]);
-    button.setAttribute('aria-pressed', String(index === 0 || index === 2));
+    button.setAttribute('aria-label', ['Show public map', 'Show aerial imagery', 'Use map without labels as terrain texture'][index]);
+    button.setAttribute('aria-pressed', String(index === 0));
     layers.append(button);
     return button;
   });
-  const [mapLayer, aerialLayer, navigationLayer, vectorLayer] = layerButtons;
+  const [mapLayer, aerialLayer, vectorLayer] = layerButtons;
   const chartButton = document.createElement('button');
   chartButton.type = 'button'; chartButton.textContent = 'Charts';
   chartButton.setAttribute('aria-controls', 'flight-map-charts'); chartButton.setAttribute('aria-expanded', 'false');
@@ -145,6 +152,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   credit.innerHTML = 'Map: © <a href="https://www.bkg.bund.de" target="_blank" rel="noopener noreferrer">BKG</a> (2026), <a href="https://www.govdata.de/dl-de/by-2-0" target="_blank" rel="noopener noreferrer">dl-de/by-2-0</a>, <a href="https://sgx.geodatenzentrum.de/web_public/gdz/datenquellen/datenquellen_topplusopen.html" target="_blank" rel="noopener noreferrer">Sources</a> · Imagery: HVBG (DL-DE Zero 2.0), © Bayerische Vermessungsverwaltung (2026, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>), Datenquelle: <a href="https://www.lgl-bw.de" target="_blank" rel="noopener noreferrer">LGL-BW</a> (2026, <a href="https://www.govdata.de/dl-de/by-2-0" target="_blank" rel="noopener noreferrer">dl-de/by-2-0</a>) · Airports: OurAirports, public domain';
   const navCredit = document.createElement('span');
   navCredit.textContent = ' · NAV: OurAirports, public domain (snapshot 2026-11-02); ILS: Robin A. Peel / FlightGear, GPL-2.0-or-later (2013.10)';
+  navCredit.append(document.createTextNode(' · Fixes: Robin A. Peel / FlightGear, GPL-2.0-or-later (2013.10)'));
   credit.append(navCredit);
   const caption = document.createElement('p');
   caption.className = 'practice-map-caption';
@@ -171,7 +179,13 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   airportDetail.className = 'practice-map-airport-detail';
   airportDetail.setAttribute('aria-live', 'polite');
   airportsSection.append(summary, search, airportType, airportStatus, airportList, airportDetail);
-  container.replaceChildren(header, viewport, status, toolbar, layers, charts, circuitNote, circuitReadout, readout, legend, navigationStatus, navigationKey, navigationDetail, airportsSection, credit, caption);
+  const extendedMenu = document.createElement('section');
+  extendedMenu.id = 'flight-map-extended-menu'; extendedMenu.className = 'practice-map-extended-menu';
+  extendedMenu.setAttribute('aria-label', 'Extended flight map menu'); extendedMenu.hidden = true;
+  extendedMenu.append(layers, charts, circuitNote, circuitReadout, readout, legend, navigationStatus, navigationKey, navigationDetail, airportsSection, credit, caption);
+  container.dataset.extendedMenu = 'false'; delete container.dataset.overlapCockpit;
+  container.replaceChildren(header, viewport, toolbar, extendedMenu);
+  viewport.append(status);
 
   let map: LibreMap | undefined;
   let aircraft: Marker | undefined;
@@ -204,7 +218,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   let paintedNavigationData: FlightMapNavigation | undefined;
   let navigationData: FlightMapNavigation = { type: 'FeatureCollection', features: [] };
   let aerial = false, vector = false;
-  let navigationVisible = true;
+  let locationTypes: ReadonlySet<MapLocationType> = new Set(MAP_LOCATION_TYPES.map(([type]) => type));
   let airports: Airport[] = [];
   let selectedAirport = 'EDFE';
   let circuitEnabled = false, circuitFitPending = false, circuitDataKey = '', circuitLabelKey = '', circuitLegKey = '';
@@ -213,6 +227,106 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   const circuitMarkers: Marker[] = [];
   let comPanel: ReturnType<typeof createAirportComPanel> | undefined;
   let reviewing = false;
+  let comDirectory: AirportComDirectory | null = null;
+  let fixes: readonly MapFix[] = [];
+  let fixMarkerKey = '';
+  let paintedFixes: readonly MapFix[] | undefined;
+  const fixMarkers: Marker[] = [];
+  let selectedPoint: Readonly<MapPoint> | null = null, pointPopup: Popup | null = null;
+  let gpsTarget: Readonly<MapPoint> | null = null, gpsDataKey = '';
+  let searchPosition: { lat: number; lon: number } | null = null;
+  const fixesStatus = document.createElement('p'); fixesStatus.className = 'practice-map-navigation-status';
+  fixesStatus.textContent = 'Loading historical navigation fixes…';
+  const gpsReadout = document.createElement('output'); gpsReadout.id = 'map-gps-readout';
+  const gpsClear = document.createElement('button'); gpsClear.type = 'button'; gpsClear.textContent = '×'; gpsClear.setAttribute('aria-label', 'Clear GPS target');
+  const gpsOverlay = document.createElement('div'); gpsOverlay.className = 'practice-map-gps-target'; gpsOverlay.hidden = true; gpsOverlay.append(gpsReadout, gpsClear); viewport.append(gpsOverlay);
+  const pointSearch = createMapPointSearch({ onSelect(point) {
+    setFollowing(false); map?.jumpTo({ center: [point.lon_deg, point.lat_deg], zoom: Math.max(map.getZoom(), 11) });
+    const airport = point.kind === 'airport' ? airports.find(a => a.id === point.id || a.icao === point.id) : undefined;
+    if (airport) selectAirport(airport);
+    else {
+      const nav = navigationData.features.find(f => f.properties.identifier === point.id && Math.abs(f.geometry.coordinates[0] - point.lon_deg) < 1e-7 && Math.abs(f.geometry.coordinates[1] - point.lat_deg) < 1e-7);
+      if (nav) selectNavigation(nav); else openPoint(point);
+    }
+    onInteraction();
+  }, onTypesChange(types) {
+    locationTypes = new Set(types);
+    paintedNavigationData = undefined; paintedFixes = undefined;
+    if (selectedPoint && !locationTypes.has(mapLocationType(selectedPoint))) {
+      pointPopup?.remove(); pointPopup = null; selectedPoint = null;
+    }
+    if (!locationTypes.has('nav')) navigationDetail.hidden = true;
+    renderAirports(); paintNavigation(); paintFixes(); onInteraction();
+  } });
+  extendedMenu.prepend(pointSearch.element, fixesStatus);
+  function airportPoint(airport: Airport): MapPoint {
+    return { id: airport.icao || airport.id, name: airport.name, kind: 'airport', airport_type: airport.type, lon_deg: airport.lon, lat_deg: airport.lat,
+      source_label: `OurAirports community snapshot${comDirectory ? ` · COM ${comDirectory.retrieved}` : ''}`,
+      frequencies: (comDirectory?.stations ?? []).filter(station => station.airport_id === airport.id).map(station => ({ kind: 'com', channel_khz: station.channel_khz, label: station.service })) };
+  }
+  function navigationPoint(feature: FlightMapNavigationFeature): MapPoint {
+    const p = feature.properties;
+    return { id: p.identifier, name: p.name + (p.component === 'station' ? '' : ` · ${p.component}`), kind: p.kind, equipment: p.equipment,
+      lon_deg: feature.geometry.coordinates[0], lat_deg: feature.geometry.coordinates[1], source_label: p.source_label,
+      frequencies: [{ kind: 'nav', channel_khz: p.frequency_mhz ? Math.round(Number(p.frequency_mhz) * 1000) : Number(p.frequency_label.split(' ')[0]), label: p.equipment }] };
+  }
+  const fixPoint = (fix: MapFix): MapPoint => ({ ...fix, id: fix.name, kind: 'fix' });
+  function refreshPointSearch(): void { pointSearch.setPoints([...airports.map(airportPoint), ...navigationData.features.map(navigationPoint), ...fixes.map(fixPoint)]); }
+  function refreshPointPopup(): void {
+    if (!selectedPoint || !pointPopup) return;
+    const point = selectedPoint;
+    pointPopup.setDOMContent(createMapPointPopup(point, {
+      canTune: () => !reviewing && (options.canTuneCom?.() ?? true) && !!point.frequencies?.some(f => f.kind === 'com' ? options.onTuneCom : options.onTuneNav),
+      onTune(kind, receiver, channel) {
+        if (reviewing || !(options.canTuneCom?.() ?? true)) return;
+        (kind === 'com' ? options.onTuneCom : options.onTuneNav)?.(receiver, channel); onInteraction();
+      },
+      onGpsTarget(target) { gpsTarget = target; gpsDataKey = ''; paintGpsTarget(); onInteraction(); },
+    }));
+  }
+  function openPoint(point: Readonly<MapPoint>): void {
+    if (!map || disposed || !locationTypes.has(mapLocationType(point))) return;
+    pointPopup?.remove(); selectedPoint = point;
+    pointPopup = new Popup({ closeButton: true, closeOnClick: true, maxWidth: '290px', offset: 10 }).setLngLat([point.lon_deg, point.lat_deg]);
+    refreshPointPopup(); pointPopup.addTo(map);
+  }
+  function paintGpsTarget(): void {
+    if (!ready || !map) return;
+    gpsOverlay.hidden = !gpsTarget || !frame;
+    const key = gpsTarget && frame ? `${gpsTarget.id}/${gpsTarget.lon_deg}/${gpsTarget.lat_deg}/${frame.position.map(n => n.toFixed(5)).join('/')}` : '';
+    if (key === gpsDataKey) return;
+    gpsDataKey = key;
+    const features = gpsTarget && frame ? [
+      { type: 'Feature' as const, properties: {}, geometry: { type: 'LineString' as const, coordinates: [frame.position, [gpsTarget.lon_deg, gpsTarget.lat_deg]] } },
+      { type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: [gpsTarget.lon_deg, gpsTarget.lat_deg] } },
+    ] : [];
+    (map.getSource('gps-target') as GeoJSONSource).setData({ type: 'FeatureCollection', features });
+    if (gpsTarget && frame) {
+      const rad = Math.PI / 180, lon = frame.position[0] * rad, lat = frame.position[1] * rad;
+      const tlat = gpsTarget.lat_deg * rad, dl = gpsTarget.lon_deg * rad - lon;
+      const bearing = (Math.atan2(Math.sin(dl) * Math.cos(tlat), Math.cos(lat) * Math.sin(tlat) - Math.sin(lat) * Math.cos(tlat) * Math.cos(dl)) / rad + 360) % 360;
+      gpsReadout.textContent = `GPS ${gpsTarget.id} · ${Math.round(bearing).toString().padStart(3, '0')}°T · ${(distanceMeters(lat, lon, tlat, gpsTarget.lon_deg * rad) / 1852).toFixed(1)} NM`;
+    }
+  }
+  gpsClear.onclick = () => { gpsTarget = null; gpsDataKey = 'clear'; paintGpsTarget(); onInteraction(); };
+  function paintFixes(): void {
+    if (!map || !ready) return;
+    const matches = locationTypes.has('fix') ? fixes : [];
+    if (paintedFixes !== fixes) {
+      (map.getSource('navigation-fixes') as GeoJSONSource).setData({ type: 'FeatureCollection', features: matches.map(f => ({ type: 'Feature', id: f.id, properties: { fixId: f.id, name: f.name }, geometry: { type: 'Point', coordinates: [f.lon_deg, f.lat_deg] } })) });
+      paintedFixes = fixes;
+    }
+    const labelled = nearby([...matches], f => [f.lon_deg, f.lat_deg]).slice(0, 40);
+    const key = labelled.map(f => f.id).join(','); if (key === fixMarkerKey) return;
+    fixMarkerKey = key; fixMarkers.splice(0).forEach(marker => marker.remove());
+    for (const fix of labelled) {
+      const element = document.createElement('button'); element.type = 'button'; element.className = 'practice-map-fix-marker'; element.textContent = `△ ${fix.name}`;
+      element.dataset.fixId = fix.id; element.setAttribute('aria-label', `Select fix ${fix.name}`);
+      element.onclick = event => { event.stopPropagation(); openPoint(fixPoint(fix)); onInteraction(); };
+      fixMarkers.push(new Marker({ element }).setLngLat([fix.lon_deg, fix.lat_deg]).addTo(map));
+    }
+  }
+
   const playControls = createAirportPlayControls(options.onStartRunway, options.onStopExercise);
   airportsSection.before(playControls.element);
   const practiceCard = createRunwayPracticePanel();
@@ -230,11 +344,13 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     airportDetail.textContent = `${airport.name} · ${airport.id}${airport.icao ? ` · ICAO ${airport.icao}` : ''}${airport.local ? ` · local ${airport.local}` : ''} · ${airport.type.replaceAll('_', ' ')} · ${airport.iso_region} · ${airport.lat.toFixed(5)}° N, ${airport.lon.toFixed(5)}° E · ${elevation}. OurAirports community data; not a navigation chart.`;
     chartAirport.textContent = `Charts for ${airport.icao || airport.id} · ${airport.name}`;
     airportsSection.open = true;
+    openPoint(airportPoint(airport));
     onInteraction();
   };
   const filteredAirports = () => {
     const query = search.value.trim().toLocaleLowerCase();
-    return airports.filter(a => (airportType.value === 'all'
+    return airports.filter(a => locationTypes.has(mapLocationType({ id: a.id, name: a.name, kind: 'airport', airport_type: a.type,
+      lon_deg: a.lon, lat_deg: a.lat, source_label: '' })) && (airportType.value === 'all'
       || (airportType.value === 'airfields' ? a.type.endsWith('_airport') : a.type === airportType.value))
       && `${a.name} ${a.id} ${a.icao} ${a.local} ${a.iso_region} ${a.type.replaceAll('_', ' ')}`.toLocaleLowerCase().includes(query));
   };
@@ -390,14 +506,15 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       element.dataset.type = airport.type;
       element.setAttribute('aria-label', `Select ${airport.name}${airport.type === 'closed' ? ', closed' : ''}`);
       element.addEventListener('click', event => { event.stopPropagation(); selectAirport(airport); });
-      airportMarkers.push(new Marker({ element }).setLngLat([airport.lon, airport.lat]).addTo(map));
+      airportMarkers.push(new Marker({ element, offset: [0, 9] }).setLngLat([airport.lon, airport.lat]).addTo(map));
     }
   }
 
   function paintNavigation(): void {
     if (!map || !ready) return;
+    const navigationVisible = locationTypes.has('nav');
     if (paintedNavigationData !== navigationData) {
-      (map.getSource('navigation-aids') as GeoJSONSource).setData(navigationData);
+      (map.getSource('navigation-aids') as GeoJSONSource).setData(navigationVisible ? navigationData : { type: 'FeatureCollection', features: [] });
       paintedNavigationData = navigationData;
     }
     for (const layer of ['navigation-components', 'navigation-stations']) map.setLayoutProperty(layer, 'visibility', navigationVisible ? 'visible' : 'none');
@@ -420,7 +537,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
         label.textContent = `${p.identifier} ${p.equipment} ${p.frequency_label}`;
         element.append(symbol, label);
         element.addEventListener('click', event => { event.stopPropagation(); selectNavigation(feature); onInteraction(); });
-        navigationMarkers.push(new Marker({ element }).setLngLat(feature.geometry.coordinates).addTo(map));
+        navigationMarkers.push(new Marker({ element, offset: [0, -15] }).setLngLat(feature.geometry.coordinates).addTo(map));
       }
     }
     navigationKey.hidden = !navigationVisible;
@@ -433,22 +550,18 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       .map(item => `${item.properties.component === 'station' ? p.equipment : item.properties.component} ${item.geometry.coordinates[1].toFixed(5)}° N, ${item.geometry.coordinates[0].toFixed(5)}° E`);
     navigationDetail.textContent = `${p.identifier} · ${p.name} · ${p.equipment} · ${p.frequency_label}${p.airport_runway ? ` · ${p.airport_runway}` : ''}. ${components.join(' · ')}. ${p.historical ? 'Historical 2013.10; source AMSL/datum unverified.' : 'OurAirports community snapshot 2026-11-02; not current AIS.'} ${p.source_line_ids.length ? `Source rows ${p.source_line_ids.join(', ')}.` : ''} Not current service or a published approach.`;
     navigationDetail.hidden = false;
+    openPoint(navigationPoint(feature));
   };
 
   listen(vectorLayer, () => { const enabled = !vector; setVector(enabled); options.onVectorChange?.(enabled); });
   listen(mapLayer, () => { setAerial(false); });
   listen(aerialLayer, () => { setAerial(true); });
-  listen(navigationLayer, () => {
-    navigationVisible = !navigationVisible;
-    navigationLayer.setAttribute('aria-pressed', String(navigationVisible));
-    if (!navigationVisible) navigationDetail.hidden = true;
-    paintNavigation();
-  });
 
   function paint(): void {
     if (!visible || !ready || !map || !frame || disposed) return;
     paintTrajectory();
     paintCircuit();
+    paintGpsTarget();
     const pathKey = JSON.stringify(frame.path);
     if (pathKey !== paintedPath) {
       (map.getSource('recorded-path') as GeoJSONSource).setData({
@@ -487,12 +600,14 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   const controller: PracticeMap = {
     toggleOverlap() {
       if (disposed) return;
-      const enabled = container.dataset.overlapCockpit !== 'true';
-      container.dataset.overlapCockpit = String(enabled);
-      overlap.setAttribute('aria-pressed', String(enabled));
+      const enabled = container.dataset.extendedMenu !== 'true';
+      container.dataset.extendedMenu = String(enabled); extendedMenu.hidden = !enabled;
+      overlap.setAttribute('aria-pressed', String(enabled)); overlap.setAttribute('aria-expanded', String(enabled));
     },
     update(state, path, mode) {
-      reviewing = mode === 'review';
+      if (disposed) return;
+      const wasReviewing = reviewing; reviewing = mode === 'review';
+      if (wasReviewing !== reviewing) refreshPointPopup();
       playControls.update(options.isExerciseActive?.() ?? false, reviewing);
       const practice = options.getRunwayPractice?.();
       circuitState = state;
@@ -507,7 +622,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
         frame = makePracticeMapFrame(state, path);
       } catch {
         // Invalid flight state: never keep a stale marker, path or readout on screen.
-        frame = undefined; circuitState = null; paintedPath = ''; paintTrajectory(); refreshCircuit();
+        frame = undefined; circuitState = null; paintedPath = ''; paintTrajectory(); refreshCircuit(); gpsDataKey = 'clear'; paintGpsTarget();
+        searchPosition = null; pointSearch.setPosition(NaN, NaN);
         aircraft?.remove(); start?.remove();
         if (ready && map) (map.getSource('recorded-path') as GeoJSONSource | undefined)?.setData({ type: 'FeatureCollection', features: [] });
         readout.textContent = 'Aircraft position unavailable';
@@ -518,6 +634,10 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       }
       refreshCircuit();
       const [longitude_deg, latitude_deg] = frame.position;
+      const lat = latitude_deg * Math.PI / 180, lon = longitude_deg * Math.PI / 180;
+      if (!searchPosition || distanceMeters(lat, lon, searchPosition.lat, searchPosition.lon) >= 500) {
+        searchPosition = { lat, lon }; pointSearch.setPosition(longitude_deg, latitude_deg);
+      }
       readout.textContent = `${Math.abs(latitude_deg).toFixed(4)}° ${latitude_deg < 0 ? 'S' : 'N'}  ${Math.abs(longitude_deg).toFixed(4)}° ${longitude_deg < 0 ? 'W' : 'E'}  ·  ${(Math.round(frame.heading_deg) % 360).toString().padStart(3, '0')}° true`;
       if (ready && !failed) status.hidden = true;
       // Render failures propagate so the host can dispose and offer a retry.
@@ -531,12 +651,13 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     setVisible(value) {
       if (disposed) return;
       visible = value;
+      if (!value) { pointPopup?.remove(); pointPopup = null; }
       container.hidden = !value;
       if (value) { map?.resize(); paint(); }
     },
     dispose() {
       if (disposed) return;
-      disposed = true;
+      disposed = true; pointPopup?.remove(); pointSearch.dispose(); fixMarkers.splice(0).forEach(marker => marker.remove());
       abort.abort(); comPanel?.dispose();
       observer.disconnect();
       removers.forEach((remove) => remove());
@@ -558,6 +679,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     const style: StyleSpecification = {
       version: 8,
       sources: {
+        'navigation-fixes': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
+        'gps-target': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
         basemap: { type: 'raster', tiles: ['/scenery/map/{z}/{x}/{y}.png'], tileSize: 256, minzoom: 5, maxzoom: 16, bounds: [...AIRFIELD_BOUNDS] },
         imagery: { type: 'raster', tiles: ['/scenery/imagery/{z}/{x}/{y}.png'], tileSize: 512, minzoom: 7, maxzoom: 15, bounds: [7, 49, 10, 51.5] },
         'recorded-path': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
@@ -569,6 +692,9 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
         { id: 'background', type: 'background', paint: { 'background-color': '#162530' } },
         { id: 'basemap', type: 'raster', source: 'basemap', paint: { 'raster-fade-duration': 0 } },
         { id: 'imagery', type: 'raster', source: 'imagery', layout: { visibility: 'none' }, paint: { 'raster-fade-duration': 0 } },
+        { id: 'navigation-fixes', type: 'circle', source: 'navigation-fixes', minzoom: 8, paint: { 'circle-radius': 3, 'circle-color': '#e3a1e8', 'circle-stroke-color': '#34203e', 'circle-stroke-width': 1 } },
+        { id: 'gps-target-line', type: 'line', source: 'gps-target', filter: ['==', ['geometry-type'], 'LineString'], paint: { 'line-color': '#ff8af1', 'line-width': 2, 'line-dasharray': [3, 2] } },
+        { id: 'gps-target-point', type: 'circle', source: 'gps-target', filter: ['==', ['geometry-type'], 'Point'], paint: { 'circle-radius': 7, 'circle-color': '#ff8af1', 'circle-stroke-color': '#fff', 'circle-stroke-width': 1 } },
         { id: 'airfields', type: 'circle', source: 'airfields', paint: {
           'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 2, 13, 5],
           'circle-color': ['match', ['get', 'type'], 'closed', '#858b91', 'heliport', '#e3bc75', '#89cfff'],
@@ -591,7 +717,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     setWorkerUrl(mapWorkerUrl);
     map = new LibreMap({
       container: viewport, style, center: [8.64, 49.9625], zoom: 13,
-      minZoom: 5, maxZoom: 17, interactive: true, attributionControl: false,
+      minZoom: 5, maxZoom: 17, interactive: true, attributionControl: { compact: true, customAttribution: '© BKG (2026) · HVBG · Bayerische Vermessungsverwaltung · LGL-BW · OurAirports · FlightGear (2013)' },
       renderWorldCopies: false, maxPitch: 0, pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
       transformRequest(url, resourceType) {
         if (visible && resourceType === 'Tile') {
@@ -609,18 +735,19 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     map.on('move', paintTrajectory); map.on('resize', paintTrajectory);
     map.dragRotate.disable();
     map.touchZoomRotate.disableRotation();
-    map.on('moveend', () => { paintAirports(); paintNavigation(); paintCircuit(); });
+    map.on('moveend', () => { paintAirports(); paintNavigation(); paintFixes(); paintCircuit(); });
     map.on('click', 'airfields', event => {
       const airport = airports.find(a => a.id === event.features?.[0]?.properties.id);
       if (airport) selectAirport(airport);
     });
     for (const layer of ['navigation-stations', 'navigation-components']) map.on('click', layer, event => {
-      const feature = navigationData.features.find(f => f.id === event.features?.[0]?.id);
+      const hit = event.features?.[0];
+      const feature = navigationData.features.find(f => f.id === hit?.id || (f.properties.station_uid === hit?.properties.station_uid && f.properties.component === hit?.properties.component));
       if (feature) { selectNavigation(feature); onInteraction(); }
     });
     void loadFlightMapCatalogue(abort.signal).then(data => {
       if (disposed || !map) return;
-      navigationData = data;
+      navigationData = data; refreshPointSearch();
       const stations = data.features.filter(f => f.properties.component === 'station');
       const historical = stations.filter(f => f.properties.historical).length;
       navigationStatus.textContent = `NAV · ${stations.length - historical} community sources (2026-11-02) + ${historical} historical LOC/ILS (2013.10) · not current AIS`;
@@ -628,14 +755,25 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     }).catch(() => {
       if (!disposed) navigationStatus.textContent = 'NAV inventory unavailable. Community snapshot / historical ILS; not current AIS.';
     });
+    void loadMapFixes(abort.signal).then(data => {
+      if (disposed || !map) return;
+      fixes = data; refreshPointSearch();
+      fixesStatus.textContent = `${fixes.length} regional fixes · FlightGear 2013.10 · historical`; paintFixes();
+    }).catch(() => { if (!disposed) fixesStatus.textContent = 'Historical navigation fixes unavailable'; });
+    map.on('click', 'gps-target-point', () => { if (gpsTarget) { openPoint(gpsTarget); onInteraction(); } });
+    map.on('click', 'navigation-fixes', event => {
+      const fix = fixes.find(f => f.id === event.features?.[0]?.properties.fixId); if (fix) { openPoint(fixPoint(fix)); onInteraction(); }
+    });
     map.on('dragstart', () => { setFollowing(false); onInteraction(); });
     map.on('zoomstart', (event) => { if (event.originalEvent) { setFollowing(false); onInteraction(); } });
     void loadAirportCatalogue(abort.signal).then((data) => {
       if (disposed || !map) return;
-      airports = data;
+      airports = data; refreshPointSearch();
       renderAirports();
       void loadAirportComDirectory(abort.signal).then(directory => {
         if (disposed) return;
+        comDirectory = directory; refreshPointSearch();
+        if (selectedPoint?.kind === 'airport') { const airport = airports.find(a => a.id === selectedPoint!.id || a.icao === selectedPoint!.id); if (airport) { selectedPoint = airportPoint(airport); refreshPointPopup(); } }
         comPanel = createAirportComPanel({ airports, directory,
           onTune(receiver, channel) { if (!reviewing) options.onTuneCom?.(receiver, channel); },
           onSelectAirport(id) { const airport = airports.find(a => a.id === id); if (airport) selectAirport(airport); },
@@ -666,11 +804,14 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       status.hidden = !failed;
       [...buttons, ...layerButtons].forEach((button) => { button.disabled = false; });
       circuitToggle.disabled = false;
-      circuitDataKey = ''; circuitLabelKey = ''; circuitLegKey = '';
+      circuitDataKey = ''; circuitLabelKey = ''; circuitLegKey = ''; paintedFixes = undefined;
+      airportSourceKey = ''; paintedNavigationData = undefined;
       refreshCircuit();
       const savedVector = vector; setAerial(aerial); if (savedVector) setVector(true);
       paintAirports();
       paintNavigation();
+      paintFixes();
+      gpsDataKey = '';
       paint();
     });
   } catch {

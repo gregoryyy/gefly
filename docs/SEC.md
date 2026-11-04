@@ -23,6 +23,16 @@ Protect source code, build environment, dependency integrity, aircraft/reference
 | LLM authoring fabricating facts, following instructions embedded in a source or producing executable content | Resolve real assets through structured sources; validate declarative packages and record provenance; isolate untrusted source text from authoring instructions; require review before accepted use | Unknown-fix, malicious-source, invalid-geometry, incompatible-equipment and provider-failure cases in E9 |
 | Public community exposing private records or falsely labeling content as reviewed | Explicit submission visibility, scoped roles, authorship/review labels, reporting/moderation/removal and retention decisions | Scoped community access/content cases in E11 before deployment |
 
+## Flight-map point actions and historical fixes
+
+Map popups render source strings as text. Supported radio actions validate the
+channel and update standby only; Review rejects tuning at both UI and application
+boundaries. GPS targets draw a map point/line without issuing aircraft commands.
+The pinned 2013.10 fix package has fixed same-origin paths, manifest and compressed
+byte hashes, byte/decompression limits and an abortable deadline. Invalid assets
+leave the optional layer unavailable. Its historical age stays visible; this does
+not establish current AIRAC accuracy or operational navigation authority.
+
 ## Repository-tool CI
 
 The foundation workflow runs the committed offline gate on pull requests to
@@ -323,7 +333,8 @@ missing tile/source conditions remain explicit; no current chart claim is added.
 
 The map-only southern NAV and airfield packages use fixed same-origin paths,
 bounded streamed reads, schema/coordinate/source checks and SHA-256 integrity.
-They cannot retune the radio model. Five-state airport selection retains closed
+Displaying these packages cannot retune the radio model; explicit validated
+marker actions update standby as described above. Five-state airport selection retains closed
 facilities with explicit labels; beacon context is a declared larger envelope.
 
 ## Convenience autopilot and simulation rate

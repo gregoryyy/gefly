@@ -55,7 +55,7 @@ map guide. Landing is a clean 90 kt visual-practice start at a geometric 3-degre
 height above the threshold; set power/flaps yourself. It is not a published approach.
 Research flights and contact studies are in the secondary group.
 
-Alternatively, open the flight map with **M**, choose **EDFE 26 or 08**, and select **Start at runway**. The aircraft starts at rest with the engine idling and parking brake
+Alternatively, open the flight map with **M**, press **,** for the map menu, choose **EDFE 26 or 08**, and select **Start at runway**. The aircraft starts at rest with the engine idling and parking brake
 set. Press **N** to release the brake, add power with **1–9**, and fly the circuit
 manually. **Stop exercise** on the map pauses the flight and keeps Review available.
 Other airports can be inspected, but their runway starts are not prepared yet.
@@ -158,14 +158,22 @@ the selected live or recorded position. This is a practice aid, not a published
 route or an altitude, speed or obstacle-clearance instruction.
 
 **M** or **View → Flight map** opens a right-side map beside the 3D view,
-showing the aircraft and whole retained flight path. **Comma (,)** toggles the
-larger map view. The map has **731 searchable
+showing the aircraft and whole retained flight path. **Comma (,)** opens the menu
+below the map over the right cockpit panels. **Location types** checkboxes filter airfields, helipads, NAV aids, fixes and other facilities on both the map and search results. The map has **731 searchable
 community airfield and heliport entries across five southern German states**, including available airport elevations. Choose the
 public map or aerial imagery; a nautical scale and **community radio beacons and historical LOC/ILS
 references (2013.10)** provide source-marked practice context. Pan/zoom,
 select an airport and use Follow to return to the aircraft; selection does not
 move the aircraft. During **Review**, the marker follows the selected historical
 state. The map is practice context, not a navigation chart or current airport reference.
+
+The flight map uses almost the full front-window height. **M** shows it and **,**
+opens details and search below it over the right cockpit panels. Click airports,
+radio aids or fixes directly on the map to inspect them, load supported COM/NAV
+standby channels or set a visual GPS target. The 2,739 regional fix rows are from
+FlightGear 2013.10 and are clearly historical, not a current AIRAC database.
+Nearby map/vector data preloads while the start screen is open; Start remains
+available. See the [source inventory](app/public/mapdata/fixes-README.md).
 
 The local development server fetches live map/photo tiles from fixed public
 WMS services. Pillow is needed for photo compositing; provider failure leaves

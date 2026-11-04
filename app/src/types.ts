@@ -159,6 +159,8 @@ export interface FlightState extends LoadingSnapshot, Partial<Record<keyof Altit
 }
 export interface Controls { elevator: number; aileron: number; rudder: number; throttle: number; flap_norm?: number; brake_norm?: number; mixture_norm?: number; mixture_auto?: boolean; pitch_trim_norm?: number; engine_running?: boolean; pilot_override?: boolean }
 export interface FlightScene {
+  /** Warm public tiles at the acknowledged starting position; never starts physics. */
+  preloadScenery?(state: Readonly<FlightState>): void;
   setLandmarkLevel?(level: 0 | 1 | 2 | 3): void;
   setSceneryMode?(vector: boolean): void;
   setPracticePapi?(enabled: boolean): void;

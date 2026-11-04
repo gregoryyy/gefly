@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "id": "regional-map-fixes-2013.10-v1",
+  "asset": "fixes-2013.10-v1.json.bin",
+  "bytes": 50948,
+  "sha256": "1a6fb70898ac3af13636e9d560d043f384a689734002d794f116a56e33919d11",
+  "count": 2739,
+  "source_sha256": "0be045e8acdcb2cf0656084063d58768976da4cd02902542e1bdb1fe44c23b95",
+  "decoded_bytes": 271162,
+  "compression": "gzip"
+}
