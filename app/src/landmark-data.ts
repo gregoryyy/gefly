@@ -180,6 +180,73 @@ async function tileBytes(response: Response, signal: AbortSignal): Promise<Uint8
   return bytes;
 }
 
+/** A bounded, latest-query lookup of mapped anchors, not a geocoder or an
+ * assertion that a clicked object has a name. Adjacent tiles are not searched. */
+export function createLandmarkLookup(options: { fetcher?: typeof fetch } = {}): {
+  lookup(lat_rad: number, lon_rad: number, signal: AbortSignal): Promise<{ item: Landmark; distance_m: number } | null>;
+  dispose(): void;
+} {
+  const fetcher = options.fetcher ?? fetch, cache = new Map<string, readonly Landmark[]>();
+  const lifetime = new AbortController();
+  let current: AbortController | null = null, active = 0;
+  const queue: { run: () => void; signal: AbortSignal }[] = [];
+  const pump = () => {
+    while (active < 2 && queue.length) {
+      const task = queue.shift()!;
+      if (!task.signal.aborted) { active++; task.run(); }
+    }
+  };
+  const load = async (tile: Tile, signal: AbortSignal): Promise<readonly Landmark[]> => {
+    signal.throwIfAborted();
+    const cached = cache.get(tile.key);
+    if (cached) { cache.delete(tile.key); cache.set(tile.key, cached); return Promise.resolve(cached); }
+    return new Promise((resolve, reject) => {
+      const abort = () => { const index = queue.indexOf(task); if (index >= 0) queue.splice(index, 1); reject(signal.reason); };
+      const task = { signal, run: () => {
+        void (async () => {
+          try {
+            const response = await fetcher(`/scenery/landmarks/${tile.key}.pbf`, { signal, redirect: 'error', credentials: 'same-origin' });
+            const items = decodeLandmarkTile(await tileBytes(response, signal), tile);
+            signal.throwIfAborted();
+            cache.delete(tile.key); cache.set(tile.key, items);
+            while (cache.size > CACHE_LIMIT) cache.delete(cache.keys().next().value!);
+            resolve(items);
+          } catch (error) { reject(error); }
+          finally { signal.removeEventListener('abort', abort); active--; pump(); }
+        })();
+      } };
+      signal.addEventListener('abort', abort, { once: true }); queue.push(task); pump();
+    });
+  };
+  return {
+    async lookup(lat_rad, lon_rad, signal) {
+      current?.abort(); current = new AbortController();
+      const querySignal = AbortSignal.any([signal, current.signal, lifetime.signal, AbortSignal.timeout(12000)]);
+      querySignal.throwIfAborted();
+      if (!Number.isFinite(lat_rad) || !Number.isFinite(lon_rad) || Math.abs(lat_rad) > MERCATOR_LIMIT || Math.abs(lon_rad) > Math.PI) return null;
+      // tilesAt starts with the containing tile in each tier, even at pole rows.
+      const tiles = tilesAt(lat_rad, lon_rad, 3);
+      const containing = ([9, 12, 14] as const).map(z => tiles.find(tile => tile.z === z)!);
+      const results = await Promise.allSettled(containing.map(tile => load(tile, querySignal)));
+      querySignal.throwIfAborted();
+      let nearest: { item: Landmark; distance_m: number } | null = null, failed = false;
+      for (const result of results) {
+        if (result.status === 'rejected') { failed = true; continue; }
+        for (const item of result.value) {
+          const h = Math.sin((item.lat_rad - lat_rad) / 2) ** 2
+            + Math.cos(lat_rad) * Math.cos(item.lat_rad) * Math.sin((item.lon_rad - lon_rad) / 2) ** 2;
+          const distance_m = 6371000 * 2 * Math.asin(Math.sqrt(Math.min(1, Math.max(0, h))));
+          if (distance_m > (item.category === 'place' ? 10000 : 2000)) continue;
+          if (!nearest || distance_m < nearest.distance_m || distance_m === nearest.distance_m && item.id < nearest.item.id) nearest = { item, distance_m };
+        }
+      }
+      if (!nearest && failed) throw new Error('Mapped names unavailable; lookup was incomplete');
+      return nearest;
+    },
+    dispose() { lifetime.abort(); current?.abort(); cache.clear(); },
+  };
+}
+
 export function createLandmarkSource(options: {
   onUpdate: (items: readonly Landmark[], status: 'off' | 'loading' | 'ready' | 'degraded') => void; fetcher?: typeof fetch;
 }): {

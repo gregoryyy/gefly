@@ -3,6 +3,32 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 13:26 — Right-click place lookup
+
+TODO: 2.0.86; R-WORLD-7/R-INPUT-1. Agent: Codex UI/integration;
+glide_cases source lookup; glide_model existing browser check;
+glide_housekeeping independent source review.
+
+**Implementation notes**
+
+With labels enabled, right-click terrain for the nearest mapped name/distance.
+Use actual globe picking and three bounded source tiles; cache results, cancel
+superseded requests and separate empty data from unavailable names. Off preserves
+the existing context-menu handling; sky sends no query. Mac Ctrl-click does not start a
+pointer-yoke gesture. TypeScript, 11 source cases and 19 existing pointer cases
+pass; independent source review passes. The existing Chrome landmark case passes
+actual ground lookup, sky/Off no-query guards and paused native-state invariance.
+Cross-provider peer pending.
+
+**Deviations**
+
+Lookup samples source anchors, not an exact address or exhaustive reverse geocoder.
+No new public geocoder, dependency, native model change or broad CI run.
+
+**Insights**
+
+Pick rendered ground rather than inventing a location from a sky/ellipsoid hit.
+
 ## 2026-11-04 13:10 — Terrain beyond the Taunus and chart access
 
 TODO: 2.0.84/2.0.85; R-WORLD-5/R-CHART-1. Agent: Codex integration;
