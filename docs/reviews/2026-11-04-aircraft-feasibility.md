@@ -1,0 +1,6 @@
+# Aircraft feasibility: scoped documentation review
+
+Quality and research-coverage review: pass, with no blocking findings. Codex subagent `glide_housekeeping` independently reviewed the integrated overview and other authors' light-aircraft/glider notes; its own airliner note and exact input are excluded from independent acceptance. The orchestrator separately checked the airliner source/licence claims.
+All requested aircraft are covered with explicit variant boundaries, cockpit/system requirements, reuse prospects and missing dynamics/rights evidence. Official Extra and Aviat source samples match the stated configurations; review-side FlightGear SVN retrieval was unavailable, so raw glider-source claims are not represented as independently reverified here.
+The overview preserves C172-first scope, labels relative feasibility as judgment, separates open browser implementation from licensed desktop bridges/partnerships and makes no full-envelope, complete-cockpit or training-credit acceptance. Recommendations are future investigations, not implemented aircraft or changed roadmap commitments.
+Research only: no simulator tests, aircraft downloads, asset imports or added dependencies. Current manuals, per-file licensing and quantitative validation remain prerequisites for a selected integration; cross-provider peer pending.
