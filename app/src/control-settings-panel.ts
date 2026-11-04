@@ -58,9 +58,9 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
       Centered touchpad controls
     </label>
     <p class="control-settings-note" id="centered-touchpad-note">Flight-view center is neutral. Hold-drag sets the view; release keeps it. Escape resets the view.</p>
-    <label class="control-settings-note control-settings-toggle"><input id="vector-scenery" type="checkbox"> Vector map and terrain · EDFE region</label>
+    <label class="control-settings-note control-settings-toggle"><input id="vector-scenery" type="checkbox"> Map terrain · cartography without labels</label>
     <label class="control-settings-note control-settings-toggle"><input id="practice-papi" type="checkbox"> Practice PAPI / runway lights · illustrative</label>
-    <p class="control-settings-note">Vector surfaces use OpenStreetMap with public terrain. Practice lights are generic aids, not an installed EDFE lighting survey.</p>
+    <p class="control-settings-note">Map terrain uses official German vector cartography without text. Photography remains underneath if a tile is unavailable. Practice lights are generic aids, not an installed EDFE lighting survey.</p>
     <div class="control-settings-presets">
       <span>Quick presets</span>
       <button type="button" id="settings-gentle">Gentle</button>

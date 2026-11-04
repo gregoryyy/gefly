@@ -1080,6 +1080,268 @@
         "reviewer": "Codex glide_housekeeping (independent of implementation)",
         "independent": true
       }
+    },
+    {
+      "id": "map-terrain-observation",
+      "mode": "recorded_run",
+      "revision": "18e52fe0697eff6d8dccb3a450d63977f24cee5a + recorded working-tree source pins",
+      "procedure": "Actual official-vector provider, whole-scene same-pose comparison, blocked-service fallback and airport/replay browser checks, plus scenery unit tests; commands/stdout and frozen source hashes are in the result. Catalog inspection does not rerun them.",
+      "scope": "Actual label-free official map cartography on the existing 3D terrain and independent 2D background; bounded regional rendering, fallback and paused-state isolation.",
+      "limitations": [
+        "basemap.de cartography preserves regional map features but is not pixel-identical to TopPlusOpen; the existing raster has baked-in labels.",
+        "Germany vector data and sprites are live upstream editions; the local style is hash-pinned but no complete frozen geography snapshot is claimed.",
+        "The scene comparison uses actual public cartography/photography near the user point, after a short flight to dismiss the start card and then with a fixed paused pose.",
+        "The failure case deliberately uses fixture live WMS pixels, actual bundled starter photographs and a blocked vector service. It tests fallback, not real-service recovery or full world coverage.",
+        "Native physical heights, navigation and flight coefficients are unchanged. Embedded aircraft/runtime closure is not redistributed.",
+        "No global scenery, surveyed runway/obstacle, aircraft-performance, regulatory or training acceptance is claimed; peer remains pending."
+      ],
+      "outcome": "pass",
+      "requirements": [
+        "R-AIRPORT-1",
+        "R-WORLD-3",
+        "R-WORLD-6",
+        "R-DATA-1"
+      ],
+      "inputs": [
+        {
+          "role": "fixture",
+          "path": "studies/e1-browser/results/2026-11-04-map-terrain.json",
+          "sha256": "96e36c0b4b8700a1a0487979ce3cc131df3428a1d1b65e4acb11962ad5ecc001",
+          "pointer": "/runs"
+        },
+        {
+          "role": "build",
+          "path": "studies/e1-browser/results/2026-11-04-map-terrain.json",
+          "sha256": "96e36c0b4b8700a1a0487979ce3cc131df3428a1d1b65e4acb11962ad5ecc001",
+          "pointer": "/build_info"
+        },
+        {
+          "role": "environment",
+          "path": "studies/e1-browser/results/2026-11-04-map-terrain.json",
+          "sha256": "96e36c0b4b8700a1a0487979ce3cc131df3428a1d1b65e4acb11962ad5ecc001",
+          "pointer": "/environment"
+        },
+        {
+          "role": "evaluator",
+          "path": "app/tests/map-terrain-imagery.browser.mjs",
+          "sha256": "cd58c90811307367df0a3a93b6ece7685f1b7d2d3f1ad71b9781af596353d81e"
+        },
+        {
+          "role": "evaluator",
+          "path": "app/tests/map-terrain.browser.mjs",
+          "sha256": "58e5d46a26695f02b3c7e082086d0b7674985c54c8e6901f815d3a7716116a0e"
+        },
+        {
+          "role": "evaluator",
+          "path": "app/tests/map-terrain-fallback.browser.mjs",
+          "sha256": "b0b37b5c1c63a75a2394244f3db6c1fe94768df905ea4fa23fdbbe55948c615c"
+        },
+        {
+          "role": "criteria",
+          "path": "app/vector-map-server.test.ts",
+          "sha256": "63d96944f952168221f2415c8c2395f1812e30d6e306877f56171926f409de19"
+        },
+        {
+          "role": "source",
+          "path": "docs/input/2026-11-04-map-terrain-texture.md",
+          "sha256": "17653176b8530e49219513d0f422b1596484daa314bcdd79936ce16fdbbd4367"
+        },
+        {
+          "role": "source",
+          "path": "app/vector-map-server.ts",
+          "sha256": "dfd662e966964fd7910b6ddfea883b3cb5d8524b555e53f5944c658ecfcee191"
+        },
+        {
+          "role": "source",
+          "path": "app/src/map-terrain-imagery.ts",
+          "sha256": "a2fdc28c1eb5063d0e76c20b820c3206fdb58a760c22379f0344cede84f757e5"
+        },
+        {
+          "role": "source",
+          "path": "app/src/map-terrain-style.ts",
+          "sha256": "d743b304b55dcf3f30031e5bbc530d1796f014c924b8ef0029206ed06a81d5ef"
+        },
+        {
+          "role": "source",
+          "path": "app/public/mapdata/terrain-style.json",
+          "sha256": "f6ed255e627a3dbc74dcb0a27cc982c75872c20a31d5c7815b717ac5c150b048"
+        },
+        {
+          "role": "source",
+          "path": "app/src/scene.ts",
+          "sha256": "0a2b0e768868a07064cdcf0d5b8a3956ecdd42e22130eea86286cc78ef28ce4a"
+        },
+        {
+          "role": "source",
+          "path": "app/src/practice-map.ts",
+          "sha256": "ee864855a96ea3d4294341154e8223451d74958ec59a8cc7b011f0b1059bb632"
+        },
+        {
+          "role": "source",
+          "path": "app/scenery-server.ts",
+          "sha256": "0e3a17a95e4f0cdee222a9fe74fb385079df35c7382e668691b22e3906739250"
+        }
+      ],
+      "unavailableRoles": [
+        {
+          "role": "model",
+          "reason": "Embedded aircraft/runtime and complete live vector/sprite edition closure are not redistributed. This bounded run observation does not establish full world/aircraft fidelity or immutable geography."
+        }
+      ],
+      "notApplicableRoles": [],
+      "dependsOn": [],
+      "result": {
+        "path": "studies/e1-browser/results/2026-11-04-map-terrain.json",
+        "sha256": "96e36c0b4b8700a1a0487979ce3cc131df3428a1d1b65e4acb11962ad5ecc001",
+        "assertions": [
+          {
+            "pointer": "/runs/provider/result/result",
+            "equals": "pass"
+          },
+          {
+            "pointer": "/runs/provider/result/observations/real/first/visible",
+            "equals": 262144
+          },
+          {
+            "pointer": "/runs/provider/result/observations/real/first/colors",
+            "equals": 4410
+          },
+          {
+            "pointer": "/runs/scene/result/result",
+            "equals": "pass"
+          },
+          {
+            "pointer": "/runs/scene/result/shown/mapTerrain",
+            "equals": "ready"
+          },
+          {
+            "pointer": "/runs/fallback/result/result",
+            "equals": "pass"
+          },
+          {
+            "pointer": "/runs/unit/passed",
+            "equals": 12
+          }
+        ]
+      }
+    },
+    {
+      "id": "map-terrain-scoped-review",
+      "mode": "manual_review",
+      "revision": "18e52fe0697eff6d8dccb3a450d63977f24cee5a + recorded working-tree source pins",
+      "procedure": "Independent proxy units, actual official provider rendering, retained-style comparison and source review; final scene/fallback/browser output and pixel captures inspected. Report separates quality and criterion outcomes and renews affected main-integration coverage.",
+      "scope": "Regional map texture without labels, normal 2D background, fixed-source safety, resource bounds, fallback and visual-only boundary. Reviewer research prose and root status/catalog/result records are outside independent implementation acceptance.",
+      "limitations": [
+        "Whole-scene suites were run by root; the independent reviewer inspected their outputs and visible captures.",
+        "Global coverage, all-device performance, upstream recovery, surveyed geometry and aircraft/training acceptance remain unclaimed; external peer pending."
+      ],
+      "outcome": "pass",
+      "requirements": [
+        "R-AIRPORT-1",
+        "R-WORLD-3",
+        "R-WORLD-6",
+        "R-DATA-1"
+      ],
+      "inputs": [
+        {
+          "role": "fixture",
+          "path": "studies/e1-browser/results/2026-11-04-map-terrain.json",
+          "sha256": "96e36c0b4b8700a1a0487979ce3cc131df3428a1d1b65e4acb11962ad5ecc001",
+          "pointer": "/runs"
+        },
+        {
+          "role": "build",
+          "path": "studies/e1-browser/results/2026-11-04-map-terrain.json",
+          "sha256": "96e36c0b4b8700a1a0487979ce3cc131df3428a1d1b65e4acb11962ad5ecc001",
+          "pointer": "/build_info"
+        },
+        {
+          "role": "environment",
+          "path": "studies/e1-browser/results/2026-11-04-map-terrain.json",
+          "sha256": "96e36c0b4b8700a1a0487979ce3cc131df3428a1d1b65e4acb11962ad5ecc001",
+          "pointer": "/environment"
+        },
+        {
+          "role": "evaluator",
+          "path": "app/tests/map-terrain-imagery.browser.mjs",
+          "sha256": "cd58c90811307367df0a3a93b6ece7685f1b7d2d3f1ad71b9781af596353d81e"
+        },
+        {
+          "role": "evaluator",
+          "path": "app/tests/map-terrain.browser.mjs",
+          "sha256": "58e5d46a26695f02b3c7e082086d0b7674985c54c8e6901f815d3a7716116a0e"
+        },
+        {
+          "role": "evaluator",
+          "path": "app/tests/map-terrain-fallback.browser.mjs",
+          "sha256": "b0b37b5c1c63a75a2394244f3db6c1fe94768df905ea4fa23fdbbe55948c615c"
+        },
+        {
+          "role": "criteria",
+          "path": "app/vector-map-server.test.ts",
+          "sha256": "63d96944f952168221f2415c8c2395f1812e30d6e306877f56171926f409de19"
+        },
+        {
+          "role": "source",
+          "path": "docs/input/2026-11-04-map-terrain-texture.md",
+          "sha256": "17653176b8530e49219513d0f422b1596484daa314bcdd79936ce16fdbbd4367"
+        },
+        {
+          "role": "source",
+          "path": "app/vector-map-server.ts",
+          "sha256": "dfd662e966964fd7910b6ddfea883b3cb5d8524b555e53f5944c658ecfcee191"
+        },
+        {
+          "role": "source",
+          "path": "app/src/map-terrain-imagery.ts",
+          "sha256": "a2fdc28c1eb5063d0e76c20b820c3206fdb58a760c22379f0344cede84f757e5"
+        },
+        {
+          "role": "source",
+          "path": "app/src/map-terrain-style.ts",
+          "sha256": "d743b304b55dcf3f30031e5bbc530d1796f014c924b8ef0029206ed06a81d5ef"
+        },
+        {
+          "role": "source",
+          "path": "app/public/mapdata/terrain-style.json",
+          "sha256": "f6ed255e627a3dbc74dcb0a27cc982c75872c20a31d5c7815b717ac5c150b048"
+        },
+        {
+          "role": "source",
+          "path": "app/src/scene.ts",
+          "sha256": "0a2b0e768868a07064cdcf0d5b8a3956ecdd42e22130eea86286cc78ef28ce4a"
+        },
+        {
+          "role": "source",
+          "path": "app/src/practice-map.ts",
+          "sha256": "ee864855a96ea3d4294341154e8223451d74958ec59a8cc7b011f0b1059bb632"
+        },
+        {
+          "role": "source",
+          "path": "app/scenery-server.ts",
+          "sha256": "0e3a17a95e4f0cdee222a9fe74fb385079df35c7382e668691b22e3906739250"
+        }
+      ],
+      "unavailableRoles": [
+        {
+          "role": "model",
+          "reason": "Embedded aircraft/runtime and complete live vector/sprite edition closure are not redistributed. This bounded run observation does not establish full world/aircraft fidelity or immutable geography."
+        }
+      ],
+      "notApplicableRoles": [],
+      "dependsOn": [
+        "map-terrain-observation"
+      ],
+      "result": {
+        "path": "docs/reviews/2026-11-04-map-terrain.md",
+        "sha256": "db613cca9afc0260d0e72156a272ce64b8775b67c46fd8df3858828265b49604",
+        "assertions": []
+      },
+      "review": {
+        "author": "Codex root, glide_cases and glide_model",
+        "reviewer": "Codex glide_housekeeping (independent of implementation)",
+        "independent": true
+      }
     }
   ],
   "criteria": [

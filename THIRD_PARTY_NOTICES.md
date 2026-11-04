@@ -273,3 +273,16 @@ snapshot. Its manifest retains source commit, timestamp and checksum; see the
 [COM source note](docs/research/2026-11-03-airport-com-directory.md). It is not current
 operational aeronautical information. Original rendering code remains GPL-3.0-or-later;
 source data rights remain separate.
+
+
+## Label-free official terrain cartography
+
+`app/public/mapdata/terrain-style.json` is adapted from basemap.de Web Colour
+style 6.0.0, © GeoBasis-DE / BKG (2026), under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Text/symbol and hidden
+extrusion layers are omitted; retained fill/line/circle cartography is unchanged.
+Source hash, exact changes, upstream terms and live vector/sprite endpoints are in
+[the asset note](app/public/mapdata/terrain-style-README.md). Runtime cartography
+is rendered onto the existing terrain, with linked attribution visible in the
+scene. Data licensing is separate from Gefly code. No aircraft model or commercial
+map subscription is added.

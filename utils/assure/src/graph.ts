@@ -111,7 +111,9 @@ export function buildGraph(snapshot: Snapshot): Graph {
       catch { problem('invalid-json', path, 'Cannot parse JSON input', [path]); continue; }
       let fields = 0;
       const walk = (item: unknown, pointer: string, parent?: string, depth = 0) => {
-        if (++fields > 12000 || depth > 48) throw new Error('JSON traversal limit');
+        // The imported regional map style has 15,988 nodes. Keep extraction
+        // bounded while retaining every field instead of excluding that asset.
+        if (++fields > 20000 || depth > 48) throw new Error('JSON traversal limit');
         const id = `${path}#${pointer}`;
         merge({ kind: 'object', id, source: id, hash: sha256(canonical(item)), attrs: { scope: 'JSON pointer; value not validated by graph', file: path, pointer } });
         add({ kind: 'object', id }, 'part-of', { kind: 'object', id: parent ?? path }, id, 'derived');

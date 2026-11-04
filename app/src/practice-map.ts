@@ -80,12 +80,12 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   layers.className = 'practice-map-layers';
   layers.setAttribute('role', 'group');
   layers.setAttribute('aria-label', 'Map layers');
-  const layerButtons = ['Map', 'Aerial', 'NAV aids', 'Vector'].map((label, index) => {
+  const layerButtons = ['Map', 'Aerial', 'NAV aids', 'Map terrain'].map((label, index) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.textContent = label;
     button.disabled = true;
-    button.setAttribute('aria-label', ['Show public map', 'Show aerial imagery', 'Show navigation aids', 'Show vector map and terrain'][index]);
+    button.setAttribute('aria-label', ['Show public map', 'Show aerial imagery', 'Show navigation aids', 'Use map without labels as terrain texture'][index]);
     button.setAttribute('aria-pressed', String(index === 0 || index === 2));
     layers.append(button);
     return button;
@@ -240,27 +240,22 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   }
 
   function setAerial(value: boolean): void {
-    caption.textContent = value ? 'Public aerial imagery · capture dates vary · terrain and navigation unchanged.' : 'Southern Germany public map · community snapshot, not a navigation chart.';
-    vector = false; vectorLayer.setAttribute("aria-pressed", "false");
-    if (ready) for (const id of ["vector-land", "vector-lines"]) map?.setLayoutProperty(id, "visibility", "none");
-    if (ready) map?.setLayoutProperty("basemap", "visibility", "visible");
     aerial = value;
+    updateLayerCaption();
     mapLayer.setAttribute('aria-pressed', String(!value));
     aerialLayer.setAttribute('aria-pressed', String(value));
     viewport.setAttribute('aria-label', `North-up ${value ? 'aerial imagery' : 'public map'} and recorded flight path`);
     if (ready) map?.setLayoutProperty('imagery', 'visibility', value ? 'visible' : 'none');
   }
 
+  function updateLayerCaption(): void {
+    caption.textContent = `${aerial ? 'Public aerial imagery · capture dates vary.' : 'Southern Germany public map · not a navigation chart.'}${vector ? ' Terrain: map without labels.' : ''}`;
+  }
+
   function setVector(enabled: boolean): void {
     vector = enabled;
     vectorLayer.setAttribute('aria-pressed', String(enabled));
-    caption.textContent = enabled ? 'Vector coverage: EDFE immediate surroundings only · © OpenStreetMap contributors · ODbL · terrain and navigation unchanged.' : 'Southern Germany public map · community snapshot, not a navigation chart.';
-    if (!ready || !map) return;
-    if (!enabled) { setAerial(aerial); return; }
-    mapLayer.setAttribute('aria-pressed', 'false'); aerialLayer.setAttribute('aria-pressed', 'false');
-    map.setLayoutProperty('basemap', 'visibility', 'none'); map.setLayoutProperty('imagery', 'visibility', 'none');
-    for (const id of ['vector-land', 'vector-lines']) map.setLayoutProperty(id, 'visibility', 'visible');
-    viewport.setAttribute('aria-label', 'OpenStreetMap vector scenery · EDFE region only · public physical terrain independent');
+    updateLayerCaption();
   }
 
   // All points remain in GPU layers; only a bounded set of nearby labels uses DOM.
@@ -339,8 +334,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   };
 
   listen(vectorLayer, () => { const enabled = !vector; setVector(enabled); options.onVectorChange?.(enabled); });
-  listen(mapLayer, () => { setAerial(false); options.onVectorChange?.(false); });
-  listen(aerialLayer, () => { setAerial(true); options.onVectorChange?.(false); });
+  listen(mapLayer, () => { setAerial(false); });
+  listen(aerialLayer, () => { setAerial(true); });
   listen(navigationLayer, () => {
     navigationVisible = !navigationVisible;
     navigationLayer.setAttribute('aria-pressed', String(navigationVisible));
@@ -455,7 +450,6 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       sources: {
         basemap: { type: 'raster', tiles: ['/scenery/map/{z}/{x}/{y}.png'], tileSize: 256, minzoom: 5, maxzoom: 16, bounds: [...AIRFIELD_BOUNDS] },
         imagery: { type: 'raster', tiles: ['/scenery/imagery/{z}/{x}/{y}.png'], tileSize: 512, minzoom: 7, maxzoom: 15, bounds: [8, 49, 10, 50.75] },
-        'airport-vector': { type: 'geojson', data: '/airports/scenery/edfe-vector.geojson' },
         'recorded-path': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
         airfields: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
         'navigation-aids': { type: 'geojson', data: navigationData },
@@ -464,8 +458,6 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
         { id: 'background', type: 'background', paint: { 'background-color': '#162530' } },
         { id: 'basemap', type: 'raster', source: 'basemap', paint: { 'raster-fade-duration': 0 } },
         { id: 'imagery', type: 'raster', source: 'imagery', layout: { visibility: 'none' }, paint: { 'raster-fade-duration': 0 } },
-        { id: 'vector-land', type: 'fill', source: 'airport-vector', filter: ['==', ['geometry-type'], 'Polygon'], layout: { visibility: 'none' }, paint: { 'fill-color': ['match', ['get', 'kind'], 'water', '#5488a1', 'forest', '#426d4b', 'building', '#b7a89b', 'runway', '#34383b', 'apron', '#858789', 'residential', '#c7b9a7', '#8d9e6f'], 'fill-outline-color': '#68765b' } },
-        { id: 'vector-lines', type: 'line', source: 'airport-vector', filter: ['==', ['geometry-type'], 'LineString'], layout: { visibility: 'none' }, paint: { 'line-color': ['match', ['get', 'kind'], 'water', '#5488a1', 'taxiway', '#9b9b92', 'runway', '#34383b', '#ded5be'], 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1, 16, 5] } },
         { id: 'airfields', type: 'circle', source: 'airfields', paint: {
           'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 2, 13, 5],
           'circle-color': ['match', ['get', 'type'], 'closed', '#858b91', 'heliport', '#e3bc75', '#89cfff'],

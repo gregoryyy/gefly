@@ -337,3 +337,14 @@ dialogs and read-only Review. The rate overlay reports confirmed state rather
 than an unacknowledged command. Reset returns to normal speed; failed/paused
 loading does not create catch-up integration. These controls add no persistence,
 permissions, telemetry or external traffic.
+
+
+The label-free map terrain uses bundled, hash-verified basemap.de style data.
+All text/symbol layers and glyph requests are removed. A fixed BKG-only proxy
+serves canonical Germany XYZ PBF tiles and the known sprite pair; callers cannot
+choose hosts, URLs or filesystem paths. Bounds, MIME types, bytes, concurrency,
+pending work and memory caches are limited. The browser renders these tiles in
+one offscreen MapLibre context with a bounded queue/cache and disposal. Failed
+tiles are transparent over the existing photographs; data service failure does
+not change physical terrain, navigation or native flight state. See the
+[source note](research/2026-11-04-label-free-map-terrain.md) for coverage/rights.

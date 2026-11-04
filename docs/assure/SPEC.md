@@ -140,7 +140,9 @@ errors with a blanket baseline or reinterpret absent evidence as a pass.
 
 The implementation documents the command surface, supported input schemas,
 stable IDs/selectors, hash and canonicalization rules, path containment, traversal
-limits and supported runtimes. Negative fixtures must distinguish an actual
+limits and supported runtimes. JSON pointer extraction permits at most 20,000
+nodes per file and depth 48, including the imported regional map style; exceeding
+either bound remains an error. Negative fixtures must distinguish an actual
 content change from mere time/author metadata where the schema says these are
 non-substantive. A fresh accepted record is needed after an affected fix; old
 evidence remains historical and is not silently overwritten.

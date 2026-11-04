@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { createVectorMapMiddleware } from './vector-map-server.ts';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
 const LIMIT = 2 * 1024 * 1024;
@@ -82,6 +83,7 @@ function compose(images: Buffer[], python: string): Promise<Buffer> {
 
 /** Fixed-source, memory-bounded local XYZ proxy. No request parameter becomes a URL or path. */
 export function sceneryMiddleware(options: SceneryOptions = {}) {
+  const vectorMap = createVectorMapMiddleware(options);
   const fetcher = options.fetcher || fetch, python = options.python || 'python3';
   const capacity = Math.max(0, Math.min(32 * 1024 * 1024, options.cacheBytes ?? 32 * 1024 * 1024));
   const network = new Semaphore(4), composers = new Semaphore(2), jobs = new Semaphore(8);
@@ -110,6 +112,7 @@ export function sceneryMiddleware(options: SceneryOptions = {}) {
   }
   return (req: IncomingMessage, res: ServerResponse, next: () => void): void => {
     const url = req.url || '';
+    if (url.startsWith('/scenery/vector/')) { vectorMap(req, res, next); return; }
     if (!url.startsWith('/scenery/')) { next(); return; }
     const match = /^\/scenery\/(map|imagery)\/(\d{1,2})\/(\d{1,6})\/(\d{1,6})\.(png|jpg)$/.exec(url);
     if (!match || !['GET', 'HEAD'].includes(req.method || '') || match[5] !== 'png') { res.writeHead(404).end(); return; }

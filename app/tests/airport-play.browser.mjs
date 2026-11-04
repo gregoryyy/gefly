@@ -49,7 +49,7 @@ try {
   await page.locator('#vector-scenery').check();await page.locator('#practice-papi').check();
   await page.locator('#settings-close').click();
   await page.waitForFunction(()=>document.querySelector('#scene').dataset.sceneryMode==='vector'&&document.querySelector('#scene').dataset.airportScenery==='ready');
-  assert.equal(await page.getByRole('button',{name:'Show vector map and terrain'}).getAttribute('aria-pressed'),'true');
+  assert.equal(await page.getByRole('button',{name:'Use map without labels as terrain texture'}).getAttribute('aria-pressed'),'true');
   await page.locator('#scene').focus();await page.keyboard.press('v');await page.keyboard.press('Space');
   await page.waitForFunction(()=>document.querySelector('#status').textContent==='Flying');
   await mkdir(new URL('../../output/flight/',import.meta.url),{recursive:true});

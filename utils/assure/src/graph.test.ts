@@ -75,6 +75,21 @@ test('AS1 code files and lexical test identities are opaque and never executed',
   assert(graph.facts.some((f) => f.relation === 'verifies' && f.object.id === 'R-DEMO-1'));
 });
 
+test('AS1 large map-style JSON retains all pointers within bounded field/depth limits', () => {
+  const within = buildGraph(fixture({ 'data/style.json': JSON.stringify(Array(19999).fill(0)) }));
+  assert(!within.problems.some((p) => p.check === 'json-limit'));
+  assert(within.nodes.some((n) => n.id === 'data/style.json#/19998'));
+  const beyond = buildGraph(fixture({ 'data/style.json': JSON.stringify(Array(20000).fill(0)) }));
+  assert(beyond.problems.some((p) => p.check === 'json-limit'));
+  let deep: unknown = 0;
+  for (let i = 0; i < 48; i++) deep = { nested: deep };
+  assert(!buildGraph(fixture({ 'data/deep.json': JSON.stringify(deep) }))
+    .problems.some((p) => p.check === 'json-limit'));
+  deep = { nested: deep };
+  assert(buildGraph(fixture({ 'data/deep.json': JSON.stringify(deep) }))
+    .problems.some((p) => p.check === 'json-limit'));
+});
+
 test('AS1 merge commit changes remain connected and legacy invalid trailers are warnings', () => {
   const snapshot = fixture({ 'src/only-at-merge.cpp': 'int answer = 42;\n' });
   snapshot.commits = [{ hash: 'b'.repeat(40), subject: 'Merge with unique edit', time: '2026-11-01T00:00:00Z', refs: 'TODO 1.1, R-LEGACY-999, unknown-token' }];

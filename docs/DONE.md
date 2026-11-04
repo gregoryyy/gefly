@@ -3,6 +3,44 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-04 02:42 — Regional map texture without terrain labels
+
+TODO: 2.0.66.1; R-AIRPORT-1/R-WORLD-3/R-WORLD-6/R-DATA-1.
+Agent: Codex orchestrator scene/map integration; glide_cases implemented the
+MapLibre imagery provider, glide_model the fixed-source proxy/style, and
+glide_housekeeping source research and independent quality/validation review.
+
+**Implementation notes**
+
+Replace the sparse EDFE-only Vector landscape with official regional map content
+rendered without symbol/text layers onto the existing physical terrain. Preserve
+normal Map/Aerial background in the flight map; retain photography beneath missing
+or loading cartographic tiles. Use one bounded offscreen renderer, cached fixed
+BKG tile/sprite routes, a pinned derived style and visible linked attribution.
+Actual official tiles outside EDFE and settled same-pose 3D comparisons show roads,
+land cover, water and town footprints without labels. Provider eight-group and
+proxy six-group independent checks pass; whole-scene comparison, failed-service
+fallback, native-state isolation, existing airport/replay and build checks pass.
+Integrate main 18e52fe, preserving all exercise tests, selected-state forwarding
+and complete shared records; renew affected browser/build/review evidence.
+[Review](reviews/2026-11-04-map-terrain.md) records scoped outcomes. Versioned
+run observations retain exact source hashes and live-data limitations.
+Retain full JSON-pointer extraction for the imported 15,988-node style with a
+20,000-node bound; preserve depth 48 and test both overflow boundaries.
+
+**Deviations**
+
+The source is basemap.de vector cartography, not an erased TopPlusOpen raster.
+Initial loading can show photography; upstream recovery and global/detail/aircraft
+acceptance are unclaimed. Germany map coverage does not extend the physical
+terrain region. The native model and terrain elevations are unchanged. Peer pending.
+
+**Insights**
+
+A mode toggle that hides the regional base cannot be satisfied by a small airport
+extract. Verify actual rendered pixels and settled foreground coverage, not just
+option flags or a few loaded tiles; keep photography as a transparent-layer fallback.
+
 ## 2026-11-04 01:56 — Sensed runway-setup checklist
 
 TODO: 2.1.3; R-PLAY-1/R-TRAIN-4/R-REVIEW-1. Agent: Codex orchestrator
