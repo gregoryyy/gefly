@@ -136,7 +136,7 @@ accounts, personal telemetry, persistence or runtime AI calls are used. Generate
 generic aircraft data stays local and outside the production UI build. The
 UI-only production build is not a published simulator deployment.
 
-Control sensitivity settings, including the 0–100% keyboard/button wheel-brake command gain, are bounded dimensionless gains held only in page memory. They have no persistence or network path, preserve throttle, and leave the declared study roll offset separate. Opening the settings dialog pauses flight and releases held inputs; closing it does not resume automatically. These input preferences do not calibrate or modify aircraft physics.
+Control sensitivity settings, including the 0–100% keyboard/button wheel-brake command gain, are bounded dimensionless gains held only in page memory. They have no persistence or network path, preserve throttle, and leave the declared study roll offset separate and initially zero. Opening the settings dialog pauses flight and releases held inputs; closing it does not resume automatically. These input preferences do not calibrate or modify aircraft physics.
 
 The parking-brake latch is separate page-session input state. A guarded N/button
 toggle requests full bounded wheel braking independently of the momentary brake

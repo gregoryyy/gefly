@@ -3,6 +3,52 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-05 17:51 — Diagnose unstable controls and publish bounded draft repair PR86
+
+TODO: 2.0.153 remains open for the overall handling report; R-INPUT-1/R-SIM-5/R-SIM-11.
+Agent: Codex orchestrator; code1 `control_native` native/handler diagnostics;
+code2 `control_input` default/input tests; `control_housekeeping` primary-source
+notes; independent `quality` and `panel_validate_final`; external Claude peer.
+
+**Implementation notes**
+
+[PR86](https://github.com/gregoryyy/gefly/pull/86) is an independent draft from
+main700dd53, outside the accumulated terrain/map stack. Fresh launches explicitly
+unload the generic model's80lb external station at12ft right, paired with zero
+initial fixed aileron correction. Default rudder is independent; the fixed link
+and legacy offset remain explicit options. Custom/recorded loading and legacy
+continuation retain their policies. No aircraft coefficients or binary changed.
+See [native diagnosis](research/2026-11-05-control-stability-native.md),
+[complete prior/new comparison](research/2026-11-05-control-stability-app-comparison.md),
+[quality](reviews/2026-11-05-control-stability-quality.md),
+[validation](reviews/2026-11-05-control-stability-validation.md) and
+[external peer findings](reviews/2026-11-05-control-stability-peer.md).
+
+Isolated branch408Node+12Python tests pass with zero skips; production build3.19s.
+Actual-browser six control groups and three loading/restart/fuel checks pass;
+existing native loading checks pass. Native diagnostic64cases and deterministic
+repeat, plus five production-handler/native compatibility cases, complete.
+The sweep checks declared trim/finite/repeat conditions, not calibrated handling
+thresholds. SharedCI passes with nine of23optional JSBSim study checks skipped,
+not accepted. Affected assurance and final record checks are run at publication.
+
+**Deviations**
+
+The40-case exact prior/new comparison is mixed:70kt trim-power neutral bank30s
+40.16°→14.12°;90kt trim-power −15.96°→+15.24°;90kt full-power19.83°→35.38°.
+Large-command peak roll rates generally decrease; overall stability is **not
+resolved or accepted**. The110kt matrix fails initialization trim; residual
+drift and actuator hysteresis remain. Executing WASM11a92… differs from stale
+build metadata, so no source-to-binary or C172S fidelity acceptance. Claude CLI
+2.1.308 returned blocked/partial; coverage findings prompted stronger checks,
+and source after its frozen214e289 packet is not externally accepted. Keep draft.
+
+**Insights**
+
+The source zero-offset35°roll-off was not the former app default: the app already
+applied a fixed correction. Removing either asymmetric loading or correction
+alone is inadequate. Independent factor tests and complete application-default
+comparisons answer different questions and neither proves real-aircraft fidelity.
 
 ## 2026-11-05 20:09 — Repair vector terrain loading starvation and safe window retention
 

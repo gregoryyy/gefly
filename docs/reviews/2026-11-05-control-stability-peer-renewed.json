@@ -1,0 +1,24 @@
+{
+  "status": "blocked",
+  "accepted": false,
+  "author_provider": "codex",
+  "reviewer_provider": "claude",
+  "packet": {
+    "path": "output/flight/control-peer-final-packet.md",
+    "sha256": "0ae9571a948b07ed2335ff727de12760ef2711c10255484e869c630674be048e",
+    "revision": "7512d608c86784bf8e67ca77ab8f99ae9ba1e2b8"
+  },
+  "cli": {
+    "executable": "/opt/homebrew/bin/claude",
+    "version": "2.1.308"
+  },
+  "model_evidence": [
+    "unknown"
+  ],
+  "review": null,
+  "limitations": [
+    "CLI routing and returned model names are evidence, not backend attestation.",
+    "Packet review does not independently execute the packet's test commands."
+  ],
+  "diagnostic": "reviewer_timeout"
+}

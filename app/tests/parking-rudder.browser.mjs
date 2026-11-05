@@ -54,6 +54,16 @@ try {
   };
   const parked = async value => assert.equal(await parking.getAttribute('aria-pressed'), String(value));
   const initial = await stats();
+  const initialState = await page.evaluate(() => window.groundStates.at(-1));
+  assert.equal(initialState.payload_external_kg, 0, 'fresh flight unloads the off-centre legacy external station');
+  await scene.focus(); await page.keyboard.down('ArrowRight');
+  assert.equal(await page.locator('#roll-control').textContent(), '0.45', 'normal roll command has no fixed study bias');
+  assert.equal(await page.locator('#rudder-control').textContent(), '0.00', 'fresh roll input does not also command rudder');
+  await page.keyboard.up('ArrowRight');
+  assert.equal(await page.locator('#roll-control').textContent(), '0.00', 'release returns aileron to true neutral');
+  assert.equal(await page.locator('#rudder-control').textContent(), '0.00');
+  await frozen(initial);
+  checks.push('fresh native loading excludes the asymmetric external station; independent roll/release commands have zero bias and preserve paused physics');
   await parked(false);
   const positions = await page.locator('.brake-controls').evaluate(element => {
     const wheel = element.querySelector('#wheel-brakes').getBoundingClientRect(), park = element.querySelector('#parking-brake').getBoundingClientRect();
@@ -68,7 +78,7 @@ try {
   await parked(true); await frozen(initial);
   await page.locator('#controls-settings').click();
   const link = page.getByLabel('Link rudder to aileron', { exact: true });
-  assert.equal(await link.isChecked(), true, 'rudder and nosewheel linking starts enabled');
+  assert.equal(await link.isChecked(), false, 'rudder and aileron start independent');
   await link.focus(); await page.keyboard.press('n'); await parked(true);
   await page.locator('#settings-close').click();
   for (const key of ['Shift+n', 'Control+n', 'Alt+n', 'Meta+n']) { await scene.focus(); await page.keyboard.press(key); await parked(true); }
@@ -96,7 +106,7 @@ try {
   await page.locator('#settings-default').click(); assert.equal(await link.isChecked(), true);
   await frozen(beforeOptions); await page.locator('#settings-close').click();
   await startOrResume(page);
-  const yokeBox=await scene.boundingBox(), yokeX=yokeBox.x+yokeBox.width*.65, yokeY=yokeBox.y+yokeBox.height*.5;
+  const yokeBox=await scene.boundingBox(), yokeX=yokeBox.x+yokeBox.width*.5, yokeY=yokeBox.y+yokeBox.height*.5;
   await page.mouse.click(yokeX,yokeY);
   await page.waitForFunction(()=>document.querySelector('#scene').dataset.pointerMode==='yoke');
   await page.mouse.move(yokeX+80,yokeY);
@@ -104,7 +114,7 @@ try {
   await page.mouse.move(yokeX-80,yokeY);
   await page.waitForFunction(()=>window.groundInputs.at(-1)?.aileron<0&&window.groundStates.at(-1)?.rudder_cmd_norm>.05);
   await page.mouse.move(yokeX,yokeY);
-  await page.waitForFunction(()=>window.groundStates.at(-1)?.rudder_cmd_norm===0&&window.groundStates.at(-1)?.aileron_cmd_norm!==0);
+  await page.waitForFunction(()=>window.groundStates.at(-1)?.rudder_cmd_norm===0&&window.groundStates.at(-1)?.aileron_cmd_norm===0);
   await page.mouse.click(yokeX,yokeY);await page.waitForFunction(()=>document.querySelector('#scene').dataset.pointerMode==='off');
   await scene.focus(); await page.keyboard.down('ArrowRight');
   await page.waitForFunction(() => window.groundInputs.at(-1)?.rudder === -.45 && window.groundStates.at(-1)?.rudder_cmd_norm === -.45);
@@ -112,14 +122,14 @@ try {
   await page.waitForFunction(() => window.groundInputs.at(-1)?.rudder === .35 && window.groundStates.at(-1)?.rudder_cmd_norm === .35);
   await page.keyboard.up('q'); await page.waitForFunction(() => window.groundInputs.at(-1)?.rudder === -.45);
   await page.keyboard.up('ArrowRight');
-  await page.waitForFunction(() => window.groundInputs.at(-1)?.rudder === 0 && window.groundInputs.at(-1)?.aileron !== 0);
+  await page.waitForFunction(() => window.groundInputs.at(-1)?.rudder === 0 && window.groundInputs.at(-1)?.aileron === 0);
   await page.keyboard.down('ArrowLeft'); await page.waitForFunction(() => window.groundStates.at(-1)?.rudder_cmd_norm === .45);
   await page.keyboard.up('ArrowLeft');
   await page.locator('#controls-settings').click(); await link.uncheck(); await page.locator('#settings-close').click();
   await startOrResume(page); await scene.focus(); await page.keyboard.down('ArrowRight');
   await page.waitForFunction(() => window.groundInputs.at(-1)?.aileron > 0 && window.groundStates.at(-1)?.aileron_cmd_norm > 0 && window.groundStates.at(-1)?.rudder_cmd_norm === 0);
   await page.keyboard.up('ArrowRight'); await page.locator('#pause').click(); await page.waitForTimeout(100);
-  checks.push('link defaults on, survives sensitivity presets, sends correctly signed native rudder from actual touchpad and keyboard bank, gives explicit Q priority and excludes the centered study offset; switching off restores independent rudder');
+  checks.push('link defaults off, explicit opt-in survives sensitivity presets, sends correctly signed native rudder from actual touchpad and keyboard bank, gives explicit Q priority and release returns to true neutral; switching off restores independent rudder');
 
   await scene.focus(); await page.keyboard.press('n'); await parked(true);
   await page.keyboard.press('r'); await page.locator('#flight-review').waitFor({ state: 'visible' });

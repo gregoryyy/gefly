@@ -37,7 +37,7 @@ import { autopilotCommand, engineFields, engineSwitchFields } from './engine.js'
 import { groundCollisionContact, collisionRecord, collisionStateFields, contactOutcome, unacknowledgedContact, EMPTY_COLLISION } from './collision.js';
 import { createKap140, validKapCommand, validKapState } from './kap140.js';
 import { resumeProblem, resumeValues } from './continue-flight.js';
-import { validLoading, loadingValues, loadingFromState, loadingFields, LOADING_FIELDS } from './loading.js';
+import { FLIGHT_DEFAULT_LOADING, validLoading, loadingValues, loadingFromState, loadingFields, LOADING_FIELDS } from './loading.js';
 import { createAltitudeAlert } from './altitude-alert.js';
 import { DEFAULT_NAVIGATION, NAVIGATION_FIELDS, validNavigation, navigationSignal, loadNavigationPackage } from './navigation.js';
 import { validSimulationRate, pacedStepMilliseconds } from './simulation-rate.js';
@@ -622,7 +622,7 @@ async function onInit(msg) {
     if(msg.landing_preset!==undefined||msg.runway_start||!msg.kap140||typeof M._gf_init_resume!=='function') {fail('Continuation requires the updated native engine and exclusive resume initialization.');return;}
     if((resume.terrain_profile===1)!==(msg.terrain===true)){fail('Continuation terrain profile does not match the selected frame.');return;}
   }
-  const loading=resume?loadingFromState(resume):msg.loading;
+  const loading=resume?loadingFromState(resume):(msg.loading??FLIGHT_DEFAULT_LOADING);
   if(resume&&LOADING_FIELDS.some(key=>Object.hasOwn(resume,key))&&!loading){fail('Recorded loading group is incomplete or invalid.');return;}
   if(msg.loading!==undefined&&!validLoading(msg.loading)){fail('init: invalid loading configuration');return;}
   if(loading&&typeof M._gf_configure_loading!=='function'){fail('Loading requires the updated native engine.');return;}

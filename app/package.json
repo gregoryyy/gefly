@@ -17,6 +17,7 @@
     "test:circuit-guide": "node --test src/practice-circuit.test.ts && node tests/practice-circuit.browser.mjs",
     "test:landmarks": "node --test src/landmark-data.test.ts vector-map-server.test.ts && node tests/landmark-labels.browser.mjs",
     "test:scenery-cache": "node --test src/scenery-coverage.test.ts src/landmark-data.test.ts && node tests/scenery-cache.browser.mjs",
+    "test:control-stability": "node ../studies/e1-browser/sim/control-stability-native.mjs && node ../studies/e1-browser/sim/control-stability-worker.mjs && node tests/parking-rudder.browser.mjs"
     "test:world-fallback": "node ../studies/e1-browser/sim/world-terrain-worker.mjs && node tests/world-fallback.browser.mjs"
   },
   "dependencies": {

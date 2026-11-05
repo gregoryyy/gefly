@@ -43,7 +43,7 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
           <label class="control-settings-toggle" for="coordinated-rudder">
             <input type="checkbox" id="coordinated-rudder" aria-describedby="coordinated-rudder-note">Link rudder to aileron
           </label>
-          <p class="control-settings-note" id="coordinated-rudder-note">Bank input also steers rudder and nosewheel. Q/W takes priority.</p>
+          <p class="control-settings-note" id="coordinated-rudder-note">Optional fixed bank-to-rudder/nosewheel link, off by default; not calibrated turn coordination. Q/W takes priority.</p>
         </div>
         <div>
           <label class="control-settings-toggle" for="centered-touchpad">

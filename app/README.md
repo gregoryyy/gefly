@@ -191,12 +191,19 @@ Q/W—and linked roll input when enabled—also steer on the ground through the
 existing gear model. No new steering coefficients or aircraft calibration are
 introduced.
 
-The **roll correction** is a constant left aileron command: its default −0.109375
-means about **10.9% of full left command**. It counters roll drift observed in the
-generic study model; it is not the yoke position, a trim tab or an aircraft trim
-specification. Select **Off · 0%** to compare unassisted behavior, or **Study default** to restore the correction. Sensitivity changes
-do not scale it. It is suspended while the autopilot controls roll, then its
-configured value returns after disconnect.
+Normal flights start with **zero roll correction** and no legacy external load.
+The generic source model contains an 80 lb external station 12 ft to the right;
+normal launches unload it while retaining the source seating and fuel values.
+Weight & fuel still exposes it for deliberate experiments. Recorded loading and
+legacy continuation keep their declared historical policy.
+
+The **roll correction** remains an optional constant aileron command, not aircraft
+trim. **Off · 0%** restores neutral; **Legacy study offset** selects the old
+−0.109375 fixture value. That value was specific to the asymmetric study setup
+and can cause substantial roll in normal loading. Sensitivity does not scale it;
+AP suspends it and disconnect restores the selected value. Rudder linking is an
+input convenience, not calibrated turn coordination. Native actuator hysteresis,
+residual untrimmed drift and failed high-speed trim remain model limitations.
 
 Q is left rudder and W right rudder. Positive `rudder_cmd_norm` yaws left in the
 pinned generic model.
