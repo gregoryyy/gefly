@@ -3,6 +3,43 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+
+## 2026-11-05 20:09 — Repair vector terrain loading starvation and safe window retention
+
+TODO: 2.0.154; R-WORLD-11/R-WORLD-9/R-SIM-2/R-REVIEW-1.
+Agent: Codex orchestrator; code1 `map_load_renderer` provider implementation;
+code2 `map_load_imagery` scene/imagery and runtime diagnostics;
+`map_load_housekeeping` research; independent `quality` and `panel_validate_final`.
+
+**Implementation notes**
+
+Two source-aligned geographic roots replace 4050 eager roots. Bounded immutable
+source history and unchanged-geometry checks retain live provider/meshes across
+safe native-window updates; unsafe changes rebuild conservatively. Review and
+empty-install epochs reject live reuse. See the [performance evidence](research/2026-11-05-vector-terrain-performance.md).
+
+The legacy foundation port is source commit641e09c. Its27 provider/streamed tests
+and TypeScript check pass. Final sharedCI passes with 9 of 23 optional JSBSim study
+checks skipped and one Linux-only repository-tool process-state case skipped
+on macOS, not accepted. Later integrated world30 NY runtime observations
+are mechanism evidence, not an actual browser run of this PR85 legacy port.
+Source-metadata caching and imagery backpressure remain later integration slices.
+
+**Deviations**
+
+Conservative source-change, feather/coarse-preview or capacity rebuilds remain.
+Complete native New Flight/Review lifecycle, all-world GPU heights and device/
+network performance are not accepted by these bounded tests. Native binary build
+provenance remains unverified. Cross-provider performance review is peer pending;
+this is a draft increment, not milestone/physics acceptance.
+
+**Insights**
+
+Fast native movement exposed full globe invalidation; mesh preparation could not
+catch up even when map requests succeeded. Retain safe geometry and measure the
+rendered surface independently of download and CPU-only completion.
+
+
 ## 2026-11-05 17:09 — Reconstruct the modular regional/world terrain foundation
 
 TODO: 2.0.120, 2.0.135, 2.0.141; R-WORLD-10/R-WORLD-11.

@@ -331,3 +331,5 @@ models first), R-AUTHOR-1 (LLM-created flight experiences), R-COMMUNITY-1 and
 R-OPEN-1 (free/open-source flight-school community). E9–E11 define their planned
 gates; public deployment, provider integration and regional model construction are
 future tasks, not completed by this requirements update.
+
+- [x] 2.0.154 Repair 3D vector loading starvation and unnecessary live-window globe invalidation with two source-aligned roots, bounded safe updates and strict height/provenance guards. R-WORLD-11/R-WORLD-9/R-SIM-2. [Request](input/2026-11-05-vector-terrain-loading.md); [reload follow-up](input/2026-11-05-vector-terrain-reload.md); [bounded evidence/limits](research/2026-11-05-vector-terrain-performance.md). Conservative source-change/capacity rebuilds and broader fidelity/device gates remain explicit.

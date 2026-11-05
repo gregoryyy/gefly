@@ -483,3 +483,19 @@ stay inside the declared ±89.5-degree flight latitude, while map tiles retain
 WebMercator limits. Review loads only the selected neighborhood, keeps the last
 valid 3D frame during loading and caps its cache; it is not a captured world-state
 recording. Country-specific Swiss/Austrian data is not yet part of the runtime.
+
+## Bounded worldwide terrain rendering
+
+Two 180° geographic roots replace 4050 eager root mesh jobs. Preview grids refine
+to 181 nodes; 180 intervals give2^-L degree spacing, matching legacy native nodes
+at L9. Far terrain stops at L12 and fine coverage at L14, retaining the previous
+finest spacing. This changes rendering only, not the 129² native terrain ABI.
+
+Same-epoch live windows can update a stable provider through strict validation,
+owned 64-grid history and 512-region finest/coarse-preview tracking. Changed
+heights or uncertain cached surfaces conservatively rebuild; completed geometry
+is retained for safe unchanged source cells. Metadata and source credits update
+atomically. Static combined Review inputs remain bounded at 73 and disable live
+mutation; older regional filtering behavior is preserved. Reset/new-flight and
+archived/cached Review contexts prevent live mutation. Review using only
+already-live terrain need not replace the provider. No private Cesium mesh API is used.
