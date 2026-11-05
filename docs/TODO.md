@@ -304,6 +304,8 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 
 - [x] 2.0.155 Predict approaching terrain-window changes and warm the flight-direction corridor using measured ground motion and simulation rate; preserve foreground priority, source validation, bounded residency and reset/Review isolation. R-WORLD-9/R-WORLD-11/R-SIM-2. [Request](input/2026-11-05-predictive-terrain-loading.md).
 
+- [x] 2.0.156 Keep the simulation/replay speed badge visible above the open flight map, preserving map interaction and menu/dialog priority. R-SIM-9/R-UX-2. [Request](input/2026-11-05-speed-overlay-map.md).
+
 - [ ] 2.1 Milestone 2 scope (GAPS Q23, 2026-11-02): circuit flight, sensed checklist items, static scenario briefing, engine/fuel indications in `ind`; text radio in phase 3. Orchestrator dispatches explicit requirement IDs, criteria and disjoint write sets to both coders; starts housekeeping alongside them.
   - [x] 2.1.1 Deliver a bounded EDFE runway-practice briefing and sensed flight-event log: north/right-hand 26 and north/left-hand 08, explicit idle/parked setup, native wheel-contact takeoff/landing observations and ground stop/collision, retained with cursor-correct Review. R-PLAY-1/R-TRAIN-2/R-REVIEW-1. No checklist, circuit grading, official route or complete scenario/weather briefing acceptance; those remain open in 2.1 and 1.5. Peer pending.
   - [x] 2.1.2 Preserve declared EDFE runway context in version-1 JSON recordings; restore the imported briefing/event log from its own trace, keep legacy context unknown, reject malformed metadata and return to the unchanged live flight. R-PLAY-1/R-REVIEW-1. Aircraft/weather provenance, other airports and complete scenario packages remain separate; peer pending.
