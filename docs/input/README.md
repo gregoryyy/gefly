@@ -158,3 +158,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [Startup preloading and full-height interactive map](2026-11-04-startup-preload-and-map-menu.md)
 - [Pointer-anchored panel zoom and reachable lower edge](2026-11-04-panel-bottom-zoom.md)
 - [Map location-type checkbox filters](2026-11-04-map-location-filters.md)
+
+- [2026-11-05 control stability](2026-11-05-control-stability.md) — user reports roll-off, oversensitive steering and oscillation; authorizes analysis, repair and a separate PR.

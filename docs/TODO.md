@@ -327,3 +327,5 @@ models first), R-AUTHOR-1 (LLM-created flight experiences), R-COMMUNITY-1 and
 R-OPEN-1 (free/open-source flight-school community). E9–E11 define their planned
 gates; public deployment, provider integration and regional model construction are
 future tasks, not completed by this requirements update.
+
+- [ ] 2.0.153 Diagnose and repair excessive hands-off roll and steering oscillation with bounded native/input regressions; publish a separate control-stability PR. R-INPUT-1/R-SIM-5/R-SIM-11. [Request](input/2026-11-05-control-stability.md).

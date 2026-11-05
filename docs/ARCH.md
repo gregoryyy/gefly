@@ -447,8 +447,12 @@ claim of measured real-time throughput.
 
 The pinned generic c172x model supplies six point-mass stations, including its
 auxiliary external load, plus 1454 lb empty weight and two 130 lb tanks at the source
-6.6 lb/USgal density. Preserve those defaults rather than silently retuning the
-existing aircraft. `loading.js` defines the shared kg/m³ contract and model/editor
+6.6 lb/USgal density. Preserve these as explicit legacy source defaults. Fresh
+flights use `FLIGHT_DEFAULT_LOADING`: the same seats and fuel with the 80 lb
+external station at 12 ft right unloaded, paired with zero initial study aileron
+offset. The external station remains explicitly configurable; continuation
+restores recorded loading or the historical source default for legacy traces.
+This changes launch configuration, not aerodynamic coefficients. `loading.js` defines the shared kg/m³ contract and model/editor
 bounds; these are not certified C172S limits. Native loading applies before trim
 or runway settling. JSBSim supplies mass, CG, fuel delivery and tank depletion;
 no presentation-side burn model is added. Ignition-off windmilling can still

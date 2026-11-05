@@ -2,6 +2,11 @@
 
 All times are Europe/Berlin. Answers record the author and recording time. New answers go above older answers; strike through earlier answers without deleting them. When resolved, carry the decision into its authoritative document and retain a Resolved line here. A proposal or elapsed waiting time is not a user answer. The orchestrator asks only questions that affect the current work and continues independent tasks.
 
+## Recorded interaction decisions
+
+**2026-11-05 17:35, user request and Codex implementation decision** (Europe/Berlin):
+[Control-stability report](input/2026-11-05-control-stability.md) authorizes diagnosis, repair and a separate PR. Measured generic-source asymmetry is addressed through fresh loading with the external station unloaded and zero initial study correction. Rudder linking becomes opt-in. Explicit custom loading and historical continuation remain available. No aerodynamic coefficient, damping or automatic wings-level assist is introduced; aircraft fidelity and native build provenance remain unverified. R-INPUT-1/R-SIM-11, TODO2.0.153.
+
 ## Resolved questions
 
 ### Q22. Adopt assurance like Propeller?
