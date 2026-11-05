@@ -35,6 +35,8 @@ export class WorldTerrainStream {
   gridAt(lat: number, lon: number): WorldTerrainTile | null;
   quality(lat: number, lon: number): 1 | 2 | 3 | null;
   cancel(): void;
+  cancelPrefetch(): void;
+  prefetch(lat: number, lon: number, prediction: Pick<import('./terrain-prediction.js').TerrainPrediction, 'lat_rad' | 'lon_rad'> | null): Promise<boolean>;
   needsUpdate(lat: number, lon: number): boolean;
   move(lat: number, lon: number): Promise<void>;
 }

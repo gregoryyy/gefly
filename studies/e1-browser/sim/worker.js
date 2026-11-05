@@ -30,6 +30,7 @@ import createJSBSim from './dist/jsbsim.mjs';
 import { loadTerrainPackage, sampleTerrain, sampleTerrainGradient, terrainContainsInterior } from './terrain.js';
 import { loadRegionalManifestOptional, WorldTerrainStream, sampleAtlas, sampleAtlasGradient } from './terrain-stream.js';
 import { loadWorldTerrainPackage } from './world-terrain.js';
+import { createTerrainPrediction } from './terrain-prediction.js';
 import { pressureAltitude_m, indicatedAltitude_m, validSetting } from './altimeter.js';
 import { stallFields, controlFields, cockpitFields, pitchTrimFields, groundFields } from './cockpit.js';
 import { autopilotCommand, engineFields, engineSwitchFields } from './engine.js';
@@ -88,6 +89,7 @@ let untilStep = Infinity;
 let terrainGrid = null;
 let terrainFault = false;
 let terrainStream = null;
+const terrainPrediction = createTerrainPrediction();
 let terrainLoad = null;
 let terrainGeneration = 0;
 let resumeAfterTerrain = false;
@@ -118,7 +120,7 @@ function requestTerrain(lat, lon) {
   if (terrainLoad) return;
   const generation = terrainGeneration, stream = terrainStream;
   resumeAfterTerrain = running;
-  onHalt();
+  onHalt(true, true);
   postMessage({ type: 'terrain-loading', loading: true });
   terrainLoad = stream.move(lat, lon).then(() => {
     if (generation !== terrainGeneration) return;
@@ -461,6 +463,10 @@ function postState() {
     if (!Number.isFinite(msg[k])) { fail(`non-finite state ${k} at step ${stepIndex}`); return false; }
   }
   postMessage(msg);
+  if (running && terrainStream && !terrainLoad) {
+    const focus = terrainPrediction.update(msg, simulationRate);
+    void terrainStream.prefetch(msg.lat_rad, msg.lon_rad, focus);
+  }
   return true;
 }
 
@@ -762,7 +768,8 @@ function onRun(msg) {
   timer = setTimeout(tick, 0);
 }
 
-function onHalt() {
+function onHalt(_discardWarnings = true, preserveTerrainPrefetch = false) {
+  if (!preserveTerrainPrefetch) { terrainPrediction.reset(); terrainStream?.cancelPrefetch(); }
   if (running) runWallMs += performance.now() - runWallStartMs;
   running = false;
   if (timer !== null) { clearTimeout(timer); timer = null; }
