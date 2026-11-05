@@ -3,6 +3,37 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+
+## 2026-11-05 22:09 — Keep simulation speed visible above the flight map
+
+TODO: 2.0.156; R-SIM-9/R-UX-2.
+Agent: Codex orchestrator; code1 `speed_overlay_css`; code2
+`speed_overlay_browser`; `speed_overlay_housekeeping`; independent `quality`
+and `panel_validate_final`.
+
+**Implementation notes**
+
+Badge layer changes3→7 above the map6 and below menu/dialog layers. Existing
+position and pointer pass-through remain. Browser component checks at1440×900
+and390×844 pass for SIM/REPLAY, map open/closed, paint order, map clicks and
+menu/modal priority; screenshots inspected. CSS source commit5a18ec5.
+See [bounded evidence](research/2026-11-05-speed-overlay-map.md).
+Required sharedCI passes with9optional JSBSim and one Linux-only case skipped
+on macOS; skips are not accepted. Foundation/link and final assurance gates
+accompany the document-only completion records.
+
+**Deviations**
+
+Chrome component verification, not full native/map-source or WebKit acceptance.
+No new permanent test or engine/data/dependency change. Peer pending under the
+existing batched gate. Separate branch is stacked on PR87 until it is merged.
+
+**Insights**
+
+The badge was hidden by a sibling stacking layer; raising only its layer keeps
+map interaction and current placement intact.
+
+
 ## 2026-11-05 21:53 — Predict terrain crossings and preload the flight direction
 
 TODO: 2.0.155; R-WORLD-9/R-WORLD-11/R-SIM-2.
