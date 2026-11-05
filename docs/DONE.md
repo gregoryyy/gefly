@@ -16,7 +16,7 @@ Four actual unchanged-WASM starts at3/5km with terrain on/off, two-frame JSON/co
 
 **Deviations**
 
-The user's actual pressure-flight altitude remains unknown; no connection to the earlier Swiss walls is established. Native bytes11a92abd… remain unchanged and disagree with the stale build record, so build provenance and installed-aircraft fidelity are unverified. A fresh external Claude2.1.308 packet review times out with unknown model evidence: cross-provider peer remains pending, with its actual envelope recorded. This is an app repair, not milestone/release or training acceptance. The separate all-flat Hessen observation remains open Task2.0.161.
+The user's actual pressure-flight altitude remains unknown; no connection to the earlier Swiss walls is established. Native bytes11a92abd… remain unchanged and disagree with the stale build record, so build provenance and installed-aircraft fidelity are unverified. A fresh external Claude2.1.308 packet review times out with unknown model evidence: cross-provider peer remains pending, with its actual envelope recorded. This is an app repair, not milestone/release or training acceptance. The separate all-flat Hessen observation remains unresolved.
 
 **Insights**
 
