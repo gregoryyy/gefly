@@ -1,0 +1,23 @@
+# Copernicus native/data foundation
+
+This bounded Task150 increment adds optional fixed-source GLO-30 elevation to the nine-slot native terrain interface. It retains valid regional priority, the existing coarse last fallback and distinct archived quarter-degree identities. New world30 cells cover1/32 degree with129² nodes (approximately27.2m north–south pitch); source quality is copied once per installed grid and displayed without rescanning buffers each frame.512 latched owner outcomes include failures. No engine, native ABI, aircraft coefficient or fixed timestep is changed.
+
+The common source service provides v1 fine and v2 quarter-degree overview DATA APIs with separate cell identities/cache keys and shared upstream caches/bounds. The display client is absent from this foundation; it is separate dependent Task162. Source rights, original licence, DSM/metre/EGM2008 references and coarse-geoid limits are in the [source inventory](../../app/public/terrain/copernicus/SOURCE.json) and [provenance note](2026-11-05-copernicus-source-provenance.md).
+
+## Executed evidence
+
+- Full app:498 Node and22 Python tests pass; TypeScript passes. Runtime/session regressions cover static worker import closure, valid world30 cells, malformed source counts and legacy IDs. Independent review found two initial port omissions (missing decoder allowlist and old-only session prefix); both were repaired before publication.
+- Actual unchanged-WASM callback: composed/native physical H agrees exactly at Table Mountain1064.745383m and Feldberg867.484508m. Whole-window staging preserves sampled native state, step and digest. A production-handler Node adapter runs240 NY steps across a cell boundary with nine resident cells. That adapter uses the root server with matching frozen source code.
+- A separate real Chrome156.0.8078.80 application uses its own Vite5365 and actual Worker/runtime assets without response/API substitution. Sixteen fine source requests and the newly allowlisted helper return200; nine world30 Copernicus cells reach session Ready/Paused with Start enabled, no recorded errors, and unchanged paused full native state/digest.
+- Independent numeric decoder: original Cape block894531bytes, range30642356–31536886 of33743971 bytes, strong source ETagfc66e3b75b96fb28a08047d27f0ad5de. Production JS versus Pillow11.2.1/libtiff4.7.0 yields exact equality for all1048576 Float32 samples spanning0–1082.389648m. This checks decompression, not georeferencing, source accuracy or calibration. Reproduce the reference side with `python3 utils/terrain/copernicus_reference.py COMPRESSED OUTPUT` using existing Pillow.
+- `just ci` passes with498Node+22Python app cases,85assurance and11training checks;9of23 optional JSBSim study cases and a platform-specific repository case are skipped, not accepted passes. Final record checks and lineage diff are recorded at publication.
+
+Local ignored artifacts and SHA-256: `output/flight/copernicus-native-port.json` `0479b4479fb638ff7cdc632fa2ee9d0153160f2b7cae5df3333ba6e855944510`; `copernicus-native-browser.json` `30b6c971453a6d22c03d3f48e9ec9e1df64853f4d72d285e9bb16cabbcb160b3`; `copernicus-libtiff-cape-report.json` `497d42d0d830df9a0ee14aba65f017c804a727c5bd2ab93e052f182a712b5354`; `copernicus-native-ci.log` `647d65f0fde2f51cdd78c53ab4561ce0863c4f50e333d5f8c8c0509983325a9d`.
+
+Manual browser command: `npm --prefix app run test:copernicus-browser` with the existing local engine and public-source access. Core checks use `npm --prefix app test` and `just ci`.
+
+## Limits and status
+
+Independent [quality](../reviews/2026-11-05-copernicus-native-quality.md) and [validation](../reviews/2026-11-05-copernicus-native-validation.md) accept the bounded foundation. Complete R-WORLD-11 remains partial: long-route endurance, selected Review GPU/source behavior and broader terrain fidelity are not established by these short cases. Task160's injected failed-owner physical discontinuity is still open; stable outcomes do not make that physical transition smooth. Task161's all-flat Hessen view remains unreproduced. The distant display client is separately validated/published under Task162.
+
+WASM11a92abd… remains unchanged and differs from its stale build record4fe24bfc…; reproducible source-to-binary provenance is unverified. No aircraft, landing, operational-navigation or training-fidelity acceptance follows. A fresh external Claude2.1.308 packet review times out after180seconds with unknown model evidence; actual envelope records peer pending. Later documentation records are outside that frozen source packet. Task150 remains open for its broader gates rather than being declared fully validated.

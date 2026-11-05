@@ -3,6 +3,25 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 00:07 — Add the modular Copernicus native/data foundation
+
+TODO: 2.0.150 (bounded foundation; broader gates remain open); R-WORLD-11/R-SIM-2/R-REVIEW-1.
+Agent: Codex orchestrator; code1 `alps_source`; code2 `alps_renderer` on the parallel distant-display slice; housekeeping/numeric reference `alps_pressure`; independent `quality` and `panel_validate_final`.
+
+**Implementation notes**
+
+Modular source commits2450e67(service/rights),8bd081a(native world30/metadata/runtime boundaries) and4c69e86(real-app startup regression) introduce optional fixed-source Copernicus DSM enhancement with valid regional priority. Nine129² native cells use a1/32-degree lattice;512 canonical owner outcomes are latched per epoch, with distinct archived quarter-degree identities. Shared v1/v2 data APIs retain fixed-host/range/ETag/byte/cache/deadline limits and reserve foreground cell capacity. V2 is an API prerequisite only; this foundation does not contain the separate Task162 display client. Engine bytes, native ABI, aircraft coefficients and fixed step are unchanged.
+
+Independent review found and verified repairs to missing decoder runtime allowlisting and world30 session classification. Full498Node+22Python app tests, TypeScript,85assurance and11training checks pass. SharedCI passes with9of23 optional JSBSim study checks and one platform-specific repository case skipped, not accepted as passes. CI `output/flight/copernicus-native-ci.log` SHA-256647d65f0fde2f51cdd78c53ab4561ce0863c4f50e333d5f8c8c0509983325a9d. Actual independent Pillow/libtiff comparison gives exact equality across1048576 nonconstant Cape Float32 samples. The real branch-owned Vite/browser Worker loads16/16 fine requests and nine cells, reaches Ready/Paused and preserves paused full native state/digest. Separate native/handler cases match Table/Feldberg heights exactly and cross a NY cell boundary in240steps with nine slots. Final record/lineage checks are reported at publication.
+
+**Deviations**
+
+Independent quality/validation accept this bounded foundation; complete R-WORLD-11/Task150 remains partial, so its checkbox stays open. Task160's failed-owner physical discontinuity and Task161's unreproduced all-flat Hessen view remain open. Wider display coverage is separate Task162. Native11a92abd… still disagrees with the stale build record4fe24bfc…; reproducible build provenance and aircraft/source/training fidelity are unverified. A fresh Claude2.1.308 source-packet process times out after180seconds with unknown model evidence; external peer is pending, not accepted. Later records/reference-tool publication are outside that packet.
+
+**Insights**
+
+Node/native adapters do not exercise browser runtime allowlists or session acceptance; the real app regression is necessary at this boundary. The common source service and native streaming can be reviewed separately from distant display behavior.
+
 ## 2026-11-05 23:03 — Remove artificial exterior terrain walls
 
 TODO: 2.0.158; R-WORLD-2/R-WORLD-11/R-WORLD-9/R-SIM-2.

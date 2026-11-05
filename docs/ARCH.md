@@ -519,3 +519,9 @@ reset/Review epochs suppress stale predictions; failures retain ordinary loading
 See the [bounded cache design](design/scenery-cache.md). Actual source-cache and
 handoff bounds are recorded with implementation evidence, not inferred from this
 policy.
+
+## Copernicus native/data foundation
+
+The unchanged worker/native terrain interface receives nine immutable world30 grids on a1/32-degree cell/129²-node lattice. The composed node order prefers valid regional triangles, then canonically owned Copernicus posts, then the bundled coarse baseline.512 owner outcomes, including failures, are latched per stream epoch so shared edges cannot change through retries. Distinct world30 IDs preserve archived quarter-degree world identities. The generic nine-slot native callback and fixed timestep are unchanged.
+
+A fixed-host same-origin service decodes reviewed Float32 DEFLATE/Predictor3 COG ranges under existing identity/size/resource bounds. Fine v1 and quarter-degree v2 output identities/cache keys are separate while upstream source caches remain shared. At most one optional overview cell job reserves capacity for fine requests. V2 is a data API prerequisite; the wider display client belongs to the separate display-overview increment. Source metadata describes live grids; old recorded numeric source codes do not prove fine-source quality.

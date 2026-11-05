@@ -1,0 +1,3 @@
+# Copernicus native/data cross-provider attempt
+
+Codex/OpenAI authored the source delta. A fresh external Claude packet review identifies revision4c69e860d38e37aa416b2c4a2c45232506434f3e and packet SHA-25688a5ee01a3e60ee0c557784e9a895f2fd5449dbafdf25d862e011a3db2c17587. The [actual envelope](2026-11-05-copernicus-native-peer.json) records `/opt/homebrew/bin/claude`2.1.308, a180-second reviewer timeout and unknown model evidence; no review was returned. External quality/validation remain pending. Independent local reviews and executed CI are separate. Later documentation/reference-tool records are outside that packet. No milestone/release, aircraft or training acceptance.

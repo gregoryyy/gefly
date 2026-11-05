@@ -434,3 +434,9 @@ failed speculative task must not alter current authoritative terrain or poison
 its source outcomes. Current visible demand retains priority over the bounded
 forward cartography corridor. Cancellation and new stream epochs discard owned
 speculation; ordinary validated loading remains the fallback.
+
+## Copernicus fixed-source height service
+
+Canonical integer `/scenery/elevation/copernicus/{col}/{row}.bin` and `/scenery/elevation/copernicus-overview/{col}/{row}.bin` paths select fixed public Copernicus GLO-30 AWS COG ranges only. V1 fine and v2 quarter-degree headers have separate identities and output-cache keys. Requests cannot choose hosts, credentials, URLs, query strings or redirects.206 range/ETag/object/header/DEFLATE/byte/value checks precede grid use. Each job is bounded to15s, sharing four upstream reads, two cell decoders,64MiB cache and bounded pending work; at most one overview job leaves fine-request admission available. Client disconnect does not cancel deduplicated shared work, whose deadline remains.
+
+Source paths describe simulated scenery, not device GPS or learner telemetry. No account, dependency, native binary or physical integration step changes. Regional priority, signed heights, explicit nodata/coarse fallback and bounded512 source outcomes are validated before native install. The separate display client is not included in this foundation; its nine active/32 cached grid and cancellation boundary is planned in R-WORLD-11.
