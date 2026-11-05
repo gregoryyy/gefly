@@ -3,6 +3,7 @@ export interface LoadingSnapshot {mass_total_kg?:number;mass_empty_kg?:number;fu
 export const LOAD_STATIONS:readonly Readonly<{id:'pilot_kg'|'copilot_kg'|'rear_left_kg'|'rear_right_kg'|'baggage_kg'|'external_kg';label:string;default_kg:number;max_kg:number}>[];
 export const LOADING_FIELDS:readonly (keyof LoadingSnapshot)[];
 export const DEFAULT_LOADING:Readonly<LoadingConfiguration>;
+export const FLIGHT_DEFAULT_LOADING:Readonly<LoadingConfiguration>;
 export const MODEL_EMPTY_MASS_KG:number;
 export const MODEL_FUEL_DENSITY_KGPM3:number;
 export const MODEL_TANK_CAPACITY_M3:number;

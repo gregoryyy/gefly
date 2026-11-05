@@ -126,9 +126,26 @@ test('engine ignition selection survives control settings without a fabricated d
   assert.equal('engine_running' in applyControlSettings(raw, DEFAULT_CONTROL_SETTINGS, 0), false);
 });
 
+test('R-INPUT-1 fresh presets keep airborne roll input independent of rudder', () => {
+  for (const preset of [DEFAULT_CONTROL_SETTINGS, GENTLE_CONTROL_SETTINGS]) {
+    for (const aileron of [-1, -.45, 0, .45, 1]) {
+      const raw = Object.freeze({ ...neutral, aileron });
+      const mapped = applyControlSettings(raw, preset, 0);
+      assert.equal(mapped.aileron, aileron * preset.roll);
+      assert.equal(mapped.rudder, 0, 'roll alone must not command an uncalibrated yaw input');
+      assert.equal(mapped.elevator, 0);
+      assert.equal(mapped.throttle, neutral.throttle);
+    }
+    for (const rudder of [-1, -.35, .35, 1]) {
+      const mapped = applyControlSettings({ ...neutral, aileron: .45, rudder }, preset, 0);
+      assert.equal(mapped.rudder, rudder * preset.rudder, 'independent pedals retain full selected gain');
+    }
+  }
+});
+
 test('R-INPUT-1 linked rudder follows deliberate bank direction, sensitivity and manual priority', () => {
-  assert.equal(DEFAULT_CONTROL_SETTINGS.coordinatedRudder, true);
-  assert.equal(GENTLE_CONTROL_SETTINGS.coordinatedRudder, true);
+  assert.equal(DEFAULT_CONTROL_SETTINGS.coordinatedRudder, false);
+  assert.equal(GENTLE_CONTROL_SETTINGS.coordinatedRudder, false);
   const settings = Object.freeze({ ...DEFAULT_CONTROL_SETTINGS, roll: .5, rudder: .7, coordinatedRudder: true });
   const rightBank = Object.freeze({ ...neutral, aileron: .8 });
   const right = applyControlSettings(rightBank, settings, -.2);
@@ -150,8 +167,8 @@ test('R-INPUT-1 rudder link excludes study correction and clamps combined sensit
   const strong = { ...linked, roll: 1.5, rudder: 1.5 };
   assert.equal(applyControlSettings({ ...neutral, aileron: 1 }, strong, 0).rudder, -1);
   assert.equal(applyControlSettings({ ...neutral, aileron: -1 }, strong, 0).rudder, 1);
-  assert.equal(applyControlSettings({ ...neutral, aileron: 1 }, DEFAULT_CONTROL_SETTINGS, 0).rudder, -1,
-    'default bank input also commands rudder and nosewheel steering');
+  assert.equal(applyControlSettings({ ...neutral, aileron: 1 }, DEFAULT_CONTROL_SETTINGS, 0).rudder, 0,
+    'fresh default bank input keeps rudder independent');
   assert.equal(applyControlSettings({ ...neutral, aileron: 1 }, { ...DEFAULT_CONTROL_SETTINGS, coordinatedRudder: false }, 0).rudder, 0,
     'the explicit unlink option retains independent rudder');
   assert.equal(applyControlSettings({ ...neutral, aileron: 1 }, { pitch: 1, roll: 1, rudder: 1 }, 0).rudder, 0,

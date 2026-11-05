@@ -1,5 +1,5 @@
 import {
-  DEFAULT_LOADING, LOAD_STATIONS, EMPTY_MASS_KG, FUEL_CAPACITY_M3, FUEL_DENSITY_KGPM3,
+  FLIGHT_DEFAULT_LOADING, LOAD_STATIONS, EMPTY_MASS_KG, FUEL_CAPACITY_M3, FUEL_DENSITY_KGPM3,
   validLoading, validLoadingState, type LoadingConfiguration,
 } from '../../studies/e1-browser/sim/loading.js';
 import type { FlightState } from './types';
@@ -11,7 +11,7 @@ export function createLoadingPanel(options: {
   onOpen(): void;
   onClose(): void;
 }): { update(state: Readonly<FlightState> | null, reviewing: boolean): void; setConfiguration(config: LoadingConfiguration): void; dispose(): void } {
-  let configuration = { ...DEFAULT_LOADING }, draft = { ...configuration };
+  let configuration = { ...FLIGHT_DEFAULT_LOADING }, draft = { ...configuration };
   let latest: Readonly<FlightState> | null = null, reviewing = false, disposed = false;
   const button = document.createElement('button'); button.id = 'loading-open'; button.type = 'button';
   button.textContent = 'Weight & fuel'; button.setAttribute('aria-haspopup', 'dialog');
@@ -38,10 +38,10 @@ export function createLoadingPanel(options: {
     const input = document.createElement('input'); input.id = `loading-${key.replace(/_(kg|m3)$/, '')}`;
     input.type = 'number'; input.min = '0'; input.max = String(maximum); input.step = 'any'; input.required = true;
     input.dataset.key = key; input.setAttribute('aria-label', `${label} in ${unit}`);
-    if (key === 'external_kg') input.title = 'Auxiliary point mass in the generic model';
+    if (key === 'external_kg') input.title = 'Legacy external station, 12 ft right of the aircraft centreline; normally unloaded';
     row.append(name, input); inputs.append(row); controls.set(key, input);
   };
-  for (const station of LOAD_STATIONS) addInput(station.id, station.id === 'external_kg' ? 'Auxiliary load' : station.label, 'kg', station.max_kg);
+  for (const station of LOAD_STATIONS) addInput(station.id, station.id === 'external_kg' ? 'External load · 12 ft right' : station.label, 'kg', station.max_kg);
   addInput('fuel_left_m3', 'Left fuel', 'L', FUEL_CAPACITY_M3 * 1000);
   addInput('fuel_right_m3', 'Right fuel', 'L', FUEL_CAPACITY_M3 * 1000);
   const text = (id: string, value: string): void => { const element=dialog.querySelector<HTMLElement>(`#${id}`)!; if(element.textContent!==value)element.textContent=value; };
