@@ -30,8 +30,10 @@ Source-metadata caching and imagery backpressure remain later integration slices
 Conservative source-change, feather/coarse-preview or capacity rebuilds remain.
 Complete native New Flight/Review lifecycle, all-world GPU heights and device/
 network performance are not accepted by these bounded tests. Native binary build
-provenance remains unverified. Cross-provider performance review is peer pending;
-this is a draft increment, not milestone/physics acceptance.
+provenance remains unverified. The [external Claude attempt](reviews/2026-11-05-vector-terrain-performance-peer.md)
+returned a nonzero process exit and no review; quality/validation are blocked
+and covering peer acceptance remains pending. This is a draft increment,
+not milestone/physics acceptance.
 
 **Insights**
 

@@ -1,0 +1,24 @@
+{
+  "status": "blocked",
+  "accepted": false,
+  "author_provider": "codex",
+  "reviewer_provider": "claude",
+  "packet": {
+    "path": "output/flight/map-performance-peer-packet.md",
+    "sha256": "405a61f6a85401ff7f36c34027f5a25953c36cd8088d8e0c73d1872f592ed517",
+    "revision": "641e09cd29421453a87f46922c09a41c985dd99c"
+  },
+  "cli": {
+    "executable": "/opt/homebrew/bin/claude",
+    "version": "2.1.308"
+  },
+  "model_evidence": [
+    "unknown"
+  ],
+  "review": null,
+  "limitations": [
+    "CLI routing and returned model names are evidence, not backend attestation.",
+    "Packet review does not independently execute the packet's test commands."
+  ],
+  "diagnostic": "reviewer_nonzero_exit"
+}
