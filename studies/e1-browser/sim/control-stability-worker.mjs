@@ -2,7 +2,8 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { DEFAULT_LOADING, FLIGHT_DEFAULT_LOADING, LOADING_FIELDS } from './loading.js';
+import { DEFAULT_LOADING, FLIGHT_DEFAULT_LOADING, LOADING_FIELDS, LOAD_STATIONS,
+  MODEL_EMPTY_MASS_KG, MODEL_FUEL_DENSITY_KGPM3, MODEL_TANK_CAPACITY_M3 } from './loading.js';
 import { resumeProblem } from './continue-flight.js';
 
 globalThis.self = globalThis;
@@ -58,12 +59,32 @@ cases.push({ id: 'recorded-legacy-loading', original: legacy, restored });
 const noLoading = { ...legacy };
 for (const key of LOADING_FIELDS) delete noLoading[key];
 assert.equal(resumeProblem(noLoading), null, 'legacy recording loading group is optional');
+// Adversarial predecessor: if the worker forgets to reset pending loading, this
+// unrelated lightweight/low-fuel configuration must not leak into continuation.
+const customLoading = { ...FLIGHT_DEFAULT_LOADING, pilot_kg: 72, copilot_kg: 66,
+  rear_left_kg: 0, rear_right_kg: 0, baggage_kg: 0,
+  fuel_left_m3: .02, fuel_right_m3: .025 };
+await send({ ...config, loading: customLoading }, 'ready');
+const customBeforeFallback = await state();
+assert.equal(customBeforeFallback.payload_external_kg, 0);
+assert.equal(customBeforeFallback.payload_pilot_kg, customLoading.pilot_kg);
+assert.equal(customBeforeFallback.payload_baggage_kg, 0);
+assert(customBeforeFallback.fuel_left_m3 < .021 && customBeforeFallback.fuel_right_m3 < .026,
+  'predecessor deliberately differs from the full-fuel source and recorded group');
 await send({ ...config, resume_state: noLoading }, 'ready');
 const oldRestored = await state();
-assert.equal(oldRestored.payload_external_kg, DEFAULT_LOADING.external_kg,
-  'legacy continuation without loading retains the native source fallback');
+for (const station of LOAD_STATIONS) assert.equal(oldRestored[`payload_${station.id}`], DEFAULT_LOADING[station.id],
+  'missing loading resets every source payload station after custom loading');
+assert.equal(oldRestored.mass_empty_kg, MODEL_EMPTY_MASS_KG);
+assert.equal(oldRestored.fuel_capacity_left_m3, MODEL_TANK_CAPACITY_M3);
+assert.equal(oldRestored.fuel_capacity_right_m3, MODEL_TANK_CAPACITY_M3);
+assert.equal(oldRestored.fuel_density_kgpm3, MODEL_FUEL_DENSITY_KGPM3);
+assert.equal(oldRestored.loading_initial_fuel_m3, legacy.fuel_left_m3 + legacy.fuel_right_m3,
+  'missing historical fuel-use baseline reconstructs from recorded contents, never custom predecessor');
+for (const key of ['fuel_left_m3', 'fuel_right_m3', 'fuel_mass_kg', 'mass_total_kg'])
+  assert.equal(oldRestored[key], restored[key], 'recorded tank contents and reconstructed mass survive missing loading metadata');
 assert.equal(oldRestored.step, legacy.step);
-cases.push({ id: 'recorded-no-loading-fallback', restored: oldRestored });
+cases.push({ id: 'recorded-no-loading-fallback', custom_predecessor: customBeforeFallback, restored: oldRestored });
 
 await send({ ...config, loading: FLIGHT_DEFAULT_LOADING }, 'ready');
 const explicitNormal = await state();

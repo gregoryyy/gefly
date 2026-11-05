@@ -1,5 +1,5 @@
 // R-INPUT-1/R-SIM-5: diagnose the existing native model and application commands.
-// These comparisons are regression measurements, not calibrated C172 limits.
+// This is a command-response diagnostic, not an aircraft stability regression.
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -8,6 +8,7 @@ import { DEFAULT_LOADING, FLIGHT_DEFAULT_LOADING, loadingValues } from './loadin
 
 const DT = 1 / 120, DEG = Math.PI / 180, KT = 1852 / 3600;
 const sha = path => createHash('sha256').update(readFileSync(new URL(path, import.meta.url))).digest('hex');
+const wasmBefore = sha('./dist/jsbsim.wasm');
 const M = await createJSBSim({ print() {}, printErr() {} });
 const read = (fn, count) => {
   const index = fn() >> 3;
@@ -27,9 +28,10 @@ function initialize(cas_kt, noExternal) {
     tas *= cas_kt * KT / read(M._gf_cockpit_state, 8)[0];
   }
   assert.equal(M._gf_init(DT, 49.96 * DEG, 8.643 * DEG, 396.24, 82 * DEG, tas), 0);
-  // At 110 kt the current engine may fail trim; retain that observed limitation
-  // and never label the resulting response as a trimmed equilibrium.
   const trimStatus = M._gf_trim_status();
+  if (cas_kt === 110) assert.equal(trimStatus, -1,
+    'known failed 110 kt initialization is explicitly excluded from trimmed-response interpretation');
+  else assert.equal(trimStatus, 1, '70/90 kt comparison initializations must successfully trim');
   assert(Math.abs(read(M._gf_cockpit_state, 8)[0] / KT - cas_kt) < 1e-7, 'CAS matching fixture converges');
   assert.equal(M._gf_set_autopilot(0, 0), 0);
   assert.equal(M._gf_set_autopilot_vertical(0, 0), 0);
@@ -60,8 +62,8 @@ function run(config) {
     if (step === 60 / DT) break;
     // Two-second deliberate input at t=5..7s; held inputs then release exactly.
     const pulse = current.t_s >= 5 && current.t_s < 7 ? (config.pulse_norm ?? 0) : 0;
-    const aileron = pulse + (config.offset_norm ?? 0);
-    const rudder = config.link ? -pulse : 0;
+    const aileron = (config.pulse_axis === 'rudder' ? 0 : pulse) + (config.offset_norm ?? 0);
+    const rudder = config.pulse_axis === 'rudder' ? pulse : config.link ? -pulse : 0;
     const throttle = config.power === 'full' ? 1 : trim.throttle_norm;
     assert.equal(M._gf_set_inputs(0, aileron, rudder, throttle), 0);
     assert.equal(M._gf_step(), 0);
@@ -82,9 +84,34 @@ for (const cas_kt of [70, 90, 110]) for (const no_external of [false, true]) {
     configs.push({ id: `${cas_kt}cas-noexternal${no_external}-pulse${pulse_norm}-link${link}`, cas_kt, no_external, pulse_norm, link, power: 'trim' });
   }
 }
+const coreCaseCount = configs.length;
+// Independent-axis/reversal observations use normal loading and zero bias.
+// Both signed pulse commands are declared fixtures, not aircraft tolerances.
+for (const cas_kt of [70, 90]) for (const power of ['trim', 'full'])
+  for (const pulse_axis of ['aileron', 'rudder']) for (const pulse_norm of [-.1, .1]) {
+    configs.push({ id: `${cas_kt}cas-independent-${pulse_axis}${pulse_norm}-${power}`,
+      cas_kt, no_external: true, offset_norm: 0, power, pulse_axis, pulse_norm, link: false });
+  }
 try {
   const results = configs.map(config => {
     const result = run(config);
+    if (config.pulse_axis) {
+      const { at7, at10 } = result.summary;
+      assert(at7 && at10, 'independent-axis fixtures reach pulse and release observations');
+      if (config.pulse_axis === 'rudder') {
+        assert(result.samples.every(sample => sample.controls_raw_7[1] === 0),
+          'independent rudder never sends an aileron command');
+        assert.equal(at7.controls_raw_7[3], config.pulse_norm);
+        assert(at7.controls_raw_7[6] * config.pulse_norm > 0, 'actual rudder responds in the commanded sign');
+      } else {
+        assert(result.samples.every(sample => sample.controls_raw_7[3] === 0),
+          'independent aileron never sends a rudder command');
+        assert.equal(at7.controls_raw_7[1], config.pulse_norm);
+        assert(at7.controls_raw_7[4] * config.pulse_norm > 0, 'actual left aileron responds in the commanded sign');
+      }
+      assert.equal(at10.controls_raw_7[1], 0, 'aileron command is released');
+      assert.equal(at10.controls_raw_7[3], 0, 'rudder command is released');
+    }
     console.log(JSON.stringify({ id: config.id, trim: result.trim, stop: result.stop,
       peak_bank_deg: result.summary.max_abs_bank_deg, peak_p_degps: result.summary.max_abs_roll_rate_degps,
       peak_beta_deg: result.summary.max_abs_beta_deg,
@@ -95,14 +122,20 @@ try {
   const repeat = run(configs[0]);
   assert.equal(repeat.digest, results[0].digest, 'same fixed-step native case repeats exactly');
   assert.deepEqual(repeat.final, results[0].final);
-  const report = { scope: 'Existing generic c172x runtime command diagnosis, not C172S validation or operating advice',
+  const wasmAfter = sha('./dist/jsbsim.wasm');
+  assert.equal(wasmAfter, wasmBefore, 'executing WASM file is unchanged throughout this diagnostic run');
+  const report = { scope: 'Existing generic c172x command-response diagnostic, not an aircraft stability regression, C172S validation or operating advice',
+    core_case_count: coreCaseCount, independent_axis_case_count: configs.length - coreCaseCount,
+    interpretation: { successfully_trimmed_initial_cas_kt: [70, 90],
+      expected_failed_trim_initial_cas_kt: [110], failed_trim_excluded_from_trimmed_response_claims: true },
     fixed_step_s: DT, initial_altitude_msl_m: 396.24, loading: { source_default: DEFAULT_LOADING, no_external: { ...DEFAULT_LOADING, external_kg: 0 } },
     conditions: 'CAS matched at initialization only; clean flaps, longitudinal trim retained, lateral and vertical AP off, still-air/default native atmosphere. Pulse amplitudes/times are input fixtures, not aircraft limits.',
     sources: { wasm_sha256: sha('./dist/jsbsim.wasm'), glue_sha256: sha('./dist/jsbsim.mjs'),
       build_info_sha256: sha('./dist/build-info.json'), script_sha256: sha('./control-stability-native.mjs'),
+      loading_js_sha256: sha('./loading.js'), wasm_before_sha256: wasmBefore, wasm_after_sha256: wasmAfter,
       build_record_wasm_sha256: build.wasm_sha256,
       build_provenance_verified: sha('./dist/jsbsim.wasm') === build.wasm_sha256,
-      native_binary_not_rebuilt: true },
+      wasm_file_unchanged_during_run: wasmBefore === wasmAfter },
     deterministic_repeat: { id: configs[0].id, digest: repeat.digest, exact_final_match: true }, results };
   const output = new URL('../../../output/flight/', import.meta.url); mkdirSync(output, { recursive: true });
   writeFileSync(new URL('control-stability-native.json', output), JSON.stringify(report, null, 2));

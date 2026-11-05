@@ -203,7 +203,7 @@ let practiceMap: PracticeMap | null = null;
 let mapVisible = false, mapLoading = false, mapDisposed = false;
 let lastMapUpdate_ms = -Infinity;
 let lastMapSample: unknown = undefined;
-// Existing E1 fixture's empirical input offset, not an aircraft coefficient.
+// Optional experimental aileron offset, neutral by default; not aircraft trim.
 let rollOffset = 0;
 let controlSettings: ControlSettings = { ...DEFAULT_CONTROL_SETTINGS };
 const keys = new Set<string>();

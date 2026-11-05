@@ -6,6 +6,11 @@ are separate. R-INPUT-1/R-SIM-5/R-REVIEW-1. Root owns the new task/status and
 production integration. This note measures the existing generic c172x runtime,
 not a calibrated C172S or a real-aircraft handling limit.
 
+Revised 2026-11-05 17:49 Europe/Berlin by the same code1 agent after peer
+findings: strengthen fixture/trim assertions, exercise independent axes and
+loading-reset order, and measure the WASM file hash before/after execution.
+Production physics and configuration are unchanged by this revision.
+
 ## Question and source boundary
 
 The user reports excessive sensitivity, hands-off roll-off and oscillation.
@@ -14,7 +19,7 @@ without changing the executing aircraft model. The pinned upstream
 [c172x XML](https://raw.githubusercontent.com/JSBSim-Team/jsbsim/66f7fafc07fe13e7ede9db20873030fed2881713/aircraft/c172x/c172x.xml)
 describes a generic 1982 C172P and contains an 80 lb agricultural test pointmass
 at structural y=144 in (12 ft right). Existing source loading includes it.
-The current application also injects a constant −0.109375 normalized aileron
+The pre-change application also injected a constant −0.109375 normalized aileron
 command when AP is off. Neither is ordinary passenger-flight trim.
 
 The existing source uses longitudinal-only initialization trim. Its aileron
@@ -34,7 +39,8 @@ telemetry from the identified executing bytes.
 
 ## Native measurements
 
-Run `node studies/e1-browser/sim/control-stability-native.mjs`. The 48 cases use
+Run `node studies/e1-browser/sim/control-stability-native.mjs`. The original
+48-case matrix is retained, with 16 added independent-axis observations. Cases use
 1/120 s steps, initial 396.24 m MSL, matched initial CAS 70/90/110 kt, clean flaps,
 AP off, retained longitudinal trim, native default atmosphere, and up to 60 s
 of unconstrained motion. Source loading is contrasted with the same stations
@@ -43,6 +49,18 @@ or full throttle; power/speed are allowed to evolve. Pulse cases command +0.1
 or +0.45 aileron during t=5..7 s, with rudder zero or a 1:1 opposite-sign linked
 command. Inputs/times are test fixtures, not aircraft coefficients or limits.
 The first case repeats with exact native digest and final state equality.
+The diagnostic now asserts successful initialization trim for every 70/90 kt
+case, and explicitly asserts the known failed 110 kt trim. Failed trim is
+excluded from trimmed-response interpretation. This is a command-response
+diagnostic, **not an aircraft stability regression**; a future model that trims
+110 kt needs a corresponding update to the declared diagnostic expectation.
+
+The 16 added cases use normal loading, zero bias, independent rudder, initial
+70/90 kt CAS, trim/full power and signed ±0.1 aileron-only or rudder-only pulses
+during seconds 5–7. They assert the other commanded axis remains zero, the actual
+surface responds in the commanded sign, and both commands are zero by 10 s.
+They measure the remaining model coupling; zero commanded aileron during a
+rudder pulse does not imply zero physical roll.
 
 Selected 90 kt initial-CAS results, with successful longitudinal trim:
 
@@ -54,6 +72,13 @@ Selected 90 kt initial-CAS results, with successful longitudinal trim:
 | No external, zero aileron, full power | +9.809° | +35.383° | Retained trim is not equilibrium at changed power |
 | No external, +0.1 pulse, rudder independent | +14.630° | +30.399° | Peak body roll rate 6.742°/s |
 | No external, +0.1 pulse, 1:1 rudder link | +17.091° | +31.720° | Peak body roll rate 8.138°/s |
+
+These rows isolate factors; the source-loading/zero-bias row was **not** the
+former complete application default. The separate
+[whole-configuration comparison](2026-11-05-control-stability-app-comparison.md)
+includes the old fixed bias and linked rudder. It reports mixed outcomes:
+90 kt trim-power absolute hands-off drift is similar, and full-power drift is
+worse under the new defaults. No uniform handling improvement is inferred.
 
 Removing the external mass changes initial nominal loading 2480→2400 lb and
 lateral CG +0.107376→−0.010964 m; it also changes inertia and trim demands, so the
@@ -91,7 +116,13 @@ runway flight, explicit normal loading, explicit/recorded legacy external
 loading, and legacy continuation without loading telemetry. New flights omit
 the external payload and start at step 0 with zero lateral command; recorded
 legacy loading takes precedence over the new default and the missing-group
-continuation preserves the former native source fallback. No exact hidden-state
+continuation preserves the former native source fallback. That last case now
+immediately follows a custom lightweight/no-external, reduced-fuel flight,
+so leaving stale pending loading would fail. It checks all six source payload
+stations, empty mass, tank capacities/density, recorded fuel contents and total
+mass against the explicit-legacy reconstruction. Missing historical fuel-use
+baseline reconstructs from the recorded tank-volume sum rather than the custom
+predecessor. No exact hidden-state
 checkpoint or physical model validation is inferred.
 
 ## Evidence retention and limits
@@ -104,11 +135,21 @@ was run by this agent. These diagnostics measure command/model response and
 legacy state compatibility, not training fidelity, operational speeds or a
 guarantee of wings-level hands-off flight.
 
+The original 48-case artifacts and scripts remain under
+`output/flight/control-stability-native-pre-peer.*` (original JSON SHA-256
+`553efc5d7a4bf0d46c256e9a33b7ff4e97f96810cc800b58d263238f2ade35c0`;
+original script SHA-256
+`e70a92c23e1fd727c63335df8086cf6ba343f71f2d802be0e7ace6f7bf97c319`).
+The separate 40-case whole-configuration comparison is unchanged. The final
+diagnostic records `loading.js` and before/after WASM hashes and asserts those
+two WASM hashes match; this establishes only that the file did not change during
+the run, not source-to-binary build provenance or absence of an earlier rebuild.
+
 | Local artifact/source | SHA-256 |
 | --- | --- |
-| `studies/e1-browser/sim/control-stability-native.mjs` | `e70a92c23e1fd727c63335df8086cf6ba343f71f2d802be0e7ace6f7bf97c319` |
-| `studies/e1-browser/sim/control-stability-worker.mjs` | `5ebbfdb6fc07c3b5cbab234dbb571f068c28b4041748e8a95c2a868e880873f9` |
+| `studies/e1-browser/sim/control-stability-native.mjs` | `1b1cbf2efd6c9a124977c7bdbbc06925c81a1589e327bfc43ccde86d8be56b78` |
+| `studies/e1-browser/sim/control-stability-worker.mjs` | `9ecdad618ac979e966187b9981a735994fea03c3e11d04b458c5d8412686da10` |
 | `studies/e1-browser/sim/loading.js` | `b36361f5d73f4681e987c6eaf52472e59df6fa404e03b4cc8dc13bcc179d7957` |
 | `studies/e1-browser/sim/loading.d.ts` | `c5d351f96172687fc488b6c9ea79b2e100242a5af2814db93cb8ec236f5a177c` |
-| `output/flight/control-stability-native.json` | `553efc5d7a4bf0d46c256e9a33b7ff4e97f96810cc800b58d263238f2ade35c0` |
-| `output/flight/control-stability-worker.json` | `71fa9fd611cd807cb0cb7560d85fabd5a28fedaa284b0d08f64c6d5a7867fbb7` |
+| `output/flight/control-stability-native.json` | `a472e3f1c2581c86e8eb129240d6d1619cf2d1285f0f045e6b178d5674b3b67a` |
+| `output/flight/control-stability-worker.json` | `8eeb52f6a2f33ae9774aedb5bc4055bf038beaa31d2b6152ba40f6cec8546626` |
