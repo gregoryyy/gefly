@@ -123,3 +123,94 @@ test('nearby warming survives transient visible work; new locations wait and dis
   for(const [key,descriptor] of descriptors)if(descriptor)Object.defineProperty(globalThis,key,descriptor);else Reflect.deleteProperty(globalThis,key);
  }
 });
+
+test('R-WORLD-9 forward corridor keeps current detail first and shares the existing source budgets', () => {
+ const lat=40.7*DEG,lon=-74*DEG;
+ const ahead={lat_rad:lat,lon_rad:lon+.08};
+ // An invalid/over-budget caller cannot request a distant speculative region.
+ assert.deepEqual(planSceneryPrefetch(lat,lon,true,ahead),planSceneryPrefetch(lat,lon,true));
+ const endpoint={lat_rad:lat,lon_rad:lon+.075*DEG};
+ const local=planSceneryPrefetch(lat,lon,true),urls=planSceneryPrefetch(lat,lon,true,endpoint);
+ assert.deepEqual(urls.slice(0,4),local.filter(url=>url.startsWith('/scenery/osm/14/')).slice(0,4));
+ const aheadDetail=planSceneryPrefetch(endpoint.lat_rad,endpoint.lon_rad,true).filter(url=>url.startsWith('/scenery/osm/14/'));
+ assert(aheadDetail.some(url=>urls.includes(url)&&!local.includes(url)),'new endpoint detail is actually warmed');
+ assert(urls.length<=32&&new Set(urls).size===urls.length);
+ assert(urls.every(url=>/^\/scenery\/osm\/(11|14)\/\d+\/\d+\.pbf$/.test(url)));
+ assert.deepEqual(urls,planSceneryPrefetch(lat,lon,true,endpoint));
+ for(const vector of [false,true]){
+  const region=planSceneryPrefetch(49.96*DEG,8.643*DEG,vector,{lat_rad:49.96*DEG,lon_rad:8.73*DEG});
+  assert(region.length<=200&&new Set(region).size===region.length);
+  assert(region.filter(url=>url.startsWith('/scenery/osm/')).length<=32);
+  assert(region.filter(url=>url.startsWith('/scenery/map/')).length<=32);
+  assert(region.filter(url=>url.startsWith('/terrain/region/')).length<=24);
+  assert(region.filter(url=>url.startsWith(vector?'/scenery/vector/14/':'/scenery/imagery/14/')).length<=64);
+  assert(region.filter(url=>url.startsWith(vector?'/scenery/vector/11/':'/scenery/imagery/11/')).length<=48);
+ }
+});
+
+test('R-WORLD-9 forward detail follows actual direction and wraps canonical date-line URLs',()=>{
+ const lat=40.7*DEG,lon=-74*DEG;
+ const east=planSceneryPrefetch(lat,lon,true,{lat_rad:lat,lon_rad:lon+.075*DEG});
+ const west=planSceneryPrefetch(lat,lon,true,{lat_rad:lat,lon_rad:lon-.075*DEG});
+ assert.notDeepEqual(east,west);
+ const center=tilesWithinRadius(lat,lon,14,0,1)[0].x;
+ const xs=(urls:readonly string[])=>urls.filter(url=>url.startsWith('/scenery/osm/14/')).map(url=>Number(url.split('/')[4]));
+ assert(Math.max(...xs(east))>Math.max(...xs(west)));
+ assert(Math.min(...xs(west))<Math.min(...xs(east)));
+ assert(xs(east).includes(center)&&xs(west).includes(center));
+ const date=planSceneryPrefetch(0,179.99*DEG,true,{lat_rad:0,lon_rad:-179.95*DEG});
+ assert(date.length>0&&date.length<=32);
+ assert(date.some(url=>/^\/scenery\/osm\/14\/(0|1)\//.test(url)));
+ for(const url of date){const [,z,x,y]=/\/(\d+)\/(\d+)\/(\d+)\.pbf$/.exec(url)!;assert(+x>=0&&+x<2**+z&&+y>=0&&+y<2**+z);}
+ const local=planSceneryPrefetch(lat,lon,true);
+ assert.deepEqual(planSceneryPrefetch(lat,lon,true,{lat_rad:NaN,lon_rad:lon}),local);
+ assert.deepEqual(planSceneryPrefetch(lat,lon,true,{lat_rad:lat,lon_rad:lon}),local);
+});
+
+test('R-WORLD-9 display prediction replans on course changes and clears speculative warming on pause/Review/reset',async()=>{
+ const descriptors=new Map(['window','navigator','fetch'].map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)]));
+ const messages:{urls:string[]}[]=[];
+ const active={postMessage:(message:{urls:string[]})=>messages.push(message)};
+ const serviceWorker={register:async()=>({active}),ready:Promise.resolve({active}),addEventListener(){},removeEventListener(){}};
+ Object.defineProperty(globalThis,'window',{configurable:true,value:{isSecureContext:true}});
+ Object.defineProperty(globalThis,'navigator',{configurable:true,value:{serviceWorker}});
+ Object.defineProperty(globalThis,'fetch',{configurable:true,value:async()=>new Response('',{status:503})});
+ let cache:ReturnType<typeof import('./scenery-cache.ts').createSceneryCache>|undefined;
+ try{
+  const {createSceneryCache}=await import('./scenery-cache.ts');
+  cache=createSceneryCache({dataset:{}} as unknown as HTMLElement);
+  const lat=40.7*DEG,lon=-74*DEG,step=50/(6371000*Math.cos(lat));
+  cache.update(lat,lon,true,true,true,{t_s:0,live:true,simulation_rate:10});
+  await new Promise(resolve=>setImmediate(resolve));
+  const base=messages.length;
+  cache.update(lat,lon+step,true,true,true,{t_s:1,live:true,simulation_rate:10});
+  assert.equal(messages.length,base+1,'valid motion starts the ahead plan');
+  const east=messages.at(-1)!.urls;
+  for(let frame=0;frame<30;frame++)cache.update(lat,lon+step,true,true,true,{t_s:1,live:true,simulation_rate:10});
+  assert.equal(messages.length,base+1,'identical render frames preserve background progress');
+  cache.update(lat,lon+step*2,true,true,true,{t_s:2,live:true,simulation_rate:10});
+  assert.equal(messages.length,base+1,'small endpoint changes stay below500m hysteresis');
+  cache.update(lat,lon+step,true,true,true,{t_s:3,live:true,simulation_rate:10});
+  assert.equal(messages.length,base+2,'opposite groundtrack replaces obsolete ahead requests');
+  assert.notDeepEqual(messages.at(-1)!.urls,east);
+  const fast=messages.at(-1)!.urls;
+  cache.update(lat,lon+step,true,true,true,{t_s:3,live:true,simulation_rate:1});
+  assert.notDeepEqual(messages.at(-1)!.urls,fast,'confirmed rate changes rescale the existing measured groundtrack');
+  cache.update(lat,lon+step,true,true,true,{t_s:4,live:true,simulation_rate:1});
+  assert.deepEqual(messages.at(-1)!.urls,planSceneryPrefetch(lat,lon+step,true),'stationary authoritative motion clears ahead requests');
+  cache.update(lat,lon+step,true,true,true,{t_s:4,live:false,simulation_rate:10});
+  assert.deepEqual(messages.at(-1)!.urls,planSceneryPrefetch(lat,lon+step,true),'paused/Review display keeps local warming only');
+  const paused=messages.length;
+  cache.update(lat,lon+step,true,true,true,{t_s:3,live:false,simulation_rate:10});
+  assert.equal(messages.length,paused,'paused frames do not replan');
+  cache.update(lat,lon+step,true,true,true,{t_s:4,live:true,simulation_rate:10});
+  cache.update(lat,lon+step*2,true,true,true,{t_s:5,live:true,simulation_rate:10});
+  cache.update(lat,lon+step*2,true,true,true,{t_s:0,live:true,simulation_rate:10});
+  assert.deepEqual(messages.at(-1)!.urls,planSceneryPrefetch(lat,lon+step*2,true),'new-flight time reset clears ahead requests');
+  cache.update(NaN,lon,true,true,true,{t_s:1,live:true});
+  assert.deepEqual(messages.at(-1)!.urls,[],'invalid location cancels obsolete display work');
+ }finally{
+  cache?.dispose();
+  for(const [key,descriptor] of descriptors)if(descriptor)Object.defineProperty(globalThis,key,descriptor);else Reflect.deleteProperty(globalThis,key);
+ }
+});
