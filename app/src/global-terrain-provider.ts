@@ -59,10 +59,9 @@ const SIZE = 181;
 // avoid rebuilding thousands of off-screen meshes when resident cells change.
 // From level six, 181 samples give a vertex pitch of 2^-level degrees.
 const meshWidth = (level: number) => Math.min(SIZE, 2 ** (level + 2) + 1);
-/** Two hemisphere roots with 180 mesh intervals align the quarter-degree,
- * 129-node native source at level nine. Distant terrain stops at level twelve;
- * starter terrain reaches level fourteen, preserving their prior finest pitches.
- * A global coarse horizon remains outside the resident native cells;
+/** Two hemisphere roots with 180 mesh intervals align the 1/32-degree,
+ * 129-node native source at level twelve; level fourteen retains the prior finest
+ * starter mesh pitch. A global coarse horizon remains outside resident cells;
  * renderer LOD interpolation does not establish additional terrain measurements. */
 export function createGlobalTerrainProvider(world: TerrainGrid, fine: TerrainGrid,
   tiles: readonly TerrainGrid[]): TerrainProvider {
@@ -86,13 +85,9 @@ export function createGlobalTerrainProvider(world: TerrainGrid, fine: TerrainGri
   let copernicusExample = [...selected.values()].find(grid => (grid.copernicus_nodes ?? 0) > 0);
   const tilingScheme = new GeographicTilingScheme({ numberOfLevelZeroTilesX: 2, numberOfLevelZeroTilesY: 1 });
   const maximum = 14;
-  const fineBounds = new Rectangle(fine.west_rad, fine.south_rad, fine.east_rad, fine.north_rad);
-  const insideFine = (x: number, y: number, level: number) =>
-    Rectangle.intersection(tilingScheme.tileXYToRectangle(x, y, level), fineBounds) !== undefined;
   const available = (x: number, y: number, level: number) => Number.isInteger(level) && level >= 0 && level <= maximum
     && Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0
-    && x < 2 * 2 ** level && y < 1 * 2 ** level
-    && (level <= 12 || insideFine(x, y, level));
+    && x < 2 * 2 ** level && y < 1 * 2 ** level;
   let latitudeEdges = [...new Set([fine.south_rad, fine.north_rad, ...[...selected.values()].flatMap(grid => [grid.south_rad, grid.north_rad])])];
   let longitudeEdges = [...new Set([fine.west_rad, fine.east_rad, ...[...selected.values()].flatMap(grid => [grid.west_rad, grid.east_rad])])];
   let samplingFinest = false, usedCoarsePreview = false;
@@ -150,7 +145,7 @@ export function createGlobalTerrainProvider(world: TerrainGrid, fine: TerrainGri
   const heightsFor = (x: number, y: number, level: number, width = meshWidth(level)) => {
       if (!available(x, y, level)) return undefined;
       const bounds = tilingScheme.tileXYToRectangle(x, y, level);
-      samplingFinest = level === (insideFine(x, y, level) ? maximum : 12);
+      samplingFinest = level === maximum;
       usedCoarsePreview = false;
       const heights = new Float64Array(width * width), cells = width - 1;
       for (let row = 0; row < width; row++) {
@@ -184,14 +179,13 @@ export function createGlobalTerrainProvider(world: TerrainGrid, fine: TerrainGri
     return Math.max(curvatureError, level >= maximum ? 1e-6 : spacing * .25);
   };
   provider.getTileDataAvailable = available;
-  // Both the advertised coverage and child mask stop distant coarse rendering
-  // at level twelve; the detailed starter area can refine to level fourteen.
+  // Use one consistent global child hierarchy. Higher LOD subdivides the same
+  // source planes; it does not invent additional measurements in coarse areas.
   provider.requestTileGeometry = (x, y, level) => {
     const width = meshWidth(level), heights = heightsFor(x, y, level, width);
     if (!heights) return undefined;
-    const finest = insideFine(x, y, level) ? maximum : 12;
     return Promise.resolve(new HeightmapTerrainData({ buffer: heights, width, height: width,
-      childTileMask: level < finest ? 15 : 0 }));
+      childTileMask: level < maximum ? 15 : 0 }));
   };
 
   let liveCredit = streamedTerrainCredit([...selected.values()], true);

@@ -17,7 +17,7 @@ function tile(lat: number, lon: number): WorldTerrainTile {
   const [col, row] = worldCellAt(lat * RAD, lon * RAD)!;
   const west = -180 + col * WORLD_TERRAIN.step, south = -90 + row * WORLD_TERRAIN.step;
   return { version: 1, id: worldTileId(col, row), slot: 0, width: 129, height: 129,
-    source: 'global',
+    source: 'global', source_detail: 'copernicus', copernicus_nodes: 129 * 129, coarse_nodes: 0,
     sha256: 'a'.repeat(64), west_rad: west * RAD, east_rad: (west + WORLD_TERRAIN.step) * RAD,
     south_rad: south * RAD, north_rad: (south + WORLD_TERRAIN.step) * RAD,
     physical_m: Float64Array.from({ length: 129 * 129 }, (_, i) => 20 + (i % 129) * .5 + Math.floor(i / 129) * .8 + (i % 3) * .25),
@@ -39,11 +39,11 @@ test('R-WORLD-11 global horizon remains sampleable far from nine resident source
   assert.equal(provider.getTileDataAvailable(-1,0,0), false);
   assert.equal(provider.getTileDataAvailable(0,0,15), false);
 });
-test('R-WORLD-11 coarse-cell-aligned level nine preserves fine native triangle heights and geoid', async () => {
+test('R-WORLD-11 source-aligned level twelve preserves fine native triangle heights and geoid', async () => {
   for (const [lat, lon] of [[40.71,-74.01],[-33.9,18.4],[-16.5,179.99],[-16.5,-179.99]]) {
     const grid = tile(lat, lon), provider = createGlobalTerrainProvider(world, fine, [grid]);
     const expected = sampleAtlas(fine, new Map([[grid.id, grid]]), lat * RAD, lon * RAD)!.ellipsoid_m;
-    for (const level of [9, 12]) {
+    for (const level of [12,13,14]) {
       const actual = await height(provider, lat, lon, level);
       assert(Math.abs(actual - expected) < 1e-7, JSON.stringify({lat,lon,level,actual,expected,difference:actual-expected}));
     }
@@ -52,8 +52,8 @@ test('R-WORLD-11 coarse-cell-aligned level nine preserves fine native triangle h
 test('R-WORLD-11 detailed starter area retains independent sampling and bounded higher LOD', async () => {
   const provider = createGlobalTerrainProvider(world, fine, []);
   assert(Math.abs(await height(provider,50,8.6,14) - 540) < 1e-8);
-  const far = provider.tilingScheme.positionToTileXY(new Cartographic(0,0),13)!;
-  assert.equal(provider.getTileDataAvailable(far.x,far.y,13),false);
+  const far = provider.tilingScheme.positionToTileXY(new Cartographic(0,0),8)!;
+  assert.equal(provider.getTileDataAvailable(far.x,far.y,8),true, 'coarse far terrain retains a complete global LOD hierarchy');
   assert.match(provider.credit!.html,/NOAA ETOPO/);
 });
 
@@ -121,7 +121,7 @@ test('R-WORLD-11 hierarchy bounds and terminal child masks preserve finite negat
       assert.equal(provider.requestTileGeometry(x, y, level), undefined);
     }
   }
-  const level = 12;
+  const level = 14;
   const xy = provider.tilingScheme.positionToTileXY(new Cartographic(70 * RAD, 12 * RAD), level)!;
   const data = await provider.requestTileGeometry(xy.x, xy.y, level) as HeightmapTerrainData;
   assert(data);
@@ -140,8 +140,6 @@ const updateWorld = { ...world, physical_m: new Float64Array(world.width * world
   geoid_m: new Float64Array(world.width * world.height).fill(10) };
 const updateFine = { ...fine, west_rad: 8.4 * RAD, east_rad: 8.9 * RAD, south_rad: 49.8 * RAD, north_rad: 50.4 * RAD };
 function cell(col: number, row=4000, h=100, profile: Readonly<WorldTerrainProfile> = WORLD_TERRAIN): WorldTerrainTile {
-  col %= profile.cols;
-  row = profile.firstRow + (row - profile.firstRow) % (profile.lastRow - profile.firstRow + 1);
   const step=profile.step;
   return {version:1,id:profile===WORLD_TERRAIN?worldTileId(col,row):`world-c${col}-r${row}`,slot:0,width:129,height:129,
     west_rad:(-180+col*step)*RAD,east_rad:(-180+(col+1)*step)*RAD,
@@ -151,7 +149,7 @@ function cell(col: number, row=4000, h=100, profile: Readonly<WorldTerrainProfil
 }
 const clone=(grid:WorldTerrainTile):WorldTerrainTile=>({...grid,physical_m:grid.physical_m.slice(),geoid_m:grid.geoid_m.slice()});
 function middle(grid:TerrainGrid){return new Cartographic((grid.west_rad+grid.east_rad)/2,(grid.south_rad+grid.north_rad)/2);}
-async function request(provider:ReturnType<typeof createGlobalTerrainProvider>,position:Cartographic,level=12){
+async function request(provider:ReturnType<typeof createGlobalTerrainProvider>,position:Cartographic,level=14){
   const xy=provider.tilingScheme.positionToTileXY(position,level)!;
   const data=await provider.requestTileGeometry(xy.x,xy.y,level) as HeightmapTerrainData;
   assert(data);
@@ -209,9 +207,9 @@ test('fine interior is irrelevant but fine feather missing-coarse geometry is pr
 });
 test('profiles and malformed updates fail closed without changing live credit or geometry',()=>{
   const grid=cell(4000),provider=createGlobalTerrainProvider(updateWorld,updateFine,[grid]),credit=provider.credit;
-  const wrongProfile={...cell(10),id:'world30-c10-r4000'};
+  const wrongProfile=cell(10,400,100,LEGACY_WORLD_TERRAIN);
   for(const input of [[],[grid,grid],[wrongProfile],[{...grid,physical_m:new Float64Array(1)}],
-    Array.from({length:10},(_,i)=>cell(4000+i))]){
+    [{...grid,source_detail:'coarse'}],Array.from({length:10},(_,i)=>cell(4000+i))]){
     assert.equal(tryUpdateGlobalTerrainProvider(provider,input as WorldTerrainTile[]),false);
     assert.equal(provider.credit,credit);
   }
@@ -234,6 +232,18 @@ test('history eviction cannot drop a finest mesh source and silently regenerate 
   assert.equal(tryUpdateGlobalTerrainProvider(provider,[cell(164)]),false);
   assert.equal(await request(provider,middle(initial)),112);
 });
+test('live public credit getter adds Copernicus and retains it after history eviction',()=>{
+  const coarse=cell(100);coarse.source_detail='coarse';coarse.copernicus_nodes=0;coarse.coarse_nodes=NODES;
+  const provider=createGlobalTerrainProvider(updateWorld,updateFine,[coarse]);
+  assert.doesNotMatch(provider.credit!.html,/Copernicus/);
+  assert.equal(tryUpdateGlobalTerrainProvider(provider,[cell(101)]),true);
+  assert.match(provider.credit!.html,/Copernicus/);
+  for(let i=102;i<=170;i++){
+    const next=cell(i);next.source_detail='coarse';next.copernicus_nodes=0;next.coarse_nodes=NODES;
+    assert.equal(tryUpdateGlobalTerrainProvider(provider,[next]),true);
+  }
+  assert.match(provider.credit!.html,/Copernicus/);
+});
 test('dateline neighbors compare shared geometry conservatively and update without losing coverage',async()=>{
   const left=cell(0),right=cell(WORLD_TERRAIN.cols-1),provider=createGlobalTerrainProvider(updateWorld,updateFine,[left]);
   assert.equal(tryUpdateGlobalTerrainProvider(provider,[right]),true);
@@ -244,13 +254,13 @@ test('dateline neighbors compare shared geometry conservatively and update witho
   await request(fallback,new Cartographic(-Math.PI,(left.south_rad+left.north_rad)/2));
   assert.equal(tryUpdateGlobalTerrainProvider(fallback,[right]),false,'+π new tile intersects cached -π boundary');
 });
-test('legacy outside-fine terminal12 is protected exactly like world30 terminal14',async()=>{
+test('legacy identities also protect unknown finest geometry without reinterpretation',async()=>{
   const grid=cell(400,400,100,LEGACY_WORLD_TERRAIN),provider=createGlobalTerrainProvider(updateWorld,updateFine,[cell(100,100,100,LEGACY_WORLD_TERRAIN)]);
-  assert.equal(await request(provider,middle(grid),12),50);
+  assert.equal(await request(provider,middle(grid),14),50);
   assert.equal(tryUpdateGlobalTerrainProvider(provider,[grid]),false);
   const stable=createGlobalTerrainProvider(updateWorld,updateFine,[grid]);
   assert.equal(tryUpdateGlobalTerrainProvider(stable,[clone(grid),cell(401,400,100,LEGACY_WORLD_TERRAIN)]),true);
-  assert.equal(await request(stable,middle(grid),12),112);
+  assert.equal(await request(stable,middle(grid),14),112);
 });
 test('real3x3 center shift accepts six freshly cloned unchanged cells and three new cells',async()=>{
   const window=(center:number)=>Array.from({length:9},(_,i)=>({...cell(center-1+i%3,3999+Math.floor(i/3)),slot:i}));
@@ -265,7 +275,7 @@ test('real3x3 center shift accepts six freshly cloned unchanged cells and three 
 });
 test('bounded coarse-preview overflow conservatively rejects unknown geometry but accepts equal current clones',async()=>{
   const installed=cell(4000),provider=createGlobalTerrainProvider(updateWorld,updateFine,[installed]);
-  for(let x=0;x<513;x++)await provider.requestTileGeometry(x,3000,12);
+  for(let x=0;x<513;x++)await provider.requestTileGeometry(x,3000,14);
   assert.equal(tryUpdateGlobalTerrainProvider(provider,[clone(installed)]),true);
   assert.equal(tryUpdateGlobalTerrainProvider(provider,[cell(4001)]),false,'overflow cannot silently forget an already returned coarse preview');
 });
@@ -275,7 +285,8 @@ test('static Review factory preserves18 disjoint grids, mixed profiles, and boun
   assert.equal(await request(provider,middle(grids[0])),112);
   assert.equal(await request(provider,middle(grids[17])),112);
   assert.equal(tryUpdateGlobalTerrainProvider(provider,[clone(grids[0])]),false,'archive union must remain static');
-  const legacy={...cell(400),id:'world30-c400-r4000'},mixed=createGlobalTerrainProvider(updateWorld,updateFine,[grids[0],legacy]);
+  const legacy=cell(400,400,100,LEGACY_WORLD_TERRAIN),mixed=createGlobalTerrainProvider(updateWorld,updateFine,[grids[0],legacy]);
+  assert.equal(await request(mixed,middle(legacy)),112);
   assert.equal(await request(mixed,middle(grids[0])),112);
   assert.equal(tryUpdateGlobalTerrainProvider(mixed,[clone(grids[0])]),false,'mixed archives never reinterpret an identity profile');
   const all=Array.from({length:73},(_,i)=>cell(100+i*10));
@@ -286,6 +297,20 @@ test('static Review factory preserves18 disjoint grids, mixed profiles, and boun
   const empty=createGlobalTerrainProvider(updateWorld,updateFine,[]);
   assert.equal(await request(empty,middle(grids[0])),50);
   assert.equal(tryUpdateGlobalTerrainProvider(empty,[grids[0]]),false,'zero initial cells is explicitly static');
+});
+test('equalgeometry metadata refresh accepts slot changes and adds newly declared Copernicus credit',async()=>{
+  const initial=cell(4000);initial.source_detail='coarse';initial.copernicus_nodes=0;initial.coarse_nodes=NODES;
+  const provider=createGlobalTerrainProvider(updateWorld,updateFine,[initial]);
+  assert.doesNotMatch(provider.credit!.html,/Copernicus/);
+  const changedSlot=clone(initial);changedSlot.slot=8;
+  assert.equal(tryUpdateGlobalTerrainProvider(provider,[changedSlot]),true);
+  const copernicus=clone(changedSlot);copernicus.source_detail='copernicus';copernicus.copernicus_nodes=NODES;copernicus.coarse_nodes=0;
+  copernicus.sha256='b'.repeat(64);
+  assert.equal(tryUpdateGlobalTerrainProvider(provider,[copernicus]),true);
+  assert.match(provider.credit!.html,/Copernicus/,'new valid16641-node source declaration must update public credit');
+  assert.equal(await request(provider,middle(initial)),112);
+  assert.equal(tryUpdateGlobalTerrainProvider(provider,[clone(initial)]),true);
+  assert.match(provider.credit!.html,/Copernicus/,'source credits remain sticky for already cached meshes');
 });
 test('static Review ignores valid older regional grids while retaining native world coverage',async()=>{
   const native=Array.from({length:9},(_,i)=>({...cell(3999+i%3,3999+Math.floor(i/3)),slot:i}));
@@ -304,12 +329,7 @@ test('static Review ignores valid older regional grids while retaining native wo
     assert.throws(()=>create(updateWorld,updateFine,[invalid]),/Invalid global terrain window/,'invalid general grids still fail explicitly');
   }
 });
-test('stable metadata refresh accepts reassigned native slots on unchanged legacy geometry',async()=>{
-  const original=cell(400),provider=createGlobalTerrainProvider(updateWorld,updateFine,[original]);
-  const shifted=clone(original);shifted.slot=8;
-  assert.equal(tryUpdateGlobalTerrainProvider(provider,[shifted]),true);
-  assert.equal(await request(provider,middle(original)),112);
-});
+
 
 // Synthetic mechanism fixtures: these establish transition/cache behavior, not
 // source accuracy. Real Swiss Copernicus/native/GPU measurements are separate.
@@ -330,12 +350,22 @@ test('R-WORLD-11 exterior collar is continuous at all source edges/corners and e
   }
   assert.equal(await request(provider,c),112);
 });
+test('R-WORLD-11 exterior correction includes geoid and has no disjoint-source nearest-tie seam',async()=>{
+  const a=cell(4000,4000,100),b=cell(4004,4000,300),provider=createGlobalTerrainProvider(updateWorld,updateFine,[a,b]);
+  const lat=middle(a).latitude,lon=(a.east_rad+b.west_rad)/2,delta=1e-8*RAD;
+  const left=await request(provider,new Cartographic(lon-delta,lat));
+  const right=await request(provider,new Cartographic(lon+delta,lat));
+  assert(Math.abs(left-right)<.001,JSON.stringify({left,right}));
+  assert(left>100&&left<312,'blended exterior is finite and bounded by contributing corrections');
+  assert(Math.abs(await request(provider,new Cartographic(a.east_rad+1e-9*RAD,lat))-112)<1e-5,
+    'near a source boundary its own physical+geoid correction dominates other sources');
+});
 test('R-WORLD-11 exterior collar wraps longitude and remains finite at geographic limits',async()=>{
   for(const [col,row,longitude] of [[0,4000,180-1e-9],[WORLD_TERRAIN.cols-1,4000,-180+1e-9]]){
     const grid=cell(col,row),provider=createGlobalTerrainProvider(updateWorld,updateFine,[grid]);
     assert(Math.abs(await request(provider,new Cartographic(longitude*RAD,middle(grid).latitude))-112)<1e-5);
   }
-  const polar=cell(0,WORLD_TERRAIN.lastRow),provider=createGlobalTerrainProvider(updateWorld,updateFine,[polar]);
+  const polar=cell(0,WORLD_TERRAIN.rows-1),provider=createGlobalTerrainProvider(updateWorld,updateFine,[polar]);
   assert(Number.isFinite(await request(provider,new Cartographic(-179.9*RAD,Math.PI/2))));
 });
 test('R-WORLD-11 new source and eviction protect cached exterior collar geometry',async()=>{
@@ -354,9 +384,9 @@ test('R-WORLD-11 new source and eviction protect cached exterior collar geometry
 
 test('R-WORLD-11 redundant fine-interior source cannot alter cached exterior collar weights',async()=>{
   const provider=createGlobalTerrainProvider(updateWorld,updateFine,[cell(100)]);
-  const point=new Cartographic(updateFine.west_rad-.005*RAD,(updateFine.south_rad+updateFine.north_rad)/2);
+  const point=new Cartographic(updateFine.west_rad-.03*RAD,(updateFine.south_rad+updateFine.north_rad)/2);
   const before=await request(provider,point);
-  const interior=cell(Math.floor((8.6+180)/WORLD_TERRAIN.step),Math.floor((50.1+90)/WORLD_TERRAIN.step));
+  const interior=cell(Math.floor((8.46+180)/WORLD_TERRAIN.step),Math.floor((50.1+90)/WORLD_TERRAIN.step));
   assert.equal(tryUpdateGlobalTerrainProvider(provider,[interior]),true);
   assert.equal(await request(provider,point),before);
 });

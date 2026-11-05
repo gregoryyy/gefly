@@ -207,7 +207,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       if (m.type === 'terrain-tile') {
         const grid = m.grid as TerrainGrid & {slot:number};
         if (!validateTerrainGrid(grid) || grid.width !== 129 || grid.height !== 129 || !Number.isInteger(grid.slot) || grid.slot < 0 || grid.slot >= REGIONAL_TERRAIN.tileCount) { failCurrent('Invalid regional terrain message.'); return; }
-        if (grid.id.startsWith('world-')) {
+        if (grid.id.startsWith('world-') || grid.id.startsWith('world30-')) {
           if (!validWorldTerrainTile(grid)) { failCurrent('World terrain identity, bounds or source mismatch.'); return; }
         } else {
           const { west, south, cols, step } = REGIONAL_TERRAIN;

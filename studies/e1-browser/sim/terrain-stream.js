@@ -1,4 +1,5 @@
 import { validateTerrainGrid, sampleTerrain } from './terrain.js';
+import { readCopernicusCell } from './copernicus-terrain.js';
 import { WORLD_TERRAIN, worldCellAt, worldTileId, sampleWorldTerrain, terrainDigest, validWorldTerrainTile } from './world-terrain.js';
 
 const ROOT = '/terrain/region/';
@@ -235,13 +236,19 @@ export class TerrainStream {
   async move(lat, lon) { await this.update(lat, lon); this.key = this.center(lat, lon).join(','); }
 }
 
-/** Coarse global baseline with valid regional samples preferred; nine native cells. */
+/** Dense global cells keep nine native slots while sampling the public 30 m
+ * DSM on a 1/4096-degree lattice (~27.2 m north-south). Regional valid samples
+ * take priority. Canonical east/north owners make every shared edge use the
+ * same source outcome. At most512 owner outcomes (including failures) are
+ * retained for one stream epoch; unseen owners use coarse after that budget.
+ * Outcomes are never evicted/retried under already installed cells. */
 export class WorldTerrainStream {
-  constructor(world, manifest, install, remove, fetcher = globalThis.fetch) {
+  constructor(world, manifest, install, remove, fetcher = globalThis.fetch, options = {}) {
     if (!validateTerrainGrid(world) || world.width !== 361 || world.height !== 181) throw new Error('Invalid bundled world terrain.');
     this.world = world; this.manifest = manifest ?? new Map(); this.install = install; this.remove = remove; this.fetcher = fetcher;
     this.tiles = new Map(); this.sources = new Map(); this.failedSources = new Set(); this.controller = new AbortController();
-    this.key = null; this.busy = false; this.prefetchTask = null; this.prepared = null;
+    this.copernicusSources = new Map(); this.copernicusEnabled = options.copernicus !== false;
+    this.copernicusBudgetExhausted = false; this.key = null; this.busy = false; this.prefetchTask = null; this.prepared = null;
   }
   center(lat, lon) { return worldCellAt(lat, lon); }
   sample(lat, lon) { return sampleAtlas(null, this.tiles, lat, lon); }
@@ -261,28 +268,67 @@ export class WorldTerrainStream {
     const meta = this.nodeOwner(lon, lat), source = meta && this.sources.get(meta.id);
     return source ? sampleTerrain(source, lat * RAD, lon * RAD) : null;
   }
+  copernicusOwner(col, row, x, y) {
+    const longitude = (col * 128 + x) % (WORLD_TERRAIN.cols * 128), latitude = row * 128 + y;
+    // At the supported north edge the last cell owns its own final row.
+    const ownerCol = Math.floor(longitude / 128), ownerRow = Math.min(WORLD_TERRAIN.lastRow, Math.floor(latitude / 128));
+    return { col: ownerCol, row: ownerRow, index: (latitude - ownerRow * 128) * 129 + longitude % 128 };
+  }
+  async loadCopernicusOwners(wanted) {
+    if (!this.copernicusEnabled) return;
+    const owners = new Map();
+    for (const [col, row] of wanted) for (let y = 0; y < 129; y++) for (let x = 0; x < 129; x++) {
+      const lon = -180 + (col * 128 + x) / 4096, lat = -90 + (row * 128 + y) / 4096;
+      if (this.regionalSample(lon, lat)) continue;
+      const owner = this.copernicusOwner(col, row, x, y), key = worldTileId(owner.col, owner.row);
+      if (!this.copernicusSources.has(key)) owners.set(key, owner);
+    }
+    const budget = optionalBudget(this.controller.signal), pending = [...owners.entries()];
+    // Two output requests match the service's bounded decoder jobs. A single
+    // five-second enhancement budget covers the entire new owner halo.
+    let index = 0;
+    const work = async () => {
+      while (index < pending.length) {
+        const [key, owner] = pending[index++];
+        if (this.copernicusSources.size >= 512) { this.copernicusBudgetExhausted = true; continue; }
+        // Reserve the outcome before the await so parallel workers cannot
+        // exceed the epoch cap. A failed/cancelled optional request stays null.
+        this.copernicusSources.set(key, null);
+        if (budget.signal.aborted) continue;
+        try { this.copernicusSources.set(key, await readCopernicusCell(owner.col, owner.row, this.fetcher, budget.signal)); }
+        catch (error) { if (this.controller.signal.aborted) throw error; }
+      }
+    };
+    try { await Promise.all([work(), work()]); }
+    finally { budget.dispose(); }
+  }
   async compose(col, row, slot) {
     const physical_m = new Float64Array(129 * 129), geoid_m = new Float64Array(129 * 129);
-    let regional = 0;
+    let regional = 0, copernicus = 0;
     for (let y = 0; y < 129; y++) for (let x = 0; x < 129; x++) {
       // Integer lattice first: all cells compute identical shared node inputs.
-      const lon = -180 + (col + x / 128) * WORLD_TERRAIN.step, lat = -90 + (row + y / 128) * WORLD_TERRAIN.step;
+      const lon = -180 + (col * 128 + x) / 4096, lat = -90 + (row * 128 + y) / 4096;
       const sample = this.regionalSample(lon, lat);
       let h, n;
       if (sample) { h = sample.physical_m; n = sample.geoid_m; regional++; }
       else {
         const global = sampleWorldTerrain(this.world, lat * RAD, lon * RAD);
         if (!global) throw new Error('Bundled world terrain sample unavailable.');
-        h = global.physical_m;
+        const owner = this.copernicusOwner(col, row, x, y), cell = this.copernicusSources.get(worldTileId(owner.col, owner.row));
+        const value = cell?.physical_m[owner.index];
+        if (Number.isFinite(value)) { h = value; copernicus++; } else h = global.physical_m;
         n = global.geoid_m;
       }
       physical_m[y * 129 + x] = h; geoid_m[y * 129 + x] = n;
     }
     const source = regional === physical_m.length ? 'regional' : regional ? 'mixed' : 'global';
+    const coarse = physical_m.length - regional - copernicus;
+    const source_detail = regional === physical_m.length ? 'regional' : copernicus === physical_m.length ? 'copernicus'
+      : coarse === physical_m.length ? 'coarse' : 'mixed';
     const packed = new ArrayBuffer(129 * 129 * 16), view = new DataView(packed);
     for (let i = 0; i < physical_m.length; i++) { view.setFloat64(i * 16, physical_m[i], true); view.setFloat64(i * 16 + 8, geoid_m[i], true); }
     const step = WORLD_TERRAIN.step;
-    const grid = { version: 1, id: worldTileId(col, row), slot, width: 129, height: 129, source,
+    const grid = { version: 1, id: worldTileId(col, row), slot, width: 129, height: 129, source, source_detail, copernicus_nodes: copernicus, coarse_nodes: coarse,
       west_rad: (-180 + col * step) * RAD, south_rad: (-90 + row * step) * RAD,
       east_rad: (-180 + (col + 1) * step) * RAD, north_rad: (-90 + (row + 1) * step) * RAD,
       physical_m, geoid_m, sha256: await terrainDigest(packed),
@@ -396,7 +442,7 @@ export class WorldTerrainStream {
           catch (error) { if (this.controller.signal.aborted) throw error; this.failedSources.add(id); }
         }
       } finally { budget.dispose(); }
-
+      await this.loadCopernicusOwners(wanted);
       const staged = new Map(); let slot = 0;
       for (const [x, y] of wanted) {
         const id = worldTileId(x, y), previous = this.tiles.get(id);
