@@ -1,0 +1,70 @@
+// Trusted C keys through the actual app/worker/native engine; synthetic scenery only.
+import assert from 'node:assert/strict';
+import {spawn} from 'node:child_process';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {fileURLToPath} from 'node:url';
+import {chromium} from 'playwright';
+import {installSceneryFixture,prepareFlightUI,startOrResume} from './flight-actions.mjs';
+const app=fileURLToPath(new URL('..',import.meta.url)),output=fileURLToPath(new URL('../../output/flight/',import.meta.url)),origin='http://127.0.0.1:5371';
+const server=spawn(process.execPath,['--input-type=module','-e',`import{createServer}from'vite';const s=await createServer({cacheDir:'../output/flight/cws-vite',server:{host:'127.0.0.1',port:5371,strictPort:true,hmr:false,watch:{ignored:['**/*']}}});await s.listen();s.printUrls();`],{cwd:app,stdio:'pipe'});
+let log='',browser,page;const result={checks:[],errors:[]};
+server.stdout.on('data',d=>{log+=d});server.stderr.on('data',d=>{log+=d});
+try{
+ await mkdir(output,{recursive:true});
+ for(let i=0;i<100&&!log.includes('Local:');i++)await new Promise(r=>setTimeout(r,100));
+ assert(log.includes('Local:'),log);
+ browser=await chromium.launch({headless:true,...(process.env.CHROME?{executablePath:process.env.CHROME}:{channel:'chrome'})});result.browser=browser.version();
+ page=await browser.newPage({viewport:{width:1440,height:1000},serviceWorkers:'block'});page.on('pageerror',e=>result.errors.push(String(e)));
+ await page.addInitScript(()=>{const Native=Worker;window.cwsCommands=[];
+ window.Worker=class extends Native{constructor(...args){super(...args);if(String(args[0]).includes('/sim/worker.js')){window.cwsWorker=this;this.addEventListener('message',({data})=>{if(data.type==='state')window.cwsState=data;});}}
+ postMessage(m,...args){if(m?.type==='kap140'||m?.type==='input')window.cwsCommands.push(structuredClone(m));return super.postMessage(m,...args);}};});
+ await installSceneryFixture(page);await page.goto(origin);
+ await page.waitForFunction(()=>!document.querySelector('#start').disabled&&window.cwsState?.kap_profile===1,null,{timeout:60000});
+ const focus=()=>page.locator('#scene').focus(),wait=value=>page.waitForFunction(v=>window.cwsState?.kap_cws===v,value);
+ await focus();await page.keyboard.press('a');await page.waitForFunction(()=>window.cwsState?.kap_engaged===1&&window.cwsState.kap_vertical===1);
+ await page.keyboard.press('c');await wait(0);
+ const commands=()=>page.evaluate(()=>window.cwsCommands.filter(m=>m.type==='kap140'&&m.command?.action==='cws'));
+ assert.equal((await commands()).length,0);
+ await startOrResume(page);await page.waitForFunction(()=>window.cwsState.t_s>.2);
+ await focus();await page.keyboard.down('c');await wait(1);await page.keyboard.down('c');
+ const box=await page.locator('#scene').boundingBox();await page.mouse.click(box.x+box.width/2,box.y+box.height/2);await page.mouse.move(box.x+box.width/2+100,box.y+box.height/2-40);await page.waitForTimeout(100);
+ await page.keyboard.down('ArrowDown');await page.waitForTimeout(150);await page.keyboard.up('ArrowDown');
+ assert.equal(await page.evaluate(()=>window.cwsState.kap_engaged),1);
+ assert(await page.evaluate(()=>window.cwsCommands.some(m=>m.type==='input'&&m.elevator!==0&&m.pilot_override===true)),'manual elevator reaches the worker');
+ assert(await page.evaluate(()=>window.cwsCommands.some(m=>m.type==='input'&&m.aileron!==0)),'pointer aileron reaches the worker during C hold');
+ await page.keyboard.up('c');await wait(0);
+ assert.equal(await page.evaluate(()=>window.cwsState.kap_engaged),1);assert.equal(await page.evaluate(()=>window.cwsState.kap_vertical),1);
+ assert.deepEqual((await commands()).map(m=>m.command.value),[1,0]);
+ result.checks.push('paused C ignored; live hold/repeat/manual input/release retains AP and ALT with one command per edge');
+ await page.locator('#ap-cws').focus();await page.keyboard.down('Space');await wait(1);
+ await page.keyboard.down('c');await page.keyboard.up('Space');await wait(1);await page.keyboard.up('c');await wait(0);
+ result.checks.push('panel Space release cannot cancel held C');
+ await focus();await page.keyboard.down('Control');await page.keyboard.press('c');await page.keyboard.up('Control');await wait(0);
+ await page.locator('#ap-heading-target').focus();await page.keyboard.press('c');await wait(0);
+ await focus();await page.keyboard.down('c');await wait(1);await page.keyboard.press('Space');await wait(0);await page.keyboard.up('c');
+ await page.waitForFunction(()=>document.querySelector('#status').textContent==='Paused');
+ result.checks.push('typing/modifiers blocked and pause releases without late-keyup restart');
+ await startOrResume(page);await focus();await page.keyboard.down('c');await wait(1);
+ await page.evaluate(()=>window.dispatchEvent(new Event('blur')));await wait(0);await page.keyboard.up('c');
+ result.checks.push('blur releases CWS');
+ await startOrResume(page);await focus();await page.keyboard.down('c');await wait(1);
+ // Explicit injected loading notification tests application lifecycle routing, not terrain-source behavior.
+ await page.evaluate(()=>window.cwsWorker.dispatchEvent(new MessageEvent('message',{data:{type:'terrain-loading',loading:true}})));await wait(0);await page.keyboard.up('c');
+ const beforeLoading=(await commands()).length;await page.keyboard.press('c');assert.equal((await commands()).length,beforeLoading);
+ await page.evaluate(()=>window.cwsWorker.dispatchEvent(new MessageEvent('message',{data:{type:'terrain-loading',loading:false}})));
+ result.checks.push('injected terrain-loading lifecycle notification releases CWS and blocks new holds');
+ await focus();await page.keyboard.down('c');await wait(1);await page.keyboard.press('a');await page.waitForFunction(()=>window.cwsState.kap_engaged===0);await wait(0);await page.keyboard.up('c');
+ await page.keyboard.press('a');await page.waitForFunction(()=>window.cwsState.kap_engaged===1);
+ result.checks.push('AP disengagement clears held C');
+ await focus();await page.keyboard.down('c');await wait(1);
+ await page.keyboard.press('r');await page.waitForFunction(()=>document.querySelector('#status').textContent==='Review');await wait(0);await page.keyboard.up('c');await page.keyboard.press('c');await wait(0);
+ result.checks.push('Review releases CWS and rejects new holds');
+ await page.keyboard.press('r');await page.waitForFunction(()=>document.querySelector('#status').textContent!=='Review');
+ await focus();if(await page.locator('#status').textContent()==='Flying')await page.keyboard.press('Space');
+ await page.waitForFunction(()=>document.querySelector('#status').textContent==='Paused');await prepareFlightUI(page,{controls:false});
+ await page.locator('#flight-menu > summary').click();await page.keyboard.press('c');await wait(0);await page.locator('#reset').click();
+ await page.waitForFunction(()=>!document.querySelector('#start').disabled&&window.cwsState?.t_s===0&&window.cwsState.kap_engaged===0,null,{timeout:60000});
+ await startOrResume(page);await focus();await page.keyboard.press('c');await wait(0);
+ result.checks.push('menu/AP-off reject C; reset retains no hold');assert.deepEqual(result.errors,[]);result.result='pass';console.log(JSON.stringify(result,null,2));
+}catch(e){result.result='fail';result.error=String(e);throw e;}
+finally{if(page){result.commands=await page.evaluate(()=>window.cwsCommands).catch(()=>[]);result.finalState=await page.evaluate(()=>window.cwsState).catch(()=>null);await page.screenshot({path:`${output}/cws-keyboard.png`}).catch(()=>{});}await writeFile(`${output}/cws-keyboard.json`,JSON.stringify(result,null,2)+'\n');await browser?.close();server.kill('SIGTERM');}
