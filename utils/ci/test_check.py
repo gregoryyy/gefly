@@ -73,6 +73,14 @@ class ScaffoldTests(ScaffoldFixture):
         self.write("README.md", "[Broken](docs/missing.md)\n")
         self.assert_rejected("README.md:1: missing link target docs/missing.md")
 
+    def test_local_sdk_work_markdown_is_excluded_but_study_docs_are_checked(self):
+        self.write("studies/e1-browser/sim/.work/emsdk/node/README.md",
+                   "[SDK source file omitted from installation](GOVERNANCE.md)\n")
+        code, _, stderr = self.run_check()
+        self.assertEqual(code, 0, stderr)
+        self.write("studies/e1-browser/README.md", "[Broken study reference](missing.md)\n")
+        self.assert_rejected("studies/e1-browser/README.md:1: missing link target missing.md")
+
     def test_malformed_native_toml_fails(self):
         self.write(".codex/agents/code1.toml", 'name = "unterminated\n')
         self.assert_rejected(".codex/agents/code1.toml:")
