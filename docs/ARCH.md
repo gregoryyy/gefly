@@ -499,3 +499,19 @@ atomically. Static combined Review inputs remain bounded at 73 and disable live
 mutation; older regional filtering behavior is preserved. Reset/new-flight and
 archived/cached Review contexts prevent live mutation. Review using only
 already-live terrain need not replace the provider. No private Cesium mesh API is used.
+
+
+## Predictive scenery loading policy
+
+A shared bounded predictor uses consecutive authoritative positions and simulated
+elapsed time for ground motion; aircraft heading is not a wind-corrected track.
+Look-ahead is20wall-seconds multiplied by confirmed simulation pacing, capped at
+8km. The terrain worker stages one prospective next neighborhood separately from
+the nine installed native tiles. Only the ordinary validated boundary transaction
+can install it. Optional prefetch does not change controls, integration step or
+current ground support. Cartography warming retains current-area priority within
+the existing200-URL/two-background-request budget. Turns, invalid motion and
+reset/Review epochs suppress stale predictions; failures retain ordinary loading.
+See the [bounded cache design](design/scenery-cache.md). Actual source-cache and
+handoff bounds are recorded with implementation evidence, not inferred from this
+policy.

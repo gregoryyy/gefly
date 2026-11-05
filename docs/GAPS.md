@@ -4,6 +4,17 @@ All times are Europe/Berlin. Answers record the author and recording time. New a
 
 ## Recorded interaction decisions
 
+**2026-11-05 21:32, user request and Codex implementation choice** (Europe/Berlin):
+[Predictive terrain loading](input/2026-11-05-predictive-terrain-loading.md) uses
+consecutive simulated positions/time for actual ground track, with20wall-seconds
+of lead scaled by confirmed pacing and capped at8km. These are bounded loading
+policy choices, not aircraft parameters. Stage at most one next native window
+without speculative installation, and use the existing200-URL/two-background-slot
+cartography budget with current-area priority. Turns, invalid motion, new epochs
+and Review invalidate predictions; optional failure preserves ordinary loading.
+The preceding PR85 merge is confirmed by origin/main b55607b; this follow-up uses
+an isolated branch and separate PR. R-WORLD-9/R-WORLD-11/R-SIM-2, TODO2.0.155.
+
 **2026-11-05 20:09, Codex implementation decision within user-requested repair** (Europe/Berlin):
 [Reload follow-up](input/2026-11-05-vector-terrain-reload.md) confirms loading
 starvation. Replace 4050 global roots with two progressive source-aligned roots;

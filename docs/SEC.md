@@ -421,3 +421,16 @@ font, sprite, provider, executable source or dependency is introduced. Regional
 photo mode retains its existing source boundaries. Disable the default opaque
 regional cartography overlay while retaining its implementation; cartographic
 geometry/labels do not alter native terrain, flight or navigation inventories.
+
+
+## Predictive simulated-flight loading
+
+Prediction reads simulated position/time and confirmed simulation pacing only.
+It adds no device geolocation, provider, account, telemetry upload or persistence.
+Speculative terrain is bounded separately from the nine native resident slots and
+cannot invoke native install/remove until its window is actually required.
+Existing hash/schema/source/shared-edge checks remain mandatory. A superseded or
+failed speculative task must not alter current authoritative terrain or poison
+its source outcomes. Current visible demand retains priority over the bounded
+forward cartography corridor. Cancellation and new stream epochs discard owned
+speculation; ordinary validated loading remains the fallback.
