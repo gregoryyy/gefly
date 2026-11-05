@@ -59,7 +59,7 @@ export function tilesWithinRadius(lat_rad: number, lon_rad: number, z: number, r
 
 /** Display-resource warming only; never installs terrain or changes physics.
  * Budgets: map32, coarse48, detail64, terrain24, OSM32; at most200 same-origin URLs. */
-export function planSceneryPrefetch(lat_rad: number, lon_rad: number, vector: boolean): readonly string[] {
+export function planSceneryPrefetch(lat_rad: number, lon_rad: number, vector: boolean, ahead?: Readonly<{ lat_rad: number; lon_rad: number }> | null): readonly string[] {
   if (!valid(lat_rad, lon_rad)) return [];
   const items: {url: string; distance: number; tier: number}[] = [];
   function layer(prefix: string, suffix: string, z: number, radius: number, cap: number, bounds: readonly number[], tier: number): void {
@@ -85,7 +85,42 @@ export function planSceneryPrefetch(lat_rad: number, lon_rad: number, vector: bo
   }
   terrain.sort((a,b)=>a.distance-b.distance || a.url.localeCompare(b.url));items.push(...terrain.slice(0,24));
   items.sort((a,b)=>a.distance-b.distance || a.tier-b.tier || a.url.localeCompare(b.url));
-  return items.slice(0, 200).map(item=>item.url);
+  const local = items.slice(0, 200).map(item => item.url);
+  if (!ahead || !valid(ahead.lat_rad, ahead.lon_rad)
+    || distanceMeters(lat_rad, lon_rad, ahead.lat_rad, ahead.lon_rad) > 8000.01
+    || distanceMeters(lat_rad, lon_rad, ahead.lat_rad, ahead.lon_rad) < 1) return local;
+
+  // Current containing/nearby cartography keeps priority. A forward corridor
+  // warms only the active global OSM source, without adding render contexts.
+  // Three2km neighborhood targets sample the bounded8km corridor; tile limits
+  // can truncate coverage, especially near the Web Mercator edge.
+  const forward: string[] = [];
+  for (const fraction of [1 / 3, 2 / 3, 1]) {
+    const lat = lat_rad + (ahead.lat_rad - lat_rad) * fraction;
+    const lon = wrap(lon_rad + wrap(ahead.lon_rad - lon_rad) * fraction);
+    if (Math.abs(lat) <= MAX_LAT) {
+      for (const [z, radius, cap] of [[14, 2000, 8], [11, 20000, 24]]) {
+        forward.push(...tilesWithinRadius(lat, lon, z, radius, cap).map(tile => `/scenery/osm/${tile.key}.pbf`));
+      }
+    }
+  }
+  const nearby = [...local.filter(url => url.startsWith('/scenery/osm/14/')).slice(0, 4), ...local.slice(0, 12)];
+  const detail = forward.filter(url => url.startsWith('/scenery/osm/14/'));
+  const coarse = forward.filter(url => url.startsWith('/scenery/osm/11/'));
+  const selected: string[] = [], seen = new Set<string>(), counts = new Map<string, number>();
+  for (const url of [...nearby, ...detail, ...coarse, ...local]) {
+    if (seen.has(url)) continue;
+    const group = url.startsWith('/scenery/osm/') ? 'osm'
+      : url.startsWith('/terrain/region/') ? 'terrain'
+        : url.startsWith('/scenery/map/') ? 'map'
+          : url.includes('/14/') ? 'detail' : 'coarse';
+    const cap = { osm: 32, terrain: 24, map: 32, detail: 64, coarse: 48 }[group];
+    const count = counts.get(group) ?? 0;
+    if (count >= cap) continue;
+    seen.add(url); counts.set(group, count + 1); selected.push(url);
+    if (selected.length === 200) break;
+  }
+  return selected;
 }
 
 /** Small startup warmup for both selectable map modes, not full radius coverage.

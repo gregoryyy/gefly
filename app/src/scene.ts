@@ -397,7 +397,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     }
   });
 
-  function update(state: FlightState, view: 'cockpit' | 'chase', look?: Readonly<CameraLook>): void {
+  function update(state: FlightState, view: 'cockpit' | 'chase', look?: Readonly<CameraLook>, livePrediction = false): void {
     if (disposed) return;
     if (![state.lat_rad, state.lon_rad, state.alt_msl_m, state.pitch_rad, state.roll_rad, state.heading_rad].every(Number.isFinite)) {
       landmarkLabels.update(null, false);
@@ -406,7 +406,8 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     const useTerrain = state.terrain_profile === 1;
     if (useTerrain) ensureWorldMap();
     // Start a new warm plan after visible tiles settle; retain nearby progress through brief camera tile work.
-    sceneryCache.update(state.lat_rad, state.lon_rad, vectorScenery, useTerrain, scene.globe.tilesLoaded);
+    sceneryCache.update(state.lat_rad, state.lon_rad, vectorScenery, useTerrain, scene.globe.tilesLoaded,
+      { t_s: state.t_s, simulation_rate: state.simulation_rate, live: livePrediction });
     airportScenery.setVisible(useTerrain);
     airportScenery.setVectorVisible(false);
     airportScenery.update(state);

@@ -61,6 +61,41 @@ server proxy: a deployment must still serve the allowlisted scenery routes.
 Simulation time/physics remain independent of warming, and authoritative terrain
 coverage/validation failures retain their existing behavior.
 
+## Predictive flight-direction warming
+
+[R-WORLD-9](../SPEC.md) and TODO 2.0.155 extend the existing current-area plan
+with a bounded flight-direction corridor. The implementation policy uses two
+consecutive authoritative positions and simulated elapsed time to estimate
+actual ground motion; aircraft heading and airspeed are not substituted for
+ground track. The target is 20 wall seconds ahead at the confirmed simulation
+rate, capped at 8 km. These are loading-policy limits, not aircraft parameters.
+Initial, stationary, invalid, reset/teleport and Review samples must not create a
+speculative plan. Course changes invalidate obsolete predictions.
+
+The native loader prepares at most one next required terrain neighborhood before
+an approaching window crossing. Preparation does not install or remove native
+tiles; the current nine-slot atlas remains authoritative until the ordinary
+validated handoff between fixed steps. Source identities, hashes, shared edges,
+height/geoid conventions and epoch cancellation remain on the existing terrain
+path. A failed or obsolete prefetch leaves current terrain intact and falls back
+to ordinary loading. It cannot justify stale heights, zero-height substitution or
+an automatic simulation step.
+
+Display warming keeps current-area resources ahead of the forward corridor,
+including startup seed priority and visible-request promotion. Both areas share
+the existing 200-URL plan, two background request slots, allowlisted same-origin
+providers and persistent-cache bounds. Directional planning does not open a map,
+create a renderer, request device location or add a source. Existing camera-ready
+and optional-storage fallbacks remain applicable. The predictor resets on a new
+flight or discontinuous position/time; Review does not warm a route from recorded
+motion. Pause must not extrapolate from wall time alone.
+
+This section records the bounded implementation policy; source and behavioral
+acceptance belong to the task's independent reviews. Look-ahead can reduce
+boundary waits, but upstream delays, a changed course, cache eviction or source
+failure can still require ordinary loading. It is not a zero-wait or complete
+corridor-coverage guarantee.
+
 ## Rendered-vector reuse and foreground priority
 
 The single MapLibre terrain renderer retains up to 64 finished 512px RGBA canvases
@@ -79,3 +114,6 @@ two-slot limit. Browser-native photo cancellation remains on its existing path.
 These changes reduce repeated I/O, redraws and queue contention. First visits
 still depend on upstream latency, source availability and serial vector rendering;
 a warm-cache fixture does not establish a whole-scene cold-load time.
+
+Implementation and bounded legacy/world30 observations are recorded in the
+[predictive-loading evidence](../research/2026-11-05-predictive-terrain-loading.md).

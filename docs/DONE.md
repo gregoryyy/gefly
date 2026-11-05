@@ -3,6 +3,89 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-05 21:53 — Predict terrain crossings and preload the flight direction
+
+TODO: 2.0.155; R-WORLD-9/R-WORLD-11/R-SIM-2.
+Agent: Codex orchestrator; code1 `predictive_native` predictor/stream/worker;
+code2 `predict_display` forward cartography and Scene integration;
+`predict_housekeeping` cache design; independent `quality` and `panel_validate_final`.
+
+**Implementation notes**
+
+Measured ground motion predicts20wall-seconds ahead at confirmed simulation
+pacing, capped at8km. One private next terrain window prepares without native
+installation; matching required crossings promote checked tiles within nine
+native slots. Current-area detail precedes a bounded forward map corridor using
+the existing200-URL/two-background-slot budget. [Evidence](research/2026-11-05-predictive-terrain-loading.md)
+separates the legacy foundation and integrated world30 profiles.
+
+Actual browser production-worker/native flights each complete12000fixed steps
+at10×. Legacy prepares one window; integrated prepares two. Each promotes one
+completed window with zero new observed terrain/Copernicus fetches, at most nine
+resident tiles and unchanged paused pose/digest/step. Full integrated checks pass
+591Node+25Python tests, zero skips; production build passes. Branch application
+checks pass469Node+22Python, zero skips. Final sharedCI passes with9of23 optional JSBSim checks and one Linux-only
+repository-tool case skipped on macOS; skips are not accepted. The inherited
+merged DONE ordering is repaired with every existing entry preserved.
+
+Implementation slices are26a11d3 and65ff907, with merged main integrated locally.
+The missing npm scripts separator inherited from main8c4103a is repaired separately
+in7a0e69c. Complete existing DONE entries are preserved while sorting timestamps.
+
+**Deviations**
+
+This is source/component plus worker/native integration evidence. Actual GPU
+corridor rendering, ServiceWorker latency, worldwide/device/cold-network and
+complete interactive Review/NewFlight lifecycle acceptance remain unevaluated.
+Failed prefetch and changed course retain ordinary validated loading. Native
+build provenance remains unverified. [External Claude attempts](reviews/2026-11-05-predictive-terrain-peer.md)
+returned no review; covering peer acceptance remains pending.
+
+**Insights**
+
+A prepared window must survive a crossed-boundary publication until required
+promotion. A divergent stall-warning publication needed its own executable hook
+regression. Actual flight tests also check AP capability before treating a no-hit
+result as loading evidence.
+
+
+## 2026-11-05 20:09 — Repair vector terrain loading starvation and safe window retention
+
+TODO: 2.0.154; R-WORLD-11/R-WORLD-9/R-SIM-2/R-REVIEW-1.
+Agent: Codex orchestrator; code1 `map_load_renderer` provider implementation;
+code2 `map_load_imagery` scene/imagery and runtime diagnostics;
+`map_load_housekeeping` research; independent `quality` and `panel_validate_final`.
+
+**Implementation notes**
+
+Two source-aligned geographic roots replace 4050 eager roots. Bounded immutable
+source history and unchanged-geometry checks retain live provider/meshes across
+safe native-window updates; unsafe changes rebuild conservatively. Review and
+empty-install epochs reject live reuse. See the [performance evidence](research/2026-11-05-vector-terrain-performance.md).
+
+The legacy foundation port is source commit641e09c. Its27 provider/streamed tests
+and TypeScript check pass. Final sharedCI passes with 9 of 23 optional JSBSim study
+checks skipped and one Linux-only repository-tool process-state case skipped
+on macOS, not accepted. Later integrated world30 NY runtime observations
+are mechanism evidence, not an actual browser run of this PR85 legacy port.
+Source-metadata caching and imagery backpressure remain later integration slices.
+
+**Deviations**
+
+Conservative source-change, feather/coarse-preview or capacity rebuilds remain.
+Complete native New Flight/Review lifecycle, all-world GPU heights and device/
+network performance are not accepted by these bounded tests. Native binary build
+provenance remains unverified. The [external Claude attempt](reviews/2026-11-05-vector-terrain-performance-peer.md)
+returned a nonzero process exit and no review; quality/validation are blocked
+and covering peer acceptance remains pending. This is a draft increment,
+not milestone/physics acceptance.
+
+**Insights**
+
+Fast native movement exposed full globe invalidation; mesh preparation could not
+catch up even when map requests succeeded. Retain safe geometry and measure the
+rendered surface independently of download and CPU-only completion.
+
 ## 2026-11-05 17:51 — Diagnose unstable controls and publish bounded draft repair PR86
 
 TODO: 2.0.153 remains open for the overall handling report; R-INPUT-1/R-SIM-5/R-SIM-11.
@@ -49,44 +132,6 @@ The source zero-offset35°roll-off was not the former app default: the app alrea
 applied a fixed correction. Removing either asymmetric loading or correction
 alone is inadequate. Independent factor tests and complete application-default
 comparisons answer different questions and neither proves real-aircraft fidelity.
-
-## 2026-11-05 20:09 — Repair vector terrain loading starvation and safe window retention
-
-TODO: 2.0.154; R-WORLD-11/R-WORLD-9/R-SIM-2/R-REVIEW-1.
-Agent: Codex orchestrator; code1 `map_load_renderer` provider implementation;
-code2 `map_load_imagery` scene/imagery and runtime diagnostics;
-`map_load_housekeeping` research; independent `quality` and `panel_validate_final`.
-
-**Implementation notes**
-
-Two source-aligned geographic roots replace 4050 eager roots. Bounded immutable
-source history and unchanged-geometry checks retain live provider/meshes across
-safe native-window updates; unsafe changes rebuild conservatively. Review and
-empty-install epochs reject live reuse. See the [performance evidence](research/2026-11-05-vector-terrain-performance.md).
-
-The legacy foundation port is source commit641e09c. Its27 provider/streamed tests
-and TypeScript check pass. Final sharedCI passes with 9 of 23 optional JSBSim study
-checks skipped and one Linux-only repository-tool process-state case skipped
-on macOS, not accepted. Later integrated world30 NY runtime observations
-are mechanism evidence, not an actual browser run of this PR85 legacy port.
-Source-metadata caching and imagery backpressure remain later integration slices.
-
-**Deviations**
-
-Conservative source-change, feather/coarse-preview or capacity rebuilds remain.
-Complete native New Flight/Review lifecycle, all-world GPU heights and device/
-network performance are not accepted by these bounded tests. Native binary build
-provenance remains unverified. The [external Claude attempt](reviews/2026-11-05-vector-terrain-performance-peer.md)
-returned a nonzero process exit and no review; quality/validation are blocked
-and covering peer acceptance remains pending. This is a draft increment,
-not milestone/physics acceptance.
-
-**Insights**
-
-Fast native movement exposed full globe invalidation; mesh preparation could not
-catch up even when map requests succeeded. Retain safe geometry and measure the
-rendered surface independently of download and CPU-only completion.
-
 
 ## 2026-11-05 17:09 — Reconstruct the modular regional/world terrain foundation
 
@@ -139,7 +184,6 @@ PR, release, aircraft fidelity or training acceptance is claimed by this entry.
 
 Module boundaries need runnable intermediate contracts and source-scoped records;
 copying a final shared file wholesale would pull later features into this PR.
-
 
 ## 2026-11-04 22:43 — Filter map locations with checkboxes
 

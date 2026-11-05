@@ -172,3 +172,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-05 vector-terrain loading](2026-11-05-vector-terrain-loading.md) — user reports slow 3D vector terrain, with view clarification.
 
 - [2026-11-05 repeated vector-terrain reloads](2026-11-05-vector-terrain-reload.md) — accelerated-flight repeated detail loss and reload investigation.
+
+- [2026-11-05: predictive terrain loading](2026-11-05-predictive-terrain-loading.md)

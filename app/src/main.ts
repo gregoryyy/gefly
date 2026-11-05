@@ -1323,7 +1323,7 @@ function animate(now: number) {
       cancelReviewTerrain();
     }
     if (scene && !sceneFailed && terrainReady) {
-      try { scene.update(state, view, { ...cameraLook, fov_rad: cameraFov_rad }); } catch {
+      try { scene.update(state, view, { ...cameraLook, fov_rad: cameraFov_rad }, ready && running && !reviewing && !terrainLoading && !failed && !sceneFailed); } catch {
         sceneFailed = true; pauseFlight(); notice('The 3D scene stopped rendering. Reload to restart.'); updateSessionUI();
       }
     }

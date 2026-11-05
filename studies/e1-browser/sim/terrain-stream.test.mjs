@@ -115,3 +115,67 @@ test('feather joins coarse and fine heights smoothly and includes its slope', as
   assert(Math.abs(sampleAtlas(fine, tiles, lat, 8.5 * rad - eps).physical_m - sampleAtlas(fine, tiles, lat, 8.5 * rad + eps).physical_m) < 1e-5);
   assert.equal(sampleAtlas(fine, new Map(), lat, 8.5 * rad).physical_m, 200);
 });
+
+// Predictive loading exercises the same public stream used by the paced worker.
+const { WorldTerrainStream } = await import('./terrain-stream.js');
+const { WORLD_TERRAIN } = await import('./world-terrain.js');
+const worldFixture = { version:1, id:'predictive-test-world', width:361, height:181,
+ west_rad:-Math.PI, east_rad:Math.PI, south_rad:-Math.PI/2, north_rad:Math.PI/2,
+ physical_m:new Float64Array(361*181).fill(100), geoid_m:new Float64Array(361*181).fill(20) };
+const radians=Math.PI/180;
+function aheadCoordinates(lat=49.6,lon=8.6) {
+ const center=[Math.floor((lon+180)/WORLD_TERRAIN.step),Math.floor((lat+90)/WORLD_TERRAIN.step)];
+ return { lat:(-90+(center[1]+.5)*WORLD_TERRAIN.step)*radians,
+  lon:(-180+(center[0]+.99)*WORLD_TERRAIN.step)*radians,
+  future:(-180+(center[0]+1.25)*WORLD_TERRAIN.step)*radians };
+}
+test('R-WORLD-9 next terrain neighborhood prepares before crossing without native changes; handoff fetches nothing',async()=>{
+ let requests=0; const events=[],installed=new Map(),metas=await loadRegionalManifest(fetcher);
+ const stream=new WorldTerrainStream(worldFixture,metas,g=>{events.push('install');installed.set(g.id,g);},g=>{events.push('remove');installed.delete(g.id);},
+  async()=>{requests++;return response(bytes.slice(0));},{copernicus:false});
+ const {lat,lon,future}=aheadCoordinates(); await stream.move(lat,lon);
+ const old=new Map(stream.tiles),liveSources=new Map(stream.sources),key=stream.key;events.length=0;
+ const warm=stream.prefetch(lat,lon,{lat_rad:lat,lon_rad:future});
+ assert.equal(stream.prefetch(lat,lon,{lat_rad:lat,lon_rad:future}),warm,'same prediction coalesces');
+ assert.equal(await warm,true); assert.equal(stream.prepared.stream.tiles.size,9);
+ assert.equal(stream.key,key); assert.deepEqual(stream.tiles,old); assert.deepEqual(stream.sources,liveSources);
+ assert.equal(installed.size,9); assert.equal(events.length,0,'speculative preparation cannot install/remove');
+ // The paced worker publishes a crossed position before stepOnce requests
+ // the required window. That publication must not cancel its matching task.
+ assert.equal(stream.needsUpdate(lat,future),true);
+ assert.equal(stream.prefetch(lat,future,{lat_rad:lat,lon_rad:future+WORLD_TERRAIN.step*radians}),warm);
+ assert.equal(await stream.prefetch(lat,future,null),true);
+ assert(stream.prepared,'boundary publication retains the now-required staged window');
+ const warmRequests=requests; await stream.move(lat,future);
+ assert.equal(requests,warmRequests,'prepared handoff does not fetch'); assert.equal(installed.size,9);
+ assert.equal(stream.prepared,null);assert.equal(stream.prefetchTask,null);assert.equal(stream.needsUpdate(lat,future),false);
+ for(const [id,grid]of old)if(stream.tiles.has(id))assert.equal(stream.tiles.get(id).physical_m,grid.physical_m,'overlap retains immutable height buffers');
+ assert(stream.sources.size<=16); assert.equal(events.filter(x=>x==='install').length,9);
+});
+test('R-WORLD-9 first upcoming boundary is staged, turns/invalid targets discard staging, dateline wraps',async()=>{
+ const stream=new WorldTerrainStream(worldFixture,null,()=>{},()=>{},fetcher,{copernicus:false});
+ const {lat,lon,future}=aheadCoordinates(10.1,179.99); await stream.move(lat,lon);
+ const wrap=x=>((x+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
+ const far=wrap(lon+WORLD_TERRAIN.step*radians*4),old=stream.center(lat,lon),next=stream.nextCenter(lat,lon,{lat_rad:lat,lon_rad:far});
+ assert.deepEqual(next,[(old[0]+1)%WORLD_TERRAIN.cols,old[1]]);
+ assert.equal(await stream.prefetch(lat,lon,{lat_rad:lat,lon_rad:wrap(future)}),true);
+ const ready=stream.prepared.stream;
+ assert.equal(await stream.prefetch(lat,lon,null),false);assert.equal(stream.prepared,null);assert(ready.controller.signal.aborted);
+ assert.equal(await stream.prefetch(lat,lon,{lat_rad:NaN,lon_rad:0}),false);assert.equal(stream.tiles.size,9);
+});
+test('R-WORLD-9 obsolete/cancelled predictive loads do not poison live sources or install stale windows',async()=>{
+ const metas=await loadRegionalManifest(fetcher),{lat,lon,future}=aheadCoordinates();let delay=false,entered;
+ const waiting=new Promise(resolve=>{entered=resolve;}),events=[];
+ const stream=new WorldTerrainStream(worldFixture,metas,()=>events.push('install'),()=>events.push('remove'),async()=>{
+  if(delay){entered();return new Promise(()=>{});}return response(bytes.slice(0));
+ },{copernicus:false});
+ await stream.move(lat,lon);const old=new Map(stream.tiles),sources=new Map(stream.sources);events.length=0;
+ // Force a source miss in the shadow only; do not mutate installed geometry.
+ const original=stream.sources; stream.sources=new Map();delay=true;
+ const pending=stream.prefetch(lat,lon,{lat_rad:lat,lon_rad:future});await waiting;
+ stream.sources=original;stream.cancelPrefetch();assert.equal(await pending,false);
+ assert.deepEqual(stream.tiles,old);assert.deepEqual(stream.sources,sources);assert.equal(stream.failedSources.size,0);assert.equal(events.length,0);
+ delay=false;await stream.move(lat,future);assert.equal(stream.tiles.size,9);
+ stream.cancel();await assert.rejects(stream.move(lat,lon),/cancelled/);
+ assert.equal(await stream.prefetch(lat,lon,{lat_rad:lat,lon_rad:future}),false);
+});

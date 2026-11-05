@@ -241,7 +241,7 @@ export class WorldTerrainStream {
     if (!validateTerrainGrid(world) || world.width !== 361 || world.height !== 181) throw new Error('Invalid bundled world terrain.');
     this.world = world; this.manifest = manifest ?? new Map(); this.install = install; this.remove = remove; this.fetcher = fetcher;
     this.tiles = new Map(); this.sources = new Map(); this.failedSources = new Set(); this.controller = new AbortController();
-    this.key = null; this.busy = false;
+    this.key = null; this.busy = false; this.prefetchTask = null; this.prepared = null;
   }
   center(lat, lon) { return worldCellAt(lat, lon); }
   sample(lat, lon) { return sampleAtlas(null, this.tiles, lat, lon); }
@@ -250,7 +250,7 @@ export class WorldTerrainStream {
     const grid = this.gridAt(lat, lon);
     return grid ? ({ regional: 1, global: 2, mixed: 3 })[grid.source] : null;
   }
-  cancel() { this.controller.abort(); }
+  cancel() { this.controller.abort(); this.cancelPrefetch(); }
   needsUpdate(lat, lon) { const center = this.center(lat, lon); return !center || center.join(',') !== this.key; }
   nodeOwner(lon, lat) {
     if (lon < WEST || lon > EAST || lat < SOUTH || lat > NORTH) return null;
@@ -291,7 +291,89 @@ export class WorldTerrainStream {
     if (!validWorldTerrainTile(grid)) throw new Error('Invalid composed world terrain cell.');
     return Object.freeze(grid);
   }
+  /** Pick the first center-cell boundary along the measured ground-track lead.
+   * The farther horizon must not skip the next required neighborhood. */
+  nextCenter(lat, lon, prediction) {
+    const center = this.center(lat, lon);
+    if (!center || !prediction || ![prediction.lat_rad, prediction.lon_rad].every(Number.isFinite)
+      || Math.abs(prediction.lon_rad) > Math.PI || !this.center(prediction.lat_rad, prediction.lon_rad)) return null;
+    const wrap = value => ((value + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+    const dx = wrap(prediction.lon_rad - lon), dy = prediction.lat_rad - lat, [col, row] = center;
+    const fractions = [];
+    if (dx) fractions.push(((-180 + (col + Number(dx > 0)) * WORLD_TERRAIN.step) * RAD - lon) / dx);
+    if (dy) fractions.push(((-90 + (row + Number(dy > 0)) * WORLD_TERRAIN.step) * RAD - lat) / dy);
+    const crossing = Math.min(...fractions.filter(value => value >= -1e-10));
+    if (!Number.isFinite(crossing) || crossing > 1) return null;
+    const fraction = Math.min(1, Math.max(0, crossing) + 1e-7);
+    const next = this.center(lat + dy * fraction, wrap(lon + dx * fraction));
+    return next && next.join(',') !== center.join(',') ? next : null;
+  }
+  cancelPrefetch() {
+    const task = this.prefetchTask;
+    this.prefetchTask = null; this.prepared = null;
+    task?.stream.cancel();
+  }
+  /** One private shadow window. It shares immutable current buffers but cannot
+   * install native tiles or change live source/failure outcomes while warming. */
+  prefetch(lat, lon, prediction) {
+    // A state publication can observe the crossed cell before the next fixed
+    // step requests its authoritative window. Its matching warm task is now
+    // foreground-needed, even if the next prediction is absent or points on.
+    const requiredKey = this.center(lat, lon)?.join(',');
+    if (!this.busy && !this.controller.signal.aborted && this.prefetchTask
+      && this.prefetchTask.key === requiredKey && this.prefetchTask.baseKey === this.key) return this.prefetchTask.promise;
+    const center = this.nextCenter(lat, lon, prediction);
+    if (this.busy || this.controller.signal.aborted || this.needsUpdate(lat, lon) || !center) {
+      this.cancelPrefetch(); return Promise.resolve(false);
+    }
+    const key = center.join(',');
+    if (this.prefetchTask?.key === key && this.prefetchTask.baseKey === this.key) return this.prefetchTask.promise;
+    this.cancelPrefetch();
+    const shadow = new WorldTerrainStream(this.world, this.manifest, () => {}, () => {}, this.fetcher,
+      { copernicus: this.copernicusEnabled });
+    shadow.tiles = new Map(this.tiles); shadow.sources = new Map(this.sources);
+    shadow.failedSources = new Set(this.failedSources);
+    if (this.copernicusSources) {
+      shadow.copernicusSources = new Map(this.copernicusSources);
+      shadow.copernicusBudgetExhausted = this.copernicusBudgetExhausted;
+    }
+    const task = { key, baseKey: this.key, stream: shadow, promise: null };
+    this.prefetchTask = task;
+    task.promise = shadow.move((-90 + (center[1] + .5) * WORLD_TERRAIN.step) * RAD,
+      (-180 + (center[0] + .5) * WORLD_TERRAIN.step) * RAD).then(() => {
+      if (this.prefetchTask !== task || this.controller.signal.aborted || this.key !== task.baseKey) return false;
+      this.prepared = { key, baseKey: task.baseKey, stream: shadow }; return true;
+    }).catch(() => false); // Optional warming must never fault the live flight.
+    return task.promise;
+  }
   async move(lat, lon) {
+    if (this.busy) throw new Error('World terrain update already in progress.');
+    if (this.controller.signal.aborted) throw new Error('World terrain request cancelled.');
+    const center = this.center(lat, lon), key = center?.join(',');
+    const task = this.prefetchTask;
+    if (task && task.key === key && task.baseKey === this.key) {
+      this.busy = true;
+      try {
+        await task.promise;
+        if (this.controller.signal.aborted) throw new Error('World terrain request cancelled.');
+        const staged = this.prepared;
+        if (staged?.key === key && staged.baseKey === this.key) {
+          for (const grid of this.tiles.values()) this.remove(grid);
+          this.tiles.clear();
+          for (const [id, grid] of staged.stream.tiles) { this.install(grid); this.tiles.set(id, grid); }
+          this.sources = staged.stream.sources; this.failedSources = staged.stream.failedSources;
+          if (this.copernicusSources) {
+            this.copernicusSources = staged.stream.copernicusSources;
+            this.copernicusBudgetExhausted = staged.stream.copernicusBudgetExhausted;
+          }
+          this.key = key; this.prefetchTask = null; this.prepared = null; return;
+        }
+      } finally { this.busy = false; }
+    }
+    this.cancelPrefetch();
+    return this.moveUnprepared(lat, lon);
+  }
+  async moveUnprepared(lat, lon) {
     if (this.busy) throw new Error('World terrain update already in progress.');
     if (this.controller.signal.aborted) throw new Error('World terrain request cancelled.');
     const center = this.center(lat, lon);

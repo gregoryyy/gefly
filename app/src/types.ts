@@ -172,7 +172,7 @@ export interface FlightScene {
   prepareRecording?(states: Iterable<Readonly<FlightState>>): Promise<void>;
   terrainReady?(state: Readonly<FlightState>): boolean;
   cancelTerrainPreparation?(): void;
-  update(state: FlightState, view: 'cockpit' | 'chase', look?: { yaw_rad: number; pitch_rad: number; fov_rad?: number }): void;
+  update(state: FlightState, view: 'cockpit' | 'chase', look?: { yaw_rad: number; pitch_rad: number; fov_rad?: number }, livePrediction?: boolean): void;
   dispose(): void;
 }
 export interface FlightLocation { version: 1; lat_rad: number; lon_rad: number; alt_msl_m: number; heading_rad: number; mode: 'airborne' | 'ground' }
