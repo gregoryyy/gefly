@@ -328,4 +328,4 @@ R-OPEN-1 (free/open-source flight-school community). E9–E11 define their plann
 gates; public deployment, provider integration and regional model construction are
 future tasks, not completed by this requirements update.
 
-- [ ] 2.0.153 Diagnose and repair excessive hands-off roll and steering oscillation with bounded native/input regressions; publish a separate control-stability PR. R-INPUT-1/R-SIM-5/R-SIM-11. [Request](input/2026-11-05-control-stability.md).
+- [ ] 2.0.153 Investigate and repair reported roll-off/oversteering. [Draft PR86](https://github.com/gregoryyy/gefly/pull/86) removes inappropriate fresh loading, fixed correction and default rudder coupling, with bounded diagnostics and independent reviews. Overall handling remains unresolved: complete prior/new results are mixed,110kt trim fails, native build provenance and external peer acceptance remain blocked. R-INPUT-1/R-SIM-5/R-SIM-11. [Request](input/2026-11-05-control-stability.md); [comparison](research/2026-11-05-control-stability-app-comparison.md).
