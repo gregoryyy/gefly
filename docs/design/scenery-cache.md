@@ -114,3 +114,6 @@ two-slot limit. Browser-native photo cancellation remains on its existing path.
 These changes reduce repeated I/O, redraws and queue contention. First visits
 still depend on upstream latency, source availability and serial vector rendering;
 a warm-cache fixture does not establish a whole-scene cold-load time.
+
+Implementation and bounded legacy/world30 observations are recorded in the
+[predictive-loading evidence](../research/2026-11-05-predictive-terrain-loading.md).
