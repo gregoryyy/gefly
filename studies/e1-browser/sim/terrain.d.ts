@@ -2,6 +2,9 @@ export interface TerrainGrid {
   version: 1; id: string; width: number; height: number;
   west_rad: number; south_rad: number; east_rad: number; north_rad: number;
   physical_m: Float64Array; geoid_m: Float64Array;
+  masked?: true;
+  source_detail?: 'copernicus' | 'coarse' | 'regional' | 'mixed';
+  copernicus_nodes?: number; coarse_nodes?: number;
   sha256?: string; physical_datum?: string; geoid_model?: string;
 }
 export const TERRAIN_PACKAGE_URL: string;

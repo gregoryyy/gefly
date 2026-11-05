@@ -11,11 +11,13 @@ function fixture() {
   const store = createFlightLocationStore({ storage, now: () => time });
   return { store, values, storage, advance: (ms: number) => { time += ms; }, writes: () => writes };
 }
-test('versioned local position rejects corrupt/extra/nonfinite/outside-region input', () => {
+test('versioned local position rejects corrupt/extra/nonfinite/outside-world-flight-band input', () => {
   assert(validFlightLocation(pose));
+  assert(validFlightLocation({ ...pose, lat_rad: 40.75 * Math.PI / 180, lon_rad: -74 * Math.PI / 180 }));
+  assert(validFlightLocation({ ...pose, lat_rad: -33.9 * Math.PI / 180, lon_rad: 18.4 * Math.PI / 180 }));
   assert(validFlightLocation({ ...pose, lat_rad: 51.4 * Math.PI / 180, lon_rad: 7.1 * Math.PI / 180 }));
   for (const value of [null, [], {}, { ...pose, version: 2 }, { ...pose, extra: 'execute' }, { ...pose, mode: ['ground'] },
-    { ...pose, lat_rad: NaN }, { ...pose, lon_rad: 0 }, { ...pose, alt_msl_m: 6001 }, { ...pose, heading_rad: 2 * Math.PI }]) assert(!validFlightLocation(value));
+    { ...pose, lat_rad: NaN }, { ...pose, lon_rad: Math.PI + .001 }, { ...pose, lat_rad: 89.5 * Math.PI / 180 }, { ...pose, alt_msl_m: 6001 }, { ...pose, heading_rad: 2 * Math.PI }]) assert(!validFlightLocation(value));
   const { store, values } = fixture();
   for (const raw of ['{bad', 'x'.repeat(513), JSON.stringify({ ...pose, mode: 'script' })]) { values.set(FLIGHT_LOCATION_KEY, raw); assert.equal(store.read(), null); }
   values.set(FLIGHT_LOCATION_KEY, JSON.stringify(pose)); const saved = store.read()!; saved.lat_rad = 0; assert.deepEqual(store.read(), pose);

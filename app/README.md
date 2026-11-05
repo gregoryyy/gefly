@@ -590,8 +590,8 @@ Select a marker or directory result to inspect it; this moves the map only,
 never the aircraft. Missing elevations remain unavailable and do not replace
 the physical DEM. **Follow** returns the map to the aircraft. The airport
 inventory covers Bavaria, Baden-Württemberg, Hesse, Rhineland-Palatinate and
-Saarland inside 6–14°E / 47–51.75°N, substantially wider than physical terrain
-coverage; a map point is not permission to fly/land beyond the terrain boundary.
+Saarland inside 6–14°E / 47–51.75°N. Map records, physical terrain and photographic
+coverage are independent; a marker does not establish surveyed landing geometry.
 It is geographic practice context, not a navigation chart, operational airport
 directory or the complete EDDF/100 NM model.
 
@@ -744,16 +744,17 @@ Normal flights retain the local public Hessen package spanning 8.45–8.90°E an
 wheel/structure contacts sample this surface with slope normals at fixed steps.
 DHHN2016 physical heights drive the atmosphere and dynamics; GCG2016/2023
 quasigeoid offsets are added only for rendering. Review retains the actual
-height fields. Missing/corrupt data and coverage exits stop flight, without an
-invisible flat-ground fallback. A surrounding BKG DGM200 package now covers
-**7.00–10.00°E / 49.25–51.50°N** in **108 tiles**. The worker keeps up to nine
-surrounding tiles and pauses at tile-centre transitions while additional data
-loads; it preserves the current flight state and resumes prior intent. Rendering
-retains visited tiles, at most 108, for Review. A derived **0.02° inward blend**
-joins fine and coarse surfaces with the same interpolation in native contact
-physics and rendering. This transition is not surveyed terrain. The 200 m source
-surveys date approximately 2000–2019; added display subdivision is not additional
-measured detail. See the [streamed package](public/terrain/region/README.md).
+height fields. A surrounding BKG DGM200 package declares **608 slots** over
+**6–14°E / 47–51.75°N**, with **475 available source assets** and explicit gaps.
+Native and rendered world cells prefer valid regional samples, using the coarse
+world baseline otherwise. Optional regional failures no longer impose the old
+regional boundary stop; missing required world/native assets still stop visibly.
+The worker keeps nine cells, preserves flight state during loading and resumes
+only prior running intent. A derived **0.02° inward blend** joins the fine and
+coarser surfaces using the same interpolation for contact and rendering. This
+transition is not surveyed terrain. Source surveys date approximately 2000–2019;
+display subdivision adds no measured detail. See the
+[streamed package](public/terrain/region/README.md) and global limits below.
 Rebuild the local engine after updating.
 
 Try **Flight → Taunus ridge flight**, then Start and Chase, for an immediate
@@ -839,3 +840,29 @@ near the actual starting position, including saved locations. It uses the same
 two background slots and bounded cache, does not open the map, and never delays
 the Start button. Downloads still take time on a first-ever visit; the start
 screen gives them a head start.
+
+## Coarse worldwide fallback and global cartography
+
+Normal flights retain the finer local Hessen surface and source-marked regional
+DGM200 terrain where available. The five-state package declares 608 slots over
+6–14°E / 47–51.75°N, with 475 available assets and explicit unsupported border
+nodes. Missing regional nodes use a bundled one-degree ETOPO 2022/EGM2008 baseline,
+with an approximate connected-ocean surface. This approximately 111 km source
+spacing smooths mountains; quarter-degree streaming cells add no measurements.
+
+A moving 3×3 window uses nine native slots. Optional regional data has a five-second
+enhancement budget; failures leave coarse data available, while missing required
+world/native assets still stop visibly. Saved positions work strictly inside
+±89.5° latitude, including dateline crossing. Exact polar flight is unsupported.
+Native contact and rendering use the same composed surface. Review prepares only
+the selected neighborhood and labels changed reconstruction; it is not a frozen
+world-state recording. The coarse fallback is unsuitable for accurate landings.
+
+The default 2D Map and 3D vector terrain use the same detailed labeled global OSM
+cartography, with roads, land use, water and building footprints where supplied.
+Regional photography remains above the map in photo mode. The regional BKG map
+implementation remains available but its opaque overlay is inactive by default.
+The map stops at Web Mercator limits, separately from physical terrain coverage.
+No worldwide airport/NAV inventory or new photographs are added. See the
+[regional package](public/terrain/region/README.md),
+[world package](public/terrain/world/README.md), and [source rights](../THIRD_PARTY_NOTICES.md).

@@ -233,3 +233,28 @@ test('visible vector demand promotes its queued warm tile and shares one upstrea
   } finally { freeAll = true; releases.forEach(release => release()); await Promise.all([...work, visible]); }
   assert.equal(started.length, 7, 'visible and warm consumers share one finite upstream fetch');
 });
+
+test('global OSM routes share one pinned source cache and four-request pool with landmarks', async () => {
+  let release!: () => void; const gate = new Promise<void>(resolve => { release = resolve; });
+  let calls = 0, active = 0, peak = 0;
+  const handler = createVectorMapMiddleware({ fetcher: async (input, init) => {
+    assert.match(String(input), /^https:\/\/tiles\.openfreemap\.org\/planet\/20261101_080013_pt\/\d+\/\d+\/\d+\.pbf$/);
+    assert.equal(init?.credentials, 'omit'); assert.equal(init?.redirect, 'error');
+    calls++; active++; peak = Math.max(peak, active); await gate; active--; return response();
+  } });
+  const waiting = ['/scenery/osm/0/0/0.pbf', '/scenery/osm/1/1/1.pbf',
+    '/scenery/osm/12/100/100.pbf', '/scenery/landmarks/12/100/100.pbf',
+    '/scenery/landmarks/12/101/100.pbf', '/scenery/osm/14/16383/16383.pbf'].map(path => call(handler, path));
+  assert.equal(calls, 4); release();
+  assert((await Promise.all(waiting)).every(result => result.status === 200));
+  assert.equal(calls, 5, 'same XYZ requested as map and landmark coalesces'); assert.equal(peak, 4);
+  assert.equal((await call(handler, '/scenery/osm/12/100/100.pbf', 'HEAD')).data.length, 0);
+  assert.equal(calls, 5);
+  for (const path of ['/scenery/osm/15/0/0.pbf', '/scenery/osm/00/0/0.pbf', '/scenery/osm/1/2/0.pbf',
+    '/scenery/osm/1/0/2.pbf', '/scenery/osm/1/-1/0.pbf', '/scenery/osm/1/00/0.pbf',
+    '/scenery/osm/1/0/0.pbf?url=https://example.com', '/scenery/osm/../secret']) {
+    assert.equal((await call(handler, path)).status, 404, path);
+  }
+  assert.equal((await call(handler, '/scenery/osm/0/0/0.pbf', 'POST')).status, 404);
+  assert.equal(calls, 5, 'invalid URLs never select an upstream');
+});

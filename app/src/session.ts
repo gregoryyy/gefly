@@ -1,7 +1,9 @@
+import { REGIONAL_FLIGHTS, isRegionalFlight } from './regional-flights.ts';
 import { validLoading, validLoadingState, loadingFromState, LOADING_FIELDS, type LoadingConfiguration } from '../../studies/e1-browser/sim/loading.js';
 import { validFlightLocation } from './flight-location.ts';
 import { EMPTY_COLLISION } from '../../studies/e1-browser/sim/collision.js';
 import { resumeProblem } from '../../studies/e1-browser/sim/continue-flight.js';
+import { validWorldTerrainTile } from '../../studies/e1-browser/sim/world-terrain.js';
 import { REGIONAL_TERRAIN } from '../../studies/e1-browser/sim/terrain-stream.js';
 import { validateTerrainGrid, type TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
 import { eddfApproachPractice } from './navigation-approach.ts';
@@ -9,7 +11,7 @@ import { getNavigationCatalogue } from './radio-nav.ts';
 import { validKapCommand } from '../../studies/e1-browser/sim/kap140.js';
 import { validSimulationRate } from '../../studies/e1-browser/sim/simulation-rate.js';
 import { NAVIGATION_FIELDS, validNavigation } from '../../studies/e1-browser/sim/navigation.js';
-import { ALERT_FIELDS, validAlertState, KAP_FIELDS, validKapState, TERRAIN_FIELDS, validTerrainState, COLLISION_FIELDS, validCollisionState, STALL_FIELDS, validStallState, CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, ENGINE_SWITCH_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
+import { ALERT_FIELDS, validAlertState, KAP_FIELDS, validKapState, TERRAIN_FIELDS, TERRAIN_SOURCE_FIELDS, validTerrainState, COLLISION_FIELDS, validCollisionState, STALL_FIELDS, validStallState, CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, ENGINE_SWITCH_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
 import type { Controls, FlightSession, FlightState, LandingPreset, AirborneSite, RunwayStart, FlightLocation } from './types';
 
 /** Worker navdata identity from `ready` (see studies/e1-browser/sim/README.md).
@@ -24,6 +26,7 @@ export interface NavdataIdentity {
 interface SessionCallbacks {
   onState(state: FlightState): void;
   onTerrainTile?(grid: TerrainGrid & {slot:number}): void;
+  onTerrainRemove?(id: string): void;
   onTerrainLoading?(loading: boolean): void;
   onReady(trim: { throttle: number; pitch_trim: number; status: number }, navdata: NavdataIdentity): void;
   onStatus(status: string): void;
@@ -33,8 +36,8 @@ interface SessionCallbacks {
 
 const DEG_RAD = Math.PI / 180;
 function regionalInitialCondition(site: AirborneSite) {
-  const point = ({darmstadt:[49.87,8.65,900,170],odenwald:[49.65,8.85,1300,90],spessart:[50,9.5,1300,270],westerwald:[50.45,7.8,1500,90],marburg:[50.8,8.77,1500,0],kassel:[51.3,9.4,1500,90]} as const)[site as 'darmstadt'|'odenwald'|'spessart'|'westerwald'|'marburg'|'kassel'];
-  return point ? {lat_rad:point[0]*DEG_RAD,lon_rad:point[1]*DEG_RAD,alt_msl_m:point[2],heading_rad:point[3]*DEG_RAD,tas_mps:90*1852/3600} : null;
+  const point = isRegionalFlight(site) ? REGIONAL_FLIGHTS[site] : null;
+  return point ? {lat_rad:point.lat*DEG_RAD,lon_rad:point.lon*DEG_RAD,alt_msl_m:point.altitude,heading_rad:point.heading*DEG_RAD,tas_mps:90*1852/3600} : null;
 }
 const INPUT_PERIOD_MS = 50;
 const LOAD_TIMEOUT_MS = 30_000;
@@ -74,6 +77,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
   let wantedRunning = false;
   let disposed = false;
   let latestStep = 0;
+  const terrainTiles = new Map<string, TerrainGrid & {slot:number}>();
   let collided = false;
   let collisionState: Readonly<FlightState> | null = null;
   let collisionContinuation: { worker: Worker; step: number; resolve: (state: FlightState) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> } | null = null;
@@ -115,7 +119,9 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       mixture_norm: state.mixture_norm!, mixture_auto: state.mixture_auto===1, engine_running: state.engine_command_on===1,
       pitch_trim_norm: state.pitch_trim_norm!, pilot_override: false };
     userControls = true; controlsChanged = true; old?.terminate();
-    for (const grid of attempt.tiles) callbacks.onTerrainTile?.(grid);
+    for (const id of terrainTiles.keys()) callbacks.onTerrainRemove?.(id);
+    terrainTiles.clear();
+    for (const grid of attempt.tiles) { terrainTiles.set(grid.id, grid); callbacks.onTerrainTile?.(grid); }
     callbacks.onTerrainLoading?.(false);
     callbacks.onReady(attempt.ready.trim, attempt.ready.navdata);
     callbacks.onState(state); callbacks.onStatus('Paused'); attempt.resolve({ ...state });
@@ -171,7 +177,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       else if (!attempt || worker === attempt.worker) fail(message);
     };
     if (!attempt) { cancelRestore('Continuation cancelled by restart.'); destroyWorker();
-      latestStep = 0; collided = false; collisionState = null; callbacks.onStatus('Loading JSBSim…'); }
+      latestStep = 0; collided = false; collisionState = null; terrainTiles.clear(); callbacks.onStatus('Loading JSBSim…'); }
 
     let current: Worker;
     try {
@@ -201,17 +207,36 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       if (m.type === 'terrain-tile') {
         const grid = m.grid as TerrainGrid & {slot:number};
         if (!validateTerrainGrid(grid) || grid.width !== 129 || grid.height !== 129 || !Number.isInteger(grid.slot) || grid.slot < 0 || grid.slot >= REGIONAL_TERRAIN.tileCount) { failCurrent('Invalid regional terrain message.'); return; }
-        const { west, south, cols, step } = REGIONAL_TERRAIN;
-        const col = grid.slot % cols, row = Math.floor(grid.slot / cols);
-        const expectedBounds = [west + col * step, south + row * step, west + (col + 1) * step, south + (row + 1) * step];
-        if (grid.id !== `e${west * 100 + col * step * 100}-n${south * 100 + row * step * 100}`
-          || [grid.west_rad, grid.south_rad, grid.east_rad, grid.north_rad].some((value, i) => Math.abs(value - expectedBounds[i] * DEG_RAD) > 1e-12)) {
-          failCurrent('Regional terrain identity or bounds mismatch.'); return;
+        if (grid.id.startsWith('world-')) {
+          if (!validWorldTerrainTile(grid)) { failCurrent('World terrain identity, bounds or source mismatch.'); return; }
+        } else {
+          const { west, south, cols, step } = REGIONAL_TERRAIN;
+          const col = grid.slot % cols, row = Math.floor(grid.slot / cols);
+          const expectedBounds = [west + col * step, south + row * step, west + (col + 1) * step, south + (row + 1) * step];
+          if (grid.id !== `e${west * 100 + col * step * 100}-n${south * 100 + row * step * 100}`
+            || [grid.west_rad, grid.south_rad, grid.east_rad, grid.north_rad].some((value, i) => Math.abs(value - expectedBounds[i] * DEG_RAD) > 1e-12)) {
+            failCurrent('Regional terrain identity or bounds mismatch.'); return;
+          }
+        }
+        const staged = attempt && restoring === attempt ? attempt.tiles : [...terrainTiles.values()];
+        if (staged.some(tile => tile.slot === grid.slot && tile.id !== grid.id)
+          || !staged.some(tile => tile.id === grid.id) && staged.length >= 9) {
+          failCurrent('Terrain tile pool exceeded or slot reused before removal.'); return;
         }
         if (attempt && restoring === attempt) {
-          const previous = attempt.tiles.findIndex(tile => tile.slot === grid.slot);
+          const previous = attempt.tiles.findIndex(tile => tile.id === grid.id);
           if (previous < 0) attempt.tiles.push(grid); else attempt.tiles[previous] = grid;
-        } else callbacks.onTerrainTile?.(grid);
+        } else { terrainTiles.set(grid.id, grid); callbacks.onTerrainTile?.(grid); }
+      } else if (m.type === 'terrain-remove') {
+        if (typeof m.id !== 'string') { failCurrent('Invalid terrain removal.'); return; }
+        if (attempt && restoring === attempt) {
+          const index = attempt.tiles.findIndex(tile => tile.id === m.id);
+          if (index < 0) { failCurrent('Unknown terrain removal.'); return; }
+          attempt.tiles.splice(index, 1);
+        } else {
+          if (!terrainTiles.delete(m.id)) { failCurrent('Unknown terrain removal.'); return; }
+          callbacks.onTerrainRemove?.(m.id);
+        }
       } else if (m.type === 'terrain-loading') {
         if (typeof m.loading !== 'boolean') { failCurrent('Invalid terrain loading state.'); return; }
         if (attempt && restoring === attempt) return;
@@ -258,7 +283,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
         callbacks.onState(cleared); callbacks.onStatus('Paused'); pending.resolve(cleared);
       } else if (m.type === 'state') {
         if (!validState(m)) { failCurrent('The flight model returned an invalid state. Flight stopped; reset to restart.'); return; }
-        const fields = [...STATE_FIELDS, ...['simulation_rate', ...LOADING_FIELDS, ...ALERT_FIELDS, ...KAP_FIELDS, ...NAVIGATION_FIELDS, ...TERRAIN_FIELDS, ...COLLISION_FIELDS, ...STALL_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...ENGINE_SWITCH_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS].filter((key) => m[key] !== undefined)];
+        const fields = [...STATE_FIELDS, ...['simulation_rate', ...LOADING_FIELDS, ...ALERT_FIELDS, ...KAP_FIELDS, ...NAVIGATION_FIELDS, ...TERRAIN_FIELDS, ...TERRAIN_SOURCE_FIELDS, ...COLLISION_FIELDS, ...STALL_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...ENGINE_SWITCH_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS].filter((key) => m[key] !== undefined)];
         const state = Object.fromEntries(fields.map(key => [key, m[key]])) as unknown as FlightState;
         if (attempt && restoring === attempt) { attempt.state = state; commitRestore(attempt); return; }
         if (collisionState && Object.keys({ ...collisionState, ...state })
@@ -288,7 +313,8 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
     // (navdata_error) instead of stopping the flight.
     try { current.postMessage({
       ...(approach ? { navigation: approach.navigation } : {}),
-      type: 'init', ...(!resumeState && loading ? {loading:{...loading}} : {}), ...(resumeState ? { resume_state: { ...resumeState } } : {}), ...(!resumeState && (runwayStart || initialLocation?.mode === 'ground') ? { runway_start: true } : {}), kap140: true, regional_navigation: true, streaming_terrain: resumeState ? resumeState.terrain_profile === 1 : landingPreset === undefined, terrain: resumeState ? resumeState.terrain_profile === 1 : landingPreset === undefined, ...(!resumeState && landingPreset ? { landing_preset: landingPreset } : {}), ground_collision: true, dt_s: 1 / 120, aircraft: 'c172x', state_hz: 60,
+      type: 'init', ...(!resumeState && loading ? {loading:{...loading}} : {}), ...(resumeState ? { resume_state: { ...resumeState } } : {}), ...(!resumeState && (runwayStart || initialLocation?.mode === 'ground') ? { runway_start: true } : {}),
+      kap140: true, regional_navigation: true, streaming_terrain: resumeState ? resumeState.terrain_profile === 1 : landingPreset === undefined, terrain: resumeState ? resumeState.terrain_profile === 1 : landingPreset === undefined, ...(!resumeState && landingPreset ? { landing_preset: landingPreset } : {}), ground_collision: true, dt_s: 1 / 120, aircraft: 'c172x', state_hz: 60,
       ic: (resumeState ? { lat_rad: resumeState.lat_rad, lon_rad: resumeState.lon_rad, alt_msl_m: resumeState.alt_msl_m, heading_rad: resumeState.heading_rad, tas_mps: resumeState.tas_mps } : null) ?? (initialLocation ? { lat_rad: initialLocation.lat_rad, lon_rad: initialLocation.lon_rad,
         alt_msl_m: initialLocation.alt_msl_m, heading_rad: initialLocation.heading_rad, tas_mps: initialLocation.mode === 'ground' ? 0 : 90 * 1852 / 3600 } : null) ?? (runwayStart ? { ...runwayStart, alt_msl_m: 0, tas_mps: 0 } : null) ?? approach?.ic ?? regionalInitialCondition(airborneSite) ?? {
         lat_rad: (airborneSite === 'taunus' ? 50.20 : 49.96) * DEG_RAD, lon_rad: (airborneSite === 'taunus' ? 8.52 : 8.643) * DEG_RAD,
@@ -310,7 +336,8 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       if (disposed || !worker || !ready || wantedRunning) return Promise.reject(new Error('Pause a ready live flight before continuing from Review.'));
       if (restoring) return Promise.reject(new Error('A continuation is already being prepared.'));
       return new Promise<FlightState>((resolve, reject) => {
-        restoring = {worker: null, selected: { ...state }, tiles: [], resolve, reject};
+        const selected = { ...state };
+        restoring = {worker: null, selected, tiles: [], resolve, reject};
         initialize(restoring.selected);
       });
     },
@@ -360,13 +387,14 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       if (runway && (!/^[A-Z0-9-]{2,12}$/.test(runway.airport) || (!/^[0-3][0-9][LRC]?$/.test(runway.runway) || Number(runway.runway.slice(0,2)) < 1 || Number(runway.runway.slice(0,2)) > 36) || ![runway.lat_rad, runway.lon_rad, runway.heading_rad].every(Number.isFinite) || Math.abs(runway.lat_rad) > Math.PI/2 || Math.abs(runway.lon_rad) > Math.PI)) return;
       if (disposed) return;
       if (preset !== undefined && !['normal', 'hard', 'side', 'banked'].includes(preset)) return;
-      if (site !== undefined && !['edfe', 'taunus', 'eddf-ils', 'darmstadt', 'odenwald', 'spessart', 'westerwald', 'marburg', 'kassel'].includes(site)) return;
+      if (site !== undefined && !['edfe', 'taunus', 'eddf-ils'].includes(site) && !isRegionalFlight(site)) return;
       airborneSite = site ?? airborneSite;
       initialLocation = location ? { ...location } : undefined;
       if (location) wantedRunning = false;
       runwayStart = runway ? { ...runway } : undefined;
       landingPreset = runway ? undefined : preset;
-      controls = { elevator: 0, aileron: 0, rudder: 0, throttle: runway || location?.mode === 'ground' ? 0 : 0.7, ...(runway || location?.mode === 'ground' ? { brake_norm: 1 } : {}) };
+      const ground = runway || location?.mode === 'ground';
+      controls = { elevator: 0, aileron: 0, rudder: 0, throttle: ground ? 0 : 0.7, ...(ground ? { brake_norm: 1 } : {}) };
       userControls = false;
       controlsChanged = true;
       initialize();

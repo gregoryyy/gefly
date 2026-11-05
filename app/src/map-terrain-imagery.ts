@@ -3,13 +3,15 @@ import { Credit, Event, Rectangle, RequestState, WebMercatorTilingScheme, type I
 import { Map as LibreMap, setWorkerUrl, type StyleSpecification } from 'maplibre-gl';
 import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { MAP_TERRAIN_STYLE_URL, MAP_TERRAIN_STYLE_SHA256, MAP_TERRAIN_CREDIT } from './map-terrain-style';
+import { createWorldMapStyle, WORLD_MAP_BOUNDS, WORLD_MAP_CREDIT } from './world-map-style';
 
 const SIZE = 512, MIN_LEVEL = 6, MAX_LEVEL = 16;
 const BOUNDS = [5.8, 47.2, 15.1, 55.1] as const;
 const MAX_STYLE_BYTES = 1024 * 1024, MAX_QUEUED = 48, MAX_SUBSCRIBERS = 8, TIMEOUT_MS = 12000;
 // Each owned RGBA canvas is fixed-size. This bounds cache pixel storage, not
 // MapLibre/Cesium GPU storage or references retained by imagery consumers.
-const TILE_BYTES = SIZE * SIZE * 4, MAX_CACHE_BYTES = 64 * 1024 * 1024;
+// Regional and global renderers together retain at most the original 64 MiB.
+const TILE_BYTES = SIZE * SIZE * 4, MAX_CACHE_BYTES = 32 * 1024 * 1024;
 const MAX_CACHE = MAX_CACHE_BYTES / TILE_BYTES;
 type Status = 'loading' | 'ready' | 'degraded';
 type MutableRequest = Request & { cancelled?: boolean; state: RequestState };
@@ -55,23 +57,25 @@ async function readStyle(signal: AbortSignal): Promise<StyleSpecification> {
   return style;
 }
 
-function allowedResource(url: string): string {
+function allowedResource(url: string, world = false): string {
   const parsed = new URL(url, location.origin);
   if (parsed.origin !== location.origin || parsed.username || parsed.password || parsed.search || parsed.hash) throw new Error('External map terrain resource rejected');
-  if (/^\/scenery\/vector\/sprite(?:@2x)?\.(?:json|png)$/.test(parsed.pathname)) return parsed.href;
-  const match = /^\/scenery\/vector\/(\d{1,2})\/(\d{1,5})\/(\d{1,5})\.pbf$/.exec(parsed.pathname);
+  if (!world && /^\/scenery\/vector\/sprite(?:@2x)?\.(?:json|png)$/.test(parsed.pathname)) return parsed.href;
+  const match = (world ? /^\/scenery\/osm\/(\d{1,2})\/(\d{1,5})\/(\d{1,5})\.pbf$/
+    : /^\/scenery\/vector\/(\d{1,2})\/(\d{1,5})\/(\d{1,5})\.pbf$/).exec(parsed.pathname);
   if (!match) throw new Error('Unsupported map terrain resource');
   const [z, x, y] = match.slice(1).map(Number);
-  if (z > 15 || x >= 2 ** z || y >= 2 ** z) throw new Error('Map terrain resource outside tile domain');
+  if (z > (world ? 14 : 15) || x >= 2 ** z || y >= 2 ** z) throw new Error('Map terrain resource outside tile domain');
   return parsed.href;
 }
 
-/** A single MapLibre renderer supplies sharp, label-free XYZ cartography to the
- * existing Cesium globe. It changes no terrain heights, navigation or physics.
+/** A single MapLibre renderer supplies sharp XYZ cartography to the existing
+ * Cesium globe: detailed OSM with local-font labels for the world profile, or
+ * the retained label-free regional style. Neither changes physical ground.
  * Failed tiles are transparent; the scene chooses the underlying visual fallback.
  */
 export async function createMapTerrainImagery(options: {
-  onStatus?: (status: Status) => void; signal?: AbortSignal;
+  onStatus?: (status: Status) => void; signal?: AbortSignal; profile?: 'regional' | 'world';
 } = {}): Promise<{
   provider: ImageryProvider;
   dispose(): void;
@@ -81,13 +85,20 @@ export async function createMapTerrainImagery(options: {
 }> {
   const notify = (status: Status) => { try { options.onStatus?.(status); } catch { /* UI callbacks cannot break tile jobs. */ } };
   const controller = new AbortController();
+  const world = options.profile === 'world', minimumLevel = world ? 0 : MIN_LEVEL;
   notify('loading');
   let style: StyleSpecification;
-  try { style = await readStyle(AbortSignal.any([controller.signal, AbortSignal.timeout(TIMEOUT_MS), ...(options.signal ? [options.signal] : [])])); }
+  try {
+    style = world ? createWorldMapStyle() : await readStyle(AbortSignal.any([controller.signal, AbortSignal.timeout(TIMEOUT_MS), ...(options.signal ? [options.signal] : [])]));
+    if (world) {
+      const source = style.sources['world-map'];
+      if (source.type === 'vector') source.tiles = [`${location.origin}/scenery/osm/{z}/{x}/{y}.pbf`];
+    }
+  }
   catch (error) { notify('degraded'); throw error; }
   options.signal?.throwIfAborted();
   const container = document.createElement('div');
-  container.dataset.mapTerrainRenderer = '';
+  container.dataset.mapTerrainRenderer = world ? 'world' : 'regional';
   container.setAttribute('aria-hidden', 'true');
   Object.assign(container.style, { position: 'fixed', width: `${SIZE}px`, height: `${SIZE}px`,
     left: '-10000px', top: '0', opacity: '0', pointerEvents: 'none' });
@@ -96,14 +107,14 @@ export async function createMapTerrainImagery(options: {
   try {
     setWorkerUrl(mapWorkerUrl);
     map = new LibreMap({ container, style, interactive: false, attributionControl: false,
-      center: [10, 51], zoom: MIN_LEVEL, minZoom: MIN_LEVEL, maxZoom: MAX_LEVEL,
+      center: [10, 51], zoom: minimumLevel, minZoom: minimumLevel, maxZoom: MAX_LEVEL,
       bearing: 0, pitch: 0, pixelRatio: 1, fadeDuration: 0, renderWorldCopies: false,
-      maxTileCacheSize: 64,
+      maxTileCacheSize: 32,
       canvasContextAttributes: { preserveDrawingBuffer: true, antialias: false },
-      transformRequest: url => ({ url: allowedResource(url), credentials: 'same-origin',
+      transformRequest: url => ({ url: allowedResource(url, world), credentials: 'same-origin',
         headers: { 'X-Gefly-Scenery-Priority': 'visible' } }) });
   } catch (error) { container.remove(); notify('degraded'); throw error; }
-  const tilingScheme = new WebMercatorTilingScheme(), coverage = Rectangle.fromDegrees(...BOUNDS);
+  const tilingScheme = new WebMercatorTilingScheme(), coverage = Rectangle.fromDegrees(...(world ? WORLD_MAP_BOUNDS : BOUNDS));
   const cache = new Map<string, HTMLCanvasElement>(), failed = new Map<string, number>();
   const pending = new Map<string, Job>();
   const queue: Job[] = [];
@@ -185,11 +196,11 @@ export async function createMapTerrainImagery(options: {
   }
   const provider = {
     rectangle: coverage, tilingScheme, tileWidth: SIZE, tileHeight: SIZE,
-    minimumLevel: MIN_LEVEL, maximumLevel: MAX_LEVEL, hasAlphaChannel: true,
-    errorEvent: new Event(), credit: new Credit(MAP_TERRAIN_CREDIT, true), proxy: undefined, tileDiscardPolicy: undefined,
+    minimumLevel, maximumLevel: MAX_LEVEL, hasAlphaChannel: true,
+    errorEvent: new Event(), credit: new Credit(world ? WORLD_MAP_CREDIT : MAP_TERRAIN_CREDIT, true), proxy: undefined, tileDiscardPolicy: undefined,
     getTileCredits: () => undefined, pickFeatures: () => undefined,
     requestImage(x: number, y: number, level: number, request?: Request) {
-      if (disposed || !Number.isInteger(level) || level < MIN_LEVEL || level > MAX_LEVEL
+      if (disposed || !Number.isInteger(level) || level < minimumLevel || level > MAX_LEVEL
           || !Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0 || x >= 2 ** level || y >= 2 ** level) return undefined;
       const rectangle = tilingScheme.tileXYToRectangle(x, y, level);
       if (!Rectangle.intersection(coverage, rectangle)) return undefined;

@@ -94,7 +94,7 @@ try {
   // Actual public-source working set: source pixels stay unmodified. This is
   // renderer timing, not a simulated-flight or guaranteed-network benchmark.
   observations.realTiming = await page.evaluate(async () => {
-    const tile=tileAt(49.9116,8.6348,14),tiles=Array.from({length:34},(_,i)=>({...tile,x:tile.x+i%7,y:tile.y+Math.floor(i/7)}));
+    const tile=tileAt(49.9116,8.6348,14),tiles=Array.from({length:30},(_,i)=>({...tile,x:tile.x+i%7,y:tile.y+Math.floor(i/7)}));
     const started=performance.now(),before=handle.getStats();
     for(const t of tiles) await handle.provider.requestImage(t.x,t.y,t.z);
     const cold_ms=performance.now()-started,afterCold=handle.getStats();
@@ -105,7 +105,7 @@ try {
       afterRevisit:handle.getStats(),revisitImage:await imageFacts(revisit)};
   });
   assert(observations.realTiming.revisitImage.visible>512*512*.9);
-  assert.equal(observations.realTiming.afterRevisit.loadedTiles,observations.realTiming.afterCold.loadedTiles,'real34-tile working set revisits without redraw');
+  assert.equal(observations.realTiming.afterRevisit.loadedTiles,observations.realTiming.afterCold.loadedTiles,'real30-tile working set revisits without redraw');
   assert(observations.realTiming.afterRevisit.cacheHits>observations.realTiming.afterCold.cacheHits);
   console.log('Real cold/warm/revisit',JSON.stringify(observations.realTiming));
 
@@ -117,8 +117,8 @@ try {
     for (let i = 0; i < 66; i++) await handle.provider.requestImage(tile.x + i % 10, tile.y + Math.floor(i / 10), tile.z);
     return { stats: handle.getStats(), rendererCount: document.querySelectorAll('[data-map-terrain-renderer]').length };
   });
-  assert.equal(observations.cache.stats.cacheSize, 64);
-  assert.equal(observations.cache.stats.cacheBytes,64*1024*1024); assert.equal(observations.cache.rendererCount, 1);
+  assert.equal(observations.cache.stats.cacheSize, 32);
+  assert.equal(observations.cache.stats.cacheBytes,32*1024*1024); assert.equal(observations.cache.rendererCount, 1);
   observations.coalescing=await page.evaluate(async()=>{
     const tile=tileAt(50.4,9.7,14),requests=Array.from({length:9},()=>new CesiumRequest()),before=handle.getStats();
     const first=handle.provider.requestImage(tile.x,tile.y,tile.z,requests[0]);
@@ -141,7 +141,7 @@ try {
   assert.equal(observations.coalescing.after.queuedTiles,0);
   checks.push('same XYZ shares one render/canvas with independent request cancellation; eight subscribers/key are bounded and overflow defers');
   await page.unroute('**/scenery/vector/*/*/*.pbf');
-  checks.push('66 controlled tile jobs evict old canvases at the 64-image/64MiB owned-pixel cap while retaining one renderer');
+  checks.push('66 controlled tile jobs evict old canvases at the 32-image/32MiB per-profile cap (64MiB combined regional/world) while retaining one renderer');
 
   observations.queue = await page.evaluate(async () => {
     const tile = tileAt(50.3, 8.9, 14), promises = [], actualRequests = [];
@@ -158,7 +158,7 @@ try {
   });
   assert.equal(observations.queue.queued, 48); assert.equal(observations.queue.cancelled, 48);
   assert.equal(observations.queue.rejected, 70); assert.equal(observations.queue.cancelledStates, 70);
-  assert.equal(observations.queue.stats.queuedTiles, 0); assert(observations.queue.stats.cacheSize <= 64);
+  assert.equal(observations.queue.stats.queuedTiles, 0); assert(observations.queue.stats.cacheSize <= 32);
   assert.equal(observations.queue.rendererCount, 1);
   checks.push('serial work queue stays at 48, dropped/view-cancelled requests use Cesium cancellation, and cancellation creates no extra WebGL contexts');
 

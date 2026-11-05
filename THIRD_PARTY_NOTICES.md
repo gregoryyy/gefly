@@ -140,7 +140,7 @@ without current airport, chart or surveyed runway acceptance. See
 
 ## Streamed DGM200 regional terrain
 
-The [42-tile regional package](app/public/terrain/region/README.md) derives from
+The [608-slot regional package](app/public/terrain/region/README.md) derives from
 BKG DGM200, **© GeoBasis-DE / BKG (2026), Daten verändert**, under
 [Data licence Germany – Attribution 2.0](https://www.govdata.de/dl-de/by-2-0).
 [BKG](https://www.bkg.bund.de) publishes the
@@ -149,10 +149,13 @@ and [documentation](https://sgx.geodatenzentrum.de/web_public/gdz/dokumentation/
 The original source archive and extracted TIFF are not bundled; URLs and exact
 hashes are retained in the manifest. Changes: regional extraction, exact
 coordinate transformation, bilinear source-centre resampling on common nodes,
-float32 encoding and a declared fine/coarse boundary blend. The 200 m source
+float32 encoding, paired-NaN gaps where DEM/geoid support is absent, and a
+declared fine/coarse boundary blend. The index declares 475 available tile
+assets and 133 unavailable slots within 6–14°E / 47–51.75°N. The 200 m source
 spacing and approximately 2000–2019 survey ages are not upgraded by display LOD.
 
-GCG2016/2023 West retains **© Bundesamt für Kartographie und Geodäsie (2026)**,
+The expanded package uses the nationwide GCG2016/2023 archive; the fine local
+package retains GCG2016/2023 West. Both retain **© Bundesamt für Kartographie und Geodäsie (2026)**,
 [CC BY 4.0](LICENSES/CC-BY-4.0.txt), and the original
 [sources](app/public/terrain/BKG-SOURCES.pdf) and
 [attribution](app/public/terrain/BKG-CC-BY-NOTICE.pdf) notices. Changes are bounded
@@ -172,7 +175,8 @@ chart, official ARP, surveyed ground or current operational directory.
 
 ## Live public map and photography
 
-The local development proxy fetches and resamples fixed public WMS layers;
+The local development proxy fetches fixed TopPlusOpen WMTS tiles and resamples
+fixed public photography WMS layers;
 source responses are cached temporarily, not bundled as a global data grant.
 
 - **TopPlusOpen:** © [BKG](https://www.bkg.bund.de) (2026),
@@ -185,6 +189,13 @@ source responses are cached temporarily, not bundled as a global data grant.
   (2026), [CC BY 4.0](LICENSES/CC-BY-4.0.txt), layer `by_dop40c`.
 - **Baden-Württemberg DOP20:** © [LGL-BW](https://www.lgl-bw.de) (2026),
   [DL-DE-BY-2.0](https://www.govdata.de/dl-de/by-2-0), layer `IMAGES_DOP_20_RGB`.
+- **Rhineland-Palatinate DOP20:** © [GeoBasis-DE / LVermGeoRP](https://www.lvermgeo.rlp.de)
+  (2026), Daten bearbeitet, [DL-DE-BY-2.0](https://www.govdata.de/dl-de/by-2-0),
+  layer `rp_dop20`; [official layer metadata](https://www.geoportal.rlp.de/mapbender/php/mod_showMetadata.php?resource=layer&id=61676).
+- **Saarland DOP20 (2025 service):** © GeoBasis DE/LVGL-SL (2026),
+  [DL-DE-BY-2.0](https://www.govdata.de/dl-de/by-2-0), layer `sl_dop20_rgb`;
+  [official layer metadata](https://geoportal.saarland.de/mapbender/php/mod_showMetadata.php?resource=layer&id=49804).
+
 
 Changes: WMS resampling to EPSG:3857, transparent image composition and PNG
 encoding. Native source 20/40 cm resolution does not establish output detail;
@@ -318,3 +329,26 @@ regional subset, preserved original rows, notice and full license are described
 in [the fix source notice](app/public/mapdata/fixes-README.md). The binary asset
 contains gzip-compressed JSON; the source remains readable. This historical
 inventory does not establish current navigation availability or AIRAC accuracy.
+
+
+## Bundled coarse world terrain
+
+The [world fallback package](app/public/terrain/world/README.md) derives from:
+
+- NOAA National Centers for Environmental Information, 2022, **ETOPO 2022 Global
+  Relief Model**, ice-surface edition, [doi:10.25921/fd45-gt74](https://doi.org/10.25921/fd45-gt74).
+  NOAA's [User Guide, section 4](https://www.ngdc.noaa.gov/mgg/global/relief/ETOPO2022/docs/1.2%20ETOPO%202022%20User%20Guide.pdf)
+  permits private, academic and commercial use with citation. A sparse derived
+  one-degree grid is bundled; the complete source DEM is not redistributed.
+- NGA **EGM2008**, distributed as the public-domain 2.5-minute grid by
+  [OSGeo PROJ-data](https://cdn.proj.org/us_nga_README.txt).
+- **Made with Natural Earth**, public-domain 1:50 million ocean polygons under
+  [Natural Earth terms](https://www.naturalearthdata.com/about/terms-of-use/).
+  The derived connected-ocean mask excludes inland disconnected features.
+
+[Source identities](app/public/terrain/world/SOURCE.json) pin exact input and
+output hashes, registration, height datums and derivation. These data rights are
+separate from Gefly's GPL code. The coarse surface has no surveyed landing,
+shoreline or inland-lake-surface fidelity. OSM/OpenFreeMap cartography remains
+separate from physical heights, with the credits described above; the same
+on-demand source now also provides the global baseline beneath regional scenery.

@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "id": "world-etopo2022-1deg-egm2008-v1",
+  "source_accessed": "2026-11-05",
+  "compiler_sha256": "cb5d1ced9503e31483fe402649c6b417bcec8ac0c528320d98cd1f2b768e9106",
+  "sources": {
+    "dem": {
+      "url": "https://oceanwatch.pifsc.noaa.gov/erddap/griddap/ETOPO_2022_v1_60s.json?z[0:60:10799][0:60:21599]",
+      "bytes": 3778929,
+      "sha256": "a0e925530769f34d38bb79c57a727228252eed66cd1c3c031c1a81db7d5284fe"
+    },
+    "north": {
+      "url": "https://oceanwatch.pifsc.noaa.gov/erddap/griddap/ETOPO_2022_v1_60s.json?z[10799:1:10799][0:60:21599]",
+      "bytes": 20261,
+      "sha256": "6e67c26a99137b8570b265d01824bf340bdc062417f7450281bb2cda688f37da"
+    },
+    "metadata": {
+      "url": "https://oceanwatch.pifsc.noaa.gov/erddap/griddap/ETOPO_2022_v1_60s.das",
+      "bytes": 6223,
+      "sha256": "932d36582d1b50c63a05ea689dea4ad96b2ca2df14c8849e02fc04fae73dbdbf"
+    },
+    "geoid": {
+      "url": "https://cdn.proj.org/us_nga_egm08_25.tif",
+      "bytes": 80585622,
+      "sha256": "4191d471eefebf24091b56dbc604353cb3b8cf8cc70e448bb9ae56a272bef17a"
+    },
+    "ocean": {
+      "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_ocean.geojson",
+      "bytes": 1383426,
+      "sha256": "5b810162af4b20805838cfd766ef1a445c350cf6aafc8b589515daef30033adf"
+    }
+  },
+  "dataset": "NOAA ETOPO 2022 v1 60 arc-second Global Ice Surface, EGM2008 physical heights",
+  "source_resolution_arcsec": 60,
+  "output_node_spacing_degrees": 1,
+  "resampling": "Nearest source centre at target latitude/longitude +1/120 degree; source longitude 0..360 wrapped to -180..180. Polar values are longitude means of the nearest source row. Duplicate +180 copies -180 bits.",
+  "geoid_sampling": "Exact 24-node stride of NGA EGM2008 2.5-minute PixelIsPoint grid; h_ellipsoid = H + zeta; +180 wraps to -180.",
+  "ice": "Ice Surface, not bedrock beneath Greenland/Antarctic ice sheets.",
+  "ocean": "Natural Earth 1:50m globally connected ocean polygon only, with holes respected; isolated Caspian polygon excluded. Ocean nodes set H=0 EGM2008. Negative inland heights preserved. Shoreline is approximate at this output spacing.",
+  "nodata": "Reject nonfinite, source -99999, remaining non-ocean H<=-1000/H>=10000 or abs(zeta)>=200; no invented zero replacement for missing samples.",
+  "limitations": "One-degree coarse baseline, about 111 km north-south node spacing. No surveyed airport, coastline, lake-surface, obstacle or landing fidelity. Interpolation cannot recover lost relief.",
+  "licences": {
+    "dem": "NOAA ETOPO User Guide section 4: free private, academic and commercial use; cite NOAA NCEI and DOI 10.25921/fd45-gt74.",
+    "geoid": "NGA via PROJ-data: Public Domain.",
+    "ocean": "Natural Earth: Public Domain; Made with Natural Earth."
+  },
+  "statistics": {
+    "ocean_nodes_excluding_seam": 43533,
+    "negative_inland_nodes_excluding_seam": 165,
+    "minimum_height_m": -864.0625,
+    "maximum_height_m": 5989.088,
+    "south_pole_source_mean_m": 2832.048133611111,
+    "north_pole_source_mean_m": -4189.9546875
+  }
+}

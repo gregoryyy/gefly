@@ -78,7 +78,7 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
     </fieldset>
     <fieldset>
       <legend>Scenery</legend>
-      <label class="control-settings-toggle"><input id="vector-scenery" type="checkbox">Map terrain · no labels</label>
+      <label class="control-settings-toggle"><input id="vector-scenery" type="checkbox">Map terrain · OSM cartography</label>
       <p class="control-settings-note">Cartography replaces photography; unavailable tiles show terrain relief.</p>
       <label class="control-settings-toggle"><input id="practice-papi" type="checkbox">Practice PAPI / runway lights</label>
       <p class="control-settings-note">Illustrative lights, not surveyed EDFE equipment.</p>

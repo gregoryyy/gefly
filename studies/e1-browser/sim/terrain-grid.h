@@ -22,7 +22,7 @@ class TerrainGrid {
  public:
   static constexpr size_t kMaxPoints = 4 * 1024 * 1024;
   TerrainGrid(double west, double south, double east, double north,
-              size_t width, size_t height, const double* values, size_t count)
+              size_t width, size_t height, const double* values, size_t count, bool allow_missing = false)
       : west_(west), south_(south), east_(east), north_(north), width_(width), height_(height) {
     constexpr double pi = 3.141592653589793;
     if (!std::isfinite(west) || !std::isfinite(south) || !std::isfinite(east) || !std::isfinite(north)
@@ -31,7 +31,12 @@ class TerrainGrid {
         || width > kMaxPoints / height || count != width * height || count > kMaxPoints || !values)
       throw std::invalid_argument("Invalid terrain grid");
     values_.assign(values, values + count);
-    for (double value : values_) if (!std::isfinite(value)) throw std::invalid_argument("Non-finite terrain node");
+    bool has_value = false;
+    for (double value : values_) {
+      if (std::isfinite(value)) has_value = true;
+      else if (!allow_missing || !std::isnan(value)) throw std::invalid_argument("Non-finite terrain node");
+    }
+    if (!has_value) throw std::invalid_argument("Terrain grid has no supported nodes");
   }
 
   bool contains(double longitude, double latitude) const {

@@ -173,7 +173,6 @@ validated aircraft/region model.
 | emsdk 6.0.13 | Build tool for the JSBSim WASM study ([sim](../studies/e1-browser/sim/README.md)); not bundled; build outputs not committed. |
 | OpenStreetMap data | Assess relevant basemap/coverage and ODbL obligations; public tile service access is a separate policy and hosting decision. |
 | OurAirports data | Adopted as a bounded, hash-pinned 731-entry five-state community map directory, with public-domain terms and accuracy limitations; not an accepted substitute for EDDF's official ARP, surveyed ground or authoritative procedures. |
-| Copernicus elevation/surface products | Select product/edition, distinguish surface from terrain, review vertical reference/accuracy, attribution and actual download/service access. |
 | DFS/AIP and EAD reference material | Verify viewing, extraction and redistribution permissions; public consultation is not an open chart/navigation-data grant or proof of current operational coverage. |
 
 Reuse-first assessment belongs in E1/TODO 1.2; region/data acceptance belongs in
@@ -318,15 +317,19 @@ and [reproduction](../utils/imagery/README.md).
 ## Streamed regional terrain, airport directory and live photography
 
 The [regional terrain manifest](../app/public/terrain/region/manifest.json)
-declares 42 tiles over 8.25–10°E / 49.25–50.75°N, each 133,128 bytes; their total
-is 5,591,376 bytes. BKG DGM200 uses EPSG:25832 and DHHN2016 normal heights at
+declares 608 slots over 6–14°E / 47–51.75°N. Its compressed, hash-bound
+index identifies 475 assets (382 full, 93 partial), each 133,128 bytes, totaling
+63,235,800 bytes; 133 unavailable slots have no asset. Unsupported nodes in
+partial assets retain paired height/geoid NaNs, rather than invented elevations. BKG DGM200 uses EPSG:25832 and DHHN2016 normal heights at
 200 m source spacing, under DL-DE-BY-2.0. The ZIP SHA-256 is
 `db82ad95da97bf9b8a5b4eab7aa856cd6f67bb0caaec551d21d12c7807ab3216`;
 the extracted TIFF SHA-256 is
 `2921c7f92b970bb115ce94d6d19eb42a7735ca8c60b176660567dd1ffb62cd1f`.
-Source surveys date approximately 2000–2019. GCG2016/2023 West is the existing
-CC-BY-4.0 source ZIP, SHA-256
-`16b2f09996aee74eaa647fde4b7724ade17e384be534f38d23d9d229f30520c3`.
+Source surveys date approximately 2000–2019. The expanded package uses the
+nationwide GCG2016/2023 CC-BY-4.0 archive,
+[`quasigeoid.geo89.de.zip`](https://daten.gdz.bkg.bund.de/produkte/sonstige/quasigeoid/2023/quasigeoid.geo89.de.zip),
+SHA-256 `d5a40a20ae4cdb372c6ca27dbf742c1f46d8e28be282a12ef083fb93b823c67a`.
+The separate fine local package retains its existing GCG West source.
 The compiler uses exact PROJ coordinates and source-centre bilinear interpolation
 on a shared lattice, slices common edges and writes interleaved float32 H/ζ.
 Native/render sampling adds a derived fine/coarse transition. Per-tile hashes,
@@ -351,12 +354,15 @@ not bundled source datasets or commercial provider integrations:
 
 | Source | Fixed service/layer | Rights and visible credit |
 | --- | --- | --- |
-| BKG TopPlusOpen | `https://sgx.geodatenzentrum.de/wms_topplus_open`, `web` | DL-DE-BY-2.0; linked BKG/year/license and [source inventory](https://sgx.geodatenzentrum.de/web_public/gdz/datenquellen/datenquellen_topplusopen.html). Map fallback, not photography/chart. |
+| BKG TopPlusOpen | `https://sgx.geodatenzentrum.de/wmts_topplus_open`, `web` / `WEBMERCATOR` | DL-DE-BY-2.0; linked BKG/year/license and [source inventory](https://sgx.geodatenzentrum.de/web_public/gdz/datenquellen/datenquellen_topplusopen.html). Map fallback, not photography/chart. |
 | Hessen HVBG DOP20 | `https://www.gds-srv.hessen.de/cgi-bin/lika-services/ogc-free-images.ows`, `he_dop_rgb` | DL-DE-Zero-2.0; HVBG credit retained. 20 cm source, not output resolution. |
 | Bavaria DOP40 | `https://geoservices.bayern.de/od/wms/dop/v1/dop40`, `by_dop40c` | CC-BY-4.0; © Bayerische Vermessungsverwaltung (2026), linked LDBV/license. 40 cm source. |
 | Baden-Württemberg DOP20 | `https://owsproxy.lgl-bw.de/owsproxy/ows/WMS_LGL-BW_ATKIS_DOP_20_C`, `IMAGES_DOP_20_RGB` | DL-DE-BY-2.0; © LGL-BW (2026), linked LGL/license. 20 cm source. |
+| Rhineland-Palatinate DOP20 | `https://geo4.service24.rlp.de/wms/rp_dop20.fcgi`, `rp_dop20` | DL-DE-BY-2.0; © GeoBasis-DE / LVermGeoRP (2026), Daten bearbeitet; [official layer metadata](https://www.geoportal.rlp.de/mapbender/php/mod_showMetadata.php?resource=layer&id=61676). 20 cm source. |
+| Saarland DOP20 (2025 service) | `https://geoportal.saarland.de/freewms/dop2025`, `sl_dop20_rgb` | DL-DE-BY-2.0; © GeoBasis DE/LVGL-SL (2026); [official layer metadata](https://geoportal.saarland.de/mapbender/php/mod_showMetadata.php?resource=layer&id=49804). 20 cm source; service label does not establish each tile's capture date. |
 
-Changes: WMS EPSG:3857 resampling, 256 px map or 512 px photo requests, transparent
+Changes: fixed 256 px TopPlusOpen WMTS map requests, WMS EPSG:3857 resampling
+into 512 px photo requests, transparent
 photo composition and PNG encoding. Capture dates remain unknown. Cached bytes
 are temporary and not a frozen Review image/video snapshot; request/resource
 limits and external flow are in [SEC](SEC.md). Full EDDF/100 NM and global
@@ -415,3 +421,29 @@ identities, including duplicated names. A50,948-byte gzip binary carries a
 271,162-byte JSON payload, both bounded and manifest/hash checked. Original source
 rows, notice and full GPL license accompany the package. No current AIRAC,
 receiver database, published procedure or aircraft guidance is implied.
+
+
+## Coarse global terrain and cartography fallback
+
+R-WORLD-11 / TODO 2.0.135 adds the local, derived
+[world-v1 package](../app/public/terrain/world/README.md): 361×181 interleaved
+physical/geoid float32 nodes, 522,728 bytes, SHA-256
+`36d07b3e7ef82882402ebeca41a3f3842900a91baac9b4ef29fe43d9b007d099`.
+The source spacing is one degree (about 111 km north–south). Quarter-degree
+streaming cells and display subdivision add no measurements. NOAA ETOPO 2022
+ice-surface heights use EGM2008; NGA's public-domain EGM2008 grid supplies geoid
+separation. Natural Earth's public-domain 1:50 million connected-ocean mask
+creates an approximate ocean surface while preserving inland negative relief.
+Exact source URLs, rights, input/compiler hashes and derivation are pinned in
+[SOURCE.json](../app/public/terrain/world/SOURCE.json) and the
+[notices](../THIRD_PARTY_NOTICES.md#bundled-coarse-world-terrain).
+
+The offline compiler uses Python and already-pinned Pillow 11.2.1; no new
+runtime dependency or live DEM provider is added. Numeric source downloads stay
+in ignored scratch storage. Existing OpenFreeMap/OpenMapTiles/OSM source and
+decoder dependencies provide fixed-route global cartography, under available regional photography, with the same bounded network/cache policy and required credit. No
+external style, glyph or sprite service is introduced. Country-specific
+[Swiss/Austrian sources](research/2026-11-05-swiss-austria-terrain-sources.md)
+remain researched candidates requiring edition-specific rights and datum work.
+
+Native runtime provenance is checked separately on the integrated revision; generated local engine files are not distributed by this source change.

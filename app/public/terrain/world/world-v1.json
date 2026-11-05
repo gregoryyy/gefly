@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "id": "world-etopo2022-1deg-egm2008-v1",
+  "width": 361,
+  "height": 181,
+  "bounds": [
+    -180,
+    -90,
+    180,
+    90
+  ],
+  "rows": "south-to-north",
+  "encoding": "float32-le-interleaved-H-zeta",
+  "physical_datum": "EGM2008",
+  "geoid_model": "EGM2008",
+  "asset": "world-v1.f32",
+  "bytes": 522728,
+  "sha256": "36d07b3e7ef82882402ebeca41a3f3842900a91baac9b4ef29fe43d9b007d099"
+}

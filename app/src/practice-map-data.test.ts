@@ -38,6 +38,13 @@ test('true heading wraps in both directions and always remains finite in [0, 360
   }
 });
 
+test('world map plotting retains southern/western and date-line positions without regional clipping', () => {
+  const positions = [[-74, 40.7], [151.21, -33.86], [179.999, 0], [-179.999, 0]];
+  const states = positions.map(([lon, lat]) => state({ lon_rad: lon * Math.PI / 180, lat_rad: lat * Math.PI / 180 }));
+  const frame = makePracticeMapFrame(states[0], states);
+  frame.path.forEach((point, index) => point.forEach((value, axis) => assert(Math.abs(value - positions[index][axis]) < 1e-12)));
+});
+
 test('map frames reject invalid positions or current headings instead of dropping bad points', () => {
   for (const field of ['lon_rad', 'lat_rad', 'heading_rad'] as const) {
     for (const value of [NaN, Infinity, -Infinity]) {

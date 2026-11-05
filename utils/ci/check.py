@@ -32,7 +32,7 @@ REQUIRED = {
 }
 IGNORED_DIRS = {
     ".git", "node_modules", ".venv", "venv", "__pycache__", "dist", "build", "target",
-    "output", "tmp", ".cache", ".pdfstamps",
+    "output", "tmp", ".cache", ".pdfstamps", ".work",
 }
 
 

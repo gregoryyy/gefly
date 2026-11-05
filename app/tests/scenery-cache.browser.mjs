@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 import { chromium } from 'playwright';
 import { gzipSync } from 'node:zlib';
 import { stripTypeScriptTypes } from 'node:module';
-const clientModules = new Map(await Promise.all(['scenery-cache','scenery-coverage','map-terrain-style'].map(async name =>
+const clientModules = new Map(await Promise.all(['scenery-cache','scenery-coverage','map-terrain-style','world-map-style'].map(async name =>
   [`/app/src/${name}.ts`,stripTypeScriptTypes(await readFile(new URL(`../src/${name}.ts`,import.meta.url),'utf8'))])));
 const source = await readFile(new URL('../public/scenery-cache-sw.js', import.meta.url));
 // Observe the real Cache API in this fixture worker; no cache behavior is replaced.
@@ -19,7 +19,7 @@ const counts = new Map(), aborted = new Set(); let active = 0, peak = 0;
 const server = createServer((req, res) => {
   if (clientModules.has(req.url)) { res.setHeader('Content-Type','text/javascript'); res.end(clientModules.get(req.url)); return; }
   if (req.url === '/studies/e1-browser/sim/terrain-stream.js') {
-    res.setHeader('Content-Type','text/javascript');res.end('export const loadRegionalManifest=()=>new Promise(resolve=>{window.resolveClientTerrain=resolve;});');return;
+    res.setHeader('Content-Type','text/javascript');res.end('export const REGIONAL_TERRAIN={west:6,south:47,east:14,north:51.75,step:.25};export const loadRegionalManifest=()=>new Promise(resolve=>{window.resolveClientTerrain=resolve;});');return;
   }
   if (req.url === '/') { res.setHeader('Content-Type', 'text/html'); res.end('<!doctype html><title>Cache</title>'); return; }
   if (req.url === '/scenery-cache-sw.js') { res.setHeader('Content-Type', 'text/javascript'); res.end(worker); return; }
@@ -58,6 +58,9 @@ try {
   const compressed = '/scenery/vector/11/2/1.pbf';
   assert.equal(await get(compressed), 'fixture'); assert.equal(await get(compressed), 'fixture');
   assert.equal(counts.get(compressed), 1, 'compressed source bytes survive persistent reuse');
+  const globalMap = '/scenery/osm/11/603/770.pbf';
+  assert.equal(await get(globalMap), 'fixture'); await page.reload(); assert.equal(await get(globalMap), 'fixture');
+  assert.equal(counts.get(globalMap), 1, 'global OSM fallback bytes survive reload through the existing bounded cache');
   await get('/private.json'); await get('/private.json'); assert.equal(counts.get('/private.json'), 2);
   const priorityPath = '/scenery/map/10/3/1.png';
   await page.evaluate(path => navigator.serviceWorker.controller.postMessage({ type: 'scenery-cache-focus', urls: [path] }), priorityPath);

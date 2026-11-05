@@ -12,7 +12,7 @@ function eligible(input) {
   if (/^\/terrain\/region\/e\d{3,4}-n\d{4}\.f32$/.test(url.pathname)) return hash;
   if (/^\/imagery\/rhein-main\/tiles\/\d{1,2}\/\d{1,5}\/\d{1,5}\.jpg$/.test(url.pathname)) return hash;
   return !url.search && /^\/scenery\/(?:map|imagery)\/\d{1,2}\/\d{1,5}\/\d{1,5}\.png$/.test(url.pathname)
-    || !url.search && /^\/scenery\/(?:vector|landmarks)\/\d{1,2}\/\d{1,5}\/\d{1,5}\.pbf$/.test(url.pathname);
+    || !url.search && /^\/scenery\/(?:vector|landmarks|osm)\/\d{1,2}\/\d{1,5}\/\d{1,5}\.pbf$/.test(url.pathname);
 }
 function lifetime(response) {
   const control = response.headers.get('cache-control') ?? '';
