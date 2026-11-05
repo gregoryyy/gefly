@@ -4,6 +4,8 @@ All times are Europe/Berlin. Answers record the author and recording time. New a
 
 ## Recorded interaction decisions
 
+**2026-11-05 22:56, Codex confirmed renderer repair choice** (Europe/Berlin): measured Swiss resident heights agree across source/native boundaries, while the exterior coarse horizon introduces a >1 km display step. Apply a bounded exterior-only 1/8-degree visual transition with exact existing atlas heights inside loaded sources; it adds no measured data or contact surface. Preserve safe-update geometry guards. Injected failed source-owner physical discontinuities remain TODO2.0.160. The user reports Hessen is “all flat” after a rebuild; current fresh normal-flight Hessen native/GPU probes show real relief, so TODO2.0.161 remains unresolved. R-WORLD-2/R-WORLD-11/R-SIM-2.
+
 **2026-11-05 21:32, user request and Codex implementation choice** (Europe/Berlin):
 [Predictive terrain loading](input/2026-11-05-predictive-terrain-loading.md) uses
 consecutive simulated positions/time for actual ground track, with20wall-seconds

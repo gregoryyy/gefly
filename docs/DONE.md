@@ -3,6 +3,27 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-05 23:03 — Remove artificial exterior terrain walls
+
+TODO: 2.0.158; R-WORLD-2/R-WORLD-11/R-WORLD-9/R-SIM-2.
+Agent: Codex orchestrator; code1 `alps_source` source diagnostics and parallel pressure slice; code2 `alps_renderer`; housekeeping `alps_pressure`; independent `quality` and `panel_validate_final`.
+
+**Implementation notes**
+
+Successful Swiss detailed-source/native grids agree, but the original resident/coarse horizon join creates an approximately1168m rendered step. A compact exterior-only1/8-degree correction joins that horizon continuously, preserving exact existing atlas heights and native contact geometry. Multiple edges/corners use continuous bounded weights; dateline/poles and conservative update/eviction influence guards retain existing64/73/512 history limits. Modular commits59aaba6 andc1378d2 separate implementation and a reproducible public-GPU regression. The published legacy port retains its quarter-degree profile and LOD12/14; it does not publish the separate Copernicus integration.
+
+Legacy24provider tests,31provider/streamed targeted checks and a real synthetic Cesium browser seam pass: four public picks, maximum expected/GPU error0.004238m. Root modern26provider tests and the same browser mechanism pass at LOD14 (0.001647m). Separate real Swiss before/after evidence reduces the observed boundary change to~0.091m;22actual10× flight samples show9safe retained updates, no rebuild after initial assignment and maximum native/GPU error0.05697m. That moving run predates the final fine-interior exclusion, irrelevant at its Swiss locations; final-hash static Swiss/Hessen checks and the new cache regression cover the later branch. Root fresh normal-flight Feldberg GPU/native difference is0.000664m. Independent quality/validation accept this bounded repair, distinguishing each source variant.
+
+Branch app473Node+22Python, TypeScript,85assurance and11training checks pass. Full `just ci` completes with9of23 optional JSBSim study cases skipped; a Linux-only repository case is also skipped, not passed. CI log `output/flight/terrain-horizon-ci.log` SHA-256 `43591f3ec50f878553ee31cf2d24262c4a2b0bf3f480cd03de5c9c84d138bfe1`. Final record/assurance checks are recorded at publication.
+
+**Deviations**
+
+This is a derived exterior visual transition, not measured extra resolution or a changed physical terrain surface. A failed optional owner can independently create a physical source discontinuity: Task2.0.160 remains open. The user's all-flat Hessen view after rebuilding remains unreproduced (Task2.0.161), despite correct fresh source/native/GPU relief. No aircraft, source-accuracy or complete legacy moving-flight acceptance follows. Native build provenance remains unverified. A fresh Claude2.1.308 packet process times out with unknown model evidence; external peer remains pending and its actual envelope is retained. No milestone/release or training acceptance.
+
+**Insights**
+
+A correct native grid can still meet a radically different distant display surface. Diagnose both sides before changing data or physics, and extend cache invalidation to the full visual influence area.
+
 ## 2026-11-05 21:53 — Predict terrain crossings and preload the flight direction
 
 TODO: 2.0.155; R-WORLD-9/R-WORLD-11/R-SIM-2.

@@ -1,0 +1,3 @@
+# Terrain horizon cross-provider attempt
+
+Codex/OpenAI authored the bounded delta. A fresh external Claude packet review used source revisionc1378d21e110622aba688545a6bd17cc41c86760 and packet SHA-2560f73dc64fff38a6a5908da85ff53e6012fca5d229519b0780af37dba690384d9. The [actual envelope](2026-11-05-terrain-horizon-peer.json) records `/opt/homebrew/bin/claude`2.1.308, a60-second reviewer timeout, unknown model evidence and no review. External quality/validation remain pending. Later record/CI changes are outside that packet. Local independent reviews and measured checks remain separate; no milestone/release, aircraft or training acceptance.
