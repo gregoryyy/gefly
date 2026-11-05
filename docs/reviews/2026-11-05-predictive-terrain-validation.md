@@ -1,8 +1,8 @@
 # Predictive terrain validation
 
-2026-11-05 21:51 Europe/Berlin. Independent Codex validate; no implementation,
+2026-11-05 21:58 Europe/Berlin. Independent Codex validate; no implementation,
 reviewer browser execution or new tests. Reviewed isolated revision
-`fa43055a9a70d519f4dc3d3a26b5b50c624d8a4e` after merged control defaults,
+`7288046c4e976d0c0bc0cf2a72754a21b7dac029` after merged control defaults,
 plus the separately pinned root world30 port.
 
 **Recommend bounded behavioral acceptance of TODO2.0.155.** Both production
@@ -33,13 +33,21 @@ fetches do not quantify remote DSM latency savings. Root and legacy height/sourc
 contexts are distinct even though this high-altitude final digest matches.
 
 No unresolved blocking behavioral defect was found after the affected repairs.
-Reviewed supplied focused checks:21legacy and25root predictor/stream/world tests
-(the root includes four Copernicus cases), plus12app cache/planner groups per
+Reviewed supplied focused checks:21legacy and26root predictor/stream/world tests
+(the root includes four Copernicus cases and executable publication wiring), plus12app cache/planner groups per
 tree, all pass without skips. Final root unit log records591Node+25Python tests
 passing without skips. Earlier isolated CI attempts had listener-permission and
-merged package-JSON failures; neither is accepted. The JSON separator repair
-retains both npm commands. Renewed final isolated shared CI remains pending at
-this report freeze; integration owns its result and publication gates.
+merged package-JSON and inherited DONE-order failures; none is accepted. The JSON separator repair
+retains both npm commands. Final isolated `just ci` at `7288046` completed successfully:469application
+Node+22Python tests,85assurance and11training checks pass. The gate is
+**passed with skips**: nine of23optional JSBSim tests and one Linux-only
+repository-tool process-state test were skipped, not accepted. Independent fence-aware DONE comparison against `origin/main`
+`8c4103a382733dcbf9f4f688360cc92a65c4966d` confirms all164original entries
+retain their exact bodies and the preamble is unchanged; only the Task155entry
+is added, with all165headings sorted. The corrected order therefore preserves
+history. Earlier failed gates remain historical failures. The final gate log was independently inspected and hash-checked; integration
+owns publication. External peer attempts are blocked; no
+covering cross-provider acceptance is claimed.
 
 Frozen SHA-256 identities:
 
@@ -67,6 +75,10 @@ trees is `a6ad13f9d752f6840c19f9c36bd4a5bebe0e5b86b61383f57722049152702fb8`.
 
 - Legacy: `7b171a0675c07cca209b8b82040efd2a82966a596e47c2a95d514dc98b7f483a`.
 - Root: `4253e8a9eae59505645921d0445c17aba5f5322a0004e2d37b7017ce161b8ff6`.
+
+Isolated `output/flight/predictive-ci-complete.log` SHA-256:
+`524fbc9d4c4a20c735da5e89fa0fe08f3cd0fff704bcc1782f78d4099f925238`.
+This completed result supersedes earlier failed/incomplete gate attempts.
 
 Root `output/flight/predictive-integrated-unit-final.log`:
 `b5646f5da0c3b1933e968e881edd5d1b3ad05bdd3117d71aa891ffacebffc11b`.

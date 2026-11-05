@@ -24,8 +24,9 @@ at10×. Legacy prepares one window; integrated prepares two. Each promotes one
 completed window with zero new observed terrain/Copernicus fetches, at most nine
 resident tiles and unchanged paused pose/digest/step. Full integrated checks pass
 591Node+25Python tests, zero skips; production build passes. Branch application
-checks pass469Node+22Python, zero skips. Final sharedCI renewal is pending while
-correcting the inherited merged DONE record ordering; no failed gate is a pass.
+checks pass469Node+22Python, zero skips. Final sharedCI passes with9of23 optional JSBSim checks and one Linux-only
+repository-tool case skipped on macOS; skips are not accepted. The inherited
+merged DONE ordering is repaired with every existing entry preserved.
 
 Implementation slices are26a11d3 and65ff907, with merged main integrated locally.
 The missing npm scripts separator inherited from main8c4103a is repaired separately

@@ -48,8 +48,11 @@ its recorded native build provenance remains unverified.
 Legacy native/predictor component checks21; integrated26including four Copernicus
 and the actual postState wiring regression; display/cache checks12in each tree.
 All focused checks pass with zero skips. Integrated complete app unit checks
-pass591Node+25Python tests, zero skips. Final branch CI is recorded separately
-when complete; planned or skipped criteria are not passes.
+pass591Node+25Python tests, zero skips. Final branch sharedCI passes at source/review revision7288046 with469Node and
+22Python app tests, zero app skips,85assurance and11training tests. Nine of23
+optional JSBSim cases and one Linux-only repository-tool case skip on macOS;
+skips are not passes. Final document-only renewals use the scaffold/assurance
+gates. Complete existing DONE bodies survive the inherited ordering repair.
 
 A crossed-boundary publication could discard a matching prepared task before
 required loading. Matching current-key promotion now takes precedence over an
