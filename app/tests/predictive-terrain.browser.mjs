@@ -29,7 +29,7 @@ try {
 import {WorldTerrainStream as ProbeStream} from './terrain-stream.js';
 let probeFetches=0;
 const probeFetch=globalThis.fetch;
-globalThis.fetch=(...args)=>{if(String(args[0]).startsWith('/terrain/'))probeFetches++;return probeFetch(...args);};
+globalThis.fetch=(...args)=>{if(String(args[0]).startsWith('/terrain/')||String(args[0]).startsWith('/scenery/elevation/copernicus/'))probeFetches++;return probeFetch(...args);};
 const probePrefetch=ProbeStream.prototype.prefetch,probeMove=ProbeStream.prototype.move;
 const probeSeen=new WeakSet();
 ProbeStream.prototype.prefetch=function(...args){
