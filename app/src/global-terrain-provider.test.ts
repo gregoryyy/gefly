@@ -173,9 +173,10 @@ test('stable update accepts equal geometry clones, preserves identity, and sampl
 test('stable update rejects changed H/geoid/bounds and mismatched adjacent nodes atomically',async()=>{
   for(const part of ['physical_m','geoid_m'] as const){
     const old=cell(4000),provider=createGlobalTerrainProvider(updateWorld,updateFine,[old]);
+    const beforeNew = await request(provider,middle(cell(4001)));
     const changed=clone(old);changed[part][3000]++;
     assert.equal(tryUpdateGlobalTerrainProvider(provider,[changed,cell(4001)]),false);
-    assert.equal(await request(provider,middle(cell(4001))),50,'new cell was not partially installed');
+    assert.equal(await request(provider,middle(cell(4001))),beforeNew,'new cell was not partially installed');
   }
   const provider=createGlobalTerrainProvider(updateWorld,updateFine,[cell(4000)]);
   assert.equal(tryUpdateGlobalTerrainProvider(provider,[cell(4001,4000,101)]),false,'shared edge heights must agree');
@@ -308,4 +309,54 @@ test('stable metadata refresh accepts reassigned native slots on unchanged legac
   const shifted=clone(original);shifted.slot=8;
   assert.equal(tryUpdateGlobalTerrainProvider(provider,[shifted]),true);
   assert.equal(await request(provider,middle(original)),112);
+});
+
+// Synthetic mechanism fixtures: these establish transition/cache behavior, not
+// source accuracy. Real Swiss Copernicus/native/GPU measurements are separate.
+test('R-WORLD-11 exterior collar is continuous at all source edges/corners and exact inside/outside',async()=>{
+  const grid=cell(6029,4388),provider=createGlobalTerrainProvider(updateWorld,updateFine,[grid]);
+  const band=.125*RAD,epsilon=1e-9*RAD,c=middle(grid);
+  for(const [x,y] of [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]]){
+    const lon=x<0?grid.west_rad:x>0?grid.east_rad:c.longitude;
+    const lat=y<0?grid.south_rad:y>0?grid.north_rad:c.latitude;
+    const boundary=await request(provider,new Cartographic(lon,lat));
+    const inside=await request(provider,new Cartographic(lon-x*epsilon,lat-y*epsilon));
+    const outside=await request(provider,new Cartographic(lon+x*epsilon,lat+y*epsilon));
+    assert(Math.abs(boundary-112)<1e-6,JSON.stringify({x,y,boundary}));
+    assert(Math.abs(inside-112)<1e-6);
+    assert(Math.abs(outside-boundary)<1e-5,JSON.stringify({x,y,boundary,outside}));
+    const distance=Math.hypot(x,y),beyond=new Cartographic(lon+x*(band+.001*RAD)/distance,lat+y*(band+.001*RAD)/distance);
+    assert(Math.abs(await request(provider,beyond)-50)<1e-8,'beyond compact support is exact coarse H+N');
+  }
+  assert.equal(await request(provider,c),112);
+});
+test('R-WORLD-11 exterior collar wraps longitude and remains finite at geographic limits',async()=>{
+  for(const [col,row,longitude] of [[0,4000,180-1e-9],[WORLD_TERRAIN.cols-1,4000,-180+1e-9]]){
+    const grid=cell(col,row),provider=createGlobalTerrainProvider(updateWorld,updateFine,[grid]);
+    assert(Math.abs(await request(provider,new Cartographic(longitude*RAD,middle(grid).latitude))-112)<1e-5);
+  }
+  const polar=cell(0,WORLD_TERRAIN.lastRow),provider=createGlobalTerrainProvider(updateWorld,updateFine,[polar]);
+  assert(Number.isFinite(await request(provider,new Cartographic(-179.9*RAD,Math.PI/2))));
+});
+test('R-WORLD-11 new source and eviction protect cached exterior collar geometry',async()=>{
+  const old=cell(4000),incoming=cell(4001),provider=createGlobalTerrainProvider(updateWorld,updateFine,[old]);
+  const exterior=new Cartographic(incoming.east_rad+.05*RAD,middle(old).latitude);
+  const before=await request(provider,exterior);
+  assert.equal(tryUpdateGlobalTerrainProvider(provider,[clone(old)]),true,'metadata/duplicate update retains provider');
+  assert.equal(tryUpdateGlobalTerrainProvider(provider,[incoming]),false,'new source can alter a cached collar beyond its own rectangle');
+  assert.equal(await request(provider,exterior),before);
+  assert.equal(tryUpdateGlobalTerrainProvider(provider,[cell(5000)]),true,'distant source does not invalidate the cached collar');
+  const history=createGlobalTerrainProvider(updateWorld,updateFine,[cell(100)]);
+  await request(history,new Cartographic(cell(100).east_rad+.05*RAD,middle(cell(100)).latitude));
+  for(let i=200;i<263;i++)assert.equal(tryUpdateGlobalTerrainProvider(history,[cell(i)]),true);
+  assert.equal(tryUpdateGlobalTerrainProvider(history,[cell(263)]),false,'eviction cannot remove a cached source contribution');
+});
+
+test('R-WORLD-11 redundant fine-interior source cannot alter cached exterior collar weights',async()=>{
+  const provider=createGlobalTerrainProvider(updateWorld,updateFine,[cell(100)]);
+  const point=new Cartographic(updateFine.west_rad-.005*RAD,(updateFine.south_rad+updateFine.north_rad)/2);
+  const before=await request(provider,point);
+  const interior=cell(Math.floor((8.6+180)/WORLD_TERRAIN.step),Math.floor((50.1+90)/WORLD_TERRAIN.step));
+  assert.equal(tryUpdateGlobalTerrainProvider(provider,[interior]),true);
+  assert.equal(await request(provider,point),before);
 });
