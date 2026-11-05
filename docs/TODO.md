@@ -336,3 +336,9 @@ future tasks, not completed by this requirements update.
 
 - [ ] 2.0.153 Investigate and repair reported roll-off/oversteering. [Draft PR86](https://github.com/gregoryyy/gefly/pull/86) removes inappropriate fresh loading, fixed correction and default rudder coupling, with bounded diagnostics and independent reviews. Overall handling remains unresolved: complete prior/new results are mixed,110kt trim fails, native build provenance and external peer acceptance remain blocked. R-INPUT-1/R-SIM-5/R-SIM-11. [Request](input/2026-11-05-control-stability.md); [comparison](research/2026-11-05-control-stability-app-comparison.md).
 - [x] 2.0.154 Repair 3D vector loading starvation and unnecessary live-window globe invalidation with two source-aligned roots, bounded safe updates and strict height/provenance guards. R-WORLD-11/R-WORLD-9/R-SIM-2. [Request](input/2026-11-05-vector-terrain-loading.md); [reload follow-up](input/2026-11-05-vector-terrain-reload.md); [bounded evidence/limits](research/2026-11-05-vector-terrain-performance.md). Conservative source-change/capacity rebuilds and broader fidelity/device gates remain explicit.
+
+- [x] 2.0.159 Repair confirmed high-altitude startup pressure gating: preserve supported QNH/STD indications and raw launch QFE in recording/continuation, explain unsupported QFE selection and retain unavailable sensor/envelope safeguards. R-AIR-3/R-SIM-2. [Report](input/2026-11-05-alps-terrain-walls.md).
+
+- [ ] 2.0.158 Repair the separately diagnosed exterior detailed/coarse Swiss terrain walls; this pressure increment does not implement that renderer repair. R-WORLD-2/R-WORLD-11/R-SIM-2. [Report](input/2026-11-05-alps-terrain-walls.md).
+
+- [ ] 2.0.161 Diagnose the separate all-flat Hessen report after rebuild; fresh source/native/rendered relief is correct, but the user observation is unreproduced. R-WORLD-2/R-WORLD-11/R-SIM-2. [Report](input/2026-11-05-hessen-elevation-rebuild.md).

@@ -39,3 +39,5 @@ End with proposed implications, limitations and a handoff to product/orchestrato
 - [2026-11-04 — OSM landmark source and rights](2026-11-04-osm-landmark-labels.md)
 
 - [Aircraft feasibility: realistic dynamics and complete cockpits](2026-11-04-aircraft-feasibility.md) — requested electric, glider, aerobatic, PA-28 and airliner candidates; primary sources, exact variants, reuse rights and missing validation data.
+
+- [2026-11-05: Alps terrain and pressure diagnosis](2026-11-05-alps-terrain-pressure.md) — source/pressure separation and bounded high-altitude app repair.

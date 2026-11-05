@@ -3,6 +3,25 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-05 23:00 — Preserve pressure indication at supported high-altitude starts
+
+TODO: 2.0.159; R-AIR-3/R-SIM-2.
+Agent: Codex orchestrator; code1 `alps_source`; code2 `alps_renderer` on the separate terrain slice; housekeeping `alps_pressure`; independent `quality` and `panel_validate_final`.
+
+**Implementation notes**
+
+The app incorrectly required raw launch QFE to fit the 800–1100 hPa practice subscale before publishing any pressure fields. Supported high starts now retain complete indications and raw launch metadata. QNH/STD/manual settings work; unsupported QFE is disabled/explained and rejected without mutation. Continuation preserves its native first32 packing and JSON launch references. Missing APIs/out-of-atmosphere values remain unavailable. Source commits5c846ca andcbcc192 are separated from terrain work on `fix/high-altitude-pressure`, based on the predictive-terrain branch.
+
+Four actual unchanged-WASM starts at3/5km with terrain on/off, two-frame JSON/continuation, low-launch QFE zero and unsupported11.2km pressure pass. Three actual real-Worker/component browser groups preserve paused native state and every engaged AP field. The working app also passes the same browser checks. Independent quality/validation find no blocking repair defect. Full branch app472Node+22Python, TypeScript,85assurance and11training tests pass. `just ci` completes with9of23 optional JSBSim study checks skipped; these are not passed cases. Final CI log `output/flight/pressure-ci-final.log` SHA-256 `4757d0912bc85c133c206f1f28a5f7a5db965ef241515c824edb80b66b7b68f4`. Final record checks and assurance diff are recorded separately at publication.
+
+**Deviations**
+
+The user's actual pressure-flight altitude remains unknown; no connection to the earlier Swiss walls is established. Native bytes11a92abd… remain unchanged and disagree with the stale build record, so build provenance and installed-aircraft fidelity are unverified. A fresh external Claude2.1.308 packet review times out with unknown model evidence: cross-provider peer remains pending, with its actual envelope recorded. This is an app repair, not milestone/release or training acceptance. The separate all-flat Hessen observation remains open Task2.0.161.
+
+**Insights**
+
+Sensor/reference validity and selectable instrument settings need separate domains; accepting truthful metadata must remain consistent across live state, recordings and continuation.
+
 ## 2026-11-05 21:53 — Predict terrain crossings and preload the flight direction
 
 TODO: 2.0.155; R-WORLD-9/R-WORLD-11/R-SIM-2.

@@ -1,0 +1,24 @@
+{
+  "status": "blocked",
+  "accepted": false,
+  "author_provider": "codex",
+  "reviewer_provider": "claude",
+  "packet": {
+    "path": "output/flight/high-pressure-peer.md",
+    "sha256": "da557b84f578e7e4d23b0963d748258beeaf6f6240ad3fc66c8c1cadb33b975c",
+    "revision": "cbcc1920ff2fa8fec47fbea0b978df63e5478f15"
+  },
+  "cli": {
+    "executable": "/opt/homebrew/bin/claude",
+    "version": "2.1.308"
+  },
+  "model_evidence": [
+    "unknown"
+  ],
+  "review": null,
+  "limitations": [
+    "CLI routing and returned model names are evidence, not backend attestation.",
+    "Packet review does not independently execute the packet's test commands."
+  ],
+  "diagnostic": "reviewer_timeout"
+}
