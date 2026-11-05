@@ -1,4 +1,6 @@
 import { MAP_TERRAIN_BOUNDS } from './map-terrain-style.ts';
+import { WORLD_MAP_BOUNDS } from './world-map-style.ts';
+import { REGIONAL_TERRAIN } from '../../studies/e1-browser/sim/terrain-stream.js';
 
 const R = 6371000, DEG = Math.PI / 180;
 const MAX_LAT = Math.atan(Math.sinh(Math.PI));
@@ -56,7 +58,7 @@ export function tilesWithinRadius(lat_rad: number, lon_rad: number, z: number, r
 }
 
 /** Display-resource warming only; never installs terrain or changes physics.
- * Budgets: map48, coarse64, detail64, terrain24; at most200 same-origin URLs. */
+ * Budgets: map32, coarse48, detail64, terrain24, OSM32; at most200 same-origin URLs. */
 export function planSceneryPrefetch(lat_rad: number, lon_rad: number, vector: boolean): readonly string[] {
   if (!valid(lat_rad, lon_rad)) return [];
   const items: {url: string; distance: number; tier: number}[] = [];
@@ -67,19 +69,23 @@ export function planSceneryPrefetch(lat_rad: number, lon_rad: number, vector: bo
     }).slice(0, cap);
     for (const tile of tiles) items.push({url: `${prefix}/${tile.key}.${suffix}`, distance: rectangleDistance(lat_rad, lon_rad, rectangle(tile)), tier});
   }
-  layer('/scenery/map', 'png', 10, 30000, 48, [6,47,14,51.75], 2);
-  const bounds = vector ? MAP_TERRAIN_BOUNDS : [7,49,10,51.5];
+  layer('/scenery/map', 'png', 10, 30000, 32, [6,47,14,51.75], 2);
+  const bounds = vector ? MAP_TERRAIN_BOUNDS : [6,47,14,51.75];
   const prefix = vector ? '/scenery/vector' : '/scenery/imagery', suffix = vector ? 'pbf' : 'png';
   layer(prefix, suffix, 14, 2000, 64, bounds, 0);
-  layer(prefix, suffix, 11, 20000, 64, bounds, 1);
+  layer(prefix, suffix, 11, 20000, 48, bounds, 1);
+  if (Math.abs(lat_rad) <= MAX_LAT) {
+    layer('/scenery/osm', 'pbf', 14, 2000, 8, WORLD_MAP_BOUNDS, 4);
+    layer('/scenery/osm', 'pbf', 11, 20000, 24, WORLD_MAP_BOUNDS, 4);
+  }
   const terrain = [];
-  for (let west = 7; west < 10; west += .25) for (let south = 49.25; south < 51.5; south += .25) {
+  for (let west = REGIONAL_TERRAIN.west; west < REGIONAL_TERRAIN.east; west += REGIONAL_TERRAIN.step) for (let south = REGIONAL_TERRAIN.south; south < REGIONAL_TERRAIN.north; south += REGIONAL_TERRAIN.step) {
     const distance = rectangleDistance(lat_rad, lon_rad, [west*DEG,south*DEG,(west+.25)*DEG,(south+.25)*DEG]);
     if (distance <= 35000) terrain.push({url:`/terrain/region/e${Math.round(west*100)}-n${Math.round(south*100)}.f32`,distance,tier:3});
   }
   terrain.sort((a,b)=>a.distance-b.distance || a.url.localeCompare(b.url));items.push(...terrain.slice(0,24));
   items.sort((a,b)=>a.distance-b.distance || a.tier-b.tier || a.url.localeCompare(b.url));
-  return items.map(item=>item.url);
+  return items.slice(0, 200).map(item=>item.url);
 }
 
 /** Small startup warmup for both selectable map modes, not full radius coverage.
@@ -98,5 +104,10 @@ export function planStartupSceneryPrefetch(lat_rad: number, lon_rad: number): re
   layer('/scenery/map', 'png', 15, 2000, 8, [6,47,14,51.75]);
   layer('/scenery/vector', 'pbf', 14, 2000, 4, MAP_TERRAIN_BOUNDS);
   layer('/scenery/vector', 'pbf', 11, 20000, 4, MAP_TERRAIN_BOUNDS);
-  return urls;
+  // Preserve the regional startup priority; fill unused seed slots globally.
+  if (Math.abs(lat_rad) <= MAX_LAT) {
+    layer('/scenery/osm', 'pbf', 14, 2000, 8, WORLD_MAP_BOUNDS);
+    layer('/scenery/osm', 'pbf', 11, 20000, 8, WORLD_MAP_BOUNDS);
+  }
+  return urls.slice(0, 16);
 }

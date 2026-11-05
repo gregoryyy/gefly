@@ -158,3 +158,11 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [Startup preloading and full-height interactive map](2026-11-04-startup-preload-and-map-menu.md)
 - [Pointer-anchored panel zoom and reachable lower edge](2026-11-04-panel-bottom-zoom.md)
 - [Map location-type checkbox filters](2026-11-04-map-location-filters.md)
+
+- [2026-11-04-five-state-world-coverage](2026-11-04-five-state-world-coverage.md): terrain/world source request retained for the scoped foundation.
+
+- [2026-11-05-world-terrain-fallback](2026-11-05-world-terrain-fallback.md): terrain/world source request retained for the scoped foundation.
+
+- [2026-11-05-swiss-austria-terrain](2026-11-05-swiss-austria-terrain.md): terrain/world source request retained for the scoped foundation.
+
+- [2026-11-05-global-map-detail-plan-ux](2026-11-05-global-map-detail-plan-ux.md): terrain/world source request retained for the scoped foundation.

@@ -6,16 +6,30 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 const LIMIT = 2 * 1024 * 1024;
 const WORLD = 20037508.342789244;
 // WGS84 [west, south, east, north]. Public cartography covers the five-state
-// inventory; photography remains within its separately reviewed regional area.
+// inventory. State photography keeps its own published footprint/transparent gaps.
 const MAP_BOUNDS = [6, 47, 14, 51.75] as const;
-const IMAGERY_BOUNDS = [7, 49, 10, 51.5] as const;
+const IMAGERY_BOUNDS = [6, 47, 14, 51.75] as const;
 const SOURCES = {
   map: ['https://sgx.geodatenzentrum.de/wmts_topplus_open', 'web'],
   hessen: ['https://www.gds-srv.hessen.de/cgi-bin/lika-services/ogc-free-images.ows', 'he_dop_rgb'],
   bavaria: ['https://geoservices.bayern.de/od/wms/dop/v1/dop40', 'by_dop40c'],
   bw: ['https://owsproxy.lgl-bw.de/owsproxy/ows/WMS_LGL-BW_ATKIS_DOP_20_C', 'IMAGES_DOP_20_RGB'],
+  // Official metadata: DL-DE-BY-2.0; credit LVermGeoRP / LVGL-SL and processing.
+  // https://www.geoportal.rlp.de/mapbender/php/mod_showMetadata.php?resource=layer&id=61676
+  // https://geoportal.saarland.de/mapbender/php/mod_showMetadata.php?resource=layer&id=49804
+  rlp: ['https://geo4.service24.rlp.de/wms/rp_dop20.fcgi', 'rp_dop20'],
+  saarland: ['https://geoportal.saarland.de/freewms/dop2025', 'sl_dop20_rgb'],
 } as const;
 type Source = keyof typeof SOURCES;
+// Layer envelopes from each official GetCapabilities (checked 2026-11-04).
+// The services, not these rectangles, provide the actual state-boundary alpha.
+const PHOTO_BOUNDS: Record<Exclude<Source, 'map'>, readonly [number, number, number, number]> = {
+  hessen: [7.41867, 49.25, 10.5, 51.7596],
+  bavaria: [8.957580, 47.117703, 14.037541, 50.632870],
+  bw: [7.20, 47.40, 10.70, 50.00],
+  rlp: [6.037773, 48.897996, 8.617703, 51.000893],
+  saarland: [6.340597, 49.082884, 7.438171, 49.659757],
+};
 type Fetcher = typeof fetch;
 type Result = { bytes: Buffer; type: string; sources: string; partial: boolean; expires: number };
 export interface SceneryOptions { fetcher?: Fetcher; cacheBytes?: number; python?: string }
@@ -111,9 +125,10 @@ export function sceneryMiddleware(options: SceneryOptions = {}) {
     const [west, south, east, north] = [longitude(box[0]), latitude(box[1]), longitude(box[2]), latitude(box[3])];
     const selected: Source[] = [];
     // Query envelopes bound providers; actual state footprints remain transparent.
-    if (east >= 7.41867 && west <= 10.5 && north >= 49.25 && south <= 51.7596) selected.push('hessen');
-    if (east >= 8.96 && north >= 49 && south <= 50.75) selected.push('bavaria');
-    if (east >= 8 && west <= 10 && north >= 49 && south <= 49.8) selected.push('bw');
+    for (const source of Object.keys(PHOTO_BOUNDS) as Array<keyof typeof PHOTO_BOUNDS>) {
+      const [w, s, e, n] = PHOTO_BOUNDS[source];
+      if (east >= w && west <= e && north >= s && south <= n) selected.push(source);
+    }
     const results = await Promise.allSettled(selected.map((source) => acquire(source, box, 512, tile, priority)));
     const images: Buffer[] = [], sources: string[] = [];
     results.forEach((result, i) => { if (result.status === 'fulfilled') { images.push(result.value); sources.push(selected[i]); } });
@@ -123,7 +138,7 @@ export function sceneryMiddleware(options: SceneryOptions = {}) {
   }
   return (req: IncomingMessage, res: ServerResponse, next: () => void): void => {
     const url = req.url || '';
-    if (url.startsWith('/scenery/vector/') || url.startsWith('/scenery/landmarks/')) { vectorMap(req, res, next); return; }
+    if (url.startsWith('/scenery/vector/') || url.startsWith('/scenery/landmarks/') || url.startsWith('/scenery/osm/')) { vectorMap(req, res, next); return; }
     if (!url.startsWith('/scenery/')) { next(); return; }
     const match = /^\/scenery\/(map|imagery)\/(\d{1,2})\/(\d{1,6})\/(\d{1,6})\.(png|jpg)$/.exec(url);
     if (!match || !['GET', 'HEAD'].includes(req.method || '') || match[5] !== 'png') { res.writeHead(404).end(); return; }

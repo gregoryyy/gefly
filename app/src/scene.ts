@@ -14,13 +14,16 @@ import { AIRCRAFT_CONTROL_SURFACES, controlSurfaceAngle } from './aircraft-contr
 import { createAircraftShadow } from './aircraft-shadow';
 import { createPublicTerrainProvider } from './terrain-provider';
 import { createStreamedTerrainProvider } from './streamed-terrain-provider';
-import { REGIONAL_TERRAIN, loadRegionalManifest, TerrainStream, sampleAtlas, type RegionalTile } from '../../studies/e1-browser/sim/terrain-stream.js';
+import { createGlobalTerrainProvider } from './global-terrain-provider';
+import { REGIONAL_TERRAIN, loadRegionalManifestOptional, WorldTerrainStream, sampleAtlas, atlasGridAt, type AtlasTile } from '../../studies/e1-browser/sim/terrain-stream.js';
+import { loadWorldTerrainPackage, validWorldTerrainTile, worldCellAt } from '../../studies/e1-browser/sim/world-terrain.js';
 import { createRegionalImageryProvider } from './regional-imagery';
 import { createMapTerrainImagery } from './map-terrain-imagery';
 import { imageryStatusText } from './imagery-status';
 import { loadTerrainPackage, sampleTerrain, type TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
 import { aircraftBasisENU, boundedCameraLook, cockpitCameraENU, chaseCameraENU, type CameraLook } from './aircraft-orientation';
 import { DEFAULT_FOV_RAD, MIN_FOV_RAD, MAX_FOV_RAD } from './field-of-view.ts';
+import { WORLD_MAP_MAX_LATITUDE } from './world-map-style';
 import type { FlightScene, FlightState } from './types';
 
 const DEG_RAD = Math.PI / 180;
@@ -74,12 +77,14 @@ function elevationRelief(grid: TerrainGrid): HTMLCanvasElement {
  * Renderer state never feeds the flight model.
  */
 export async function createScene(container: HTMLElement): Promise<FlightScene> {
-  const terrainGrid = await loadTerrainPackage();
+  const [terrainGrid, worldGrid] = await Promise.all([loadTerrainPackage(), loadWorldTerrainPackage()]);
   const sceneryCache = createSceneryCache(container);
   const publicTerrain = createPublicTerrainProvider(terrainGrid);
   let activeTerrain = publicTerrain;
   const recordingTiles = new Map<string, TerrainGrid>();
-  let streamedTiles: TerrainGrid[] = [], atlasTiles = new Map<string,RegionalTile>();
+  let liveTiles: TerrainGrid[] = [], recordingLoad: WorldTerrainStream | null = null, recordingVersion = 0;
+  let recordingController: AbortController | null = null;
+  let streamedTiles: TerrainGrid[] = [], atlasTiles = new Map<string,AtlasTile>();
   let terrainRevision = 0, providerKey = '';
   let liveLayers = false;
   const atlasSample=(lat:number,lon:number)=>streamedTiles.length ? sampleAtlas(terrainGrid,atlasTiles,lat,lon) : sampleTerrain(terrainGrid,lat,lon);
@@ -149,14 +154,15 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   widget.clock.shouldAnimate = false;
   if (scene.camera.frustum && 'near' in scene.camera.frustum) scene.camera.frustum.near = 0.15;
 
-  // Keep source credit legible above the instrument deck; never hide Cesium credits.
+  // The app hosts live credits in its Credits menu; standalone scenes retain
+  // their original overlay. Keep Cesium/provider content and source links intact.
   const credit = credits.querySelector('.cesium-widget-credits') as HTMLElement | null;
   if (credit) { credit.style.right = '0'; credit.style.left = 'auto'; credit.style.maxWidth = '100%'; credit.style.textAlign = 'right'; }
   const status = document.createElement('div');
   status.id = 'imagery-status';
   status.setAttribute('role', 'status');
   status.style.cssText = 'position:absolute;right:12px;bottom:38px;max-width:330px;padding:7px 10px;border-radius:4px;background:#10272cdd;color:#e5eadd;font:11px/1.4 system-ui;z-index:2;pointer-events:none;';
-  status.textContent = 'Loading Hessen aerial imagery…';
+  status.textContent = 'Loading southern Germany aerial imagery…';
   container.appendChild(status);
   container.dataset.imagery = 'loading';
 
@@ -169,26 +175,28 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   let regionalSettled = false;
   let removeCameraListener: (() => void) | null = null;
   let airportLayer: ImageryLayer | null = null;
+  const starterLayers: ImageryLayer[] = [];
   let localRegionalLayer: ImageryLayer | null = null;
   let livePhotoLayer: ImageryLayer | null = null;
-  let mapTerrain: Awaited<ReturnType<typeof createMapTerrainImagery>> | null = null;
-  let mapTerrainLayer: ImageryLayer | null = null;
-  let mapTerrainLoad: Promise<void> | null = null;
-  let mapTerrainStatus: 'loading' | 'ready' | 'degraded' = 'loading';
+  let worldMap: Awaited<ReturnType<typeof createMapTerrainImagery>> | null = null;
+  let worldMapLayer: ImageryLayer | null = null;
+  let worldMapLoad: Promise<void> | null = null;
+  let worldMapStatus: 'loading' | 'ready' | 'degraded' = 'loading';
   function orderPhotographs() {
+    // Photographs cover the OSM map only in Photo mode. Vector mode uses the
+    // same detailed OSM presentation everywhere, independent of regional bounds.
+    if(worldMapLayer)scene.imageryLayers.raiseToTop(worldMapLayer);
     if(livePhotoLayer)scene.imageryLayers.raiseToTop(livePhotoLayer);
     if(localRegionalLayer)scene.imageryLayers.raiseToTop(localRegionalLayer);
-    if(airportLayer)scene.imageryLayers.raiseToTop(airportLayer);
-    if(mapTerrainLayer)scene.imageryLayers.raiseToTop(mapTerrainLayer);
+    for(const layer of starterLayers)scene.imageryLayers.raiseToTop(layer);
     applyImageryMode();
   }
   function applyImageryMode(useTerrain = lastState.terrain_profile === 1): void {
     for (let i = 0; i < scene.imageryLayers.length; i++) {
       const layer = scene.imageryLayers.get(i);
-      // Vector and photography are alternative terrain modes. An empty or
-      // failed vector tile exposes only the neutral base/height relief.
+      // Failed or unavailable photographs expose OSM beneath them.
       layer.show = layer === baseLayer ? true : layer === reliefLayer ? useTerrain
-        : layer === mapTerrainLayer ? vectorScenery && useTerrain : !vectorScenery;
+        : layer === worldMapLayer ? useTerrain : !vectorScenery;
     }
   }
   let loadSlow = false;
@@ -240,16 +248,38 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       regionalFailedTiles: regionalStats?.failedTiles ?? 0, tilesLoaded: scene.globe.tilesLoaded,
       liveImagery,
     });
-    const text = vectorScenery && state.terrain_profile === 1
-      ? mapTerrainStatus === 'ready' ? '' : mapTerrainStatus === 'degraded'
+    let text = vectorScenery && state.terrain_profile === 1
+      ? worldMapStatus === 'ready' ? '' : worldMapStatus === 'degraded'
         ? 'Map terrain unavailable in parts of this view; terrain relief remains visible.'
-        : 'Loading map terrain without labels; terrain relief remains visible.'
+        : 'Loading detailed OSM map terrain; terrain relief remains visible.'
       : photographText;
-    container.dataset.mapTerrain = vectorScenery && state.terrain_profile === 1 ? mapTerrainStatus : vectorScenery ? 'flat-study' : 'off';
-    container.dataset.mapTerrainLoaded = String(mapTerrain?.getStats().loadedTiles ?? 0);
-    container.dataset.mapTerrainQueued = String(mapTerrain?.getStats().queuedTiles ?? 0);
-    container.dataset.mapTerrainFailed = String(mapTerrain?.getStats().failedTiles ?? 0);
+    const bounds = [6, 47, 14, 51.75];
+    const lat = state.lat_rad / DEG_RAD, lon = state.lon_rad / DEG_RAD;
+    const outside = lon < bounds[0] || lon > bounds[2] || lat < bounds[1] || lat > bounds[3];
+    const polar = Math.abs(lat) > WORLD_MAP_MAX_LATITUDE;
+    container.dataset.sceneryFallback = state.terrain_profile !== 1 ? 'off-flat-study' : polar ? 'outside-map-coverage' : vectorScenery || outside ? 'osm' : 'regional';
+    container.dataset.worldMap = worldMapStatus;
+    container.dataset.worldMapLoaded = String(worldMap?.getStats().loadedTiles ?? 0);
+    container.dataset.worldMapCache = String(worldMap?.getStats().cacheSize ?? 0);
+    container.dataset.worldMapQueued = String(worldMap?.getStats().queuedTiles ?? 0);
+    const globalTerrainText = 'coarse global fallback · 1° source grid';
+    if (state.terrain_profile === 1 && outside) {
+      text = polar ? `${globalTerrainText} · OSM map unavailable beyond Web Mercator coverage.`
+        : worldMapStatus === 'degraded' ? 'Global OSM map unavailable in parts of this view; physical terrain remains available.'
+        : worldMapStatus === 'loading' ? vectorScenery
+          ? 'Loading detailed global OSM map; terrain relief remains visible.'
+          : 'Loading global OSM fallback; regional photography unavailable here.'
+        : vectorScenery ? `Global OpenStreetMap · ${globalTerrainText}.`
+        : `Global OSM fallback · regional photography unavailable here · ${globalTerrainText}.`;
+    }
+    container.dataset.mapTerrain = vectorScenery && state.terrain_profile === 1 ? worldMapStatus : vectorScenery ? 'flat-study' : 'off';
+    container.dataset.mapTerrainLoaded = String(worldMap?.getStats().loadedTiles ?? 0);
+    container.dataset.mapTerrainQueued = String(worldMap?.getStats().queuedTiles ?? 0);
+    container.dataset.mapTerrainFailed = String(worldMap?.getStats().failedTiles ?? 0);
     if (liveImagery === 'ready') container.dataset.liveImagery = 'ready';
+    if (container.dataset.reviewTerrain === 'loading') text = 'Loading selected Review terrain; showing the previous 3D position.';
+    else if (container.dataset.reviewTerrain === 'unavailable') text = 'Selected Review terrain unavailable; showing the previous 3D position.';
+    else if (container.dataset.reviewTerrain === 'reconstructed') text = 'Review terrain reconstructed from currently available sources; ground differs from the recorded terrain.';
     if (status.textContent !== text) status.textContent = text;
     status.hidden = !text;
     container.dataset.imagery = outcome;
@@ -257,24 +287,16 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   // Load the same photograph for every view. A cached source snapshot makes
   // the first practice scene independent of WMS latency and adaptive tile LOD.
   const photographAbort = new AbortController();
-  function ensureMapTerrain(): void {
-    if (mapTerrainLoad || disposed) return;
-    mapTerrainStatus = 'loading';
-    mapTerrainLoad = createMapTerrainImagery({
-      signal: photographAbort.signal,
-      onStatus(value) {
-        if (disposed) return;
-        mapTerrainStatus = value; imageryStatus(lastState); scene.requestRender();
-      },
+  function ensureWorldMap(): void {
+    if (worldMapLoad || disposed) return;
+    worldMapLoad = createMapTerrainImagery({ profile: 'world', signal: photographAbort.signal,
+      onStatus(value) { if (!disposed) { worldMapStatus = value; imageryStatus(lastState); scene.requestRender(); } },
     }).then(handle => {
       if (disposed) { handle.dispose(); return; }
-      mapTerrain = handle;
-      mapTerrainLayer = new ImageryLayer(handle.provider);
-      mapTerrainLayer.show = vectorScenery && lastState.terrain_profile === 1;
-      scene.imageryLayers.add(mapTerrainLayer); orderPhotographs(); scene.requestRender();
-    }).catch(() => {
-      if (!disposed) { mapTerrainStatus = 'degraded'; imageryStatus(lastState); }
-    });
+      worldMap = handle; worldMapLayer = new ImageryLayer(handle.provider);
+      scene.imageryLayers.add(worldMapLayer, Math.min(2, scene.imageryLayers.length));
+      orderPhotographs(); scene.requestRender();
+    }).catch(() => { if (!disposed) { worldMapStatus = 'degraded'; imageryStatus(lastState); } });
   }
   async function loadPhotograph(path: string, rectangle: Rectangle): Promise<SingleTileImageryProvider> {
     const response = await fetch(path, {
@@ -296,6 +318,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     results.forEach((result, index) => {
       if (result.status === 'fulfilled') {
         const layer = new ImageryLayer(result.value);
+        starterLayers.push(layer);
         scene.imageryLayers.add(layer);
         if (index === 2) airportLayer = layer;
         if (index === 0) overviewLoaded = true; else if (index === 1) detailLoaded = true; else airportLoaded = true;
@@ -380,15 +403,18 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       throw new RangeError('Cannot render a non-finite aircraft state');
     }
     const useTerrain = state.terrain_profile === 1;
+    if (useTerrain) ensureWorldMap();
     // Start a new warm plan after visible tiles settle; retain nearby progress through brief camera tile work.
     sceneryCache.update(state.lat_rad, state.lon_rad, vectorScenery, useTerrain, scene.globe.tilesLoaded);
     airportScenery.setVisible(useTerrain);
     airportScenery.setVectorVisible(false);
-    if (vectorScenery && useTerrain) ensureMapTerrain();
     airportScenery.update(state);
     container.dataset.airportScenery = airportScenery.status;
     applyImageryMode(useTerrain);
     const terrainSample = useTerrain ? atlasSample(state.lat_rad, state.lon_rad) : null;
+    if (container.dataset.reviewTerrain === 'reconstructed' && terrainSample
+      && Math.abs(terrainSample.physical_m - (state.terrain_height_msl_m ?? Infinity)) <= .25
+      && Math.abs(terrainSample.geoid_m - (state.terrain_geoid_m ?? Infinity)) <= .25) container.dataset.reviewTerrain = 'ready';
     if (useTerrain && (!terrainSample || !Number.isFinite(state.ground_height_ellipsoid_m))) {
       container.dataset.terrain = terrainSample ? 'height-unavailable' : 'outside-coverage';
       landmarkLabels.update(null, false);
@@ -396,9 +422,12 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     }
     if (useTerrain && streamedTiles.length) {
       const fine = state.lon_rad>=terrainGrid.west_rad && state.lon_rad<=terrainGrid.east_rad && state.lat_rad>=terrainGrid.south_rad && state.lat_rad<=terrainGrid.north_rad;
-      const key=`${terrainRevision}/${Math.floor((state.lon_rad/DEG_RAD-REGIONAL_TERRAIN.west)/REGIONAL_TERRAIN.step)}/${Math.floor((state.lat_rad/DEG_RAD-REGIONAL_TERRAIN.south)/REGIONAL_TERRAIN.step)}/${fine}`;
+      const cell = worldCellAt(state.lat_rad, state.lon_rad);
+      const key=`${terrainRevision}/${cell?.join('/')}/${fine}`;
       if(key!==providerKey) {
-        const provider=createStreamedTerrainProvider(terrainGrid,streamedTiles,state);
+        const provider=streamedTiles.some(validWorldTerrainTile)
+          ? createGlobalTerrainProvider(worldGrid, terrainGrid, streamedTiles)
+          : createStreamedTerrainProvider(terrainGrid,streamedTiles,state);
         if(!provider) throw new Error('Required streamed terrain has not loaded.');
         activeTerrain=provider;providerKey=key;
         if(terrainEnabled) scene.globe.terrainProvider=activeTerrain;
@@ -422,7 +451,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       terrainEnabled = useTerrain;
     }
     container.dataset.terrain = useTerrain ? terrainSample ? 'public-grid' : 'outside-coverage' : 'flat-study';
-    container.dataset.terrainId = useTerrain ? terrainGrid.id : '';
+    container.dataset.terrainId = useTerrain ? atlasGridAt(terrainGrid, atlasTiles, state.lat_rad, state.lon_rad)?.id ?? '' : '';
     container.dataset.terrainHeightEllipsoidM = terrainSample ? String(terrainSample.ellipsoid_m) : '';
     container.dataset.terrainRelief = useTerrain ? 'dem-derived' : 'off-flat-study';
     imageryStatus(state);
@@ -527,56 +556,96 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     },
     setSceneryMode(vector) {
       vectorScenery = vector; airportScenery.setVectorVisible(false);
-      if (vector && !mapTerrain && mapTerrainStatus === 'degraded') mapTerrainLoad = null;
-      if (vector && lastState.terrain_profile === 1) ensureMapTerrain();
-      if (!vector) mapTerrain?.cancelQueued();
-      else regionalImagery?.cancelQueued();
+      if (vector && lastState.terrain_profile === 1) ensureWorldMap();
+      if (vector) regionalImagery?.cancelQueued();
       applyImageryMode();
       container.dataset.sceneryMode = vector ? 'vector' : 'imagery'; imageryStatus(lastState); scene.requestRender();
     },
     setPracticePapi(enabled) { airportScenery.setPracticePapi(enabled); container.dataset.practicePapi = String(enabled); },
     update,
-    async prepareRecording(states) {
-      const needed = new Map<string, Readonly<FlightState>>();
-      for (const state of states) if (state.terrain_profile === 1 && !atlasSample(state.lat_rad, state.lon_rad)) {
-        needed.set(`${Math.floor(state.lat_rad / DEG_RAD * 4)},${Math.floor(state.lon_rad / DEG_RAD * 4)}`, state);
+    cancelTerrainPreparation() {
+      recordingVersion++;
+      recordingController?.abort(); recordingController = null;
+      recordingLoad?.cancel(); recordingLoad = null;
+      if (container.dataset.reviewTerrain === 'loading' || container.dataset.reviewTerrain === 'unavailable') {
+        container.dataset.reviewTerrain = 'ready'; imageryStatus(lastState);
       }
-      if (!needed.size) return;
-      const tiles = new Map(streamedTiles.map(grid => [grid.id, grid]));
-      const loader = new TerrainStream(await loadRegionalManifest(), grid => { tiles.set(grid.id, grid); }, () => {});
+    },
+    terrainReady(state: Readonly<FlightState>) {
+      const sample = state.terrain_profile === 1 ? atlasSample(state.lat_rad, state.lon_rad) : null;
+      if (state.terrain_profile === 1 && !sample) return false;
+      // Optional regional availability can differ from a historic recording.
+      // Display the current source honestly instead of claiming an exact replay
+      // of a previously available surface. This never replaces recorded state.
+      const difference = sample && Number.isFinite(state.terrain_height_msl_m) && Number.isFinite(state.terrain_geoid_m)
+        ? Math.max(Math.abs(sample.physical_m - state.terrain_height_msl_m!), Math.abs(sample.geoid_m - state.terrain_geoid_m!)) : 0;
+      container.dataset.reviewTerrainDifferenceM = String(difference);
+      container.dataset.reviewTerrain = difference > .25 ? 'reconstructed' : 'ready';
+      return true;
+    },
+    async prepareRecording(states) {
+      // The caller supplies the selected frame. Never warm an entire worldwide
+      // recording: one 3×3 window per request, with at most64 retained cells.
+      let state: Readonly<FlightState> | undefined;
+      for (const selected of states) { state = selected; break; }
+      // Invalidate the previous request before every early return, including a
+      // cached cursor, so obsolete manifest fetches cannot outlive the seek.
+      flightScene.cancelTerrainPreparation!();
+      if (!state || state.terrain_profile !== 1 || atlasSample(state.lat_rad, state.lon_rad)) return;
+      const version = recordingVersion, controller = new AbortController();
+      recordingController = controller;
+      container.dataset.reviewTerrain = 'loading'; imageryStatus(lastState);
+      const tiles = new Map<string, TerrainGrid>();
+      let loader: WorldTerrainStream | null = null;
+      const abort = () => loader?.cancel();
+      controller.signal.addEventListener('abort', abort, { once: true });
       try {
-        for (const state of needed.values()) await loader.move(state.lat_rad, state.lon_rad);
-        if (!disposed) {
-          for (const [id, grid] of tiles) recordingTiles.set(id, grid);
-          flightScene.setTerrainTiles?.(streamedTiles);
+        const manifest = await loadRegionalManifestOptional(globalThis.fetch, controller.signal);
+        if (disposed || controller.signal.aborted || version !== recordingVersion) return;
+        loader = new WorldTerrainStream(worldGrid, manifest, grid => { tiles.set(grid.id, grid); }, () => {});
+        recordingLoad = loader;
+        await loader.move(state.lat_rad, state.lon_rad);
+        if (!disposed && !controller.signal.aborted && version === recordingVersion) {
+          for (const [id, grid] of tiles) { recordingTiles.delete(id); recordingTiles.set(id, grid); }
+          while (recordingTiles.size > 64) recordingTiles.delete(recordingTiles.keys().next().value!);
+          flightScene.setTerrainTiles?.(liveTiles);
+          container.dataset.reviewTerrain = 'ready'; imageryStatus(lastState);
         }
-      } finally { loader.cancel(); }
+      } catch (error) {
+        if (controller.signal.aborted || disposed || version !== recordingVersion) return;
+        if (!disposed && version === recordingVersion) { container.dataset.reviewTerrain = 'unavailable'; imageryStatus(lastState); }
+        throw error;
+      } finally {
+        controller.signal.removeEventListener('abort', abort); loader?.cancel();
+        if (recordingLoad === loader) recordingLoad = null;
+        if (recordingController === controller) recordingController = null;
+      }
     },
     setTerrainTiles(tiles) {
-      streamedTiles=Array.from(new Map([...tiles, ...recordingTiles.values()].map(grid => [grid.id, grid])).values());
-      atlasTiles=new Map(streamedTiles.map(grid=>[grid.id,grid as RegionalTile]));terrainRevision++;
+      liveTiles = Array.from(tiles);
+      streamedTiles=Array.from(new Map([...recordingTiles.values(), ...liveTiles].map(grid => [grid.id, grid])).values());
+      atlasTiles=new Map(streamedTiles.map(grid=>[grid.id,grid as AtlasTile]));terrainRevision++;
+      container.dataset.reviewTerrainCached = String(recordingTiles.size);
       if(tiles.length && !liveLayers) {
         liveLayers=true;
         const rectangle=Rectangle.fromDegrees(REGIONAL_TERRAIN.west, REGIONAL_TERRAIN.south, REGIONAL_TERRAIN.east, REGIONAL_TERRAIN.north);
-        const mapLayer = new ImageryLayer(new UrlTemplateImageryProvider({url:new Resource({url:'/scenery/map/{z}/{x}/{y}.png',headers:{'X-Gefly-Scenery-Priority':'visible'}}),minimumLevel:5,maximumLevel:12,tileWidth:256,tileHeight:256,rectangle,
-          credit:new Credit('© <a href="https://www.bkg.bund.de" target="_blank" rel="noopener noreferrer">BKG</a> (2026) · <a href="https://www.govdata.de/dl-de/by-2-0" target="_blank" rel="noopener noreferrer">dl-de/by-2-0</a> · <a href="https://sgx.geodatenzentrum.de/web_public/gdz/datenquellen/datenquellen_topplusopen.html" target="_blank" rel="noopener noreferrer">TopPlusOpen sources</a> · map fallback',true)}));
-        scene.imageryLayers.add(mapLayer,2);
         const photoProvider=new UrlTemplateImageryProvider({url:new Resource({url:'/scenery/imagery/{z}/{x}/{y}.png',headers:{'X-Gefly-Scenery-Priority':'visible'}}),minimumLevel:7,maximumLevel:14,tileWidth:512,tileHeight:512,rectangle,
-          credit:new Credit('Open photography: HVBG · <a href="https://www.govdata.de/dl-de/zero-2-0">DL-DE-Zero-2.0</a>; © <a href="https://www.ldbv.bayern.de">Bayerische Vermessungsverwaltung</a> (2026) · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; Datenquelle: <a href="https://www.lgl-bw.de">LGL-BW</a> (2026) · <a href="https://www.govdata.de/dl-de/by-2-0">dl-de/by-2-0</a> · resampled, composited · capture dates unknown',true)});
+          credit:new Credit('Open photography: HVBG · <a href="https://www.govdata.de/dl-de/zero-2-0">DL-DE-Zero-2.0</a>; © <a href="https://www.ldbv.bayern.de">Bayerische Vermessungsverwaltung</a> (2026) · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; Datenquelle: <a href="https://www.lgl-bw.de">LGL-BW</a> (2026) · <a href="https://www.govdata.de/dl-de/by-2-0">dl-de/by-2-0</a>; © GeoBasis-DE / <a href="https://lvermgeo.rlp.de">LVermGeoRP</a> (2026), <a href="https://www.govdata.de/dl-de/by-2-0">dl-de/by-2-0</a> [Daten bearbeitet]; © GeoBasis DE / <a href="https://www.saarland.de/lvgl">LVGL-SL</a> (2026), <a href="https://www.govdata.de/dl-de/by-2-0">dl-de/by-2-0</a>, DOP2025 · resampled, composited · capture dates unknown',true)});
         photoProvider.errorEvent.addEventListener(()=>{container.dataset.liveImagery='degraded';});
         livePhotoLayer=new ImageryLayer(photoProvider);
-        scene.imageryLayers.add(livePhotoLayer,3);orderPhotographs();
+        scene.imageryLayers.add(livePhotoLayer);orderPhotographs();
         container.dataset.liveImagery='loading';
       }
     },
     dispose() {
       if (disposed) return;
       disposed = true;
+      flightScene.cancelTerrainPreparation!(); recordingTiles.clear();
       sceneryCache.dispose();
       photographAbort.abort();
       removeCameraListener?.(); removeCameraListener = null;
       regionalImagery?.dispose();
-      mapTerrain?.dispose();
+      worldMap?.dispose();
       observer.disconnect();
       creditObserver.disconnect();
       clearTimeout(loadTimeout);

@@ -266,37 +266,44 @@ image decoding, tile budgets, atomic output and source/derivative notices.
 
 ## Streamed terrain and live public scenery proxy
 
-The fixed regional terrain manifest declares exactly 42 known 0.25° tiles over
-8.25–10°E / 49.25–50.75°N. Runtime tile URLs are derived from validated IDs;
-redirects, unexpected lengths, hashes, dimensions and non-finite nodes are
-rejected. Reads have 15 s deadlines and cancellation. At most nine current
-tiles are installed into the native atlas between fixed steps; the renderer
-retains at most 42 visited tiles for Review. Loading pauses authoritative physics
-without changing its step size; explicit user pause/stop cancels automatic resume.
-Missing source coverage cannot silently become zero or the last known height.
+The fixed regional terrain manifest declares 608 known 0.25° slots over
+6–14°E / 47–51.75°N. Its hash-bound compressed index identifies 475 tile assets
+(382 full, 93 partial) and 133 unavailable slots. Runtime URLs are derived from
+validated IDs; redirects, unexpected lengths, hashes and dimensions are rejected.
+Partial tiles encode unsupported height/geoid pairs as paired NaNs; mismatched
+pairs, infinities and out-of-range finite values are rejected. Missing support
+remains unavailable during sampling, never zero or the last known height.
+Reads have 15 s deadlines and cancellation. At most nine current tiles are
+installed into the native atlas between fixed steps; the renderer retains at
+most 475 visited assets for Review. Loading pauses authoritative physics without
+changing its step size; explicit user pause/stop cancels automatic resume.
 
 The browser requests same-origin `/scenery/map/{z}/{x}/{y}.png` or
-`/scenery/imagery/{z}/{x}/{y}.png`. The Vite process sends WMS 1.1.1 requests only
-to these hard-coded HTTPS sources:
+`/scenery/imagery/{z}/{x}/{y}.png`. The Vite process requests fixed TopPlusOpen WMTS tiles and WMS 1.1.1
+photographs only from these hard-coded HTTPS sources:
 
-- `sgx.geodatenzentrum.de/wms_topplus_open`, `web` map layer.
+- `sgx.geodatenzentrum.de/wmts_topplus_open`, `web` / `WEBMERCATOR` map tiles.
 - `www.gds-srv.hessen.de/cgi-bin/lika-services/ogc-free-images.ows`, `he_dop_rgb`.
 - `geoservices.bayern.de/od/wms/dop/v1/dop40`, `by_dop40c`.
 - `owsproxy.lgl-bw.de/owsproxy/ows/WMS_LGL-BW_ATKIS_DOP_20_C`, `IMAGES_DOP_20_RGB`.
+- `geo4.service24.rlp.de/wms/rp_dop20.fcgi`, `rp_dop20`.
+- `geoportal.saarland.de/freewms/dop2025`, `sl_dop20_rgb`.
 
 Requests accept only GET/HEAD and canonical bounded integer XYZ paths, rejecting
 query strings, arbitrary destinations and redirects. Endpoint coverage is
-6–14°E / 47–51.75°N for map tiles (z5–16), and
-8–10°E / 49–50.75°N for photography (z7–15). Image responses are capped at
+6–14°E / 47–51.75°N for both map tiles (z5–16) and photography (z7–15).
+Photography requests select intersecting official layer envelopes; rectangles do
+not establish complete source coverage, and actual footprints can be transparent. Image responses are capped at
 2 MiB and checked as PNG with expected 256/512 px dimensions. The proxy limits
-eight active jobs, four upstream fetches, two compositors and 128 pending keys;
+four active map jobs and four photo jobs, separate four-fetch map/photo
+pools, two compositors and 128 pending keys;
 deduplicated memory LRU is capped at 32 MiB with map/photo TTLs of 1 h/15 min.
 Fetch and compositor deadlines are 15 s. Cache responses sent to the browser are
 private with a 300 s max-age. Failures return 502 or queue saturation 503 without
 writing terrain or aircraft state.
 
-Photography uses the fixed local Python compositor with at most three 512 px
-images, 9 MiB bounded base64/JSON stdin and 2 MiB output. Its executable/script
+Photography uses the fixed local Python compositor with at most five 512 px
+images, 15 MiB bounded base64/JSON stdin and 2 MiB output. Its executable/script
 arguments are configured locally, never supplied by a request. Pillow 11.2.1
 performs decoding and alpha composition; its dependency is required only by the
 scenery service, not the browser or native physics. Black/white blank images are
@@ -386,3 +393,31 @@ model-supplied URLs. Preserve per-layer and per-model rights, source provenance
 and measured/inferred/generated status. Generated visual detail cannot silently
 replace accepted terrain, runway, navigation or obstacle facts. No world-authoring
 importer, external AI data flow or new provider is activated by the research.
+
+## World fallback terrain and cartography
+
+The coarse world baseline is a fixed same-origin hash-bound asset, generated
+from identified NOAA/NGA sources and a declared Natural Earth ocean-mask rule.
+Strict byte, shape, value and identity checks precede native installation; source
+quality is explicit and cannot establish survey/landing fidelity. Optional regional
+failure may select this lower-detail baseline, while missing/malformed required
+assets still stop safely. It never copies the last known height into new geography.
+
+World grid IDs are validated independently of their nine-slot native pool; tile
+removals and slot reuse keep client/native residency bounded. Global simulated
+saved positions retain the existing local-only schema and do not persist controls.
+OSM requests use the existing fixed OpenFreeMap snapshot through bounded
+allowlisted proxy routes, shared upstream limits/cache and required credits;
+no arbitrary upstream URL, provider credential or device geolocation is added.
+Selected Review loading is bounded and isolated from live native state.
+
+## Detailed global cartography
+
+R-WORLD-11 uses one original OSM/OpenMapTiles geometry and label style across the
+2D map and 3D vector texture. The pinned fixed-route vector source retains byte,
+queue, cache and concurrency limits. Source names are bounded inert canvas text,
+rendered with local system fonts and halo/collision placement; no external glyph,
+font, sprite, provider, executable source or dependency is introduced. Regional
+photo mode retains its existing source boundaries. Disable the default opaque
+regional cartography overlay while retaining its implementation; cartographic
+geometry/labels do not alter native terrain, flight or navigation inventories.

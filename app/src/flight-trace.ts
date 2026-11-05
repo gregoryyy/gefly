@@ -1,7 +1,7 @@
 import { LOADING_FIELDS, validLoadingState } from '../../studies/e1-browser/sim/loading.js';
 import { validSystemsState } from './types.ts';
 import { RADIO_NAV_FIELDS, validRadioNavSnapshot } from './radio-nav.ts';
-import { ALERT_FIELDS, validAlertState, KAP_FIELDS, validKapState, TERRAIN_FIELDS, validTerrainState, COLLISION_FIELDS, validCollisionState, STALL_FIELDS, validStallState, CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, ENGINE_SWITCH_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
+import { ALERT_FIELDS, validAlertState, KAP_FIELDS, validKapState, TERRAIN_FIELDS, TERRAIN_SOURCE_FIELDS, validTerrainState, COLLISION_FIELDS, validCollisionState, STALL_FIELDS, validStallState, CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, ENGINE_SWITCH_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
 import type { FlightState } from './types';
 import { validSimulationRate } from '../../studies/e1-browser/sim/simulation-rate.js';
 
@@ -80,7 +80,7 @@ export class FlightTrace {
       ...(state.simulation_rate === undefined ? {} : { simulation_rate: state.simulation_rate }),
       ...(state.systems_switch_mask === undefined ? {} : { systems_switch_mask: state.systems_switch_mask }),
     };
-    for (const key of [...LOADING_FIELDS, ...ALERT_FIELDS, ...KAP_FIELDS, ...TERRAIN_FIELDS, ...COLLISION_FIELDS, ...STALL_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...ENGINE_SWITCH_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS, ...RADIO_NAV_FIELDS]) if (state[key] !== undefined) snapshot[key] = state[key];
+    for (const key of [...LOADING_FIELDS, ...ALERT_FIELDS, ...KAP_FIELDS, ...TERRAIN_FIELDS, ...TERRAIN_SOURCE_FIELDS, ...COLLISION_FIELDS, ...STALL_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...ENGINE_SWITCH_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS, ...RADIO_NAV_FIELDS]) if (state[key] !== undefined) snapshot[key] = state[key];
     if (!Object.values(snapshot).every((value) => typeof value === 'number' && Number.isFinite(value))
       || !Number.isInteger(snapshot.step) || snapshot.step < 0 || snapshot.t_s < 0
       || snapshot.tas_mps < 0 || Math.abs(snapshot.lat_rad) > Math.PI / 2

@@ -1,4 +1,4 @@
-import { REGIONAL_TERRAIN } from '../../studies/e1-browser/sim/terrain-stream.js';
+import { WORLD_TERRAIN } from '../../studies/e1-browser/sim/world-terrain.js';
 import type { FlightLocation, FlightState } from './types.ts';
 
 export const FLIGHT_LOCATION_KEY = 'gefly.flight-location.v1';
@@ -8,15 +8,15 @@ const WRITE_PERIOD_MS = 2000;
 type LocationStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 /** A local launch position, not a dynamics checkpoint or recorded flight. The
- * bounds stay inside the native regional terrain; controls/speed are not saved. */
+ * bounds follow the supported global terrain latitude band; controls/speed are not saved. */
 export function validFlightLocation(value: unknown): value is FlightLocation {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const v = value as Record<string, unknown>;
   return Object.keys(v).length === FIELDS.length && FIELDS.every(key => Object.hasOwn(v, key))
     && v.version === 1 && (v.mode === 'airborne' || v.mode === 'ground')
     && [v.lat_rad, v.lon_rad, v.alt_msl_m, v.heading_rad].every(n => typeof n === 'number' && Number.isFinite(n))
-    && (v.lat_rad as number) > REGIONAL_TERRAIN.south * DEG && (v.lat_rad as number) < REGIONAL_TERRAIN.north * DEG
-    && (v.lon_rad as number) > REGIONAL_TERRAIN.west * DEG && (v.lon_rad as number) < REGIONAL_TERRAIN.east * DEG
+    && (v.lat_rad as number) > WORLD_TERRAIN.south * DEG && (v.lat_rad as number) < WORLD_TERRAIN.north * DEG
+    && (v.lon_rad as number) >= -Math.PI && (v.lon_rad as number) <= Math.PI
     && (v.alt_msl_m as number) >= -500 && (v.alt_msl_m as number) <= 6000
     && (v.heading_rad as number) >= 0 && (v.heading_rad as number) < 2 * Math.PI;
 }

@@ -5,16 +5,22 @@ const MAX_NODES = 1025 * 1025;
 let defaultPackage;
 
 export function validateTerrainGrid(grid) {
-  return !!grid && grid.version === 1 && typeof grid.id === 'string' && grid.id.length > 0 && grid.id.length <= 100
+  const validShape = !!grid && grid.version === 1 && typeof grid.id === 'string' && grid.id.length > 0 && grid.id.length <= 100
     && Number.isInteger(grid.width) && Number.isInteger(grid.height) && grid.width >= 2 && grid.height >= 2
     && grid.width * grid.height <= MAX_NODES
     && [grid.west_rad, grid.south_rad, grid.east_rad, grid.north_rad].every(Number.isFinite)
     && grid.west_rad >= -Math.PI && grid.east_rad <= Math.PI && grid.west_rad < grid.east_rad
     && grid.south_rad >= -Math.PI / 2 && grid.north_rad <= Math.PI / 2 && grid.south_rad < grid.north_rad
-    && [grid.physical_m, grid.geoid_m].every(values => values instanceof Float64Array && values.length === grid.width * grid.height
-      && values.every(Number.isFinite))
-    && grid.physical_m.every(value => value > -1000 && value < 10000)
-    && grid.geoid_m.every(value => Math.abs(value) < 200);
+    && [grid.physical_m, grid.geoid_m].every(values => values instanceof Float64Array && values.length === grid.width * grid.height);
+  if (!validShape || (grid.masked !== undefined && grid.masked !== true)) return false;
+  let available = 0;
+  for (let i = 0; i < grid.physical_m.length; i++) {
+    const h = grid.physical_m[i], z = grid.geoid_m[i];
+    if (grid.masked === true && Number.isNaN(h) && Number.isNaN(z)) continue;
+    if (!Number.isFinite(h) || h <= -1000 || h >= 10000 || !Number.isFinite(z) || Math.abs(z) >= 200) return false;
+    available++;
+  }
+  return available > 0 && (grid.masked !== true || available < grid.physical_m.length);
 }
 
 /** Same SW→NE diagonal and piecewise-linear surface as Cesium heightmaps.

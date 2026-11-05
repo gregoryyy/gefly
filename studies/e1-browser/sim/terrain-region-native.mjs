@@ -32,14 +32,15 @@ const rad = Math.PI / 180;
 const nativeHeight = (lat, lon) => model._gf_terrain_height_m(lon, lat);
 const state = () => Array.from(model.HEAPF64.subarray(model._gf_state() >> 3, (model._gf_state() >> 3) + 8));
 const digest = () => model.UTF8ToString(model._gf_digest_hex());
-for (const [lat, lon] of [[49.65, 8.85], [50, 9.5], [50.45,7.8], [50.8,8.77], [51.3,9.4], [51.4,9.9]]) {
+const testedPoints = [[49.65, 8.85], [50, 9.5], [50.45,7.8], [50.8,8.77], [51.3,9.4], [51.4,9.9], [48.14,11.58], [48.78,9.18], [49.24,7], [50.36,7.6], [47.58,11]];
+for (const [lat, lon] of testedPoints) {
   await stream.move(lat * rad, lon * rad);
-  assert.equal(model._gf_init(1 / 120, lat * rad, lon * rad, 1500, 0, 45), 0);
+  assert.equal(model._gf_init(1 / 120, lat * rad, lon * rad, Math.max(1500, stream.sample(lat * rad, lon * rad).physical_m + 800), 0, 45), 0);
   assert.equal(model._gf_terrain_available(), 1);
   assert(Math.abs(nativeHeight(lat * rad, lon * rad) - stream.sample(lat * rad, lon * rad).physical_m) < 1e-8);
   for (let i = 0; i < 10; i++) assert.equal(model._gf_step(), 0);
   const before = state(), hash = digest(), step = model._gf_step_index();
-  await stream.move((lat + (lat > 51 ? -.26 : .26)) * rad, lon * rad);
+  await stream.move((lat + (lat > 51 ? -.1 : .1)) * rad, lon * rad);
   assert.deepEqual(state(), before); assert.equal(digest(), hash); assert.equal(model._gf_step_index(), step);
   assert.equal(model._gf_terrain_available(), 1);
   assert.equal(model._gf_step(), 0);
@@ -73,5 +74,7 @@ for (let i = 0; i <= 32; i++) for (const edge of [0,1,2,3]) {
 }
 assert(maxJump < .01, `boundary jump ${maxJump} m`);
 assert(maxHeightMismatch < 1e-8); assert(maxSlopeMismatch < 1e-10);
-console.log(JSON.stringify({ result: 'pass', points: [[49.65,8.85],[50,9.5],[50.45,7.8],[50.8,8.77],[51.3,9.4],[51.4,9.9]], maxResident, edgeSamples: count,
+await assert.rejects(stream.move(47.1 * rad, 6.1 * rad), /coverage/);
+assert.equal(model._gf_init(1 / 120, 47.1 * rad, 6.1 * rad, 1500, 0, 45), -7, 'no synthetic ground outside source coverage');
+console.log(JSON.stringify({ result: 'pass', points: testedPoints, maxResident, edgeSamples: count,
   maxAcrossBoundaryChange_m: maxJump, maxNativeHeightMismatch_m: maxHeightMismatch, maxNativeSlopeMismatch: maxSlopeMismatch }));

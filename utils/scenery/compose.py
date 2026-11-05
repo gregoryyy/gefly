@@ -7,11 +7,11 @@ import sys
 from PIL import Image
 
 Image.MAX_IMAGE_PIXELS = 512 * 512
-raw = sys.stdin.buffer.read(9 * 1024 * 1024 + 1)
-if len(raw) > 9 * 1024 * 1024:
+raw = sys.stdin.buffer.read(15 * 1024 * 1024 + 1)
+if len(raw) > 15 * 1024 * 1024:
     raise ValueError('input too large')
 inputs = json.loads(raw)
-if not isinstance(inputs, list) or not 1 <= len(inputs) <= 3:
+if not isinstance(inputs, list) or not 1 <= len(inputs) <= 5:
     raise ValueError('invalid images')
 canvas = Image.new('RGBA', (512, 512), (0, 0, 0, 0))
 for item in inputs:

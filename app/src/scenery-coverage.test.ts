@@ -36,11 +36,17 @@ test('prefetch uses declared source coverage, nearby detail first and bounded co
   assert(urls.some(u=>u.startsWith('/scenery/map/10/')));assert(urls.some(u=>u.startsWith('/terrain/region/e')));
   assert(urls.filter(u=>u.startsWith('/scenery/map/')).length<=48);assert(urls.filter(u=>u.includes('/11/')).length<=64);assert(urls.filter(u=>u.includes('/14/')).length<=64);assert(urls.filter(u=>u.endsWith('.f32')).length<=24);
   assert(urls.every(u=>!u.startsWith(vector?'/scenery/imagery/':'/scenery/vector/')));
-  for(const url of urls.filter(u=>u.endsWith('.f32'))){const match=/e(\d+)-n(\d+)\.f32$/.exec(url)!;assert(+match[1]>=700&&+match[1]<1000&&+match[2]>=4925&&+match[2]<5150);}
+  for(const url of urls.filter(u=>u.endsWith('.f32'))){const match=/e(\d+)-n(\d+)\.f32$/.exec(url)!;assert(+match[1]>=600&&+match[1]<1400&&+match[2]>=4700&&+match[2]<5175);}
  }
- assert.deepEqual(planSceneryPrefetch(0,0,false),[]);assert.deepEqual(planSceneryPrefetch(NaN,0,true),[]);
- assert(!planSceneryPrefetch(52*DEG,13*DEG,false).some(u=>u.startsWith('/scenery/imagery/')),'outside aerial coverage is omitted');
- assert(planSceneryPrefetch(52*DEG,13*DEG,true).some(u=>u.startsWith('/scenery/vector/')),'vector declared coverage extends north');
+ for(const [lat,lon] of [[48.14,11.58],[48.78,9.18],[49.24,7],[50.36,7.6],[51.3,9.4]]) {
+  const urls=planSceneryPrefetch(lat*DEG,lon*DEG,false);
+  assert(urls.some(url=>url.startsWith('/scenery/imagery/')),'all five states can warm photography');
+  assert(urls.some(url=>url.startsWith('/terrain/region/')),'all five states can warm physical terrain');
+  assert(urls.length<=200);
+ }
+ assert(planSceneryPrefetch(0,0,false).every(url=>url.startsWith('/scenery/osm/')));assert.deepEqual(planSceneryPrefetch(NaN,0,true),[]);
+ assert(!planSceneryPrefetch(52.5*DEG,13*DEG,false).some(u=>u.startsWith('/scenery/imagery/')),'outside aerial coverage is omitted');
+ assert(planSceneryPrefetch(52.5*DEG,13*DEG,true).some(u=>u.startsWith('/scenery/vector/')),'vector declared coverage extends north');
 });
 
 test('startup prefetch warms bounded nearest tiles for both map modes without photos or remote URLs',()=>{
@@ -54,18 +60,34 @@ test('startup prefetch warms bounded nearest tiles for both map modes without ph
  assert(urls.slice(0,8).every(url=>url.startsWith('/scenery/map/15/')));
  assert(urls.every(url=>/^\/scenery\/(?:map\/15\/\d+\/\d+\.png|vector\/(?:11|14)\/\d+\/\d+\.pbf)$/.test(url)));
 });
-test('startup prefetch clips existing provider bounds and rejects invalid or uncovered positions',()=>{
- for(const [lat,lon] of [[NaN,0],[0,Infinity],[91*DEG,0],[0,181*DEG],[0,0],[56*DEG,8*DEG]])assert.deepEqual(planStartupSceneryPrefetch(lat,lon),[]);
- const north=planStartupSceneryPrefetch(52*DEG,13*DEG);assert(north.length>0&&north.length<=8);assert(north.every(url=>url.startsWith('/scenery/vector/')));
+test('startup prefetch clips regional providers while using bounded global OSM elsewhere',()=>{
+ for(const [lat,lon] of [[NaN,0],[0,Infinity],[91*DEG,0],[0,181*DEG]])assert.deepEqual(planStartupSceneryPrefetch(lat,lon),[]);
+ const north=planStartupSceneryPrefetch(52*DEG,13*DEG);assert(north.length>0&&north.length<=16);assert(north.every(url=>/^\/scenery\/(vector|osm)\//.test(url)));
  for(const [lat,lon] of [[47,6],[51.75,14],[55.1,15.1],[47.2,5.8]]){
   const urls=planStartupSceneryPrefetch(lat*DEG,lon*DEG);assert(urls.length<=16);
   for(const url of urls){
-   const match=/\/(map|vector)\/(\d+)\/(\d+)\/(\d+)\./.exec(url)!;
+   const match=/\/(map|vector|osm)\/(\d+)\/(\d+)\/(\d+)\./.exec(url)!;
    const [,kind,z,x,y]=match,n=2**Number(z),west=Number(x)/n*360-180,east=(Number(x)+1)/n*360-180;
    const south=Math.atan(Math.sinh(Math.PI*(1-2*(Number(y)+1)/n)))/DEG,north=Math.atan(Math.sinh(Math.PI*(1-2*Number(y)/n)))/DEG;
-   const bounds=kind==='map'?[6,47,14,51.75]:[5.8,47.2,15.1,55.1];
+   const bounds=kind==='map'?[6,47,14,51.75]:kind==='vector'?[5.8,47.2,15.1,55.1]:[-180,-85.0511287798066,180,85.0511287798066];
    assert(east>=bounds[0]&&west<=bounds[2]&&north>=bounds[1]&&south<=bounds[3],url);
   }
+ }
+});
+
+test('world fallback warming stays canonical and bounded across continents and date line, without polar map claims',()=>{
+ for(const [lat,lon] of [[35.68,139.69],[-33.86,151.21],[40.7,-74],[0,179.99],[0,-179.99],[84.9,0]]) {
+  for(const vector of [false,true]) {
+   const urls=planSceneryPrefetch(lat*DEG,lon*DEG,vector);
+   assert(urls.length>0&&urls.length<=32); assert(urls.every(url=>url.startsWith('/scenery/osm/')));
+   assert.equal(new Set(urls).size,urls.length);
+   for(const url of urls) {const [,z,x,y]=/\/(\d+)\/(\d+)\/(\d+)\.pbf$/.exec(url)!;assert(+z<=14&&+x<2**+z&&+y<2**+z);}
+  }
+  const startup=planStartupSceneryPrefetch(lat*DEG,lon*DEG);assert(startup.length>0&&startup.length<=16);
+ }
+ for(const lat of [-90,90]) {
+  assert.deepEqual(planSceneryPrefetch(lat*DEG,0,false),[]);
+  assert.deepEqual(planStartupSceneryPrefetch(lat*DEG,0),[]);
  }
 });
 

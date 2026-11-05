@@ -2,6 +2,10 @@
 
 All times are Europe/Berlin. Answers record the author and recording time. New answers go above older answers; strike through earlier answers without deleting them. When resolved, carry the decision into its authoritative document and retain a Resolved line here. A proposal or elapsed waiting time is not a user answer. The orchestrator asks only questions that affect the current work and continues independent tasks.
 
+## Recorded interaction decisions
+
+**2026-11-05 17:09, Codex orchestrator modular-source reconstruction**: the terrain/world foundation contains the five-state regional package, a bundled one-degree worldwide fallback and detailed global OSM cartography. Subsequent cockpit/map-planning/runtime/Copernicus/airport-surface work is intentionally excluded from this PR head. The original requests are retained under [terrain](input/2026-11-04-five-state-world-coverage.md), [world fallback](input/2026-11-05-world-terrain-fallback.md) and [global cartography](input/2026-11-05-global-map-detail-plan-ux.md). This partition changes publication boundaries, not user product decisions. Regional interpolation and the coarse global fallback establish no new source resolution or runway fidelity. R-WORLD-10/R-WORLD-11 / TODO 2.0.120,2.0.135,2.0.141.
+
 ## Resolved questions
 
 ### Q22. Adopt assurance like Propeller?

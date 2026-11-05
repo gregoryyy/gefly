@@ -1,4 +1,5 @@
-// Actual WASM worker: a held regional tile fetch must not resume a paused flight.
+// Actual WASM worker: optional regional failure uses bundled world terrain;
+// held tile loading must preserve state and explicit pause/stop intent.
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { webcrypto } from 'node:crypto';
@@ -8,10 +9,11 @@ let hold = false, release, failure = null;
 let gate = Promise.resolve();
 globalThis.fetch = async (url, options) => {
   if (typeof url === 'string' && url.startsWith('/terrain/')) {
-    if (hold && url.startsWith('/terrain/region/') && url.endsWith('.f32')) await gate;
-    if (failure && url.startsWith('/terrain/region/') && url.endsWith('.f32'))
+    const path = url.split('?')[0];
+    if (hold && path.startsWith('/terrain/region/') && path.endsWith('.f32')) await gate;
+    if (failure && path.startsWith('/terrain/region/') && path.endsWith('.f32'))
       return failure === 'missing' ? new Response(null, { status: 404 }) : new Response(new Uint8Array(129 * 129 * 8));
-    try { return new Response(await readFile(new URL(`../../../app/public${url}`, import.meta.url))); }
+    try { return new Response(await readFile(new URL(`../../../app/public${path}`, import.meta.url))); }
     catch { return new Response(null, { status: 404 }); }
   }
   return originalFetch(url, options);
@@ -59,12 +61,16 @@ for (const mode of ['missing', 'corrupt']) {
   hold = true; gate = new Promise(resolve => { release = resolve; });
   const offset = messages.length; send({ type: 'run' });
   await wait('terrain-loading', offset, m => m.loading === true);
+  send({ type: 'pause' });
   const before = await stats();
   failure = mode; hold = false; release();
-  // Error is the expected result here, so do not use wait(), which rejects errors.
-  for (let i = 0; i < 5000 && !messages.slice(offset).some(m => m.type === 'error'); i++) await new Promise(r => setTimeout(r, 2));
-  assert(messages.slice(offset).some(m => m.type === 'error'));
+  await wait('terrain-loading', offset, m => m.loading === false);
+  assert(!messages.slice(offset).some(m => m.type === 'error'));
+  assert(messages.slice(offset).some(m => m.type === 'terrain-tile' && ['global','mixed'].includes(m.grid.source)), 'failed regional enhancement installs real world fallback cells');
   const after = await stats();
   assert.equal(after.step, before.step); assert.equal(after.digest, before.digest); assert.deepEqual(after.final_state, before.final_state);
+  const burstOffset = messages.length;
+  send({ type: 'burst', steps: 30, blocks: 1 }); await wait('burst', burstOffset);
+  const advanced = await stats(); assert.equal(advanced.step, after.step + 30);
 }
-console.log(JSON.stringify({ result: 'pass', checks: ['pause and stop during held fetch preserve state, digest and step without automatic resume', 'missing and corrupt tiles fail closed without advancing physics'] }));
+console.log(JSON.stringify({ result: 'pass', checks: ['pause and stop during held fetch preserve state, digest and step without automatic resume', 'missing and corrupt regional enhancements install bundled world fallback without advancing during loading', 'actual native integration continues after explicit paused fallback commit'] }));

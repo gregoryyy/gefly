@@ -3,6 +3,59 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-05 17:09 — Reconstruct the modular regional/world terrain foundation
+
+TODO: 2.0.120, 2.0.135, 2.0.141; R-WORLD-10/R-WORLD-11.
+Agent: Codex terrain_airfield_help, assigned isolated preparation worker for root;
+root retains integration, independent review and publication ownership.
+
+**Implementation notes**
+
+Prepared the first modular branch from 700dd53 with five-state terrain/source
+assets, masked-node support, bounded coarse world streaming and shared native/
+rendered source quality. Geographic quarter-degree world IDs remain independent
+of nine reusable slots. Optional regional failure uses the bundled one-degree
+ETOPO/EGM2008/Natural Earth surface; required assets still fail visibly. Saved
+world positions, selected-neighborhood Review reconstruction and the coarse
+horizon share the same sampling boundary. The 49-layer source-backed OSM style
+supplies detailed global 2D/3D cartography without its default opaque regional
+BKG rectangle. Compiler/source rights and public source footprints are recorded.
+
+Current isolated typecheck and production build pass. The application test gate
+passes 442 Node and 22 Python cases, zero failures/skips. Actual production Worker
+with the retained local WASM passes seven groups: shared native world/regional
+samples, Japan initialization, dateline crossing, missing regional manifest,
+corrupt regional tile, explicit pause during loading and corrupt required world.
+A focused real-browser run passes two groups: real New York/Tokyo OSM rendering,
+and actual paused outside-Germany native/rendered agreement with map/photo/vector
+interactions preserving the native state. Retained output logs are local-only
+paths under `output/flight/pr1-*`; they are not broken repository links or
+independent acceptance records.
+
+**Deviations**
+
+This is an intentionally reconstructed publication stage, not the later complete
+working tree. Cockpit/map planning/runtime/AP persistence, Copernicus service and
+fine world IDs, new airport ground surfaces and the ILS follow-up are excluded.
+A later display-preference persistence assertion was removed from the scoped
+browser fixture because that feature belongs to a later PR; its initial failure
+is retained locally, not counted as a pass. The first shared CI invocation failed
+local HTTP binding under the sandbox and is rerun with the test network boundary.
+Independent quality/validation and cross-provider peer remain pending for this
+new branch head; earlier final-tree reports do not accept reconstructed inputs.
+
+The tested local WASM SHA-256 is
+`11a92abda742ade86d4153d314d37e7d5f63c42eb064999c840baff00c1063c7`;
+its build-info provenance remains unverified, and no native binary was rebuilt or
+committed. Local ignored dependency/runtime links support checks only. No push,
+PR, release, aircraft fidelity or training acceptance is claimed by this entry.
+
+**Insights**
+
+Module boundaries need runnable intermediate contracts and source-scoped records;
+copying a final shared file wholesale would pull later features into this PR.
+
+
 ## 2026-11-04 22:43 — Filter map locations with checkboxes
 
 TODO: 2.0.119; R-WORLD-6.

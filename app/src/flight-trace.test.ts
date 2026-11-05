@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { DEFAULT_RADIO_NAV } from './radio-nav.ts';
 import { FlightTrace, type RunwayPracticeContext } from './flight-trace.ts';
-import { COLLISION_FIELDS, STALL_FIELDS, type FlightState } from './types.ts';
+import { COLLISION_FIELDS, STALL_FIELDS, GROUND_FIELDS, type FlightState } from './types.ts';
 
 test('JSON recordings round-trip immutable states, controls, VSI and retained bounds', () => {
   const trace = new FlightTrace({ maxSamples: 3 });
@@ -485,4 +485,18 @@ test('continuation prefix is exclusive, independent and keeps context while disc
   assert.equal(original.prefixBefore(0).bounds(),null);
   for(const bad of [NaN,Infinity,-1])assert.throws(()=>original.prefixBefore(bad));
   assert(Object.isFrozen(branch.atTime(3)!.state));
+});
+
+test('R-WORLD-11 recordings preserve actual terrain quality and height references across world seeking', () => {
+  const trace = new FlightTrace();
+  for (const [step, terrain_source] of [[1, 2], [2, 3], [3, 1]]) assert(trace.record({ ...state(step),
+    ...Object.fromEntries(GROUND_FIELDS.map(key => [key, 0])), ground_height_ellipsoid_m: 80,
+    lon_rad: -1.29, terrain_profile: 1, terrain_height_msl_m: 100, terrain_geoid_m: -20,
+    terrain_height_ellipsoid_m: 80, terrain_source }, 0));
+  const loaded = FlightTrace.fromJSON(trace.exportJSON());
+  assert.deepEqual([...loaded.recordedStates()].map(s => s.terrain_source), [2, 3, 1]);
+  assert.equal(loaded.atTime(1)!.state.terrain_geoid_m, -20);
+  assert.equal(trace.record({ ...state(4), terrain_source: 2 }, 0), false);
+  assert.equal(trace.record({ ...state(4), terrain_profile: 1, terrain_height_msl_m: 100, terrain_geoid_m: -20,
+    terrain_height_ellipsoid_m: 80, terrain_source: 4 }, 0), false);
 });

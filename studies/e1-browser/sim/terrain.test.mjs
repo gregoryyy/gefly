@@ -31,6 +31,22 @@ test('physical slopes follow the selected triangle and edge coverage reserves a 
   const invalid = grid(); invalid.physical_m[0] = NaN; assert(!validateTerrainGrid(invalid));
 });
 
+test('explicit masked regional nodes preserve gaps without weakening ordinary terrain validation', () => {
+  const masked = { ...grid(), masked: true };
+  masked.physical_m[2] = masked.geoid_m[2] = NaN;
+  assert(validateTerrainGrid(masked));
+  assert(sampleTerrain(masked, .00025, .00075), 'the fully supported lower triangle remains usable');
+  assert.equal(sampleTerrain(masked, .00075, .00025), null);
+  assert.equal(sampleTerrainGradient(masked, .00075, .00025), null);
+  assert(!validateTerrainGrid({ ...masked, masked: undefined }), 'fine/default grids still require finite nodes');
+  assert(!validateTerrainGrid({ ...masked, geoid_m: grid().geoid_m }), 'one-sided missing data is invalid');
+  const infinite = { ...masked, physical_m: masked.physical_m.slice() }; infinite.physical_m[0] = Infinity;
+  assert(!validateTerrainGrid(infinite));
+  assert(!validateTerrainGrid({ ...masked, physical_m: new Float64Array(4).fill(NaN), geoid_m: new Float64Array(4).fill(NaN) }));
+  const outOfRange = { ...masked, physical_m: masked.physical_m.slice() }; outOfRange.physical_m[0] = -9999;
+  assert(!validateTerrainGrid(outOfRange));
+});
+
 function packageFixture(change = {}) {
   const binary = new Uint8Array(32), view = new DataView(binary.buffer);
   for (let i = 0; i < 4; i++) { view.setFloat32(i * 8, 100 + i, true); view.setFloat32(i * 8 + 4, 48, true); }

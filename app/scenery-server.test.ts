@@ -32,7 +32,21 @@ test('fixed paths, region bounds, cache, HEAD and upstream validation', async ()
   assert.equal((await call(wrongType, path)).status, 502);
 });
 
-test('R-WORLD-6 public map covers southern Germany while imagery stays regional', async () => {
+test('world OSM delegates outside regional raster coverage without widening photographs or arbitrary upstream access', async () => {
+  const seen: string[] = [], bytes = new Uint8Array([26, 3, 10, 1, 97]);
+  const handler = sceneryMiddleware({ fetcher: async input => {
+    seen.push(String(input)); return new Response(bytes, { headers: { 'content-type': 'application/vnd.mapbox-vector-tile' } });
+  } });
+  const [x, y] = tile(40.7, -74, 11), path = `/scenery/osm/11/${x}/${y}.pbf`;
+  const result = await call(handler, path);
+  assert.equal(result.status, 200); assert.match(result.headers['X-Scenery-Sources'], /OpenFreeMap/);
+  assert.equal(seen[0], `https://tiles.openfreemap.org/planet/20261101_080013_pt/11/${x}/${y}.pbf`);
+  assert.equal((await call(handler, `/scenery/imagery/11/${x}/${y}.png`)).status, 404);
+  assert.equal((await call(handler, `${path}?url=https://example.com`)).status, 404);
+  assert.equal(seen.length, 1);
+});
+
+test('R-WORLD-6 public map and imagery reject tiles outside the declared five-state envelope', async () => {
   const seen: URL[] = [];
   const handler = sceneryMiddleware({ fetcher: async (input, init) => {
     const url = new URL(String(input));
@@ -44,25 +58,82 @@ test('R-WORLD-6 public map covers southern Germany while imagery stays regional'
     assert.ok(init?.signal);
     return new Response(mapPng, { headers: { 'content-type': 'image/png' } });
   } });
-  // Public cartography remains broader than the regional photography.
-  for (const [lat, lon] of [[48.137, 11.576], [49.2346, 6.9969], [51.315, 9.493]]) {
+  for (const [lat, lon] of [[48.137, 11.576], [49.2346, 6.9969], [51.315, 9.493], [48.7758, 9.1829], [50.3569, 7.589]]) {
     const [x, y] = tile(lat, lon, 12);
     const result = await call(handler, `/scenery/map/12/${x}/${y}.png`);
     assert.equal(result.status, 200);
     assert.equal(result.headers['X-Scenery-Sources'], 'BKG');
     assert.deepEqual(result.data, mapPng);
   }
-  for (const [lat, lon] of [[48.137, 11.576], [49.2346, 6.6], [51.8, 9.493]]) {
-    const [x, y] = tile(lat, lon, 12);
-    assert.equal((await call(handler, `/scenery/imagery/12/${x}/${y}.png`)).status, 404);
-  }
-  assert.equal(seen.length, 3, 'rejected imagery does not request new source coverage');
   // At this zoom these complete tiles lie beyond each boundary, without overlap.
   for (const [lat, lon] of [[46.7, 10], [52, 10], [49, 5.5], [49, 14.5]]) {
     const [x, y] = tile(lat, lon, 12);
     assert.equal((await call(handler, `/scenery/map/12/${x}/${y}.png`)).status, 404);
+    assert.equal((await call(handler, `/scenery/imagery/12/${x}/${y}.png`)).status, 404);
   }
-  assert.equal(seen.length, 3, 'out-of-bounds map tiles make no upstream requests');
+  assert.equal(seen.length, 5, 'out-of-bounds map/imagery tiles make no upstream requests');
+});
+
+test('five-state photography uses only published overlapping source envelopes and fixed WMS layers', async () => {
+  const seen: URL[] = [];
+  const endpoints: Record<string, [string, string, string]> = {
+    hessen: ['www.gds-srv.hessen.de', '/cgi-bin/lika-services/ogc-free-images.ows', 'he_dop_rgb'],
+    bavaria: ['geoservices.bayern.de', '/od/wms/dop/v1/dop40', 'by_dop40c'],
+    bw: ['owsproxy.lgl-bw.de', '/owsproxy/ows/WMS_LGL-BW_ATKIS_DOP_20_C', 'IMAGES_DOP_20_RGB'],
+    rlp: ['geo4.service24.rlp.de', '/wms/rp_dop20.fcgi', 'rp_dop20'],
+    saarland: ['geoportal.saarland.de', '/freewms/dop2025', 'sl_dop20_rgb'],
+  };
+  const handler = sceneryMiddleware({ fetcher: async (input, init) => {
+    const url = new URL(String(input)); seen.push(url);
+    assert.equal(init?.redirect, 'error'); assert.ok(init?.signal);
+    assert.equal(url.username, ''); assert.equal(url.password, '');
+    assert.equal(url.searchParams.get('SRS'), 'EPSG:3857');
+    assert.equal(url.searchParams.get('WIDTH'), '512'); assert.equal(url.searchParams.get('HEIGHT'), '512');
+    assert.equal(url.searchParams.get('TRANSPARENT'), 'TRUE');
+    return new Response(photoPng, { headers: { 'content-type': 'image/png' } });
+  } });
+  const cases: Array<[string, number, number, string[]]> = [
+    ['Stuttgart', 48.7758, 9.1829, ['bavaria', 'bw']],
+    ['Munich', 48.137, 11.576, ['bavaria']],
+    ['Saarbruecken', 49.2346, 6.9969, ['rlp', 'saarland']],
+    ['Koblenz', 50.3569, 7.589, ['hessen', 'rlp']],
+    ['Kassel', 51.315, 9.493, ['hessen']],
+  ];
+  for (const [name, lat, lon, sources] of cases) {
+    const start = seen.length, [x, y] = tile(lat, lon, 14);
+    const result = await call(handler, `/scenery/imagery/14/${x}/${y}.png`);
+    assert.equal(result.status, 200, name); assert.equal(result.headers['X-Scenery-Sources'], sources.join(','), name);
+    assert.equal(result.headers['X-Scenery-Partial'], 'false');
+    assert.deepEqual(seen.slice(start).map(url => [url.hostname, url.pathname, url.searchParams.get('LAYERS')]), sources.map(source => endpoints[source]), name);
+  }
+});
+
+test('a new state provider failure remains partial instead of claiming complete photography', async () => {
+  const handler = sceneryMiddleware({ fetcher: async input => new URL(String(input)).hostname === 'geoportal.saarland.de'
+    ? new Response('', { status: 503 }) : new Response(photoPng, { headers: { 'content-type': 'image/png' } }) });
+  const [x, y] = tile(49.2346, 6.9969, 14), result = await call(handler, `/scenery/imagery/14/${x}/${y}.png`);
+  assert.equal(result.status, 200); assert.equal(result.headers['X-Scenery-Sources'], 'rlp');
+  assert.equal(result.headers['X-Scenery-Partial'], 'true');
+});
+
+test('paletted state imagery preserves transparent borders over its neighboring source', async () => {
+  const paletted = execFileSync('python3', ['-c', `from PIL import Image
+import sys
+im=Image.new('P',(512,512),0)
+im.putpalette([0,0,0,80,90,100]+[0,0,0]*254)
+im.info['transparency']=0
+im.putpixel((100,100),1)
+im.save(sys.stdout.buffer,format='PNG')`]);
+  const handler = sceneryMiddleware({ fetcher: async input => new Response(
+    new URL(String(input)).hostname === 'geoportal.saarland.de' ? paletted : photoPng,
+    { headers: { 'content-type': 'image/png' } }) });
+  const [x, y] = tile(49.2346, 6.9969, 14), result = await call(handler, `/scenery/imagery/14/${x}/${y}.png`);
+  assert.equal(result.status, 200); assert.equal(result.headers['X-Scenery-Sources'], 'rlp,saarland');
+  const pixels = execFileSync('python3', ['-c', `from PIL import Image
+import json,sys
+im=Image.open(sys.stdin.buffer).convert('RGBA')
+print(json.dumps([im.getpixel((0,0)),im.getpixel((100,100))]))`], { input: result.data });
+  assert.deepEqual(JSON.parse(pixels.toString()), [[40,90,30,255], [80,90,100,255]]);
 });
 
 test('imagery accepts Cesium level 7 parent tiles', async () => {

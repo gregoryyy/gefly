@@ -1,3 +1,4 @@
+import { createWorldMapStyle, worldMapLayers, worldMapLabelLayers } from './world-map-style';
 /// <reference types="vite/client" />
 import { createAirportPlayControls } from './airport-play-controls';
 import { createRunwayPracticePanel } from './runway-practice-panel';
@@ -679,18 +680,20 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     const style: StyleSpecification = {
       version: 8,
       sources: {
+        ...createWorldMapStyle().sources,
         'navigation-fixes': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
         'gps-target': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
         basemap: { type: 'raster', tiles: ['/scenery/map/{z}/{x}/{y}.png'], tileSize: 256, minzoom: 5, maxzoom: 16, bounds: [...AIRFIELD_BOUNDS] },
-        imagery: { type: 'raster', tiles: ['/scenery/imagery/{z}/{x}/{y}.png'], tileSize: 512, minzoom: 7, maxzoom: 15, bounds: [7, 49, 10, 51.5] },
+        imagery: { type: 'raster', tiles: ['/scenery/imagery/{z}/{x}/{y}.png'], tileSize: 512, minzoom: 7, maxzoom: 15, bounds: [6, 47, 14, 51.75] },
         'recorded-path': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
         airfields: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
         'navigation-aids': { type: 'geojson', data: navigationData },
         'practice-circuit': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
       },
       layers: [
-        { id: 'background', type: 'background', paint: { 'background-color': '#162530' } },
-        { id: 'basemap', type: 'raster', source: 'basemap', paint: { 'raster-fade-duration': 0 } },
+        ...worldMapLayers(),
+        ...worldMapLabelLayers(),
+        { id: 'basemap', type: 'raster', source: 'basemap', layout: { visibility: 'none' }, paint: { 'raster-fade-duration': 0 } },
         { id: 'imagery', type: 'raster', source: 'imagery', layout: { visibility: 'none' }, paint: { 'raster-fade-duration': 0 } },
         { id: 'navigation-fixes', type: 'circle', source: 'navigation-fixes', minzoom: 8, paint: { 'circle-radius': 3, 'circle-color': '#e3a1e8', 'circle-stroke-color': '#34203e', 'circle-stroke-width': 1 } },
         { id: 'gps-target-line', type: 'line', source: 'gps-target', filter: ['==', ['geometry-type'], 'LineString'], paint: { 'line-color': '#ff8af1', 'line-width': 2, 'line-dasharray': [3, 2] } },
@@ -723,7 +726,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
         if (visible && resourceType === 'Tile') {
           try {
             const target = new URL(url, window.location.href);
-            if (target.origin === window.location.origin && /^\/scenery\/(?:map|imagery)\//.test(target.pathname))
+            if (target.origin === window.location.origin && /^\/scenery\/(?:map|imagery|osm)\//.test(target.pathname))
               return { url, headers: { 'X-Gefly-Scenery-Priority': 'visible' } };
           } catch { /* Preserve MapLibre's handling of other request URLs. */ }
         }

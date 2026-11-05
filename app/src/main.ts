@@ -1,3 +1,5 @@
+import { worldCellAt } from '../../studies/e1-browser/sim/world-terrain.js';
+import { REGIONAL_FLIGHTS, isRegionalFlight } from './regional-flights';
 import { EDFE_RUNWAYS, airportOffset } from './airport-geometry';
 import { tuneStandby } from './radio-nav';
 import type { RunwayStart } from './types';
@@ -67,7 +69,7 @@ root.innerHTML = `
       <button id="practice-landing" disabled title="Start 3 NM before the selected threshold at a geometric 3-degree height, 90 kt, flaps up. Set power and configuration manually; approximate practice geometry, not a published approach.">Landing · 3 NM final</button>
       <button id="practice-circuit" disabled title="Start on the runway with the generated north-circuit map guide. Not a published circuit or graded exercise.">Fly a circuit</button>
       <details id="flight-research" class="flight-research"><summary>Research & other locations</summary>
-        <span class="menu-label">REGIONAL FLIGHTS</span><button id="airborne-practice">Egelsbach airborne practice</button><button id="taunus-practice">Taunus ridge flight</button><button data-region="darmstadt">Darmstadt flight</button><button data-region="odenwald">Odenwald ridge flight</button><button data-region="spessart">Spessart flight</button><button data-region="westerwald">Westerwald flight</button><button data-region="marburg">Marburg / Lahn flight</button><button data-region="kassel">Kassel flight</button><button id="eddf-ils-practice" disabled>EDDF 25C ILS practice · historical</button>
+        <span class="menu-label">REGIONAL FLIGHTS</span><button id="airborne-practice">Egelsbach airborne practice</button><button id="taunus-practice">Taunus ridge flight</button>${Object.entries(REGIONAL_FLIGHTS).map(([id, region]) => `<button data-region="${id}">${region.label} flight</button>`).join('')}<button id="eddf-ils-practice" disabled>EDDF 25C ILS practice · historical</button>
         <span class="menu-label">FLAT-GROUND CONTACT STUDIES</span><button data-landing="normal">Baseline touchdown</button><button data-landing="hard">Fast descent</button><button data-landing="side">Sideways touchdown</button><button data-landing="banked">Banked touchdown</button>
       </details>
       <span class="menu-label">FLIGHT TOOLS</span><button id="reset">Restart flight</button>
@@ -203,6 +205,8 @@ let practiceMap: PracticeMap | null = null;
 let mapVisible = false, mapLoading = false, mapDisposed = false;
 let lastMapUpdate_ms = -Infinity;
 let lastMapSample: unknown = undefined;
+let reviewTerrainRequest: string | null = null;
+let reviewTerrainGeneration = 0;
 // Existing E1 fixture's empirical input offset, not an aircraft coefficient.
 let rollOffset = -0.109375;
 let controlSettings: ControlSettings = { ...DEFAULT_CONTROL_SETTINGS };
@@ -269,9 +273,9 @@ function updateSessionUI() {
     el('gate-copy').textContent = 'The aircraft starts airborne at 90 kt. Flight time stays paused until you start.';
     el('start').textContent = 'Loading…';
   } else {
-    el('gate-label').textContent = hasFlown ? 'SIMULATION PAUSED' : ['darmstadt','odenwald','spessart','westerwald','marburg','kassel'].includes(airborneSite) ? `${airborneSite.toUpperCase()} TERRAIN FLIGHT` : airborneSite === 'eddf-ils' ? 'HISTORICAL EDDF 25C PRACTICE' : airborneSite === 'taunus' ? 'TAUNUS TERRAIN FLIGHT' : 'READY AT EGELSBACH';
+    el('gate-label').textContent = hasFlown ? 'SIMULATION PAUSED' : isRegionalFlight(airborneSite) ? `${airborneSite.toUpperCase()} TERRAIN FLIGHT` : airborneSite === 'eddf-ils' ? 'HISTORICAL EDDF 25C PRACTICE' : airborneSite === 'taunus' ? 'TAUNUS TERRAIN FLIGHT' : 'READY AT EGELSBACH';
     el('gate-title').textContent = hasFlown ? 'Ready when you are.' : 'Take the controls.';
-    el('gate-copy').textContent = runwayStart ? `Runway ${runwayStart.runway} at EDFE · at rest, engine idle and parking brake set. N releases the brake; 1–9 adds throttle. Approximate practice geometry.` : landingPreset ? 'Flat-ground contact study: CG starts 3 m above the ellipsoid, at 28 m/s. These are test fixtures, not landing procedures.' : hasFlown ? 'Flight time is paused. Resume, then drag the stick or use the keyboard.' : ['darmstadt','odenwald','spessart','westerwald','marburg','kassel'].includes(airborneSite) ? 'Regional terrain demonstration at 90 kt. Elevation tiles load as you fly; this is not a published route or surveyed airport exercise.' : airborneSite === 'eddf-ils' ? 'Start 5 NM from the historical 25C glideslope antenna at 90 kt, slightly below its beam. NAV1 111.55, NAV2 FFM 114.20. Engage AP, then APR to practice capture. Geometric simulator fixture, not a published procedure.' : airborneSite === 'taunus' ? 'Start at 90 kt and 3,609 ft MSL, facing the Taunus ridge. This is a terrain demonstration, not a published route.' : 'Start airborne at 90 kt and 1,300 ft MSL over public Hessen terrain. Drag the stick or hold the buttons to fly.';
+    el('gate-copy').textContent = runwayStart ? `Runway ${runwayStart.runway} at EDFE · at rest, engine idle and parking brake set. N releases the brake; 1–9 adds throttle. Approximate practice geometry.` : landingPreset ? 'Flat-ground contact study: CG starts 3 m above the ellipsoid, at 28 m/s. These are test fixtures, not landing procedures.' : hasFlown ? 'Flight time is paused. Resume, then drag the stick or use the keyboard.' : isRegionalFlight(airborneSite) ? 'Regional terrain demonstration at 90 kt. Elevation tiles load as you fly; this is not a published route or surveyed airport exercise.' : airborneSite === 'eddf-ils' ? 'Start 5 NM from the historical 25C glideslope antenna at 90 kt, slightly below its beam. NAV1 111.55, NAV2 FFM 114.20. Engage AP, then APR to practice capture. Geometric simulator fixture, not a published procedure.' : airborneSite === 'taunus' ? 'Start at 90 kt and 3,609 ft MSL, facing the Taunus ridge. This is a terrain demonstration, not a published route.' : 'Start airborne at 90 kt and 1,300 ft MSL over public Hessen terrain. Drag the stick or hold the buttons to fly.';
     el('start').textContent = hasFlown ? 'Resume flight →' : 'Start flight →';
     if (restoredFlightLocationActive) {
       el('gate-label').textContent = 'SAVED FLIGHT LOCATION';
@@ -284,6 +288,7 @@ function updateSessionUI() {
 
 const session = createSession({
   onTerrainTile(grid) { regionalTiles.set(grid.id,grid); },
+  onTerrainRemove(id) { regionalTiles.delete(id); },
   onTerrainLoading(loading) { terrainLoading=loading; if (!loading) scene?.setTerrainTiles?.([...regionalTiles.values()]); },
   onState(workerState) {
     if (continuingReplay) return;
@@ -376,7 +381,7 @@ function renderTerrainMode(): void {
   const enabled = !!controlSettings.vectorScenery;
   const button = el<HTMLButtonElement>('toggle-map-terrain');
   button.setAttribute('aria-pressed', String(enabled));
-  button.firstChild!.textContent = `Terrain: ${enabled ? 'map · no labels' : 'photos'} `;
+  button.firstChild!.textContent = `Terrain: ${enabled ? 'map · OSM cartography' : 'photos'} `;
 }
 function setTerrainMode(enabled: boolean): void {
   controlSettings = { ...controlSettings, vectorScenery: enabled };
@@ -750,7 +755,8 @@ const reviewControls = createFlightReviewControls({
     const version = ++recordingLoadVersion;
     if (!ready || failed || sceneFailed) throw new Error('Wait for the flight to be ready before loading a recording.');
     const recording = FlightTrace.fromJSON(text);
-    await scene?.prepareRecording?.(recording.recordedStates());
+    const first = recording.atTime(recording.bounds()!.start_s);
+    if (first) await scene?.prepareRecording?.([first.state]);
     if (mapDisposed || version !== recordingLoadVersion) return;
     if (!ready || failed || sceneFailed) throw new Error('The live flight is unavailable. Please restart before loading a recording.');
     loadedTrace = recording;
@@ -793,9 +799,13 @@ function enterReview() {
   reviewing = true; reviewTime_s = bounds.start_s; lastMapUpdate_ms = -Infinity;
   pauseFlight(); el('status').textContent = 'Review'; focusFlight();
 }
+function cancelReviewTerrain() {
+  reviewTerrainGeneration++; reviewTerrainRequest = null;
+  scene?.cancelTerrainPreparation?.();
+}
 function exitReview() {
   if (!reviewing || continuingReplay) return;
-  recordingLoadVersion++;
+  recordingLoadVersion++; cancelReviewTerrain();
   engineAudio.update(null, false);
   reviewing = reviewPlaying = false; lastMapUpdate_ms = -Infinity;
   loadedTrace = null;
@@ -815,6 +825,7 @@ async function continueLiveFromReview() {
   if (!reviewing || continuingReplay || !ready || failed || sceneFailed) return;
   const source = recordedTrace(), selected = source.atTime(reviewTime_s);
   if (!selected || resumeProblem(selected.state)) return;
+  cancelReviewTerrain();
   continuingReplay = true; recordingLoadVersion++; reviewPlaying = false; updateReviewControls();
   try {
     const actual = await session.restoreFromReview(selected.state);
@@ -964,7 +975,7 @@ function reset(preset: LandingPreset | null | undefined = landingPreset, start: 
   liveWarningMonitor.reset(); reviewWarningMonitor.reset(); liveWarnings = unavailableWarnings;
   flightWarningsPanel.update(unavailableWarnings, false);
   regionalTiles.clear(); terrainLoading=false; scene?.setTerrainTiles?.([]);
-  document.querySelector('.location strong')!.textContent = ['darmstadt','odenwald','spessart','westerwald','marburg','kassel'].includes(airborneSite) ? airborneSite.toUpperCase() : airborneSite === 'eddf-ils' ? 'FRANKFURT 25C' : airborneSite === 'taunus' ? 'TAUNUS' : 'EGELSBACH';
+  document.querySelector('.location strong')!.textContent = isRegionalFlight(airborneSite) ? airborneSite.toUpperCase() : airborneSite === 'eddf-ils' ? 'FRANKFURT 25C' : airborneSite === 'taunus' ? 'TAUNUS' : 'EGELSBACH';
   document.querySelector('.location span')!.textContent = runwayStart ? `C172 research aircraft · ${runwayStart.airport} runway ${runwayStart.runway}` : 'C172 research aircraft · airborne practice';
   collisionUnavailableNoticed = false;
   systemsPanel.reset(); radioPanel.reset();
@@ -1297,7 +1308,21 @@ function animate(now: number) {
       }
     }
 
-    if (scene && !sceneFailed) {
+    const terrainReady = !reviewing || !scene?.terrainReady || scene.terrainReady(state);
+    if (reviewing && scene && !terrainReady) {
+      const key = `${worldCellAt(state.lat_rad, state.lon_rad)?.join(',') ?? 'unsupported'},${state.terrain_source ?? 0}`;
+      if (reviewTerrainRequest !== key) {
+        reviewTerrainRequest = key; const generation = ++reviewTerrainGeneration;
+        void scene.prepareRecording?.([state]).then(() => {
+          if (generation === reviewTerrainGeneration) reviewTerrainRequest = null;
+        }).catch(() => { /* Scene reports terrain unavailability without changing live flight. */ });
+      }
+    } else if (reviewTerrainRequest !== null) {
+      // Returning to a cached Review frame also supersedes an outstanding
+      // far-window request; readiness alone must not leave that fetch running.
+      cancelReviewTerrain();
+    }
+    if (scene && !sceneFailed && terrainReady) {
       try { scene.update(state, view, { ...cameraLook, fov_rad: cameraFov_rad }); } catch {
         sceneFailed = true; pauseFlight(); notice('The 3D scene stopped rendering. Reload to restart.'); updateSessionUI();
       }
@@ -1305,7 +1330,9 @@ function animate(now: number) {
     engineAudio.update(state, ready && !failed && !sceneFailed && !terrainLoading && !document.hidden
       && (reviewing ? reviewPlaying : running), { warnings: shownWarnings, live: !reviewing });
     pressureAltimeter.update(state, reviewing, groundCollisionStopped());
-    const sceneryLabel = state.terrain_profile === 1 ? 'Streamed terrain · Westerwald–Lahn–Kassel' : 'Flat-ground contact study · zero-height ellipsoid';
+    const sceneryLabel = state.terrain_profile === 1
+      ? state.terrain_source === 2 ? 'Coarse global fallback · 1° source grid' : state.terrain_source === 3 ? 'Mixed regional / coarse global terrain' : state.terrain_source === 1 ? 'Detailed regional terrain · southern Germany' : 'Terrain source unknown · legacy recording'
+      : 'Flat-ground contact study · zero-height ellipsoid';
     const scenery = document.querySelector<HTMLElement>('.scenery-label')!;
     if (scenery.textContent !== sceneryLabel) scenery.textContent = sceneryLabel;
     sixPack.update(state, shownVsiFpm, reviewing);

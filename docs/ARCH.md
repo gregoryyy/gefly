@@ -2,7 +2,7 @@
 
 Status: selected stack with proposed product component boundaries. **Web application**, **Cessna 172**, **EASA PPL first**, **classic instruments before glass** and **QNH/QFE/standard-pressure coverage** are user decisions. Aircraft: a classic-panel 172S first, then the Reims FR172, as distinct engine configurations (Q3); the first exercise is a circuit at Frankfurt-Egelsbach (EDFE). The dynamics engine is **JSBSim** (Q17), used as a replaceable LGPL library; the web stack is TypeScript with a CesiumJS renderer (three.js fallback), MapLibre 2D maps and JSBSim in a module Web Worker at a fixed **1/120 s** step (Q17). Exact radio fit and geographic data provider remain open. Native and browser studies exist; the complete learner simulator and project-owned 172S flight model are not implemented. Expanded scope and proposed delivery slices are in [the training design](design/TRAINING.md).
 
-An experimental [local browser application](../app/README.md) integrates the existing study worker with a TypeScript flight deck and Cesium scene. npm/Vite owns this bounded application; reusable package boundaries below remain the target for extraction. Its generic study aircraft is built only for local research. Normal flights combine the finer public Hessen DEM with 108 lazy-loaded BKG DGM200 tiles over 7.00–10.00°E / 49.25–51.50°N, sharing physical DHHN2016 heights and GCG2016/2023 offsets between native ground contact and the Cesium ellipsoid-height surface. Explicit flat landing studies remain separate. This is not surveyed airport/runway or full EDDF/100 NM fidelity. The project-owned 172S model, real EDFE circuit and production runtime distribution remain incomplete.
+An experimental [local browser application](../app/README.md) integrates the existing study worker with a TypeScript flight deck and Cesium scene. npm/Vite owns this bounded application; reusable package boundaries below remain the target for extraction. Its generic study aircraft is built only for local research. Normal flights combine the finer public Hessen DEM with 475 available BKG DGM200 tiles within 608 declared slots over 6–14°E / 47–51.75°N, sharing physical DHHN2016 heights and GCG2016/2023 offsets between native ground contact and the Cesium ellipsoid-height surface. Explicit flat landing studies remain separate. This is not surveyed airport/runway or full EDDF/100 NM fidelity. The project-owned 172S model, real EDFE circuit and production runtime distribution remain incomplete.
 
 A lazy-loaded MapLibre map shows selected flight position, true heading, the bounded whole retained path and 731 searchable five-state OurAirports community airfield/heliport entries with optional reported elevation. Review uses the historical marker state, while the full retained line remains visible. Airport selection moves only the map. The community inventory is not accepted airport/runway, chart, fix or procedure data; reported elevation never overwrites contact terrain. Both 2D and 3D views use bundled imagery plus fixed-source live map/photo endpoints.
 
@@ -390,7 +390,7 @@ layers remain underneath and the sharper Egelsbach overlay remains above.
 
 ## Streamed regional ground and live scenery
 
-The [regional manifest](../app/public/terrain/region/manifest.json) pins 108
+The [regional manifest](../app/public/terrain/region/manifest.json) declares 608 slots and pins 475 available
 129×129-node tiles, each containing interleaved physical DHHN2016 H and
 GCG2016/2023 ζ channels. The authoring compiler builds one exact shared
 geographic lattice from BKG's 200 m source, then slices tiles so adjacent edges
@@ -402,14 +402,15 @@ This interpolation is an explicit approximation, not improved source accuracy.
 The fixed-step worker installs/removes complete immutable tile buffers between
 steps. Its moving 3×3 working set holds at most nine tiles; a tile-centre change
 pauses physics until the new set is ready, then resumes only prior running intent.
-User pause cancels automatic resume. Missing/corrupt data stops rather than
-substituting a flat/stale surface. The renderer retains up to 108 visited tiles for
-recorded Review, without restoring or advancing physics. Source 200 m relief and
+User pause cancels automatic resume. R-WORLD-11 now fills invalid or missing
+regional nodes from the bundled coarse baseline; required assets still fail
+visibly. Review prepares only the selected neighborhood, capped at 64 world
+cells plus the current live nine, without restoring or advancing physics. Source 200 m relief and
 mostly 2000–2019 surveys remain distinct from finer display subdivision.
 
 Vite's development middleware exposes fixed same-origin `/scenery/map/...png`
 and `/scenery/imagery/...png` XYZ endpoints. It converts bounded coordinates to
-allowlisted WMS requests for TopPlusOpen and three state photography services.
+allowlisted WMS requests for TopPlusOpen and five state photography services.
 Node controls request/cache limits; a bounded Python/Pillow process composites
 transparent 512 px responses. Unavailable/transparent photo areas expose map
 fallback rather than invented imagery. The original verified local pyramid and
@@ -459,3 +460,26 @@ restores recorded modern payload and original fuel baseline; old traces without
 that group use pinned original payload with an explicit UI disclosure, never the
 current custom takeoff configuration. Weight & fuel edits apply only through an
 explicit restart; ordinary restarts retain the selected configuration.
+
+## Coarse world terrain fallback
+
+R-WORLD-11 retains detailed regional inputs while providing a bundled coarse
+NOAA ETOPO 2022/EGM2008 height/geoid baseline. A canonical 0.25-degree streaming
+lattice interpolates its 1-degree source; this adds no measurements. Valid
+regional nodes take priority, masked/unavailable nodes use coarse heights. The
+resulting derived source transition is explicitly approximate. Native contact
+and Cesium consume the same 129×129 height/geoid grids with separate stable world
+IDs and reusable nine-slot native storage. Source quality 1/2/3 means regional,
+global or mixed for the entire current cell and is retained in recordings;
+a mixed label is conservative even when the aircraft samples only coarse nodes. Loading occurs between fixed
+steps without reconstructing the aircraft; optional regional enhancement times
+out to coarse data. Required game assets remain integrity checked.
+
+OpenFreeMap/OSM is the consistent detailed, labeled global cartography for the
+2D map and 3D vector texture. Default opaque regional BKG cartography is inactive
+(implementation retained), avoiding a rectangular map patchwork. Available
+regional photographs cover the OSM underlay when photo mode is selected. It supplies no physical heights. World saved locations
+stay inside the declared ±89.5-degree flight latitude, while map tiles retain
+WebMercator limits. Review loads only the selected neighborhood, keeps the last
+valid 3D frame during loading and caps its cache; it is not a captured world-state
+recording. Country-specific Swiss/Austrian data is not yet part of the runtime.
