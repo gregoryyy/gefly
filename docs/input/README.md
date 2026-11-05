@@ -160,3 +160,15 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [Map location-type checkbox filters](2026-11-04-map-location-filters.md)
 
 - [2026-11-05 control stability](2026-11-05-control-stability.md) — user reports roll-off, oversensitive steering and oscillation; authorizes analysis, repair and a separate PR.
+
+- [2026-11-04-five-state-world-coverage](2026-11-04-five-state-world-coverage.md): terrain/world source request retained for the scoped foundation.
+
+- [2026-11-05-world-terrain-fallback](2026-11-05-world-terrain-fallback.md): terrain/world source request retained for the scoped foundation.
+
+- [2026-11-05-swiss-austria-terrain](2026-11-05-swiss-austria-terrain.md): terrain/world source request retained for the scoped foundation.
+
+- [2026-11-05-global-map-detail-plan-ux](2026-11-05-global-map-detail-plan-ux.md): terrain/world source request retained for the scoped foundation.
+
+- [2026-11-05 vector-terrain loading](2026-11-05-vector-terrain-loading.md) — user reports slow 3D vector terrain, with view clarification.
+
+- [2026-11-05 repeated vector-terrain reloads](2026-11-05-vector-terrain-reload.md) — accelerated-flight repeated detail loss and reload investigation.

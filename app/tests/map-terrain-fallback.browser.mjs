@@ -1,5 +1,5 @@
 // Whole-scene failure regression: a failed cartographic service must retain the
-// existing photographs instead of exposing an empty/sparse terrain mode.
+// physical relief and selected display mode; it must not stop paused flight.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -30,7 +30,7 @@ try {
     };
   });
   await installSceneryFixture(page);
-  await page.route('**/scenery/vector/**', route => route.fulfill({ status: 502, body: '' }));
+  await page.route('**/scenery/osm/**', route => route.fulfill({ status: 502, body: '' }));
   await page.goto(origin);
   await page.waitForFunction(() => !document.querySelector('#start')?.disabled);
   await prepareFlightUI(page, { controls: false });
@@ -43,7 +43,7 @@ try {
   const before = await stats();
   await page.locator('#scene').focus(); await page.keyboard.press('m');
   await page.locator('.practice-map-heading').click();
-  await page.getByRole('button', { name: 'Use map without labels as terrain texture' }).click();
+  await page.getByRole('button', { name: 'Use detailed OSM map as terrain texture' }).click();
   await page.waitForFunction(() => {
     const d = document.querySelector('#scene').dataset;
     return d.mapTerrain === 'degraded' && Number(d.mapTerrainFailed) > 0 && Number(d.mapTerrainQueued) === 0;
@@ -52,10 +52,10 @@ try {
   assert.equal(after.step, before.step); assert.equal(after.digest, before.digest); assert.deepEqual(after.final_state, before.final_state);
   assert.equal(await page.getByRole('button', { name: 'Show public map', exact: true }).getAttribute('aria-pressed'), 'true');
   assert.equal(await page.locator('#scene').getAttribute('data-imagery-detail'), 'ready', 'starter photography remains present');
-  assert.match(await page.locator('#imagery-status').textContent(), /photography retained/);
+  assert.match(await page.locator('#imagery-status').textContent(), /Map terrain unavailable/);
   await mkdir(new URL('../../output/flight/', import.meta.url), { recursive: true });
   await page.screenshot({ path: fileURLToPath(new URL('../../output/flight/map-terrain-fallback.png', import.meta.url)) });
   assert.deepEqual(errors, []);
-  console.log(JSON.stringify({ result: 'pass', browser: browser.version(), checks: ['blocked vector service retains photography and normal 2D map',
+  console.log(JSON.stringify({ result: 'pass', browser: browser.version(), checks: ['blocked OSM service leaves photography assets and the selected Map control intact',
     'degraded status is explicit', 'failure does not advance or replace the paused native flight'] }, null, 2));
 } finally { await browser?.close(); server.kill(); }

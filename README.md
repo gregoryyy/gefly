@@ -129,14 +129,19 @@ map terrain or photography; source coverage and label density are bounded.
 With labels on, **right-click** terrain (Mac **Ctrl-click** also works) to look
 for its nearest mapped name. The popup shows distance; it is not an address lookup.
 
-Public terrain now streams across **7.00–10.00°E / 49.25–51.50°N**, including
+Public terrain now streams across **6–14°E / 47–51.75°N**, including
 Westerwald, the Lahn valley, Marburg and Kassel, alongside Darmstadt, Odenwald
 and Spessart, with named Flight-menu demonstrations. The
-bounded 200 m BKG relief surrounds the finer Egelsbach–Frankfurt–Taunus package;
+bounded 200 m BKG relief spans five southern German states around the finer
+Egelsbach–Frankfurt–Taunus package;
 it is not surveyed runway terrain or the full EDDF/100 NM region. Bundled
 approximately 1.5–3 m imagery around Frankfurt is complemented by live public
-Hessen, Bavarian and Baden-Württemberg photography and a map fallback. The generic
-research aircraft remains experimental; see
+official five-state photography and a map fallback. Outside valid regional
+coverage, a bundled one-degree ETOPO 2022/EGM2008 baseline supports approximate
+continued flight. This roughly 111 km source spacing smooths mountains and is
+unsuitable for accurate landings. Detailed labeled global OSM cartography supplies
+2D map and 3D vector context beneath available photographs; it supplies no
+physical heights. The generic research aircraft remains experimental; see
 [setup, controls and limitations](app/README.md).
 
 Flight map → **Charts** opens the official OpenFlightMaps Germany VFR viewer

@@ -41,3 +41,7 @@ Thumbs.db
 .vscode/
 *.swp
 *~
+
+# Generated local runtime/dependency links in isolated worktrees
+/app/node_modules
+/studies/e1-browser/sim/dist

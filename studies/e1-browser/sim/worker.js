@@ -28,7 +28,8 @@
 // cost per step for each block, separating compute cost from post-idle wake cost.
 import createJSBSim from './dist/jsbsim.mjs';
 import { loadTerrainPackage, sampleTerrain, sampleTerrainGradient, terrainContainsInterior } from './terrain.js';
-import { loadRegionalManifest, TerrainStream, sampleAtlas, sampleAtlasGradient } from './terrain-stream.js';
+import { loadRegionalManifestOptional, WorldTerrainStream, sampleAtlas, sampleAtlasGradient } from './terrain-stream.js';
+import { loadWorldTerrainPackage } from './world-terrain.js';
 import { pressureAltitude_m, indicatedAltitude_m, validSetting } from './altimeter.js';
 import { stallFields, controlFields, cockpitFields, pitchTrimFields, groundFields } from './cockpit.js';
 import { autopilotCommand, engineFields, engineSwitchFields } from './engine.js';
@@ -127,7 +128,7 @@ function requestTerrain(lat, lon) {
   }).catch(error => {
     if (generation !== terrainGeneration) return;
     terrainLoad = null; resumeAfterTerrain = false; terrainFault = true;
-    fail(`Regional terrain loading failed: ${error.message}`);
+    fail(`Terrain loading failed: ${error.message}`);
   });
 }
 let groundCollisionEnabled = false;
@@ -243,7 +244,7 @@ function readGroundFields() {
   const fields = groundFields(M.HEAPF64.subarray(pointer, pointer + 18));
   if (terrainGrid && Number.isFinite(fields.ground_height_ellipsoid_m)) {
     const state = readState(), sample = terrainSample(state[1], state[2]);
-    if (!sample) throw new Error('Terrain coverage unavailable; restart inside the published terrain region.');
+    if (!sample) throw new Error('Terrain coverage unavailable; the bundled world terrain could not support this position.');
     fields.ground_height_ellipsoid_m += sample.geoid_m;
   }
   return fields;
@@ -424,7 +425,12 @@ function terrainFields() {
   if (!terrainGrid) return {};
   const state = readState(), sample = terrainSample(state[1], state[2]);
   if (!sample) throw new Error('Public terrain coverage is unavailable.');
-  return { terrain_profile: 1, terrain_height_msl_m: sample.physical_m,
+  let source = terrainStream?.quality(state[1], state[2]) ?? 1;
+  if (sampleTerrain(terrainGrid, state[1], state[2])) {
+    const edge = Math.min(state[2] - terrainGrid.west_rad, terrainGrid.east_rad - state[2], state[1] - terrainGrid.south_rad, terrainGrid.north_rad - state[1]);
+    source = source !== 1 && edge < .02 * Math.PI / 180 ? 3 : 1;
+  }
+  return { terrain_profile: 1, terrain_source: source, terrain_height_msl_m: sample.physical_m,
     terrain_geoid_m: sample.geoid_m, terrain_height_ellipsoid_m: sample.ellipsoid_m };
 }
 
@@ -509,7 +515,7 @@ function stepOnce() {
       requestTerrain(state[1], state[2]); return false;
     }
     if ((!terrainStream && !terrainContainsInterior(terrainGrid, state[1], state[2])) || M._gf_terrain_available() !== 1) {
-      terrainFault = true; fail('Terrain coverage boundary reached. Restart inside the Egelsbach–Frankfurt–Taunus region.'); return false;
+      terrainFault = true; fail('Terrain/contact support unavailable at this position. Check bundled world terrain data and latitude coverage.'); return false;
     }
   }
   if (!applyDueInputs()) return false;
@@ -517,7 +523,7 @@ function stepOnce() {
   const previousGround = groundCollisionEnabled ? readGroundFields() : null;
   const rc = M._gf_step();
   const b = performance.now();
-  if (rc !== 0) { if (rc === -7) terrainFault = true; fail(rc === -7 ? 'Terrain/contact coverage unavailable; flight stopped. Restart inside the terrain region.' : `step rc=${rc} at step ${stepIndex}`); return false; }
+  if (rc !== 0) { if (rc === -7) terrainFault = true; fail(rc === -7 ? 'Terrain/contact coverage unavailable; flight stopped without changing aircraft position.' : `step rc=${rc} at step ${stepIndex}`); return false; }
   stepIndex += 1;
   updateAltimeter();
   if (altitudeAlert) altitudeAlert.update(alertSensors());
@@ -670,7 +676,9 @@ async function onInit(msg) {
       fail('Regional terrain requires the updated local engine. Run just build-flight-engine and restart.'); return;
     }
     const generation = terrainGeneration;
-    terrainStream = new TerrainStream(await loadRegionalManifest(),
+    const world = await loadWorldTerrainPackage();
+    const regional = await loadRegionalManifestOptional();
+    terrainStream = new WorldTerrainStream(world, regional,
       grid => { if (generation === terrainGeneration) installTile(grid); },
       grid => { if (generation === terrainGeneration) removeTile(grid); });
     await terrainStream.move(ic.lat_rad, ic.lon_rad);
@@ -701,7 +709,8 @@ async function onInit(msg) {
     navdata_sha256: navigationPackage ? navigationPackage.sha256 : null,
     navdata_error: navdataError,
     build: { ...(navigationPackage ? { navigation: { id: navigationPackage.id, edition: navigationPackage.edition, sha256: navigationPackage.sha256, historical: navigationPackage.historical } } : {}), ...(terrainGrid ? { terrain: { id: terrainGrid.id, sha256: terrainGrid.sha256, physical_datum: terrainGrid.physical_datum, geoid_model: terrainGrid.geoid_model } } : {}),
-             ...(terrainStream ? { regional_terrain: { id: 'rhein-main-dgm200-gcg-v1', cache_limit: 9, transition_degrees: .02,
+             ...(terrainStream ? { regional_terrain: { id: 'world-with-optional-southern-germany-v1', world_id: terrainStream.world.id, world_sha256: terrainStream.world.sha256,
+               regional_available: terrainStream.manifest.size > 0, regional_failed_tiles: terrainStream.failedSources.size, cache_limit: 9, transition_degrees: .02,
                loaded_tiles: Array.from(terrainStream.tiles.values(), grid => ({ id: grid.id, sha256: grid.sha256 })) } } : {}),
              jsbsim_tag: build.jsbsim_tag, emsdk: build.emsdk, wasm_bytes: build.wasm_bytes,
              jsbsim_commit: build.jsbsim_commit, wasm_sha256: build.wasm_sha256, flags: build.flags,
@@ -800,7 +809,7 @@ self.onmessage = (ev) => {
       if (msg.type === 'init') { onHalt(); await onInit(msg); return; }
       if (!initialized) { postMessage({ type: 'error', message: `${msg.type} before init` }); return; }
       if (terrainFault && ['input', 'altimeter', 'autopilot', 'autopilot-capture', 'simulation-rate', 'kap140', 'navigation', 'run', 'burst'].includes(msg.type)) {
-        postMessage({ type: 'terrain-rejected', command: msg.type, message: 'Terrain coverage unavailable; restart inside the region.' }); return;
+        postMessage({ type: 'terrain-rejected', command: msg.type, message: 'Terrain support unavailable. Check bundled world terrain data and latitude coverage.' }); return;
       }
       if (collision.collision_mask && ['input', 'altimeter', 'autopilot', 'autopilot-capture', 'simulation-rate', 'kap140', 'navigation', 'run', 'burst'].includes(msg.type)) {
         postMessage({ type: 'collision-rejected', command: msg.type, message: 'Ground contact latched; acknowledge it to continue or restart flight.' });

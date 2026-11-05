@@ -1,4 +1,4 @@
-// Live official-cartography visual regression. Requires the local research engine
+// Live OSM-cartography visual regression. Requires the local research engine
 // and public network access; no synthetic map pixels stand in for the new layer.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -25,7 +25,7 @@ try {
   const errors = [], vectorResponses = [], glyphRequests = [];
   page.on('pageerror', e => errors.push(String(e)));
   page.on('request', r => { if (/glyph|\/fonts\//i.test(r.url())) glyphRequests.push(r.url()); });
-  page.on('response', r => { if (/\/scenery\/vector\/\d+\//.test(r.url()) && r.ok()) vectorResponses.push(r.url()); });
+  page.on('response', r => { if (/\/scenery\/osm\/\d+\//.test(r.url()) && r.ok()) vectorResponses.push(r.url()); });
   // Observe actual Cesium layer visibility without a production test hook.
   await page.route(url => /\/src\/scene(?:\.ts)?$/.test(url.pathname), async route => {
     const response = await route.fetch(), source = await response.text();
@@ -33,7 +33,7 @@ try {
     await route.fulfill({ response, body: source.replace('const scene = widget.scene;', `const scene = widget.scene;
       window.terrainLayers = () => Array.from({length:scene.imageryLayers.length},(_,i)=>{
         const layer=scene.imageryLayers.get(i),url=String(layer.imageryProvider.url??'');
-        return {kind:layer===baseLayer?'base':layer===reliefLayer?'relief':layer===mapTerrainLayer?'vector':url.includes('/scenery/map/')?'raster-map':'photo',show:layer.show};
+        return {kind:layer===baseLayer?'base':layer===reliefLayer?'relief':layer===worldMapLayer?'vector':url.includes('/scenery/map/')?'raster-map':'photo',show:layer.show};
       });`) });
   });
   let releasePhotographs;
@@ -79,14 +79,14 @@ try {
   await page.waitForTimeout(200);
   await mkdir(output, { recursive: true });
   await page.screenshot({ path: `${output}/map-terrain-standard.png` });
-  const texture = page.getByRole('button', { name: 'Use map without labels as terrain texture' });
+  const texture = page.getByRole('button', { name: 'Use detailed OSM map as terrain texture' });
   // The visible View control is the entry point; no modifier shortcut is needed.
   await page.locator('#view-menu > summary').click();
   await page.locator('#toggle-map-terrain').click();
   const assertExclusive = async vector => {
     const layers = await page.evaluate(() => window.terrainLayers());
     assert(layers.filter(l => l.kind === 'photo' || l.kind === 'raster-map').every(l => l.show === !vector), JSON.stringify(layers));
-    assert(layers.filter(l => l.kind === 'vector').every(l => l.show === vector), JSON.stringify(layers));
+    assert(layers.filter(l => l.kind === 'vector').every(l => l.show), JSON.stringify(layers));
     return layers;
   };
   await assertExclusive(true);
@@ -103,8 +103,8 @@ try {
   assert.equal(await page.getByRole('button', { name: 'Show public map', exact: true }).getAttribute('aria-pressed'), 'true', 'terrain choice does not remove the normal flight-map background');
   await page.screenshot({ path: `${output}/map-terrain-cartography.png` });
   const shown = await page.locator('#scene').evaluate(e => ({ ...e.dataset }));
-  assert(vectorResponses.length > 0, 'actual official vector data was received');
-  assert.deepEqual(glyphRequests, [], 'label-free terrain never requests font glyphs');
+  assert(vectorResponses.length > 0, 'actual pinned OSM vector data was received');
+  assert.deepEqual(glyphRequests, [], 'local-font terrain labels never request remote font glyphs');
   const after = await stats();
   assert.equal(after.step, before.step); assert.equal(after.digest, before.digest); assert.deepEqual(after.final_state, before.final_state);
   assert.equal(await page.evaluate(() => window.terrainWorkerCount), 1);
@@ -121,7 +121,7 @@ try {
   assert.deepEqual(errors, []);
   await writeFile(`${output}/map-terrain-browser.json`, JSON.stringify({ vectorResponses, shown, lateLayers, restoredLayers, native: {step:after.step,digest:after.digest} }, null, 2));
   console.log(JSON.stringify({ result: 'pass', browser: browser.version(), position: [49.9116, 8.6348],
-    vector_responses: vectorResponses.length, shown, lateLayers, restoredLayers, checks: ['visible View command selects vector terrain without modifier shortcuts', 'all five photo layers and raster fallback stay hidden including late arrivals, then restore', 'live label-free official terrain outside EDFE',
+    vector_responses: vectorResponses.length, shown, lateLayers, restoredLayers, checks: ['visible View command selects vector terrain without modifier shortcuts', 'all five photo layers and raster fallback stay hidden including late arrivals, then restore', 'live detailed OSM terrain outside EDFE',
       'normal flight-map background retained', 'no font glyph requests', '2D imagery choice independent',
       'mode toggles preserve paused native step/digest/state and worker', 'standard/terrain/restored screenshots captured'] }, null, 2));
 } finally { await browser?.close(); server.kill(); }

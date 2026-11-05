@@ -29,6 +29,22 @@ int main() {
     } catch (const std::invalid_argument&) { rejected = true; }
     assert(rejected);
   }
+  const double missing = std::numeric_limits<double>::quiet_NaN();
+  const double masked_values[]{10, 20, missing, 40};
+  TerrainGrid masked(0, 0, .01, .01, 2, 2, masked_values, 4, true);
+  assert(masked.sample(.0075, .0025));
+  assert(!masked.sample(.0025, .0075));
+  for (bool all_missing : {false, true}) {
+    bool rejected = false;
+    const double invalid[]{missing, missing, missing, all_missing ? missing : std::numeric_limits<double>::infinity()};
+    try { TerrainGrid unsupported(0, 0, .01, .01, 2, 2, invalid, 4, true); }
+    catch (const std::invalid_argument&) { rejected = true; }
+    assert(rejected);
+  }
+  bool strict_rejected = false;
+  try { TerrainGrid strict(0, 0, .01, .01, 2, 2, masked_values, 4); }
+  catch (const std::invalid_argument&) { strict_rejected = true; }
+  assert(strict_rejected);
   auto fine = std::make_shared<const TerrainGrid>(0, 0, .01, .01, 2, 2, values, 4);
   auto coarse = std::make_shared<const TerrainGrid>(0, 0, .02, .02, 2, 2, flat, 4);
   gefly::TerrainAtlas atlas(fine); atlas.set(1, coarse);

@@ -80,11 +80,14 @@ export function validPitchTrimState(input: object): boolean {
   return PITCH_TRIM_FIELDS.every(key => typeof value[key] === 'number' && Number.isFinite(value[key]))
     && Math.abs(value.pitch_trim_norm!) <= 1 && Math.abs(value.pitch_trim_initial_norm!) <= 1;
 }
-/** Present together only for the pinned public DGM/GCG terrain profile. */
+/** Shared physical/render height snapshot; regional or derived global surface. */
 export const TERRAIN_FIELDS = ['terrain_profile', 'terrain_height_msl_m', 'terrain_geoid_m', 'terrain_height_ellipsoid_m'] as const;
-export type TerrainState = Partial<Record<typeof TERRAIN_FIELDS[number], number>>;
+export const TERRAIN_SOURCE_FIELDS = ['terrain_source'] as const;
+/** 1 regional, 2 coarse global, 3 mixed; absence is legacy unknown. */
+export type TerrainState = Partial<Record<typeof TERRAIN_FIELDS[number] | typeof TERRAIN_SOURCE_FIELDS[number], number>>;
 export function validTerrainState(input: object): boolean {
   const value = input as TerrainState;
+  if (value.terrain_source !== undefined && (![1, 2, 3].includes(value.terrain_source) || value.terrain_profile !== 1)) return false;
   if (!TERRAIN_FIELDS.some(key => value[key] !== undefined)) return true;
   return TERRAIN_FIELDS.every(key => typeof value[key] === 'number' && Number.isFinite(value[key]))
     && value.terrain_profile === 1 && value.terrain_height_msl_m! > -1000 && value.terrain_height_msl_m! < 10000
@@ -165,13 +168,16 @@ export interface FlightScene {
   setSceneryMode?(vector: boolean): void;
   setPracticePapi?(enabled: boolean): void;
   setTerrainTiles?(tiles: readonly TerrainGrid[]): void;
+  /** Prepare only the selected Review window; no eager whole-trace world fetch. */
   prepareRecording?(states: Iterable<Readonly<FlightState>>): Promise<void>;
+  terrainReady?(state: Readonly<FlightState>): boolean;
+  cancelTerrainPreparation?(): void;
   update(state: FlightState, view: 'cockpit' | 'chase', look?: { yaw_rad: number; pitch_rad: number; fov_rad?: number }): void;
   dispose(): void;
 }
 export interface FlightLocation { version: 1; lat_rad: number; lon_rad: number; alt_msl_m: number; heading_rad: number; mode: 'airborne' | 'ground' }
 export interface RunwayStart { airport: string; runway: string; lat_rad: number; lon_rad: number; heading_rad: number }
-export type AirborneSite = 'edfe' | 'taunus' | 'eddf-ils' | 'darmstadt' | 'odenwald' | 'spessart' | 'westerwald' | 'marburg' | 'kassel';
+export type AirborneSite = 'edfe' | 'taunus' | 'eddf-ils' | keyof typeof import('./regional-flights').REGIONAL_FLIGHTS;
 export interface FlightSession {
   setLoading(config: LoadingConfiguration): boolean;
   restoreFromReview(state: Readonly<FlightState>): Promise<FlightState>;

@@ -14,12 +14,12 @@ interface Result { bytes: Buffer; mime: string; expires: number }
 export interface VectorMapOptions { fetcher?: Fetcher; cacheBytes?: number }
 
 function resourceFor(path: string): Resource | null {
-  const landmark = /^\/scenery\/landmarks\/([7-9]|1[0-4])\/(0|[1-9]\d{0,4})\/(0|[1-9]\d{0,4})\.pbf$/.exec(path);
+  const landmark = /^\/scenery\/(landmarks|osm)\/(0|[1-9]|1[0-4])\/(0|[1-9]\d{0,4})\/(0|[1-9]\d{0,4})\.pbf$/.exec(path);
   if (landmark) {
-    const [z, x, y] = landmark.slice(1).map(Number);
-    if (x >= 2 ** z || y >= 2 ** z) return null;
+    const [z, x, y] = landmark.slice(2).map(Number);
+    if (landmark[1] === 'landmarks' && z < 7 || x >= 2 ** z || y >= 2 ** z) return null;
     const key = `${z}/${x}/${y}.pbf`;
-    return { key: `landmarks/${key}`, upstream: LANDMARK_UPSTREAM + key, kind: 'tile',
+    return { key: `osm/${key}`, upstream: LANDMARK_UPSTREAM + key, kind: 'tile',
       limit: 2 * 1024 * 1024, source: 'OpenFreeMap-OSM-20261101_080013_pt' };
   }
   const sprite = /^\/scenery\/vector\/sprite(@2x)?\.(json|png)$/.exec(path);
@@ -102,7 +102,7 @@ export function createVectorMapMiddleware(options: VectorMapOptions = {}) {
     bkg: { active: 0, pending: 0, queue: [] as Array<{ resolve: () => void; priority: () => number }> },
     landmarks: { active: 0, pending: 0, queue: [] as Array<{ resolve: () => void; priority: () => number }> },
   };
-  const poolFor = (resource: Resource) => pools[resource.key.startsWith('landmarks/') ? 'landmarks' : 'bkg'];
+  const poolFor = (resource: Resource) => pools[resource.key.startsWith('osm/') ? 'landmarks' : 'bkg'];
   async function acquire(resource: Resource, priority: () => number): Promise<Result> {
     const pool = poolFor(resource);
     if (pool.active < 4) pool.active++;
@@ -133,7 +133,7 @@ export function createVectorMapMiddleware(options: VectorMapOptions = {}) {
   }
   return (req: IncomingMessage, res: ServerResponse, next: () => void): void => {
     const path = req.url || '';
-    if (!path.startsWith('/scenery/vector/') && !path.startsWith('/scenery/landmarks/')) { next(); return; }
+    if (!path.startsWith('/scenery/vector/') && !path.startsWith('/scenery/landmarks/') && !path.startsWith('/scenery/osm/')) { next(); return; }
     const resource = resourceFor(path);
     if (!resource || !['GET', 'HEAD'].includes(req.method || '')) { res.writeHead(404).end(); return; }
     let cached = cache.get(resource.key);

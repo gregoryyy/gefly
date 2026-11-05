@@ -25,14 +25,14 @@ function fixture(t: TestContext) {
   const original = globalThis.Worker;
   globalThis.Worker = MockWorker as unknown as typeof Worker;
   MockWorker.instances = [];
-  const states: unknown[] = [], errors: string[] = [], statuses: string[] = [], readies: unknown[] = [], tiles: unknown[] = [], autopilotRejections: string[] = [];
+  const states: unknown[] = [], errors: string[] = [], statuses: string[] = [], readies: unknown[] = [], tiles: unknown[] = [], removed: string[] = [], autopilotRejections: string[] = [];
   const session = createSession({
-    onState: (state) => states.push(state), onReady: value => {readies.push(value);}, onTerrainTile: value => {tiles.push(value);},
+    onState: (state) => states.push(state), onReady: value => {readies.push(value);}, onTerrainTile: value => {tiles.push(value);}, onTerrainRemove: id => {removed.push(id);},
     onAutopilotRejected: message => autopilotRejections.push(message),
     onError: (error) => errors.push(error), onStatus: (status) => statuses.push(status),
   });
   t.after(() => { session.dispose(); globalThis.Worker = original; });
-  return { session, states, errors, statuses, readies, tiles, autopilotRejections };
+  return { session, states, errors, statuses, readies, tiles, removed, autopilotRejections };
 }
 
 const ready = { type: 'ready', trim: { throttle: 0.693, pitch_trim: 0.168, status: 1 } };
@@ -71,15 +71,15 @@ test('regional worker messages accept expanded edge slots and reject inconsisten
   const { session, errors, tiles } = fixture(t);
   session.reset(); const worker = MockWorker.instances[0];
   const r = Math.PI / 180;
-  for (const [id, slot, west, south] of [['e700-n4925', 0, 7, 49.25], ['e975-n5125', 107, 9.75, 51.25]] as const) {
+  for (const [id, slot, west, south] of [['e600-n4700', 0, 6, 47], ['e1375-n5150', 607, 13.75, 51.5]] as const) {
     worker.emit({ type: 'terrain-tile', grid: { version: 1, id, slot, width: 129, height: 129,
       west_rad: west * r, south_rad: south * r, east_rad: (west + .25) * r, north_rad: (south + .25) * r,
       physical_m: new Float64Array(129 * 129).fill(100), geoid_m: new Float64Array(129 * 129).fill(48) } });
   }
   assert.equal(tiles.length, 2); assert.deepEqual(errors, []);
   worker.emit({ type: 'terrain-tile', grid: {
-    version: 1, id: 'e725-n4925', slot: 0, width: 129, height: 129,
-    west_rad: 7 * r, south_rad: 49.25 * r, east_rad: 7.25 * r, north_rad: 49.5 * r,
+    version: 1, id: 'e625-n4700', slot: 0, width: 129, height: 129,
+    west_rad: 6 * r, south_rad: 47 * r, east_rad: 6.25 * r, north_rad: 47.25 * r,
     physical_m: new Float64Array(129 * 129).fill(100), geoid_m: new Float64Array(129 * 129).fill(48),
   } });
   assert.equal(errors.length, 1); assert(worker.terminated);
@@ -435,7 +435,7 @@ test('saved regional location starts paused through native airborne or settled g
   const ground = MockWorker.instances.at(-1)!; assert.equal(ground.messages[0].runway_start, true); assert.equal((ground.messages[0].ic as Record<string, number>).tas_mps, 0);
   ground.emit(ready); session.start(); const input = ground.messages.find(m => m.type === 'input')!; assert.equal(input.brake_norm, 1); assert.equal(input.throttle, .693);
   const count = MockWorker.instances.length;
-  session.reset(undefined, 'edfe', undefined, { ...location, lon_rad: 0 }); assert.equal(MockWorker.instances.length, count);
+  session.reset(undefined, 'edfe', undefined, { ...location, lon_rad: 4 }); assert.equal(MockWorker.instances.length, count);
   session.reset('hard', 'edfe', undefined, location); assert.equal(MockWorker.instances.length, count);
   session.reset(); assert.equal(MockWorker.instances.at(-1)!.messages[0].runway_start, undefined);
 });
@@ -537,4 +537,52 @@ test('collision continuation rejects worker refusal and cancels on reset without
   pending = session.continueAfterCollision(); const rejection = assert.rejects(pending, /cancelled/); session.reset(); await rejection;
   worker.emit({ type: 'collision-continued', collision_step: state.step, state }); assert.deepEqual(errors, []);
   assert.equal(MockWorker.instances.length, 2);
+});
+
+function worldGrid(col: number, row: number, slot: number) {
+  const rad = Math.PI / 180;
+  return { version: 1 as const, id: `world-c${col}-r${row}`, width: 129, height: 129, slot,
+    source: 'global' as const, sha256: 'a'.repeat(64),
+    west_rad: (-180 + col / 4) * rad, east_rad: (-180 + (col + 1) / 4) * rad,
+    south_rad: (-90 + row / 4) * rad, north_rad: (-90 + (row + 1) / 4) * rad,
+    physical_m: new Float64Array(129 * 129).fill(10), geoid_m: new Float64Array(129 * 129).fill(30) };
+}
+test('R-WORLD-11 world tile identity is independent of reused native slot and removals bound residency', t => {
+  const f = fixture(t); f.session.reset(); const worker = MockWorker.instances[0];
+  const first = worldGrid(424, 523, 0), second = worldGrid(425, 523, 0);
+  worker.emit({ type: 'terrain-tile', grid: first });
+  worker.emit({ type: 'terrain-remove', id: first.id });
+  worker.emit({ type: 'terrain-tile', grid: second });
+  assert.equal(f.tiles.length, 2); assert.deepEqual(f.removed, [first.id]); assert.deepEqual(f.errors, []);
+  worker.emit({ type: 'terrain-remove', id: first.id });
+  assert.equal(f.errors.length, 1, 'unknown removal cannot silently desynchronize the view');
+});
+test('R-WORLD-11 malformed world grids, unsupported pool slots and unremoved slot aliases fail closed', async t => {
+  const base = worldGrid(424, 523, 0);
+  for (const change of [{ slot: 9 }, { source: 'unknown' }, { id: 'world-c0-r0' },
+    { east_rad: base.east_rad + .001 }, { sha256: 'bad' }, { masked: true }]) await t.test(JSON.stringify(change), t => {
+      const f = fixture(t); f.session.reset(); MockWorker.instances[0].emit({ type: 'terrain-tile', grid: { ...base, ...change } });
+      assert.equal(f.tiles.length, 0); assert.equal(f.errors.length, 1);
+    });
+  await t.test('reuse without removal', t => {
+    const f = fixture(t); f.session.reset(); const worker = MockWorker.instances[0];
+    worker.emit({ type: 'terrain-tile', grid: base }); worker.emit({ type: 'terrain-tile', grid: worldGrid(425, 523, 0) });
+    assert.equal(f.tiles.length, 1); assert.equal(f.errors.length, 1);
+  });
+});
+test('R-WORLD-11 world source quality is forwarded atomically and unknown quality cannot claim coverage', t => {
+  const f = fixture(t); f.session.reset(); const worker = MockWorker.instances[0]; worker.emit(ready);
+  worker.emit({ ...state, terrain_profile: 1, terrain_height_msl_m: 10, terrain_geoid_m: 30, terrain_height_ellipsoid_m: 40, terrain_source: 2 });
+  assert.equal((f.states.at(-1) as FlightState).terrain_source, 2);
+  worker.emit({ ...state, terrain_source: 2 });
+  assert.equal(f.errors.length, 1, 'source alone is not a valid terrain snapshot');
+});
+test('R-WORLD-11 saved world position initializes the actual global terrain mode while paused', t => {
+  const f = fixture(t); f.session.reset(); MockWorker.instances[0].emit(ready);
+  const location = { version: 1 as const, lat_rad: 40.75 * Math.PI / 180, lon_rad: -74 * Math.PI / 180,
+    alt_msl_m: 1200, heading_rad: 1, mode: 'airborne' as const };
+  f.session.reset(undefined, 'edfe', undefined, location); const worker = MockWorker.instances.at(-1)!;
+  assert.equal((worker.messages[0].ic as FlightState).lon_rad, location.lon_rad);
+  assert.equal(worker.messages[0].streaming_terrain, true); worker.emit(ready);
+  assert(!worker.messages.some(m => m.type === 'run'));
 });

@@ -7,6 +7,20 @@ All times are Europe/Berlin. Answers record the author and recording time. New a
 **2026-11-05 17:35, user request and Codex implementation decision** (Europe/Berlin):
 [Control-stability report](input/2026-11-05-control-stability.md) authorizes diagnosis, repair and a separate PR. Measured generic-source asymmetry is addressed through fresh loading with the external station unloaded and zero initial study correction. Rudder linking becomes opt-in. Explicit custom loading and historical continuation remain available. No aerodynamic coefficient, damping or automatic wings-level assist is introduced; aircraft fidelity and native build provenance remain unverified. R-INPUT-1/R-SIM-11, TODO2.0.153.
 
+**2026-11-05 20:09, Codex implementation decision within user-requested repair** (Europe/Berlin):
+[Reload follow-up](input/2026-11-05-vector-terrain-reload.md) confirms loading
+starvation. Replace 4050 global roots with two progressive source-aligned roots;
+retain provider/meshes for unchanged live geometry within bounded history.
+Source-change, finest coarse/feather influence, capacity and recording/empty
+epoch guards rebuild conservatively. Physical terrain inputs and fixed stepping
+stay unchanged. The [performance note](research/2026-11-05-vector-terrain-performance.md)
+distinguishes the legacy PR85 port from later world30 runtime evidence and
+explicitly excludes complete lifecycle/device/worldwide fidelity acceptance.
+R-WORLD-11/R-WORLD-9/R-SIM-2, TODO2.0.154. Earlier 18:15 profiling observations
+remain historical; sampling reductions alone did not solve globe invalidation.
+
+**2026-11-05 17:09, Codex orchestrator modular-source reconstruction**: the terrain/world foundation contains the five-state regional package, a bundled one-degree worldwide fallback and detailed global OSM cartography. Subsequent cockpit/map-planning/runtime/Copernicus/airport-surface work is intentionally excluded from this PR head. The original requests are retained under [terrain](input/2026-11-04-five-state-world-coverage.md), [world fallback](input/2026-11-05-world-terrain-fallback.md) and [global cartography](input/2026-11-05-global-map-detail-plan-ux.md). This partition changes publication boundaries, not user product decisions. Regional interpolation and the coarse global fallback establish no new source resolution or runway fidelity. R-WORLD-10/R-WORLD-11 / TODO 2.0.120,2.0.135,2.0.141.
+
 ## Resolved questions
 
 ### Q22. Adopt assurance like Propeller?
