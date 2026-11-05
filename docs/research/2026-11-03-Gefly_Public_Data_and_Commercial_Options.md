@@ -1,7 +1,7 @@
 # Gefly: public terrain, aeronautical data and commercial options
 
-**Research date:** 3 November 2026  
-**Scope:** Germany, Austria, Switzerland, Mallorca and Cape Town / Western Cape, with worldwide fallback and commercial options.  
+**Research date:** 3 November 2026
+**Scope:** Germany, Austria, Switzerland, Mallorca and Cape Town / Western Cape, with worldwide fallback and commercial options.
 **Product context:** [gregoryyy/gefly](https://github.com/gregoryyy/gefly), an open-source flight simulator with a potential paid hosted edition.
 
 ## 1. Decision summary
@@ -380,4 +380,3 @@ Links identify the primary source pages used in this review unless explicitly de
 - **L2:** [Data licence Germany — Attribution 2.0](https://www.govdata.de/dl-de/by-2-0).
 - **L3:** [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/).
 - **L4:** [GNU: selling free software](https://www.gnu.org/philosophy/selling.en.html).
-
