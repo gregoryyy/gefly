@@ -4,6 +4,9 @@ All times are Europe/Berlin. Answers record the author and recording time. New a
 
 ## Recorded interaction decisions
 
+**2026-11-05 17:35, user request and Codex implementation decision** (Europe/Berlin):
+[Control-stability report](input/2026-11-05-control-stability.md) authorizes diagnosis, repair and a separate PR. Measured generic-source asymmetry is addressed through fresh loading with the external station unloaded and zero initial study correction. Rudder linking becomes opt-in. Explicit custom loading and historical continuation remain available. No aerodynamic coefficient, damping or automatic wings-level assist is introduced; aircraft fidelity and native build provenance remain unverified. R-INPUT-1/R-SIM-11, TODO2.0.153.
+
 **2026-11-05 20:09, Codex implementation decision within user-requested repair** (Europe/Berlin):
 [Reload follow-up](input/2026-11-05-vector-terrain-reload.md) confirms loading
 starvation. Replace 4050 global roots with two progressive source-aligned roots;

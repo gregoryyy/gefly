@@ -1,0 +1,201 @@
+{
+  "status": "blocked",
+  "accepted": false,
+  "author_provider": "codex",
+  "reviewer_provider": "claude",
+  "packet": {
+    "path": "output/flight/control-peer-packet.md",
+    "sha256": "f536b97048a6219578ecf590322819dfdd914a02b40b7fa84dcea2a97f5c1ca7",
+    "revision": "214e2891aaf0438e4216dceefa4d898ccfa16d19"
+  },
+  "cli": {
+    "executable": "/opt/homebrew/bin/claude",
+    "version": "2.1.308"
+  },
+  "model_evidence": [
+    "claude-opus-5-5"
+  ],
+  "review": {
+    "quality": [
+      {
+        "severity": "medium",
+        "location": "app/src/main.ts (rollOffset initialization); legacy continuation path not supplied",
+        "description": "The global offset default changes to 0 while legacy continuation keeps the 80 lb source payload. The packet shows no code that restores the former -0.109375 command, so a continued legacy flight may switch to payload-without-correction. The diagnosis says these two corrections belong together. Expected: a continued legacy flight applies a deliberate, disclosed offset policy, with a test. Reproduction: continue a legacy recording with no loading group through the app, then compare its aileron command and bank trend with the recording.",
+        "evidence": "main.ts hunk sets `let rollOffset = 0`. The diagnostics report source loading at zero aileron reaching +35.303\u00b0 at 7 s and the 100 m floor before 30 s, and say removing the correction alone is insufficient. The worker harness does not exercise the app's offset."
+      },
+      {
+        "severity": "medium",
+        "location": "studies/e1-browser/sim/control-stability-worker.mjs (recorded-no-loading-fallback case)",
+        "description": "The missing-loading continuation case cannot distinguish the native source fallback from configuration retained from the previous init, because the preceding flight also carried the source external mass. R-SIM-11 forbids using the current custom load here. The native harness configures once and then calls `_gf_init` repeatedly, which suggests configuration may persist across native inits, although the worker's module lifecycle is not supplied. Expected: start a zero-external or custom flight, immediately resume the no-loading state in the same worker, and assert the full source-default loading group.",
+        "evidence": "The worker harness runs `loading: DEFAULT_LOADING`, then `resume_state: legacy`, then `resume_state: noLoading`, and asserts only `payload_external_kg` and step. `initialize()` in the native harness shows one `_gf_configure_loading` call before six `_gf_init` calls."
+      },
+      {
+        "severity": "medium",
+        "location": "studies/e1-browser/sim/loading.d.ts; app/src/loading-panel.ts import",
+        "description": "The diagnostics say the declaration exports `FLIGHT_DEFAULT_LOADING`, and the panel now imports that symbol, but the code diff has no `loading.d.ts` hunk. If the declaration is not part of the revision, TypeScript checking of `loading-panel.ts` would fail. A successful bundle or test run does not prove otherwise. Expected: the reviewed diff includes the declaration and the validation record includes a type-check result.",
+        "evidence": "The artifact table lists `studies/e1-browser/sim/loading.d.ts` with a local hash. The code diff contains `loading.js` but not `loading.d.ts`, and the Validation section lists no type-check."
+      },
+      {
+        "severity": "medium",
+        "location": "studies/e1-browser/sim/control-stability-native.mjs (run, report generation)",
+        "description": "The native script is presented as a regression but asserts no behavior beyond finite telemetry, CAS matching, native call return codes and exact repeatability. Restoring the old payload or offset, or a new 70/90 kt trim failure, would still pass, even though the diagnosis relies on successful 90 kt trim. Expected: assert the trim status per declared case and add pre-declared comparison criteria, or label the script as diagnostic only and not as passing regression evidence.",
+        "evidence": "`trimStatus` is stored but never asserted. The only behavioral assertions are the CAS convergence check and the repeat digest/final-state comparison. The Validation section reports the 48 cases as passing."
+      },
+      {
+        "severity": "medium",
+        "location": "studies/e1-browser/sim/control-stability-native.mjs (configs)",
+        "description": "The case matrix has no independent rudder pulse. Rudder is only ever `-pulse`, coupled to an aileron pulse. Pulses are also positive only and run only at trim power, so independent yaw response and left/right asymmetry are unmeasured even though the model is laterally asymmetric and retains actuator hysteresis. Expected: add rudder-only and opposite-sign pulses at the declared speeds and powers.",
+        "evidence": "The configs loop uses `pulse_norm` of `.1` and `.45` with `link` true or false and `power: 'trim'`. In `run()`, `const rudder = config.link ? -pulse : 0`."
+      },
+      {
+        "severity": "medium",
+        "location": "app/src/main.ts; app/src/loading-panel.ts; test coverage",
+        "description": "The app-level changes have no identifiable test in the diff: zero initial roll offset and slider state, the loading panel's normal draft, the external-station label, and the renamed legacy offset button. Worker initialization asserts zero aileron but does not cover the main-thread offset. Expected: named app or browser assertions for each behavior.",
+        "evidence": "The only app test hunk is `control-settings.test.ts`. The Validation section says `actualbrowser6groups pass` but does not name the groups or assertions."
+      },
+      {
+        "severity": "low",
+        "location": "studies/e1-browser/sim/worker.js (onInit loading default)",
+        "description": "The new default applies to every non-resume init that omits `loading`, not only to app flights. Callers relying on the old implicit source payload silently change mass and digests, and a native engine without `_gf_configure_loading` now fails where a no-loading init previously skipped configuration. Expected: inventory omitted-loading callers and pin explicit `DEFAULT_LOADING` wherever historical behavior is intended.",
+        "evidence": "worker.js hunk: `resume?loadingFromState(resume):(msg.loading??FLIGHT_DEFAULT_LOADING)`, followed by the existing `_gf_configure_loading` guard. No caller inventory is supplied."
+      },
+      {
+        "severity": "low",
+        "location": "app/src/control-settings-panel.ts (coordinated-rudder note)",
+        "description": "The new note drops the statement that manual rudder takes priority. With the link enabled, saying Q/W controls rudder independently does not explain that nonzero manual rudder overrides the link. It also no longer says plainly that bank input drives the nosewheel. Expected: state the bank-to-rudder/nosewheel link and the manual override.",
+        "evidence": "The diff replaces `Bank input also steers rudder and nosewheel. Q/W takes priority.` The R-INPUT-1 text requires that nonzero manual rudder overrides."
+      },
+      {
+        "severity": "low",
+        "location": "app/src/main.ts (comment above rollOffset)",
+        "description": "The comment still describes the variable as the E1 fixture's empirical offset, but it now holds a neutral default of 0. Expected: describe it as an optional experimental offset that starts at zero.",
+        "evidence": "main.ts hunk near line 206."
+      },
+      {
+        "severity": "low",
+        "location": "studies/e1-browser/sim/control-stability-native.mjs (report.sources)",
+        "description": "`native_binary_not_rebuilt: true` is hard-coded rather than measured, so the artifact can assert it even if the binary was rebuilt. The report also omits the `loading.js` hash that the worker report includes. Expected: remove the constant or derive it from pinned expected hashes, and record the `loading.js` hash.",
+        "evidence": "The `sources` object in the native report; compare `report.source` in the worker harness."
+      },
+      {
+        "severity": "low",
+        "location": "studies/e1-browser/sim/control-stability-worker.mjs (state helper)",
+        "description": "The state probe sends a KAP140 `baro` command, so reading state goes through an autopilot command path before the state later used for continuation is captured. Expected: use a read-only state request, or show that this command cannot affect the compared state.",
+        "evidence": "`const state = () => send({ type: 'kap140', command: { action: 'baro' } }, 'state')`, then `legacy = await state()` before resume."
+      }
+    ],
+    "validation": [
+      {
+        "criterion": "R-SIM-5: reference data, envelope, pre-selected tolerances and passing mass/balance, force/moment, trim, steady-flight and transient fixtures before model acceptance",
+        "expected": "All in-scope cases pass against declared reference data and justified tolerances.",
+        "observed": "The packet provides command-response diagnostics without reference data or tolerances. All 110 kt cases report trim status -1, and source-to-binary fidelity cannot be accepted. The packet makes no calibration claim.",
+        "status": "fail",
+        "evidence": "Native measurements; Evidence retention and limits; Validation: WASM hash differs from the build record and 110 kt trim fails."
+      },
+      {
+        "criterion": "R-SIM-11: fresh flights use source seating/fuel with the external station unloaded",
+        "expected": "New flights omit the 80 lb right-side mass and retain the other source values.",
+        "observed": "`FLIGHT_DEFAULT_LOADING` copies `DEFAULT_LOADING` with `external_kg: 0`, and both the worker fallback and panel draft use it. The listed worker cases report external 0 and 2140 lb dry mass for airborne and runway starts.",
+        "status": "pass",
+        "evidence": "Diff of `loading.js`, `worker.js` and `loading-panel.ts`; worker harness; Validation lists 5 passing worker cases."
+      },
+      {
+        "criterion": "R-SIM-11: external station remains available for explicit loading and its lateral position is labeled",
+        "expected": "The station stays editable and shows its 12 ft right position.",
+        "observed": "The panel still builds an input for every station, with the label `External load \u00b7 12 ft right` and a matching title. The explicit `DEFAULT_LOADING` worker case retains the mass.",
+        "status": "pass",
+        "evidence": "`loading-panel.ts` hunks; worker harness explicit legacy loading case."
+      },
+      {
+        "criterion": "R-SIM-11: legacy continuation preserves historical source loading, discloses it and never uses the current custom load",
+        "expected": "Legacy traces stay viewable and continue with source-default payload and disclosure, including after a different current load.",
+        "observed": "Recorded and missing-group worker cases pass, but the missing-group sequence follows a source-loaded flight and does not test a different current load. No disclosure or viewing source or test is supplied, and offset handling during continuation is not shown.",
+        "status": "blocked",
+        "evidence": "Worker harness case order; no continuation UI source or named browser assertion in the packet."
+      },
+      {
+        "criterion": "R-SIM-11: normal manual controls start with zero study aileron offset",
+        "expected": "The initial command offset and visible control are both zero.",
+        "observed": "`rollOffset`, the slider value and the output text all start at 0.",
+        "status": "pass",
+        "evidence": "`main.ts` hunks. This result comes from source inspection; no named browser assertion is supplied."
+      },
+      {
+        "criterion": "R-SIM-11: explicit experimental offset remains discoverable and optional",
+        "expected": "The offset can be found, selected and removed by explicit user action.",
+        "observed": "The slider and buttons remain, including a button relabeled `Legacy study offset`, but their handlers and behavior tests are not supplied.",
+        "status": "blocked",
+        "evidence": "`main.ts` markup hunk only; missing handler source and test evidence."
+      },
+      {
+        "criterion": "R-SIM-11: bounded native regressions compare source/normal loading, offset on/off and roll/rudder pulses at declared speeds and powers",
+        "expected": "Declared cases cover each listed contrast, including rudder pulses, as checkable regressions.",
+        "observed": "Loading, offset, power and aileron pulses with or without the link are measured at 70, 90 and 110 kt. There is no independent rudder pulse, and most behavioral contrasts have no pass/fail assertion.",
+        "status": "fail",
+        "evidence": "`control-stability-native.mjs` configs and `run()`; Native measurements."
+      },
+      {
+        "criterion": "R-SIM-11: no claim of wings-level hands-off flight or calibrated C172S dynamics",
+        "expected": "Documentation and reports keep these claims excluded.",
+        "observed": "The diagnosis, report scope and Validation section all explicitly disclaim them.",
+        "status": "pass",
+        "evidence": "Diagnosis introduction; Evidence retention and limits; native report `scope`; Validation."
+      },
+      {
+        "criterion": "R-SIM-11: panel editing, explicit Apply restart, restart retention, complete trace loading group, real payload/performance effect and actual fuel/mass decrease",
+        "expected": "Each behavior is demonstrated by source and test or runtime evidence.",
+        "observed": "The packet shows dry-mass changes and nominal loading and CG changes, but no measured fuel or total-mass decrease and no Apply or restart-retention evidence. Trace-group coverage is limited to fields used by the continuation cases. Native mass/CG and tank consumption driving the readouts is also not shown.",
+        "status": "blocked",
+        "evidence": "Missing full panel and restart source and named test results; the native and worker harnesses contain no fuel-decrease assertion."
+      },
+      {
+        "criterion": "R-INPUT-1: Link rudder to aileron assist is opt-in and initially off, with fresh presets independent",
+        "expected": "Default and Gentle settings leave rudder at zero for roll input; enabling the link keeps the required sign and manual override.",
+        "observed": "Both presets set `coordinatedRudder: false`. Updated tests cover independent roll and rudder, and linked sign and clamping. The Validation section reports the app tests as passing.",
+        "status": "pass",
+        "evidence": "`control-settings.ts` and `control-settings.test.ts` hunks; Validation: 408 Node and 12 Python tests pass."
+      },
+      {
+        "criterion": "R-INPUT-1: assist is session-only, presets preserve the selected assist and paused changes do not advance physics",
+        "expected": "Panel and app behavior meet each condition, with tests.",
+        "observed": "The preset application, session handling and pause paths are not supplied. The default change makes preset preservation important, because the preset objects now carry false.",
+        "status": "blocked",
+        "evidence": "Only the note hunk from `control-settings-panel.ts` is supplied; no named test result covers these conditions."
+      },
+      {
+        "criterion": "R-INPUT-1: actual low-speed ground steering and runway acceleration/takeoff remain verified with the changed default",
+        "expected": "Runtime evidence shows steering and takeoff with independent rudder, and with the link enabled.",
+        "observed": "The packet says six browser groups pass but does not identify them. The diagnosis says no browser or real-device handling trial was run by its authoring agent.",
+        "status": "blocked",
+        "evidence": "Validation: `actualbrowser6groups pass`; Evidence retention and limits."
+      },
+      {
+        "criterion": "R-INPUT-1: remaining criteria (device matrix, mappings, brakes, trim, Review, pointer modes, yoke marker, focus and shortcut conflicts, optional hardware)",
+        "expected": "Each in-scope criterion has source and test evidence.",
+        "observed": "The diff does not touch most of these behaviors, and the packet supplies neither their source nor per-criterion results.",
+        "status": "blocked",
+        "evidence": "Requirements table compared with the code diff; the aggregate test counts do not map to these criteria."
+      },
+      {
+        "criterion": "Packet completeness: declaration diff, type-check and full shared CI",
+        "expected": "The reviewed revision includes every changed runtime and type source and has completed CI.",
+        "observed": "The `loading.d.ts` diff is absent, no type-check result is listed and full shared CI is pending.",
+        "status": "blocked",
+        "evidence": "Code diff; artifact table; Validation: `FullsharedCI pending`."
+      }
+    ],
+    "recommendation": "blocked",
+    "limitations": [
+      "This review used only the frozen packet. I ran no checks, and all runtime results are the packet's reported evidence.",
+      "Generated artifacts and local hashes could not be inspected or matched to file contents.",
+      "Full source is not supplied for `main.ts`, `worker.js`, `loading.js`, the settings and loading panels, or the continuation and trace paths. Findings about those paths are limited to the diff and stated as evidence gaps where behavior is not shown.",
+      "The executing WASM has a hash that differs from its build record, so results apply to the identified bytes and not to verified pinned source.",
+      "The packet reports bank and roll measurements but no oscillation metric or sensitivity change. It shows the reported sensitivity and oscillation are not fully resolved, and hands-off drift remains (+15.241\u00b0 at 30 s, no external mass, 90 kt trim power)."
+    ]
+  },
+  "limitations": [
+    "CLI routing and returned model names are evidence, not backend attestation.",
+    "Packet review does not independently execute the packet's test commands."
+  ],
+  "diagnostic": "review_blocked"
+}

@@ -8,6 +8,10 @@ export const MODEL_FUEL_DENSITY_KGPM3=6.6*LB/GAL;
 export const MODEL_TANK_CAPACITY_M3=130/6.6*GAL;
 export const EMPTY_MASS_KG=MODEL_EMPTY_MASS_KG, FUEL_DENSITY_KGPM3=MODEL_FUEL_DENSITY_KGPM3, FUEL_CAPACITY_M3=MODEL_TANK_CAPACITY_M3;
 export const DEFAULT_LOADING=Object.freeze(Object.fromEntries([...LOAD_STATIONS.map(s=>[s.id,s.default_kg]),['fuel_left_m3',MODEL_TANK_CAPACITY_M3],['fuel_right_m3',MODEL_TANK_CAPACITY_M3]]));
+// Normal simulator flights omit the upstream agricultural test payload mounted
+// 12 ft to the right. Preserve DEFAULT_LOADING for explicit legacy fixtures and
+// recorded continuations; this changes loading, not aircraft coefficients.
+export const FLIGHT_DEFAULT_LOADING=Object.freeze({...DEFAULT_LOADING,external_kg:0});
 const keys=Object.freeze(Object.keys(DEFAULT_LOADING));
 export const LOADING_FIELDS=Object.freeze(['mass_total_kg','mass_empty_kg','fuel_mass_kg',...LOAD_STATIONS.map(s=>'payload_'+s.id),'fuel_capacity_left_m3','fuel_capacity_right_m3','fuel_density_kgpm3','loading_initial_fuel_m3']);
 export function validLoading(c){return !!c&&typeof c==='object'&&!Array.isArray(c)&&Object.keys(c).length===keys.length&&keys.every(k=>Object.hasOwn(c,k)&&Number.isFinite(c[k])&&c[k]>=0&&c[k]<=(k.startsWith('fuel_')?MODEL_TANK_CAPACITY_M3:250));}

@@ -159,6 +159,8 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [Pointer-anchored panel zoom and reachable lower edge](2026-11-04-panel-bottom-zoom.md)
 - [Map location-type checkbox filters](2026-11-04-map-location-filters.md)
 
+- [2026-11-05 control stability](2026-11-05-control-stability.md) — user reports roll-off, oversensitive steering and oscillation; authorizes analysis, repair and a separate PR.
+
 - [2026-11-04-five-state-world-coverage](2026-11-04-five-state-world-coverage.md): terrain/world source request retained for the scoped foundation.
 
 - [2026-11-05-world-terrain-fallback](2026-11-05-world-terrain-fallback.md): terrain/world source request retained for the scoped foundation.
