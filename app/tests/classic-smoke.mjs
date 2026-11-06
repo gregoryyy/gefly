@@ -71,8 +71,8 @@ try {
   };
   const mode = expected => page.waitForFunction(expected => document.querySelector('#scene').dataset.pointerMode === expected, expected);
   const centered = async () => {
-    assert(Math.abs(Number(await page.locator('#roll-control').textContent()) + 0.109375) < .01,
-      'only the separate study roll offset remains');
+    assert(Math.abs(Number(await page.locator('#roll-control').textContent())) < .01,
+      'released pilot axes are neutral');
     assert.equal(Number(await page.locator('#pitch-control').textContent()), 0);
   };
 
@@ -90,7 +90,7 @@ try {
   // This point lies in the unobstructed scene, away from the header, control pad and panel.
   await page.mouse.click(900, 150); await mode('yoke');
   await page.mouse.move(975, 112);
-  assert(Math.abs(Number(await page.locator('#roll-control').textContent()) - (.25 - .109375)) < .02);
+  assert(Math.abs(Number(await page.locator('#roll-control').textContent()) - .25) < .02);
   assert(Number(await page.locator('#pitch-control').textContent()) > .09);
   await page.mouse.click(975, 112); await mode('off'); await centered();
   checks.push('scene short-click yoke and neutral release');
