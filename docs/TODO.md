@@ -351,6 +351,8 @@ future tasks, not completed by this requirements update.
 
 - [x] 2.0.163 Add hold C for existing momentary CWS with shared keyboard/panel ownership, discoverable help, guarded activation and safe lifecycle release. Preserve AP modes/reference synchronization and native physics. R-AP-1/R-INPUT-1. [Request](input/2026-11-06-cws-keyboard.md). Eight browser groups, six helper and18 existing KAP tests, CI and bounded independent reviews pass; source-inspected/unexercised contexts remain explicit in [validation](reviews/2026-11-06-cws-keyboard-validation.md). Cross-provider peer pending.
 
+- [x] 2.0.175 Make Fixes consistently visible on map and in results through one category filter, and retain all location-type choices across map recreation/new flights/reload with bounded local preferences and native/navigation isolation. R-WORLD-6/R-NAV-5. [Request](input/2026-11-06-map-fix-filters.md).
+
 - [ ] 2.0.164 Build bounded on-demand OSM airport surface generation and persistent region caching, integrate terrain-draped rendering and prepared-scenery priority, and independently verify source/cache/lifecycle/native isolation. R-AIRPORT-3/R-DATA-1. [Request](input/2026-11-06-on-demand-airport-generator.md). Separate from the original Frankfurt inventory task2.0.151.
 
 - [ ] 2.0.165 Separate browser terrain source work and server Copernicus decoding from native stepping; preserve exact grids, source history and coverage guards. R-WORLD-11/R-SIM-2. [Request](input/2026-11-06-scenery-workers-and-overview.md). Implementation and real-worker/native equivalence pass; independent acceptance pending.
