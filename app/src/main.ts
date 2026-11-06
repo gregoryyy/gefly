@@ -44,7 +44,9 @@ import { createFlightLocationStore } from './flight-location';
 import { FlightTrace } from './flight-trace';
 import { createRunwayPracticeMonitor, type PracticeProgress } from './runway-practice';
 import { createFlightReviewControls } from './flight-review-controls';
-import { applyControlSettings, DEFAULT_CONTROL_SETTINGS, type ControlSettings } from './control-settings';
+import { applyControlSettings, type ControlSettings } from './control-settings';
+import { loadSettingsPreferences, saveSettingsPreferences } from './settings-preferences';
+import { loadViewPreferences, saveViewPreferences } from './view-preferences';
 import { createControlSettingsPanel } from './control-settings-panel';
 import { reviewKeyAction, snapReviewTime } from './review-transport';
 import { checkNavdata, eddfPracticeReady, workerNavdata, type NavdataCheck, type NavdataSide } from './navdata-identity';
@@ -112,7 +114,7 @@ root.innerHTML = `
       <div class="axis-display"><span>FLAP CMD <b id="recorded-flap-command">—</b></span><span>ACTUAL <b id="recorded-flap-actual">—</b></span><span>TRIM <b id="recorded-trim">—</b></span></div>
       <div class="axis-display"><span>THROTTLE <b id="recorded-throttle">—</b></span><span>MIXTURE <b id="recorded-mixture">—</b></span><span>MODE <b id="recorded-mixture-mode">—</b></span><span>ENGINE <b id="recorded-engine">—</b></span></div>
     </div>
-    <details class="control-options"><summary>Keyboard & assistance</summary><p>↑ Push nose down · ↓ Pull nose up<br>← / → Bank · Q / W Rudder<br>1–9 Throttle: 10–90% · 0: idle<br>[ / ] Retract / extend flaps · B Hold wheel brakes · N Toggle parking brake<br>&#39; / &#92; Trim nose up / down<br>P Autopilot on / off<br>E Engine on/off · S Sound on/off<br>Space Pause · R Review</p><label for="roll-offset">Roll correction <output id="offset-value">0</output></label><input id="roll-offset" type="range" min="-0.25" max="0.25" step="0.001" value="0" aria-label="Experimental roll correction for the generic model"><small>Optional constant aileron command for experiments. Normal flight starts at zero; this is not aircraft trim.</small><div class="roll-correction-presets"><button id="roll-correction-off" type="button">Off · 0%</button><button id="roll-correction-default" type="button">Legacy study offset</button></div></details>
+    <details class="control-options"><summary>Keyboard & assistance</summary><p>↑ Push nose down · ↓ Pull nose up<br>← / → Bank · Q / W Rudder<br>1–9 Throttle: 10–90% · 0: idle<br>[ / ] Retract / extend flaps · B Hold wheel brakes · N Toggle parking brake<br>&#39; / &#92; Trim nose up / down<br>P Autopilot on / off<br>E Engine on/off · S Sound on/off<br>Space Pause · R Review</p><label for="roll-offset">Roll correction <output id="offset-value">0</output></label><input id="roll-offset" type="range" min="-0.25" max="0.25" step="0.001" value="0" aria-label="Experimental roll correction for the generic model"><small>Optional constant aileron command for experiments. Defaults to zero; a saved choice is retained. This is not aircraft trim.</small><div class="roll-correction-presets"><button id="roll-correction-off" type="button">Off · 0%</button><button id="roll-correction-default" type="button">Legacy study offset</button></div></details>
   </aside>
   <div class="scenery-label">Hessen public terrain · Egelsbach–Frankfurt–Taunus</div>
   <aside id="practice-map-panel" class="practice-map-panel" aria-label="Flight map" hidden></aside>
@@ -131,7 +133,7 @@ root.innerHTML = `
       <div class="avionics-units cockpit-radio"><div id="radio-nav-systems"></div></div>
     </div>
     <footer><span>LOCAL RESEARCH PROTOTYPE · NOT VALIDATED FOR TRAINING</span><span>Imagery: HVBG · DL-DE Zero 2.0</span></footer>
-    <div id="limitations" hidden>Generic JSBSim 172P research data, not the planned C172S. The local fixed-pitch propeller uses generic Aero-Matic windmilling tables; low-RPM/stopped-prop drag remains unsupported, and glide performance is not calibrated to a real aircraft. Official Hessen DGM terrain is active on normal flights, with DHHN2016 heights in dynamics and GCG2016/2023 ellipsoid conversion for rendering. A 108-tile DGM200 region extends across the Taunus and beyond, including Darmstadt, Odenwald and Spessart within 7–10°E, 49.25–51.5°N. Its 200 m source is blended into the fine Hessen patch near the edge; fine source nodes are approximately 32–54 m. This is not full EDDF/100 NM coverage or surveyed runway/obstacle fidelity. Photography and map tiles load from official public services; acquisition dates and coverage vary. Flat-ground landing-study presets remain separate. The map shows 731 community airfield and heliport entries across five southern German states, with source elevations and closed facilities distinguished; these are not current operational airport information. Bundled radio navigation uses a historical 2013.10 FlightGear NAV810 snapshot within approximately 100 NM of a community EDDF point; it is not current AIRAC or operational flight information. Airspeed shows ideal engine CAS, not installation-calibrated IAS; older engines explicitly fall back to TAS. Heading is true, and the ideal turn-rate aid is not a full gyro turn-coordinator model. The pressure altimeter uses an ideal ISA scale-offset model driven by JSBSim static pressure; launch-point QFE is a practice datum, not airport elevation. Installed C172S instrument errors and limits are not modeled. Electrical controls use an independent ideal 24/28 V teaching model and generic circuit-current estimates, not native electrical telemetry. Battery depletion/recharge, low-RPM alternator response, external light rendering, avionics power failures and pitot icing are not coupled. No validated landing, circuit assessment, weather, radio or checklists yet. The adjustable study roll offset adds a constant aileron input to counter the generic model’s initial roll-off; this is an experimental assist, not an aircraft trim specification. Local research runtime assets are excluded from distribution. COM channel names support 25/8.33 kHz designators; the source-dated station directory does not provide an ATC service. Historical real VOR/LOC/GS/DME sources are modeled with spherical geometry and approximate service sectors; no RF propagation or terrain masking. VOR OBS uses sourced station magnetic calibration; LOC courses and the DG remain TRUE. Missing components stay unavailable. Autopilot operating logic follows the KAP 140 two-axis altitude-preselect reference, over reused generic JSBSim servos. AP engages ROL/current VS; ALT captures current pressure altitude, separate from the selector. Native controller response and capture anticipation are uncalibrated. TRUE DG reference remains a teaching substitution. NAV/APR/REV can use historical NAV1 VOR/LOC and APR uses paired GS where available. Current LOC/GS/GPS service data, hardware PFT timing and installed trim-servo/electrical/fault dynamics are not supplied. AP and altimeter BARO settings are separate. Raw manual input or trim change disconnects AP as a simulator safety substitution. Supported pressure-sensor height is −2 km to 11 km; incompatible selector/BARO combinations are rejected. A is a simulator convenience that captures current heading and pressure altitude in HDG/ALT; it is not an original KAP 140 button. Throttle remains manual; no automatic stall or overspeed protection is claimed. The = shortcut cycles requested simulation pacing through 1×, 1.5×, 2×, 5× and 10× without enlarging the physics step; achievable speed depends on the computer and loading. Landing contact studies use a flat zero-height ellipsoid, upstream generic gear forces and illustrative fixed-wheel visuals; they do not establish aircraft damage or safe load limits. Airspeed colored arcs use fixed 1982 C172P CAS references (2400 lb, forward CG, power off and zero bank for stalls), not installed IAS arcs, current-weight stall predictions or validated model bounds. The TAS fallback hides those arcs.</div>
+    <div id="limitations" hidden>Generic JSBSim 172P research data, not the planned C172S. The local fixed-pitch propeller uses generic Aero-Matic windmilling tables; low-RPM/stopped-prop drag remains unsupported, and glide performance is not calibrated to a real aircraft. Official Hessen DGM terrain is active on normal flights, with DHHN2016 heights in dynamics and GCG2016/2023 ellipsoid conversion for rendering. A 108-tile DGM200 region extends across the Taunus and beyond, including Darmstadt, Odenwald and Spessart within 7–10°E, 49.25–51.5°N. Its 200 m source is blended into the fine Hessen patch near the edge; fine source nodes are approximately 32–54 m. This is not full EDDF/100 NM coverage or surveyed runway/obstacle fidelity. Photography and map tiles load from official public services; acquisition dates and coverage vary. Flat-ground landing-study presets remain separate. The map offers worldwide OurAirports community airport, runway, COM and radio-navaid discovery in bounded regional packages, with global airport/NAV search. These records are not current operational airport information or a complete IFR/ILS database. The bundled five-state inventory remains a fallback. Bundled radio navigation uses a historical 2013.10 FlightGear NAV810 snapshot within approximately 100 NM of a community EDDF point; it is not current AIRAC or operational flight information. Airspeed shows ideal engine CAS, not installation-calibrated IAS; older engines explicitly fall back to TAS. Heading is true, and the ideal turn-rate aid is not a full gyro turn-coordinator model. The pressure altimeter uses an ideal ISA scale-offset model driven by JSBSim static pressure; launch-point QFE is a practice datum, not airport elevation. Installed C172S instrument errors and limits are not modeled. Electrical controls use an independent ideal 24/28 V teaching model and generic circuit-current estimates, not native electrical telemetry. Battery depletion/recharge, low-RPM alternator response, external light rendering, avionics power failures and pitot icing are not coupled. No validated landing, circuit assessment, weather, radio or checklists yet. The adjustable study roll offset adds a constant aileron input to counter the generic model’s initial roll-off; this is an experimental assist, not an aircraft trim specification. Local research runtime assets are excluded from distribution. COM channel names support 25/8.33 kHz designators; the source-dated station directory does not provide an ATC service. Historical real VOR/LOC/GS/DME sources are modeled with spherical geometry and approximate service sectors; no RF propagation or terrain masking. VOR OBS uses sourced station magnetic calibration; LOC courses and the DG remain TRUE. Missing components stay unavailable. Autopilot operating logic follows the KAP 140 two-axis altitude-preselect reference, over reused generic JSBSim servos. AP engages ROL/current VS; ALT captures current pressure altitude, separate from the selector. Native controller response and capture anticipation are uncalibrated. TRUE DG reference remains a teaching substitution. NAV/APR/REV can use historical NAV1 VOR/LOC and APR uses paired GS where available. Current LOC/GS/GPS service data, hardware PFT timing and installed trim-servo/electrical/fault dynamics are not supplied. AP and altimeter BARO settings are separate. Raw manual input or trim change disconnects AP as a simulator safety substitution. Supported pressure-sensor height is −2 km to 11 km; incompatible selector/BARO combinations are rejected. A is a simulator convenience that captures current heading and pressure altitude in HDG/ALT; it is not an original KAP 140 button. Throttle remains manual; no automatic stall or overspeed protection is claimed. The = shortcut cycles requested simulation pacing through 1×, 1.5×, 2×, 5× and 10× without enlarging the physics step; achievable speed depends on the computer and loading. Landing contact studies use a flat zero-height ellipsoid, upstream generic gear forces and illustrative fixed-wheel visuals; they do not establish aircraft damage or safe load limits. Airspeed colored arcs use fixed 1982 C172P CAS references (2400 lb, forward CG, power off and zero bank for stalls), not installed IAS arcs, current-weight stall predictions or validated model bounds. The TAS fallback hides those arcs.</div>
   </section>
 </main>`;
 
@@ -162,7 +164,12 @@ const sceneContainer = el('scene');
 const focusFlight = () => sceneContainer.focus({ preventScroll: true });
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 let view: 'cockpit' | 'chase' = 'cockpit';
-let landmarkLevel: LandmarkLevel = 0;
+const viewPreferenceStorage = (() => { try { return window.localStorage; } catch { return null; } })();
+const initialViewPreferences = loadViewPreferences(viewPreferenceStorage);
+const initialSettingsPreferences = loadSettingsPreferences(viewPreferenceStorage);
+engineAudio.setVolume(initialSettingsPreferences.volume);
+engineAudio.setMuted(initialSettingsPreferences.muted);
+let landmarkLevel: LandmarkLevel = initialViewPreferences.landmarkLevel;
 let pointerYoke: ReturnType<typeof createPointerYoke> | null = null;
 let centerPickupRequired = false;
 let cameraLook = { yaw_rad: 0, pitch_rad: 0 };
@@ -212,9 +219,25 @@ let lastMapUpdate_ms = -Infinity;
 let lastMapSample: unknown = undefined;
 let reviewTerrainRequest: string | null = null;
 let reviewTerrainGeneration = 0;
-// Normal flight starts without an external aileron command; the study offset is explicit.
-let rollOffset = 0;
-let controlSettings: ControlSettings = { ...DEFAULT_CONTROL_SETTINGS };
+// Optional saved experimental aileron offset, neutral by default; not aircraft trim.
+let rollOffset = initialSettingsPreferences.rollOffset;
+el<HTMLInputElement>('roll-offset').value = String(rollOffset);
+let controlSettings: ControlSettings = { ...initialSettingsPreferences.controls, vectorScenery: initialViewPreferences.vectorScenery };
+function persistSettingsPreferences(): void {
+  const { volume, muted } = engineAudio.getStatus();
+  saveSettingsPreferences({
+    controls: {
+      pitch: controlSettings.pitch, roll: controlSettings.roll, rudder: controlSettings.rudder,
+      brake: controlSettings.brake ?? initialSettingsPreferences.controls.brake,
+      coordinatedRudder: controlSettings.coordinatedRudder ?? false,
+      centeredTouchpad: controlSettings.centeredTouchpad ?? true,
+      practicePapi: controlSettings.practicePapi ?? false,
+    }, rollOffset, volume, muted,
+  }, viewPreferenceStorage);
+}
+function persistViewPreferences(): void {
+  saveViewPreferences({ vectorScenery: !!controlSettings.vectorScenery, landmarkLevel, mapColorScheme: initialViewPreferences.mapColorScheme }, viewPreferenceStorage);
+}
 const keys = new Set<string>();
 const pointerControls = new Map<number, string>();
 const keyboardControls = new Set<string>();
@@ -380,6 +403,7 @@ const controlSettingsPanel = createControlSettingsPanel({
       engineAudio.setMuted(openingOptions.muted);
       publishInput();
     }
+    if (saved) { persistSettingsPreferences(); persistViewPreferences(); }
     focusFlight();
   },
   onChange(settings) { controlSettings = { ...settings }; scene?.setSceneryMode?.(!!settings.vectorScenery); scene?.setPracticePapi?.(!!settings.practicePapi); practiceMap?.setVector?.(!!settings.vectorScenery); neutralize(); updateConfiguration(latest, reviewing); updatePointerHint(); renderTerrainMode(); },
@@ -394,7 +418,7 @@ function setTerrainMode(enabled: boolean): void {
   controlSettings = { ...controlSettings, vectorScenery: enabled };
   controlSettingsPanel.setSettings(controlSettings);
   scene?.setSceneryMode?.(enabled); practiceMap?.setVector?.(enabled);
-  renderTerrainMode();
+  renderTerrainMode(); persistViewPreferences();
 }
 el('toggle-map-terrain').onclick = () => {
   setTerrainMode(!controlSettings.vectorScenery); closeViewMenu(); focusFlight();
@@ -423,8 +447,9 @@ audioControls = createAudioControls({
       void engineAudio.unlock();
     }
     else engineAudio.setMuted(!status.muted);
+    if (!controlSettingsPanel.isOpen()) persistSettingsPreferences();
   },
-  onVolume(volume) { engineAudio.setVolume(volume); if (!engineAudio.getStatus().muted) void engineAudio.unlock(); },
+  onVolume(volume) { engineAudio.setVolume(volume); if (!engineAudio.getStatus().muted) void engineAudio.unlock(); if (!controlSettingsPanel.isOpen()) persistSettingsPreferences(); },
 });
 audioControls.update(engineAudio.getStatus());
 // Unlock only from a trusted activation, never from worker/RAF/startup callbacks.
@@ -446,6 +471,7 @@ function soundShortcut(event: KeyboardEvent): void {
   event.preventDefault(); event.stopPropagation();
   const muted = !engineAudio.getStatus().muted;
   engineAudio.setMuted(muted);
+  persistSettingsPreferences();
   if (!muted) void engineAudio.unlock();
 }
 document.addEventListener('keydown', soundShortcut, true);
@@ -676,8 +702,9 @@ const mapZoomShortcuts = createMapZoomShortcuts({
 function cycleLandmarks(): void {
   landmarkLevel = (landmarkLevel + 1) % LANDMARK_LEVEL_NAMES.length as LandmarkLevel;
   el('cycle-landmarks').firstChild!.textContent = `Landmarks: ${LANDMARK_LEVEL_NAMES[landmarkLevel]} `;
-  scene?.setLandmarkLevel?.(landmarkLevel);
+  scene?.setLandmarkLevel?.(landmarkLevel); persistViewPreferences();
 }
+el('cycle-landmarks').firstChild!.textContent = `Landmarks: ${LANDMARK_LEVEL_NAMES[landmarkLevel]} `;
 el('cycle-landmarks').onclick = () => { cycleLandmarks(); closeViewMenu(); focusFlight(); };
 function landmarkShortcut(event: KeyboardEvent): void {
   if (event.code !== 'Period' || event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey

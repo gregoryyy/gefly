@@ -48,8 +48,18 @@ End with proposed implications, limitations and a handoff to product/orchestrato
 
 - [2026-11-06: Neutral-control merge regression](2026-11-06-neutral-controls-regression.md) — actual app command reproduction, bounded zero-start repair and remaining native-model limits.
 
+- [OurAirports worldwide integration](2026-11-06-ourairports-integration.md): source pins, discovery contracts and bounded integration.
+
+- [2026-11-06: On-demand airport surfaces and cache](2026-11-06-on-demand-airports.md).
+
+- [OpenFlightMaps overlay assessment](2026-11-06-openflightmaps-overlay.md) — structured-data candidate and unresolved product rights/edition.
+
 - [2026-11-06: Generic-model initial airborne equilibrium](2026-11-06-airborne-model-balance.md).
 
 - [2026-11-06: Centered-yoke resize handoff](2026-11-06-yoke-resize-handoff.md).
 
 - [Map zoom key priority](2026-11-06-map-zoom-keys.md): open-map magnification and closed-map simulation/replay speed.
+
+- [Map fixes and saved filters](2026-11-06-map-fix-filters.md): consistent marker/directory visibility and bounded category persistence.
+
+- [Saved Options](2026-11-06-settings-preferences.md): bounded device-local preferences, preview/Save/Cancel and safe startup.

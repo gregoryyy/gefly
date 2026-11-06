@@ -13,7 +13,7 @@ interface ControlSettingsPanelOptions {
   onClose: (saved: boolean) => void;
 }
 
-/** Session-only input gains. Aircraft dynamics and study assists are unchanged. */
+/** Preview input preferences; the application persists only explicitly saved choices. */
 export function createControlSettingsPanel(options: ControlSettingsPanelOptions): {
   open(): void;
   setSettings(settings: ControlSettings): void;
@@ -33,7 +33,7 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
   dialog.innerHTML = `
     <div class="control-settings-heading">
       <h2 id="control-settings-title">Options</h2>
-      <p id="control-settings-description">Flight is paused. Preview changes, then Save for this session.</p>
+      <p id="control-settings-description">Flight is paused. Preview changes, then Save on this device.</p>
     </div>
     <div class="control-settings-sections">
     <fieldset class="control-settings-controls">
@@ -81,7 +81,7 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
       <label class="control-settings-toggle"><input id="vector-scenery" type="checkbox">Map terrain · OSM cartography</label>
       <p class="control-settings-note">Cartography replaces photography; unavailable tiles show terrain relief.</p>
       <label class="control-settings-toggle"><input id="practice-papi" type="checkbox">Practice PAPI / runway lights</label>
-      <p class="control-settings-note">Illustrative lights, not surveyed EDFE equipment.</p>
+      <p class="control-settings-note">Generic practice lights at EDFE and larger mapped paved runways; equipment and placement are illustrative.</p>
     </fieldset>
     <fieldset>
       <legend>Sound</legend>

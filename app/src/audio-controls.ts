@@ -8,7 +8,7 @@ interface AudioControlsOptions {
   onVolume: (volume: number) => void;
 }
 
-/** Session-only preferences; this UI never changes engine state or starts audio itself. */
+/** Preference controls; the application decides when to persist committed choices. */
 export function createAudioControls(options: AudioControlsOptions): {
   update(status: EngineAudioStatus): void;
   dispose(): void;
