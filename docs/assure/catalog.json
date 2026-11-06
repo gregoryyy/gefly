@@ -1550,5 +1550,13 @@
         "data/aircraft/c172s-classic/indication-loading-values.json"
       ]
     }
+  ],
+  "jsonExtractionProfiles": [
+    {
+      "path": "app/public/mapdata/terrain-style.json",
+      "sha256": "f6ed255e627a3dbc74dcb0a27cc982c75872c20a31d5c7815b717ac5c150b048",
+      "mode": "file-level",
+      "reason": "Imported generated cartographic style: retain original bytes, whole-file hash and existing whole-file evidence. Omit 15988 disposable derived JSON-pointer nodes to keep the fixed graph budget; no aircraft fields or accepted child-selector claims are covered by this exception."
+    }
   ]
 }

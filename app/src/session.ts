@@ -1,3 +1,4 @@
+import { INITIAL_BALANCE_FIELDS, validInitialBalanceState, initialBalanceProfile, equalInitialBalance } from '../../studies/e1-browser/sim/initial-balance.js';
 import { REGIONAL_FLIGHTS, isRegionalFlight } from './regional-flights.ts';
 import { validLoading, validLoadingState, loadingFromState, LOADING_FIELDS, type LoadingConfiguration } from '../../studies/e1-browser/sim/loading.js';
 import { validFlightLocation } from './flight-location.ts';
@@ -23,12 +24,14 @@ export interface NavdataIdentity {
   navdata_error: string | null | undefined;
 }
 
+type ReadyTrim = { throttle: number; pitch_trim: number; status: number } & Partial<Pick<FlightState, 'initial_balance_profile' | 'roll_trim_norm' | 'yaw_trim_norm'>>;
+
 interface SessionCallbacks {
   onState(state: FlightState): void;
   onTerrainTile?(grid: TerrainGrid & {slot:number}): void;
   onTerrainRemove?(id: string): void;
   onTerrainLoading?(loading: boolean): void;
-  onReady(trim: { throttle: number; pitch_trim: number; status: number }, navdata: NavdataIdentity): void;
+  onReady(trim: ReadyTrim, navdata: NavdataIdentity): void;
   onStatus(status: string): void;
   onError(message: string): void;
   onAutopilotRejected?(message: string): void;
@@ -51,7 +54,7 @@ function validState(value: Record<string, unknown>): value is Record<string, unk
     && Number.isInteger(value.step) && (value.step as number) >= 0
     && (value.t_s as number) >= 0 && (value.tas_mps as number) >= 0
     && Math.abs(value.lat_rad as number) <= Math.PI / 2
-    && Math.abs(value.lon_rad as number) <= Math.PI && validLoadingState(value) && validAltimeterState(value) && validCockpitState(value) && validEngineState(value) && validPitchTrimState(value) && validGroundState(value) && validControlState(value) && validStallState(value) && validCollisionState(value) && validTerrainState(value) && validKapState(value) && validAlertState(value)
+    && Math.abs(value.lon_rad as number) <= Math.PI && validInitialBalanceState(value) && validLoadingState(value) && validAltimeterState(value) && validCockpitState(value) && validEngineState(value) && validPitchTrimState(value) && validGroundState(value) && validControlState(value) && validStallState(value) && validCollisionState(value) && validTerrainState(value) && validKapState(value) && validAlertState(value)
     && (value.simulation_rate === undefined || validSimulationRate(value.simulation_rate))
     && (!NAVIGATION_FIELDS.some(k => value[k] !== undefined) || validNavigation(value));
 }
@@ -71,7 +74,9 @@ function validControls(value: Controls): boolean {
  * not the planned project-owned 172S. No synthetic flight path or dynamics fallback.
  * Inputs are coalesced on a wall-clock timer, while the worker owns fixed-step time.
  */
-export function createSession(callbacks: SessionCallbacks): FlightSession {
+export function createSession(callbacks: SessionCallbacks, options: { initial_balance_profile?: 0 | 1 } = {}): FlightSession {
+  if (options.initial_balance_profile !== undefined && ![0, 1].includes(options.initial_balance_profile)) throw new RangeError('Unsupported initial balance profile.');
+  let selectedBalanceProfile: 0 | 1 = options.initial_balance_profile ?? 0;
   let worker: Worker | null = null;
   let ready = false;
   let wantedRunning = false;
@@ -96,7 +101,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
   let inputTimer: ReturnType<typeof setInterval> | undefined;
   let loadTimer: ReturnType<typeof setTimeout> | undefined;
   type Attempt = { worker: Worker | null; selected: Readonly<FlightState>; tiles: (TerrainGrid & {slot:number})[];
-    ready?: {trim: {throttle:number;pitch_trim:number;status:number}; navdata: NavdataIdentity}; state?: FlightState;
+    ready?: {trim: ReadyTrim; navdata: NavdataIdentity}; state?: FlightState;
     timer?: ReturnType<typeof setTimeout>; resolve: (state: FlightState) => void; reject: (error: Error) => void };
   let restoring: Attempt | null = null;
   function cancelRestore(message: string): void {
@@ -106,12 +111,13 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
   function commitRestore(attempt: Attempt): void {
     if (restoring !== attempt || !attempt.ready || !attempt.state || !attempt.worker) return;
     const state = attempt.state;
-    if (state.step !== attempt.selected.step || Math.abs(state.t_s-attempt.selected.t_s)>1e-9 || resumeProblem(state)) {
+    if (state.step !== attempt.selected.step || Math.abs(state.t_s-attempt.selected.t_s)>1e-9 || resumeProblem(state) || !equalInitialBalance(state, attempt.selected)) {
       cancelRestore('The reconstructed aircraft did not return a supported frame at the selected time.'); return;
     }
     restoring = null; clearTimeout(attempt.timer); clearTimers();
     const old = worker; worker = attempt.worker; ready = true; wantedRunning = false;
     latestStep = state.step; collided = false; collisionState = null;
+    selectedBalanceProfile = initialBalanceProfile(state)!;
     initialLocation = undefined; landingPreset = undefined; runwayStart = undefined;
     const restoredLoading = loadingFromState(state); loading = restoredLoading ? {...restoredLoading} : undefined;
     controls = { elevator: state.elevator_cmd_norm!, aileron: state.aileron_cmd_norm!, rudder: state.rudder_cmd_norm!,
@@ -172,6 +178,11 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
 
   function initialize(resumeState?: Readonly<FlightState>): void {
     const attempt = resumeState ? restoring : null;
+    const requestedBalanceProfile = resumeState ? initialBalanceProfile(resumeState)
+      : (runwayStart || initialLocation?.mode === 'ground' || landingPreset) ? 0
+      : initialLocation ? initialLocation.initial_balance_profile ?? 1 : selectedBalanceProfile;
+    let readyBalance: Record<string, unknown> | null = null;
+    let firstStateBalance: Record<string, unknown> | null = null;
     const failCurrent = (message: string): void => {
       if (attempt && restoring === attempt) cancelRestore(message);
       else if (!attempt || worker === attempt.worker) fail(message);
@@ -249,6 +260,14 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
           failCurrent('The aircraft returned invalid trim settings.');
           return;
         }
+        if (!validInitialBalanceState(m) || initialBalanceProfile(m) !== requestedBalanceProfile
+          || (!resumeState && requestedBalanceProfile === 1 && trim.status !== 1)
+          || (resumeState && !equalInitialBalance(m, resumeState))
+          || (readyBalance && !equalInitialBalance(m, readyBalance))
+          || (firstStateBalance && !equalInitialBalance(m, firstStateBalance))) {
+          failCurrent('The aircraft did not acknowledge the requested initial balance. Rebuild the engine and reset.'); return;
+        }
+        readyBalance = Object.fromEntries(INITIAL_BALANCE_FIELDS.filter(key => m[key] !== undefined).map(key => [key, m[key]]));
         const sha = m.navdata_sha256, navError = m.navdata_error;
         if (!(sha === undefined || sha === null || (typeof sha === 'string' && /^[0-9a-f]{64}$/.test(sha)))
           || !(navError === undefined || navError === null || (typeof navError === 'string' && navError.length > 0 && navError.length <= 500))
@@ -256,7 +275,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
           failCurrent('The flight worker returned an invalid navigation database identity.');
           return;
         }
-        const result = { throttle: trim.throttle as number, pitch_trim: trim.pitch_trim as number, status: trim.status as number };
+        const result: ReadyTrim = { throttle: trim.throttle as number, pitch_trim: trim.pitch_trim as number, status: trim.status as number, ...readyBalance };
         const navdata = { navdata_sha256: sha as string | null | undefined, navdata_error: navError as string | null | undefined };
         if (attempt && restoring === attempt) { attempt.ready = { trim: result, navdata }; commitRestore(attempt); return; }
         clearTimeout(loadTimer); loadTimer = undefined; ready = true;
@@ -283,7 +302,12 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
         callbacks.onState(cleared); callbacks.onStatus('Paused'); pending.resolve(cleared);
       } else if (m.type === 'state') {
         if (!validState(m)) { failCurrent('The flight model returned an invalid state. Flight stopped; reset to restart.'); return; }
-        const fields = [...STATE_FIELDS, ...['simulation_rate', ...LOADING_FIELDS, ...ALERT_FIELDS, ...KAP_FIELDS, ...NAVIGATION_FIELDS, ...TERRAIN_FIELDS, ...TERRAIN_SOURCE_FIELDS, ...COLLISION_FIELDS, ...STALL_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...ENGINE_SWITCH_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS].filter((key) => m[key] !== undefined)];
+        if (initialBalanceProfile(m) !== requestedBalanceProfile || (readyBalance && !equalInitialBalance(m, readyBalance))
+          || (firstStateBalance && !equalInitialBalance(m, firstStateBalance))) {
+          failCurrent('The flight model changed or omitted its initial balance. Flight stopped; reset to restart.'); return;
+        }
+        firstStateBalance ??= Object.fromEntries(INITIAL_BALANCE_FIELDS.filter(key => m[key] !== undefined).map(key => [key, m[key]]));
+        const fields = [...STATE_FIELDS, ...[...INITIAL_BALANCE_FIELDS, 'simulation_rate', ...LOADING_FIELDS, ...ALERT_FIELDS, ...KAP_FIELDS, ...NAVIGATION_FIELDS, ...TERRAIN_FIELDS, ...TERRAIN_SOURCE_FIELDS, ...COLLISION_FIELDS, ...STALL_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...ENGINE_SWITCH_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS].filter((key) => m[key] !== undefined)];
         const state = Object.fromEntries(fields.map(key => [key, m[key]])) as unknown as FlightState;
         if (attempt && restoring === attempt) { attempt.state = state; commitRestore(attempt); return; }
         if (collisionState && Object.keys({ ...collisionState, ...state })
@@ -313,7 +337,7 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
     // (navdata_error) instead of stopping the flight.
     try { current.postMessage({
       ...(approach ? { navigation: approach.navigation } : {}),
-      type: 'init', ...(!resumeState && loading ? {loading:{...loading}} : {}), ...(resumeState ? { resume_state: { ...resumeState } } : {}), ...(!resumeState && (runwayStart || initialLocation?.mode === 'ground') ? { runway_start: true } : {}),
+      type: 'init', ...(!resumeState ? { initial_balance_profile: requestedBalanceProfile } : {}), ...(!resumeState && loading ? {loading:{...loading}} : {}), ...(resumeState ? { resume_state: { ...resumeState } } : {}), ...(!resumeState && (runwayStart || initialLocation?.mode === 'ground') ? { runway_start: true } : {}),
       kap140: true, regional_navigation: true, streaming_terrain: resumeState ? resumeState.terrain_profile === 1 : landingPreset === undefined, terrain: resumeState ? resumeState.terrain_profile === 1 : landingPreset === undefined, ...(!resumeState && landingPreset ? { landing_preset: landingPreset } : {}), ground_collision: true, dt_s: 1 / 120, aircraft: 'c172x', state_hz: 60,
       ic: (resumeState ? { lat_rad: resumeState.lat_rad, lon_rad: resumeState.lon_rad, alt_msl_m: resumeState.alt_msl_m, heading_rad: resumeState.heading_rad, tas_mps: resumeState.tas_mps } : null) ?? (initialLocation ? { lat_rad: initialLocation.lat_rad, lon_rad: initialLocation.lon_rad,
         alt_msl_m: initialLocation.alt_msl_m, heading_rad: initialLocation.heading_rad, tas_mps: initialLocation.mode === 'ground' ? 0 : 90 * 1852 / 3600 } : null) ?? (runwayStart ? { ...runwayStart, alt_msl_m: 0, tas_mps: 0 } : null) ?? approach?.ic ?? regionalInitialCondition(airborneSite) ?? {
@@ -382,13 +406,15 @@ export function createSession(callbacks: SessionCallbacks): FlightSession {
       if (ready && worker) worker.postMessage({ type: 'pause' });
       callbacks.onStatus(collided ? 'Ground collision' : 'Paused');
     },
-    reset(preset, site, runway, location) {
+    reset(preset, site, runway, location, balanceProfile) {
+      if (balanceProfile !== undefined && ![0, 1].includes(balanceProfile)) return;
       if (location !== undefined && (!validFlightLocation(location) || preset !== undefined || runway !== undefined)) return;
       if (runway && (!/^[A-Z0-9-]{2,12}$/.test(runway.airport) || (!/^[0-3][0-9][LRC]?$/.test(runway.runway) || Number(runway.runway.slice(0,2)) < 1 || Number(runway.runway.slice(0,2)) > 36) || ![runway.lat_rad, runway.lon_rad, runway.heading_rad].every(Number.isFinite) || Math.abs(runway.lat_rad) > Math.PI/2 || Math.abs(runway.lon_rad) > Math.PI)) return;
       if (disposed) return;
       if (preset !== undefined && !['normal', 'hard', 'side', 'banked'].includes(preset)) return;
       if (site !== undefined && !['edfe', 'taunus', 'eddf-ils'].includes(site) && !isRegionalFlight(site)) return;
       airborneSite = site ?? airborneSite;
+      if (balanceProfile !== undefined) selectedBalanceProfile = balanceProfile;
       initialLocation = location ? { ...location } : undefined;
       if (location) wantedRunning = false;
       runwayStart = runway ? { ...runway } : undefined;

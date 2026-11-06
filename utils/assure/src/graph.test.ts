@@ -209,3 +209,40 @@ test('AS8 runtime inventory rejects changed pinned vendor bytes and accepts the 
   mixedPinned.revision = 'a'.repeat(40);
   assert(buildGraph(mixedPinned).problems.some((p) => p.check === 'upstream-integrity' && p.id === path && p.severity === 'error'), 'current inventory checks current vendor bytes even with valid legacy copies');
 });
+
+test('AS1 exact generated cartography profile retains whole-file identity and default JSON fields', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { GENERATED_STYLE_PROFILE } = await import('./json-extraction.ts');
+  const style = readFileSync(new URL('../../../app/public/mapdata/terrain-style.json', import.meta.url), 'utf8');
+  assert.equal(sha256(style), 'f6ed255e627a3dbc74dcb0a27cc982c75872c20a31d5c7815b717ac5c150b048');
+  const profile = { ...GENERATED_STYLE_PROFILE, reason: 'Imported generated cartographic style; whole-file evidence only.' };
+  const graph = buildGraph(fixture({ [profile.path]: style, 'data/aircraft.json': '{"values":{"height_m":42}}',
+    'docs/assure/catalog.json': JSON.stringify({ ...JSON.parse(emptyCatalog), jsonExtractionProfiles: [profile] }) }));
+  assert.equal(graph.nodes.find(node => node.kind === 'object' && node.id === profile.path)?.hash, sha256(style));
+  assert(!graph.nodes.some(node => node.id.startsWith(profile.path + '#')));
+  assert(graph.nodes.some(node => node.id === 'data/aircraft.json#/values/height_m'));
+  assert(graph.problems.some(problem => problem.check === 'json-profile.applied' && problem.severity === 'note'));
+  assert.equal(graph.summary.errors, 0);
+  const defaultGraph = buildGraph(fixture({ [profile.path]: style }));
+  assert(defaultGraph.nodes.some(node => node.id === profile.path + '#/layers/0'));
+});
+
+test('AS5 generated profile byte changes fail closed and unapproved path/hash cannot enable omission', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { GENERATED_STYLE_PROFILE } = await import('./json-extraction.ts');
+  const style = readFileSync(new URL('../../../app/public/mapdata/terrain-style.json', import.meta.url), 'utf8');
+  const profile = { ...GENERATED_STYLE_PROFILE, reason: 'Imported generated cartography.' };
+  const missing = buildGraph(fixture({ 'docs/assure/catalog.json': JSON.stringify({ ...JSON.parse(emptyCatalog), jsonExtractionProfiles: [profile] }) }));
+  assert(missing.problems.some(problem => problem.check === 'json-profile.missing' && problem.severity === 'error'));
+  const graph = buildGraph(fixture({ [profile.path]: style + '\n',
+    'docs/assure/catalog.json': JSON.stringify({ ...JSON.parse(emptyCatalog), jsonExtractionProfiles: [profile] }) }));
+  assert(graph.problems.some(problem => problem.check === 'json-profile.hash' && problem.severity === 'error'));
+  assert.equal(graph.nodes.find(node => node.kind === 'object' && node.id === profile.path)?.hash, sha256(style + '\n'));
+  for (const changed of [{ path: 'data/aircraft.json' }, { sha256: '0'.repeat(64) }, { mode: 'skip' }]) {
+    const invalid = buildGraph(fixture({ [profile.path]: style, 'data/aircraft.json': '{"height_m":42}',
+      'docs/assure/catalog.json': JSON.stringify({ ...JSON.parse(emptyCatalog), jsonExtractionProfiles: [{ ...profile, ...changed }] }) }));
+    assert(invalid.problems.some(problem => problem.check === 'json-profile.schema' && problem.severity === 'error'));
+    assert(invalid.nodes.some(node => node.id === profile.path + '#/layers/0'));
+    assert(invalid.nodes.some(node => node.id === 'data/aircraft.json#/height_m'));
+  }
+});

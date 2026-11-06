@@ -65,6 +65,7 @@ uint64_t g_hash = 1469598103934665603ULL;
 double g_steps = 0.0;
 char g_hex[17] = {0};
 int g_trim_ok = 0;
+int g_initial_balance_profile = 0;
 double g_trim_throttle = 0.0;
 double g_trim_pitch = 0.0;
 int g_mixture_auto = 1;
@@ -223,6 +224,7 @@ int load_model(double dt_s, double lat_rad, double lon_rad, double heading_rad) 
     g_fdm.reset();
     return kErrLoad;
   }
+  g_initial_balance_profile = 0;
   g_mixture_auto = 1; g_ap_mode = 0; g_ap_vertical_mode = 0; g_ap_vertical_target = 0.0; g_ap_heading_target = std::fmod(heading_rad, 2.0 * kPi);
   g_engine_switch_controlled = false; g_engine_command_on = true; g_engine_start_requested = false;
   if (g_ap_heading_target < 0) g_ap_heading_target += 2.0 * kPi;
@@ -332,8 +334,8 @@ EMSCRIPTEN_KEEPALIVE double gf_terrain_height_m(double longitude, double latitud
   return std::numeric_limits<double>::quiet_NaN();
 }
 
-EMSCRIPTEN_KEEPALIVE int gf_init(double dt_s, double lat_rad, double lon_rad,
-                                 double alt_msl_m, double heading_rad, double tas_mps) {
+static int init_airborne(double dt_s, double lat_rad, double lon_rad,
+                         double alt_msl_m, double heading_rad, double tas_mps, int balance_profile) {
   if (!finite_all({dt_s, lat_rad, lon_rad, alt_msl_m, heading_rad, tas_mps})) return kErrNonFinite;
   if (!(dt_s > 0.0 && dt_s <= 0.1) || std::fabs(lat_rad) > kPi / 2 || std::fabs(lon_rad) > kPi ||
       tas_mps < 0.0) return kErrRange;
@@ -354,22 +356,58 @@ EMSCRIPTEN_KEEPALIVE int gf_init(double dt_s, double lat_rad, double lon_rad,
   if (!ran_ic) { g_fdm.reset(); return kErrRunIc; }
   if (g_active_terrain && !terrain_support_available()) { g_fdm.reset(); return kErrTerrainCoverage; }
   f.SetPropertyValue("propulsion/set-running", -1);
-  // Longitudinal trim (JSBSim mode 0) so a neutral elevator command holds
-  // approximately level flight; the result lands in fcs/pitch-trim-cmd-norm,
-  // which later elevator inputs add to. Trim failure is reported, not fatal;
-  // a failed trim may leave partially adjusted state/controls (not rolled back).
+  // Legacy mode0 solves longitudinal equilibrium; mode1 also solves lateral
+  // equilibrium. Pitch trim is additive to later elevator inputs. Legacy trim
+  // failure remains reported/nonfatal; balanced initialization discards failure.
   g_trim_ok = 0;
   try {
     f.SetPropertyValue("fcs/throttle-cmd-norm", 0.7);
-    f.SetPropertyValue("simulation/do_simple_trim", 0);
+    f.SetPropertyValue("simulation/do_simple_trim", balance_profile);
     g_trim_ok = 1;
   } catch (...) {
     g_trim_ok = -1;
   }
   if (g_terrain_query_failed) { g_fdm.reset(); return kErrTerrainCoverage; }
+  if (balance_profile == 1) {
+    if (g_trim_ok != 1) { g_fdm.reset(); return kErrRunIc; }
+    // Generic-model initial equilibrium, not a real cockpit trim control or
+    // self-leveling assist. Retain solved actuator history: no second RunIC.
+    const double roll = f.GetPropertyValue("fcs/aileron-cmd-norm") + f.GetPropertyValue("fcs/roll-trim-cmd-norm");
+    const double yaw = f.GetPropertyValue("fcs/rudder-cmd-norm") + f.GetPropertyValue("fcs/yaw-trim-cmd-norm");
+    if (!finite_all({roll,yaw}) || std::fabs(roll)>1 || std::fabs(yaw)>1) { g_fdm.reset(); return kErrRange; }
+    f.SetPropertyValue("fcs/roll-trim-cmd-norm",roll);
+    f.SetPropertyValue("fcs/yaw-trim-cmd-norm",yaw);
+    f.SetPropertyValue("fcs/aileron-cmd-norm",0);
+    f.SetPropertyValue("fcs/rudder-cmd-norm",0);
+    f.SetPropertyValue("fcs/steer-cmd-norm",0);
+    g_initial_balance_profile = 1;
+  }
   g_trim_throttle = f.GetPropertyValue("fcs/throttle-cmd-norm");
   g_trim_pitch = f.GetPropertyValue("fcs/pitch-trim-cmd-norm");
   reset_study_state();
+  return 0;
+}
+
+// Profile zero preserves the historical longitudinal-only initialization.
+EMSCRIPTEN_KEEPALIVE int gf_init(double dt_s, double lat_rad, double lon_rad,
+                                 double alt_msl_m, double heading_rad, double tas_mps) {
+  return init_airborne(dt_s,lat_rad,lon_rad,alt_msl_m,heading_rad,tas_mps,0);
+}
+EMSCRIPTEN_KEEPALIVE int gf_init_balanced(double dt_s, double lat_rad, double lon_rad,
+                                          double alt_msl_m, double heading_rad, double tas_mps) {
+  const int result=init_airborne(dt_s,lat_rad,lon_rad,alt_msl_m,heading_rad,tas_mps,1);
+  if(result!=0){g_fdm.reset();g_initial_balance_profile=0;g_trim_ok=-1;}
+  return result;
+}
+// Separate caller-owned three-double group; existing state buffers stay fixed.
+EMSCRIPTEN_KEEPALIVE int gf_initial_balance_state(double* out) {
+  if(!g_fdm)return kErrNotInit;
+  const uintptr_t address=reinterpret_cast<uintptr_t>(out);
+  const size_t heap=emscripten_get_heap_size();
+  if(!address||address%alignof(double)||address>heap||3*sizeof(double)>heap-address)return kErrRange;
+  out[0]=g_initial_balance_profile;
+  out[1]=g_fdm->GetPropertyValue("fcs/roll-trim-cmd-norm");
+  out[2]=g_fdm->GetPropertyValue("fcs/yaw-trim-cmd-norm");
   return 0;
 }
 
@@ -377,9 +415,9 @@ EMSCRIPTEN_KEEPALIVE int gf_init(double dt_s, double lat_rad, double lon_rad,
 // contact histories are fresh; this is deliberately not a serialized checkpoint.
 EMSCRIPTEN_KEEPALIVE int gf_init_resume(double dt_s, const double* v, double count) {
   const uintptr_t address = reinterpret_cast<uintptr_t>(v);
-  if (count != 32 || !address || address % alignof(double) || address > emscripten_get_heap_size()
-      || 32*sizeof(double) > emscripten_get_heap_size()-address) return kErrRange;
-  for (int i=0;i<32;++i) if (!std::isfinite(v[i])) return kErrNonFinite;
+  if ((count != 32 && count != 35) || !address || address % alignof(double) || address > emscripten_get_heap_size()
+      || count*sizeof(double) > emscripten_get_heap_size()-address) return kErrRange;
+  for (int i=0;i<count;++i) if (!std::isfinite(v[i])) return kErrNonFinite;
   if (!(dt_s>=1e-4 && dt_s<=1.0/60) || v[0]<0 || v[0]>1e9 || v[1]<0 || v[1]>1e9 || std::floor(v[1])!=v[1]
       || std::fabs(v[2])>kPi/2 || std::fabs(v[3])>kPi || v[4]<-1000 || v[4]>11000
       || std::fabs(v[5])>kPi || std::fabs(v[6])>kPi/2 || std::fabs(v[7])>2*kPi) return kErrRange;
@@ -390,6 +428,8 @@ EMSCRIPTEN_KEEPALIVE int gf_init_resume(double dt_s, const double* v, double cou
       ||v[21]<-1e-6||v[21]>kPi/6+1e-6||v[22]<0||v[22]>1||v[23]<0||v[23]>1||v[24]<0||v[24]>1
       ||(v[25]!=0&&v[25]!=1)||(v[26]!=0&&v[26]!=1)||(v[27]!=0&&v[27]!=1)
       ||v[28]<0||v[28]>500||v[29]<0||v[29]>.2||v[30]<0||v[30]>.2) return kErrRange;
+  if(count==35 && ((v[32]!=0&&v[32]!=1)||std::fabs(v[33])>1||std::fabs(v[34])>1
+      ||(v[32]==0&&(v[33]!=0||v[34]!=0))))return kErrRange;
   if(g_pending_terrain&&!g_pending_terrain->contains(v[3],v[2]))return kErrTerrainCoverage;
   const int rc=load_model(dt_s,v[2],v[3],v[7]);if(rc)return rc;
   auto& f=*g_fdm;
@@ -402,6 +442,11 @@ EMSCRIPTEN_KEEPALIVE int gf_init_resume(double dt_s, const double* v, double cou
   for(int i=0;i<6;++i)f.SetPropertyValue(velocity[i],v[i+8]/(i<3?kFtToM:1));
   const char* controls[]={"fcs/elevator-cmd-norm","fcs/aileron-cmd-norm","fcs/rudder-cmd-norm","fcs/throttle-cmd-norm","fcs/pitch-trim-cmd-norm"};
   for(int i=0;i<5;++i)f.SetPropertyValue(controls[i],v[i+14]);
+  // Restore compensation before RunIC even for a later ground-contact frame.
+  // This reconstructs exposed state, not the hidden actuator/integrator history.
+  g_initial_balance_profile=count==35?static_cast<int>(v[32]):0;
+  f.SetPropertyValue("fcs/roll-trim-cmd-norm",count==35?v[33]:0);
+  f.SetPropertyValue("fcs/yaw-trim-cmd-norm",count==35?v[34]:0);
   f.SetPropertyValue("fcs/steer-cmd-norm",-v[16]);
   f.SetPropertyValue("fcs/flap-cmd-norm",v[20]);
   f.SetPropertyValue("fcs/left-brake-cmd-norm",v[22]);f.SetPropertyValue("fcs/right-brake-cmd-norm",v[23]);

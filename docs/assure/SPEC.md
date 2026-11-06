@@ -33,7 +33,7 @@ Build a deterministic graph from the selected local revision or working tree,
 retaining node identity, source location, revision, relation and certainty. Repeated
 builds over the same inputs produce the same sorted substantive output. Extract
 requirements, TODO/DONE/GAPS and commit references; include Python, JavaScript/MJS
-and C++ at least as file-level objects and JSON fields by stable pointer. Do not
+and C++ at least as file-level objects and JSON fields by stable pointer. One catalog-declared exception retains only the file object/hash for the exact imported generated `app/public/mapdata/terrain-style.json` bytes (SHA-256 `f6ed255e627a3dbc74dcb0a27cc982c75872c20a31d5c7815b717ac5c150b048`). Its 15,988 disposable generated field nodes are omitted; existing whole-file evidence/claims and raw bytes remain. No aircraft or hand-authored JSON fields are exempted. Missing/changed bytes or unapproved profiles fail integrity; explicit child selectors/assertions cannot fall back to file-level acceptance. All other structured extraction and the graph resource caps remain unchanged. Do not
 claim declaration-level understanding of a language handled only at file level.
 External documents are represented by their local source records, not fetched.
 
@@ -140,9 +140,11 @@ errors with a blanket baseline or reinterpret absent evidence as a pass.
 
 The implementation documents the command surface, supported input schemas,
 stable IDs/selectors, hash and canonicalization rules, path containment, traversal
-limits and supported runtimes. JSON pointer extraction permits at most 20,000
-nodes per file and depth 48, including the imported regional map style; exceeding
-either bound remains an error. Negative fixtures must distinguish an actual
+limits and supported runtimes. Default structured JSON pointer extraction permits
+at most20,000 nodes per file and depth48; exceeding either bound remains an error.
+The exact generated-style profile declared under AS1 instead retains whole-file
+identity and rejects child-selector acceptance; it does not change these limits
+for any unprofiled file. Negative fixtures must distinguish an actual
 content change from mere time/author metadata where the schema says these are
 non-substantive. A fresh accepted record is needed after an affected fix; old
 evidence remains historical and is not silently overwritten.

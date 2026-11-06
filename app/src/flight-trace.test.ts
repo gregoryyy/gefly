@@ -500,3 +500,34 @@ test('R-WORLD-11 recordings preserve actual terrain quality and height reference
   assert.equal(trace.record({ ...state(4), terrain_profile: 1, terrain_height_msl_m: 100, terrain_geoid_m: -20,
     terrain_height_ellipsoid_m: 80, terrain_source: 4 }, 0), false);
 });
+
+test('R-SIM-11/R-REVIEW-1 nonlegacy initial balance round-trips in version two without pilot offsets',()=>{
+  const trace=new FlightTrace(),balance={initial_balance_profile:1 as const,roll_trim_norm:-.011,yaw_trim_norm:-.0008};
+  const first={...state(1),...balance};assert(trace.record(first,0));first.roll_trim_norm=-.02;
+  assert(trace.record({...state(2),...balance},0));const raw=trace.exportJSON();assert.equal(JSON.parse(raw).version,2);
+  const imported=FlightTrace.fromJSON(raw);assert.deepEqual([...imported.recordedStates()],[...trace.recordedStates()]);
+  assert.equal(imported.atTime(1)!.state.roll_trim_norm,-.011);assert(Object.isFrozen(imported.atTime(1)!.state));
+  const forged=JSON.parse(raw);forged.version=1;assert.throws(()=>FlightTrace.fromJSON(JSON.stringify(forged)),/invalid/);
+  for(const patch of [{initial_balance_profile:1},{...balance,roll_trim_norm:NaN},{...balance,initial_balance_profile:2},{...balance,yaw_trim_norm:1.01}])assert.equal(new FlightTrace().record({...state(1),...patch} as FlightState,0),false);
+});
+test('R-SIM-11 explicit zero balance remains recorded and paused changes cannot rewrite it',()=>{
+  const trace=new FlightTrace();const balance={initial_balance_profile:0 as const,roll_trim_norm:0,yaw_trim_norm:0};
+  assert(trace.record({...state(1),...balance},0));assert(trace.record({...state(2),...balance},0));
+  const data=JSON.parse(trace.exportJSON());assert.equal(data.version,2);assert.equal(data.samples[0].state.initial_balance_profile,0);
+  assert.equal(FlightTrace.fromJSON(JSON.stringify(data)).atTime(1)!.state.initial_balance_profile,0);
+  assert.equal(trace.record({...state(2),initial_balance_profile:1,roll_trim_norm:-.01,yaw_trim_norm:0,altimeter_setting_pa:100000},0),false);
+  const legacy=new FlightTrace();assert(legacy.record(state(1),0));assert(legacy.record(state(2),0));assert.equal(JSON.parse(legacy.exportJSON()).version,1);
+});
+
+
+test('R-SIM-11/R-REVIEW-1 current balanced recordings cannot lose or change initialization identity', () => {
+  const balance={initial_balance_profile:1 as const,roll_trim_norm:-.011,yaw_trim_norm:-.0008};
+  const trace=new FlightTrace(); assert(trace.record({...state(1),...balance},0)); assert(trace.record({...state(2),...balance},0));
+  const raw=JSON.parse(trace.exportJSON());
+  for(const sample of raw.samples)for(const key of ['initial_balance_profile','roll_trim_norm','yaw_trim_norm'])delete sample.state[key];
+  assert.throws(()=>FlightTrace.fromJSON(JSON.stringify(raw)),/invalid/);
+  const changed=JSON.parse(trace.exportJSON());changed.samples[1].state.roll_trim_norm=-.02;
+  assert.throws(()=>FlightTrace.fromJSON(JSON.stringify(changed)),/invalid/);
+  assert.equal(trace.record({...state(3),...balance,yaw_trim_norm:.1},0),false);
+  assert.equal(trace.record(state(3),0),false);
+});

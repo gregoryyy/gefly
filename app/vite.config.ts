@@ -1,3 +1,4 @@
+import { createAirportRegionMiddleware } from './airport-region-server.ts';
 import { defineConfig } from 'vite';
 import { sceneryMiddleware } from './scenery-server';
 import { createCopernicusTerrainMiddleware } from './copernicus-terrain-server';
@@ -8,6 +9,7 @@ import { stat, cp, mkdir, readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
+const airportRegions = createAirportRegionMiddleware();
 const cesiumRoot = resolve(import.meta.dirname, 'node_modules/cesium/Build/Cesium');
 const cesiumDirectories = ['Assets', 'Workers', 'ThirdParty', 'Widgets'];
 const contentTypes: Record<string, string> = {
@@ -45,10 +47,14 @@ export default defineConfig({
     configurePreviewServer(server) {
       server.middlewares.use(hashedSceneryAssets(resolve(import.meta.dirname, 'dist')));
       server.middlewares.use(createCopernicusTerrainMiddleware());
+      server.middlewares.use(airportRegions);
+      server.httpServer?.once('close', () => { airportRegions.dispose(); });
     },
     configureServer(server) {
       server.middlewares.use(hashedSceneryAssets(resolve(import.meta.dirname, 'public')));
       server.middlewares.use(createCopernicusTerrainMiddleware());
+      server.middlewares.use(airportRegions);
+      server.httpServer?.once('close', () => { airportRegions.dispose(); });
       server.middlewares.use(sceneryMiddleware());
       // The research runtime remains local and is excluded from production output.
       server.middlewares.use(MOUNT, runtimeMiddleware(runtimeRoot()));

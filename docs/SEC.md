@@ -476,3 +476,33 @@ validated by the dedicated worker. The assurance graph records descriptor and
 file-level provenance, not every generated airport-field JSON pointer. Compiler,
 source-audit and all-cell client tests provide separate semantic checks. No
 hand-authored aircraft-data extraction or assurance resource bound is relaxed.
+
+## On-demand airport surface service
+
+Only canonical bounded integer region keys are accepted; clients cannot supply
+upstream URLs, Overpass expressions or cache paths. The fixed HTTPS provider is
+requested without credentials/redirects, under independent job, byte, timeout
+and cooldown budgets. Region extents are sent upstream; exact flight samples,
+controls and accounts are not. No broad crawl or provider failover is performed.
+Compiled packages retain OSM provenance but strip mapper names/UIDs/changesets.
+Persistent local cache files are versioned, atomically written, size/count bounded,
+content-hashed and schema/geometry checked again on read; corruption is a miss,
+not trusted executable input. Source text is inert and cannot create HTML or
+flight commands. Missing data/failures remain optional scenery availability;
+Review/flat/disposal cancellation cannot resume or reposition the aircraft.
+
+### Scenery worker boundaries
+
+Worker messages use fixed operations, bounded queues, request/generation identities and deadlines. Terrain Workers resolve existing allowlisted sources; callers cannot supply arbitrary code or upstream URLs. Cancelled/late results cannot be admitted. Source arrays are copied before transfer to retain cache/history ownership. Backend block decoding has two active workers,32 queued requests and a15-second job deadline. These are CPU/lifecycle boundaries, not isolation from a compromised same-origin application. No flight telemetry is sent to airport-source services.
+
+
+## Hash-pinned generated cartography extraction
+
+Task2.0.180 adds one optional catalog extraction profile for the exact path and
+SHA-256 of the imported generated terrain-style JSON. Core allowlisting admits
+only that reviewed pair and file-level mode. Original bytes and whole-file
+identity/freshness remain; default structured extraction, aircraft inputs and
+accepted whole-file evidence are preserved. Missing/changed bytes and invalid
+profiles fail integrity. Child selectors or child result assertions on the
+profiled file are explicitly ineligible, never silently mapped to its file node.
+No graph cap, validation deadline, application asset or runtime behavior changes.

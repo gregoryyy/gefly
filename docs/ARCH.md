@@ -558,3 +558,30 @@ validated by the dedicated worker. The assurance graph records descriptor and
 file-level provenance, not every generated airport-field JSON pointer. Compiler,
 source-audit and all-cell client tests provide separate semantic checks. No
 hand-authored aircraft-data extraction or assurance resource bound is relaxed.
+
+## On-demand visual airport surfaces
+
+R-AIRPORT-3 adds a separate same-origin `/scenery/airports/v1/x/y.json` service.
+Canonical half-degree keys generate fixed Overpass way queries; the compiler
+retains physical geometry/source metadata while stripping mapper identities.
+Validated compiled packages pass through a bounded memory/disk cache and a
+sequential client region loader to a separate Cesium airport collection. Prepared
+EDFE/regional geometry takes priority. This pipeline cannot write Worker/native
+state, change contact heights or regenerate the terrain provider. Review disables
+source requests rather than claiming historical airport geometry. See the
+[source/cache note](research/2026-11-06-on-demand-airports.md).
+
+### Separate terrain source execution
+
+The physics Worker retains fixed-step JSBSim calls and native terrain installation. A nested terrain-source Worker owns fetch/decode/compose/source-cache and prediction work, returning complete copied grids without detaching retained source buffers. Browser distant overview composition uses another dedicated Worker while the main-thread controller retains synchronous admission/stop guards. The optional server Copernicus decoder uses at most two Node worker threads and32 queued blocks. Failure, cancellation and bounded deadlines reject delivery; existing required-coverage waits remain. Terrain overview camera distance is render-only; airport meshes and practice PAPI never install physical terrain or airport collision geometry.
+
+
+## Generated cartography lineage budget
+
+The assurance catalog may select one fixed path/hash profile for the imported
+terrain-style JSON. Its complete byte hash and file node remain inputs to existing
+whole-file evidence; generated paint/layout field expansion is omitted. Child
+selectors are unavailable for that profile and cannot establish acceptance via
+its file node. The adapter still extracts all other JSON fields normally and
+retains the existing resource limits. This is disposable lineage compaction, not
+an application asset conversion or an aircraft/source-data deletion.

@@ -462,3 +462,14 @@ hashes are pinned by `utils/airports/world.py`; no airport-comment file is used.
 Generated 5° cells and gzip search index are bundled static assets, not live
 third-party API dependencies. No npm/runtime dependency is added. Existing 731-entry
 regional and historical receiver packages remain separate fallback/source records.
+
+## On-demand OSM airport surface packages
+
+The fixed Private.coffee Overpass endpoint supplies live OpenStreetMap runway,
+taxiway and apron ways under ODbL-1.0. Generated/cache packages keep source
+way/version/timestamps, the raw response SHA and snapshot/generated dates;
+mapper identities are excluded. OSM-derived data rights remain separate from
+GPL application code. Attribution links to https://www.openstreetmap.org/copyright.
+No npm dependency, bundled worldwide directory, model/physics data or new
+OurAirports fallback is introduced. Source/cache applicability and public-service
+limits are documented in [the note](research/2026-11-06-on-demand-airports.md).
