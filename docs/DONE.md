@@ -3,6 +3,23 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 07:25 — Codex orchestrator: bounded centered-pointer resize repair (Task2.0.153)
+
+Agent: Codex orchestrator, with independent quality and cws_validate.
+TODO: 2.0.153 in progress.
+
+**Implementation notes**
+
+After scene midpoint movement, pointer controls become neutral until pickup inside the live center marker; the pickup event stays neutral and the hint explains it. Keyboard input, relative controls and look remain independent.22unit tests, TypeScript and three actual app/Worker/native browser groups pass. Independent [quality](reviews/2026-11-06-yoke-resize-quality.md) and [validation](reviews/2026-11-06-yoke-resize-validation.md) pass at this scope. Authorized feature CI passes542Node+22Python,85assurance and11training tests;9optional JSBSim/one platform skip remain. Log SHA-256 `1eae1c0b85ce5d088f2ff68372d03494b3a367283adba5d445003cc61a33d4c2`. Earlier restricted-bind runtime failures remain failed historical attempts.
+
+**Deviations**
+
+Broader Task153 native handling, the user's embedded browser/trackpad and cross-provider peer review remain open/pending. This is an input discontinuity repair, not aircraft-response validation.
+
+**Insights**
+
+Absolute centered steering needs an explicit neutral handoff when the reference moves under a stationary pointer.
+
 ## 2026-11-06 02:59 — Reconcile the steering dependency before the terrain PR update
 
 TODO: 2.0.153/2.0.162; R-INPUT-1/R-SIM-11/R-WORLD-11.
