@@ -281,14 +281,14 @@ VS/ALT output is separate from the legacy engine/AP group. Manufacturer manuals
 are source references only: no PDF, figure or extract is bundled. See
 [autopilot research](research/2026-11-03-kap140.md) for inspected editions/rights.
 
-## Historical Rhein-Main navigation snapshot
+## Historical worldwide navigation snapshot
 
 `app/public/navdata/` adds local source-derived NAV810 data, not an npm dependency
 or live service. Source cycle 2013.10/build20131334, FlightGear fgdata commit
 `5371094f6cc81d39b5cc7d9052ba13ba4a8b8e95`, gzip SHA-256
 `24cfae74114d43586a5816029bb2ddeeeb1a0b6b4472b4ce775d7d748898b839`.
 Robin A. Peel copyright 2013/GPL-2.0-or-later is retained, with corresponding source
-subset and full license. Derived units/encoding/explicit component pairing and
+subset, original pinned gzip source for the worldwide package, and full license. Worldwide service transport is opaque UTF-8 JSON in `world-v1.bin`; regional fixtures remain available. Derived units/encoding/explicit component pairing and
 compiler hash are recorded in the JSON; manifest binds runtime bytes. This is a
 GPL-compatible copyleft data component, selected because the inspected permissive
 OurAirports inventory lacks ILS components. No proprietary AIS data is copied.

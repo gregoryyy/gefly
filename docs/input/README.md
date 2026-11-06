@@ -194,3 +194,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-06: Handling repair does not require old recording compatibility](2026-11-06-handling-recording-scope.md)
 
 - [2026-11-06: Remaining handling report at localhost:5173 and SIM 1×](2026-11-06-local-handling-context.md)
+
+- [2026-11-06 nav reception](2026-11-06-nav-reception.md)

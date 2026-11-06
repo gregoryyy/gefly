@@ -389,23 +389,20 @@ NAV1 has an independent glideslope cross-needle and GS flag; NAV2 has lateral gu
 explicitly labeled **25 kHz subset**; it does not implement the full European
 8.33 kHz channel set. COM tuning does not provide ATC or voice communication.
 
-Normal receivers use the bundled **2013.10 historical** Rhein-Main snapshot:
-31 VOR-family records, 39 localizers and 16 standalone DMEs, with only explicitly
-paired GS/DME components. **Stations** lists identifiers, frequencies, runways and
-capabilities and loads either standby receiver without silently activating it.
-The approximate 100 NM extent uses a community EDDF coordinate, not a verified
-official ARP. This is not current AIRAC/NOTAM, a chart or real-flight information.
-See [source, rights, coverage and reproduction](public/navdata/README.md).
+Normal receivers use the bundled **worldwide 2013.10 historical NAV810** snapshot,
+including source VOR, localizer, glideslope and independent DME components.
+**Stations** searches identifiers, frequencies, runways and capabilities, showing
+at most200 nearest matches. Load NAV1 or NAV2 standby, then **swap** to activate;
+standby tuning alone does not change the instrument. Set OBS for a VOR course;
+localizer course comes from the source. A DME-only station supplies distance
+without a CDI or VOR bearing. NDB and TACAN-only direction finding are unsupported.
 
-Opt in to **Fictional LAB only** to isolate the synthetic NAV demonstration. Its demonstration frequency is **113.8 MHz**, at **49.96° N, 8.643° E**.
-These are synthetic exercise settings, not a real published station, frequency
-assignment or accepted navaid database. The demonstration does not implement
-an ILS receiver or establish usable real-world navigation coverage.
-
-To try it, start flight, enable **LAB**, tune NAV1 standby to **113.80**, then swap
-it active. Adjust NAV1's OBS and watch its matching gauge. Give NAV2 a different
-OBS course or active frequency to compare the two receivers independently. LAB
-only mode excludes the regional records. Unmatched channels, unavailable components,
+The map's newer community inventory is separate: a modern channel absent from
+the historical receiver database cannot produce a signal. The radio source/date
+and unavailable reasons remain visible. This is not current AIRAC/NOTAM, a chart
+or real-flight information. See [source, rights and reproduction](public/navdata/README.md).
+Legacy recordings may retain their fictional LAB demonstration semantics.
+Unmatched channels, unavailable components,
 invalid geometry or ambiguous co-channel service remain flagged. Review uses captured tuning and position;
 its radio and OBS controls are read-only.
 

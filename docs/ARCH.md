@@ -368,7 +368,7 @@ separate atomic extension, with its own pressure setting and NAV1 configuration.
 UI timing recognizes physical button gestures, while simulation-time state owns
 mode transitions, arming and capture. Recorded mode snapshots never drive native
 physics. A shared pure navigation module now drives both NAV instrument receivers
-and fixed-step NAV1/AP guidance from the same immutable historical NAV810 package.
+and fixed-step NAV1/AP guidance from the same immutable historical NAV810 package. The receiver package now covers worldwide source services; its bounded loader verifies identical bytes on both sides and an immutable frequency index avoids full-world scans during fixed-step guidance. OurAirports discovery remains an independent source and does not supply receiver components.
 Normal initialization verifies bounded same-origin bytes/hash/schema before physics;
 LAB remains an explicit isolated source. Real VOR OBS uses sourced station magnetic
 calibration, while LOC/GS courses and the prototype DG remain true. Components

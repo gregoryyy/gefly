@@ -4,6 +4,9 @@ All times are Europe/Berlin. Answers record the author and recording time. New a
 
 ## Recorded interaction decisions
 
+**2026-11-06 15:51, user report and Codex reception scope** (Europe/Berlin): [missing signals](input/2026-11-06-nav-reception.md). Extend the existing pinned historical NAV810 receiver services worldwide so tuning outside Rhein-Main has source-backed instrument/worker guidance. Preserve exact calibrations, ranges, component pairing, source identity and explicit historical limits; OurAirports discovery does not establish receiver service. NDB/TACAN-only guidance remains unsupported. Task177/R-NAV-1/R-NAV-2/R-NAV-4.
+
+
 **2026-11-06 07:25, user recording scope and Codex implementation** (Europe/Berlin): [old recording compatibility is not required](input/2026-11-06-handling-recording-scope.md). For the remaining localSIM1 report, use the source engine's full airborne trim once and transfer its solved lateral commands into existing model trim channels, separately identified as generic-model initial equilibrium. Fresh airborne launches use this profile; fresh ground/landing studies use zero. Preserve current profile/trims through AP/CWS and exposed-state reconstruction; failure is visible. This selects no aircraft coefficients or continuous leveling assist and does not accept calibrated172S dynamics. R-SIM-11/R-SIM-5/R-REVIEW-1, Task153.
 
 **2026-11-06 07:25, user context and Codex bounded input repair** (Europe/Berlin): [localhost:5173 atSIM1×](input/2026-11-06-local-handling-context.md) confirms the remaining report is separate from the merged startup-bias fix. A1440→1100px resize changes the neutral midpoint; the next1px pointer movement formerly sent+.5aileron. Require neutral pickup at the new visible ring, retaining live centering, keyboard and relative/look behavior. No aircraft gain/coefficient change. Task153 remains open. R-INPUT-1.
