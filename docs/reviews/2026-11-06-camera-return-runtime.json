@@ -1,0 +1,310 @@
+{
+  "task": "2.0.178",
+  "scope": "Camera-only animated return and chase distance response",
+  "ci": {
+    "result": "pass",
+    "node_application": 620,
+    "python_application": 22,
+    "assurance": 85,
+    "training": 11,
+    "tooling_executed": 242,
+    "tooling_skipped": 1,
+    "jsbsim_study_executed": 14,
+    "jsbsim_study_skipped": 9,
+    "c172s_study_executed": 25
+  },
+  "contexts": {
+    "working-app": {
+      "animation": {
+        "artifact_sha256": "4d6fd224d846629d76099a2448e53b09db546c8a97cb3ed43293427a623a96a1",
+        "sourceHashes": {
+          "src/main.ts": "2c883da2c5c996948caa371c710d3ff9f69bd8d4a55b0f38b56b557eb0ac7129",
+          "src/scene.ts": "63de768859232ac66544292eb7f4da4b1588df777a0419d08894dd2319d12e3a",
+          "src/pointer-yoke.ts": "01b70ea4c83891835535449e97eed4c89a60f0d07703f286b4d9a4c85f686d76",
+          "src/chase-distance.ts": "aa786ff673050d4059220da44ccf13a92405b4b6c2e0eac38c90cf40c9da9745",
+          "src/camera-return.ts": "4c10e39aebcf10b21b9d0897120351d037c822413079a21a09d37e3b4a61170b",
+          "src/camera-preferences.ts": "fbd5e9963b3712426a8dd1a07a4211fac696432260ea28e378de72f5c618f055",
+          "tests/camera-return.browser.mjs": "bf6a91e715dc3ad6e1934a85fe529c932fdf35d586b219f13d55604f6ca0578d"
+        },
+        "browser": "156.0.8078.80",
+        "checks": [
+          "gentle near-aircraft zoom uses fixed focal length; chase double-click renders a smooth bounded return to actual heading-following pose without native changes",
+          "cockpit double-click animates actual look direction to centre while preserving selected field of view and paused native state",
+          "repeated double-click restarts a rendered chase return from its visible pose and reaches the exact endpoint",
+          "wheel, view switch, fresh drag and explicit synthetic blur cancel return without a delayed camera jump or native integration",
+          "View-menu animation preference saves immediately and survives reload; disabled and reduced-motion returns snap to the correct actual chase pose"
+        ],
+        "errors": [],
+        "observations": [
+          {
+            "label": "gentle first 100 px",
+            "before_m": 31.953090617507574,
+            "after_m": 37.506388736807196,
+            "fov_rad": 1.0471975511965976
+          },
+          {
+            "label": "animated chase return",
+            "frame_count": 36,
+            "active_frame_count": 25,
+            "active_span_ms": 673.7000002861023,
+            "fov_range_rad": [
+              1.0471975511965976,
+              1.0471975511965976
+            ],
+            "radius_range_m": [
+              31.95309061750757,
+              280082.91483756236
+            ],
+            "middle_offset_ENU": [
+              -76726.84854803619,
+              45857.369984489866,
+              78842.6617535241
+            ],
+            "final_offset_ENU": [
+              -29.708042062120512,
+              -4.175193028524518,
+              11.000000000931323
+            ],
+            "final_direction_ENU": [
+              0.9297392361202326,
+              0.13066632829990044,
+              -0.3442546491584233
+            ]
+          },
+          {
+            "label": "animated cockpit return",
+            "frame_count": 66,
+            "active_frame_count": 30,
+            "active_span_ms": 698.8000001907349,
+            "fov_range_rad": [
+              0.9013312852076995,
+              0.9013312852076995
+            ],
+            "radius_range_m": [
+              0.7000000011926595,
+              0.7000000011926595
+            ],
+            "middle_offset_ENU": [
+              -0.01708689285442233,
+              -0.001821013167500496,
+              0.6997890565544367
+            ],
+            "final_offset_ENU": [
+              -0.01708689285442233,
+              -0.001821013167500496,
+              0.6997890565544367
+            ],
+            "final_direction_ENU": [
+              0.9837328599163273,
+              0.13813924437816172,
+              -0.11483557586163745
+            ]
+          },
+          {
+            "label": "repeated double-click",
+            "frame_count": 38,
+            "active_frame_count": 37,
+            "active_span_ms": 814.0999999046326,
+            "fov_range_rad": [
+              0.9013312852076995,
+              0.9013312852076995
+            ],
+            "radius_range_m": [
+              31.95309061750757,
+              907.5154047143055
+            ],
+            "middle_offset_ENU": [
+              -85.28514942503534,
+              -11.986046087928116,
+              31.578541653230786
+            ],
+            "final_offset_ENU": [
+              -29.708042062120512,
+              -4.175193028524518,
+              11.000000000931323
+            ],
+            "final_direction_ENU": [
+              0.9297392361202326,
+              0.13066632829990044,
+              -0.3442546491584233
+            ]
+          }
+        ]
+      },
+      "legacy-chase": {
+        "artifact_sha256": "710aa7a38f796bb190b165c948bea15b4fb3bf22ed70d9935213c891c40787dd",
+        "sourceHashes": {
+          "src/main.ts": "2c883da2c5c996948caa371c710d3ff9f69bd8d4a55b0f38b56b557eb0ac7129",
+          "src/scene.ts": "63de768859232ac66544292eb7f4da4b1588df777a0419d08894dd2319d12e3a",
+          "src/aircraft-orientation.ts": "b8438d67c7ab8abd739f567fb0d88f9fff8e5c4a8299b0115b0565b3ff21a68f",
+          "src/chase-distance.ts": "aa786ff673050d4059220da44ccf13a92405b4b6c2e0eac38c90cf40c9da9745",
+          "src/camera-pose.ts": "445ca24283032513b7adb4dacb058e1a1089dff4b0853651b7e4ceffeed9029e",
+          "src/pointer-yoke.ts": "01b70ea4c83891835535449e97eed4c89a60f0d07703f286b4d9a4c85f686d76",
+          "tests/chase-zoom.browser.mjs": "21dd6fa756d66047721bc64cd9f0d17e47e8b58c73b81e542300605659121ae5"
+        },
+        "browser": "156.0.8078.80",
+        "checks": [
+          "chase wheel changes actual Cesium distance with a fixed lens; zero-angle double-click returns close behind the plane without changing paused native state",
+          "chase reaches 20000km, hold-drag gives a top-down overview and double-click restores ordinary heading-relative chase",
+          "horizontal/modifier/editable/dialog guards, cockpit field-of-view zoom and separate overview distance remain independent",
+          "actual native flight moves the heading-relative chase target; paused Review supports zoom/recenter without changing the live worker"
+        ],
+        "errors": [],
+        "gazeEvaluations": 39,
+        "maxGazeVectorError": 3.070453235030418e-11,
+        "observation_count": 9
+      }
+    },
+    "publication": {
+      "animation": {
+        "artifact_sha256": "9a7eb3accf95249052aa773136594874932e86eddf829bff0d3ebaa4406ed8f7",
+        "sourceHashes": {
+          "src/main.ts": "f3eaca90fe7e4570486a4650a7da66c5d0cccded7600febe3bb29c43cf9db6d9",
+          "src/scene.ts": "d7e74750c5e3992ae08829abc2f27aa5c3a20da070c86f8c952ff353a4c110bb",
+          "src/pointer-yoke.ts": "7b975d0778f2aeca730ff608be57bd7dacc1cb48eac71978827276a4ece1dfca",
+          "src/chase-distance.ts": "aa786ff673050d4059220da44ccf13a92405b4b6c2e0eac38c90cf40c9da9745",
+          "src/camera-return.ts": "4c10e39aebcf10b21b9d0897120351d037c822413079a21a09d37e3b4a61170b",
+          "src/camera-preferences.ts": "fbd5e9963b3712426a8dd1a07a4211fac696432260ea28e378de72f5c618f055",
+          "tests/camera-return.browser.mjs": "bf6a91e715dc3ad6e1934a85fe529c932fdf35d586b219f13d55604f6ca0578d"
+        },
+        "browser": "156.0.8078.80",
+        "checks": [
+          "gentle near-aircraft zoom uses fixed focal length; chase double-click renders a smooth bounded return to actual heading-following pose without native changes",
+          "cockpit double-click animates actual look direction to centre while preserving selected field of view and paused native state",
+          "repeated double-click restarts a rendered chase return from its visible pose and reaches the exact endpoint",
+          "wheel, view switch, fresh drag and explicit synthetic blur cancel return without a delayed camera jump or native integration",
+          "View-menu animation preference saves immediately and survives reload; disabled and reduced-motion returns snap to the correct actual chase pose"
+        ],
+        "errors": [],
+        "observations": [
+          {
+            "label": "gentle first 100 px",
+            "before_m": 31.953090617507574,
+            "after_m": 37.506388736807196,
+            "fov_rad": 1.0471975511965976
+          },
+          {
+            "label": "animated chase return",
+            "frame_count": 32,
+            "active_frame_count": 30,
+            "active_span_ms": 683.8000001907349,
+            "fov_range_rad": [
+              1.0471975511965976,
+              1.0471975511965976
+            ],
+            "radius_range_m": [
+              31.95309061750757,
+              280082.9148375634
+            ],
+            "middle_offset_ENU": [
+              -1662.6005728371674,
+              337.9439951167442,
+              1011.2655230099335
+            ],
+            "final_offset_ENU": [
+              -29.708042062120512,
+              -4.175193028524518,
+              11.000000000931323
+            ],
+            "final_direction_ENU": [
+              0.9297392361202325,
+              0.13066632829990096,
+              -0.3442546491584232
+            ]
+          },
+          {
+            "label": "animated cockpit return",
+            "frame_count": 44,
+            "active_frame_count": 40,
+            "active_span_ms": 683.5,
+            "fov_range_rad": [
+              0.9013312852076995,
+              0.9013312852076995
+            ],
+            "radius_range_m": [
+              0.7000000006641797,
+              0.7000000006641797
+            ],
+            "middle_offset_ENU": [
+              -0.01700693613383919,
+              -0.002390169072896242,
+              0.6997892912477255
+            ],
+            "final_offset_ENU": [
+              -0.01700693613383919,
+              -0.002390169072896242,
+              0.6997892912477255
+            ],
+            "final_direction_ENU": [
+              0.9837169621150667,
+              0.13825240296655197,
+              -0.11483558473347229
+            ]
+          },
+          {
+            "label": "repeated double-click",
+            "frame_count": 53,
+            "active_frame_count": 51,
+            "active_span_ms": 866.5999999046326,
+            "fov_range_rad": [
+              0.9013312852076995,
+              0.9013312852076995
+            ],
+            "radius_range_m": [
+              31.95309061750757,
+              13591.447303933608
+            ],
+            "middle_offset_ENU": [
+              -427.84366808924824,
+              -60.12950623547658,
+              158.4177220147103
+            ],
+            "final_offset_ENU": [
+              -29.708042062120512,
+              -4.175193028524518,
+              11.000000000931323
+            ],
+            "final_direction_ENU": [
+              0.9297392361202325,
+              0.13066632829990096,
+              -0.3442546491584232
+            ]
+          }
+        ]
+      },
+      "legacy-chase": {
+        "artifact_sha256": "43034152fe1de60cbd9c7c3c4c6a621e669cfc394d44b8af390dce72bfe4fb13",
+        "sourceHashes": {
+          "src/main.ts": "f3eaca90fe7e4570486a4650a7da66c5d0cccded7600febe3bb29c43cf9db6d9",
+          "src/scene.ts": "d7e74750c5e3992ae08829abc2f27aa5c3a20da070c86f8c952ff353a4c110bb",
+          "src/aircraft-orientation.ts": "b8438d67c7ab8abd739f567fb0d88f9fff8e5c4a8299b0115b0565b3ff21a68f",
+          "src/chase-distance.ts": "aa786ff673050d4059220da44ccf13a92405b4b6c2e0eac38c90cf40c9da9745",
+          "src/camera-pose.ts": "445ca24283032513b7adb4dacb058e1a1089dff4b0853651b7e4ceffeed9029e",
+          "src/pointer-yoke.ts": "7b975d0778f2aeca730ff608be57bd7dacc1cb48eac71978827276a4ece1dfca",
+          "tests/chase-zoom.browser.mjs": "21dd6fa756d66047721bc64cd9f0d17e47e8b58c73b81e542300605659121ae5"
+        },
+        "browser": "156.0.8078.80",
+        "checks": [
+          "chase wheel changes actual Cesium distance with a fixed lens; zero-angle double-click returns close behind the plane without changing paused native state",
+          "chase reaches 20000km, hold-drag gives a top-down overview and double-click restores ordinary heading-relative chase",
+          "horizontal/modifier/editable/dialog guards, cockpit field-of-view zoom and separate overview distance remain independent",
+          "actual native flight moves the heading-relative chase target; paused Review supports zoom/recenter without changing the live worker"
+        ],
+        "errors": [],
+        "gazeEvaluations": 39,
+        "maxGazeVectorError": 3.070452396802395e-11,
+        "observation_count": 9
+      }
+    }
+  },
+  "history": [
+    "The first publication pointer port missed its differently shaped return-object insertion; TSC and focused tests caught the missing method. The method was ported before final source freeze.",
+    "The new pointer-reference test initially expected the wrong yaw sign; corrected the expectation to the existing positive-right convention before the passing focused and browser runs."
+  ],
+  "limits": [
+    "Chromium156 with fixture scenery and actual Cesium/native worker; no geography or aircraft fidelity acceptance.",
+    "Blur boundary is explicitly synthetic; genuine hidden/pagehide/reset/Review-transition cancellation has source coverage rather than this focused runtime exercise.",
+    "Animations are exercised while paused; legacy chase checks retain actual live follow and Review isolation.",
+    "Cross-provider peer pending under batching cadence; embedded WebKit not exercised."
+  ]
+}

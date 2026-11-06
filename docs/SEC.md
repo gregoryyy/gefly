@@ -216,7 +216,7 @@ persistence, personal telemetry or external service was introduced in the UI.
 Scene wheel zoom is a bounded, page-local camera preference. A non-passive
 capture listener handles eligible vertical scene events before Cesium; Ctrl/Meta/Alt,
 editable, modal and sibling UI/map gestures are excluded. It requests no device
-permission, makes no network/storage calls and sends no simulation input. Cockpit scroll changes FOV; chase and overview scroll change separately bounded camera distance. Chase double-click resets its distance/orbit while retaining the existing guarded pointer neutralization. These page-local camera values stay separate from aircraft/review state and reset to defaults on reload.
+permission, makes no network calls and sends no simulation input. Wheel/pose changes themselves do not write storage. Cockpit scroll changes FOV; chase and overview scroll change separately bounded camera distance. Chase double-click resets its distance/orbit while retaining the existing guarded pointer neutralization. These page-local camera values stay separate from aircraft/review state and reset to defaults on reload.
 
 ## Procedural engine audio
 
@@ -470,3 +470,16 @@ Review/flat/disposal cancellation cannot resume or reposition the aircraft.
 ### Scenery worker boundaries
 
 Worker messages use fixed operations, bounded queues, request/generation identities and deadlines. Terrain Workers resolve existing allowlisted sources; callers cannot supply arbitrary code or upstream URLs. Cancelled/late results cannot be admitted. Source arrays are copied before transfer to retain cache/history ownership. Backend block decoding has two active workers,32 queued requests and a15-second job deadline. These are CPU/lifecycle boundaries, not isolation from a compromised same-origin application. No flight telemetry is sent to airport-source services.
+
+
+## Animated view return preference
+
+R-VIEW-1 stores only `{version:1,animate_return:boolean}` under the separate
+`gefly.camera-preferences.v1` key, with strict shape/type/UTF-8 byte bounds128
+and safe default-on behavior for denied/corrupt storage. Reduced-motion preference
+always bypasses animation. No view pose, aircraft position, flight data or telemetry
+is persisted by this preference. The700ms wall-time interpolator changes only the
+camera pose; it has no timer, network or physics interface. Input/view/lifecycle
+interruptions cancel it and pointer references synchronize without flight callbacks.
+The gentler chase mapping retains fixed FOV, existing wheel guards and distance
+bounds. The existing double-click control neutralization is preserved.

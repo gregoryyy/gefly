@@ -3,6 +3,55 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 16:25 — Add optional animated view return and gentle chase zoom
+
+TODO: 2.0.178; R-VIEW-1/R-INPUT-1/R-UX-2.
+Agent: Codex orchestrator; pure return helper `camera_return`, chase mapping/browser
+implementation `chase_zoom_response`, source inventory and independent quality
+`camera_return_housekeeping`, independent validation `camera_return_validate`.
+
+**Implementation notes**
+
+View → Animate view return saves a separate strict128-byte boolean preference,
+on by default with reduced-motion instant override. Cockpit double-click centers
+look; chase also returns close behind the current aircraft heading. The700ms
+wall-time helper eases shortest yaw and logarithmic radius; new gestures/views/
+lifecycle boundaries cancel it and silently synchronize the next pointer reference.
+Chase retains fixed FOV; first100px distance growth falls from82%to17%, with
+reversible/subdivision-consistent travel and20Mm reach. [Behavior](research/2026-11-06-camera-return.md).
+
+Both working-app and publication checkouts pass five new actual-camera browser
+groups and four retained chase groups. Rendered intermediate poses/endpoints,
+restart/interruption, saved-off reload, reduced motion, constant lens and paused
+native isolation are observed. Legacy live follow/poles/Review remain covered;
+39actualgazes per context have maximum direction error about3.071e−11.
+[Evidence](reviews/2026-11-06-camera-return-runtime.json),
+[quality](reviews/2026-11-06-camera-return-quality.md) and
+[validation](reviews/2026-11-06-camera-return-validation.md).
+
+Publication CI passes620Node/22applicationPython/85assurance/11training tests;
+242of243tool cases execute (one platform skip),14of23JSBSim cases execute
+(nine optional skips),25C172S pass. Focused tests pass42working-app/40publication;
+both TypeScript checks pass. Independent quality/validation have no blockers.
+
+**Deviations**
+
+The initial pointer port missed a return-object method because the parent branch
+has older pointer surroundings; TSC/focused tests caught it before the final freeze.
+A new reference test initially assumed the opposite yaw sign; corrected the test
+to the existing convention. No runtime repairs were needed after four frozen
+browser passes. Publication is stacked on the existing chase-overview PR, keeping
+unrelated navigation/settings features separate. Compact evidence pins raw rendered
+frame artifacts without flooding assurance extraction. Synthetic blur is explicit;
+true hidden/pagehide, live animated return and embedded WebKit are not runtime
+accepted here. Cross-provider peer remains pending under batch cadence.
+
+**Insights**
+
+Camera motion needs a synchronized input reference as well as smooth interpolation;
+close zoom response can improve without changing focal length or far-range reach.
+
+
 ## 2026-11-06 14:36 — Add Earth-scale chase zoom and close follow reset
 
 TODO: 2.0.174; R-VIEW-1/R-INPUT-1.

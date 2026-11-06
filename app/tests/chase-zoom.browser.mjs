@@ -102,6 +102,13 @@ try {
   await page.waitForFunction(() => !document.querySelector('#start').disabled && window.chaseStates.length && window.__chaseCamera,
     null, { timeout: 60000 });
   await prepareFlightUI(page, { controls: false });
+  // This legacy suite retains its immediate-reset assertions. The dedicated
+  // camera-return suite observes the optional animation and its intermediate poses.
+  await page.locator('#view-menu > summary').click();
+  if (await page.locator('#toggle-camera-return').getAttribute('aria-pressed') === 'true') {
+    await page.locator('#toggle-camera-return').click();
+  }
+  if (await page.locator('#view-menu').evaluate(menu => menu.open)) await page.locator('#view-menu > summary').click();
   const pose = async label => { const value = await page.evaluate(() => structuredClone(window.__chaseCamera));
     result.lastCameraPose = value;
     if (label) result.observations.push({ label, ...value }); cameraAxes(value); return value; };
@@ -126,13 +133,15 @@ try {
   }
   async function scroll(deltaY, deltaX = 0) { const p = await point(); await page.mouse.move(p.x, p.y); await page.mouse.wheel(deltaX, deltaY); await page.waitForTimeout(90); await pose(); }
   const paused = await stats(); await view('chase'); const initial = await pose('default chase'); follow(initial);
-  await scroll(200); const farther = await pose('first zoom'); assert(Math.hypot(...farther.offsetENU) > initialDistance_m * 2);
+  await scroll(200); const farther = await pose('first zoom');
+  assert(Math.hypot(...farther.offsetENU) > initialDistance_m);
+  assert(Math.hypot(...farther.offsetENU) <= initialDistance_m * 2, 'close chase response remains gentle');
   close(farther.fov_rad, initial.fov_rad, 'chase wheel changes distance rather than lens');
   const p = await point(); await page.mouse.dblclick(p.x, p.y); await page.waitForTimeout(90);
   follow(await pose('zero-angle double-click resets zoom')); frozen(paused, await stats());
   result.checks.push('chase wheel changes actual Cesium distance with a fixed lens; zero-angle double-click returns close behind the plane without changing paused native state');
 
-  for (let i = 0; i < 13; i++) await scroll(200);
+  for (let i = 0; i < 20; i++) await scroll(200);
   const wide = await pose('Earth-scale chase'); close(Math.hypot(...wide.offsetENU), maxDistance_m, 'Earth-scale camera distance', .001);
   const start = await point(), rect = await page.locator('#scene').boundingBox();
   await page.mouse.move(start.x, start.y); await page.mouse.down(); await page.waitForTimeout(300);
