@@ -1,0 +1,8 @@
+/* This optional chart control stays within the existing scrollable map menu. */
+.practice-map-ofm-overlay { min-width: 0; margin: .5rem 0; padding: .5rem .65rem; border: 1px solid #748c98; border-radius: .35rem; }
+.practice-map-ofm-overlay legend { padding: 0 .3rem; font-weight: 700; }
+.practice-map-ofm-overlay label { display: inline-flex; align-items: center; gap: .35rem; margin-right: .6rem; }
+.practice-map-ofm-overlay input[type=range] { width: 8rem; max-width: 28vw; }
+.practice-map-ofm-overlay p { margin: .35rem 0; overflow-wrap: anywhere; }
+.practice-map-ofm-overlay a { color: #c6e9fa; }
+.practice-map-ofm-overlay[data-status=unavailable] #ofm-overlay-status { color: #ffd18b; }

@@ -1,3 +1,4 @@
+import { createOfmOverlayMiddleware } from './ofm-overlay-server.ts';
 import { defineConfig } from 'vite';
 import { sceneryMiddleware } from './scenery-server';
 import { createCopernicusTerrainMiddleware } from './copernicus-terrain-server';
@@ -8,6 +9,7 @@ import { stat, cp, mkdir, readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
+const ofmOverlay = createOfmOverlayMiddleware();
 const cesiumRoot = resolve(import.meta.dirname, 'node_modules/cesium/Build/Cesium');
 const cesiumDirectories = ['Assets', 'Workers', 'ThirdParty', 'Widgets'];
 const contentTypes: Record<string, string> = {
@@ -43,10 +45,14 @@ export default defineConfig({
   plugins: [{
     name: 'local-flight-assets',
     configurePreviewServer(server) {
+      server.middlewares.use(ofmOverlay);
+      server.httpServer?.once('close', () => ofmOverlay.dispose());
       server.middlewares.use(hashedSceneryAssets(resolve(import.meta.dirname, 'dist')));
       server.middlewares.use(createCopernicusTerrainMiddleware());
     },
     configureServer(server) {
+      server.middlewares.use(ofmOverlay);
+      server.httpServer?.once('close', () => ofmOverlay.dispose());
       server.middlewares.use(hashedSceneryAssets(resolve(import.meta.dirname, 'public')));
       server.middlewares.use(createCopernicusTerrainMiddleware());
       server.middlewares.use(sceneryMiddleware());
