@@ -69,7 +69,7 @@ try {
   // Permit subpixel scene geometry versus browser pointer-coordinate rounding.
   const neutral = async () => {
     const command = await input(); assert(command);
-    assert(Math.abs(command.aileron + .109375) < .005, `centered aileron must only contain study correction, got ${command.aileron}`);
+    assert(Math.abs(command.aileron) < .005, `centered aileron must be neutral, got ${command.aileron}`);
     assert(Math.abs(command.elevator) < .005, `centered elevator must be zero, got ${command.elevator}`);
   };
   const sameLook = (actual, expected) => { assert(Math.abs(actual.yaw_rad - expected.yaw_rad) < 1e-12); assert(Math.abs(actual.pitch_rad - expected.pitch_rad) < 1e-12); };
@@ -97,7 +97,7 @@ try {
   await page.mouse.move(r.cx, r.cy); await neutral();
   await page.mouse.move(r.cx + 75, r.cy - 75);
   let command = await input();
-  assert(Math.abs(command.aileron - (.25 - .109375)) < .005); assert(Math.abs(command.elevator - .2) < .005);
+  assert(Math.abs(command.aileron - .25) < .005); assert(Math.abs(command.elevator - .2) < .005);
   await page.mouse.click(r.cx + 100, r.cy - 50); await mode('off');
   await page.mouse.click(r.cx - 100, r.cy + 50); await mode('yoke');
   await page.mouse.move(r.cx, r.cy); await neutral(); await frozen(paused);

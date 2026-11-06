@@ -20,6 +20,25 @@ The earlier880-second real-source renderer proof and its exact source pins remai
 
 Preserve complete shared records and test registrations when integrating merged feature stacks, then renew affected gates on the final target. Keep feature-branch, broader-working-copy, actual-source and synthetic-component observations distinct.
 
+## 2026-11-06 01:56 — Repair hidden startup left-aileron input in merged main
+
+TODO: 2.0.153 (bounded app regression repaired; broader handling remains open); R-INPUT-1/R-SIM-5/R-SIM-11.
+Agent: Codex orchestrator; code1 `handling_native`; code2 `handling_input`; housekeeping `handling_housekeeping`; independent `quality` and `cws_validate`.
+
+**Implementation notes**
+
+Restore normal startup roll offset zero after merge b51bcc0 reintroduced−0.109375 despite a zero slider. The actual old app/Worker/native browser test fails with that first command; the repaired test passes three neutral/pointer/release/explicit-calibration groups. At15pxright, the repaired app sends+0.05 rather than the old−0.059375. Experimental offsets remain explicit and available. Update the adjacent comment and normal-only expectations in four existing browser fixtures, retaining intentionally selected Legacy/native offsets. The [diagnosis](research/2026-11-06-neutral-controls-regression.md), [quality](reviews/2026-11-06-neutral-controls-quality.md) and [validation](reviews/2026-11-06-neutral-controls-validation.md) preserve source and evidence pins.
+
+Author42focused unit tests, independent22control/pilot tests, TypeScript, neutral browser and Review browser pass. Three adjacent legacy browser checks remain unsuccessful on gesture/layout/anchor expectations, including classic-smoke's changed pointer assertion; their baseline causality is not established and full browser acceptance is not claimed. Full CI passes507Node+22Python application cases,85assurance and11training cases with9of23 optional JSBSim and one platform tool skip; log SHA-256 `21b88a2b2ebf96981e57235c2234fdf58e47a5fff6da3ec47df12532429af13a`. Final structural/integrity and lineage checks follow the committed record integration.
+
+**Deviations**
+
+Production engine/model/gains are unchanged. Fresh64-case native output exactly matches November5 and proves no new kernel response in that comparison. Paired90kt diagnostic bank after7s improves−36.132°→+4.225°when hidden input is removed, without validating aircraft fidelity. The root workspace/live5173 already have runtime zero; this bounded published-main repair does not explain every reported root behavior. Raw-model drift/actuator history/110kt trim and build provenance remain Task153, and isolated full-trim held-input research is not a product change. Cross-provider peer pending; no complete handling, milestone or training acceptance.
+
+**Insights**
+
+A correct zero-default control module is insufficient when integration restores a different main-loop initializer. Test the first actual published Worker command and visible control state. A fixed roll offset can reverse small right commands and look like unstable or overly sensitive physics.
+
 ## 2026-11-06 01:43 — Retain distant elevation and scenery through moving overview windows
 
 TODO: 2.0.162; R-WORLD-11/R-WORLD-9/R-SIM-2.
