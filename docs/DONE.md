@@ -3,6 +3,25 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 10:28 — Remove the reproduced retained aileron deflection after centering
+
+TODO: 2.0.153 (bounded roll-return repair; wider handling remains open); R-SIM-11/R-SIM-5/R-INPUT-1.
+Agent: Codex orchestrator; code1 `stability_native`, code2 `stability_input`, housekeeping `stability_sources`; independent `roll_quality` and `roll_validate`.
+
+**Implementation notes**
+
+The exact c11a933… native model retains effective aileron±0.0025rad after signed commands return to zero. Actual app pointer centering and keyboard release confirm the same physical residue with all external axeszero. Adapterv5 changes only two named source aileron hysteresis widths0.005→0, retaining every other prepared XML/AP byte, source aero/mass/rate limits and steering gain. Normal rebuilt WASM266f2016… matches the isolated two-value counterfactual; original control relink exactly reproduces c11a933….
+
+The signed57-case diagnostic and18roll-return checks pass; the old engine fails the same strict physical return regression. New evidence admission tests reject empty/partial/duplicate/nonfinite/forged telemetry; nine Python adapter tests check exact scope and intended rejection causes. Native/Worker balanced-start and AP/KAP nonregressions pass. Actual browser five-case final-v5 run pins native/harness/source bytes and returns both surfaces exactly after centering.
+
+**Deviations**
+
+This is generic-model command-return semantics, not a measured C172 rigging value or full aircraft stability acceptance. Bank angle can remain after an input; the rate guard is sampled sanity, not a formal damping/settling criterion. Position-control pointer inactivity is not centering. Pitch hysteresis,110kt trim and broader handling/fidelity remain Task153. Initial external peer inspection found a real empty-data regression loophole and weak rejection fixtures; repaired before final review. Full source/evidence records follow in the documentation commit. No aircraft/model binaries are tracked.
+
+**Insights**
+
+Zero pilot command does not establish neutral surface position in a history-dependent actuator. Observe actual left/right positions, then distinguish retained forcing from unforced motion.
+
 ## 2026-11-06 07:47 — Publish the two bounded handling PRs
 
 TODO: 2.0.153 in progress. R-INPUT-1/R-SIM-11/R-REVIEW-1.
