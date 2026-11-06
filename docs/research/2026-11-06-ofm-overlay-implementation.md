@@ -224,3 +224,22 @@ A transient assurance child-process timeout under concurrent jobs is historical;
 serial85-case and full-CI renewals pass without changing deadlines or assertions.
 Independent quality/validation renew this merge; final assurance/diff are measured
 on the published integrated revision.
+
+## Final integration with worldwide navigation and merged map controls
+
+Final source0c21a23 merges current main1a53050, including worldwide discovery,
+saved Options/location filters, map magnification shortcuts and global historical
+NAV810 receiver packages. The reviewed three-string caption repair separates
+discovery from receiver inventory and keeps regional published-fix coverage
+explicit. Core OFM provider/controller and selected edition remain unchanged.
+
+The final actual publication browser passes five groups on all seven current
+source/harness hashes with zero page errors, using the actual native worker
+initialized with the global historical NAV package. Final complete CI passes
+662Node/32Python/89assurance/11training and zero integrity errors. Its repository
+tooling executes247/248, with one platform skip; nine of23optional JSBSim study
+cases are skipped. Independent bounded quality/validation renew this source and
+evidence. Versioned runtime records preserve historical failed/superseded runs;
+final documentation assurance/diff are integration-owned before publication.
+Source currentness/completeness, broader full-license/product redistribution,
+embedded WebKit, full live-flight/Review coverage and external peer stay limited.

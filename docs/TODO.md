@@ -375,7 +375,7 @@ Task2.0.170 verification: [quality](reviews/2026-11-06-worldwide-airports-qualit
 - [x] 2.0.181 Reconcile PR104 saved Options with current main, retaining settings behavior, all airport pipelines and history; renew affected checks/reviews and push the existing PR. R-INPUT-1/R-UX-2/R-AIRPORT-3/R-WORLD-12. [Request](input/2026-11-06-pr104-conflicts.md).
 - [x] 2.0.182 Reconcile PR107 map fixes and saved location filters with current main, preserving worldwide discovery and saved Options; renew checks/reviews and push the existing PR. R-WORLD-6/R-NAV-5/R-INPUT-1. [Request](input/2026-11-06-pr107-conflicts.md).
 - [x] 2.0.183 Reconcile PR108 map magnification keys with current main, preserving current map/settings/data paths; renew checks/reviews and push the existing PR. R-WORLD-6/R-INPUT-1. [Request](input/2026-11-06-pr108-conflicts.md).
-- [ ] 2.0.184 Reconcile remaining PR109 receiver reception and PR111 OFM overlay with current main, preserving independent source/native boundaries and history; renew checks/reviews and push existing PRs. R-NAV-2/R-CHART-1/R-WORLD-12. [Request](input/2026-11-06-remaining-pr-conflicts.md).
+- [x] 2.0.184 Reconcile remaining PR109 receiver reception and PR111 OFM overlay with current main, preserving independent source/native boundaries and history; renew checks/reviews and push existing PRs. R-NAV-2/R-CHART-1/R-WORLD-12. [Request](input/2026-11-06-remaining-pr-conflicts.md).
 
 
 - [x] 2.0.177 Restore sourced worldwide VOR/LOC/GS/DME reception outside the regional discovery/receiver gap; share exact package identity between instruments and native-worker NAV1/AP, preserve explicit components/flags and bounded per-step/picker work. R-NAV-1/R-NAV-2/R-NAV-4/R-DATA-1. [Request](input/2026-11-06-nav-reception.md).
