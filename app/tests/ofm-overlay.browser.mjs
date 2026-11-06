@@ -31,6 +31,12 @@ let serverLog = '', browser, page;
 server.stdout.on('data', chunk => { serverLog += chunk; }); server.stderr.on('data', chunk => { serverLog += chunk; });
 const save = () => writeFile(`${output}/ofm-overlay-${live ? 'live' : 'browser'}.json`, JSON.stringify(result, null, 2));
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+async function bounded(promise, ms, label) {
+  let timer;
+  try { return await Promise.race([promise, new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`Timed out: ${label}`)), ms); })]); }
+  finally { clearTimeout(timer); }
+}
+async function stage(name) { result.stage = name; console.log(`OFM stage: ${name}`); await save(); }
 
 // A valid512px RGBA fixture with transparent background and a synthetic chart grid.
 function fixturePNG() {
@@ -134,13 +140,13 @@ async function loaded(current = page) {
 async function closeMap(current = page) { await current.locator('#scene').focus(); await current.keyboard.press('m'); await current.locator('#practice-map-panel').waitFor({ state: 'hidden' }); }
 
 try {
-  await mkdir(output, { recursive: true });
+  await mkdir(output, { recursive: true }); await stage('startup');
   for (let i = 0; !serverLog.includes('Local:'); i++) { assert(i < 150 && server.exitCode === null, serverLog); await sleep(100); }
   browser = await chromium.launch({ headless: true, ...(process.env.CHROME ? { executablePath: process.env.CHROME } : { channel: 'chrome' }) });
   const context = await browser.newContext({ viewport: { width: 1440, height: 1100 }, serviceWorkers: 'block' });
   page = await context.newPage(); await configure(page); await page.goto(origin, { waitUntil: 'domcontentloaded' }); await ready();
   assert.equal(demand.length, 0, 'closed unselected map requests no OFM content');
-  await openMap(); assert.equal(await page.locator('#ofm-overlay-toggle').isChecked(), false); assert.equal(demand.length, 0);
+  await stage('initial map'); await openMap(); assert.equal(await page.locator('#ofm-overlay-toggle').isChecked(), false); assert.equal(demand.length, 0);
   const baseline = await stats(), beforePixels = await page.locator('#practice-map-panel .maplibregl-canvas').screenshot();
   const baselineForeground = await page.evaluate(() => {
     const style = window.__ofmMap.getStyle();
@@ -172,6 +178,7 @@ try {
   result.observations.push({ layerOrder: order.filter(id => ['imagery', 'ofm-overlay', 'navigation-fixes', 'flight-plan-route-line', 'gps-target-line', 'navigation-stations', 'path'].includes(id)), beforePixelSha256: hash(beforePixels), afterPixelSha256: hash(afterPixels) });
 
   if (!live) {
+    await stage('opacity and viewport');
     await page.locator('#ofm-overlay-opacity').focus(); await page.keyboard.press('Home');
     for (let i = 0; i < 7; i++) await page.keyboard.press('ArrowRight');
     assert.equal(await page.locator('#ofm-overlay-opacity').inputValue(), '35');
@@ -185,13 +192,16 @@ try {
     assert.match(await page.locator('#ofm-overlay-status').textContent(), /Zoom in.*7/);
     await page.evaluate(() => window.__ofmMap.jumpTo({ zoom: 17 })); await loaded();
     assert(demand.filter(path => path.endsWith('.png')).every(path => Number(path.split('/')[4]) <= 12));
-    await page.evaluate(() => new Promise(resolve => {
+    await stage('replacement style');
+    result.styleBefore = await page.evaluate(() => ({ loaded: window.__ofmMap.loaded(), styleLoaded: window.__ofmMap.isStyleLoaded(), sources: Object.keys(window.__ofmMap.getStyle().sources), layers: window.__ofmMap.getStyle().layers.map(layer => layer.id), errors: window.ofmMapErrors })); await save();
+    await bounded(page.evaluate(() => new Promise(resolve => {
       const style = window.__ofmMap.getStyle(); delete style.sources['ofm-overlay']; style.layers = style.layers.filter(layer => layer.id !== 'ofm-overlay');
       window.__ofmMap.once('style.load', resolve);
       window.__ofmMap.setStyle(style, { diff: false });
-    })); await loaded(); assert.equal((await layer()).paint['raster-opacity'], .35);
+    })), 30000, 'replacement style.load'); await loaded(); assert.equal((await layer()).paint['raster-opacity'], .35);
     await frozen(baseline); result.checks.push('Opacity saves and changes paint; viewport pan fetches new tiles, low zoom is explicit, native source overzooms to17 and style replacement restores the chart below local overlays');
 
+    await stage('off and hidden cancellation');
     await page.locator('#ofm-overlay-toggle').uncheck();
     assert(!await layer()); const offCount = demand.length;
     await page.evaluate(() => window.__ofmMap.jumpTo({ center: [7, 48], zoom: 11 })); await page.waitForTimeout(350); assert.equal(demand.length, offCount);
@@ -209,7 +219,7 @@ try {
     mode = 'good'; await openMap(); await loaded(); await frozen(baseline);
     result.checks.push('Off and hidden maps remove the chart source and stop new tile demand; aborted late metadata cannot restore a closed layer');
 
-    mode = 'failure';
+    await stage('optional failure and retry'); mode = 'failure';
     await page.evaluate(() => window.__ofmMap.jumpTo({ center: [10.6, 51.2], zoom: 12 }));
     await page.waitForFunction(() => document.querySelector('.practice-map-ofm-overlay').dataset.status === 'unavailable');
     assert.equal(await page.locator('.practice-map-status').isVisible(), false, 'optional chart failure does not flag base-map failure');
@@ -220,7 +230,7 @@ try {
     mode = 'good'; await page.locator('#ofm-overlay-retry').click(); await loaded(); await frozen(baseline);
     result.checks.push('Optional tile failure is distinct from base-map status; local flight overlays and real zoom controls remain usable, and Retry recovers the chart');
 
-    await closeMap(); demand = []; await page.reload({ waitUntil: 'domcontentloaded' }); await ready(); assert.equal(demand.length, 0);
+    await stage('reload and storage'); await closeMap(); demand = []; await page.reload({ waitUntil: 'domcontentloaded' }); await ready(); assert.equal(demand.length, 0);
     await openMap(); await loaded(); assert.equal(await page.locator('#ofm-overlay-toggle').isChecked(), true); assert.equal(await page.locator('#ofm-overlay-opacity').inputValue(), '35');
     assert.deepEqual(JSON.parse(await page.evaluate(key => localStorage.getItem(key), key)), { version: 1, enabled: true, opacity: .35 });
     for (const denied of [false, true]) {
@@ -235,13 +245,13 @@ try {
     }
     result.checks.push('Saved enabled/opacity choices restore on reopening after page reload; corrupt or denied preferences default off and remain operable without stepping native physics');
   }
-  await Promise.all(responseReads); result.responses.push(...responses);
+  await stage('final checks'); await bounded(Promise.all(responseReads), 30000, 'source response bodies'); result.responses.push(...responses);
   result.mapErrors = await page.evaluate(() => window.ofmMapErrors);
   assert(result.mapErrors.every(error => error.sourceId === 'ofm-overlay'), 'only deliberately failed optional chart requests emit map errors');
   assert.deepEqual(result.errors, []); assert.deepEqual(await hashes(), sourceBefore, 'runtime source stayed frozen');
   result.browser = browser.version(); result.result = 'pass'; await save(); console.log(JSON.stringify({ result: result.result, mode: result.mode, checks: result.checks }, null, 2));
 } catch (error) {
   result.result = 'fail'; result.error = String(error); result.serverLog = serverLog;
-  result.debug = await page?.evaluate(() => ({ map: !!window.__ofmMap, zoom: window.__ofmMap?.getZoom(), overlay: document.querySelector('.practice-map-ofm-overlay')?.outerHTML, status: document.querySelector('#status')?.textContent, mapErrors:window.ofmMapErrors })).catch(() => null);
+  result.debug = await bounded(page?.evaluate(() => ({ map: !!window.__ofmMap, zoom: window.__ofmMap?.getZoom(), overlay: document.querySelector('.practice-map-ofm-overlay')?.outerHTML, status: document.querySelector('#status')?.textContent, mapErrors:window.ofmMapErrors, styleLoaded:window.__ofmMap?.isStyleLoaded(), layers:window.__ofmMap?.getStyle()?.layers.map(layer => layer.id) })), 3000, 'failure diagnostics').catch(() => null);
   await save(); throw error;
 } finally { releaseMetadata?.(); await browser?.close(); server.kill('SIGTERM'); }

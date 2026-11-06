@@ -136,7 +136,7 @@ accounts, personal telemetry, persistence or runtime AI calls are used. Generate
 generic aircraft data stays local and outside the production UI build. The
 UI-only production build is not a published simulator deployment.
 
-Control sensitivity settings, including the 0–100% keyboard/button wheel-brake command gain, are bounded dimensionless gains held only in page memory. They have no persistence or network path, preserve throttle, and leave the declared study roll offset separate and initially zero. Opening the settings dialog pauses flight and releases held inputs; closing it does not resume automatically. These input preferences do not calibrate or modify aircraft physics.
+Saved Options use a separate bounded, strict version-1 localStorage record (at most1024 UTF-8 bytes) for dimensionless pitch/roll/rudder/brake gains, coordinated rudder, centered touchpad, practice PAPI, experimental roll offset and sound mute/volume. Save commits the preview; Escape/outside dismissal restores opening values without writing the preview. Sound changes outside Options save immediately. Unknown fields, invalid ranges/types/version, malformed/oversized records and denied storage fall back to defaults/session use. This path has no network access and stores no aircraft controls, loading, recordings, position or navigation state. Absent an explicit saved choice, roll offset is zero. Restoring sound preferences does not create/unlock an audio context or start flight. Opening the settings dialog pauses flight and releases held inputs; closing it does not resume automatically. These input preferences do not calibrate or modify aircraft physics.
 
 The parking-brake latch is separate page-session input state. A guarded N/button
 toggle requests full bounded wheel braking independently of the momentary brake
@@ -182,8 +182,8 @@ pointer axes neutral. Camera offsets never enter dynamics. Numeric throttle shor
 AP shortcuts are suppressed inside open dialogs and editable controls. The live
 mobile engine dialog releases held inputs and keeps flight running, as labeled.
 
-The optional centered-touchpad preference is a session-only boolean, initially
-off. It uses the current scene element's visible rectangle to define neutral,
+The optional centered-touchpad preference is a saved boolean, initially
+on unless the user saves another choice. It uses the current scene element's visible rectangle to define neutral,
 not hardware coordinates, device calibration or a stored click position. Resizing
 therefore changes the visible reference without installing a new pointer anchor.
 Captured hold-drag changes bounded camera offsets while pilot pointer axes remain
@@ -192,7 +192,7 @@ only subsequent real pointer movement/re-entry produces center-relative input.
 Ordinary cancellation, pause, focus loss and Options retain that camera offset
 while neutralizing controls; Escape and flight restart explicitly reset it.
 Review can inspect the view without changing live or recorded aircraft state.
-The preference adds no persistence, pointer lock, device permission, network
+Apart from the bounded local Options record, this preference adds no pointer lock, device permission, network
 request or telemetry, and does not alter sensitivity gains or native physics.
 
 Cockpit/engine state groups are validated atomically before copying and display;
@@ -224,7 +224,7 @@ retained separately from aircraft/review state and reset to default on reload.
 Web Audio is activated by explicit browser/user interaction. The original local
 synthesis graph uses existing engine telemetry; it fetches no audio assets and
 requests no microphone, media-device, network or recording access. Mute/volume
-are session-only preferences, independent of flight input. Pause/hidden/failure/
+are bounded device-local Options preferences, independent of flight input. Pause/hidden/failure/
 reset/paused Review silence the graph; page teardown closes it. Missing or denied
 audio leaves flight usable with a retry/unavailable indication. Test-only local
 WAV previews are disposable outputs, not runtime telemetry or recordings.

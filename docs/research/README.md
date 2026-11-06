@@ -59,3 +59,5 @@ End with proposed implications, limitations and a handoff to product/orchestrato
 - [2026-11-06: Centered-yoke resize handoff](2026-11-06-yoke-resize-handoff.md).
 
 - [2026-11-06 OFM overlay implementation](2026-11-06-ofm-overlay-implementation.md)
+
+- [Saved Options](2026-11-06-settings-preferences.md): bounded device-local preferences, preview/Save/Cancel and safe startup.

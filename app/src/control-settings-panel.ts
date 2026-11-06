@@ -13,7 +13,7 @@ interface ControlSettingsPanelOptions {
   onClose: (saved: boolean) => void;
 }
 
-/** Session-only input gains. Aircraft dynamics and study assists are unchanged. */
+/** Preview input preferences; the application persists only explicitly saved choices. */
 export function createControlSettingsPanel(options: ControlSettingsPanelOptions): {
   open(): void;
   setSettings(settings: ControlSettings): void;
@@ -33,7 +33,7 @@ export function createControlSettingsPanel(options: ControlSettingsPanelOptions)
   dialog.innerHTML = `
     <div class="control-settings-heading">
       <h2 id="control-settings-title">Options</h2>
-      <p id="control-settings-description">Flight is paused. Preview changes, then Save for this session.</p>
+      <p id="control-settings-description">Flight is paused. Preview changes, then Save on this device.</p>
     </div>
     <div class="control-settings-sections">
     <fieldset class="control-settings-controls">

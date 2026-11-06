@@ -32,7 +32,6 @@ The initial graph-cap failure is retained as failed evidence. One platform tool
 and nine optional JSBSim checks remain skipped. External peer is pending under
 cadence; software checks do not establish source completeness or flight fidelity.
 
-
 ## 2026-11-06 18:00 — Reconcile OpenFlightMaps publication with airport generation
 
 TODO: 2.0.179; R-CHART-1/R-AIRPORT-3.
@@ -108,6 +107,72 @@ Cross-provider peer remains pending under batching cadence.
 Already-rendered tiles need runtime fetch/cache, not conversion. A single successful
 source tile and synthetic chart fixtures did not establish the producer's format
 or native-detail behavior; the actual default-view test exposed both assumptions.
+
+## 2026-11-06 14:08 — Resolve saved-Options PR against newly merged main
+
+TODO: 2.0.173; R-INPUT-1/R-UX-2; PR104.
+Agent: Codex orchestrator; renewed independent quality `coverage_housekeeping`
+and validation `settings_validate`.
+
+**Implementation notes**
+
+Main advanced to52897de while PR104 was being checked. Merge1f0239e preserves
+PR96 pointer pickup and PR97 balanced initialization, all incoming tests/scripts
+and complete shared records. Resolve the package, specification, decision-log
+and research-index conflicts while retaining saved Options. The
+[renewed runtime record](reviews/2026-11-06-settings-preferences-merged-runtime.json)
+pins the actual merged application: nine browser groups pass again, all five
+source hashes match and startup stays paused/audio locked. Independent quality
+and validation renew scoped acceptance. Merged CI passes565 Node/22 application
+Python,85 assurance and11 training cases;9 optional study cases remain skipped.
+
+**Deviations**
+
+Earlier publication records are historical snapshots of the old target, not
+acceptance of the conflict resolution. Root runtime was already using the
+upstream features and remains unchanged. No model or control-gain change.
+Cross-provider peer remains pending under the batching cadence.
+
+**Insights**
+
+Refresh the actual target before publication and renew affected evidence after
+merging; a clean merge against an older target cannot settle current PR status.
+
+## 2026-11-06 13:50 — Keep saved Options across new flights and reloads
+
+TODO: 2.0.173; R-INPUT-1/R-UX-2.
+Agent: Codex orchestrator; implementation `world_airport_client`, source research
+`coverage_housekeeping`, independent quality `coverage_housekeeping` and
+validation `settings_validate`.
+
+**Implementation notes**
+
+Saved control gains, brake strength, coordinated rudder, centered touchpad,
+practice PAPI, experimental roll correction and sound mute/volume now restore
+from a strict bounded device-local record. Display preferences remain separate.
+Save commits a preview; Escape/outside dismissal rolls it back. Quick sound
+changes save immediately. Startup stays paused and Web Audio stays locked until
+trusted activation. [Implementation and scope](research/2026-11-06-settings-preferences.md);
+[runtime evidence](reviews/2026-11-06-settings-preferences-runtime.json).
+
+**Deviations**
+
+No native/model changes or persistence of held inputs, aircraft loading or camera
+gestures. Existing location/AP restoration stays separate. Independent
+[quality](reviews/2026-11-06-settings-preferences-quality.md) and
+[validation](reviews/2026-11-06-settings-preferences-validation.md) accept the
+bounded Options behavior in the working app and isolated publication port.
+Separate nine-group browser runs and four working-app display groups pass.
+Publication CI passes555 Node/22 application Python,85 assurance and11 training
+cases, with9 optional JSBSim study skips. The concurrent broad working-app run
+has three airport-worker deadline failures; its isolated13-case airport suite
+passes. This does not claim that the whole working tree passes CI. Cross-provider
+peer review remains pending under the batching cadence.
+
+**Insights**
+
+Persist deliberate user preferences without treating preview values, transient
+commands or a remembered sound choice as permission to resume simulation/audio.
 
 ## 2026-11-06 12:53 — Integrate worldwide OurAirports discovery
 

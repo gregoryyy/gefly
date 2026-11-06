@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "scope": "Final settings integration checks; no physics or training validation",
+  "revision": "dbe2af3fe9ff606a43eed17df6531ccc2dd8648f",
+  "ci": {
+    "result": "pass_with_optional_study_skips",
+    "log_sha256": "350f2994159de38286aa8d60ad10e90eab9dc76e495226acc2b21c38030421ae"
+  },
+  "assurance": {
+    "result": "pass",
+    "log_sha256": "dfbde7777448814783e2f3bd5913bab3a84439d1901ac05962d8df22950d6bfe",
+    "input_hash": "8f9eeaedfc51914ca510b878d1db5ac00eae6384962e81631134ad089e68fd82",
+    "nodes": 58764,
+    "facts": 71755,
+    "errors": 0,
+    "warnings": 226,
+    "notes": 135
+  },
+  "lineage_vs_main": {
+    "base": "6563c5936f6c74dc3f34d04b5000c6d7a8328b85",
+    "added": 31,
+    "changed": 227,
+    "removed": 0,
+    "log_sha256": "72ce22512777fadc5266c552c7525487b671f41875b02cc821f9c9d4ee6fd41a"
+  },
+  "merge_check": {
+    "command": "git merge-tree --write-tree origin/main HEAD",
+    "exit_code": 0,
+    "result_tree": "b6c6df3b21d4cd87781b718c5eb66fc874cad082"
+  },
+  "runtime_record_sha256": "2fdb4e8e698c0d2c544f1ceedccf33a94776e742f8b87174f566a3a4d301f254"
+}
