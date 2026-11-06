@@ -3,6 +3,23 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 01:03 — Correct the dependent overview delivery reference
+
+TODO: 2.0.150/2.0.162; R-WORLD-11.
+Agent: Codex orchestrator.
+
+**Implementation notes**
+
+The Copernicus source metadata and provenance note now refer to the separate dependent display client by stable Task2.0.162 instead of a predicted PR93 number. PR93 is the unrelated CWS keyboard change. This correction changes documentation only; native/data behavior and the earlier measured results are unchanged. Scaffold/integrity checks and the final lineage comparison are repeated for publication.
+
+**Deviations**
+
+No new terrain or aircraft validation is claimed. Display rendering remains open and cross-provider peer remains pending.
+
+**Insights**
+
+Use stable task IDs until a pull request actually exists.
+
 ## 2026-11-06 00:07 — Add the modular Copernicus native/data foundation
 
 TODO: 2.0.150 (bounded foundation; broader gates remain open); R-WORLD-11/R-SIM-2/R-REVIEW-1.

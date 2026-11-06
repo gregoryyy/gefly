@@ -74,6 +74,6 @@
     "lifecycle": "Load only after current terrain readiness. During current native-terrain loading, cancel in-flight overview work but retain completed display cells; Review, flat mode, reset/new flight and disposal cancel and clear. Stale generations cannot install.",
     "server_priority": "At most one overview job shares the two native/service cell slots, reserving one for foreground v1 demand; v1 may use both when no overview is active.",
     "client_included": false,
-    "client_status": "API available; separate dependent PR93 client not included or activated"
+    "client_status": "API available; separate dependent display client not included or activated"
   }
 }

@@ -37,7 +37,7 @@ precedence and approximate datum transitions remain limits, not surveyed joins.
 Delivery status differs deliberately between worktrees. The isolated
 `/private/tmp/gefly-copernicus-native` increment publishes the common version-1
 and version-2 service APIs and native integration, while the display client is
-absent and remains a separate dependent PR93 / Task 2.0.162. Its metadata and
+absent and remains a separate dependent Task 2.0.162. Its metadata and
 README explicitly retain coarse far-horizon rendering. The full working tree
 contains the separate display implementation with independent acceptance pending.
 Neither inventory claims that an API's existence activates a display client.

@@ -56,7 +56,7 @@ source ETag/size/range identity stays stable while decoding.
 
 This native/service increment includes both version-1 and version-2 **APIs** and
 native fine-terrain integration. It does **not** include or activate the display
-overview client. That client is a separate dependent delivery, PR93 / Task 2.0.162;
+overview client. That client is a separate dependent delivery, Task 2.0.162;
 its acceptance is pending. In this branch, far-horizon rendering outside the
 existing atlas remains coarse even though the version-2 API is available.
 
