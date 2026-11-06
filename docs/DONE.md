@@ -3,6 +3,25 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 02:59 — Reconcile the steering dependency before the terrain PR update
+
+TODO: 2.0.153/2.0.162; R-INPUT-1/R-SIM-11/R-WORLD-11.
+Agent: Codex orchestrator; independent `quality` merge audit.
+
+**Implementation notes**
+
+PR95 now includes reviewed PR94 ancestry while continuing to target main. This preserves the neutral startup repair and prevents another shared-record conflict when the user merges PR94 first. Keep all176 complete DONE entries, requirements, script commands and chronological nonduplicated GAPS records. Four terrain implementation bodies remain hash-identical to the measured source; main adds only the separately reviewed zero-offset/comment changes. Independent [merge audit](reviews/2026-11-06-terrain-steering-integration-quality.md) finds no blocking issue.
+
+Fresh full CI passes540Node+22Python,85assurance and11training tests, with9optional JSBSim/one platform skip. Log `output/flight/overview-steering-ci.log` SHA-256 `8d19dd850c65b1ea871712d5d8df073c56f769dec9cfc093672b2903aed2e9c1`. The actual neutral-control app/Worker/native browser passes all three groups after integration, artifact SHA-256 `fba7ed32c4b28e764288b93a1681d939afec12c81a68fedc0ad20d0b036860b8`.
+
+**Deviations**
+
+The broader root source snapshot's assurance-cardinality failure, native-model handling and aircraft/peer limits remain distinct and open. No new aircraft coefficient, gain or default trim assist is introduced by the dependency merge.
+
+**Insights**
+
+Carry an independently reviewed prerequisite into the dependent branch while targeting main, so merging the small repair first narrows the later diff without leaving child work on an already merged feature target.
+
 ## 2026-11-06 02:31 — Verify the terrain display increment against merged main
 
 TODO: 2.0.162; R-WORLD-11/R-WORLD-9/R-SIM-2.
