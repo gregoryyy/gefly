@@ -360,3 +360,5 @@ future tasks, not completed by this requirements update.
 - [ ] 2.0.169 Repair landing shadow receiver visibility and height-readout gating. R-VIEW-1. [Request](input/2026-11-06-scenery-workers-and-overview.md). Receiver fixes and independent flat-study pixel checks pass; exact user terrain/landing reproduction remains open, peer pending.
 
 - [x] 2.0.174 Extend chase with Earth-scale distance zoom, top-down overview and double-click return to close heading-following chase; preserve cockpit FOV, separate overview, gesture guards and native/Review isolation. R-VIEW-1/R-INPUT-1. [Request](input/2026-11-06-chase-overview.md).
+
+- [x] 2.0.178 Add a saved animation option for cockpit/chase double-click return and soften close-range chase scroll while retaining fixed FOV, Earth-scale bounds, gesture/lifecycle cancellation and native isolation. R-VIEW-1/R-INPUT-1/R-UX-2. [Request](input/2026-11-06-camera-return.md).

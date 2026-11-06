@@ -114,7 +114,7 @@ These are simulator conveniences; acceleration preserves the fixed physics step
 and the achieved rate depends on available CPU/rendering capacity.
 Restart is in Flight. The last live location is saved locally and restored paused on reload; Restart clears it. Airborne restores use the normal 90 kt launch speed, rather than a saved physics checkpoint. Click toggles touchpad yoke control;
 hold-drag retains the view where you release it and preserves the yoke midpoint;
-Double-click chase view to return close behind the aircraft; in cockpit view double-click centers the view. Escape centers the look direction. L/R/U/D/B markers
+Double-click chase view to return close behind the aircraft; in cockpit view double-click centers the view. **View → Animate view return** toggles a saved smooth return for both views; reduced-motion preferences keep it instant. Escape centers the look direction. L/R/U/D/B markers
 show the aircraft’s left, right, up, down and backward directions. Two-finger
 vertical scroll changes cockpit field of view or chase/overview distance. Chase can zoom out to 20,000 km; hold-drag above the aircraft for a top-down overview. Over the cockpit panel,
 scroll up to focus on instruments around the pointer (up to 3×). The panel stays

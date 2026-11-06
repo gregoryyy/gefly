@@ -53,3 +53,5 @@ End with proposed implications, limitations and a handoff to product/orchestrato
 - [OpenFlightMaps overlay assessment](2026-11-06-openflightmaps-overlay.md) — structured-data candidate and unresolved product rights/edition.
 
 - [Chase overview zoom](2026-11-06-chase-overview.md): bounded distance zoom, top-down orbit and double-click return behind the aircraft.
+
+- [2026-11-06 camera return](2026-11-06-camera-return.md)

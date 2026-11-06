@@ -4,6 +4,9 @@ All times are Europe/Berlin. Answers record the author and recording time. New a
 
 ## Recorded interaction decisions
 
+**2026-11-06 16:13, user request and Codex camera scope** (Europe/Berlin): [camera return](input/2026-11-06-camera-return.md). Add saved View-menu animation for both cockpit center and chase follow return; use700ms camera-only easing, default enabled with reduced-motion instant override. Preserve lens FOV. Correct the overly steep initial chase distance response with reversible analytic mapping, retaining20Mm reach. Explicit gesture/view/lifecycle cancellation and pointer reference synchronization avoid delayed motion or flight input. Task178/R-VIEW-1/R-INPUT-1/R-UX-2.
+
+
 **2026-11-06 14:17, user request and Codex camera interpretation** (Europe/Berlin): [chase overview](input/2026-11-06-chase-overview.md) extends chase from its normal approximately 32 m radius to the existing 20,000 km Earth-scale bound. Hold-drag can place the camera directly above the aircraft. Interpret double-click as returning to close chase: zero orbit, 30 m behind / 11 m above the current aircraft heading, retaining lens FOV. Cockpit retains FOV scroll; separate overview remains available. Camera-only increment, Task174/R-VIEW-1/R-INPUT-1.
 
 **2026-11-06 09:12, user steering and Codex implementation interpretation** (Europe/Berlin): [scenery additions](input/2026-11-06-scenery-workers-and-overview.md) request separate airport/terrain work, generic markings/PAPI, overview zoom, OFM assessment and stable landing shadows. Keep native terrain installation/coverage guards; separate source CPU work, not safety waits. Generic practice PAPI remains optional and visibly illustrative. Overview is a separate View entry; wheel changes distance there. OFM structured data is the recommended candidate; no current edition, tile rights or ingestion is selected. Tasks164–169.
