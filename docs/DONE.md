@@ -3,6 +3,23 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 18:00 — Reconcile OpenFlightMaps publication with airport generation
+
+TODO: 2.0.179; R-CHART-1/R-AIRPORT-3.
+Agent: Codex orchestrator; independent quality `ofm_housekeeping` and validation
+`camera_return_validate`.
+
+Merged main446293a into PR111 while preserving both source services, tests and
+complete shared records. Corrected inherited package JSON punctuation and input
+index whitespace. Final complete CI passes606Node/22Python/85assurance/11training;
+TypeScript passes and renewed publication browser passes five groups with no map
+or page errors. Optional/platform skips remain explicit in the review records.
+The earlier concurrent-job assurance timeout remains recorded as failed; serial
+and complete-CI renewals pass unchanged checks. Source/provider behavior and the
+actual publisher evidence remain frozen. Independent bounded reviews pass;
+external peer remains pending under cadence. Final assurance/diff follow this
+integration record before publication.
+
 ## 2026-11-06 17:23 — Stream an optional OpenFlightMaps aviation overlay
 
 TODO: 2.0.179; R-CHART-1/R-WORLD-6/R-DATA-1.

@@ -415,3 +415,102 @@ genuine hidden-tab/device matrix, embedded WebKit or cross-provider peer. Direct
 raster streaming needs no offline conversion; structured chart conversion and
 packaging remain separate work. New runtime, requirement or harness pins would
 invalidate affected acceptance and require another renewal.
+
+## Merge-resolution inspection — current main airport integration
+
+2026-11-06 17:39 Europe/Berlin. PR111's target advanced while publication was in
+progress. Reviewer independently inspected merged publication revision
+`f4c16e4ab3a80c05bef8e1ad6b75adcbbdcb3736`, with OFM parent
+`1332e41246b061a5ce70e5025aa4bad48a2000de` and incoming main
+`446293af00423a6af3f1e4102a05804202ff207c` (airport-surface PR98).
+**Merge meaning is preserved for R-CHART-1; current integrated runtime acceptance
+is pending renewed merged browser, TypeScript and gate observations.** The earlier
+unmerged passes remain historical, not automatic approval of a changed Vite
+integration snapshot.
+
+The seven manually reconciled paths are package scripts, Vite configuration and
+ARCH/GAPS/SBOM/SEC/TODO. No OFM provider, descriptor, controller, preferences,
+practice-map or browser-harness implementation bytes changed from the OFM parent.
+Reviewer independently compared those seven runtime/input files byte-for-byte;
+all retain the final hashes recorded above. The merged Vite configuration hash is
+`822b1dceacff039a4007a12bea65f784f1d7d101c6313e42f2e646e41078c9f7`.
+The full merged SPEC hash is
+`65b88722cd64ee542546aa6be62490139f20edc49f71aaea7a0e33745b988619`;
+its R-CHART-1 declaration is exactly the OFM parent's declaration. Unrelated
+incoming specification rows account for the full-file hash change, not altered
+OFM acceptance criteria.
+
+| Merge-sensitive criterion | Independent observation | Outcome at this inspection |
+| --- | --- | --- |
+| OFM source/math/security contracts | Provider/metadata/controller/preference/practice-map/harness bytes unchanged; strict formats4/6, selected7–12 policy, dates, queue/cache/deadline and generation/style guards retain previous source acceptance. | Pass for unchanged source meaning; merged execution pending |
+| Both middleware services coexist | Vite retains OFM import, instance, registration and close disposal in development and preview; airport service has its own distinct instance/route registration/disposal. OFM is still registered before other route middleware and canonical chart paths do not become airport paths. | Pass by source inspection; server startup/browser pending |
+| Test commands survive reconciliation | Merged package JSON parses. Reviewer compared script keys and complete whitespace-delimited test command tokens from both parents: no named test script or test token was omitted. OFM browser command remains registered and airport tests/dedicated browser command are retained. The inherited missing comma is repaired without dropping a key. | Pass for registration/syntax; execution pending |
+| Complete dated evidence and inputs survive | Whole heading/body blocks in DONE were compared against each parent: all181 blocks from each parent remain present with unchanged content (not merely matching titles). Every input-index link from each parent remains; blank-bullet whitespace cleanup does not remove a real record. The immutable OFM input itself is byte-identical. | Pass |
+| Current scope/status remains authoritative | Complete OFM ARCH/SEC/SBOM sections, Task179 checked line and the16:33 OFM decision remain unchanged. Incoming airport/worker sections and pending tasks are retained. Task168's historical assessment now explicitly points to selected Task179 streaming work and leaves full redistribution review separate; older non-adoption planning text is dated history, not a replacement for the newer decision. | Pass for merge meaning; no airport fidelity acceptance |
+| Current integrated gate and evidence | Full merged CI is running; renewed merged publication browser and TypeScript are pending. Old browser hashes bind the earlier Vite integration, so they are not reported as merged-runtime passes. Final assurance/diff and mergeability remain integration-owned. | Blocked pending supplied current evidence |
+
+No source-contract regression or omitted OFM feature was found in these merge
+resolutions. This inspection does not independently accept the incoming airport
+implementation, terrain workers, physical surfaces or their source fidelity.
+It also does not convert the old full CI or final-source browser observations
+into results at the merged revision. Follow-up must verify the merged artifact's
+current source pins, terminal gate outcomes and actual map rendering before
+closing this pending integration recommendation. No runtime/shared file repair
+was made by this validator; only this assigned report is amended.
+
+The immutable-input preservation check was also performed at Git blob level:
+all140raw input files from the OFM parent and all141from incoming main are
+present in the merged tree with exactly the same blob identities; none changed
+or disappeared. Reviewer `just check` passes555Markdown files after this report
+amendment. That structural pass is not the pending merged-runtime/gate renewal.
+
+## Final merged-runtime renewal
+
+2026-11-06 17:57 Europe/Berlin, clock-derived. Reviewer inspected the completed
+renewal at the same merged revision
+`f4c16e4ab3a80c05bef8e1ad6b75adcbbdcb3736`; no OFM runtime repair followed the
+source freeze. This section resolves the preceding pending merged execution
+recommendation, while preserving its initial observations and all earlier limits.
+
+| Previously pending criterion | Current observed evidence | Result |
+| --- | --- | --- |
+| Merged Vite/browser integration | Publication `output/flight/ofm-overlay-browser.json` has five passing groups, zero application/map errors, Chromium156.0.8078.80, and all seven source hashes independently match the current files, including merged Vite `822b1dce…`. Actual layer pixels change, foreground order and pause invariance remain covered. | pass |
+| Retained tests and current shared gate | Final whole merged CI log identifies HEADf4c16e4 and completes606Node/22Python application tests,85assurance and11training tests, integrity and tracked whitespace, with a passing terminal summary. | pass for executed checks; skips remain explicit |
+| TypeScript at merged application | Integration owner reports merged check session25531 exit0; no affected runtime edits followed. This is integration-reported compiler evidence, not an independent rerun. | pass on supplied execution evidence |
+| Unchanged source and actual publisher observation | Server, source reader, controller, preferences and harness retain reviewed final pins. The previous working-app five-group fixture and actual default-view one-group publisher evidence remain applicable to their unchanged source scopes; the merged publication has its own renewed fixture run. | pass within those separate scopes |
+
+The current publication fixture artifact SHA-256 is
+`728aeded25d89d7c0628f32a66d4a14d97083d2a45c7e0cab8fdf233a63337a4`.
+It retains the publication-specific limit: this baseline has no ordered-plan
+feature, so GPS/NAV/trace foreground is checked without claiming a plan layer.
+The working-app artifact `d619a032…` separately covers its plan foreground;
+actual publisher artifact `174cec49…` separately covers the real nonempty
+level12 parents and absence of level13 requests in the reviewed default view.
+No new worldwide or live-flight claim is inferred from combining these scopes.
+
+Reviewer read `output-ofm-merged-ci-final.log` through its terminal
+`Foundation CI: passed with skipped checks` summary. SHA-256:
+`547d1f1b8b69716550a30d252d955ed13da76ceb7da4c355f73b47b3e26af974`.
+The application Python count is6+6+10, all successful. Repository tools execute
+242of243 with one platform skip; JSBSim study executes14of23 with nine optional
+package-unavailable skips; C172S study executes25of25. Assurance integrity
+passes at input hash
+`7c46304a32dafe08bdce7b515c1ac1289c6c69758d75baf0e6cb163d3c151305`.
+These are observed local merged gate results, not hosted CI or physics acceptance.
+
+The preceding parallel attempt in `output-ofm-merged-ci.log`, SHA-256
+`d93a5e848507a631862b17f77540fb5d141fe9f6a417eb6f8a7ebfc9a957a15d`,
+failed an assurance CLI subprocess timeout and reported84of85 passing before a
+terminal CI failure. It remains an unsuccessful attempt. A subsequent serial
+assurance renewal passed85of85 (`output-ofm-merged-assure-tests.log`, SHA-256
+`16c0b580fe59cea166e541e03d41be7699957bed1321735a6b7eacabee8dd0af`),
+then the entire final merged CI passed. No source repair or timeout-limit change
+was used to convert the failed attempt into a pass.
+
+**Final bounded recommendation: pass for R-CHART-1's optional streaming-overlay
+increment at this merged runtime snapshot.** No unresolved OFM validation finding
+remains. Final report/status integration, post-document assurance/diff, current
+mergeability and publication remain the integration owner's work. Broader rights,
+operational/source coverage, genuine hidden-tab/device testing and external peer
+remain outside this acceptance as recorded above. A changed affected runtime pin
+would require renewed evidence.

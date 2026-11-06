@@ -209,3 +209,18 @@ current frozen source. [The runtime record](../reviews/2026-11-06-ofm-overlay-ru
 retains those distinctions and the prior failures. Independent quality/validation
 renew their bounded outcomes; full coverage/redistribution, live-flight/Review
 chart interaction, embedded WebKit and external peer remain separately limited.
+
+
+## Publication reconciliation with airport-generation main
+
+Main advanced to446293a during PR111 publication. Mergef4c16e4 preserves both
+OFM and airport service registration/disposal, every parent test command and all
+complete dated/shared records; inherited package-JSON comma and input-index
+whitespace defects were repaired. OFM source/controller/practice-map bytes remain
+unchanged. The publication browser was renewed against the changed Vite source
+pin and passes five groups. Merged TypeScript and complete CI pass606Node/22Python,
+85assurance/11training, with the same242/243tool and14/23JSBSim skip distinctions.
+A transient assurance child-process timeout under concurrent jobs is historical;
+serial85-case and full-CI renewals pass without changing deadlines or assertions.
+Independent quality/validation renew this merge; final assurance/diff are measured
+on the published integrated revision.

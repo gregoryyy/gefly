@@ -443,3 +443,86 @@ Broader full-license/product redistribution review, permanent offline chart
 packaging, embedded WebKit, complete coverage/current operational accuracy and
 cross-provider peer remain outside this quality acceptance. Live screenshot/chart
 pixels stay local generated artifacts and are not bundled as project assets.
+
+## 2026-11-06 17:39 — Merge-resolution quality renewal
+
+Reviewed the conflict resolution in publication merge
+`f4c16e4ab3a80c05bef8e1ad6b75adcbbdcb3736`, with parents OFM
+`1332e41246b061a5ce70e5025aa4bad48a2000de` and newly advanced main
+`446293af00423a6af3f1e4102a05804202ff207c` (on-demand airport generation).
+This section reviews integration preservation, not independent acceptance of all
+inherited airport-generation or terrain-worker implementation/fidelity claims.
+
+**No blocking merge-resolution finding.** Inspected the seven conflicted files
+(package/Vite/ARCH/GAPS/SBOM/SEC/TODO) against both parents and checked the other
+shared-record integration. No source or requirement edits were made by reviewer.
+
+- The merged `app/package.json` parses. Incoming main had a missing comma after
+  `test:airport-generator`; reviewer confirmed that inherited parse failure and
+  repaired only an in-memory comparison copy to enumerate expected scripts.
+  A programmatic script inventory confirms every script key and every command
+  component from both parents is retained. The77Node test-file arguments retain
+  the union, Python tail commands remain, both dedicated OFM/airport browser
+  scripts exist, and dependency/devDependency objects are unchanged from both.
+  This is source/inventory evidence, not a claim all those browser commands ran.
+- Both development and preview configurations retain one OFM middleware and one
+  airport-region middleware, each with its owned close/dispose hook. Existing
+  hashed assets/Copernicus/scenery/runtime setup remains. The prefixes and owned
+  instances stay separate; the merge does not route airport requests through the
+  OFM cache or vice versa.
+- Recomputed final OFM module and map bytes against the OFM parent: server,
+  source metadata, overlay controller, preferences and `practice-map.ts` are
+  exactly unchanged. The Vite integration changed and therefore needs a renewed
+  browser source pin. Current Vite SHA-256 is
+  `822b1dceacff039a4007a12bea65f784f1d7d101c6313e42f2e646e41078c9f7`;
+  package SHA-256 is
+  `2dea3d69aa5618511e25ddaac53bb040c37bb71d28ae62e85e56cac32c4ffdcc`.
+- Used the repository's fence-aware sorted-log parser to compare complete DONE
+  entries: both parents'181entries survive without a missing or changed
+  normalized entry. The input index preserves all140OFM-parent and141incoming
+  link targets; the inherited empty bullet's trailing whitespace was removed
+  without removing a linked input record. No conflict markers remain in the
+  inspected shared files.
+- All nonblank incoming lines in ARCH/GAPS/SBOM/SEC remain. OFM sections are also
+  preserved. TODO retains the delivered179scope and the explicit separate85.1
+  broader license/product review, while168now calls the old assessment historical
+  rather than retaining an obsolete current 'unselected edition' condition.
+  Dated earlier GAPS answers remain history beneath the newer OFM decision.
+
+Inspected merged CI log at this point:606Node application and22application
+Python tests have passed, with assurance/training stages observed; terminal
+shared-CI status, TypeScript and renewed publication browser are still pending.
+The preceding final source/browser/live-provider observations remain historical
+for their source pins and are not silently promoted to the changed Vite merge.
+The orchestrator is renewing those affected integration checks before publication.
+Final assurance/diff and external peer remain separate integration responsibilities.
+
+## 2026-11-06 17:54 — Final merged evidence renewal
+
+The publication merge remains `f4c16e4ab3a80c05bef8e1ad6b75adcbbdcb3736`.
+Independently inspected the renewed publication browser artifact, SHA-256
+`728aeded25d89d7c0628f32a66d4a14d97083d2a45c7e0cab8fdf233a63337a4`:
+five groups pass, no page or MapLibre errors, all seven recorded hashes match
+current publication source, including merged Vite `822b1dce…`.
+Its explicit `planScope:false` retains the main checkout's actual capabilities;
+all baseline GeoJSON foreground still participates in order/preservation checks.
+The prior ROOT fixture `d619a032…` and real-provider observation `174cec49…`
+remain byte-identical, with all seven pins matching their respective working-app
+source. They are supporting scoped observations, not a newly executed merged
+publication live-provider run.
+
+Inspected `output-ofm-merged-ci-final.log`: terminal shared CI passes for executed
+checks, including606 application Node,22 application Python,85 assurance,
+11 training and25 C172S-data tests. Offline tools executed242 of243 with one
+Linux-only skip; JSBSim study executed14 of23 with nine unavailable-package
+skips. Those ten skipped checks are not passes. The earlier
+`output-ofm-merged-ci.log` retains its CLI-child timeout failure under concurrent
+load; the subsequent complete CI renewal passes, including that affected CLI
+suite. Integration owner separately reports merged TypeScript exit0 (session25531);
+reviewer did not relaunch it or infer a pass from an empty log.
+
+**No blocking quality finding remains for the merged opt-in visual overlay.**
+Final assurance check/diff after copying records and publication remain the
+orchestrator's integration steps. Broader product/redistribution rights, offline
+packaging, source completeness/current operational accuracy, embedded WebKit and
+cross-provider peer remain limited exactly as recorded above.
