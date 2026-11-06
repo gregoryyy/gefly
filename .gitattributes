@@ -4,3 +4,7 @@ LICENSE -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 # Newest-first logs: merge DONE by dated entry, the input index by union. Run `just setup`.
 docs/DONE.md merge=sorted-log
 docs/input/README.md merge=union
+
+# Generated opaque geospatial payloads: preserve hash-pinned bytes across checkouts.
+app/public/airports/world/*.bin binary
+app/public/airports/world/cells/*.bin binary

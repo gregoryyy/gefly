@@ -378,3 +378,35 @@ test('AS3 known limitation: a negated designator ("not the 172S") is still read 
   assert.equal(source?.attrs?.applicableVariants, '172P,172S');
   assert.ok(!result.problems.some(problem => problem.check === 'aircraft.applicability' && problem.id === parameter));
 });
+
+test('AS4/AS5 profiled generated JSON preserves whole-file acceptance and rejects child selectors', async () => {
+  const { GENERATED_STYLE_PROFILE } = await import('./json-extraction.ts');
+  const style = readFileSync(new URL('../../../app/public/mapdata/terrain-style.json', import.meta.url), 'utf8');
+  const { f, c } = acceptedFixture(); f[GENERATED_STYLE_PROFILE.path] = style;
+  c.jsonExtractionProfiles = [{ ...GENERATED_STYLE_PROFILE, reason: 'Imported generated cartography; whole-file evidence only.' }];
+  c.evidence[0].inputs.push({ role: 'source', ...pin(f, GENERATED_STYLE_PROFILE.path) });
+  const whole = run(f, c);
+  assert.deepEqual(errors(whole), []);
+  assert.equal(whole.nodes.find(node => node.id === 'assure:browser-launch')?.attrs?.eligible, 'true');
+  assert(whole.nodes.some(node => node.id === GENERATED_STYLE_PROFILE.path && node.hash === sha(style)));
+  c.evidence[0].inputs.at(-1).pointer = '/version';
+  const child = run(f, c);
+  assert(checks(child).includes('evidence.pointer')); assert(checks(child).includes('criterion.acceptance'));
+  assert.equal(child.nodes.find(node => node.id === 'assure:browser-launch')?.attrs?.eligible, 'false');
+  assert(!child.nodes.some(node => node.id === GENERATED_STYLE_PROFILE.path + '#/version'));
+  delete c.evidence[0].inputs.at(-1).pointer;
+  c.evidence[1].result = { ...pin(f, GENERATED_STYLE_PROFILE.path), assertions: [{ pointer: '/version', equals: 8 }] };
+  const assertion = run(f, c);
+  assert(checks(assertion).includes('evidence.assertion')); assert(checks(assertion).includes('criterion.acceptance'));
+});
+
+test('AS5 refreshed evidence hash cannot bypass a changed generated-profile source', async () => {
+  const { GENERATED_STYLE_PROFILE } = await import('./json-extraction.ts');
+  const style = readFileSync(new URL('../../../app/public/mapdata/terrain-style.json', import.meta.url), 'utf8');
+  const { f, c } = acceptedFixture(); f[GENERATED_STYLE_PROFILE.path] = style + '\n';
+  c.jsonExtractionProfiles = [{ ...GENERATED_STYLE_PROFILE, reason: 'Imported generated cartography.' }];
+  c.evidence[0].inputs.push({ role: 'source', ...pin(f, GENERATED_STYLE_PROFILE.path) });
+  const changed = run(f, c);
+  assert(checks(changed).includes('evidence.json-profile')); assert(checks(changed).includes('criterion.acceptance'));
+  assert.equal(changed.nodes.find(node => node.id === 'assure:run-a')?.attrs?.eligible, 'false');
+});

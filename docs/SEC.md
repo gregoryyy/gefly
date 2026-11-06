@@ -453,3 +453,56 @@ The persistent renderer separately retains32 detached overview payloads alongsid
 Custom GPS planning bounds are independent of pinned regional source catalogue
 limits. Shared validation rejects invalid coordinates before mutation; global
 custom planning adds no source downloads, receiver coverage or persistence.
+
+## Worldwide community discovery packages
+
+R-WORLD-12 adds fixed same-origin `/airports/world/` assets and a dedicated
+discovery worker; it sends no simulator state, credentials or user data to
+OurAirports. CSV download/compilation occurs separately at a pinned public commit.
+Manifest, gzip search and cell reads have byte/deadline/hash/schema/record/coordinate
+and referential bounds before presentation. Gzip expansion is bounded separately;
+paths are fixed/canonical, redirected responses are rejected, obsolete jobs are
+cancelled and failed data remains unavailable. Main-thread snapshots/search hits
+are bounded; disposal terminates the worker and rejects pending requests.
+Source strings render as text, with no imported HTML/scripts. Community NAV/COM
+selection uses existing guarded standby actions and Review locks; it cannot install
+receiver signals, alter native state or invent missing ILS/procedure components.
+The bundled regional directory remains a fallback if optional world data fails.
+
+
+R-WORLD-12 bulk transport uses a small JSON descriptor whose SHA-256 binds the
+full UTF-8 JSON `catalogue.bin`; cell `.bin` assets also contain UTF-8 JSON,
+validated by the dedicated worker. The assurance graph records descriptor and
+file-level provenance, not every generated airport-field JSON pointer. Compiler,
+source-audit and all-cell client tests provide separate semantic checks. No
+hand-authored aircraft-data extraction or assurance resource bound is relaxed.
+
+## On-demand airport surface service
+
+Only canonical bounded integer region keys are accepted; clients cannot supply
+upstream URLs, Overpass expressions or cache paths. The fixed HTTPS provider is
+requested without credentials/redirects, under independent job, byte, timeout
+and cooldown budgets. Region extents are sent upstream; exact flight samples,
+controls and accounts are not. No broad crawl or provider failover is performed.
+Compiled packages retain OSM provenance but strip mapper names/UIDs/changesets.
+Persistent local cache files are versioned, atomically written, size/count bounded,
+content-hashed and schema/geometry checked again on read; corruption is a miss,
+not trusted executable input. Source text is inert and cannot create HTML or
+flight commands. Missing data/failures remain optional scenery availability;
+Review/flat/disposal cancellation cannot resume or reposition the aircraft.
+
+### Scenery worker boundaries
+
+Worker messages use fixed operations, bounded queues, request/generation identities and deadlines. Terrain Workers resolve existing allowlisted sources; callers cannot supply arbitrary code or upstream URLs. Cancelled/late results cannot be admitted. Source arrays are copied before transfer to retain cache/history ownership. Backend block decoding has two active workers,32 queued requests and a15-second job deadline. These are CPU/lifecycle boundaries, not isolation from a compromised same-origin application. No flight telemetry is sent to airport-source services.
+
+
+## Hash-pinned generated cartography extraction
+
+Task2.0.180 adds one optional catalog extraction profile for the exact path and
+SHA-256 of the imported generated terrain-style JSON. Core allowlisting admits
+only that reviewed pair and file-level mode. Original bytes and whole-file
+identity/freshness remain; default structured extraction, aircraft inputs and
+accepted whole-file evidence are preserved. Missing/changed bytes and invalid
+profiles fail integrity. Child selectors or child result assertions on the
+profiled file are explicitly ineligible, never silently mapped to its file node.
+No graph cap, validation deadline, application asset or runtime behavior changes.
