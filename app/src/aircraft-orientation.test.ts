@@ -176,8 +176,11 @@ test('R-VIEW-1 explicit bounded distance changes only chase offset and preserves
   const before = structuredClone(look);
   const ordinary = chaseCameraENU(.4, look);
   assert.equal(Math.hypot(...ordinary.offset), Math.hypot(...chaseCameraENU(.4, { yaw_rad: .7, pitch_rad: -.3 }).offset));
-  for (const invalid of [NaN, Infinity, -Infinity, -1, 0]) {
+  for (const invalid of [NaN, Infinity, -Infinity]) {
     assert.deepEqual(chaseCameraENU(.4, look, invalid), ordinary);
+  }
+  for (const belowMinimum of [-1, 0]) {
+    assert.deepEqual(chaseCameraENU(.4, look, belowMinimum), chaseCameraENU(.4, look, CHASE_DISTANCE.min_m));
   }
   assert.deepEqual(chaseCameraENU(.4, look, 1e100), chaseCameraENU(.4, look, CHASE_DISTANCE.max_m));
   const far = chaseCameraENU(.4, look, 10_000);

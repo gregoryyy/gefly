@@ -3,6 +3,31 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 20:28 — Allow closer chase-view zoom
+
+TODO: 2.0.186; R-VIEW-1/R-INPUT-1. Agent: Codex orchestrator; production and
+focused tests `closer_chase_code`; independent quality `closer_chase_review`;
+independent browser validation `closer_chase_validation`.
+
+**Implementation notes**
+
+The chase radius now ranges from16m to20,000km, with the original31.953m
+initial and double-click return radius retained. Negative wheel travel stays
+continuous and reversible; the16m limit is a presentation choice, outside the
+illustrative10.7m wingspan. This branch requires PR #113 for its underlying
+chase-camera and return implementation.
+
+Quality independently checked the travel inverse and 31/31 focused tests.
+Validation used real Chrome and observed default31.953m to16m, the aircraft
+wingspan increasing from approximately426 to873 pixels, and double-click
+returning to the default. The browser check used one viewport and fixture
+scenery; an OSM PNG/PBF fixture parsing warning occurred in both captures, with
+zero uncaught page errors. Scenery fidelity and source loading are outside this
+check. This is visual camera evidence, not aircraft or flight-model validation.
+**Deviations**
+
+Cross-provider peer review remains pending.
+
 ## 2026-11-06 19:53 — Scale chase-view return time with zoom distance
 
 TODO: 2.0.185; R-VIEW-1/R-INPUT-1/R-UX-2.
