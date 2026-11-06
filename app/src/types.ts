@@ -168,6 +168,8 @@ export interface FlightScene {
   setLandmarkLevel?(level: 0 | 1 | 2 | 3): void;
   setSceneryMode?(vector: boolean): void;
   setPracticePapi?(enabled: boolean): void;
+  /** Instructional visual aid only; not a published approach or avionics input. */
+  setApproachGuide?(guide: import('./approach-guide.ts').ApproachGuide | null): void;
   setTerrainTiles?(tiles: readonly TerrainGrid[]): void;
   /** Background display elevation is allowed only for prepared live terrain. */
   setDisplayOverviewActive?(active: boolean, retain?: boolean): void;

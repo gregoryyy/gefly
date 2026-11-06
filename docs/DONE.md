@@ -3,6 +3,35 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 21:08 — Add an airport-selected visual approach guide
+
+TODO: 2.0.187; R-NAV-3. Agent: Codex orchestrator; 3D geometry and rendering
+`glidepath_scene`; map and runway selection `glidepath_map`; housekeeping and
+independent numerical quality `glidepath_product` (excluding its own docs);
+independent browser validation `glidepath_validate`.
+
+**Implementation notes**
+
+Select an airport and runway end on the map to show or hide a 3 NM visual line
+at 3° in the flying view. Known displaced thresholds are applied; unknown
+ones and approximate rendered-terrain height are disclosed. Unavailable ground
+height waits rather than inventing zero. The guide is illustrative, not an ILS,
+published approach, obstacle clearance or autopilot input.
+
+In the live working app, five focused geometry/selection tests passed. Independent Chrome validation
+observed the line from an EDFE 08 cockpit approach, show/hide/re-show, map-close
+retention and no uncaught page errors. The separate worldwide airport browser
+regression passed10 groups with paused native step/digest, AP and radio state
+unchanged. The isolated main-based port passed nine browser groups including the detached-popup guard, with its separate standby-confirmation, flight-plan action and map-relocation checks skipped because those unrelated working-app features are absent there. Validation used fixture scenery and one viewport; visual chase,
+waiting-to-ready transition, Review, unpaused state isolation, real-world
+terrain fidelity and flight-training validity were not evaluated.
+
+**Deviations**
+
+Cross-provider peer review is pending. The optional user question about whether
+the guide should also appear on the 2D map was unanswered; this increment uses
+the 3D flying view. No official runway datum or approach procedure is implied.
+
 ## 2026-11-06 20:28 — Allow closer chase-view zoom
 
 TODO: 2.0.186; R-VIEW-1/R-INPUT-1. Agent: Codex orchestrator; production and

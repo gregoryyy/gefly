@@ -10,3 +10,8 @@
 .map-point-popup-target { width: 100%; margin-top: 9px; }
 .maplibregl-popup-content:has(> .map-point-popup) { background: #132632; padding: 11px; }
 .maplibregl-popup-content:has(> .map-point-popup) > .maplibregl-popup-close-button { color: #e5eef1; }
+.map-approach-guide { display: grid; gap: 7px; min-width: 0; margin: 10px 0 0; padding: 8px 0 0; border: 0; border-top: 1px solid #bfd2dc45; }
+.map-approach-guide legend { padding-top: 8px; font-weight: 600; }
+.map-approach-guide label { display: grid; gap: 4px; }
+.map-approach-guide select { width: 100%; min-height: 30px; border: 1px solid #abc8d94d; border-radius: 4px; color: #e5eef1; background: #223743; font: inherit; }
+.map-approach-guide small { color: #b4c5cc; font-size: 10px; }

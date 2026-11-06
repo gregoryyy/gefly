@@ -1,5 +1,6 @@
 import { validFrequency, type RadioKind, type RadioReceiver } from './radio-nav';
 import './map-point-popup.css';
+import type { ApproachGuide } from './approach-guide.ts';
 
 export interface MapPoint {
   readonly id: string;
@@ -12,9 +13,12 @@ export interface MapPoint {
   readonly equipment?: string;
   readonly world_record_id?: string;
   readonly details?: readonly string[];
+  readonly approach_guides?: readonly ApproachGuide[];
   readonly frequencies?: readonly { readonly kind: RadioKind; readonly channel_khz: number; readonly label: string }[];
 }
 export interface MapPointActions {
+  currentApproachGuide?: Readonly<ApproachGuide> | null;
+  onApproachGuide?(guide: ApproachGuide | null): void;
   canTune(): boolean;
   onTune(kind: RadioKind, receiver: RadioReceiver, channel_khz: number): void;
   /** A visual map target/bearing; this does not command aircraft guidance. */
@@ -38,6 +42,33 @@ export function createMapPointPopup(input: Readonly<MapPoint>, actions: MapPoint
     ? `${coordinate(point.lat_deg, 'N', 'S')}, ${coordinate(point.lon_deg, 'E', 'W')}` : 'Coordinates unavailable'}`));
   const source = node('p', point.source_label); source.className = 'map-point-popup-source'; section.append(source);
   for (const detail of (point.details ?? []).slice(0, 12)) section.append(node('p', detail));
+  if (point.kind === 'airport' && actions.onApproachGuide) {
+    const group = node('fieldset'); group.className = 'map-approach-guide';
+    group.append(node('legend', '3° approach guide'));
+    const guides = point.approach_guides ?? [];
+    const current = actions.currentApproachGuide;
+    if (current) {
+      group.append(node('p', `Shown: ${current.airportName} · runway ${current.runwayIdent}${current.displaced_threshold_ft === null ? ' · runway-end approximation; displacement unknown' : ''}`));
+      const hide = node('button', 'Hide 3° guide'); hide.type = 'button';
+      hide.addEventListener('click', () => actions.onApproachGuide?.(null)); group.append(hide);
+    }
+    if (guides.length) {
+      const label = node('label', 'Runway direction');
+      const select = node('select'); select.setAttribute('aria-label', 'Approach runway direction');
+      for (const [index, guide] of guides.entries()) {
+        const option = node('option', `${guide.runwayIdent}${guide.displaced_threshold_ft === null ? ' · displacement unknown' : ''}`);
+        option.value = String(index); select.append(option);
+        if (current?.airportId === guide.airportId && current.runwayIdent === guide.runwayIdent
+          && current.lat_deg === guide.lat_deg && current.lon_deg === guide.lon_deg) select.value = option.value;
+      }
+      label.append(select); group.append(label);
+      const show = node('button', 'Show 3° guide'); show.type = 'button';
+      show.addEventListener('click', () => { const guide = guides[Number(select.value)]; if (guide) actions.onApproachGuide?.({ ...guide }); });
+      group.append(show);
+    } else group.append(node('p', point.airport_type === 'closed' ? 'Airport marked closed in this snapshot.' : 'Suitable runway direction data unavailable for this airport.'));
+    group.append(node('small', 'Illustrative only: not an instrument approach, ILS, or obstacle clearance.'));
+    section.append(group);
+  }
   const unsupported = /\b(?:NDB|TACAN)\b/i.test(`${point.kind} ${point.equipment ?? ''}`);
   const unique = new Set<string>();
   for (const frequency of point.frequencies ?? []) {

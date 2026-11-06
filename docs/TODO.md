@@ -382,3 +382,4 @@ Task2.0.170 verification: [quality](reviews/2026-11-06-worldwide-airports-qualit
 - [x] 2.0.185 Scale chase-return duration with zoom-out factor up to six seconds, decelerating into the endpoint while preserving cockpit, reduced-motion, cancellation and native-state isolation. R-VIEW-1/R-INPUT-1/R-UX-2. [Request](input/2026-11-06-chase-return-duration.md).
 
 - [x] 2.0.186 Allow a closer chase-view zoom while retaining the default and reset pose, bounded smooth wheel behavior and flight-state isolation. R-VIEW-1/R-INPUT-1. [Request](input/2026-11-06-closer-chase-zoom.md). Requires PR #113; peer pending.
+- [x] 2.0.187 Add an airport-selected illustrative 3° approach line with runway-direction choice, source and terrain-height limitations, and independent visual verification. R-NAV-3. [Request](input/2026-11-06-airport-glidepath.md).

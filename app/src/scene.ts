@@ -14,6 +14,7 @@ import { projectBodyDirections } from './forward-marker-projection';
 import { createAircraftVisual } from './aircraft-visual';
 import { AIRCRAFT_CONTROL_SURFACES, controlSurfaceAngle } from './aircraft-control-surfaces';
 import { createAircraftShadow } from './aircraft-shadow';
+import { createApproachGuideRenderer } from './approach-guide-render.ts';
 import { createPublicTerrainProvider } from './terrain-provider';
 import { createStreamedTerrainProvider } from './streamed-terrain-provider';
 import { createGlobalTerrainProvider, tryUpdateGlobalTerrainProvider, tryUpdateGlobalTerrainOverview, acceptGlobalTerrainOverviewSource, closeGlobalTerrainOverview, globalTerrainOverviewInfo } from './global-terrain-provider';
@@ -139,6 +140,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   const landmarkCredit = new Credit(LANDMARK_CREDIT, true);
   let landmarkCreditVisible = false;
   const aircraftShadow = createAircraftShadow(scene, container);
+  const approachGuide = createApproachGuideRenderer(scene, container, (lat, lon) => atlasSample(lat, lon)?.ellipsoid_m ?? null);
   const forwardMarker = createForwardMarker(container);
   let directionReferencesVisible = false;
   // View-only hysteresis: 22° also clears the default 20.14° chase orbit.
@@ -484,6 +486,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       throw new RangeError('Cannot render a non-finite aircraft state');
     }
     const useTerrain = state.terrain_profile === 1;
+    approachGuide.update(useTerrain);
     if (!useTerrain && (overviewActive || overviewLoader.hasSources)) { overviewActive = false; overviewLoader.cancel(true); }
     if (useTerrain && overviewActive && !overviewLoader.stopped && streamedTiles.length && recordingController === null && recordingTiles.size === 0)
       void overviewLoader.update(state.lat_rad, state.lon_rad).catch(() => {});
@@ -699,6 +702,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       container.dataset.sceneryMode = vector ? 'vector' : 'imagery'; imageryStatus(lastState); scene.requestRender();
     },
     setPracticePapi(enabled) { airportScenery.setPracticePapi(enabled); container.dataset.practicePapi = String(enabled); },
+    setApproachGuide(guide) { approachGuide.set(guide); },
     update,
     cancelTerrainPreparation() {
       recordingVersion++;
@@ -795,7 +799,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       creditObserver.disconnect();
       clearTimeout(loadTimeout);
       forwardMarker.dispose();
-      aircraftShadow.dispose(); airportScenery.dispose(); landmarkLabels.dispose();
+      approachGuide.dispose(); aircraftShadow.dispose(); airportScenery.dispose(); landmarkLabels.dispose();
       status.remove();
       widget.destroy();
       credits.remove();

@@ -1,4 +1,6 @@
 import { createOfmMapOverlay, OFM_OVERLAY_ID } from './ofm-map-overlay.ts';
+import { airportApproachGuides } from './approach-guide-airports.ts';
+import type { ApproachGuide } from './approach-guide.ts';
 import { loadOfmOverlaySource } from './ofm-overlay-source.ts';
 import './ofm-map-overlay.css';
 
@@ -39,6 +41,8 @@ export interface PracticeMap {
 }
 
 interface MapOptions {
+  initialApproachGuide?: Readonly<ApproachGuide> | null;
+  onApproachGuide?: (guide: ApproachGuide | null) => void;
   container: HTMLElement;
   onClose: () => void;
   onInteraction: () => void;
@@ -265,6 +269,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   let paintedFixes: readonly MapFix[] | undefined;
   const fixMarkers: Marker[] = [];
   let selectedPoint: Readonly<MapPoint> | null = null, pointPopup: Popup | null = null;
+  let approachGuide: Readonly<ApproachGuide> | null = options.initialApproachGuide ?? null;
   let gpsTarget: Readonly<MapPoint> | null = null, gpsDataKey = '';
   let searchPosition: { lat: number; lon: number } | null = null;
   const fixesStatus = document.createElement('p'); fixesStatus.className = 'practice-map-navigation-status';
@@ -318,7 +323,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   function airportPoint(airport: Airport): MapPoint {
     const worldAirport = worldAirportIds.has(airport.id);
     const runways = runwayByAirport.get(airport.id) ?? [];
-    return { id: airport.icao || airport.id, name: airport.name, kind: 'airport', airport_type: airport.type, lon_deg: airport.lon, lat_deg: airport.lat,
+    const guides = airportApproachGuides(airport, runways, `OurAirports community snapshot ${worldSnapshot?.retrieved ?? 'date unavailable'} · revision ${worldSnapshot?.source_commit ?? 'unavailable'}`);
+    return { approach_guides: guides, id: airport.icao || airport.id, name: airport.name, kind: 'airport', airport_type: airport.type, lon_deg: airport.lon, lat_deg: airport.lat,
       ...(worldAirport ? { world_record_id: airport.id, details: runways.length ? runways.slice(0, 8).map(r =>
         `Runway ${r.le.ident || '?'} / ${r.he.ident || '?'} · ${r.length_ft === null ? 'length unknown' : `${r.length_ft} ft`}${r.width_ft === null ? '' : ` × ${r.width_ft} ft`} · ${r.surface || 'surface unknown'}${r.closed ? ' · CLOSED' : ''}`)
         : ['Runway details unavailable in this snapshot.'] } : {}),
@@ -348,15 +354,26 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   function refreshPointSearch(): void { pointSearch.setPoints([...airports.map(airportPoint), ...navigationData.features.map(navigationPoint), ...(worldSnapshot?.navaids.map(worldNavaidPoint) ?? []), ...fixes.map(fixPoint)]); }
   function refreshPointPopup(): void {
     if (!selectedPoint || !pointPopup) return;
-    const point = selectedPoint;
-    pointPopup.setDOMContent(createMapPointPopup(point, {
+    const point = selectedPoint, popup = pointPopup;
+    const content = createMapPointPopup(point, {
+      currentApproachGuide: approachGuide,
+      onApproachGuide: options.onApproachGuide ? guide => {
+        if (disposed || pointPopup !== popup || selectedPoint !== point || !content.isConnected || !popup.getElement().contains(content)) return;
+        if (guide && !point.approach_guides?.some(candidate => candidate.airportId === guide.airportId
+          && candidate.runwayIdent === guide.runwayIdent && candidate.lat_deg === guide.lat_deg && candidate.lon_deg === guide.lon_deg
+          && candidate.heading_deg_true === guide.heading_deg_true && candidate.displaced_threshold_ft === guide.displaced_threshold_ft)) return;
+        approachGuide = guide ? Object.freeze({ ...guide }) : null;
+        options.onApproachGuide?.(approachGuide ? { ...approachGuide } : null);
+        onInteraction(); refreshPointPopup();
+      } : undefined,
       canTune: () => !reviewing && (options.canTuneCom?.() ?? true) && !!point.frequencies?.some(f => f.kind === 'com' ? options.onTuneCom : options.onTuneNav),
       onTune(kind, receiver, channel) {
         if (reviewing || !(options.canTuneCom?.() ?? true)) return;
         (kind === 'com' ? options.onTuneCom : options.onTuneNav)?.(receiver, channel); onInteraction();
       },
       onGpsTarget(target) { gpsTarget = target; gpsDataKey = ''; paintGpsTarget(); onInteraction(); },
-    }));
+    });
+    popup.setDOMContent(content);
   }
   function openPoint(point: Readonly<MapPoint>, preserveWorldSelection = false): void {
     if (!preserveWorldSelection) { ++worldSelectionGeneration; selectedWorldHit = null; }

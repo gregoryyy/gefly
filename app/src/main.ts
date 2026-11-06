@@ -54,6 +54,7 @@ import { createControlSettingsPanel } from './control-settings-panel';
 import { reviewKeyAction, snapReviewTime } from './review-transport';
 import { checkNavdata, eddfPracticeReady, workerNavdata, type NavdataCheck, type NavdataSide } from './navdata-identity';
 import { pilotAxes, recordedControlView, recordedHeldKeys } from './pilot-controls';
+import type { ApproachGuide } from './approach-guide.ts';
 import type { Controls, FlightState, FlightScene, LandingPreset, AirborneSite, FlightLocation } from './types';
 import type { PracticeMap } from './practice-map';
 import { practiceMapUpdateDue } from './practice-map-data';
@@ -263,6 +264,7 @@ let exerciseActive = false;
 const runwayPractice = createRunwayPracticeMonitor();
 let practiceReviewCache: { trace: FlightTrace; time: number; count: number; progress: PracticeProgress } | null = null;
 let scene: FlightScene | null = null;
+let approachGuide: ApproachGuide | null = null;
 let sceneFailed = false, ready = false, running = false, failed = false;
 let hasFlown = false, startWhenReady = false;
 let latest: FlightState | null = null, previous: FlightState | null = null;
@@ -825,6 +827,8 @@ async function setMapVisible(visible: boolean) {
       container: panel,
       onClose: () => { void setMapVisible(false); focusFlight(); },
       onInteraction: neutralize,
+      initialApproachGuide: approachGuide,
+      onApproachGuide(guide) { approachGuide = guide ? { ...guide } : null; scene?.setApproachGuide?.(approachGuide); },
       onVectorChange: setTerrainMode,
       onStartRunway(id) {
         const runway = EDFE_RUNWAYS.find(r => r.id === id); if (!runway || reviewing) return;
@@ -1400,7 +1404,7 @@ const flightAssists = createFlightAssists({
 sceneContainer.setAttribute('aria-description','I toggles the menu. O opens Options. F toggles full screen. M toggles the flight map. Comma toggles the extended menu below the map. Period cycles terrain labels. Slash switches vector and photo terrain on a US keyboard. Cockpit scroll changes field of view; chase scroll changes distance. Hold-drag to orbit; double-click chase to return behind the aircraft.');
 
 const sceneReady = createScene(sceneContainer).then(result => {
-  scene = result; scene.setLandmarkLevel?.(landmarkLevel); scene.setSceneryMode?.(!!controlSettings.vectorScenery); scene.setPracticePapi?.(!!controlSettings.practicePapi);
+  scene = result; scene.setLandmarkLevel?.(landmarkLevel); scene.setSceneryMode?.(!!controlSettings.vectorScenery); scene.setPracticePapi?.(!!controlSettings.practicePapi); scene.setApproachGuide?.(approachGuide);
   scene.setTerrainTiles?.([...regionalTiles.values()]); session.reset(undefined, undefined, undefined, initialFlightLocation ?? undefined, initialFlightLocation ? initialFlightLocation.initial_balance_profile ?? (initialFlightLocation.mode === 'ground' ? 0 : 1) : 1);
 }).catch((error: unknown) => {
   sceneFailed = true; running = false; startWhenReady = false;

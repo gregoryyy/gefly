@@ -189,6 +189,34 @@ try {
     await select(id);
     const text = await popup.textContent();
     assert.match(text, /OurAirports/); assert.match(text, /Runway .*ft/);
+    if (id === 'LOWW') {
+      const directions = popup.getByLabel('Approach runway direction');
+      assert(await directions.locator('option').count() >= 2, 'airport offers both available runway directions');
+      const label = await directions.locator('option').first().textContent();
+      await page.evaluate(() => { window.__staleGuideShow = [...document.querySelectorAll('.map-approach-guide button')].find(button => button.textContent === 'Show 3° guide'); });
+      await popup.getByRole('button', { name: 'Show 3° guide' }).click();
+      assert.match(await popup.textContent(), /Illustrative only: not an instrument approach, ILS, or obstacle clearance/);
+      await page.waitForFunction(() => ['waiting', 'ready'].includes(document.querySelector('#scene').dataset.approachGuide));
+      const revision = await panel.getAttribute('data-world-airports-revision');
+      assert.match(revision, /^[a-f0-9]{40}$/);
+      assert((await page.locator('#scene .approach-guide-status').textContent()).includes(`revision ${revision}`), 'guide discloses exact source revision');
+      assert.equal(await page.locator('#scene').getAttribute('data-approach-guide-runway'), label.split(' · ')[0]);
+      await popup.getByRole('button', { name: 'Hide 3° guide' }).click();
+      assert.equal(await page.locator('#scene').getAttribute('data-approach-guide'), 'off', 'hide works immediately without reopening');
+      await page.evaluate(() => window.__staleGuideShow.click());
+      assert.equal(await page.locator('#scene').getAttribute('data-approach-guide'), 'off', 'detached stale popup cannot reactivate the guide');
+      await popup.getByRole('button', { name: 'Show 3° guide' }).click();
+      assert.notEqual(await page.locator('#scene').getAttribute('data-approach-guide'), 'off');
+      await page.locator('#scene').focus(); await page.keyboard.press('m');
+      await panel.waitFor({ state: 'hidden' });
+      assert.notEqual(await page.locator('#scene').getAttribute('data-approach-guide'), 'off', 'closing the map leaves the guide enabled');
+      await page.locator('#scene').focus(); await page.keyboard.press('m');
+      await panel.waitFor({ state: 'visible' });
+      await select('LOWW');
+      await popup.getByRole('button', { name: 'Hide 3° guide' }).click();
+      assert.equal(await page.locator('#scene').getAttribute('data-approach-guide'), 'off');
+      evidence.checks.push('airport runway guide can be selected, retained when the map closes and explicitly hidden');
+    }
     const com = popup.locator('button[data-radio-kind=com][data-receiver="1"]').first();
     await com.waitFor({ state: 'visible' });
     const channel = Number(await com.getAttribute('data-channel-khz'));
