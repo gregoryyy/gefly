@@ -2,6 +2,7 @@
 import {validKapState} from './kap140.js';
 import {validNavigation,NAVIGATION_FIELDS} from './navigation.js';
 import {pressureAltitude_m} from './altimeter.js';
+import {INITIAL_BALANCE_FIELDS, validInitialBalanceState} from './initial-balance.js';
 const bounds = {
  t_s:[0,1e9],step:[0,1e9],lat_rad:[-Math.PI/2,Math.PI/2],lon_rad:[-Math.PI,Math.PI],alt_msl_m:[-1000,11000],roll_rad:[-Math.PI,Math.PI],pitch_rad:[-Math.PI/2,Math.PI/2],heading_rad:[-2*Math.PI,2*Math.PI],
  aero_u_mps:[-200,200],aero_v_mps:[-200,200],aero_w_mps:[-200,200],aero_p_radps:[-20,20],aero_q_radps:[-20,20],aero_r_radps:[-20,20],
@@ -12,6 +13,7 @@ export const CONTINUATION_FIELDS=Object.freeze(Object.keys(bounds));
 const packed=CONTINUATION_FIELDS.slice(0,32);
 export function resumeProblem(state,dt=1/120){
  if(!state||typeof state!=='object'||Array.isArray(state))return 'Selected frame is unavailable.';
+ if(!validInitialBalanceState(state))return 'Selected initial balance configuration is unavailable.';
  if(!Number.isFinite(dt)||dt<1e-4||dt>1/60)return 'Continuation requires a supported fixed simulation step.';
  if(!Number.isFinite(state.tas_mps)||state.tas_mps<0||state.tas_mps>350)return 'Selected frame lacks supported true-airspeed telemetry.';
  for(const [key,[lo,hi]] of Object.entries(bounds))if(!Number.isFinite(state[key])||state[key]<lo||state[key]>hi)return `Selected frame lacks supported ${key} telemetry.`;
@@ -27,4 +29,4 @@ export function resumeProblem(state,dt=1/120){
  if(state.kap_sensor_fault)return 'Selected autopilot frame has a sensor fault.';
  return null;
 }
-export function resumeValues(state,dt=1/120){const problem=resumeProblem(state,dt);if(problem)throw new TypeError(problem);return new Float64Array(packed.map(key=>state[key]));}
+export function resumeValues(state,dt=1/120){const problem=resumeProblem(state,dt);if(problem)throw new TypeError(problem);const fields=state.initial_balance_profile===undefined?packed:[...packed,...INITIAL_BALANCE_FIELDS];return new Float64Array(fields.map(key=>state[key]));}

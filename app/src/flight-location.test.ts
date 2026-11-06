@@ -49,3 +49,13 @@ test('denied or unavailable browser storage leaves flight behavior usable', () =
   assert.equal(attempts, 1, 'denied writes remain throttled rather than throwing every frame');
   for (const storage of [denied, null]) { const store = createFlightLocationStore({ storage }); assert.equal(store.read(), null); store.observe(state); assert.equal(store.flush(), false); store.clear(); }
 });
+
+test('R-SIM-11 saved launch keeps requested profile only and a later ground launch clears compensation',()=>{
+  const f=fixture(),balance={initial_balance_profile:1 as const,roll_trim_norm:-.011,yaw_trim_norm:-.0008};
+  f.store.observe({...state,...balance});assert.equal(f.store.read()!.initial_balance_profile,1);
+  assert(!Object.hasOwn(f.store.read()!,'roll_trim_norm'));assert(!Object.hasOwn(f.store.read()!,'yaw_trim_norm'));
+  f.advance(2000);f.store.observe({...state,...balance,gear_left_wow:1});assert.equal(f.store.read()!.mode,'ground');assert.equal(f.store.read()!.initial_balance_profile,0);
+  for(const patch of [{initial_balance_profile:2},{initial_balance_profile:undefined},{initial_balance_profile:1,mode:'ground'},{initial_balance_profile:1,roll_trim_norm:-.01}])assert.equal(validFlightLocation({...pose,...patch}),false);
+  f.values.set(FLIGHT_LOCATION_KEY,JSON.stringify(pose));assert.deepEqual(f.store.read(),pose,'old six-field locations remain supported');
+  const before=f.store.read();f.store.observe({...state,initial_balance_profile:1});f.store.flush();assert.deepEqual(f.store.read(),before,'partial telemetry cannot select a new launch profile');
+});

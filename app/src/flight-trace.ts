@@ -1,3 +1,4 @@
+import { INITIAL_BALANCE_FIELDS, validInitialBalanceState, equalInitialBalance } from '../../studies/e1-browser/sim/initial-balance.js';
 import { LOADING_FIELDS, validLoadingState } from '../../studies/e1-browser/sim/loading.js';
 import { validSystemsState } from './types.ts';
 import { RADIO_NAV_FIELDS, validRadioNavSnapshot } from './radio-nav.ts';
@@ -70,7 +71,7 @@ export class FlightTrace {
   }
 
   record(state: FlightState, vertical_speed_mps: number): boolean {
-    if (!state || typeof state !== 'object' || !Number.isFinite(vertical_speed_mps) || !validAltimeterState(state) || !validCockpitState(state) || !validEngineState(state) || !validPitchTrimState(state) || !validGroundState(state) || !validControlState(state) || !validStallState(state) || !validCollisionState(state) || !validTerrainState(state) || !validKapState(state) || !validAlertState(state) || !validSystemsState(state) || !validLoadingState(state)
+    if (!state || typeof state !== 'object' || !Number.isFinite(vertical_speed_mps) || !validAltimeterState(state) || !validCockpitState(state) || !validEngineState(state) || !validPitchTrimState(state) || !validGroundState(state) || !validControlState(state) || !validStallState(state) || !validCollisionState(state) || !validTerrainState(state) || !validKapState(state) || !validAlertState(state) || !validSystemsState(state) || !validLoadingState(state) || !validInitialBalanceState(state)
       || (RADIO_NAV_FIELDS.some(key => state[key] !== undefined) && !validRadioNavSnapshot(state))
       || (state.simulation_rate !== undefined && !validSimulationRate(state.simulation_rate))) return false;
     const snapshot: FlightState = {
@@ -80,13 +81,15 @@ export class FlightTrace {
       ...(state.simulation_rate === undefined ? {} : { simulation_rate: state.simulation_rate }),
       ...(state.systems_switch_mask === undefined ? {} : { systems_switch_mask: state.systems_switch_mask }),
     };
-    for (const key of [...LOADING_FIELDS, ...ALERT_FIELDS, ...KAP_FIELDS, ...TERRAIN_FIELDS, ...TERRAIN_SOURCE_FIELDS, ...COLLISION_FIELDS, ...STALL_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...ENGINE_SWITCH_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS, ...RADIO_NAV_FIELDS]) if (state[key] !== undefined) snapshot[key] = state[key];
+    for (const key of [...INITIAL_BALANCE_FIELDS, ...LOADING_FIELDS, ...ALERT_FIELDS, ...KAP_FIELDS, ...TERRAIN_FIELDS, ...TERRAIN_SOURCE_FIELDS, ...COLLISION_FIELDS, ...STALL_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...ENGINE_SWITCH_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS, ...RADIO_NAV_FIELDS]) if (state[key] !== undefined) Object.assign(snapshot, { [key]: state[key] });
     if (!Object.values(snapshot).every((value) => typeof value === 'number' && Number.isFinite(value))
       || !Number.isInteger(snapshot.step) || snapshot.step < 0 || snapshot.t_s < 0
       || snapshot.tas_mps < 0 || Math.abs(snapshot.lat_rad) > Math.PI / 2
       || Math.abs(snapshot.lon_rad) > Math.PI) return false;
     if (this.count > 0) {
       const latest = this.sample(this.count - 1).state;
+      if (!equalInitialBalance(snapshot, latest)
+        || INITIAL_BALANCE_FIELDS.some(key => Object.hasOwn(snapshot, key) !== Object.hasOwn(latest, key))) return false;
       if (snapshot.step === latest.step && snapshot.t_s === latest.t_s
         && ['systems_switch_mask','simulation_rate','altimeter_setting_pa','ap_mode','ap_heading_target_rad', ...ALERT_FIELDS, ...KAP_FIELDS, ...RADIO_NAV_FIELDS]
           .some(key => snapshot[key as keyof FlightState] !== latest[key as keyof FlightState])) {
@@ -147,24 +150,29 @@ export class FlightTrace {
   /** Portable SI state trace, for viewing only; not a native physics checkpoint. */
   exportJSON(): string {
     if (this.count < 2) throw new Error('Record a flight before saving it.');
-    return JSON.stringify({ format: 'gefly-flight-recording', version: 1, units: 'SI',
+    const samples = Array.from({ length: this.count }, (_, index) => this.sample(index));
+    const version = samples.some(sample => Object.hasOwn(sample.state, 'initial_balance_profile')) ? 2 : 1;
+    const portable = samples;
+    return JSON.stringify({ format: 'gefly-flight-recording', version, units: 'SI',
       ...(this.context ? { context: this.context } : {}),
-      clipped: this.clipped, samples: Array.from({ length: this.count }, (_, index) => this.sample(index)) });
+      clipped: this.clipped, samples: portable });
   }
 
   static fromJSON(text: string): FlightTrace {
     if (text.length > MAX_RECORDING_BYTES) throw new Error('Recording exceeds the 256 MB limit.');
     const data = JSON.parse(text);
-    if (!data || data.format !== 'gefly-flight-recording' || data.version !== 1 || data.units !== 'SI'
+    if (!data || data.format !== 'gefly-flight-recording' || ![1, 2].includes(data.version) || data.units !== 'SI'
       || typeof data.clipped !== 'boolean' || !Array.isArray(data.samples)
       || data.samples.length < 2 || data.samples.length > MAX_SAMPLES) {
-      throw new Error('Unsupported recording. Expected a Gefly version 1 JSON flight recording.');
+      throw new Error('Unsupported recording. Expected a Gefly version 1 or 2 JSON flight recording.');
     }
     const trace = new FlightTrace({ context: Object.hasOwn(data, 'context') ? copyRunwayContext(data.context) : undefined });
     let previousStep = -1, previousTime = -1;
     for (const sample of data.samples) {
       const state = sample?.state;
       if (!state || typeof state !== 'object' || Array.isArray(state)
+        || (data.version === 1 && INITIAL_BALANCE_FIELDS.some(key => Object.hasOwn(state, key)))
+        || (data.version === 2 && !INITIAL_BALANCE_FIELDS.every(key => Object.hasOwn(state, key)))
         || state.step <= previousStep || state.t_s <= previousTime
         || Math.abs(state.alt_msl_m) > 1e6 || Math.abs(state.ground_height_ellipsoid_m ?? 0) > 1e6
         || (state.terrain_profile === 1 && !Number.isFinite(state.ground_height_ellipsoid_m))

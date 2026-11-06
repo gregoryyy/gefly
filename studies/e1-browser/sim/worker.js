@@ -1,3 +1,4 @@
+import { initialBalanceFields, initialBalanceProfile, validInitialBalanceState } from './initial-balance.js';
 // E1 browser check: JSBSim WASM in a module Web Worker, implementing the
 // shared worker message contract v0 in ../README.md. Study code only.
 //
@@ -248,6 +249,18 @@ function readPitchTrimFields() {
   return pitchTrimFields(M.HEAPF64.subarray(pointer, pointer + 3));
 }
 
+function readInitialBalanceFields() {
+  if (typeof M._gf_initial_balance_state !== 'function') return {};
+  const pointer = M._malloc(24);
+  if (!pointer) throw new Error('Cannot allocate initial balance telemetry.');
+  try {
+    if (M._gf_initial_balance_state(pointer) !== 0) throw new Error('Initial balance telemetry unavailable.');
+    const fields = initialBalanceFields(M.HEAPF64.subarray(pointer / 8, pointer / 8 + 3));
+    if (!Object.hasOwn(fields, 'initial_balance_profile')) throw new Error('Invalid initial balance telemetry.');
+    return fields;
+  } finally { M._free(pointer); }
+}
+
 function readGroundFields() {
   if (typeof M._gf_ground_state !== 'function') return {};
   const pointer = M._gf_ground_state() >> 3;
@@ -461,7 +474,7 @@ function stateMessage() {
     type: 'state', step: stepIndex, simulation_rate: simulationRate, t_s: s[0], lat_rad: s[1], lon_rad: s[2],
     alt_msl_m: s[3], roll_rad: s[4], pitch_rad: s[5], heading_rad: s[6], tas_mps: s[7],
     last_input_wall_ms: lastInputWallMs, step_cost_us: lastStepCostUs, ...altimeterFields,
-    ...readLoadingFields(), ...readStallFields(), ...readControlFields(), ...readCockpitFields(), ...readPitchTrimFields(), ...readGroundFields(), ...readEngineFields(), ...readEngineSwitchFields(), ...terrainFields(), ...kapFields(), ...((kap || navigationPackage) ? navigation : {}), ...collisionFields(),
+    ...readInitialBalanceFields(), ...readLoadingFields(), ...readStallFields(), ...readControlFields(), ...readCockpitFields(), ...readPitchTrimFields(), ...readGroundFields(), ...readEngineFields(), ...readEngineSwitchFields(), ...terrainFields(), ...kapFields(), ...((kap || navigationPackage) ? navigation : {}), ...collisionFields(),
   };
 }
 
@@ -622,8 +635,19 @@ function stats() {
 async function onInit(msg) {
   terrainSource?.cancel(); terrainSource = null;
   initialized = false; terrainGeneration++; terrainLoad = null; resumeAfterTerrain = false; terrainStream = null; terrainFault = false; kap = null; altitudeAlert = null; pilotOverrideActive = false; navigation = { ...DEFAULT_NAVIGATION }; navigationPackage = null; navdataError = null; collisionAvailable = false; kapSensorsInvalid = false;
+  const requestedBalance = msg.initial_balance_profile ?? 0;
+  if ((Object.hasOwn(msg, 'initial_balance_profile') && msg.initial_balance_profile !== 0 && msg.initial_balance_profile !== 1)
+    || (msg.resume_state !== undefined && Object.hasOwn(msg, 'initial_balance_profile'))
+    || (requestedBalance === 1 && (msg.runway_start === true || msg.landing_preset !== undefined))) {
+    fail('init: invalid or incompatible initial balance profile.'); return;
+  }
   await modulePromise;
   const resume = msg.resume_state;
+  if ((resume && !validInitialBalanceState(resume))
+    || ((resume ? initialBalanceProfile(resume) : requestedBalance) === 1
+      && (typeof M._gf_init_balanced !== 'function' || typeof M._gf_initial_balance_state !== 'function'))) {
+    fail('Initial model balance unavailable or invalid. Rebuild the local flight engine.'); return;
+  }
   if (resume !== undefined) {
     const problem=resumeProblem(resume,msg.dt_s);
     if(problem){fail(`Continuation unavailable: ${problem}`);return;}
@@ -706,9 +730,13 @@ async function onInit(msg) {
   let resumeRc=null;
   if(resume){const values=resumeValues(resume,dt),pointer=M._malloc(values.byteLength);if(!pointer){fail('Cannot allocate continuation state.');return;}try{M.HEAPF64.set(values,pointer/8);resumeRc=M._gf_init_resume(dt,pointer,values.length);}finally{M._free(pointer);}}
   const rc = resume ? resumeRc : msg.runway_start ? M._gf_init_runway(dt, ic.lat_rad, ic.lon_rad, ic.heading_rad) : preset === undefined
-    ? M._gf_init(dt, ic.lat_rad, ic.lon_rad, ic.alt_msl_m, ic.heading_rad, ic.tas_mps)
+    ? (requestedBalance === 1 ? M._gf_init_balanced : M._gf_init)(dt, ic.lat_rad, ic.lon_rad, ic.alt_msl_m, ic.heading_rad, ic.tas_mps)
     : M._gf_init_landing(dt, ic.lat_rad, ic.lon_rad, ic.heading_rad, presets[preset]);
-  if (rc !== 0) { fail(`init rc=${rc}`); return; }
+  if (rc !== 0) { fail(requestedBalance === 1 ? `Initial model balance failed (rc=${rc}); flight has not started.` : `init rc=${rc}`); return; }
+  const appliedBalance = readInitialBalanceFields();
+  if (initialBalanceProfile(appliedBalance) !== (resume ? initialBalanceProfile(resume) : requestedBalance)) {
+    fail('Initial model balance does not match the requested profile.'); return;
+  }
   dtS = dt; simulationRate = 1; statePeriodMs = 1000 / hz;
   stepIndex = resume ? resume.step : 0; pending = []; lastInputWallMs = null; lastStepCostUs = 0;
   missedSteps = 0; droppedSteps = 0; maxLagSteps = 0; maxLagMs = 0; lateInputs = 0; appliedInputs = 0; maxBatch = 0; ticks = 0;
@@ -726,6 +754,7 @@ async function onInit(msg) {
   initialized = true;
   postMessage({
     type: 'ready',
+    ...appliedBalance,
     navdata_sha256: navigationPackage ? navigationPackage.sha256 : null,
     navdata_error: navdataError,
     build: { ...(navigationPackage ? { navigation: { id: navigationPackage.id, edition: navigationPackage.edition, sha256: navigationPackage.sha256, historical: navigationPackage.historical } } : {}), ...(terrainGrid ? { terrain: { id: terrainGrid.id, sha256: terrainGrid.sha256, physical_datum: terrainGrid.physical_datum, geoid_model: terrainGrid.geoid_model } } : {}),
