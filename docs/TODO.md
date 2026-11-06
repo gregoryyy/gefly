@@ -363,4 +363,6 @@ future tasks, not completed by this requirements update.
 
 Task2.0.170 verification: [quality](reviews/2026-11-06-worldwide-airports-quality.md) and [validation](reviews/2026-11-06-worldwide-airports-validation.md) accept the bounded discovery increment; runtime records distinguish working-app and feature-only main scopes. Historical receiver/current-data fidelity and batched peer acceptance remain separate.
 
+- [x] 2.0.173 Retain saved Options across new flights and page reloads with bounded device-local preferences, preview/Save/Cancel and safe storage/audio defaults. R-INPUT-1/R-UX-2. [Request](input/2026-11-06-flaps-settings.md).
+
 - [ ] 2.0.180 Reconcile PR102 worldwide discovery with current main and its on-demand OSM airport generator, preserving source boundaries and history; renew integrated checks/reviews and update the existing PR. R-WORLD-12/R-NAV-2/R-DATA-1/R-COMM-2/R-AIRPORT-3. [Request](input/2026-11-06-pr102-conflicts.md).

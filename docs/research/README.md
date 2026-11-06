@@ -57,3 +57,5 @@ End with proposed implications, limitations and a handoff to product/orchestrato
 - [2026-11-06: Generic-model initial airborne equilibrium](2026-11-06-airborne-model-balance.md).
 
 - [2026-11-06: Centered-yoke resize handoff](2026-11-06-yoke-resize-handoff.md).
+
+- [Saved Options](2026-11-06-settings-preferences.md): bounded device-local preferences, preview/Save/Cancel and safe startup.
