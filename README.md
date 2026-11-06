@@ -146,7 +146,7 @@ physical heights. The generic research aircraft remains experimental; see
 
 Flight map → **Charts** opens the official OpenFlightMaps Germany VFR viewer
 and DFS AIP airport/approach chart access, with the selected airport identifier.
-Charts remain publisher-hosted; an embedded aeronautical overlay is not included.
+In **Map menu → OpenFlightMaps**, enable the transparent aviation overlay and adjust opacity. It loads tiles on demand without conversion; the saved setting is off initially. The displayed2611 edition includes its validity dates and error-report link.
 
 **N** toggles the parking brake beside the **B** wheel-brake button.
 Touchpad and keyboard bank input also steer the rudder/nosewheel by default.

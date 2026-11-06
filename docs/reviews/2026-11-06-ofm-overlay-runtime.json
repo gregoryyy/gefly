@@ -1,0 +1,294 @@
+{
+  "task": "2.0.179",
+  "scope": "Optional source-marked raster chart streaming, no offline conversion or receiver coupling",
+  "contexts": {
+    "working-app": {
+      "artifact_sha256": "d619a03252e378fc202129abaa0fd13aca1f896f46e309eec338666765f3759a",
+      "result": "pass",
+      "mode": "synthetic transparent OFM pixels",
+      "sourceHashes": {
+        "src/practice-map.ts": "e8f1f0aac5275b3f67d9a68d3477d43e5450d7fd17ab83d14556ab12eda3add9",
+        "src/ofm-map-overlay.ts": "9b4b2ee197d4e19ef45d979bf7a07d67b197af50e2e5ccaeb92ebfc58436cebc",
+        "src/ofm-overlay-preferences.ts": "12327038830ec8690be14ffe69449d56067f04fc83323dbe7e4b7fef1fd51193",
+        "src/ofm-overlay-source.ts": "3c27997fbf945bbc95d81f8459b1bb47ce09a6fb5576741cb423f0e8753ab20e",
+        "ofm-overlay-server.ts": "eb7001479da77e2c6fbbdf789af570b12811fb1ab0cf200dbbf8f60d5d3c28e1",
+        "vite.config.ts": "8ea026ec888db8c3ea3bae35897bdd4db5f0768fb79dda077bd783509d7f8418",
+        "tests/ofm-overlay.browser.mjs": "266e38092b361a9e56c30b83db171554e8b57b02f882f29ed5d13f7016905f88"
+      },
+      "checks": [
+        "Default-off and closed map make no chart demand; enabling actual MapLibre raster changes pixels with correct source/date/credit links and foreground order",
+        "Opacity saves and changes paint; viewport pan fetches new tiles, low zoom is explicit, native source overzooms to17 and style replacement restores the chart below local overlays",
+        "Off and hidden maps remove the chart source and stop new tile demand; aborted late metadata cannot restore a closed layer",
+        "Optional tile failure is distinct from base-map status; local flight overlays and real zoom controls remain usable, and Retry recovers the chart",
+        "Saved enabled/opacity choices restore on reopening after page reload; corrupt or denied preferences default off and remain operable without stepping native physics"
+      ],
+      "observations": [
+        {
+          "layerOrder": [
+            "imagery",
+            "ofm-overlay",
+            "navigation-fixes",
+            "flight-plan-route-line",
+            "gps-target-line",
+            "navigation-stations",
+            "path"
+          ],
+          "beforePixelSha256": "60a40bf2cf67adc4326556f7c10847452930ca3ad9ca87ea22a1b663c0b7f8ab",
+          "afterPixelSha256": "b61d8ffa4c5832627b8d442550e219e45eda2cf78e6e8f54eda27b56ba400350"
+        }
+      ],
+      "errors": [],
+      "planScope": true,
+      "baselineForeground": [
+        "navigation-fixes",
+        "flight-plan-route-casing",
+        "flight-plan-route-line",
+        "gps-target-line",
+        "gps-target-point",
+        "airfields",
+        "navigation-stations",
+        "world-navigation-stations",
+        "navigation-components",
+        "practice-circuit-guide",
+        "practice-circuit-nearest",
+        "path-shadow",
+        "path"
+      ],
+      "foregroundScope": "Ordered plan, GPS, NAV and trace are present and must remain above OFM.",
+      "mapErrors": [],
+      "browser": "156.0.8078.80",
+      "response_count_by_status": {
+        "200": 43,
+        "503": 4
+      }
+    },
+    "publication": {
+      "artifact_sha256": "e14a5992d29c70ec533fe730754bbee6a7bb0aa183043a5c2bc85e2377ec9a77",
+      "result": "pass",
+      "mode": "synthetic transparent OFM pixels",
+      "sourceHashes": {
+        "src/practice-map.ts": "524b120b55e6f851096917d83c9917e14c2969f4d2e973ad883938de09108900",
+        "src/ofm-map-overlay.ts": "9b4b2ee197d4e19ef45d979bf7a07d67b197af50e2e5ccaeb92ebfc58436cebc",
+        "src/ofm-overlay-preferences.ts": "12327038830ec8690be14ffe69449d56067f04fc83323dbe7e4b7fef1fd51193",
+        "src/ofm-overlay-source.ts": "3c27997fbf945bbc95d81f8459b1bb47ce09a6fb5576741cb423f0e8753ab20e",
+        "ofm-overlay-server.ts": "eb7001479da77e2c6fbbdf789af570b12811fb1ab0cf200dbbf8f60d5d3c28e1",
+        "vite.config.ts": "8e98bf6ff8298969abd41fba6cf71cc36e439fef90472d122dc425198b322925",
+        "tests/ofm-overlay.browser.mjs": "266e38092b361a9e56c30b83db171554e8b57b02f882f29ed5d13f7016905f88"
+      },
+      "checks": [
+        "Default-off and closed map make no chart demand; enabling actual MapLibre raster changes pixels with correct source/date/credit links and foreground order",
+        "Opacity saves and changes paint; viewport pan fetches new tiles, low zoom is explicit, native source overzooms to17 and style replacement restores the chart below local overlays",
+        "Off and hidden maps remove the chart source and stop new tile demand; aborted late metadata cannot restore a closed layer",
+        "Optional tile failure is distinct from base-map status; local flight overlays and real zoom controls remain usable, and Retry recovers the chart",
+        "Saved enabled/opacity choices restore on reopening after page reload; corrupt or denied preferences default off and remain operable without stepping native physics"
+      ],
+      "observations": [
+        {
+          "layerOrder": [
+            "imagery",
+            "ofm-overlay",
+            "navigation-fixes",
+            "gps-target-line",
+            "navigation-stations",
+            "path"
+          ],
+          "beforePixelSha256": "c83e6cd7e380d556d222aa92f549b69b3d8a8360ee3243901ca0c2d0f9be8951",
+          "afterPixelSha256": "f67fe491d38bafc10ccbe079d6caaeb8288f7fe715306c4c6c0d5d63aed876b9"
+        }
+      ],
+      "errors": [],
+      "planScope": false,
+      "baselineForeground": [
+        "navigation-fixes",
+        "gps-target-line",
+        "gps-target-point",
+        "airfields",
+        "navigation-stations",
+        "navigation-components",
+        "practice-circuit-guide",
+        "practice-circuit-nearest",
+        "path-shadow",
+        "path"
+      ],
+      "foregroundScope": "This publication baseline has no ordered-plan feature; its existing GPS, NAV and trace foreground remains covered.",
+      "mapErrors": [],
+      "browser": "156.0.8078.80",
+      "response_count_by_status": {
+        "200": 43,
+        "503": 4
+      }
+    }
+  },
+  "checks": {
+    "shared_ci_before_final_local_style_repair": {
+      "result": "pass",
+      "node_application": 563,
+      "python_application": 22,
+      "assurance": 85,
+      "training": 11,
+      "tooling_executed": 242,
+      "tooling_skipped": 1,
+      "jsbsim_study_executed": 14,
+      "jsbsim_study_skipped": 9,
+      "c172s_study_executed": 25
+    },
+    "post_repair_entire_application_suite": {
+      "result": "pass",
+      "node_application": 565,
+      "python_application": 22
+    },
+    "typescript": [
+      "working-app:pass",
+      "publication:pass"
+    ],
+    "independent_focused": 15
+  },
+  "history": [
+    "Initial metadata readiness was too restrictive for actual MapLibre6 tile events without sourceDataType; corrected tile completion handling and its positive regression test.",
+    "Initial map fixture returned PNG bytes for vector .pbf requests; corrected the fixture, preserving real optional-error isolation rather than broadening error suppression.",
+    "Independent validation found a late foreground-anchor style.load ordering race; deferred chart attachment through a guarded microtask and reproduced the repair before final browser acceptance.",
+    "An initial publication browser assumed the ROOT-only ordered-plan layer; the final shared harness requires all baseline GeoJSON foreground layers and records plan capability separately.",
+    "All preparatory timeout/source-freeze/capability failures remain unaccepted historical local artifacts.",
+    "An actual default-view publisher run found valid fully transparent grayscale-alpha PNGs at the tested z13 positions. The original RGBA-only guard rejected them. Final source admits verified 8-bit PNG types4/6 and deliberately selects native max12, overzooming the observed nonempty parent. This does not claim all provider z13 tiles are empty. All source/unit/app/browser checks were renewed on final pins."
+  ],
+  "limits": [
+    "AIRAC2611 published dates/one verified Germany view; coverage of other published OFM regions varies.",
+    "Opt-in documented third-party API use with About grant/attribution/manual reporting; complete GUL retrieval and broader redistribution/offline product rights remain separately open.",
+    "Chromium156 fixture map/scenery with actual MapLibre and native WASM; embedded WebKit/live flight/Review overlay runtime not executed here.",
+    "No chart pixels or complete OFMX/plate product bundled.",
+    "Batched cross-provider peer pending."
+  ],
+  "live_proxy": {
+    "artifact_sha256": "badba4a13daf25caa5f49bcff67b9b6618239156919a8acccc9a1c4f11bc217c",
+    "result": "pass",
+    "sourceHashes": {
+      "app/ofm-overlay-server.ts": "eb7001479da77e2c6fbbdf789af570b12811fb1ab0cf200dbbf8f60d5d3c28e1",
+      "app/src/ofm-overlay-source.ts": "3c27997fbf945bbc95d81f8459b1bb47ce09a6fb5576741cb423f0e8753ab20e"
+    },
+    "metadata": {
+      "schema": 1,
+      "tiles": [
+        "/charts/ofm/2611/{z}/{x}/{y}.png"
+      ],
+      "minzoom": 7,
+      "maxzoom": 12,
+      "tileSize": 256,
+      "edition": "AIRAC 2611",
+      "validFrom": "2026-10-29T00:00:00Z",
+      "validTo": "2026-11-26T00:00:00Z",
+      "attribution": "Contains information from the open flightmaps database \u00b7 \u00a9 open flightmaps contributors",
+      "sourceUrl": "https://openflightmaps.org/downloads/ed/",
+      "licenseUrl": "https://openflightmaps.org/about/",
+      "reportUrl": "mailto:info@openflightmaps.org",
+      "coverage": "OFM published regions; Germany edition verified"
+    },
+    "tile": {
+      "path": "/charts/ofm/2611/12/2146/1389.png",
+      "bytes": 49789,
+      "sha256": "0d95532418a254559f88f8f467ad04240fb1da681c6354b5d4fdb1cf201ad7c6",
+      "width": 512,
+      "height": 512,
+      "colorType": 6,
+      "source": "OFM-AIRAC-2611"
+    },
+    "upstreamCalls": 1,
+    "checks": [
+      "metadata is local without provider demand",
+      "actual fixed publisher tile passes proxy PNG validation",
+      "same tile is served from bounded cache without a second source call",
+      "source bytes remained fixed"
+    ],
+    "limits": [
+      "One Frankfurt-area tile only; no chart pixels bundled, worldwide coverage or operational acceptance."
+    ]
+  },
+  "live_browser": {
+    "artifact_sha256": "174cec49e6cefa9f94a6c94b297242d02a86cc59b9b06915e76e910fff92f901",
+    "result": "pass",
+    "mode": "live publisher tiles, bounded Germany observation",
+    "sourceHashes": {
+      "src/practice-map.ts": "e8f1f0aac5275b3f67d9a68d3477d43e5450d7fd17ab83d14556ab12eda3add9",
+      "src/ofm-map-overlay.ts": "9b4b2ee197d4e19ef45d979bf7a07d67b197af50e2e5ccaeb92ebfc58436cebc",
+      "src/ofm-overlay-preferences.ts": "12327038830ec8690be14ffe69449d56067f04fc83323dbe7e4b7fef1fd51193",
+      "src/ofm-overlay-source.ts": "3c27997fbf945bbc95d81f8459b1bb47ce09a6fb5576741cb423f0e8753ab20e",
+      "ofm-overlay-server.ts": "eb7001479da77e2c6fbbdf789af570b12811fb1ab0cf200dbbf8f60d5d3c28e1",
+      "vite.config.ts": "8ea026ec888db8c3ea3bae35897bdd4db5f0768fb79dda077bd783509d7f8418",
+      "tests/ofm-overlay.browser.mjs": "266e38092b361a9e56c30b83db171554e8b57b02f882f29ed5d13f7016905f88"
+    },
+    "checks": [
+      "Selected AIRAC2611 transparent publisher tiles render in the Germany view above base cartography and below local flight overlays"
+    ],
+    "observations": [
+      {
+        "layerOrder": [
+          "imagery",
+          "ofm-overlay",
+          "navigation-fixes",
+          "flight-plan-route-line",
+          "gps-target-line",
+          "navigation-stations",
+          "path"
+        ],
+        "beforePixelSha256": "60a40bf2cf67adc4326556f7c10847452930ca3ad9ca87ea22a1b663c0b7f8ab",
+        "afterPixelSha256": "b9d4de54d8cbb778f838afcbf1cb1f98e9572cf51d2d87594622c318d65f2881"
+      }
+    ],
+    "responses": [
+      {
+        "path": "/charts/ofm/2611/12/2146/1389.png",
+        "bytes": 49789,
+        "sha256": "0d95532418a254559f88f8f467ad04240fb1da681c6354b5d4fdb1cf201ad7c6",
+        "width": 512,
+        "height": 512,
+        "colorType": "RGBA"
+      },
+      {
+        "path": "/charts/ofm/2611/12/2146/1390.png",
+        "bytes": 16357,
+        "sha256": "bdfea65882aae1f164a7772254dba8a06460e4b97cda7984d2db05bf60236825",
+        "width": 512,
+        "height": 512,
+        "colorType": "RGBA"
+      },
+      {
+        "path": "/charts/ofm/metadata.json",
+        "status": 200
+      },
+      {
+        "path": "/charts/ofm/2611/12/2146/1389.png",
+        "status": 200
+      },
+      {
+        "path": "/charts/ofm/2611/12/2146/1390.png",
+        "status": 200
+      }
+    ],
+    "errors": [],
+    "limits": [
+      "Actual native worker and MapLibre; scenery pixels are fixtures.",
+      "Fixture mode establishes layer lifecycle, not current chart geography; live mode is a bounded observed view, not operational acceptance.",
+      "Chromium only; no embedded WebKit or genuine background tab execution."
+    ],
+    "servedPracticeMapSha256": "208a18fe0d5a5065f9e17c59b4739acbfc7843efeb6294619ffdf4f92025e80f",
+    "observedPracticeMapSha256": "aa679de7113bda3e17d74198776ecf80522d76ee7bb573cda72187edafe8603a",
+    "planScope": true,
+    "baselineForeground": [
+      "navigation-fixes",
+      "flight-plan-route-casing",
+      "flight-plan-route-line",
+      "gps-target-line",
+      "gps-target-point",
+      "airfields",
+      "navigation-stations",
+      "world-navigation-stations",
+      "navigation-components",
+      "practice-circuit-guide",
+      "practice-circuit-nearest",
+      "path-shadow",
+      "path"
+    ],
+    "foregroundScope": "Ordered plan, GPS, NAV and trace are present and must remain above OFM.",
+    "mapErrors": [],
+    "browser": "156.0.8078.80"
+  }
+}

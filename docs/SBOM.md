@@ -451,3 +451,19 @@ Native runtime provenance is checked separately on the integrated revision; gene
 ## Copernicus global elevation source service
 
 The [source inventory](../app/public/terrain/copernicus/SOURCE.json), [retained licence](../app/public/terrain/copernicus/LICENSE.pdf) and [source note](research/2026-11-05-copernicus-source-provenance.md) identify the fixed public2021 GLO-30 COG collection, metre/EGM2008 reference, rights and derived sampling. Restricted Node built-in DEFLATE/Float32 decoding adds no dependency. Server v1 supplies fine world30 samples; v2 supplies quarter-degree overview samples as a common API prerequisite. The display client is a separate increment. This DSM includes vegetation/buildings and is not bare-earth or surveyed airport terrain. Existing coarse geoid and explicit fallback/source limitations remain.
+
+
+## OpenFlightMaps optional streaming service
+
+No package/dependency or chart-pixel asset is added. The opt-in overlay uses the
+publisher-documented EPSG3857 transparent aero API through a fixed server route.
+SelectedAIRAC2611 metadata comes from ED_2611.xml (29October–26November2026),
+SHA-2561631a347b654bf8fe2dd5481c3b5a6076bfefa7673f99dca3ddcdadef3ea6572.
+The source module records the exact publisher metadata/credit/report URLs.
+[Official About grant](https://openflightmaps.org/about/) and
+[application interfaces](https://openflightmaps.org/2016/08/18/how-to-use-application-interfaces/)
+support the streaming prototype with attribution and end-user error reporting.
+The old full GUL PDF still returns404; broader product redistribution/full terms
+review remains separate. Only bounded server memory and normal private HTTP tile
+caching are used; no persistent app chart bulk cache, OFMX or plate bundle.
+See [source/implementation note](research/2026-11-06-ofm-overlay-implementation.md).

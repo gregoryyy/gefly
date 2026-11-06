@@ -536,3 +536,23 @@ atomic ID allocation remain. The component has no worker, persistence or receive
 state access. The modular component/editor publication is separate from complete
 map/menu/popup/bearing UI integration; working-app integration evidence must not
 be represented as main-branch wiring in this increment.
+
+
+## Optional OFM aeronautical overlay
+
+R-CHART-1 adds a separate MapLibre raster source/layer above OSM/photography
+and below local fixes, route, NAV and path layers. It uses already-rendered
+transparent EPSG3857 tiles on viewport demand; following the aircraft naturally
+loads approaching areas without OFMX conversion or a new physics worker. The
+selected2611 product is source-marked and distinct from receiver data, procedures
+and captured flight state. Off/hidden removes the optional source and cancels
+requests; style reload reattaches it with saved selection/opacity. Optional errors
+remain local to the chart instead of marking the underlying map failed.
+
+A small validated descriptor identifies the reviewed edition and fixed local
+proxy paths. The server proxy bounds upstream demand, coalesces subscribers,
+validates PNG envelopes, and keeps a small expiring memory cache. It is installed
+in development and preview; a future deployment must provide this route. No
+third-party scripts or chart pixels are bundled. Structured selectable OFMX
+features would require a separate bounded parser/converter, which could run in a
+background worker on regional demand and cache source-identified results.

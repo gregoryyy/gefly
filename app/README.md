@@ -822,7 +822,7 @@ Use **Comma (,)** or **Map menu** to show search and details below the full-heig
 
 Flight map → **Charts** opens the official OFM Germany VFR viewer and DFS AIP
 airport/approach chart access. The selected airport identifier remains visible.
-Charts are publisher-hosted; embedded chart tiles/plates are not yet integrated.
+**Map menu → OpenFlightMaps → Aviation overlay** streams transparent chart tiles above the existing map; adjust its opacity there. Enable/opacity survive reload. It is off initially and stops requests when hidden/off. Edition2611 and its29October–26November2026 dates are visible, with an expired/upcoming label outside that interval and a manual error-report link. Zoom7+ displays the chart; it overzooms the selected native12level up to the map limit. The proxy uses bounded memory caching; no complete offline region conversion is needed. Other OFM regional coverage varies. Procedure plates remain publisher-hosted.
 
 
 The public scenery cache keeps its existing saved tiles across reloads. It now

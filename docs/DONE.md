@@ -3,6 +3,60 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 17:23 — Stream an optional OpenFlightMaps aviation overlay
+
+TODO: 2.0.179; R-CHART-1/R-WORLD-6/R-DATA-1.
+Agent: Codex orchestrator; provider/transport implementation `ofm_source`, map
+controller/preferences/browser implementation `ofm_map_layer`, source inventory
+and independent quality `ofm_housekeeping`, independent validation
+`camera_return_validate` reassigned to this OFM task.
+
+**Implementation notes**
+
+Map menu → OpenFlightMaps offers a saved off-by-default aviation overlay and
+opacity control. Transparent publisher tiles stream on visible viewport demand,
+with source/edition/dates/zoom/coverage/terms/reporting status, independently of
+local GPS/NAV/flight overlays and physics. No offline conversion or third-party
+scripts. The pinned2611 edition has published29October–26November2026 dates;
+metadata/source URLs are validated. The4-job/32pending/8MiB/64entry proxy has a
+15s total queue/fetch/body budget, byte/PNG guards, cancellation and memory cache.
+[Source and behavior](research/2026-11-06-ofm-overlay-implementation.md).
+
+Final working-app and publication fixture browsers each pass five groups with
+all source pins matched; a separate actual-publisher browser passes its Germany
+view. Genuine Egelsbach chart content renders below local aircraft/NAV, using
+nonempty zoom12 parents and no13requests. A real proxy repeat makes only one
+upstream call. Source-format/style regressions and date/descriptor/preferences/
+resource bounds have15independent focused passes. Final affected application
+renewal passes565Node/22Python and both TypeScript checks pass. The earlier full
+shared CI563/22/85assurance/11training predates localized repairs; unchanged tools
+ran242of243(one platform skip), JSBSim14of23(nine optional skips), C172S25.
+[Evidence](reviews/2026-11-06-ofm-overlay-runtime.json),
+[quality](reviews/2026-11-06-ofm-overlay-quality.md),
+[validation](reviews/2026-11-06-ofm-overlay-validation.md).
+
+**Deviations**
+
+Browser preparation caught MapLibre6 tile-event shape, a PNG-as-PBF fixture error,
+a late foreground-anchor style race and a publication-only absent-plan assumption.
+The actual source test then found valid fully transparent grayscale-alpha zoom13
+samples rejected by an RGBA-only guard. The final proxy admits verified8-bit
+formats4/6; the reviewed source conservatively selects native12 to retain observed
+nonempty content, with ordinary raster overzoom. This is not a claim all13tiles
+are empty. Prior failures/partial passes remain historical, with final source/unit/
+browser/app gates renewed. Official API/About grant supports opt-in streaming;
+complete GUL/product redistribution/offline packaging and plates remain open.
+No chart pixels are bundled; fixture basemap/current source geography/coverage,
+live-flight/Review chart behavior and embedded WebKit have no broader acceptance.
+Cross-provider peer remains pending under batching cadence.
+
+**Insights**
+
+Already-rendered tiles need runtime fetch/cache, not conversion. A single successful
+source tile and synthetic chart fixtures did not establish the producer's format
+or native-detail behavior; the actual default-view test exposed both assumptions.
+
+
 ## 2026-11-06 07:47 — Publish the two bounded handling PRs
 
 TODO: 2.0.153 in progress. R-INPUT-1/R-SIM-11/R-REVIEW-1.

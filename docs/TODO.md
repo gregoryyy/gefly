@@ -247,7 +247,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 - [x] 2.0.84 Expand physical terrain to 108 actual DGM200/GCG tiles over 7–10°E / 49.25–51.5°N, update streaming/rendering/persistence and add Westerwald, Marburg/Lahn and Kassel Flight presets. Extend Hessen photography with honest map fallbacks. R-WORLD-5. Original 42 tile bytes remain unchanged; new manifest/seams and native heights verified.
 
 - [x] 2.0.85 Add Flight map chart access to OFM Germany VFR and official DFS AIP airport/approach sources, preserving selected airport reference. R-CHART-1. Publisher-hosted access only.
-  - [ ] 2.0.85.1 Obtain complete applicable OFM/product or alternative chart rights and edition metadata, then embed a licensed airspace/chart layer with the flown path; procedure-plate embedding remains source-specific. Database permissions alone do not establish raster/plate rights.
+  - [ ] 2.0.85.1 Complete full OFM/product terms, broader redistribution/offline packaging and procedure-plate review. The bounded published2611 streaming overlay is delivered byTask179; full product/plate embedding remains source-specific. Database permissions alone do not establish raster/plate rights.
 
 - [x] 2.0.86 Add right-click place lookup when landmark labels are enabled: terrain picking, nearest source name/distance, bounded cached requests, cancellation and honest sky/empty/unavailable states. Preserve yoke gestures, including Mac Ctrl-click. R-WORLD-7/R-INPUT-1.
 
@@ -350,3 +350,5 @@ future tasks, not completed by this requirements update.
 - [x] 2.0.159 Repair confirmed high-altitude startup pressure gating: preserve supported QNH/STD indications and raw launch QFE in recording/continuation, explain unsupported QFE selection and retain unavailable sensor/envelope safeguards. R-AIR-3/R-SIM-2. [Report](input/2026-11-05-alps-terrain-walls.md).
 
 - [x] 2.0.163 Add hold C for existing momentary CWS with shared keyboard/panel ownership, discoverable help, guarded activation and safe lifecycle release. Preserve AP modes/reference synchronization and native physics. R-AP-1/R-INPUT-1. [Request](input/2026-11-06-cws-keyboard.md). Eight browser groups, six helper and18 existing KAP tests, CI and bounded independent reviews pass; source-inspected/unexercised contexts remain explicit in [validation](reviews/2026-11-06-cws-keyboard-validation.md). Cross-provider peer pending.
+
+- [x] 2.0.179 Add an optional saved OpenFlightMaps transparent chart overlay with on-demand tiles, opacity, edition/coverage/reporting and bounded source transport; keep map/flight independent and document online versus offline conversion. R-CHART-1/R-WORLD-6/R-DATA-1. [Request](input/2026-11-06-ofm-overlay.md).
