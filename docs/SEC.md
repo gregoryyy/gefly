@@ -216,8 +216,7 @@ persistence, personal telemetry or external service was introduced in the UI.
 Scene wheel zoom is a bounded, page-local camera preference. A non-passive
 capture listener handles eligible vertical scene events before Cesium; Ctrl/Meta/Alt,
 editable, modal and sibling UI/map gestures are excluded. It requests no device
-permission, makes no network/storage calls and sends no simulation input. FOV is
-retained separately from aircraft/review state and reset to default on reload.
+permission, makes no network/storage calls and sends no simulation input. Cockpit scroll changes FOV; chase and overview scroll change separately bounded camera distance. Chase double-click resets its distance/orbit while retaining the existing guarded pointer neutralization. These page-local camera values stay separate from aircraft/review state and reset to defaults on reload.
 
 ## Procedural engine audio
 

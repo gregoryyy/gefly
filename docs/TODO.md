@@ -358,3 +358,5 @@ future tasks, not completed by this requirements update.
 - [x] 2.0.167 Add separate Terrain overview camera with bounded Earth-scale scroll zoom and native-state isolation. R-VIEW-1/R-INPUT-1. [Request](input/2026-11-06-scenery-workers-and-overview.md). Independent bounded camera/native-isolation checks pass; peer pending.
 - [x] 2.0.168 Assess OpenFlightMaps structured-data overlay and current product/rights prerequisites. R-DATA-1/R-NAV-1. [Request](input/2026-11-06-scenery-workers-and-overview.md). Research delivered; specific current edition/license remains unselected, no data import.
 - [ ] 2.0.169 Repair landing shadow receiver visibility and height-readout gating. R-VIEW-1. [Request](input/2026-11-06-scenery-workers-and-overview.md). Receiver fixes and independent flat-study pixel checks pass; exact user terrain/landing reproduction remains open, peer pending.
+
+- [x] 2.0.174 Extend chase with Earth-scale distance zoom, top-down overview and double-click return to close heading-following chase; preserve cockpit FOV, separate overview, gesture guards and native/Review isolation. R-VIEW-1/R-INPUT-1. [Request](input/2026-11-06-chase-overview.md).

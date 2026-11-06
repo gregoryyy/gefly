@@ -112,11 +112,10 @@ retain camera orientation after drag. Settings last for the page session; gains
 and aircraft physics are unchanged. Review permits read-only camera inspection.
 
 Use **two fingers to scroll vertically over the flight scene** to adjust the
-camera field of view (FOV): scroll up to zoom in with a narrower perspective, or
+cockpit camera field of view (FOV): scroll up to zoom in with a narrower perspective, or
 down to zoom out with a wider perspective. The default is **60°**, bounded to
 **20–100°**. This changes only the camera perspective, never the aircraft's state
-or physics. It works in cockpit and chase views, including while paused or in
-Review. The chosen FOV survives a view switch and is independent of yoke mode
+or physics. It works in cockpit view, including while paused or in Review. Chase instead changes camera distance from about 32 m to 20,000 km; hold-drag above the aircraft for a top-down overview, and double-click to return close behind its current heading. Terrain overview retains its separate distance control. The chosen FOV survives a view switch and is independent of yoke mode
 and hold-drag look. Scrolling over dialogs or the practice map keeps those
 interfaces' normal behavior; Ctrl/pinch events bypass this FOV control.
 

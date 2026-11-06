@@ -3,6 +3,48 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 14:36 — Add Earth-scale chase zoom and close follow reset
+
+TODO: 2.0.174; R-VIEW-1/R-INPUT-1.
+Agent: Codex orchestrator; camera math/public pose implementation
+`chase_camera_math`, pointer/browser implementation `chase_pointer`, source
+inventory and independent quality `chase_housekeeping`, independent validation
+`chase_validate`.
+
+**Implementation notes**
+
+Chase scroll now changes actual distance from the original approximately32m
+orbit to20,000km. Hold-drag reaches a top-down overview. Double-click resets
+orbit and distance to30m behind/11m above the current aircraft heading, even
+when only zoom changed. Cockpit FOV, separate overview distance, normal pointer
+ownership and paused/Review inspection remain intact. Guard editable/modal,
+horizontal and modifier wheel gestures. [Interaction and renderer details](research/2026-11-06-chase-overview.md).
+
+Review caught a65.8km actual target miss at20Mm that pure orbit math and the first
+loose browser assertion missed. A validated public camera-basis helper avoids
+Cesium's lossy near-pole HPR conversion. Five actual-Cesium Camera regressions
+and strict target-ray browser assertions cover the repair. Separate working-app
+and publication runs each pass four groups and32 gaze evaluations with vector
+error below1e-10. [Runtime record](reviews/2026-11-06-chase-overview-runtime.json),
+[independent quality](reviews/2026-11-06-chase-overview-quality.md) and
+[validation](reviews/2026-11-06-chase-overview-validation.md) accept the bounded
+camera behavior. Publication CI passes607 Node/22 application Python,85 assurance
+and11 training cases;9 optional JSBSim study cases remain skipped.
+
+**Deviations**
+
+No engine, physics, native navigation, stored Options or recording changes.
+Scenery pixels are fixtures; map/terrain coverage, aircraft fidelity and broad
+device performance are not accepted. The prior failed renderer claim is retained
+as resolved history. Cross-provider peer remains pending under the batching
+cadence. This increment is stacked on the existing overview/shadow feature.
+
+**Insights**
+
+Pure camera geometry can be correct while renderer orientation conversion loses
+the target. Measure the actual applied camera sightline independently.
+
+
 ## 2026-11-06 09:36 — Add terrain overview and repair landing-shadow receivers
 
 TODO: 2.0.167/2.0.169/2.0.165/2.0.164; R-VIEW-1/R-INPUT-1/R-WORLD-11/R-AIRPORT-3.
