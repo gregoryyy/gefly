@@ -79,3 +79,13 @@ default unprofiled structured path without changing behavior.
 
 This records the repair and executed checks, not the pending full-CI rerun or
 independent acceptance. The initial cardinality failure above remains historical.
+
+## Final published-source renewal
+
+2026-11-06 18:03 Europe/Berlin, Codex orchestrator. Published head d852845 has
+complete CI exit0:611Node/32Python/89assurance/11training; one platform and nine
+optional JSBSim skips remain explicit. Both actual browser suites retain their
+frozen eight/four passing groups. Final diff exits0 with1232added/259changed/
+15988removed, exclusively generated style-child identities; impact is truncated.
+The companion merged-runtime JSON pins source/results and preserves the earlier
+cap failure. Root owns completion documentation and renewed final assurance.

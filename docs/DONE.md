@@ -3,6 +3,140 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 18:47 — Verify saved Options, map filters and map keys after conflict resolution
+
+TODO: 2.0.181; 2.0.182; 2.0.183.
+Agent: Codex orchestrator; implementation `nav_receiver_trace` for104 and
+`ofm_housekeeping` for107/108. Independent source quality: `ofm_housekeeping`
+for104 and orchestrator for107/108; independent validation `camera_return_validate`.
+
+**Implementation notes**
+
+Reconciled and pushed104a66e7eb,107f05a539 and1085d43748, preserving whole parent
+histories, source boundaries, all script inventories and saved/map behavior.
+GitHub confirmed each conflict-free;104/107/108 subsequently merged. Final
+complete CI passes at their tested bases:104626Node/32Python/89assurance/11training;
+107636/32/89/11;108643/32/89/11. Actual browsers pass nine/five/eight groups,
+respectively, with unchanged source pins and zero page errors. Final assurance
+checks have zero errors. Explicit-base diffs add/change/remove38/233/0,
+29/245/0 and24/248/0, all untruncated. Versioned runtime and independent review
+records retain actual hashes, test scopes and publication revisions. These
+results apply to the named snapshots, not untested later integrations.
+
+**Deviations**
+
+Retained initial104AS6timeouts,107hostPython3.15XML failure and output-file
+self-scan preparation as unsuccessful history. Unchanged89-case assurance and
+complete104CI renewals pass; correctedPython3.11 full107CI passes. Test deadlines
+and graph caps were not relaxed. One platform tool and nine optional JSBSim cases
+remain skipped per full gate. Cross-provider peer remains pending under cadence;
+no flight/source completeness or training-credit claim follows from these checks.
+
+## 2026-11-06 18:03 — Reconcile PR102 with airport-generation main
+
+TODO: 2.0.180; R-WORLD-12/R-NAV-2/R-DATA-1/R-COMM-2/R-AIRPORT-3.
+Agent: Codex orchestrator; integration implementer `nav_receiver_trace`,
+independent quality `ofm_housekeeping` and validation `camera_return_validate`.
+
+**Implementation notes**
+
+Merged main446293a into worldwide discovery and pushed d852845; GitHub reports
+conflict-free. Both discovery and generated-airport paths/tests remain, with
+complete histories preserved. A hash-pinned file-level extraction profile for
+one imported generated terrain-style file avoids15988 disposable derived JSON
+pointers; all original bytes and accepted whole-file evidence remain. Other JSON
+keeps structured extraction; changed bytes and child-selector assertions fail.
+Caps stay unchanged. Four new assurance cases cover this boundary.
+
+Final complete CI passes611Node/32Python/89assurance/11training. Actual browser
+checks pass eight worldwide-discovery and four airport-generation groups.
+Integrity reports44054nodes/58580facts/zero errors at d852845. Its diff from main
+adds1232/changes259/removes15988 identities, all removed IDs being generated
+style children. Impact traversal is truncated, not an all-clear. Independent
+reviews have no blocker; final documentation assurance follows this record.
+
+**Deviations**
+
+The initial graph-cap failure is retained as failed evidence. One platform tool
+and nine optional JSBSim checks remain skipped. External peer is pending under
+cadence; software checks do not establish source completeness or flight fidelity.
+
+## 2026-11-06 18:00 — Reconcile OpenFlightMaps publication with airport generation
+
+TODO: 2.0.179; R-CHART-1/R-AIRPORT-3.
+Agent: Codex orchestrator; independent quality `ofm_housekeeping` and validation
+`camera_return_validate`.
+
+**Implementation notes**
+
+Merged main446293a into PR111 while preserving both source services, tests and
+complete shared records. Corrected inherited package JSON punctuation and input
+index whitespace. Final complete CI passes606Node/22Python/85assurance/11training;
+TypeScript passes and renewed publication browser passes five groups with no map
+or page errors. Optional/platform skips remain explicit in the review records.
+The earlier concurrent-job assurance timeout remains recorded as failed; serial
+and complete-CI renewals pass unchanged checks. Source/provider behavior and the
+actual publisher evidence remain frozen. Independent bounded reviews pass;
+external peer remains pending under cadence. Final assurance/diff follow this
+integration record before publication.
+
+**Deviations**
+
+No new runtime scope; source rights and external peer limits remain recorded.
+
+## 2026-11-06 17:23 — Stream an optional OpenFlightMaps aviation overlay
+
+TODO: 2.0.179; R-CHART-1/R-WORLD-6/R-DATA-1.
+Agent: Codex orchestrator; provider/transport implementation `ofm_source`, map
+controller/preferences/browser implementation `ofm_map_layer`, source inventory
+and independent quality `ofm_housekeeping`, independent validation
+`camera_return_validate` reassigned to this OFM task.
+
+**Implementation notes**
+
+Map menu → OpenFlightMaps offers a saved off-by-default aviation overlay and
+opacity control. Transparent publisher tiles stream on visible viewport demand,
+with source/edition/dates/zoom/coverage/terms/reporting status, independently of
+local GPS/NAV/flight overlays and physics. No offline conversion or third-party
+scripts. The pinned2611 edition has published29October–26November2026 dates;
+metadata/source URLs are validated. The4-job/32pending/8MiB/64entry proxy has a
+15s total queue/fetch/body budget, byte/PNG guards, cancellation and memory cache.
+[Source and behavior](research/2026-11-06-ofm-overlay-implementation.md).
+
+Final working-app and publication fixture browsers each pass five groups with
+all source pins matched; a separate actual-publisher browser passes its Germany
+view. Genuine Egelsbach chart content renders below local aircraft/NAV, using
+nonempty zoom12 parents and no13requests. A real proxy repeat makes only one
+upstream call. Source-format/style regressions and date/descriptor/preferences/
+resource bounds have15independent focused passes. Final affected application
+renewal passes565Node/22Python and both TypeScript checks pass. The earlier full
+shared CI563/22/85assurance/11training predates localized repairs; unchanged tools
+ran242of243(one platform skip), JSBSim14of23(nine optional skips), C172S25.
+[Evidence](reviews/2026-11-06-ofm-overlay-runtime.json),
+[quality](reviews/2026-11-06-ofm-overlay-quality.md),
+[validation](reviews/2026-11-06-ofm-overlay-validation.md).
+
+**Deviations**
+
+Browser preparation caught MapLibre6 tile-event shape, a PNG-as-PBF fixture error,
+a late foreground-anchor style race and a publication-only absent-plan assumption.
+The actual source test then found valid fully transparent grayscale-alpha zoom13
+samples rejected by an RGBA-only guard. The final proxy admits verified8-bit
+formats4/6; the reviewed source conservatively selects native12 to retain observed
+nonempty content, with ordinary raster overzoom. This is not a claim all13tiles
+are empty. Prior failures/partial passes remain historical, with final source/unit/
+browser/app gates renewed. Official API/About grant supports opt-in streaming;
+complete GUL/product redistribution/offline packaging and plates remain open.
+No chart pixels are bundled; fixture basemap/current source geography/coverage,
+live-flight/Review chart behavior and embedded WebKit have no broader acceptance.
+Cross-provider peer remains pending under batching cadence.
+
+**Insights**
+
+Already-rendered tiles need runtime fetch/cache, not conversion. A single successful
+source tile and synthetic chart fixtures did not establish the producer's format
+or native-detail behavior; the actual default-view test exposed both assumptions.
+
 ## 2026-11-06 16:05 — Extend historical radio reception worldwide
 
 TODO: 2.0.177; R-NAV-1/R-NAV-2/R-NAV-4/R-DATA-1.

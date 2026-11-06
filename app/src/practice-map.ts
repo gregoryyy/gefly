@@ -1,3 +1,7 @@
+import { createOfmMapOverlay, OFM_OVERLAY_ID } from './ofm-map-overlay.ts';
+import { loadOfmOverlaySource } from './ofm-overlay-source.ts';
+import './ofm-map-overlay.css';
+
 import { loadMapLocationPreferences, saveMapLocationPreferences } from './map-location-preferences.ts';
 import { createWorldMapStyle, worldMapLayers, worldMapLabelLayers } from './world-map-style';
 /// <reference types="vite/client" />
@@ -163,7 +167,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   credit.append(navCredit);
   const caption = document.createElement('p');
   caption.className = 'practice-map-caption';
-  caption.textContent = 'Global OpenStreetMap · worldwide OurAirports community airport/NAV discovery near map centre; historical receiver/ILS and fix coverage remains regional. Not a navigation chart.';
+  caption.textContent = 'Global OpenStreetMap · worldwide OurAirports community airport/NAV discovery near map centre; receiver signals use a separate historical NAV810 inventory; published fix coverage remains regional. Not a navigation chart.';
   const airportsSection = document.createElement('details');
   airportsSection.className = 'practice-map-airports';
   const summary = document.createElement('summary');
@@ -189,12 +193,14 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   const extendedMenu = document.createElement('section');
   extendedMenu.id = 'flight-map-extended-menu'; extendedMenu.className = 'practice-map-extended-menu';
   extendedMenu.setAttribute('aria-label', 'Extended flight map menu'); extendedMenu.hidden = true;
-  extendedMenu.append(layers, charts, circuitNote, circuitReadout, readout, legend, navigationStatus, navigationKey, navigationDetail, airportsSection, credit, caption);
+  const ofmControls = document.createElement('div');
+  extendedMenu.append(layers, ofmControls, charts, circuitNote, circuitReadout, readout, legend, navigationStatus, navigationKey, navigationDetail, airportsSection, credit, caption);
   container.dataset.extendedMenu = 'false'; delete container.dataset.overlapCockpit;
   container.replaceChildren(header, viewport, toolbar, extendedMenu);
   viewport.append(status);
 
   let map: LibreMap | undefined;
+  let ofmOverlay: ReturnType<typeof createOfmMapOverlay> | undefined;
   let aircraft: Marker | undefined;
   let start: Marker | undefined;
   let frame: PracticeMapFrame | undefined;
@@ -323,7 +329,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   function worldNavaidPoint(nav: WorldNavaid): MapPoint {
     return { id: nav.ident, world_record_id: nav.id, name: nav.name, kind: nav.type, equipment: nav.type,
       lon_deg: nav.lon, lat_deg: nav.lat,
-      source_label: `OurAirports · ${worldSnapshot?.retrieved ?? ''} · community discovery; receiver coverage remains historical/regional`,
+      source_label: `OurAirports · ${worldSnapshot?.retrieved ?? ''} · community discovery; receiver signals use a separate historical NAV810 inventory`,
       frequencies: nav.frequency_khz === null ? [] : [{ kind: 'nav', channel_khz: nav.frequency_khz, label: nav.type }] };
   }
   function worldSearchPoint(hit: WorldSearchHit): MapPoint {
@@ -470,7 +476,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   }
 
   function updateLayerCaption(): void {
-    caption.textContent = `${aerial ? 'Public aerial imagery · capture dates vary.' : 'Public map · not a navigation chart.'}${vector ? ' Terrain: map without labels.' : ''} Worldwide community airport/NAV discovery near map centre. Historical receiver/ILS and fix coverage remains regional.`;
+    caption.textContent = `${aerial ? 'Public aerial imagery · capture dates vary.' : 'Public map · not a navigation chart.'}${vector ? ' Terrain: map without labels.' : ''} Worldwide community airport/NAV discovery near map centre. Receiver signals use a separate historical NAV810 inventory; published fix coverage remains regional.`;
   }
 
   function setVector(enabled: boolean): void {
@@ -793,7 +799,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     },
     setVisible(value) {
       if (disposed) return;
-      visible = value;
+      visible = value; ofmOverlay?.setVisible(value);
       if (!value) { pointPopup?.remove(); pointPopup = null; }
       container.hidden = !value;
       if (value) { map?.resize(); requestWorldCenter(); paint(); }
@@ -814,7 +820,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       circuitMarkers.forEach((marker) => marker.remove());
       aircraft?.remove();
       start?.remove();
-      map?.remove();
+      ofmOverlay?.dispose(); map?.remove();
       container.replaceChildren();
     },
   };
@@ -879,6 +885,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
         return { url };
       },
     });
+    ofmOverlay = createOfmMapOverlay({ map, controls: ofmControls, visible, onInteraction, loadSource: loadOfmOverlaySource });
     map.addControl(new ScaleControl({ unit: 'nautical', maxWidth: 100 }), 'bottom-left');
     viewport.append(trajectory);
     map.on('move', paintTrajectory); map.on('resize', paintTrajectory);
@@ -957,8 +964,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     origin.className = 'practice-map-start';
     origin.textContent = 'Trace start';
     start = new Marker({ element: origin, anchor: 'left', offset: [5, 0] });
-    map.on('error', () => {
-      if (disposed) return;
+    map.on('error', event => {
+      if (disposed || (event as typeof event & { sourceId?: string }).sourceId === OFM_OVERLAY_ID) return;
       failed = true;
       status.hidden = false;
       status.textContent = 'Some map tiles unavailable. Aircraft and path remain local.';

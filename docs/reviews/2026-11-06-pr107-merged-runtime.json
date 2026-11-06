@@ -1,0 +1,229 @@
+{
+  "pr": 107,
+  "head": "f05a539f0bf1a34e4a56451b9aeb87bfeeaaad14",
+  "tested_base": "1ac24f3bae53358d8a7bf4d9607504d7a13d4fec",
+  "scope": "Map fixes/saved category merge with worldwide discovery and saved Options; not later-main acceptance",
+  "browser": {
+    "result": "pass",
+    "browser": "156.0.8078.80",
+    "sourceHashes": {
+      "src/practice-map.ts": "db8f72bf6aecf1630a75cc8568d7d61fb282190aab731261db4424c904556eb2",
+      "src/map-point-search.ts": "fd23bf34ed2b5c6fc06a94864b8490c145912468eb66710dc01e2eb248c9826a",
+      "src/map-location-types.ts": "4d885a01eafb450d2570a53a9dd3946ab7e4dbcce896921029ccaef87baf4549",
+      "src/map-location-preferences.ts": "e351e3c39b690c1ea2dadfeb26a1d66742e338f3fc3b309732794978d027c2aa",
+      "tests/map-location-preferences.browser.mjs": "87373aea1512db548fe8fe5e7ea94decd4ef28eaac1ffdf85594453ebfd649a1"
+    },
+    "checks": [
+      "Fixes defaults on; actual historical source, rendered ASKIK and selectable label agree with results; off hides both while retaining other categories/GPS/native state",
+      "search factory owns a copy of initial types, accepts explicit all-off, and emits no initialization callback",
+      "actual Flight restart preserves saved mixed choices and filtered map sources; fresh native baseline remains paused",
+      "mixed and explicit all-off survive close/reopen, real reload and fresh same-origin tabs; saved choices appear at first filter insertion",
+      "corrupt, future and oversized storage falls back to all types; denied storage allows session choices/reopen and safe defaults after reload"
+    ],
+    "observations": [
+      {
+        "label": "fresh defaults",
+        "selected": [
+          "airfield",
+          "heliport",
+          "seaplane",
+          "balloonport",
+          "closed",
+          "nav",
+          "fix"
+        ],
+        "firstDisplay": [
+          "airfield",
+          "heliport",
+          "seaplane",
+          "balloonport",
+          "closed",
+          "nav",
+          "fix"
+        ]
+      },
+      {
+        "label": "mixed after reload",
+        "selected": [
+          "airfield",
+          "nav"
+        ],
+        "firstDisplay": [
+          "airfield",
+          "nav"
+        ]
+      },
+      {
+        "label": "mixed fresh tab",
+        "selected": [
+          "airfield",
+          "nav"
+        ],
+        "firstDisplay": [
+          "airfield",
+          "nav"
+        ]
+      },
+      {
+        "label": "all-off after reload",
+        "selected": [],
+        "firstDisplay": []
+      },
+      {
+        "label": "all-off fresh tab",
+        "selected": [],
+        "firstDisplay": []
+      },
+      {
+        "label": "malformed",
+        "selected": [
+          "airfield",
+          "heliport",
+          "seaplane",
+          "balloonport",
+          "closed",
+          "nav",
+          "fix"
+        ],
+        "firstDisplay": [
+          "airfield",
+          "heliport",
+          "seaplane",
+          "balloonport",
+          "closed",
+          "nav",
+          "fix"
+        ]
+      },
+      {
+        "label": "future version",
+        "selected": [
+          "airfield",
+          "heliport",
+          "seaplane",
+          "balloonport",
+          "closed",
+          "nav",
+          "fix"
+        ],
+        "firstDisplay": [
+          "airfield",
+          "heliport",
+          "seaplane",
+          "balloonport",
+          "closed",
+          "nav",
+          "fix"
+        ]
+      },
+      {
+        "label": "oversized",
+        "selected": [
+          "airfield",
+          "heliport",
+          "seaplane",
+          "balloonport",
+          "closed",
+          "nav",
+          "fix"
+        ],
+        "firstDisplay": [
+          "airfield",
+          "heliport",
+          "seaplane",
+          "balloonport",
+          "closed",
+          "nav",
+          "fix"
+        ]
+      },
+      {
+        "label": "denied storage",
+        "selected": [
+          "airfield",
+          "heliport",
+          "seaplane",
+          "balloonport",
+          "closed",
+          "nav",
+          "fix"
+        ],
+        "firstDisplay": [
+          "airfield",
+          "heliport",
+          "seaplane",
+          "balloonport",
+          "closed",
+          "nav",
+          "fix"
+        ]
+      },
+      {
+        "label": "denied storage reload",
+        "selected": [
+          "airfield",
+          "heliport",
+          "seaplane",
+          "balloonport",
+          "closed",
+          "nav",
+          "fix"
+        ],
+        "firstDisplay": [
+          "airfield",
+          "heliport",
+          "seaplane",
+          "balloonport",
+          "closed",
+          "nav",
+          "fix"
+        ]
+      }
+    ],
+    "errors": []
+  },
+  "browser_artifact_sha256": "a1502f5fd27142898d0a3b217a0979a291dd0d8167d82f3a0cd0b9e5aae53ba2",
+  "ci": {
+    "command": "env PATH=/Users/gregor/.pyenv/versions/3.11.12/bin:$PATH just ci",
+    "exit_code": 0,
+    "application_node": 636,
+    "application_python": 32,
+    "assurance": 89,
+    "training": 11,
+    "integrity": {
+      "nodes": 44123,
+      "facts": 62174,
+      "errors": 0,
+      "warnings": 226,
+      "notes": 138
+    },
+    "tracked_whitespace_paths": 3217,
+    "skips": {
+      "jsbsim_study": 9,
+      "platform_tool": 1
+    },
+    "artifact_sha256": "b10ce62eeae278e5e39a89a9af76c85a1fe885aa07fcb8b3e1357ff4179f9c4e"
+  },
+  "check": {
+    "exit_code": 0,
+    "artifact_sha256": "ea530eb00d0f9ae28b1603f6506159aa754f70982018cf969e32b8342839942b"
+  },
+  "diff": {
+    "exit_code": 0,
+    "added": 29,
+    "changed": 245,
+    "removed": [],
+    "impact_truncated": false,
+    "artifact_sha256": "92b2f61cdb550e04a05527919e9303e31de6e6c9fe08c602f1be26aa531bebbc"
+  },
+  "failure_history": [
+    "Initial browser could not bind localhost in sandbox; separate sandbox log/artifact retained. Authorized local-server run passes.",
+    "Initial full CI used host Python3.15 and failed pyexpat loading in six propeller tests with seven errors after636Node passed. Own failed process tree stopped; complete working-Python3.11 rerun passes.",
+    "Initial diff redirected JSON outside ignored output and scanned its own empty file. Artifact/log retained separately; moved into ignored output and complete corrected diff exits0 without generated self-input identities."
+  ],
+  "limits": [
+    "Ten skipped checks are not passes.",
+    "Cross-provider peer remains pending under cadence.",
+    "No source/navigation/physics fidelity or later-main acceptance inferred."
+  ]
+}

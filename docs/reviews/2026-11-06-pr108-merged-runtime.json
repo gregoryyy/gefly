@@ -1,0 +1,168 @@
+{
+  "pr": 108,
+  "head": "5d43748017f23235605bf4f6498e788a572427c7",
+  "tested_base": "c19caa5277b1eff846fea55e280b4e500bd5ead2",
+  "scope": "Open-map zoom ownership merge retaining worldwide discovery, saved Options and saved map filters; not later-main acceptance",
+  "browser": {
+    "result": "pass",
+    "sourceHashes": {
+      "src/main.ts": "1229ccb750afcd7c1094c2bdd924806f02029996081d6387d0a0fc3a87e68f74",
+      "src/practice-map.ts": "e38618ce9eeb91183e7b01768ef1819d7c285c93b801bf39b9d4488c13d36dc8",
+      "src/flight-assists.ts": "cc8d9f61cfa6f42b479d0fe14d75352d5d4bfec5ff61923ce8c283211b81d18c",
+      "src/map-zoom-shortcuts.ts": "7b2be897e7ad5cd9636d97eb245a33c805da2fefa747247add444b53e38aeb91",
+      "tests/map-zoom-shortcuts.browser.mjs": "3fcc4095a4093321650be17e76c807ea695263cef1c8314e42c7e75c90ef590c"
+    },
+    "checks": [
+      "open but loading map consumes zoom/German repeated = without pacing/throttle/native changes",
+      "= and + zoom in and - zooms out exactly once with scene, canvas and map-control focus; native worker stays paused and rate/throttle stay unchanged",
+      "modifier, recognized repeat, default-prevented event, editable map search, top-menu and modal guards preserve map zoom, pacing, throttle and native state",
+      "A still toggles AP with map open; Flight speed click/Shift-click changes worker rate while map remains open",
+      "closed map restores = speed cycle and + decrement without changing hidden map zoom",
+      "during live flight =/+/- change map zoom by exactly net +1 while worker steps continue and rate commands/throttle stay unchanged",
+      "Review map keys zoom map exactly once while preserving independent replay speed and paused live native state",
+      "keyboard and map buttons share the actual MapLibre min/max zoom bounds; speed shortcut hint and accessibility metadata follow map visibility"
+    ],
+    "observations": [
+      {
+        "label": "scene =",
+        "before": 13,
+        "after": 14,
+        "rateCommandCount": 0
+      },
+      {
+        "label": "scene -",
+        "before": 14,
+        "after": 13,
+        "rateCommandCount": 0
+      },
+      {
+        "label": "scene +",
+        "before": 13,
+        "after": 14,
+        "rateCommandCount": 0
+      },
+      {
+        "label": "scene numpad -",
+        "before": 14,
+        "after": 13,
+        "rateCommandCount": 0
+      },
+      {
+        "label": "MapLibre canvas =",
+        "before": 13,
+        "after": 14,
+        "rateCommandCount": 0
+      },
+      {
+        "label": "MapLibre canvas -",
+        "before": 14,
+        "after": 13,
+        "rateCommandCount": 0
+      },
+      {
+        "label": "MapLibre canvas +",
+        "before": 13,
+        "after": 14,
+        "rateCommandCount": 0
+      },
+      {
+        "label": "MapLibre canvas numpad -",
+        "before": 14,
+        "after": 13,
+        "rateCommandCount": 0
+      },
+      {
+        "label": "map control =",
+        "before": 13,
+        "after": 14,
+        "rateCommandCount": 0
+      },
+      {
+        "label": "map control -",
+        "before": 14,
+        "after": 13,
+        "rateCommandCount": 0
+      },
+      {
+        "label": "map control +",
+        "before": 13,
+        "after": 14,
+        "rateCommandCount": 0
+      },
+      {
+        "label": "map control numpad -",
+        "before": 14,
+        "after": 13,
+        "rateCommandCount": 0
+      },
+      {
+        "label": "German Shift+Digit0 =",
+        "before": 13,
+        "after": 14,
+        "rateCommandCount": 0
+      },
+      {
+        "label": "numpad +",
+        "before": 14,
+        "after": 15,
+        "rateCommandCount": 0
+      },
+      {
+        "label": "live map zoom",
+        "before": 15,
+        "after": 16,
+        "stepBefore": 141,
+        "stepAfter": 205,
+        "throttle_norm": 0.737595201290068,
+        "rate": 1,
+        "rateCommandCount": 4
+      }
+    ],
+    "errors": [],
+    "servedPracticeMapSha256": "357901ca3f9ef7bd782b75edb68be2d54e09e3714ab8473b2fc5b4d2189bc72b",
+    "observedPracticeMapSha256": "5bc757bffa5722f4ceeb6113ff969c8269ed62ea6a39717c4029efae50db1a8a",
+    "browser": "156.0.8078.80"
+  },
+  "browser_artifact_sha256": "d7c9793ed58e373d891f59ad1bd2572e0e72ff2668ba490ae281898a3b03b545",
+  "ci": {
+    "command": "env PATH=/Users/gregor/.pyenv/versions/3.11.12/bin:$PATH just ci",
+    "exit_code": 0,
+    "application_node": 643,
+    "application_python": 32,
+    "assurance": 89,
+    "training": 11,
+    "integrity": {
+      "nodes": 44148,
+      "facts": 63414,
+      "errors": 0,
+      "warnings": 226,
+      "notes": 138
+    },
+    "tracked_whitespace_paths": 3226,
+    "skips": {
+      "jsbsim_study": 9,
+      "platform_tool": 1
+    },
+    "artifact_sha256": "bf8cf359dce90cbaa75f48bb4a54662143f9acdbbdeef3bd4cf11c9f6b3f0c67"
+  },
+  "check": {
+    "exit_code": 0,
+    "artifact_sha256": "a1e7aeae1a4c578252f09612838939392b86942af51d49a39081fa4514b781cd"
+  },
+  "diff": {
+    "exit_code": 0,
+    "added": 24,
+    "changed": 248,
+    "removed": [],
+    "impact_truncated": false,
+    "artifact_sha256": "558a49fe6cb0338a3e7d37e14872641b26d90146597d3353a3f10be5ea33fc34"
+  },
+  "failure_history": [
+    "An initial npm invocation used a nonexistent script name and started no browser. Its missing-script log remains separate; the correct existing test:map-zoom-keys script passed eight actual browser groups."
+  ],
+  "limits": [
+    "Ten skipped checks are not passes.",
+    "Cross-provider peer remains pending under cadence.",
+    "No aircraft/operational fidelity or later-main acceptance inferred."
+  ]
+}

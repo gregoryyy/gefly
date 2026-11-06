@@ -454,6 +454,29 @@ Custom GPS planning bounds are independent of pinned regional source catalogue
 limits. Shared validation rejects invalid coordinates before mutation; global
 custom planning adds no source downloads, receiver coverage or persistence.
 
+
+## OpenFlightMaps optional aero overlay
+
+R-CHART-1 adds an opt-in visual raster layer above the2D map, independent of
+receivers, terrain and native physics. It follows fixed reviewed cycle2611 and
+ED publication metadata rather than guessing a current cycle. Provider requests
+go through a canonical same-origin route to one fixed HTTPS aero tile host/path;
+queries, coordinates outside the XYZ/zoom range, redirects, oversized/unexpected
+responses and invalid PNG headers/dimensions fail closed for the optional layer.
+The proxy has4active/32total pending upstream jobs,8MiB one-hour memory LRU,1MiB/tile
+and15s deadlines; no persistent/bulk chart cache or credential forwarding.
+The client validates its16KiB descriptor and small strict saved on/opacity record.
+Off/hidden cancels optional source demand and late replies cannot re-enable it.
+Chart errors do not become base-map/flight failures. Labels/source links are inert
+and publisher reporting requires an explicit user action; nothing auto-submits.
+
+The official About license grant and documented third-party chart API support
+this streaming prototype with attribution and user error reporting. The old full
+GUL PDF link remains unavailable; this does not establish unrestricted rendered
+product redistribution, permanent offline packaging or a provider SLA. No chart
+pixels or complete OFMX/plate product are bundled. Complete terms/product review
+remains separate for distribution scope beyond this opt-in documented API use.
+
 ## Open-map zoom shortcut ownership
 
 A page-lifetime document-capture router owns eligible =/+ and - keys while the

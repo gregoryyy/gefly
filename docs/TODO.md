@@ -247,7 +247,7 @@ IDs never renumber. Checked boxes mean recorded work, not a simulator claim. Fol
 - [x] 2.0.84 Expand physical terrain to 108 actual DGM200/GCG tiles over 7–10°E / 49.25–51.5°N, update streaming/rendering/persistence and add Westerwald, Marburg/Lahn and Kassel Flight presets. Extend Hessen photography with honest map fallbacks. R-WORLD-5. Original 42 tile bytes remain unchanged; new manifest/seams and native heights verified.
 
 - [x] 2.0.85 Add Flight map chart access to OFM Germany VFR and official DFS AIP airport/approach sources, preserving selected airport reference. R-CHART-1. Publisher-hosted access only.
-  - [ ] 2.0.85.1 Obtain complete applicable OFM/product or alternative chart rights and edition metadata, then embed a licensed airspace/chart layer with the flown path; procedure-plate embedding remains source-specific. Database permissions alone do not establish raster/plate rights.
+  - [ ] 2.0.85.1 Complete full OFM/product terms, broader redistribution/offline packaging and procedure-plate review. The bounded published2611 streaming overlay is delivered byTask179; full product/plate embedding remains source-specific. Database permissions alone do not establish raster/plate rights.
 
 - [x] 2.0.86 Add right-click place lookup when landmark labels are enabled: terrain picking, nearest source name/distance, bounded cached requests, cancellation and honest sky/empty/unavailable states. Preserve yoke gestures, including Mac Ctrl-click. R-WORLD-7/R-INPUT-1.
 
@@ -360,15 +360,22 @@ future tasks, not completed by this requirements update.
 - [ ] 2.0.165 Separate browser terrain source work and server Copernicus decoding from native stepping; preserve exact grids, source history and coverage guards. R-WORLD-11/R-SIM-2. [Request](input/2026-11-06-scenery-workers-and-overview.md). Implementation and real-worker/native equivalence pass; independent acceptance pending.
 - [ ] 2.0.166 Add generic paved airport markings, optional larger-runway practice PAPI and runway/taxiway/apron layering to Task164. R-AIRPORT-3/R-AIRPORT-2. [Request](input/2026-11-06-scenery-workers-and-overview.md). Source geometry/equipment fidelity remains illustrative.
 - [ ] 2.0.167 Add separate Terrain overview camera with bounded Earth-scale scroll zoom and native-state isolation. R-VIEW-1/R-INPUT-1. [Request](input/2026-11-06-scenery-workers-and-overview.md). Independent acceptance pending.
-- [ ] 2.0.168 Assess OpenFlightMaps structured-data overlay and current product/rights prerequisites. R-DATA-1/R-NAV-1. [Request](input/2026-11-06-scenery-workers-and-overview.md). Research delivered; specific current edition/license remains unselected, no data import.
+- [ ] 2.0.168 Assess OpenFlightMaps structured-data overlay and current product/rights prerequisites. R-DATA-1/R-NAV-1. [Request](input/2026-11-06-scenery-workers-and-overview.md). Historical research delivered; the selected2611 API streaming prototype is Task179, with complete product/full-license redistribution review still separate.
 - [ ] 2.0.169 Repair landing shadow receiver visibility and height-readout gating. R-VIEW-1. [Request](input/2026-11-06-scenery-workers-and-overview.md). Flat-study pixel check passes; user terrain/landing reproduction and independent acceptance pending.
+
+- [x] 2.0.179 Add an optional saved OpenFlightMaps transparent chart overlay with on-demand tiles, opacity, edition/coverage/reporting and bounded source transport; keep map/flight independent and document online versus offline conversion. R-CHART-1/R-WORLD-6/R-DATA-1. [Request](input/2026-11-06-ofm-overlay.md).
 
 - [x] 2.0.170 Integrate pinned worldwide OurAirports airport/runway/COM/radio-navaid discovery with regional packages, worker search/loading and source-marked map details/standby actions. R-WORLD-12/R-NAV-2/R-DATA-1/R-COMM-2. [Request](input/2026-11-06-integrate-ourairports.md).
 
 Task2.0.170 verification: [quality](reviews/2026-11-06-worldwide-airports-quality.md) and [validation](reviews/2026-11-06-worldwide-airports-validation.md) accept the bounded discovery increment; runtime records distinguish working-app and feature-only main scopes. Historical receiver/current-data fidelity and batched peer acceptance remain separate.
 
-- [x] 2.0.173 Retain saved Options across new flights and page reloads with bounded device-local preferences, preview/Save/Cancel and safe storage/audio defaults. R-INPUT-1/R-UX-2. [Request](input/2026-11-06-flaps-settings.md).
+- [x] 2.0.180 Reconcile PR102 worldwide discovery with current main and its on-demand OSM airport generator, preserving source boundaries and history; renew integrated checks/reviews and update the existing PR. R-WORLD-12/R-NAV-2/R-DATA-1/R-COMM-2/R-AIRPORT-3. [Request](input/2026-11-06-pr102-conflicts.md).
 
-- [ ] 2.0.180 Reconcile PR102 worldwide discovery with current main and its on-demand OSM airport generator, preserving source boundaries and history; renew integrated checks/reviews and update the existing PR. R-WORLD-12/R-NAV-2/R-DATA-1/R-COMM-2/R-AIRPORT-3. [Request](input/2026-11-06-pr102-conflicts.md).
+- [x] 2.0.173 Retain saved Options across new flights and page reloads with bounded device-local preferences, preview/Save/Cancel and safe storage/audio defaults. R-INPUT-1/R-UX-2. [Request](input/2026-11-06-flaps-settings.md).
+- [x] 2.0.181 Reconcile PR104 saved Options with current main, retaining settings behavior, all airport pipelines and history; renew affected checks/reviews and push the existing PR. R-INPUT-1/R-UX-2/R-AIRPORT-3/R-WORLD-12. [Request](input/2026-11-06-pr104-conflicts.md).
+- [x] 2.0.182 Reconcile PR107 map fixes and saved location filters with current main, preserving worldwide discovery and saved Options; renew checks/reviews and push the existing PR. R-WORLD-6/R-NAV-5/R-INPUT-1. [Request](input/2026-11-06-pr107-conflicts.md).
+- [x] 2.0.183 Reconcile PR108 map magnification keys with current main, preserving current map/settings/data paths; renew checks/reviews and push the existing PR. R-WORLD-6/R-INPUT-1. [Request](input/2026-11-06-pr108-conflicts.md).
+- [ ] 2.0.184 Reconcile remaining PR109 receiver reception and PR111 OFM overlay with current main, preserving independent source/native boundaries and history; renew checks/reviews and push existing PRs. R-NAV-2/R-CHART-1/R-WORLD-12. [Request](input/2026-11-06-remaining-pr-conflicts.md).
+
 
 - [x] 2.0.177 Restore sourced worldwide VOR/LOC/GS/DME reception outside the regional discovery/receiver gap; share exact package identity between instruments and native-worker NAV1/AP, preserve explicit components/flags and bounded per-step/picker work. R-NAV-1/R-NAV-2/R-NAV-4/R-DATA-1. [Request](input/2026-11-06-nav-reception.md).

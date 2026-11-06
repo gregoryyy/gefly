@@ -1,0 +1,98 @@
+{
+  "task": "2.0.180",
+  "head": "d852845086ea900c989bf349c11b4678862a13bf",
+  "merged_main": "446293af00423a6af3f1e4102a05804202ff207c",
+  "original_head": "aa7d49439badd6631aadc9f289f8b511058aa59f",
+  "ci": {
+    "command": "env PATH=/Users/gregor/.pyenv/versions/3.11.12/bin:$PATH just ci",
+    "result": "pass",
+    "exit_code": 0,
+    "log_sha256": "9f11968ec3bc723a7248a3419408cb6e97e01bdc2ce0de75d715fbdd124206ee",
+    "application_node": 611,
+    "application_python": 32,
+    "assurance_tests": 89,
+    "training_tests": 11,
+    "jsbsim_study_executed": 14,
+    "jsbsim_study_skipped": 9,
+    "repository_tooling_executed": 242,
+    "repository_tooling_skipped": 1,
+    "integrity": {
+      "nodes": 44054,
+      "facts": 58580,
+      "errors": 0,
+      "warnings": 226,
+      "notes": 138
+    },
+    "tracked_whitespace_paths": 3194
+  },
+  "first_attempt": {
+    "result": "fail",
+    "cause": "graph exceeds unchanged node/fact limit",
+    "log_sha256": "9886a1e0e9658d2b2ec09b2a4e2da60e209e2715b847d219beaa67e12e161e7a"
+  },
+  "browser": {
+    "worldwide_discovery": {
+      "result": "pass",
+      "checks": [
+        "a source airport can become the visual GPS target without an autopilot command",
+        "seven distant airports resolve through real global search and cells, show source runway details and load COM1 standby without changing active channels",
+        "worldwide VOR-DME selection loads the source110.050MHz into NAV2 standby only, with historical receiver coverage still disclosed",
+        "a source NDB retains its kHz frequency and exposes no unsupported NAV tuning action",
+        "map pan/return reuses cached source cells and all observed search, label, source and cache counts stay bounded",
+        "paused native step, digest, complete physical state, AP state and active radio channels remain unchanged during worldwide discovery and standby loading",
+        "recorded Review allows worldwide inspection while disabling COM tuning without sending navigation mutations",
+        "injected optional cell failures disclose unavailability and preserve the731entry regional fallback and paused native state"
+      ],
+      "artifact_sha256": "2825dc5893fb09dbaf16153e653858a384894a7a1f546c7560000aa293bff517",
+      "errors": [],
+      "limits": [
+        "Standby confirmation wording is absent from this branch; WORLD_AIRPORT_ALLOW_NO_FEEDBACK=1 limits only that presentation check. Actual standby mutation and unchanged active channels are still mandatory.",
+        "Flight-plan action is absent from this branch; WORLD_AIRPORT_ALLOW_NO_PLAN=1 explicitly limits this run.",
+        "Map relocation is absent from this branch; WORLD_AIRPORT_ALLOW_NO_RELOCATION=1 limits only that Review presentation check. Native state and radio guards remain mandatory."
+      ]
+    },
+    "airport_generation": {
+      "result": "pass",
+      "checks": [
+        "California source surfaces compile off-thread, load in one dedicated browser worker and reach ready Cesium meshes with bounded/deduplicated geometry while native flight remains paused",
+        "Distant-region traversal and cached backtracking use real browser transport without native commands, time or digest changes; disabling/disposal cancels work and terminates its worker",
+        "Actual Review disables airport generation and issues no regional source requests",
+        "Fresh server process plus page reload reuses validated persistent disk packages with zero further upstream source calls"
+      ],
+      "artifact_sha256": "84a96b48cf6bdf02e45aa77a67f006094c2f2565685afdb8a55dc4f4c35d0765",
+      "errors": [],
+      "limits": "Actual app/native/Cesium/server and browser airport Workers; synthetic OSM geometry and scenery pixels, not real-source accuracy"
+    }
+  },
+  "native_wasm_sha256": "266f201652e8fc3fb6c5ee384bad3ef1f66b335ee9885fa4a14de9a797c1edcc",
+  "source_pins": {
+    "app/package.json": "43ed764a3b9da95000419b0b3eefb9316f2bf6ea9c921190efaca3405f21e97c",
+    "app/src/main.ts": "e44861d277762b0001f0e5084da53412779a9a7485cf4fb672f282ef31c147ca",
+    "app/src/practice-map.ts": "c92cab59919988fcba0d2380eba3b7d12756cadeed26540a0b9ac1a33200fd72",
+    "app/src/scene.ts": "891a9d2f5f35a7640d2bc036f5026758bc75a017ff951c17305f4280a1a07aba",
+    "app/src/world-airport-loader.ts": "5c944f21df8a4b0ba7d55332a68376a011933889c05ff92e9c5960d830ed163b",
+    "app/src/world-airport-repository.ts": "40128a3f2f3dee4e2b52d32df9412c320c0b1bd926645c48c2334d46e7556bc9",
+    "app/tests/world-airports.browser.mjs": "099ba27185cc87c7d089815f46c085005124d7e914a980c445f19c7eee6dd63e",
+    "app/tests/airport-generator.browser.mjs": "6fb632fde8db5ab2f87eccbe6d2185a121ca2477e8343fd28143195bf8871309",
+    "app/public/airports/world/manifest.json": "ed989f584a22dca515e9fd39de275949c2e3d2804aaa978c6382d340acd8d6c6",
+    "utils/assure/src/json-extraction.ts": "5e6f8b951946853ac55d14266b80202687e9da4ba155a119dbf3fc6e5f42bea3",
+    "utils/assure/src/graph.ts": "0f67ed46f4fac4398d0609614264ce5155caf31539a75a611f6619cc47ae1d48",
+    "utils/assure/src/evidence.ts": "4be83830d82682e8b8da5fdc3f46e401c36d408b2c0955f06504734f0e78e10b",
+    "docs/assure/catalog.json": "d9535d5334bee74fc297c96f56361ee051080b37b6c5deb1bb85547d481df1af"
+  },
+  "limits": [
+    "Browser results use actual local source packages/Workers/Cesium/native engine with scenery/OSM geometry fixtures; no source/geometry/aircraft fidelity accepted.",
+    "Source pins were collected after runs; runtime application source was unchanged after merge resolution. Airport harness also checks automatic before/after source hashes.",
+    "External peer remains pending; independent review reports are supplied separately by integration owner."
+  ],
+  "final_diff": {
+    "result": "pass",
+    "from": "446293af00423a6af3f1e4102a05804202ff207c",
+    "added": 1232,
+    "changed": 259,
+    "removed": 15988,
+    "removed_scope": "Only derived object:app/public/mapdata/terrain-style.json# child identities; no other IDs removed",
+    "impact_truncated": true,
+    "artifact_sha256": "f83ef890d7f6f48765b3d05462156efc080497f62f1753583d1902c61367a7e2"
+  }
+}

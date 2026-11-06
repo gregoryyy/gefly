@@ -372,6 +372,18 @@ all rights reserved.
 The organisations in charge of the Copernicus programme by law or by delegation
 do not incur any liability for any use of the Copernicus WorldDEM-30.
 
+
+## OpenFlightMaps chart streaming
+
+The optional map overlay displays unmodified transparent aero tiles from the
+open flightmaps database with visible contributor attribution, selected2611
+edition/validity and a user-initiated report link. It uses the publisher's
+[documented application interface](https://openflightmaps.org/2016/08/18/how-to-use-application-interfaces/)
+and [official license grant/conditions summary](https://openflightmaps.org/about/).
+Chart pixels, full OFMX products and procedure plates are not included in this
+repository. Full terms/product redistribution beyond this opt-in API prototype
+remain separately reviewed; this notice does not relabel third-party data GPL.
+
 ## Worldwide OurAirports discovery snapshot
 
 `app/public/airports/world/` contains source-derived airport, runway, COM frequency
