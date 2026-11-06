@@ -56,10 +56,10 @@ class PrepareAircraftTests(unittest.TestCase):
         self.assertEqual(changed.count(module.PROPERTY), 1)
         self.assertEqual(changed.count(module.GATED_CHANNEL), 1)
         self.assertEqual(changed.count(module.STEERING_CHANNEL + module.FLIGHT_CONTROL_END), 1)
-        self.assertEqual(changed.replace(module.STEERING_CHANNEL, b'', 1).replace(module.PROPERTY, b'', 1).replace(module.GATED_CHANNEL, module.CHANNEL, 1).replace(module.AILERON_CENTERED_HYSTERESIS, module.AILERON_SOURCE_HYSTERESIS), FIXTURE)
+        self.assertEqual(changed.replace(module.STEERING_CHANNEL, b'', 1).replace(module.PROPERTY, b'', 1).replace(module.GATED_CHANNEL, module.CHANNEL, 1).replace(module.AILERON_ZERO_HYSTERESIS, module.AILERON_SOURCE_HYSTERESIS), FIXTURE)
         self.assertEqual(module.patch_xml(changed), changed)
 
-    def test_only_named_roll_actuators_center_while_elevator_rates_scales_and_aero_stay(self):
+    def test_only_named_roll_actuators_have_zero_width_while_other_source_bytes_stay(self):
         changed = module.patch_xml(FIXTURE)
         before, after = ET.fromstring(FIXTURE), ET.fromstring(changed)
         for name in module.AILERON_ACTUATORS:
@@ -74,19 +74,19 @@ class PrepareAircraftTests(unittest.TestCase):
         self.assertIn(ELEVATOR, changed)
         self.assertIn(SCALES, changed)
         self.assertIn(AERODYNAMICS, changed)
-        self.assertEqual(changed.count(module.AILERON_CENTERED_HYSTERESIS), 2)
+        self.assertEqual(changed.count(module.AILERON_ZERO_HYSTERESIS), 2)
         self.assertEqual(float(after.findtext(".//actuator[@name='fcs/elevator-actuator']/hysteresis_width")), .05)
 
     def test_missing_unknown_duplicated_or_partial_roll_targets_fail_closed(self):
-        source_line, centered = module.AILERON_SOURCE_HYSTERESIS, module.AILERON_CENTERED_HYSTERESIS
+        source_line, zero_width = module.AILERON_SOURCE_HYSTERESIS, module.AILERON_ZERO_HYSTERESIS
         unexpected = "Unexpected aileron actuator hysteresis wiring"
         missing = "Expected one named left and right aileron actuator"
         cases = (
             ("missing width", FIXTURE.replace(source_line, b'', 1), unexpected),
             ("unknown width", FIXTURE.replace(source_line, source_line.replace(b'0.005', b'0.006'), 1),
              "Unknown aileron actuator hysteresis value; review adapter"),
-            ("partially centered pair", FIXTURE.replace(source_line, centered, 1),
-             "Partially centered aileron actuator pair"),
+            ("partially zero-width pair", FIXTURE.replace(source_line, zero_width, 1),
+             "Partially patched aileron hysteresis pair"),
             ("duplicate width", FIXTURE.replace(source_line, source_line + source_line, 1), unexpected),
             ("renamed width tag", FIXTURE.replace(source_line, source_line.replace(b'hysteresis_width', b'hysteresis-width'), 1), unexpected),
             ("renamed actuator", FIXTURE.replace(b'fcs/left-aileron-actuator', b'fcs/another-actuator', 1), missing),
@@ -111,7 +111,7 @@ class PrepareAircraftTests(unittest.TestCase):
         self.assertEqual(truncated.count(b'<actuator name="fcs/right-aileron-actuator">'), 1)
         self.assertNotIn(b'</actuator>', truncated[right_start:])
         with self.assertRaisesRegex(ValueError, '^Unclosed aileron actuator$'):
-            module.patch_aileron_centering(truncated)
+            module.patch_aileron_hysteresis(truncated)
         # Preserve the wrapper's flight-control closing tag to prove the full
         # adapter also reaches this actuator-specific guard.
         unclosed_right = right.replace(b'            </actuator>\n', b'', 1)

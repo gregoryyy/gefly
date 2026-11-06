@@ -10,6 +10,13 @@ import { FLIGHT_DEFAULT_LOADING, loadingValues } from './loading.js';
 const DT = 1 / 120, RAD = Math.PI / 180, KT = 1852 / 3600;
 const START = 600, RELEASE = 660, END = 3060; // 5s settled +0.5s pulse +20s release.
 const RELEASE_SAMPLES_S = [0, .5, 1, 2, 5, 10, 20];
+const RELEASE_SAMPLE_STEPS = new Map(RELEASE_SAMPLES_S.map(seconds => {
+  const steps = seconds / DT;
+  assert(Number.isSafeInteger(steps), 'release sample must align with an integer simulation step');
+  assert.equal(steps * DT, seconds, 'release sample seconds must round-trip through the fixed step');
+  return [steps, seconds];
+}));
+assert.equal(RELEASE_SAMPLE_STEPS.size, RELEASE_SAMPLES_S.length, 'release samples have distinct steps');
 const M = await createNative({ print() {}, printErr() {} });
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const sourceFiles = ['dist/jsbsim.wasm', 'dist/jsbsim.mjs', 'dist/build-info.json', 'loading.js', 'bridge.cpp', 'disturbance-response-native.mjs'];
@@ -64,8 +71,9 @@ function run(config) {
       config.axis === 'aileron' ? pulse : 0, config.axis === 'rudder' ? pulse : 0, trim.throttle_norm), 0);
     const current = step % 12 === 0 || step === RELEASE || step === END ? sample() : null;
     if (current) trace.push(current);
-    const elapsed = (step - RELEASE) * DT;
-    if (RELEASE_SAMPLES_S.includes(elapsed)) release.push({ after_release_s: elapsed, ...sample() });
+    const afterReleaseSteps = step - RELEASE;
+    if (RELEASE_SAMPLE_STEPS.has(afterReleaseSteps))
+      release.push({ after_release_s: RELEASE_SAMPLE_STEPS.get(afterReleaseSteps), ...sample() });
     if (current?.on_ground || (current && current.altitude_msl_m < 100)) { stop = 'contact or100m diagnostic floor'; break; }
     if (step === END) break;
     assert.equal(M._gf_step(), 0);

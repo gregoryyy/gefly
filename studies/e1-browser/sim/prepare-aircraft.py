@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare an ignored c172x copy with switchable mixture, pitch AP, steering and centered manual roll targets.
+"""Prepare an ignored c172x copy with switchable mixture, pitch AP, steering and zero-width aileron hysteresis.
 
 The pinned source checkout is never modified; aircraft aerodynamic coefficients remain intact.
 Pitch-servo gains are an explicit generic simulator adaptation, not KAP 140 tuning.
@@ -41,17 +41,17 @@ def sha256(data: bytes) -> str:
 
 
 # The pinned generic model's aileron backlash retains a signed surface offset
-# after a manual command returns to trim. Center the commanded targets without
-# changing source travel/rate limits, scales, mass or aerodynamic coefficients.
+# after a manual command returns to trim. Set only the two aileron hysteresis
+# widths to zero; retain source travel/rate limits, scales, mass and aerodynamics.
 # These are generic simulator input semantics, not measured C172 rigging values.
 AILERON_ACTUATORS = (b"fcs/left-aileron-actuator", b"fcs/right-aileron-actuator")
 AILERON_SOURCE_HYSTERESIS = b"              <hysteresis_width> 0.005 </hysteresis_width>\n"
-AILERON_CENTERED_HYSTERESIS = b"              <hysteresis_width> 0 </hysteresis_width>\n"
+AILERON_ZERO_HYSTERESIS = b"              <hysteresis_width> 0 </hysteresis_width>\n"
 
 
-def patch_aileron_centering(data: bytes) -> bytes:
-    """Patch only the two named source lines; reject partial or unknown wiring."""
-    targets = []
+def patch_aileron_hysteresis(data: bytes) -> bytes:
+    """Set the two named actuator hysteresis widths to zero, preserving other bytes."""
+    actuators = []
     for name in AILERON_ACTUATORS:
         opening = b'<actuator name="' + name + b'">'
         if data.count(opening) != 1:
@@ -64,15 +64,15 @@ def patch_aileron_centering(data: bytes) -> bytes:
         if block.count(b"<actuator ") != 1 or block.count(b"<hysteresis_width>") != 1:
             raise ValueError("Unexpected aileron actuator hysteresis wiring")
         original = block.count(AILERON_SOURCE_HYSTERESIS)
-        centered = block.count(AILERON_CENTERED_HYSTERESIS)
-        if original + centered != 1:
+        zero_width = block.count(AILERON_ZERO_HYSTERESIS)
+        if original + zero_width != 1:
             raise ValueError("Unknown aileron actuator hysteresis value; review adapter")
-        targets.append((block, original))
-    if targets[0][1] != targets[1][1]:
-        raise ValueError("Partially centered aileron actuator pair")
-    if targets[0][1]:
-        for block, _ in targets:
-            data = data.replace(block, block.replace(AILERON_SOURCE_HYSTERESIS, AILERON_CENTERED_HYSTERESIS, 1), 1)
+        actuators.append((block, original))
+    if actuators[0][1] != actuators[1][1]:
+        raise ValueError("Partially patched aileron hysteresis pair")
+    if actuators[0][1]:
+        for block, _ in actuators:
+            data = data.replace(block, block.replace(AILERON_SOURCE_HYSTERESIS, AILERON_ZERO_HYSTERESIS, 1), 1)
     return data
 
 
@@ -91,7 +91,7 @@ def patch_xml(data: bytes) -> bytes:
             raise ValueError("Unexpected manual nosewheel steering wiring")
     else:
         changed = changed.replace(FLIGHT_CONTROL_END, STEERING_CHANNEL + FLIGHT_CONTROL_END, 1)
-    return patch_aileron_centering(changed)
+    return patch_aileron_hysteresis(changed)
 
 
 # Generic simulator servo adaptation: stronger VS feedback plus body pitch-rate
