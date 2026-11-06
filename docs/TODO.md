@@ -354,3 +354,5 @@ future tasks, not completed by this requirements update.
 - [x] 2.0.170 Integrate pinned worldwide OurAirports airport/runway/COM/radio-navaid discovery with regional packages, worker search/loading and source-marked map details/standby actions. R-WORLD-12/R-NAV-2/R-DATA-1/R-COMM-2. [Request](input/2026-11-06-integrate-ourairports.md).
 
 Task2.0.170 verification: [quality](reviews/2026-11-06-worldwide-airports-quality.md) and [validation](reviews/2026-11-06-worldwide-airports-validation.md) accept the bounded discovery increment; runtime records distinguish working-app and feature-only main scopes. Historical receiver/current-data fidelity and batched peer acceptance remain separate.
+
+- [x] 2.0.171 Refresh README with an actual current prototype screenshot/source provenance and the AI-assisted development research motivation, distinguishing planned A/B comparisons from measured results. Documentation only; R-BOOT-3/R-DATA-1. [Request](input/2026-11-06-readme-motivation-screenshot.md).

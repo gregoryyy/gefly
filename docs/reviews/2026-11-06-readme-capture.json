@@ -1,0 +1,369 @@
+{
+  "captured": "2026-11-06T12:08:33.299Z",
+  "browser": "156.0.8078.80",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "state": {
+    "flap_command_norm": 0,
+    "type": "state",
+    "step": 5545,
+    "simulation_rate": 1,
+    "t_s": 46.20833333333135,
+    "lat_rad": 0.872013847081661,
+    "lon_rad": 0.15136402085729325,
+    "alt_msl_m": 396.43409037092636,
+    "roll_rad": -0.000861334321525328,
+    "pitch_rad": 0.024424933190174206,
+    "heading_rad": 1.4290319925728419,
+    "tas_mps": 46.24346087066791,
+    "last_input_wall_ms": 1793966912452,
+    "step_cost_us": 300.0001907348633,
+    "p_static_pa": 96653.09787809334,
+    "altimeter_setting_pa": 101325,
+    "altimeter_indicated_m": 396.3678668850993,
+    "altimeter_qnh_pa": 101325.54470143815,
+    "altimeter_qfe_pa": 96655.3669296268,
+    "altimeter_qfe_datum_m": 396.23782935404427,
+    "initial_balance_profile": 1,
+    "roll_trim_norm": -0.010334849193586064,
+    "yaw_trim_norm": -0.0002073500207155632,
+    "mass_total_kg": 1088.3671666452358,
+    "mass_empty_kg": 659.52330598,
+    "fuel_mass_kg": 117.67944894567056,
+    "payload_pilot_kg": 86.1825503,
+    "payload_copilot_kg": 63.502931800000006,
+    "payload_rear_left_kg": 58.9670081,
+    "payload_rear_right_kg": 48.08079122,
+    "payload_baggage_kg": 54.4310844,
+    "payload_external_kg": 0,
+    "fuel_capacity_left_m3": 0.07456114120000001,
+    "fuel_capacity_right_m3": 0.07456114120000001,
+    "fuel_density_kgpm3": 790.8544202915176,
+    "loading_initial_fuel_m3": 0.14912228240000003,
+    "aero_u_mps": 46.2295879591902,
+    "aero_v_mps": 0.000020121581362593753,
+    "aero_w_mps": 1.1326386979467227,
+    "aero_p_radps": -0.000012169480625497795,
+    "aero_q_radps": -0.008141114245762672,
+    "aero_r_radps": -0.000019315584671350797,
+    "cg_structural_x_m": 1.1592208101103563,
+    "cg_structural_y_m": -0.010966897410107798,
+    "cg_structural_z_m": 0.899218571649211,
+    "aero_alpha_rad": 0.02449539790161236,
+    "aero_alpha_max_rad": 0.28,
+    "stall_warning_norm": 0,
+    "stall_hysteresis_norm": 0,
+    "throttle_norm": 0.737595201290068,
+    "aileron_cmd_norm": 0,
+    "elevator_cmd_norm": 0,
+    "rudder_cmd_norm": 0,
+    "aileron_rad": -0.0036053028766160275,
+    "right_aileron_rad": 0.0027039771574620206,
+    "rudder_rad": -0.000057892125783785244,
+    "cas_mps": 45.37280568813979,
+    "turn_rate_radps": -0.000012307028122669125,
+    "flap_rad": 0,
+    "brake_left_norm": 0,
+    "brake_right_norm": 0,
+    "on_ground": 0,
+    "slip_ball_rad": -0.0002788530027553497,
+    "pitch_trim_norm": 0.1890963398648632,
+    "pitch_trim_initial_norm": 0.1890963398648632,
+    "elevator_rad": 0.02577086574898406,
+    "ground_agl_m": 268.85366632556526,
+    "ground_height_ellipsoid_m": 444.2697369238265,
+    "ground_forward_mps": 46.24346074517336,
+    "ground_side_mps": 0.0009957020376916148,
+    "ground_down_mps": 0.0032580947720523895,
+    "structure_contact_mask": 0,
+    "gear_nose_wow": 0,
+    "gear_nose_compression_m": 0,
+    "gear_nose_load_n": 0,
+    "gear_nose_slip_rad": 0,
+    "gear_left_wow": 0,
+    "gear_left_compression_m": 0,
+    "gear_left_load_n": 0,
+    "gear_left_slip_rad": 0,
+    "gear_right_wow": 0,
+    "gear_right_compression_m": 0,
+    "gear_right_load_n": 0,
+    "gear_right_slip_rad": 0,
+    "manifold_pressure_pa": 58617.7786144063,
+    "prop_radps": 263.38997721067443,
+    "mixture_norm": 0.9535389320562782,
+    "mixture_auto": 1,
+    "oil_pressure_pa": 450882.89566216705,
+    "oil_temp_k": 336.5698593276396,
+    "egt_k": 1046.2657005517458,
+    "fuel_flow_m3ps": 0.000006964553366545412,
+    "fuel_left_m3": 0.07440022577218303,
+    "fuel_right_m3": 0.07440022577218303,
+    "ap_mode": 2,
+    "ap_heading_target_rad": 1.4311699866353509,
+    "ap_aileron_norm": 0.00000446845829658716,
+    "engine_running": 1,
+    "engine_command_on": 1,
+    "terrain_profile": 1,
+    "terrain_source": 1,
+    "terrain_height_msl_m": 127.58042404536106,
+    "terrain_geoid_m": 47.83564655290014,
+    "terrain_height_ellipsoid_m": 175.4160705982612,
+    "kap_profile": 1,
+    "kap_engaged": 1,
+    "kap_lateral": 1,
+    "kap_lateral_arm": 0,
+    "kap_vertical": 1,
+    "kap_alt_arm": 0,
+    "kap_gs_arm": 0,
+    "kap_lateral_alert": 0,
+    "kap_vertical_alert": 0,
+    "kap_hdg_prompt": 0,
+    "kap_heading_bug_rad": 1.4311699866353509,
+    "kap_selected_altitude_m": 396.1716285107109,
+    "kap_vs_target_mps": 4.200133905975179e-7,
+    "kap_hold_pressure_altitude_m": 396.1716285107109,
+    "kap_baro_setting_pa": 101325,
+    "kap_baro_units": 0,
+    "kap_display_page": 0,
+    "kap_indicated_altitude_m": 396.3678668850993,
+    "kap_nav_valid": 0,
+    "kap_nav_kind": 1,
+    "kap_gs_valid": 0,
+    "kap_elevator_norm": -0.15945050490953966,
+    "kap_sensor_fault": 0,
+    "kap_cws": 0,
+    "kap_gs_base_mps": 0,
+    "kap_alert_state": 0,
+    "kap_alert_sequence": 0,
+    "radio_nav_active_khz": 113800,
+    "radio_obs_deg": 0,
+    "radio_demo_enabled": 0,
+    "radio_nav2_active_khz": 114000,
+    "radio_obs2_deg": 0,
+    "collision_mask": 0,
+    "collision_step": 0,
+    "collision_t_s": 0,
+    "collision_down_mps": 0,
+    "collision_groundspeed_mps": 0
+  },
+  "scene": {
+    "pointerMode": "off",
+    "sceneryCache": "ready",
+    "imagery": "ready",
+    "imageryRegional": "ready",
+    "imageryRegionalLevel": "14",
+    "imageryRegionalLoadedLevel": "14",
+    "imageryRegionalLoaded": "73",
+    "imageryRegionalCache": "64",
+    "imageryRegionalInflight": "0",
+    "imageryRegionalFailed": "0",
+    "sceneryFallback": "regional",
+    "worldMap": "ready",
+    "worldMapLoaded": "210",
+    "worldMapCache": "32",
+    "worldMapQueued": "0",
+    "terrainDetail": "regional",
+    "terrainCopernicusNodes": "0",
+    "terrainCoarseNodes": "0",
+    "mapTerrain": "off",
+    "mapTerrainLoaded": "210",
+    "mapTerrainQueued": "0",
+    "mapTerrainFailed": "0",
+    "airportRegions": "loading",
+    "airportRegionsResident": "0",
+    "airportRegionsReady": "0",
+    "airportRegionsInstances": "0",
+    "airportRegionsLoaded": "",
+    "airportRegionsSourceDates": "",
+    "airportRegionsRejected": "0",
+    "airportRegionsDeferred": "0",
+    "airportRegionsTruncated": "0",
+    "airfieldGround": "ready",
+    "airfieldGroundCandidates": "89",
+    "airfieldGroundMapped": "89",
+    "airfieldGroundResident": "2",
+    "airfieldGroundLoaded": "EDDF,DE-0003",
+    "airportScenery": "ready",
+    "terrainStreamed": "true",
+    "terrainCached": "9",
+    "terrain": "public-grid",
+    "terrainId": "hessen-edfe-taunus-dgm32-gcg2016v2023-v1",
+    "terrainHeightEllipsoidM": "175.4160705982612",
+    "terrainRelief": "dem-derived",
+    "aircraftHeightEllipsoidM": "444.2697369238265",
+    "aircraftShadow": "too-high",
+    "shadowGroundHeightM": "175.4160705982612",
+    "shadowEnabled": "false",
+    "cameraView": "chase",
+    "overviewDistanceM": "1500",
+    "fovDeg": "60.0",
+    "landmarkLabels": "0",
+    "landmarkLevel": "0",
+    "landmarkStatus": "off",
+    "sceneryMode": "imagery",
+    "practicePapi": "false",
+    "terrainOverview": "ready",
+    "terrainOverviewPending": "0",
+    "terrainOverviewStopped": "",
+    "terrainOverviewHistory": "14",
+    "terrainOverviewCells": "9",
+    "terrainOverviewMissing": "0",
+    "terrainOverviewCache": "9",
+    "reviewTerrainCached": "0",
+    "imageryTiles": "3",
+    "imageryDetail": "ready",
+    "imageryAirportDetail": "ready",
+    "imageryCoverage": "airport:8.628,49.954,8.66,49.966;detail:8.62,49.95,8.66,49.975;overview:8.4,49.8,8.9,50.1",
+    "liveImagery": "loading",
+    "terrainDetailBudget": "bounded",
+    "terrainDetailSse": "3",
+    "terrainContactRefines": "true",
+    "aircraftVisual": "ready",
+    "sceneryCacheQueued": "0",
+    "sceneryCacheCompleted": "0",
+    "sceneryCacheFailed": "0"
+  },
+  "map": {
+    "mapColorScheme": "original",
+    "extendedMenu": "false",
+    "pickingGpsFix": "false",
+    "navLabels": "true",
+    "pathPoints": "378",
+    "markerHeadingDeg": "81.9",
+    "worldAirportsStatus": "ready",
+    "worldAirportsCached": "9",
+    "worldAirportsCacheBytes": "2365693",
+    "worldAirportsCount": "5234",
+    "worldNavaidsCount": "666",
+    "worldAirportsRevision": "c483a76d30ee903114b777bf099de0fae1761294",
+    "worldAirportsFallback": "false"
+  },
+  "status": "Flying",
+  "credits": "© OpenStreetMap contributors · ODbL · EDFE snapshot 2026-11-03; Frankfurt 50 NM OSM snapshot 2026-07-28, retrieved 2026-11-05 · OurAirports public-domain inventory · Source / licence•Hessen HVBG aerial imagery · DL-DE Zero 2.0•EGM2008 geoid / last fallback: NOAA ETOPO 2022; Natural Earth ocean mask · coarse derived baseline; approximate datum transitions. Terrain: © GeoBasis-DE / BKG (2026), DGM200, dl-de/by-2-0; GCG2016 © BKG (2026), CC BY 4.0; Hessen DGM, dl-de/zero-2-0 · Sources · resampled and blended•Height-derived relief: Hessen HVBG DGM1 · GCG2016 (BKG)•© OpenStreetMap contributors · OpenFreeMap · OpenMapTiles schema (CC BY 4.0) · snapshot 2026-11-01 · global map fallback•Open photography: HVBG · DL-DE-Zero-2.0; © Bayerische Vermessungsverwaltung (2026) · CC BY 4.0; Datenquelle: LGL-BW (2026) · dl-de/by-2-0; © GeoBasis-DE / LVermGeoRP (2026), dl-de/by-2-0 [Daten bearbeitet]; © GeoBasis DE / LVGL-SL (2026), dl-de/by-2-0, DOP2025 · resampled, composited · capture dates unknown•Hessen HVBG · DL-DE-Zero-2.0 · imagery resampled and tiledData attribution",
+  "creditLinks": [
+    {
+      "label": "",
+      "url": "https://cesium.com/"
+    },
+    {
+      "label": "Source / licence",
+      "url": "https://www.openstreetmap.org/copyright"
+    },
+    {
+      "label": "BKG",
+      "url": "https://www.bkg.bund.de/"
+    },
+    {
+      "label": "dl-de/by-2-0",
+      "url": "https://www.govdata.de/dl-de/by-2-0"
+    },
+    {
+      "label": "BKG",
+      "url": "https://www.bkg.bund.de/"
+    },
+    {
+      "label": "CC BY 4.0",
+      "url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    {
+      "label": "dl-de/zero-2-0",
+      "url": "https://www.govdata.de/dl-de/zero-2-0"
+    },
+    {
+      "label": "Sources",
+      "url": "http://localhost:5173/terrain/BKG-SOURCES.pdf"
+    },
+    {
+      "label": "OpenStreetMap contributors",
+      "url": "https://www.openstreetmap.org/copyright"
+    },
+    {
+      "label": "OpenFreeMap",
+      "url": "https://openfreemap.org/"
+    },
+    {
+      "label": "OpenMapTiles",
+      "url": "https://openmaptiles.org/"
+    },
+    {
+      "label": "CC BY 4.0",
+      "url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    {
+      "label": "DL-DE-Zero-2.0",
+      "url": "https://www.govdata.de/dl-de/zero-2-0"
+    },
+    {
+      "label": "Bayerische Vermessungsverwaltung",
+      "url": "https://www.ldbv.bayern.de/"
+    },
+    {
+      "label": "CC BY 4.0",
+      "url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    {
+      "label": "LGL-BW",
+      "url": "https://www.lgl-bw.de/"
+    },
+    {
+      "label": "dl-de/by-2-0",
+      "url": "https://www.govdata.de/dl-de/by-2-0"
+    },
+    {
+      "label": "LVermGeoRP",
+      "url": "https://lvermgeo.rlp.de/"
+    },
+    {
+      "label": "dl-de/by-2-0",
+      "url": "https://www.govdata.de/dl-de/by-2-0"
+    },
+    {
+      "label": "LVGL-SL",
+      "url": "https://www.saarland.de/lvgl"
+    },
+    {
+      "label": "dl-de/by-2-0",
+      "url": "https://www.govdata.de/dl-de/by-2-0"
+    },
+    {
+      "label": "Data attribution",
+      "url": ""
+    }
+  ],
+  "mapCredits": [
+    {
+      "label": "OpenStreetMap contributors",
+      "url": "https://www.openstreetmap.org/copyright"
+    },
+    {
+      "label": "OpenFreeMap",
+      "url": "https://openfreemap.org/"
+    },
+    {
+      "label": "OpenMapTiles",
+      "url": "https://openmaptiles.org/"
+    },
+    {
+      "label": "CC BY 4.0",
+      "url": "https://creativecommons.org/licenses/by/4.0/"
+    }
+  ],
+  "failures": [
+    {
+      "url": "http://localhost:5173/scenery/airports/v1/377/279.json",
+      "error": "net::ERR_ABORTED"
+    }
+  ],
+  "errors": [],
+  "sourceHashes": {
+    "app/src/main.ts": "41112ae2c4cbd004c14c7afca9d0c9381f434150a46d33006603fffa251bb64c",
+    "app/src/scene.ts": "32558e9ec73539cf995db6b23fd1d2957e08d3fc7bc28f55b780b0772d7fd89d",
+    "app/src/practice-map.ts": "351d11e2653b95a6d9324b2bbe89cac5c0a9e7ceb0fcbdf051ebb9799aa63de7",
+    "studies/e1-browser/sim/dist/jsbsim.wasm": "266f201652e8fc3fb6c5ee384bad3ef1f66b335ee9885fa4a14de9a797c1edcc",
+    "app/public/airports/world/manifest.json": "ed989f584a22dca515e9fd39de275949c2e3d2804aaa978c6382d340acd8d6c6"
+  },
+  "imageSha256": "2a60d397eec67ad7100b80b93ebe708bc671f62169fb5356ed940651f7138f8a",
+  "capture": "Actual local app, native worker and normal public scenery; no fixtures, source rewrite, generated backdrop or image editing."
+}

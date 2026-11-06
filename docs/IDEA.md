@@ -51,6 +51,25 @@ repeatable scenarios and a reviewable output package distinguish useful authorin
 from plausible prose. Publication, roles, moderation and content-review features
 need their own specification before the community opens.
 
+## AI-assisted development research
+
+A second motivation is to build a real, technically substantial system rapidly
+with AI and investigate where increasing complexity breaks informal “vibe coding.”
+The simulator supplies interacting physics, avionics, geography, asynchronous
+loading and user controls. A convincing demo or a passing local check is not by
+itself evidence that the complete system remains correct.
+
+The intended research uses controlled A/B comparisons on matched tasks, varying
+one development practice at a time: for example explicit contracts, change size,
+regression checks or independent review. Hold the task and acceptance criteria
+comparable, record the model/tool/context and resource budget, and measure time
+to a working change, regressions, rework and review effort. Report failures and
+tradeoffs as well as successes, to learn which practices prevent or reduce failure
+while retaining development speed. This is research motivation and a proposed
+method, not an executed experiment, established effectiveness result or change
+to the simulator's fidelity claims. Individual studies still need frozen protocols
+and observed results under [EVAL](EVAL.md) and [SDLC](SDLC.md).
+
 ## What must be demonstrated
 
 Progressive flight training, browser simulation and sophisticated flight models already exist. The [foundation research](research/2026-10-31-foundation-sources.md) compares official GeoFS, Microsoft Flight Simulator and X-Plane material and identifies aviation reference sources. Gefly's differentiation is a **hypothesis** about transparent fidelity, focused practice and feedback, not an established market gap or measured learning advantage.
