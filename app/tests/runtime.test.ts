@@ -6,7 +6,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, posix, resolve } from 'node:path';
 import { test } from 'node:test';
 import { ENGINE_FILES, MOUNT, RUNTIME_FILES, defaultRuntimeRoot, runtimeMiddleware, runtimeRoot } from '../runtime.ts';
 
@@ -48,6 +48,18 @@ test('build-flight-engine writes the engine into the directory just fly serves',
   assert.equal(runtimeRoot({}), defaultRuntimeRoot, 'just fly serves the study root by default');
   assert.match(read('studies/e1-browser/sim/worker.js'), /^import createJSBSim from '\.\/dist\/jsbsim\.mjs';$/m);
   assert.match(read('app/src/session.ts'), new RegExp(`new Worker\\('${MOUNT}/worker\\.js'`));
+});
+
+test('Task150 every static local runtime import is served, including the indirect Copernicus decoder', () => {
+  const allowed = new Set<string>(RUNTIME_FILES);
+  assert(allowed.has('copernicus-terrain.js'));
+  for (const file of RUNTIME_FILES.filter(file => file.endsWith('.js'))) {
+    const source = read(`studies/e1-browser/sim/${file}`);
+    for (const match of source.matchAll(/\b(?:import|export)\s+(?:[^'";]*?\s+from\s+)?['"](\.\/[^'"]+)['"]/g)) {
+      const imported = posix.normalize(posix.join(posix.dirname(file), match[1]));
+      assert(allowed.has(imported), `${file} imports unserved runtime helper ${imported}`);
+    }
+  }
 });
 
 test('the runtime middleware serves files placed at the build output path and nothing else', async (t) => {

@@ -41,3 +41,5 @@ End with proposed implications, limitations and a handoff to product/orchestrato
 - [Aircraft feasibility: realistic dynamics and complete cockpits](2026-11-04-aircraft-feasibility.md) — requested electric, glider, aerobatic, PA-28 and airliner candidates; primary sources, exact variants, reuse rights and missing validation data.
 
 - [2026-11-05: Terrain horizon cliffs](2026-11-05-terrain-horizon-cliffs.md) — exterior transition, source/renderer separation and bounded runtime evidence.
+
+- [2026-11-05: Copernicus native/data foundation](2026-11-05-copernicus-native-integration.md) — bounded source service/native integration and independent decoder/runtime evidence; broader gates remain open.

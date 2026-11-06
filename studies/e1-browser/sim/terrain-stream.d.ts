@@ -26,7 +26,9 @@ export class TerrainStream {
   move(lat: number, lon: number): Promise<void>;
 }
 export class WorldTerrainStream {
-  constructor(world: TerrainGrid, manifest: Map<string, RegionalTileMetadata> | null, install: (grid: WorldTerrainTile) => void, remove: (grid: WorldTerrainTile) => void, fetcher?: typeof fetch);
+  constructor(world: TerrainGrid, manifest: Map<string, RegionalTileMetadata> | null, install: (grid: WorldTerrainTile) => void, remove: (grid: WorldTerrainTile) => void, fetcher?: typeof fetch, options?: { copernicus?: boolean });
+  copernicusSources: Map<string, import('./copernicus-terrain.js').CopernicusCell | null>;
+  copernicusBudgetExhausted: boolean;
   tiles: Map<string, WorldTerrainTile>;
   sources: Map<string, RegionalTile>;
   failedSources: Set<string>;

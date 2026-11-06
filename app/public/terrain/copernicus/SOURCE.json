@@ -1,0 +1,79 @@
+{
+  "id": "Copernicus-GLO30-Public-COG-2021",
+  "product": "Copernicus DEM GLO-30 public COG DSM",
+  "source": "https://copernicus-dem-30m.s3.eu-central-1.amazonaws.com/",
+  "description": "Runtime-selected fixed-source COG ranges, not a bundled worldwide raster. Strong ETag and range identity checked per source object.",
+  "licence_url": "https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Data/DEM/resources/license/License-COPDEM-30.pdf",
+  "licence_asset": "LICENSE.pdf",
+  "licence_bytes": 113786,
+  "licence_sha256": "9cd37d37ea654bbcaf0a2e059e6a3a5b5f76072824d8dd860ccf274ada8951bd",
+  "physical_reference": "EGM2008 orthometric H in metres (vertical CRS EPSG:3855); DSM including vegetation/buildings",
+  "sampling": "Native v1: 30m source sampled to a 1/4096-degree lattice (~27.2m north-south). Display overview v2: quarter-degree 129x129 nodes on a 1/512-degree lattice (~217m north-south). Both use canonical source posts; derived spacing does not improve source accuracy.",
+  "geoid": "existing coarse EGM2008 interpolation unchanged",
+  "runtime_limits": {
+    "native_resident_cells": 9,
+    "cell_nodes": 129,
+    "cell_degrees": 0.03125,
+    "owner_outcomes_per_epoch": 512,
+    "server_cache_bytes": 67108864,
+    "server_active_cell_jobs": 2,
+    "server_max_overview_cell_jobs": 1,
+    "server_upstream_range_slots": 4,
+    "server_pending_cell_limit": 32,
+    "server_cell_deadline_s": 15,
+    "optional_regional_budget_s": 5,
+    "optional_copernicus_budget_s": 5
+  },
+  "fallback": "Native and display have separate sampling contracts; see native_fallback and display_overview. Exact existing native/fine atlas precedence is retained.",
+  "limitations": [
+    "DSM includes buildings/vegetation; it is not bare-earth or surveyed runway terrain.",
+    "No full global collection is bundled; optional source coverage and availability vary.",
+    "Failed optional native owner outcomes are retained until restart; epoch budget exhaustion uses coarse fallback.",
+    "The 30m source, ~27.2m native lattice and ~217m display resampling are different quantities; neither derived lattice establishes measured accuracy.",
+    "Existing coarse EGM2008 geoid interpolation and approximate regional DHHN2016/GCG-to-global datum transitions remain.",
+    "Display overview coverage is finite; coarse world terrain remains beyond it.",
+    "No aircraft, surveyed airport, operational navigation or training-fidelity acceptance is established by source integration."
+  ],
+  "recorded_at": "2026-11-05T23:29:26+01:00",
+  "official_product_metadata": "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM",
+  "edition_scope": "Existing fixed public AWS collection identified as 2021 by this integration; not a claim to serve the latest CDSE release. Per-object ETag/size/range identity is retained during decoding.",
+  "transport_profiles": {
+    "native_v1": {
+      "route": "/scenery/elevation/copernicus/{col}/{row}.bin",
+      "version": 1,
+      "cell_degrees": 0.03125,
+      "nodes_per_side": 129,
+      "columns": 11520,
+      "rows": 5760,
+      "first_row": 16,
+      "last_row": 5743,
+      "bytes": 66628
+    },
+    "display_overview_v2": {
+      "route": "/scenery/elevation/copernicus-overview/{col}/{row}.bin",
+      "version": 2,
+      "cell_degrees": 0.25,
+      "nodes_per_side": 129,
+      "columns": 1440,
+      "rows": 720,
+      "first_row": 1,
+      "last_row": 718,
+      "bytes": 66628
+    }
+  },
+  "native_fallback": "Valid regional triangles, then canonical available Copernicus physical samples plus existing world geoid, then bundled one-degree baseline. Failed owner outcomes remain fixed within the stream epoch; no display overview enters native cells.",
+  "display_overview": {
+    "native_effect": "none; display-only data never enter native contact grids, source codes, controls or simulation state",
+    "active_cells": 9,
+    "cached_cells": 32,
+    "max_active_requests": 1,
+    "batch_deadline_s": 15,
+    "regional_source_pool_cells": 9,
+    "composition": "Valid regional physical/geoid nodes first; otherwise available Copernicus H plus existing coarse world N. Omit the entire composed cell if any node remains unavailable; do not create internal coarse-filled gaps.",
+    "display_priority": "Exact existing fine/current-world atlas first, complete display overview next, coarse world last; exterior display transitions preserve exact authoritative atlas samples.",
+    "lifecycle": "Load only after current terrain readiness. During current native-terrain loading, cancel in-flight overview work but retain completed display cells; Review, flat mode, reset/new flight and disposal cancel and clear. Stale generations cannot install.",
+    "server_priority": "At most one overview job shares the two native/service cell slots, reserving one for foreground v1 demand; v1 may use both when no overview is active.",
+    "client_included": false,
+    "client_status": "API available; separate dependent display client not included or activated"
+  }
+}

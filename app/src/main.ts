@@ -1330,8 +1330,17 @@ function animate(now: number) {
     engineAudio.update(state, ready && !failed && !sceneFailed && !terrainLoading && !document.hidden
       && (reviewing ? reviewPlaying : running), { warnings: shownWarnings, live: !reviewing });
     pressureAltimeter.update(state, reviewing, groundCollisionStopped());
+    const copernicusNodes = Number(sceneContainer.dataset.terrainCopernicusNodes ?? 0);
+    const coarseNodes = Number(sceneContainer.dataset.terrainCoarseNodes ?? 0);
+    const globalLabel = reviewing ? 'Recorded global terrain · detailed source not recorded'
+      : copernicusNodes > 0 ? `Copernicus global DSM · 30 m source${coarseNodes ? ' / coarse fallback' : ''}`
+        : 'Coarse global fallback · 1° source grid';
+    const mixedLabel = reviewing ? 'Recorded mixed terrain · detailed sources not recorded'
+      : `Mixed regional / ${copernicusNodes ? 'Copernicus DSM' : 'coarse global'} terrain${copernicusNodes && coarseNodes ? ' / coarse fallback' : ''}`;
     const sceneryLabel = state.terrain_profile === 1
-      ? state.terrain_source === 2 ? 'Coarse global fallback · 1° source grid' : state.terrain_source === 3 ? 'Mixed regional / coarse global terrain' : state.terrain_source === 1 ? 'Detailed regional terrain · southern Germany' : 'Terrain source unknown · legacy recording'
+      ? state.terrain_source === 2 ? globalLabel
+        : state.terrain_source === 3 ? mixedLabel
+          : state.terrain_source === 1 ? 'Detailed regional terrain · southern Germany' : 'Terrain source unknown · legacy recording'
       : 'Flat-ground contact study · zero-height ellipsoid';
     const scenery = document.querySelector<HTMLElement>('.scenery-label')!;
     if (scenery.textContent !== sceneryLabel) scenery.textContent = sceneryLabel;

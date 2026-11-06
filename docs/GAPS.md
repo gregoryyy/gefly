@@ -4,6 +4,8 @@ All times are Europe/Berlin. Answers record the author and recording time. New a
 
 ## Recorded interaction decisions
 
+**2026-11-05 23:36, user source selection and Codex modular delivery scope** (Europe/Berlin): [Use Copernicus](input/2026-11-05-copernicus-integration.md) selects the free fixed GLO-30 public COG DSM as optional global enhancement, preserving valid regional data and the bundled coarse last fallback. This native/data foundation adds the world30 identity/lattice, nine native slots,512 latched source outcomes, metadata and common v1/v2 source API, without engine rebuild or unrelated cockpit/map features. The v2 overview API is a prerequisite only: the wider background display client is separate dependent Task162. Physical optional-owner discontinuities remain open Task160; no source-accuracy, installed-aircraft or training acceptance is inferred. R-WORLD-11/R-SIM-2/R-REVIEW-1, TODO2.0.150/2.0.162.
+
 **2026-11-05 22:56, Codex confirmed renderer repair choice** (Europe/Berlin): measured Swiss resident heights agree across source/native boundaries, while the exterior coarse horizon introduces a >1 km display step. Apply a bounded exterior-only 1/8-degree visual transition with exact existing atlas heights inside loaded sources; it adds no measured data or contact surface. Preserve safe-update geometry guards. Injected failed source-owner physical discontinuities remain TODO2.0.160. The user reports Hessen is “all flat” after a rebuild; current fresh normal-flight Hessen native/GPU probes show real relief, so TODO2.0.161 remains unresolved. R-WORLD-2/R-WORLD-11/R-SIM-2.
 
 **2026-11-05 21:32, user request and Codex implementation choice** (Europe/Berlin):
