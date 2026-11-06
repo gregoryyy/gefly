@@ -73,7 +73,12 @@
     "display_priority": "Exact existing fine/current-world atlas first, complete display overview next, coarse world last; exterior display transitions preserve exact authoritative atlas samples.",
     "lifecycle": "Load only after current terrain readiness. During current native-terrain loading, cancel in-flight overview work but retain completed display cells; Review, flat mode, reset/new flight and disposal cancel and clear. Stale generations cannot install.",
     "server_priority": "At most one overview job shares the two native/service cell slots, reserving one for foreground v1 demand; v1 may use both when no overview is active.",
-    "client_included": false,
-    "client_status": "API available; separate dependent display client not included or activated"
+    "client_included": true,
+    "client_status": "Dependent Task2.0.162 implementation; bounded source, lifecycle, GPU and queue verification recorded separately; no full worldwide or training acceptance",
+    "pending_demand_identities": 32,
+    "source_outcome_metadata_records": 512,
+    "renderer_overview_history_cells": 32,
+    "provider_update_policy": "Retain provider across ordinary overview windows; preserve exact overlaps/shared edges and pinned geometry. Conflicting optional updates stay pending; metadata-only updates refresh disclosure.",
+    "admission_closure": "Geometry/history conflict or512 outcome cap stops optional admission until explicit reset/Review/new flight; retain immutable overview/collar/world baseline and drain unknown meshes. Equal-geometry metadata can refresh; native contact unchanged."
   }
 }

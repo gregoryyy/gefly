@@ -1321,6 +1321,8 @@ function animate(now: number) {
       }
     }
 
+    scene?.setDisplayOverviewActive?.(ready && state.terrain_profile === 1 && !reviewing && !terrainLoading && !failed && !sceneFailed,
+      ready && state.terrain_profile === 1 && !reviewing && !failed && !sceneFailed);
     const terrainReady = !reviewing || !scene?.terrainReady || scene.terrainReady(state);
     if (reviewing && scene && !terrainReady) {
       const key = `${worldCellAt(state.lat_rad, state.lon_rad)?.join(',') ?? 'unsupported'},${state.terrain_source ?? 0}`;

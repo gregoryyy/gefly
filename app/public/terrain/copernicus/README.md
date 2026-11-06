@@ -54,15 +54,8 @@ source ETag/size/range identity stays stable while decoding.
 
 ## Display client status
 
-This native/service increment includes both version-1 and version-2 **APIs** and
-native fine-terrain integration. It does **not** include or activate the display
-overview client. That client is a separate dependent delivery, Task 2.0.162;
-its acceptance is pending. In this branch, far-horizon rendering outside the
-existing atlas remains coarse even though the version-2 API is available.
+Task2.0.162 adds the dependent display-only overview client to the native/service foundation. Fine native v1 and display v2 remain separate; no overview payload enters native contact or flight state. This source inventory describes implementation boundaries, not worldwide rendered-relief or training acceptance.
 
-The separate client contract is at most nine active overview cells, 32 cached
-cells, one active request and a 15-second batch. It preserves the exact existing
-atlas, then complete regional/Copernicus overview cells, then coarse world.
-Regional H/N wins; otherwise Copernicus H uses existing world N. A composed cell
-with remaining nodata is omitted whole. These are the separate client's limits,
-not evidence that this branch has an active overview or accepted rendered relief.
+Nine active cells are preloaded. The loader bounds32 payload-cache entries,32 pending on-demand identities,512 immutable outcome metadata records, one serial request shared with preload and15-second operation budgets. The persistent renderer separately retains32 detached overview grids and preserves the existing native history/preview bounds. It keeps its provider across ordinary moving windows and refreshes metadata separately; source/shared-edge/geometry/capacity conflicts remain pending.
+
+Exact authoritative atlas samples win, followed by complete regional/Copernicus overview cells and coarse world. Regional H/N wins; otherwise Copernicus H uses existing world N. A composed cell with remaining nodata is omitted whole. Public retry/parent fallback and geometry-derived refinement limits keep unknown detail from becoming permanently cached flat ground. Actual source/GPU/queue observations and their remaining limits belong to the design and review records.

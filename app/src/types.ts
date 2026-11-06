@@ -168,6 +168,8 @@ export interface FlightScene {
   setSceneryMode?(vector: boolean): void;
   setPracticePapi?(enabled: boolean): void;
   setTerrainTiles?(tiles: readonly TerrainGrid[]): void;
+  /** Background display elevation is allowed only for prepared live terrain. */
+  setDisplayOverviewActive?(active: boolean, retain?: boolean): void;
   /** Prepare only the selected Review window; no eager whole-trace world fetch. */
   prepareRecording?(states: Iterable<Readonly<FlightState>>): Promise<void>;
   terrainReady?(state: Readonly<FlightState>): boolean;

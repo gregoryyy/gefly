@@ -181,6 +181,7 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-05: Use Copernicus global elevation](2026-11-05-copernicus-integration.md)
 - [2026-11-05: Cape Town appears flat](2026-11-05-cape-town-flat.md)
 
+- [2026-11-06: Repeated South Africa scenery reloads](2026-11-06-south-africa-terrain-reloads.md)
 
 - [2026-11-06: C key for momentary CWS](2026-11-06-cws-keyboard.md)
 

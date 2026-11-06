@@ -3,6 +3,42 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 02:59 — Reconcile the steering dependency before the terrain PR update
+
+TODO: 2.0.153/2.0.162; R-INPUT-1/R-SIM-11/R-WORLD-11.
+Agent: Codex orchestrator; independent `quality` merge audit.
+
+**Implementation notes**
+
+PR95 now includes reviewed PR94 ancestry while continuing to target main. This preserves the neutral startup repair and prevents another shared-record conflict when the user merges PR94 first. Keep all176 complete DONE entries, requirements, script commands and chronological nonduplicated GAPS records. Four terrain implementation bodies remain hash-identical to the measured source; main adds only the separately reviewed zero-offset/comment changes. Independent [merge audit](reviews/2026-11-06-terrain-steering-integration-quality.md) finds no blocking issue.
+
+Fresh full CI passes540Node+22Python,85assurance and11training tests, with9optional JSBSim/one platform skip. Log `output/flight/overview-steering-ci.log` SHA-256 `8d19dd850c65b1ea871712d5d8df073c56f769dec9cfc093672b2903aed2e9c1`. The actual neutral-control app/Worker/native browser passes all three groups after integration, artifact SHA-256 `fba7ed32c4b28e764288b93a1681d939afec12c81a68fedc0ad20d0b036860b8`.
+
+**Deviations**
+
+The broader root source snapshot's assurance-cardinality failure, native-model handling and aircraft/peer limits remain distinct and open. No new aircraft coefficient, gain or default trim assist is introduced by the dependency merge.
+
+**Insights**
+
+Carry an independently reviewed prerequisite into the dependent branch while targeting main, so merging the small repair first narrows the later diff without leaving child work on an already merged feature target.
+
+## 2026-11-06 02:31 — Verify the terrain display increment against merged main
+
+TODO: 2.0.162; R-WORLD-11/R-WORLD-9/R-SIM-2.
+Agent: Codex orchestrator; source implementation `alps_source`/`alps_renderer`; existing independent `quality`/`cws_validate` reviews retained for unchanged renderer/loader/geometry bodies.
+
+**Implementation notes**
+
+Integrate origin/mainc3d850a, preserving user-merged pressure, planning, CWS and overlay features and all174 complete dated entries from both parents. The renderer/provider/loader/geometry implementation bodies retain their frozen measured hashes; main gains the separately tested CWS integration. Structural check passes before full CI. The integrated full CI passes540Node+22Python application tests,85assurance and11training tests;9of23 optional JSBSim and one platform tool test skip. Log SHA-256 `ba275460bdf2878ca525d9d91f77cfac247d1e825db1114e5f446411753fdb5a`. The actual Worker/WASM four-case1200-step isolation proof is renewed against merged worker/pressure code, artifact SHA-256 `9e6ec1a53ecae1de4fa4854a00e605bf3574a9608127ef883b27480f119f81b8`.
+
+**Deviations**
+
+The earlier880-second real-source renderer proof and its exact source pins remain distinct from the newer root working-copy integration. The root has broader unpublished features and its complete snapshot CI exceeds the unchanged60000-node assurance bound; it is not represented as a full-root gate pass by this540-case feature-branch result. Native source-history safety guards remain and can conservatively rebuild at their separate bounds. Broader physical terrain/aircraft fidelity and peer remain open. The separate hidden-input repair is PR94; this terrain increment changes no aircraft coefficient or control gain.
+
+**Insights**
+
+Preserve complete shared records and test registrations when integrating merged feature stacks, then renew affected gates on the final target. Keep feature-branch, broader-working-copy, actual-source and synthetic-component observations distinct.
+
 ## 2026-11-06 01:56 — Repair hidden startup left-aileron input in merged main
 
 TODO: 2.0.153 (bounded app regression repaired; broader handling remains open); R-INPUT-1/R-SIM-5/R-SIM-11.
@@ -21,6 +57,27 @@ Production engine/model/gains are unchanged. Fresh64-case native output exactly 
 **Insights**
 
 A correct zero-default control module is insufficient when integration restores a different main-loop initializer. Test the first actual published Worker command and visible control state. A fixed roll offset can reverse small right commands and look like unstable or overly sensitive physics.
+
+## 2026-11-06 01:43 — Retain distant elevation and scenery through moving overview windows
+
+TODO: 2.0.162; R-WORLD-11/R-WORLD-9/R-SIM-2.
+Agent: Codex orchestrator; code1 `alps_source`; code2 `alps_renderer`; independent `quality` and `cws_validate`. Handling regression investigation is separate.
+
+**Implementation notes**
+
+Add a display-only quarter-degree overview outside the native world30 neighborhood, retaining a persistent Cesium terrain provider and immutable bounded history. Preload9cells, share one serial source owner with visible demand, and bound32payload-cache entries,32queued/active identities,32renderer overview grids and512outcome metadata records. Strict v2/source/body identity and regional-first whole-cell composition preserve exact native/fine H/N. Metadata-only updates refresh disclosure without a reset. Public source-resolution retries and geometry/FOV/viewport/fog-derived refinement limits settle visible detail. Source/history/capacity conflicts explicitly stop optional admission until an explicit display lifecycle reset; retain the immutable baseline and drain unknown meshes instead of rebuilding all scenery or retrying forever. Native contact and engine bytes are unchanged.
+
+The real-source frozen vector browser test passes13checks:880.2167simulated seconds, two quarter-degree crossings794→795→796, one initial provider assignment and zero replacements thereafter. All seven default/minimum-FOV and crossing queues drain; maximum measured far GPU error0.000356m. Near contact has public returned sourceL14 at the point, an upsampled renderedL23 descendant, and0.160075m GPU error within the declared0.25m engineering budget.135terrain HTTP replies are200, browser/render errors empty, and all seven raw source hashes match before/after. Paused AP/full published state/native terrain buffers remain exact. Artifact `output/flight/terrain-overview-no-churn.json` SHA-256 `8b76482821631306d1ccfc84209f370a053fc342ccc55b5a269e1dbcf151d4d6`; executed harness `480fb71ade120d8ca2ee8f7cc3bea1af4b67ca24dbe1f40127054bb99535e2e4`. Portable tracked harness differs only in path/output/import boilerplate and is syntax-checked.
+
+Independent59focused tests (33provider/21loader/5geometry) and TypeScript pass. Actual Worker/WASM deterministic OFF/ON/failure/cancel cases each execute1200identical fixed steps with identical H/N identities, published physics, exposed native vector and digest; explicit synthetic source fixtures make this an isolation proof, not DEM evidence. Isolation artifact SHA-256 `aa55ebc016102a635752a9d4453bc3ef7b0192cb465f7aea2b10c2e2b46a5ff9`. Full branch CI passes531Node+22Python application tests,85assurance and11training tests, with9of23 optional JSBSim and one platform tool case skipped; log SHA-256 `5be053d0aee6741b10fbd106f65e1679d15b3824728846e5e9b25f29a6e5c68d`. Independent [loader](reviews/2026-11-06-terrain-overview-loader-quality.md), [renderer](reviews/2026-11-06-terrain-overview-renderer-quality.md), [geometry](reviews/2026-11-06-terrain-detail-budget-quality.md) and [validation](reviews/2026-11-06-terrain-overview-validation.md) records retain exact pins, repaired findings and acceptance limits.
+
+**Deviations**
+
+Synthetic metadata/capacity Scene components are separate from actual public DEM/GPU flight evidence. The near-contact pose is renderer-only; no landed-aircraft or surveyed accuracy is claimed. Earlier exact-rendered-L14 assertion failed because Cesium upsamples descendants above sourceL14; the renewed proof records actual returned sourceL14 and descendant GPU parity. Whole-Scene noncooperative held-response lifecycle cases and new Hessen reproduction are not newly accepted. Task160 physical failed-owner discontinuities and Task161 user all-flat Hessen remain open. Display detail stops visibly at its bounded admission budget rather than claiming unlimited world detail. Native build-record mismatch, complete aircraft fidelity and external peer remain unresolved; no training or milestone acceptance. The root running app has not been updated during this isolated verification.
+
+**Insights**
+
+A retained provider alone is insufficient: unknown fine geometry must not become cached coarse ground, and source/capacity rejection needs a settled immutable fallback so public retry queues can drain. Separate payload, history, pending-owner and outcome-metadata budgets. GPU source level differs from the level of an upsampled visible descendant.
 
 ## 2026-11-06 01:32 — Resolve PR91 and integrate the merged feature branches
 

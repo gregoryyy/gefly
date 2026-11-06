@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Cartesian3, Cartographic, Ellipsoid, type HeightmapTerrainData } from 'cesium';
-import { createGlobalTerrainProvider, tryUpdateGlobalTerrainProvider } from './global-terrain-provider.ts';
+import { createGlobalTerrainProvider, tryUpdateGlobalTerrainProvider, tryUpdateGlobalTerrainOverview, acceptGlobalTerrainOverviewSource, globalTerrainOverviewInfo } from './global-terrain-provider.ts';
 import { sampleAtlas } from '../../studies/e1-browser/sim/terrain-stream.js';
 import { sampleWorldTerrain, worldCellAt, worldTileId, WORLD_TERRAIN, LEGACY_WORLD_TERRAIN, type WorldTerrainProfile, type WorldTerrainTile } from '../../studies/e1-browser/sim/world-terrain.js';
 import type { TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
@@ -389,4 +389,121 @@ test('R-WORLD-11 redundant fine-interior source cannot alter cached exterior col
   const interior=cell(Math.floor((8.46+180)/WORLD_TERRAIN.step),Math.floor((50.1+90)/WORLD_TERRAIN.step));
   assert.equal(tryUpdateGlobalTerrainProvider(provider,[interior]),true);
   assert.equal(await request(provider,point),before);
+});
+
+test('R-WORLD-11 display overview preserves exact native atlas and both exterior joins',async()=>{
+  const {composeTerrainOverview,decodeCopernicusOverview}=await import('./terrain-overview.ts');
+  const overview=[];
+  for(const col of[753,754]){const bytes=new ArrayBuffer(64+129*129*4),view=new DataView(bytes);new Uint8Array(bytes).set([71,70,67,79,80,51,48,0]);
+    for(const[o,v]of[[8,2],[12,col],[16,548],[20,129]])view.setUint32(o,v,true);for(let i=0;i<129*129;i++)view.setFloat32(64+i*4,900,true);
+    overview.push((await composeTerrainOverview(updateWorld,col,548,await decodeCopernicusOverview(bytes,col,548),[]))!);}
+  const native=cell(6029,4388),plain=createGlobalTerrainProvider(updateWorld,updateFine,[native]);
+  const provider=createGlobalTerrainProvider(updateWorld,updateFine,[native],overview);
+  const center=middle(native);
+  assert.equal(await request(provider,center),await request(plain,center),'resident/native atlas remains bit-identical');
+  assert.equal(await height(provider,50.1,8.6,14),540,'starter fine source retains priority over display data');
+  assert(Math.abs(await height(provider,47.15,8.65,14)-910)<1e-8,'outside native collar the overview H+N is returned');
+  const edge=new Cartographic(native.east_rad,center.latitude),outside=new Cartographic(edge.longitude+1e-9*RAD,edge.latitude);
+  assert(Math.abs(await request(provider,edge)-112)<1e-6);
+  assert(Math.abs(await request(provider,outside)-112)<1e-4,'native-to-overview join has no step');
+  assert(Math.abs(await height(provider,47.15,8.75,14)-910)<1e-6);
+  assert(Math.abs(await height(provider,47.15,8.750000001,14)-910)<1e-4,'overview-to-world join has no step');
+  assert.equal(await height(provider,47.15,9,14),50,'far horizon remains original world source');
+  assert.equal(tryUpdateGlobalTerrainProvider(provider,[clone(native),cell(6030,4388)]),false,'new native geometry cannot replace a cached overview/collar mesh silently');
+  const stable=createGlobalTerrainProvider(updateWorld,updateFine,[native],overview);
+  await request(stable,center);
+  assert.equal(tryUpdateGlobalTerrainProvider(stable,[clone(native),cell(6030,4388)]),true,'unchanged overview retains safe native updates');
+  assert.match(provider.credit!.html,/Copernicus/);
+  assert.throws(()=>createGlobalTerrainProvider(updateWorld,updateFine,[native],[overview[0],overview[0]]),/overview/);
+  assert.throws(()=>createGlobalTerrainProvider(updateWorld,updateFine,[native],[{...overview[0],id:'world-c753-r548'}]),/overview/);
+  const old=await height(provider,47.15,8.65,14);overview[1].physical_m.fill(700);
+  assert.equal(await height(provider,47.15,8.65,14),old,'provider owns detached overview geometry');
+});
+
+
+async function displayCell(col:number,row:number,h=900){
+  const {composeTerrainOverview,decodeCopernicusOverview}=await import('./terrain-overview.ts');
+  const bytes=new ArrayBuffer(64+129*129*4),view=new DataView(bytes);new Uint8Array(bytes).set([71,70,67,79,80,51,48,0]);
+  for(const[o,v]of[[8,2],[12,col],[16,row],[20,129]])view.setUint32(o,v,true);for(let i=0;i<129*129;i++)view.setFloat32(64+i*4,h,true);
+  return (await composeTerrainOverview(updateWorld,col,row,await decodeCopernicusOverview(bytes,col,row),[]))!;
+}
+test('R-WORLD-11 stable overview history keeps completed geometry and refreshes metadata/credit',async()=>{
+  const a=await displayCell(753,548),b=await displayCell(754,548),coarseNative=cell(6029,4388);coarseNative.source_detail='coarse';coarseNative.copernicus_nodes=0;coarseNative.coarse_nodes=NODES;
+  const regional={...a,source:'regional' as const,regional_nodes:NODES,copernicus_nodes:0,copernicus_sha256:null};
+  const p=createGlobalTerrainProvider(updateWorld,updateFine,[coarseNative],[regional]);
+  assert.doesNotMatch(p.credit!.html,/Copernicus/);const before=await height(p,47.15,8.3,13);
+  assert(tryUpdateGlobalTerrainOverview(p,[a]));assert.match(p.credit!.html,/Copernicus/);
+  assert.equal(await height(p,47.15,8.3,13),before,'metadata-only source change preserves exact geometry');
+  assert(tryUpdateGlobalTerrainOverview(p,[b]));assert.equal(globalTerrainOverviewInfo(p)?.history,2);
+  assert.equal(await height(p,47.15,8.3,13),before,'old active window remains resident after a new window');
+  const changed={...a,physical_m:a.physical_m.slice()};changed.physical_m[400]++;
+  assert.equal(tryUpdateGlobalTerrainOverview(p,[changed]),false);assert.equal(globalTerrainOverviewInfo(p)?.pending,'changed geometry');
+});
+test('R-WORLD-11 streaming never bakes unknown far detail or nonauthoritative native level14',async()=>{
+  const requested:any[]=[];const native=cell(6029,4388),p=createGlobalTerrainProvider(updateWorld,updateFine,[native],[],{stream:true,request:c=>requested.push(...c)});
+  const far=new Cartographic(8.65*RAD,47.15*RAD),xy=p.tilingScheme.positionToTileXY(far,10)!;
+  assert.equal(p.requestTileGeometry(xy.x,xy.y,10),undefined);assert(requested.some(c=>c.col===754&&c.row===548));
+  const fineXY=p.tilingScheme.positionToTileXY(far,14)!;assert.equal(p.requestTileGeometry(fineXY.x,fineXY.y,14),undefined);
+  for(let pass=0;pass<3;pass++){const needed=[...new Map(requested.map(c=>[`${c.col}/${c.row}`,c])).values()];requested.length=0;for(const c of needed)assert(acceptGlobalTerrainOverviewSource(p,{...c,grid:await displayCell(c.col,c.row)}));const value=p.requestTileGeometry(xy.x,xy.y,10);if(value)break;}
+  assert(Math.abs(await height(p,47.15,8.65,10)-910)<1e-6);
+  assert.equal(p.requestTileGeometry(fineXY.x,fineXY.y,14),undefined,'far overview stays a progressively refined parent; native14 never changes later');
+  assert.equal(await request(p,middle(native)),112,'current native/contact level14 remains exact');
+});
+
+test('Task162 persistent overview rejects mismatched adjacent H/N without changing returned meshes',async()=>{
+  const a=await displayCell(800,400),b=await displayCell(801,400),native=cell(6029,4388);
+  const p=createGlobalTerrainProvider(updateWorld,updateFine,[native],[a],{stream:true});
+  const before=await height(p,10.125,20.125,13);
+  const bad={...b,geoid_m:b.geoid_m.slice()};bad.geoid_m[129*20]++;
+  assert.equal(tryUpdateGlobalTerrainOverview(p,[bad]),false);
+  assert.equal(globalTerrainOverviewInfo(p)?.pending,'shared edge');
+  assert.equal(await height(p,10.125,20.125,13),before);
+  assert.throws(()=>createGlobalTerrainProvider(updateWorld,updateFine,[native],[a,bad]),/shared edge/);
+  assert.equal(globalTerrainOverviewInfo(p)?.closed,'shared edge');
+  assert.equal(tryUpdateGlobalTerrainOverview(p,[b]),false,'an explicit reset is needed after a geometry conflict');
+  const fresh=createGlobalTerrainProvider(updateWorld,updateFine,[native],[a],{stream:true});
+  assert(tryUpdateGlobalTerrainOverview(fresh,[b]));
+  assert.equal(await height(fresh,10.125,20.375,13),before,'new mesh uses admitted source without replacing provider');
+  const seam=await height(fresh,10.125,20.25,13);assert.equal(seam,before);
+});
+test('Task162 pinned overview capacity remains pending with provider identity and old meshes retained',async()=>{
+  const p=createGlobalTerrainProvider(updateWorld,updateFine,[cell(6029,4388)],[],{stream:true});
+  let first=0;
+  for(let i=0;i<32;i++){
+    assert(tryUpdateGlobalTerrainOverview(p,[await displayCell(800+i,400)]));
+    const h=await height(p,10.125,20.125+i*.25,13);if(!i)first=h;
+  }
+  assert.equal(globalTerrainOverviewInfo(p)?.history,32);assert.equal(globalTerrainOverviewInfo(p)?.pinned,32);
+  assert.equal(tryUpdateGlobalTerrainOverview(p,[await displayCell(832,400)]),false);
+  assert.equal(globalTerrainOverviewInfo(p)?.pending,'history capacity');
+  assert.equal(globalTerrainOverviewInfo(p)?.closed,'history capacity');
+  assert(Number.isFinite(await height(p,10.125,28.125,13)),'closed baseline drains unknown far-detail requests');
+  const metadata={...await displayCell(800,400),source:'regional' as const,copernicus_nodes:0,regional_nodes:NODES,copernicus_sha256:null};
+  assert(tryUpdateGlobalTerrainOverview(p,[metadata]),'same-geometry metadata remains refreshable after admission closes');
+  assert.equal(await height(p,10.125,20.125,13),first);
+  assert.equal(globalTerrainOverviewInfo(p)?.history,32);
+});
+test('Task162 settled missing sources cannot flip cached fallback geometry to new positive data',async()=>{
+  const requested:any[]=[];const p=createGlobalTerrainProvider(updateWorld,updateFine,[cell(6029,4388)],[],{stream:true,request:c=>requested.push(...c)});
+  const target=new Cartographic(20.125*RAD,10.125*RAD),xy=p.tilingScheme.positionToTileXY(target,10)!;
+  let data;
+  for(let pass=0;pass<4;pass++){
+    data=p.requestTileGeometry(xy.x,xy.y,10);if(data)break;
+    const needed=[...new Map(requested.map(c=>[`${c.col}/${c.row}`,c])).values()];requested.length=0;
+    for(const c of needed)assert(acceptGlobalTerrainOverviewSource(p,{...c,grid:null}));
+  }
+  assert(data,'settled unavailable source requests drain to an honest coarse preview');
+  const rect=p.tilingScheme.tileXYToRectangle(xy.x,xy.y,10),before=(await data!).interpolateHeight(rect,target.longitude,target.latitude);
+  assert.equal(acceptGlobalTerrainOverviewSource(p,{col:800,row:400,grid:await displayCell(800,400)}),false);
+  assert.equal(globalTerrainOverviewInfo(p)?.pending,'served missing source');
+  assert.equal((await p.requestTileGeometry(xy.x,xy.y,10)!).interpolateHeight(rect,target.longitude,target.latitude),before);
+});
+
+ test('Task162 metadata512 exhaustion closes optional admission and unknown far meshes settle',async()=>{
+  const p=createGlobalTerrainProvider(updateWorld,updateFine,[cell(6029,4388)],[],{stream:true,
+    outcomes:Array.from({length:512},(_,col)=>({col,row:400,missing:true}))});
+  assert.equal(acceptGlobalTerrainOverviewSource(p,{col:800,row:400,grid:null}),false);
+  assert.equal(globalTerrainOverviewInfo(p)?.closed,'outcome capacity');
+  assert(Number.isFinite(await height(p,10.125,20.125,13)));
+  assert.equal(globalTerrainOverviewInfo(p)?.history,0);
 });
