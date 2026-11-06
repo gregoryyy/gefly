@@ -4,6 +4,16 @@ All times are Europe/Berlin. Answers record the author and recording time. New a
 
 ## Recorded interaction decisions
 
+**2026-11-05 22:17, user report and Codex repair choice** (Europe/Berlin):
+[France fix failure](input/2026-11-05-france-gps-fix.md) is caused by obsolete
+regional validation in the custom plan store and editor. Use shared finite global
+WGS84 planning bounds (±90° latitude, ±180° longitude); retain separate map-display
+and flight-start limits and the regional published-source validators. Named and
+anonymous fixes, waypoint creation and external plan points follow this same rule.
+This is a modular planner-core/editor publication slice; full map/popup/bearing
+integration in the working app is tested separately and remains a later PR slice.
+R-NAV-5/R-WORLD-6, TODO2.0.157.
+
 **2026-11-05 22:06, user request and Codex interpretation** (Europe/Berlin):
 [Simulation speed above the map](input/2026-11-05-speed-overlay-map.md) means
 the existing SIM/REPLAY badge remains visible in front of the open map. Raise

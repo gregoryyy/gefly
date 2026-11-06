@@ -519,3 +519,14 @@ reset/Review epochs suppress stale predictions; failures retain ordinary loading
 See the [bounded cache design](design/scenery-cache.md). Actual source-cache and
 handoff bounds are recorded with implementation evidence, not inferred from this
 policy.
+
+
+## Worldwide custom GPS planning component
+
+The GPS store and editor share finite global WGS84 validation via
+`map-coordinates.ts`; geographic planning is independent of regional source
+inventory bounds. Fixed capacities, immutable snapshots, source labels and
+atomic ID allocation remain. The component has no worker, persistence or receiver
+state access. The modular component/editor publication is separate from complete
+map/menu/popup/bearing UI integration; working-app integration evidence must not
+be represented as main-branch wiring in this increment.

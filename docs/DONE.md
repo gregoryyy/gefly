@@ -4,6 +4,43 @@ Times use Europe/Berlin; timestamps come from the execution clock. New entries g
 above previous entries. This log records implementation, not simulator validity.
 
 
+## 2026-11-05 22:25 — Remove the regional restriction from custom GPS planning
+
+TODO: 2.0.157; R-NAV-5/R-WORLD-6.
+Agent: Codex orchestrator; code1 `world_gps_store`; code2 `world_gps_editor`;
+`world_gps_housekeeping`; independent `quality` and `panel_validate_final`.
+
+**Implementation notes**
+
+Custom fixes, anonymous waypoints and route roles now share finite worldwide
+WGS84 validation, latitude±90°/longitude±180°. Manual and picked editor coordinates
+use the same policy; southern/western metadata uses correct hemisphere labels.
+Existing count/name/provenance/ID and failed-operation atomicity remain.
+Historical published-source region validators stay unchanged.
+
+Store/editor are modular commits1c2998c and4b921b0. In the published slice these
+are new planning components; full map/menu/popup/bearing wiring remains a later
+map-UX publication slice. The working app already consumes the repaired modules.
+Core22tests pass in each tree; the actual editor/store component browser passes
+five groups. Root actual map/right-click/manual/target/invalid cases pass five
+groups, preserving paused native step/digest/fullstate, AP and active radios.
+Root596Node+25Python unit checks pass, no skips. Isolated sharedCI passes with
+491Node+22Python app tests,85assurance and11training; nine optional JSBSim and
+one Linux-only repository case skip on macOS, not accepted.
+See [scope/evidence](research/2026-11-05-world-gps-planning.md).
+
+**Deviations**
+
+Global custom planning does not enlarge the published airport/NAV/fix inventory,
+Mercator map-display or strict±89.5° flight-start bounds. No persistence, receiver
+or native model change. Native build provenance remains unverified. External
+Claude returned no review; peer acceptance stays pending, not replaced by local
+reviews. Full interactive main-branch map wiring is not accepted by this module PR.
+
+**Insights**
+
+Custom coordinates must not inherit a regional source inventory's envelope.
+Testing both editor and actual map creation catches independent validation paths.
 ## 2026-11-05 22:09 — Keep simulation speed visible above the flight map
 
 TODO: 2.0.156; R-SIM-9/R-UX-2.
