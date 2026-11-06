@@ -309,10 +309,12 @@ try {
   await page.locator('#ap-arm').click(); await page.waitForTimeout(100); await observeArm('ARM after separately committed knob selection');
   const knobCommands = await page.evaluate(start => window.__pointerApCommands.slice(start), knobStart);
   await page.mouse.click(1000, 160); await mode('yoke');
-  await page.locator('#scene').focus(); await page.keyboard.down('ArrowRight');
-  await page.waitForFunction(() => window.__pointerStates.at(-1)?.kap_engaged === 0 && window.__pointerInputs.at(-1)?.pilot_override === true);
-  await observeArm('explicit keyboard takeover still disconnects AP'); await page.keyboard.up('ArrowRight');
-  await page.keyboard.press('a'); await page.waitForFunction(() => window.__pointerStates.at(-1)?.kap_engaged === 1);
+  const inhibitedStart = await page.evaluate(() => window.__pointerInputs.length);
+  await page.locator('#scene').focus(); await page.keyboard.down('ArrowRight'); await page.waitForTimeout(200);
+  await observeArm('keyboard steering is inhibited while AP is engaged');
+  assert.equal(armObservations.at(-1).engaged, 1);
+  assert(await page.evaluate(start => window.__pointerInputs.slice(start).every(input => !input.pilot_override && input.aileron === 0), inhibitedStart));
+  await page.keyboard.up('ArrowRight');
   await page.locator('#ap-cws').hover(); await page.mouse.down();
   await page.waitForFunction(() => window.__pointerStates.at(-1)?.kap_cws === 1);
   await page.keyboard.down('ArrowDown');
@@ -327,7 +329,7 @@ try {
     'faint neutral marker follows the authoritative relative/centered yoke reference, retains it through look, and hides off/in Review',
     'fresh default activation near the bottom keeps the marker at the visible-scene center through resize and map docking; relative mode remains an explicit option',
     'Start, pause/resume, menu dismissal, Options Save and AP capture retain the selected yoke mode and neutral marker',
-    'A capture tolerates immediate/passive pointer movement toward ARM, while explicit keyboard takeover and held CWS retain their manual-control behavior',
+    'A capture tolerates immediate/passive pointer movement and keyboard steering; held CWS permits manual input',
     'paused hold-look preserves original midpoint without advancing actual JSBSim',
     'live hold-look preserves original midpoint and actual aileron/elevator commands',
     'outside release/re-entry and short-click toggle retain their separate behavior',

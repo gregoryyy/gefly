@@ -329,7 +329,9 @@ try {
   checks.push('acknowledged fictional VOR configuration couples NAV/APR while ALT stays independent; unavailable GS is never captured, REV stays unavailable for VOR, signal loss confirms ROL with NAV flash');
 
   const beforeOverride = await stats(); await page.locator('#scene').focus(); await page.keyboard.down('ArrowRight');
-  await page.waitForFunction(() => window.kapStates.at(-1)?.kap_engaged === 0); await page.keyboard.up('ArrowRight'); frozen(beforeOverride, await stats());
+  await page.waitForTimeout(200); assert.equal((await state()).kap_engaged, 1, 'paused steering key does not disconnect AP');
+  await page.keyboard.up('ArrowRight'); await page.keyboard.press('a');
+  await page.waitForFunction(() => window.kapStates.at(-1)?.kap_engaged === 0); frozen(beforeOverride, await stats());
   await startOrResume(page); const offStart = (await state()).step; await page.waitForFunction(step => window.kapStates.at(-1)?.step >= step + 60, offStart);
   await page.locator('#pause').click(); await page.waitForTimeout(150); const paused = await stats();
   await page.locator('#scene').focus(); await page.keyboard.press('r'); await page.locator('#flight-review').waitFor({ state: 'visible' });
@@ -342,7 +344,7 @@ try {
   await page.locator('#scene').focus(); await page.keyboard.press('p'); frozen(paused, await stats());
   await page.screenshot({ path: `${output}/kap140-flight-review.png` });
   observations.review = { frozen_digest: paused.digest, selection_s: await page.locator('#review-time').inputValue() };
-  checks.push('manual raw pilot override disconnects while paused without physics advance; Review restores captured engaged modes, blocks AP/P input and preserves native state/digest');
+  checks.push('paused steering keys leave AP engaged; explicit A disconnects without physics advance; Review restores captured engaged modes, blocks AP/P input and preserves native state/digest');
   assert.deepEqual(errors, []); assert.deepEqual([...hosts], ['127.0.0.1']);
   await writeFile(`${output}/kap140-flight-browser.json`, JSON.stringify({ result: 'pass', checks, observations }, null, 2) + '\n');
   console.log(JSON.stringify({ result: 'pass', checks, observations }, null, 2));

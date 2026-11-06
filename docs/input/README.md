@@ -214,3 +214,4 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [Zoom-dependent chase return duration](2026-11-06-chase-return-duration.md).
 - [Closer chase-view zoom](2026-11-06-closer-chase-zoom.md).
 - [Airport 3° visual glidepath](2026-11-06-airport-glidepath.md).
+- [AP keyboard input](2026-11-06-ap-keyboard-input.md).

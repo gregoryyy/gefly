@@ -3,6 +3,40 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 22:13 — Keep keyboard flight inputs from disconnecting AP
+
+TODO: 2.0.188; R-AP-1/R-INPUT-1. Agent: Codex orchestrator; production and
+isolated port `ap_keyboard_trace`; browser tests `ap_touchpad_trace`;
+independent source and browser validation `ap_input_records` (excluding its
+own request/research records).
+
+**Implementation notes**
+
+While AP engagement is pending or active, keyboard flight axes and trim are
+inhibited outside CWS, like the existing touchpad behavior. A blocked hold
+and repeats stay inactive until release, including AP and CWS transitions;
+orphan repeats after focus loss cannot become a fresh command. Keyboard CWS
+hand-flying, throttle, flaps, brakes and explicit AP disconnect remain
+available. Non-keyboard override and worker safeguards remain separate.
+
+Three guard unit tests and TypeScript checking passed. Independent Chrome
+validation of the live app passed nine keyboard/AP groups with the native
+worker; a separate isolated-port run passed the same nine. The touchpad browser
+regression passed. The full live KAP flight browser scenario passed eight
+groups when run alone, after three overlapping attempts failed at different
+pre-existing audio, BARO or altitude-capture waits. One overlapping independent
+keyboard run lost CWS before its steering check; its solo retry passed, with
+cause not established. Fixture scenery and the tested browser are not aircraft
+fidelity validation.
+
+**Deviations**
+
+Cross-provider peer review remains pending. The isolated port retains its
+base's legacy P-key AP toggle and blur-to-pause behavior; the live workspace
+uses A and continues in the background. This increment does not resolve those
+separate integration differences. Physical hardware and every browser/device
+combination were not evaluated.
+
 ## 2026-11-06 21:08 — Add an airport-selected visual approach guide
 
 TODO: 2.0.187; R-NAV-3. Agent: Codex orchestrator; 3D geometry and rendering

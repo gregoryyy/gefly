@@ -1,3 +1,4 @@
+import { createApKeyboardGuard, isApProtectedFlightKey } from './ap-keyboard-guard.ts';
 import { createCameraPreferences } from './camera-preferences.ts';
 import { createCameraReturn, cameraReturnDuration_ms, type CameraReturnPose } from './camera-return.ts';
 import { CHASE_DISTANCE, nextChaseDistance } from './chase-distance.ts';
@@ -137,7 +138,7 @@ root.innerHTML = `
       <div class="avionics-units cockpit-radio"><div id="radio-nav-systems"></div></div>
     </div>
     <footer><span>LOCAL RESEARCH PROTOTYPE · NOT VALIDATED FOR TRAINING</span><span>Imagery: HVBG · DL-DE Zero 2.0</span></footer>
-    <div id="limitations" hidden>Generic JSBSim 172P research data, not the planned C172S. The local fixed-pitch propeller uses generic Aero-Matic windmilling tables; low-RPM/stopped-prop drag remains unsupported, and glide performance is not calibrated to a real aircraft. Official Hessen DGM terrain is active on normal flights, with DHHN2016 heights in dynamics and GCG2016/2023 ellipsoid conversion for rendering. A 108-tile DGM200 region extends across the Taunus and beyond, including Darmstadt, Odenwald and Spessart within 7–10°E, 49.25–51.5°N. Its 200 m source is blended into the fine Hessen patch near the edge; fine source nodes are approximately 32–54 m. This is not full EDDF/100 NM coverage or surveyed runway/obstacle fidelity. Photography and map tiles load from official public services; acquisition dates and coverage vary. Flat-ground landing-study presets remain separate. The map offers worldwide OurAirports community airport, runway, COM and radio-navaid discovery in bounded regional packages, with global airport/NAV search. These records are not current operational airport information or a complete IFR/ILS database. The bundled five-state inventory remains a fallback. Bundled radio navigation uses a worldwide historical 2013.10 FlightGear NAV810 snapshot; it is not current AIRAC or operational flight information. Airspeed shows ideal engine CAS, not installation-calibrated IAS; older engines explicitly fall back to TAS. Heading is true, and the ideal turn-rate aid is not a full gyro turn-coordinator model. The pressure altimeter uses an ideal ISA scale-offset model driven by JSBSim static pressure; launch-point QFE is a practice datum, not airport elevation. Installed C172S instrument errors and limits are not modeled. Electrical controls use an independent ideal 24/28 V teaching model and generic circuit-current estimates, not native electrical telemetry. Battery depletion/recharge, low-RPM alternator response, external light rendering, avionics power failures and pitot icing are not coupled. No validated landing, circuit assessment, weather, radio or checklists yet. The adjustable study roll offset adds a constant aileron input to counter the generic model’s initial roll-off; this is an experimental assist, not an aircraft trim specification. Local research runtime assets are excluded from distribution. COM channel names support 25/8.33 kHz designators; the source-dated station directory does not provide an ATC service. Historical real VOR/LOC/GS/DME sources are modeled with spherical geometry and approximate service sectors; no RF propagation or terrain masking. VOR OBS uses sourced station magnetic calibration; LOC courses and the DG remain TRUE. Missing components stay unavailable. Autopilot operating logic follows the KAP 140 two-axis altitude-preselect reference, over reused generic JSBSim servos. AP engages ROL/current VS; ALT captures current pressure altitude, separate from the selector. Native controller response and capture anticipation are uncalibrated. TRUE DG reference remains a teaching substitution. NAV/APR/REV can use worldwide historical NAV1 VOR/LOC and APR uses paired GS where available. Current LOC/GS/GPS service data, hardware PFT timing and installed trim-servo/electrical/fault dynamics are not supplied. AP and altimeter BARO settings are separate. Raw manual input or trim change disconnects AP as a simulator safety substitution. Supported pressure-sensor height is −2 km to 11 km; incompatible selector/BARO combinations are rejected. A is a simulator convenience that captures current heading and pressure altitude in HDG/ALT; it is not an original KAP 140 button. Throttle remains manual; no automatic stall or overspeed protection is claimed. The = shortcut cycles requested simulation pacing through 1×, 1.5×, 2×, 5× and 10× without enlarging the physics step; achievable speed depends on the computer and loading. Landing contact studies use a flat zero-height ellipsoid, upstream generic gear forces and illustrative fixed-wheel visuals; they do not establish aircraft damage or safe load limits. Airspeed colored arcs use fixed 1982 C172P CAS references (2400 lb, forward CG, power off and zero bank for stalls), not installed IAS arcs, current-weight stall predictions or validated model bounds. The TAS fallback hides those arcs.</div>
+    <div id="limitations" hidden>Generic JSBSim 172P research data, not the planned C172S. The local fixed-pitch propeller uses generic Aero-Matic windmilling tables; low-RPM/stopped-prop drag remains unsupported, and glide performance is not calibrated to a real aircraft. Official Hessen DGM terrain is active on normal flights, with DHHN2016 heights in dynamics and GCG2016/2023 ellipsoid conversion for rendering. A 108-tile DGM200 region extends across the Taunus and beyond, including Darmstadt, Odenwald and Spessart within 7–10°E, 49.25–51.5°N. Its 200 m source is blended into the fine Hessen patch near the edge; fine source nodes are approximately 32–54 m. This is not full EDDF/100 NM coverage or surveyed runway/obstacle fidelity. Photography and map tiles load from official public services; acquisition dates and coverage vary. Flat-ground landing-study presets remain separate. The map offers worldwide OurAirports community airport, runway, COM and radio-navaid discovery in bounded regional packages, with global airport/NAV search. These records are not current operational airport information or a complete IFR/ILS database. The bundled five-state inventory remains a fallback. Bundled radio navigation uses a worldwide historical 2013.10 FlightGear NAV810 snapshot; it is not current AIRAC or operational flight information. Airspeed shows ideal engine CAS, not installation-calibrated IAS; older engines explicitly fall back to TAS. Heading is true, and the ideal turn-rate aid is not a full gyro turn-coordinator model. The pressure altimeter uses an ideal ISA scale-offset model driven by JSBSim static pressure; launch-point QFE is a practice datum, not airport elevation. Installed C172S instrument errors and limits are not modeled. Electrical controls use an independent ideal 24/28 V teaching model and generic circuit-current estimates, not native electrical telemetry. Battery depletion/recharge, low-RPM alternator response, external light rendering, avionics power failures and pitot icing are not coupled. No validated landing, circuit assessment, weather, radio or checklists yet. The adjustable study roll offset adds a constant aileron input to counter the generic model’s initial roll-off; this is an experimental assist, not an aircraft trim specification. Local research runtime assets are excluded from distribution. COM channel names support 25/8.33 kHz designators; the source-dated station directory does not provide an ATC service. Historical real VOR/LOC/GS/DME sources are modeled with spherical geometry and approximate service sectors; no RF propagation or terrain masking. VOR OBS uses sourced station magnetic calibration; LOC courses and the DG remain TRUE. Missing components stay unavailable. Autopilot operating logic follows the KAP 140 two-axis altitude-preselect reference, over reused generic JSBSim servos. AP engages ROL/current VS; ALT captures current pressure altitude, separate from the selector. Native controller response and capture anticipation are uncalibrated. TRUE DG reference remains a teaching substitution. NAV/APR/REV can use worldwide historical NAV1 VOR/LOC and APR uses paired GS where available. Current LOC/GS/GPS service data, hardware PFT timing and installed trim-servo/electrical/fault dynamics are not supplied. AP and altimeter BARO settings are separate. Keyboard flight axes and keyboard trim are inhibited while AP is engaged unless CWS is held; explicit pointer control or trim changes can disconnect AP as a simulator safety substitution. Supported pressure-sensor height is −2 km to 11 km; incompatible selector/BARO combinations are rejected. A is a simulator convenience that captures current heading and pressure altitude in HDG/ALT; it is not an original KAP 140 button. Throttle remains manual; no automatic stall or overspeed protection is claimed. The = shortcut cycles requested simulation pacing through 1×, 1.5×, 2×, 5× and 10× without enlarging the physics step; achievable speed depends on the computer and loading. Landing contact studies use a flat zero-height ellipsoid, upstream generic gear forces and illustrative fixed-wheel visuals; they do not establish aircraft damage or safe load limits. Airspeed colored arcs use fixed 1982 C172P CAS references (2400 lb, forward CG, power off and zero bank for stalls), not installed IAS arcs, current-weight stall predictions or validated model bounds. The TAS fallback hides those arcs.</div>
   </section>
 </main>`;
 
@@ -309,6 +310,19 @@ function persistViewPreferences(): void {
 const keys = new Set<string>();
 const pointerControls = new Map<number, string>();
 const keyboardControls = new Set<string>();
+const keyboardControlActivation = new Map<string, string>();
+const apKeyboardGuard = createApKeyboardGuard();
+const keyboardApInhibited = () => (autopilotCapturePending || latest?.kap_engaged === 1) && !cwsHeld;
+/** A held key cleared at an AP/CWS boundary must stay inactive until keyup. */
+function suppressHeldKeyboard(): void {
+  apKeyboardGuard.blockActive();
+  for (const code of keys) if (isApProtectedFlightKey(code)) { apKeyboardGuard.block(`key:${code}`); keys.delete(code); }
+  for (const code of keyboardControls) if (isApProtectedFlightKey(code)) {
+    const activation = keyboardControlActivation.get(code);
+    if (activation) apKeyboardGuard.block(`button:${code}:${activation}`);
+    keyboardControls.delete(code); keyboardControlActivation.delete(code);
+  }
+}
 let stickPointer: number | null = null;
 const flightKeys = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyQ', 'KeyW', 'KeyB', 'Quote', 'Backslash']);
 const editing = (target: EventTarget | null) => target instanceof HTMLElement && (!!target.closest('input,select,textarea') || target.isContentEditable);
@@ -391,6 +405,7 @@ const session = createSession({
     const state = { ...radioPanel.snapshot(), ...workerState, systems_switch_mask: systemsPanel.snapshot() };
     if (!reviewing && ready) flightLocationStore.observe(state);
     const oldAp = latest?.ap_mode ?? 0;
+    const oldEngaged = latest?.kap_engaged === 1;
     const wasCollided = groundCollisionStopped();
     if (previous && state.t_s > previous.t_s) {
       const dt = state.t_s - previous.t_s;
@@ -398,6 +413,7 @@ const session = createSession({
       verticalSpeedFpm += (1 - Math.exp(-dt / 0.5)) * (raw - verticalSpeedFpm);
     }
     previous = state; latest = state;
+    if (!oldEngaged && state.kap_engaged === 1) suppressHeldKeyboard();
 
     if (cwsHeld && state.kap_engaged !== 1) cwsControls?.releaseAll();
     if (!reviewing && ready && startupPreloadPending && scene) {
@@ -621,6 +637,17 @@ const enginePanel = createEnginePanel({
 });
 el('engine-unavailable').textContent = 'INOP';
 (document.querySelector('.engine-power-controls') ?? document.querySelector('.engine-content'))!.insertBefore(document.querySelector('.throttle-control')!, document.querySelector('.engine-mixture'));
+// The range keeps its normal pointer interaction, but keyboard trim cannot
+// override the AP unless the pilot holds CWS. Keep blocked repeats blocked.
+const trimSlider = el<HTMLInputElement>('pitch-trim-control');
+trimSlider.addEventListener('keydown', event => {
+  if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End'].includes(event.code)) return;
+  if (!apKeyboardGuard.press(`trim:${event.code}`, keyboardApInhibited(), event.repeat)) event.preventDefault();
+});
+el('pitch-trim-initial').addEventListener('keydown', event => {
+  if (event.code !== 'Space' && event.code !== 'Enter') return;
+  if (!apKeyboardGuard.press(`trim-initial:${event.code}`, keyboardApInhibited(), event.repeat)) event.preventDefault();
+});
 const autopilotPanel = createAutopilotPanel({
   container: el('autopilot-systems'),
   onCommand(command) {
@@ -628,6 +655,7 @@ const autopilotPanel = createAutopilotPanel({
     if (!release && (reviewing || (!controlsAvailable() && command.action !== 'disconnect'))) return;
     if (command.action === 'cws') { cwsControls?.setPanel(command.value === 1); return; }
     if (continuedAxes && command.action === 'ap') { continuedAxes = null; publishInput(); }
+    if (command.action === 'ap' && latest?.kap_engaged !== 1) autopilotCapturePending = true;
     apDisconnectPending = false; session.setKap140(command);
   },
   onOpen: neutralize, onClose: focusFlight,
@@ -974,7 +1002,7 @@ async function continueLiveFromReview() {
     loadedTrace = null; recordingLoadVersion++; resumeAfterReview = false;
     flightTrace.record(initial, selected.vertical_speed_mps);
     previous = null; latest = initial; verticalSpeedFpm = selected.vertical_speed_mps * 60 / .3048;
-    keys.clear(); keyboardControls.clear(); pointerControls.clear(); pointerYoke?.cancel();
+    keys.clear(); keyboardControls.clear(); keyboardControlActivation.clear(); apKeyboardGuard.clear(); pointerControls.clear(); pointerYoke?.cancel();
     stickX = stickY = 0; cwsHeld = apDisconnectPending = false;
     continuedAxes = { elevator: initial.elevator_cmd_norm!, aileron: initial.aileron_cmd_norm!,
       rudder: initial.rudder_cmd_norm!, brake_norm: Math.max(initial.brake_left_norm!, initial.brake_right_norm!) };
@@ -1076,11 +1104,12 @@ function publishInput() {
   document.querySelectorAll<HTMLElement>('[data-code]').forEach(button => button.classList.toggle('held', held(button.dataset.code!)));
 }
 function neutralizeAxes() {
+  if (keyboardApInhibited() || cwsHeld) suppressHeldKeyboard();
   continuedAxes = null;
   if (latest?.kap_profile === 1) session.setKap140({action:'vertical', value:0});
   if (failed || sceneFailed || groundCollisionStopped()) pointerYoke?.cancel();
   else if (!reviewing) pointerYoke?.neutralize();
-  keys.clear(); pointerControls.clear(); keyboardControls.clear(); stickX = stickY = 0;
+  keys.clear(); pointerControls.clear(); keyboardControls.clear(); keyboardControlActivation.clear(); stickX = stickY = 0;
   if (stickPointer !== null) {
     const pointer = stickPointer; stickPointer = null;
     if (el('joystick').hasPointerCapture(pointer)) el('joystick').releasePointerCapture(pointer);
@@ -1276,7 +1305,7 @@ pointerYoke = createPointerYoke({
   enabled: () => (controlsAvailable() || reviewing || groundCollisionStopped()) && !menuOpen() && !controlSettingsPanel.isOpen() && !document.querySelector('dialog[open]'),
   onYoke(x, y) {
     // The pointer also travels to cockpit buttons. That is not a request to
-    // override AP; keyboard/stick input and held CWS remain deliberate controls.
+    // override AP; explicit stick input and held CWS remain deliberate controls.
     if ((autopilotCapturePending || latest?.kap_engaged) && !cwsHeld) return;
     continuedAxes = null; stickX = x; stickY = y; publishInput();
   },
@@ -1323,12 +1352,16 @@ for (const button of Array.from(document.querySelectorAll<HTMLButtonElement>('[d
   };
   for (const name of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(name, event => release(event as PointerEvent));
   button.addEventListener('keydown', event => {
-    if (controlsAvailable() && (event.code === 'Space' || event.code === 'Enter')) { event.preventDefault(); event.stopPropagation(); continuedAxes = null; keyboardControls.add(code); publishInput(); }
+    if (controlsAvailable() && (event.code === 'Space' || event.code === 'Enter')) {
+      event.preventDefault(); event.stopPropagation();
+      if (isApProtectedFlightKey(code) && !apKeyboardGuard.press(`button:${code}:${event.code}`, keyboardApInhibited(), event.repeat)) return;
+      continuedAxes = null; keyboardControlActivation.set(code, event.code); keyboardControls.add(code); publishInput();
+    }
   });
   button.addEventListener('keyup', event => {
-    if (event.code === 'Space' || event.code === 'Enter') { event.preventDefault(); event.stopPropagation(); keyboardControls.delete(code); publishInput(); }
+    if (event.code === 'Space' || event.code === 'Enter') { event.preventDefault(); event.stopPropagation(); apKeyboardGuard.release(`button:${code}:${event.code}`); keyboardControlActivation.delete(code); keyboardControls.delete(code); publishInput(); }
   });
-  button.addEventListener('blur', () => { if (keyboardControls.delete(code)) publishInput(); });
+  button.addEventListener('blur', () => { keyboardControlActivation.delete(code); if (keyboardControls.delete(code)) publishInput(); });
 }
 
 addEventListener('keydown', event => {
@@ -1353,7 +1386,10 @@ addEventListener('keydown', event => {
   if (editing(event.target)) return;
   if (event.code === 'Space' && event.target instanceof HTMLElement && event.target.closest('button,a,summary')) return;
   if (flightKeys.has(event.code)) {
-    event.preventDefault(); if (controlsAvailable()) { continuedAxes = null; keys.add(event.code); publishInput(); }
+    event.preventDefault(); if (controlsAvailable()) {
+      if (isApProtectedFlightKey(event.code) && !apKeyboardGuard.press(`key:${event.code}`, keyboardApInhibited(), event.repeat)) return;
+      continuedAxes = null; keys.add(event.code); publishInput();
+    }
   }
   if (event.repeat) return;
   if (controlsAvailable() && /^(Digit|Numpad)[0-9]$/.test(event.code)) {
@@ -1361,7 +1397,7 @@ addEventListener('keydown', event => {
     el<HTMLInputElement>('throttle').value = String(throttle * 100); publishInput();
   }
   if (event.code === 'KeyP' && controlsAvailable() && latest?.ap_mode !== undefined) {
-    event.preventDefault(); session.setKap140({action: latest.kap_engaged ? 'disconnect' : 'ap'});
+    event.preventDefault(); if (!latest.kap_engaged) autopilotCapturePending = true; session.setKap140({action: latest.kap_engaged ? 'disconnect' : 'ap'});
   }
   if (['BracketLeft', 'BracketRight'].includes(event.code) && controlsAvailable() && latest?.flap_rad !== undefined) {
     event.preventDefault(); flapTarget_deg = clamp(flapTarget_deg + (event.code === 'BracketLeft' ? -10 : 10), 0, 30); publishInput();
@@ -1369,8 +1405,14 @@ addEventListener('keydown', event => {
   if (event.code === 'Space') { event.preventDefault(); togglePause(); }
   if (event.code === 'KeyV') setView(view === 'cockpit' ? 'chase' : 'cockpit');
 });
-addEventListener('keyup', event => { if (keys.delete(event.code)) { event.preventDefault(); publishInput(); } });
-addEventListener('blur', pauseFlight);
+addEventListener('keyup', event => {
+  apKeyboardGuard.release(`key:${event.code}`);
+  apKeyboardGuard.release(`trim:${event.code}`);
+  apKeyboardGuard.release(`trim-initial:${event.code}`);
+  for (const code of ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyQ', 'KeyW', 'Quote', 'Backslash']) apKeyboardGuard.release(`button:${code}:${event.code}`);
+  if (keys.delete(event.code)) { event.preventDefault(); publishInput(); }
+});
+addEventListener('blur', () => { pauseFlight(); apKeyboardGuard.clear(); });
 addEventListener('focusin', event => { if (editing(event.target) && !reviewing) neutralize(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) pauseFlight(); });
 
