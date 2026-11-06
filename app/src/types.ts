@@ -1,3 +1,4 @@
+import type { InitialBalanceState } from '../../studies/e1-browser/sim/initial-balance.js';
 import { LOADING_FIELDS, validLoadingState } from '../../studies/e1-browser/sim/loading.js';
 import type { LoadingConfiguration, LoadingSnapshot } from '../../studies/e1-browser/sim/loading.js';
 export { LOADING_FIELDS, validLoadingState };
@@ -153,7 +154,7 @@ export function validCollisionState(input: object): boolean {
 export function validSystemsState(state: { systems_switch_mask?: number }): boolean {
   return state.systems_switch_mask === undefined || validSystemsMask(state.systems_switch_mask);
 }
-export interface FlightState extends LoadingSnapshot, Partial<Record<keyof AltitudeAlertSnapshot, number>>, Partial<KapSnapshot>, TerrainState, AltimeterState, CockpitState, EngineState, PitchTrimState, GroundState, ControlState, StallState, CollisionState, Partial<RadioNavSnapshot> {
+export interface FlightState extends Partial<InitialBalanceState>, LoadingSnapshot, Partial<Record<keyof AltitudeAlertSnapshot, number>>, Partial<KapSnapshot>, TerrainState, AltimeterState, CockpitState, EngineState, PitchTrimState, GroundState, ControlState, StallState, CollisionState, Partial<RadioNavSnapshot> {
   step: number; t_s: number; lat_rad: number; lon_rad: number;
   alt_msl_m: number; roll_rad: number; pitch_rad: number; heading_rad: number; tas_mps: number;
   /** Requested wall-clock pacing; fixed simulation dt is unchanged. */
@@ -177,7 +178,7 @@ export interface FlightScene {
   update(state: FlightState, view: 'cockpit' | 'chase', look?: { yaw_rad: number; pitch_rad: number; fov_rad?: number }, livePrediction?: boolean): void;
   dispose(): void;
 }
-export interface FlightLocation { version: 1; lat_rad: number; lon_rad: number; alt_msl_m: number; heading_rad: number; mode: 'airborne' | 'ground' }
+export interface FlightLocation { version: 1; lat_rad: number; lon_rad: number; alt_msl_m: number; heading_rad: number; mode: 'airborne' | 'ground'; initial_balance_profile?: 0 | 1 }
 export interface RunwayStart { airport: string; runway: string; lat_rad: number; lon_rad: number; heading_rad: number }
 export type AirborneSite = 'edfe' | 'taunus' | 'eddf-ils' | keyof typeof import('./regional-flights').REGIONAL_FLIGHTS;
 export interface FlightSession {
@@ -188,5 +189,5 @@ export interface FlightSession {
   setSimulationRate(rate: number): void;
   setKap140(command: KapCommand): void;
   setNavigation(config: Pick<RadioNavSnapshot, "radio_nav_active_khz" | "radio_obs_deg" | "radio_demo_enabled"> & Partial<Pick<RadioNavSnapshot, "radio_nav2_active_khz" | "radio_obs2_deg">>): void;
-  start(): void; pause(): void; reset(landingPreset?: LandingPreset, site?: AirborneSite, runway?: RunwayStart, location?: FlightLocation): void; input(controls: Controls): void; setAltimeter(setting_pa: number): void; setAutopilot(mode: 0|1|2, target_heading_rad?: number): void; dispose(): void;
+  start(): void; pause(): void; reset(landingPreset?: LandingPreset, site?: AirborneSite, runway?: RunwayStart, location?: FlightLocation, initialBalanceProfile?: 0 | 1): void; input(controls: Controls): void; setAltimeter(setting_pa: number): void; setAutopilot(mode: 0|1|2, target_heading_rad?: number): void; dispose(): void;
 }

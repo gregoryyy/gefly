@@ -28,6 +28,8 @@
     "test:cws": "node --test src/cws-controls.test.ts && node tests/cws-keyboard.browser.mjs",
     "test:neutral-controls": "node tests/neutral-controls.browser.mjs",
     "test:airport-generator": "node tests/airport-generator.browser.mjs"
+    "test:initial-balance": "node ../studies/e1-browser/sim/initial-balance-native.mjs && node ../studies/e1-browser/sim/initial-balance-worker.mjs && node tests/initial-balance.browser.mjs",
+    "test:yoke-resize": "node --test src/pointer-yoke.test.ts && node tests/yoke-resize.browser.mjs"
   },
   "dependencies": {
     "@mapbox/vector-tile": "3.0.0",

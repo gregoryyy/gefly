@@ -51,3 +51,7 @@ End with proposed implications, limitations and a handoff to product/orchestrato
 - [2026-11-06: On-demand airport surfaces and cache](2026-11-06-on-demand-airports.md).
 
 - [OpenFlightMaps overlay assessment](2026-11-06-openflightmaps-overlay.md) — structured-data candidate and unresolved product rights/edition.
+
+- [2026-11-06: Generic-model initial airborne equilibrium](2026-11-06-airborne-model-balance.md).
+
+- [2026-11-06: Centered-yoke resize handoff](2026-11-06-yoke-resize-handoff.md).

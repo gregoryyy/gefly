@@ -1,3 +1,4 @@
+import { initialBalanceProfile, validInitialBalanceState } from '../../studies/e1-browser/sim/initial-balance.js';
 import { WORLD_TERRAIN } from '../../studies/e1-browser/sim/world-terrain.js';
 import type { FlightLocation, FlightState } from './types.ts';
 
@@ -12,7 +13,10 @@ type LocationStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 export function validFlightLocation(value: unknown): value is FlightLocation {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const v = value as Record<string, unknown>;
-  return Object.keys(v).length === FIELDS.length && FIELDS.every(key => Object.hasOwn(v, key))
+  return FIELDS.every(key => Object.hasOwn(v, key))
+    && Object.keys(v).every(key => FIELDS.includes(key) || key === 'initial_balance_profile')
+    && (!Object.hasOwn(v, 'initial_balance_profile') || v.initial_balance_profile === 0 || v.initial_balance_profile === 1)
+    && (v.mode !== 'ground' || v.initial_balance_profile !== 1)
     && v.version === 1 && (v.mode === 'airborne' || v.mode === 'ground')
     && [v.lat_rad, v.lon_rad, v.alt_msl_m, v.heading_rad].every(n => typeof n === 'number' && Number.isFinite(n))
     && (v.lat_rad as number) > WORLD_TERRAIN.south * DEG && (v.lat_rad as number) < WORLD_TERRAIN.north * DEG
@@ -49,10 +53,11 @@ export function createFlightLocationStore(options: { storage?: LocationStorage |
       // Missing telemetry and flat study/legacy flights cannot establish a safe
       // regional launch mode. In particular, unknown WOW is not airborne zero.
       const wow = [state.gear_nose_wow, state.gear_left_wow, state.gear_right_wow];
-      if (state.terrain_profile !== 1 || !wow.every(v => v === 0 || v === 1)) return;
+      if (!validInitialBalanceState(state) || state.terrain_profile !== 1 || !wow.every(v => v === 0 || v === 1)) return;
       const location: FlightLocation = { version: 1, lat_rad: state.lat_rad, lon_rad: state.lon_rad,
         alt_msl_m: state.alt_msl_m, heading_rad: ((state.heading_rad % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI),
-        mode: wow.some(v => v === 1) ? 'ground' : 'airborne' };
+        mode: wow.some(v => v === 1) ? 'ground' : 'airborne',
+        initial_balance_profile: wow.some(v => v === 1) ? 0 : initialBalanceProfile(state)! };
       if (!validFlightLocation(location)) return;
       pending = location;
       if (now() - lastWrite_ms >= WRITE_PERIOD_MS) flush();

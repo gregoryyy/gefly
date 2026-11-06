@@ -194,3 +194,7 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-06: Build on-demand airport generation and caching](2026-11-06-on-demand-airport-generator.md)
 
 - [Scenery workers, overview, OFM and shadow](2026-11-06-scenery-workers-and-overview.md) — user requests recorded 2026-11-06.
+- 
+- [2026-11-06: Handling repair does not require old recording compatibility](2026-11-06-handling-recording-scope.md)
+
+- [2026-11-06: Remaining handling report at localhost:5173 and SIM 1×](2026-11-06-local-handling-context.md)
