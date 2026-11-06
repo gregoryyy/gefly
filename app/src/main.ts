@@ -1,3 +1,6 @@
+import { createCameraPreferences } from './camera-preferences.ts';
+import { createCameraReturn, cameraReturnDuration_ms, type CameraReturnPose } from './camera-return.ts';
+import { CHASE_DISTANCE, nextChaseDistance } from './chase-distance.ts';
 import { createCwsControls } from './cws-controls';
 import { worldCellAt } from '../../studies/e1-browser/sim/world-terrain.js';
 import { REGIONAL_FLIGHTS, isRegionalFlight } from './regional-flights';
@@ -64,7 +67,7 @@ root.innerHTML = `
     <a class="brand" href="https://github.com/gregoryyy/gefly" target="_blank" rel="noreferrer">gefly<span>FLIGHT LAB</span></a>
     <div class="location"><strong>EGELSBACH</strong><span>C172 research aircraft · airborne practice</span></div>
     <div class="session-status"><i id="status-dot"></i><span id="status" role="status">Loading flight…</span><span id="clock">00:00</span><span id="audio-button-slot"></span></div>
-    <details id="view-menu" class="top-menu"><summary>View</summary><nav class="menu-content view-controls" aria-label="Flight views"><button id="cockpit" class="selected" aria-pressed="true">Cockpit</button><button id="chase" aria-pressed="false">Chase <kbd>V</kbd></button><button id="toggle-fullscreen" type="button" aria-keyshortcuts="F" aria-pressed="false"><span data-fullscreen-label>Full screen</span> <kbd>F</kbd></button><button id="toggle-map-terrain" type="button" aria-pressed="false" aria-keyshortcuts="/" title="/ · Switch vector/photo terrain (US keyboard)">Terrain: photos <kbd>/</kbd></button><button id="toggle-map" aria-pressed="false" aria-controls="practice-map-panel" aria-keyshortcuts="M">Flight map <kbd>M</kbd></button><button id="cycle-landmarks" type="button" aria-keyshortcuts="." title=". · Cycle landmark labels">Landmarks: Off <kbd>.</kbd></button><button id="toggle-flight-data" aria-pressed="false" aria-controls="flight-data-panel">Flight data</button><button id="toggle-stall-awareness" aria-pressed="false" aria-controls="stall-awareness-panel">Stall awareness</button><button id="toggle-controls" aria-pressed="true" aria-controls="flight-controls-panel">Flight controls</button></nav></details>
+    <details id="view-menu" class="top-menu"><summary>View</summary><nav class="menu-content view-controls" aria-label="Flight views"><button id="cockpit" class="selected" aria-pressed="true">Cockpit</button><button id="chase" aria-pressed="false">Chase <kbd>V</kbd></button><button id="toggle-camera-return" type="button" aria-pressed="true">Animate view return</button><button id="toggle-fullscreen" type="button" aria-keyshortcuts="F" aria-pressed="false"><span data-fullscreen-label>Full screen</span> <kbd>F</kbd></button><button id="toggle-map-terrain" type="button" aria-pressed="false" aria-keyshortcuts="/" title="/ · Switch vector/photo terrain (US keyboard)">Terrain: photos <kbd>/</kbd></button><button id="toggle-map" aria-pressed="false" aria-controls="practice-map-panel" aria-keyshortcuts="M">Flight map <kbd>M</kbd></button><button id="cycle-landmarks" type="button" aria-keyshortcuts="." title=". · Cycle landmark labels">Landmarks: Off <kbd>.</kbd></button><button id="toggle-flight-data" aria-pressed="false" aria-controls="flight-data-panel">Flight data</button><button id="toggle-stall-awareness" aria-pressed="false" aria-controls="stall-awareness-panel">Stall awareness</button><button id="toggle-controls" aria-pressed="true" aria-controls="flight-controls-panel">Flight controls</button></nav></details>
     <span id="review-button-slot"></span>
     <button id="controls-settings" class="settings-trigger" aria-haspopup="dialog">Options</button>
     <details id="flight-menu" class="top-menu"><summary>Flight</summary><nav class="menu-content" aria-label="Flight session">
@@ -174,6 +177,69 @@ let pointerYoke: ReturnType<typeof createPointerYoke> | null = null;
 let centerPickupRequired = false;
 let cameraLook = { yaw_rad: 0, pitch_rad: 0 };
 let cameraFov_rad = DEFAULT_FOV_RAD;
+let chaseDistance_m = CHASE_DISTANCE.initial_m;
+const cameraPreferences = createCameraPreferences();
+let animateCameraReturn = cameraPreferences.read();
+const cameraMotionPreference = matchMedia('(prefers-reduced-motion: reduce)');
+let cameraReturn: ReturnType<typeof createCameraReturn> | null = null;
+function applyCameraReturnPose(pose: CameraReturnPose): void {
+  cameraLook = { yaw_rad: pose.yaw_rad, pitch_rad: pose.pitch_rad };
+  if (view === 'chase' && pose.distance_m !== undefined) chaseDistance_m = pose.distance_m;
+  pointerYoke?.synchronizeLook(pose.yaw_rad, pose.pitch_rad);
+  renderCameraZoom();
+}
+function cancelCameraReturn(): void {
+  cameraReturn?.cancel(); cameraReturn = null;
+  sceneContainer.dataset.cameraReturnActive = 'false';
+}
+function advanceCameraReturn(now: number): void {
+  if (!cameraReturn) return;
+  const sample = cameraReturn.sample(now);
+  applyCameraReturnPose(sample.pose);
+  if (sample.done) cancelCameraReturn();
+}
+function finishCameraReturn(): void {
+  if (!cameraReturn) return;
+  applyCameraReturnPose({ yaw_rad: 0, pitch_rad: 0,
+    ...(view === 'chase' ? { distance_m: CHASE_DISTANCE.initial_m } : {}) });
+  cancelCameraReturn();
+}
+function renderCameraReturnPreference(): void {
+  el('toggle-camera-return').setAttribute('aria-pressed', String(animateCameraReturn));
+  el('toggle-camera-return').title = cameraMotionPreference.matches
+    ? 'Reduced motion is enabled; view return is instant.'
+    : 'Animate double-click return in cockpit and chase views.';
+}
+function cameraMotionChanged(): void {
+  if (cameraMotionPreference.matches) finishCameraReturn();
+  renderCameraReturnPreference();
+}
+function startCameraReturn(previous: { yaw_rad: number; pitch_rad: number }): void {
+  cancelCameraReturn();
+  const from = { ...previous, ...(view === 'chase' ? { distance_m: chaseDistance_m } : {}) };
+  const to = { yaw_rad: 0, pitch_rad: 0,
+    ...(view === 'chase' ? { distance_m: CHASE_DISTANCE.initial_m } : {}) };
+  const now = performance.now();
+  cameraReturn = createCameraReturn({ from, to, startedAt_ms: now,
+    duration_ms: animateCameraReturn && !cameraMotionPreference.matches ? cameraReturnDuration_ms(from, to) : 0 });
+  sceneContainer.dataset.cameraReturnActive = 'true';
+  advanceCameraReturn(now);
+}
+sceneContainer.dataset.cameraReturnActive = 'false';
+el('toggle-camera-return').onclick = () => {
+  animateCameraReturn = !animateCameraReturn;
+  cameraPreferences.write(animateCameraReturn);
+  if (!animateCameraReturn) finishCameraReturn();
+  renderCameraReturnPreference(); closeViewMenu();
+};
+function cancelHiddenCameraReturn(): void { if (document.hidden) cancelCameraReturn(); }
+function cancelCameraReturnOnEscape(event: KeyboardEvent): void { if (event.code === 'Escape') cancelCameraReturn(); }
+cameraMotionPreference.addEventListener('change', cameraMotionChanged);
+addEventListener('blur', cancelCameraReturn);
+document.addEventListener('visibilitychange', cancelHiddenCameraReturn);
+sceneContainer.addEventListener('keydown', cancelCameraReturnOnEscape);
+sceneContainer.addEventListener('pointerdown', cancelCameraReturn, { capture: true });
+renderCameraReturnPreference();
 let flapTarget_deg = 0;
 let pitchTrimTarget: number | null = null;
 let controlsVisible = false;
@@ -650,12 +716,31 @@ const cockpitLayout = createCockpitLayout(document.querySelector<HTMLElement>('.
 
 const fieldOfView = createFieldOfViewControl({
   element: sceneContainer, getFov: () => cameraFov_rad,
-  isBlocked: () => !!document.querySelector('dialog[open]'),
+  isBlocked: () => view !== 'cockpit' || !!document.querySelector('dialog[open]'),
   onChange(fov_rad) {
-    cameraFov_rad = fov_rad;
-    el('camera-fov').textContent = `${Math.round(fov_rad * 180 / Math.PI)}° FOV · two-finger scroll`;
+    cancelCameraReturn(); cameraFov_rad = fov_rad;
+    renderCameraZoom();
   },
 });
+
+function renderCameraZoom(): void {
+  el('camera-fov').textContent = view === 'chase'
+    ? `Chase · ${chaseDistance_m < 1000 ? `${Math.round(chaseDistance_m)} m` : `${(chaseDistance_m / 1000).toFixed(1)} km`} · scroll to zoom · double-click to follow`
+    : `${Math.round(cameraFov_rad * 180 / Math.PI)}° FOV · two-finger scroll`;
+}
+function chaseWheel(event: WheelEvent): void {
+  const target = event.target instanceof Element ? event.target : null;
+  if (target?.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"]),dialog')) return;
+  if (view !== 'chase' || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey
+    || menuOpen() || document.querySelector('dialog[open]') || !Number.isFinite(event.deltaX) || !Number.isFinite(event.deltaY)
+  || (event.deltaMode !== 0 && event.deltaMode !== 1 && event.deltaMode !== 2)
+  || (event.deltaMode === 2 && (!Number.isFinite(sceneContainer.clientHeight) || sceneContainer.clientHeight <= 0))
+    || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+  event.preventDefault(); event.stopPropagation(); cancelCameraReturn();
+  chaseDistance_m = nextChaseDistance(chaseDistance_m, event.deltaY, event.deltaMode, sceneContainer.clientHeight);
+  renderCameraZoom();
+}
+sceneContainer.addEventListener('wheel', chaseWheel, { passive: false, capture: true });
 
 function setFlightDataVisible(visible: boolean): void {
   el('flight-data-panel').hidden = !visible;
@@ -835,6 +920,7 @@ function updateReviewControls() {
   });
 }
 function enterReview() {
+  cancelCameraReturn();
   const bounds = recordedTrace().bounds();
   if (reviewing || !bounds || bounds.count < 2 || !ready || failed || sceneFailed) return;
   pointerYoke?.cancel();
@@ -850,6 +936,7 @@ function cancelReviewTerrain() {
   scene?.cancelTerrainPreparation?.();
 }
 function exitReview() {
+  cancelCameraReturn();
   if (!reviewing || continuingReplay) return;
   recordingLoadVersion++; cancelReviewTerrain();
   engineAudio.update(null, false);
@@ -1037,7 +1124,7 @@ function reset(preset: LandingPreset | null | undefined = landingPreset, start: 
   pressureAltimeter.update(null, false);
   startWhenReady = running; running = false; ready = false; failed = false;
   engineAudio.update(null, false);
-  pointerYoke?.reset(); neutralize(); session.pause(); latest = previous = null; verticalSpeedFpm = 0;
+  cancelCameraReturn(); pointerYoke?.reset(); neutralize(); session.pause(); latest = previous = null; verticalSpeedFpm = 0;
   pitchTrimControl.update(null, false, false, null);
   flightData.update(null, false); stallAwareness.update(null, false); groundCollisionPanel.update(null, false, false);
   enginePanel.update(null, false, false); autopilotPanel.update(null, false, false);
@@ -1047,9 +1134,10 @@ function reset(preset: LandingPreset | null | undefined = landingPreset, start: 
   notice(''); session.reset(landingPreset, airborneSite, runwayStart ?? undefined, location, landingPreset || runwayStart || location?.mode === 'ground' ? 0 : location?.initial_balance_profile ?? 1); updateSessionUI(); focusFlight();
 }
 function setView(next: typeof view) {
-  closeViewMenu(); view = next;
+  cancelCameraReturn(); closeViewMenu(); view = next;
   for (const name of ['cockpit', 'chase']) { el(name).classList.toggle('selected', name === view); el(name).setAttribute('aria-pressed', String(name === view)); }
   el('view-label').textContent = `${view.toUpperCase()} VIEW`;
+  renderCameraZoom(); updatePointerHint();
 }
 async function launchPractice(kind: 'takeoff' | 'landing' | 'circuit'): Promise<void> {
   if (!ready || reviewing || practiceLaunchPending) return;
@@ -1168,13 +1256,14 @@ el('flaps-retract').onclick = () => { setFlaps(flapTarget_deg - 10); focusFlight
 el('flaps-extend').onclick = () => { setFlaps(flapTarget_deg + 10); focusFlight(); };
 function updatePointerHint(mode = sceneContainer.dataset.pointerMode ?? 'off'): void {
   const centered = controlSettings.centeredTouchpad === true;
+  const resetHint = view === 'chase' ? 'double-click: follow aircraft' : 'double-click: front';
   el('pointer-mode').textContent = groundCollisionStopped() && !reviewing ? 'COLLISION VIEW · hold-drag to inspect'
-    : reviewing ? (mode === 'look' ? 'REVIEW LOOK · release to keep view' : 'REVIEW · hold-drag: look · double-click: front')
+    : reviewing ? (mode === 'look' ? 'REVIEW LOOK · release to keep view' : `REVIEW · hold-drag: look · ${resetHint}`)
     : (autopilotCapturePending || latest?.kap_engaged) && !cwsHeld ? 'AUTOPILOT · P disconnects · hold C to hand-fly'
     : centerPickupRequired && mode === 'yoke' ? 'CENTERED YOKE · move pointer to the center ring to steer'
-    : mode === 'look' ? 'LOOKING · release keeps view · double-click: front'
+    : mode === 'look' ? `LOOKING · release keeps view · ${resetHint}`
     : centered ? (mode === 'yoke' ? 'CENTERED YOKE · click off · hold-drag to look' : 'CENTERED YOKE · click on · hold-drag to look')
-    : mode === 'yoke' ? 'YOKE ACTIVE · hold-drag: look · double-click: front' : 'Click: yoke · hold-drag: look · double-click: front';
+    : mode === 'yoke' ? `YOKE ACTIVE · hold-drag: look · ${resetHint}` : `Click: yoke · hold-drag: look · ${resetHint}`;
 }
 pointerYoke = createPointerYoke({
   element: sceneContainer,
@@ -1187,7 +1276,8 @@ pointerYoke = createPointerYoke({
     if ((autopilotCapturePending || latest?.kap_engaged) && !cwsHeld) return;
     continuedAxes = null; stickX = x; stickY = y; publishInput();
   },
-  onLook(yaw_rad, pitch_rad) { cameraLook = { yaw_rad, pitch_rad }; },
+  onLook(yaw_rad, pitch_rad) { cancelCameraReturn(); cameraLook = { yaw_rad, pitch_rad }; },
+  onLookReset(previous) { startCameraReturn(previous); },
   onMode(mode) {
     updatePointerHint(mode);
     sceneContainer.dataset.pointerMode = mode;
@@ -1307,7 +1397,7 @@ const flightAssists = createFlightAssists({
     focusFlight();
   },
 });
-sceneContainer.setAttribute('aria-description','I toggles the menu. O opens Options. F toggles full screen. M toggles the flight map. Comma toggles the extended menu below the map. Period cycles terrain labels. Slash switches vector and photo terrain on a US keyboard.');
+sceneContainer.setAttribute('aria-description','I toggles the menu. O opens Options. F toggles full screen. M toggles the flight map. Comma toggles the extended menu below the map. Period cycles terrain labels. Slash switches vector and photo terrain on a US keyboard. Cockpit scroll changes field of view; chase scroll changes distance. Hold-drag to orbit; double-click chase to return behind the aircraft.');
 
 const sceneReady = createScene(sceneContainer).then(result => {
   scene = result; scene.setLandmarkLevel?.(landmarkLevel); scene.setSceneryMode?.(!!controlSettings.vectorScenery); scene.setPracticePapi?.(!!controlSettings.practicePapi);
@@ -1320,6 +1410,7 @@ const sceneReady = createScene(sceneContainer).then(result => {
 let lastFrame = performance.now();
 const yokeCenterMarker = el('yoke-center-marker');
 function animate(now: number) {
+  advanceCameraReturn(now);
   const pickup = pointerYoke?.updateReference() ?? false;
   if (pickup !== centerPickupRequired) {
     centerPickupRequired = pickup;
@@ -1381,7 +1472,7 @@ function animate(now: number) {
       cancelReviewTerrain();
     }
     if (scene && !sceneFailed && terrainReady) {
-      try { scene.update(state, view, { ...cameraLook, fov_rad: cameraFov_rad }, ready && running && !reviewing && !terrainLoading && !failed && !sceneFailed); } catch {
+      try { scene.update(state, view, { ...cameraLook, fov_rad: cameraFov_rad, ...(view === 'chase' ? { distance_m: chaseDistance_m } : {}) }, ready && running && !reviewing && !terrainLoading && !failed && !sceneFailed); } catch {
         sceneFailed = true; pauseFlight(); notice('The 3D scene stopped rendering. Reload to restart.'); updateSessionUI();
       }
     }
@@ -1433,5 +1524,5 @@ function animate(now: number) {
   requestAnimationFrame(animate);
 }
 publishInput(); updateSessionUI(); requestAnimationFrame(animate);
-addEventListener('pagehide', () => { mapZoomShortcuts.dispose(); cwsControls?.dispose(); flightLocationStore.flush(); document.removeEventListener('keydown', reviewSeekShortcut, true); document.removeEventListener('keydown', flightMapShortcut, true); document.removeEventListener('keydown', landmarkShortcut, true); flightAssists.dispose(); overlayPresentation.dispose();disposeMenuShortcuts(); disposeFullscreen(); mapDisposed = true; engineAudio.dispose(); audioControls?.dispose(); document.removeEventListener('click', activateEngineAudio, true); document.removeEventListener('keydown', activateEngineAudio, true); document.removeEventListener('keydown', soundShortcut, true); document.removeEventListener('keydown', engineShortcut, true); document.removeEventListener('keydown', parkingBrakeShortcut, true); groundCollisionPanel.dispose(); loadingPanel.dispose(); aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); flightWarningsPanel.dispose(); liveWarningMonitor.reset(); reviewWarningMonitor.reset(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); systemsPanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
+addEventListener('pagehide', () => { cancelCameraReturn(); cameraMotionPreference.removeEventListener('change', cameraMotionChanged); removeEventListener('blur', cancelCameraReturn); document.removeEventListener('visibilitychange', cancelHiddenCameraReturn); sceneContainer.removeEventListener('keydown', cancelCameraReturnOnEscape); sceneContainer.removeEventListener('pointerdown', cancelCameraReturn, { capture: true }); sceneContainer.removeEventListener('wheel', chaseWheel, { capture: true }); mapZoomShortcuts.dispose(); cwsControls?.dispose(); flightLocationStore.flush(); document.removeEventListener('keydown', reviewSeekShortcut, true); document.removeEventListener('keydown', flightMapShortcut, true); document.removeEventListener('keydown', landmarkShortcut, true); flightAssists.dispose(); overlayPresentation.dispose();disposeMenuShortcuts(); disposeFullscreen(); mapDisposed = true; engineAudio.dispose(); audioControls?.dispose(); document.removeEventListener('click', activateEngineAudio, true); document.removeEventListener('keydown', activateEngineAudio, true); document.removeEventListener('keydown', soundShortcut, true); document.removeEventListener('keydown', engineShortcut, true); document.removeEventListener('keydown', parkingBrakeShortcut, true); groundCollisionPanel.dispose(); loadingPanel.dispose(); aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); flightWarningsPanel.dispose(); liveWarningMonitor.reset(); reviewWarningMonitor.reset(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); systemsPanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
 void sceneReady;

@@ -1,3 +1,5 @@
+import { CHASE_DISTANCE } from './chase-distance.ts';
+import { setCameraPose } from './camera-pose.ts';
 import { createSceneryCache } from './scenery-cache';
 import { createLandmarkLabels, LANDMARK_CREDIT } from './landmark-labels';
 import { createAirportScenery, AIRPORT_VECTOR_CREDIT } from './airport-scenery';
@@ -547,7 +549,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     }
     container.dataset.terrainStreamed=String(streamedTiles.length>0);
     container.dataset.terrainCached=String(streamedTiles.length);
-    lastState = state; lastView = view; lastLook = boundedCameraLook(look);
+    lastState = state; lastView = view; lastLook = { ...boundedCameraLook(look), distance_m: look?.distance_m };
     // Keep zoom independent of look gestures and updates that omit camera input.
     if (look?.fov_rad !== undefined) {
       lastFov_rad = Number.isFinite(look.fov_rad)
@@ -608,7 +610,8 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       Matrix4.multiplyByPointAsVector(frame, localDirection, cameraDirection);
       Matrix4.multiplyByPointAsVector(frame, localUp, cameraUp);
     } else {
-      const camera = chaseCameraENU(heading_rad, lastLook);
+      const camera = chaseCameraENU(heading_rad, lastLook, lastLook.distance_m ?? CHASE_DISTANCE.initial_m);
+      container.dataset.cameraDistanceM = String(Math.hypot(...camera.offset));
       Cartesian3.fromElements(...camera.offset, local);
       Cartesian3.fromElements(...camera.direction, localDirection);
       Cartesian3.fromElements(...camera.up, localUp);
@@ -616,7 +619,8 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       Matrix4.multiplyByPointAsVector(frame, localDirection, cameraDirection);
       Matrix4.multiplyByPointAsVector(frame, localUp, cameraUp);
     }
-    scene.camera.setView({ destination: cameraPosition, orientation: { direction: cameraDirection, up: cameraUp } });
+    container.dataset.cameraView = view;
+    setCameraPose(scene.camera, cameraPosition, cameraDirection, cameraUp);
     const frustum = scene.camera.frustum;
     if (!(frustum instanceof PerspectiveFrustum)) throw new Error('Flight view requires a perspective camera');
     // Cesium uses horizontal FOV in landscape and vertical FOV in portrait.
