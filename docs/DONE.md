@@ -9,6 +9,8 @@ TODO: 2.0.179; R-CHART-1/R-AIRPORT-3.
 Agent: Codex orchestrator; independent quality `ofm_housekeeping` and validation
 `camera_return_validate`.
 
+**Implementation notes**
+
 Merged main446293a into PR111 while preserving both source services, tests and
 complete shared records. Corrected inherited package JSON punctuation and input
 index whitespace. Final complete CI passes606Node/22Python/85assurance/11training;
@@ -19,6 +21,10 @@ and complete-CI renewals pass unchanged checks. Source/provider behavior and the
 actual publisher evidence remain frozen. Independent bounded reviews pass;
 external peer remains pending under cadence. Final assurance/diff follow this
 integration record before publication.
+
+**Deviations**
+
+No new runtime scope; source rights and external peer limits remain recorded.
 
 ## 2026-11-06 17:23 — Stream an optional OpenFlightMaps aviation overlay
 
