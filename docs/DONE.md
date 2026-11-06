@@ -3,6 +3,46 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 13:17 — Refresh README capture and AI-development motivation
+
+TODO: 2.0.171; R-BOOT-3/R-DATA-1.
+Agent: Codex orchestrator; read-only housekeeping `coverage_housekeeping`,
+independent quality `world_airport_quality` and validation `coverage_validate`.
+
+**Implementation notes**
+
+The README now uses the actual 6 November working-app
+[capture](images/gefly-2026-11-06.png), with current chase/cockpit/map, source
+attribution and [capture provenance](images/README.md#current-readme-capture--2026-11-06).
+Chrome 156.0.8078.80/1920×1080 captured the real JSBSim flight at 1×, 46.2083 s / step 5545,
+HDG/ALT engaged and 378 actual path points. Image hash 2a60d397… matches the versioned
+[capture record](reviews/2026-11-06-readme-capture.json); loading notices remain
+visible. The older 3 November capture record is explicitly archived, not rewritten.
+
+README and [IDEA](IDEA.md#ai-assisted-development-research) record the complementary
+motivation: rapid AI-assisted development of a technically substantial codebase,
+expose complexity-related vibe-coding failures, and use controlled matched-task
+A/B comparisons to test prevention/reduction practices. Study methods and metrics
+remain planned, with no effectiveness result claimed. Source counts in README
+now distinguish worldwide discovery from legacy regional fallbacks. Raw request,
+GAPS and task status are recorded. The [independent review record](reviews/2026-11-06-readme-refresh.md)
+accepts the prose, image identity/visuals and source/licence attribution.
+
+**Deviations**
+
+No simulator/runtime changes, image editing, imagery fixtures, source rewriting
+or A/B experiment. The capture is a current local working-tree prototype, not a
+claim that every pictured feature has merged. Some live detail/airport geometry
+was loading; this is not source-coverage or aircraft/training validation. No new
+implementation tests were added for this reversible documentation update.
+Structural, publication CI and final assurance checks are recorded with the PR;
+optional JSBSim study skips and batched peer status remain explicit.
+
+**Insights**
+
+Show actual development state with provenance and visible limitations; describe
+research motivation separately from measured results and simulator fidelity.
+
 ## 2026-11-06 12:53 — Integrate worldwide OurAirports discovery
 
 TODO: 2.0.170; R-WORLD-12/R-NAV-2/R-DATA-1/R-COMM-2.
