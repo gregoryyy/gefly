@@ -434,3 +434,7 @@ failed speculative task must not alter current authoritative terrain or poison
 its source outcomes. Current visible demand retains priority over the bounded
 forward cartography corridor. Cancellation and new stream epochs discard owned
 speculation; ordinary validated loading remains the fallback.
+
+Custom GPS planning bounds are independent of pinned regional source catalogue
+limits. Shared validation rejects invalid coordinates before mutation; global
+custom planning adds no source downloads, receiver coverage or persistence.
