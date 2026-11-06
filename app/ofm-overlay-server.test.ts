@@ -20,6 +20,9 @@ function chunk(kind: string, data: Buffer): Buffer {
 const header = Buffer.alloc(13); header.writeUInt32BE(512); header.writeUInt32BE(512, 4); header[8] = 8; header[9] = 6;
 const png = Buffer.concat([Buffer.from('89504e470d0a1a0a', 'hex'), chunk('IHDR', header),
   chunk('IDAT', deflateSync(Buffer.alloc(512 * (512 * 4 + 1)))), chunk('IEND', Buffer.alloc(0))]);
+const grayHeader = Buffer.from(header); grayHeader[9] = 4;
+const grayAlphaPng = Buffer.concat([Buffer.from('89504e470d0a1a0a', 'hex'), chunk('IHDR', grayHeader),
+  chunk('IDAT', deflateSync(Buffer.alloc(512 * (512 * 2 + 1)))), chunk('IEND', Buffer.alloc(0))]);
 const response = () => new Response(png, { headers: { 'content-type': 'image/png' } });
 function call(handler: Handler, url: string, method = 'GET') {
   return new Promise<{ status: number; headers: Record<string, string>; data: Buffer; next: boolean }>(resolve => {
@@ -73,6 +76,19 @@ test('R-CHART-1 malformed, redirected, oversized and unavailable upstream tiles 
   const retry = createOfmOverlayMiddleware({ now: () => now, fetcher: async () => { count++; throw new Error('offline'); } });
   assert.equal((await call(retry, path)).status, 502); assert.equal((await call(retry, path)).status, 502); assert.equal(count, 1);
   now = 30001; assert.equal((await call(retry, path)).status, 502); assert.equal(count, 2);
+});
+
+test('R-CHART-1 observed grayscale-alpha empty tiles are valid while unsupported PNG formats remain unavailable', async () => {
+  const path = '/charts/ofm/2611/13/4292/2779.png';
+  const handler = createOfmOverlayMiddleware({ fetcher: async () => new Response(grayAlphaPng, { headers: { 'content-type': 'image/png' } }) });
+  const result = await call(handler, path);
+  assert.equal(result.status, 200); assert.deepEqual(result.data, grayAlphaPng);
+  for (const colorType of [0, 2, 3]) {
+    const unsupported = Buffer.from(grayAlphaPng); unsupported[25] = colorType;
+    const rejected = await call(createOfmOverlayMiddleware({ fetcher: async () => new Response(unsupported,
+      { headers: { 'content-type': 'image/png' } }) }), path);
+    assert.equal(rejected.status, 502);
+  }
 });
 
 test('R-CHART-1 duplicate sharing, source concurrency and queue/cache budgets remain bounded', async () => {

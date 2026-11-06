@@ -70,8 +70,8 @@ async function configure(current) {
     if (live && path.endsWith('.png') && response.status() === 200) responseReads.push((async () => {
       const bytes = await response.body();
       assert.equal(bytes.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
-      assert.equal(bytes.readUInt32BE(16), 512); assert.equal(bytes.readUInt32BE(20), 512); assert.equal(bytes[25], 6);
-      result.responses.push({ path, bytes: bytes.length, sha256: hash(bytes), width: 512, height: 512, colorType: 'RGBA' });
+      assert.equal(bytes.readUInt32BE(16), 512); assert.equal(bytes.readUInt32BE(20), 512); assert([4, 6].includes(bytes[25]));
+      result.responses.push({ path, bytes: bytes.length, sha256: hash(bytes), width: 512, height: 512, colorType: bytes[25] === 6 ? 'RGBA' : 'gray-alpha' });
     })());
   });
   await current.route('**/charts/ofm/**', async route => {
@@ -154,11 +154,14 @@ try {
   await page.locator('#ofm-overlay-toggle').check(); await loaded();
   assert(demand.some(path => path.endsWith('/metadata.json')) && demand.some(path => path.endsWith('.png')));
   const actualLayer = await layer(); assert.equal(actualLayer.type, 'raster'); assert.equal(actualLayer.minzoom, 7); assert.equal(actualLayer.maxzoom, undefined);
+  assert.equal(await page.evaluate(() => window.__ofmMap.getStyle().sources['ofm-overlay'].maxzoom), 12);
+  assert(demand.filter(path => path.endsWith('.png')).every(path => Number(path.split('/')[4]) <= 12));
   assert.equal(actualLayer.paint['raster-opacity'], .8);
   const order = await page.evaluate(() => window.__ofmMap.getStyle().layers.map(layer => layer.id));
   assert(order.indexOf('ofm-overlay') > order.indexOf('imagery'));
   for (const foreground of baselineForeground) assert(order.indexOf('ofm-overlay') < order.indexOf(foreground), foreground);
   assert.match(await page.locator('#ofm-overlay-provenance').textContent(), /AIRAC 2611.*2026-10-29.*2026-11-26/);
+  assert.match(await page.locator('#ofm-overlay-provenance').textContent(), /Native zoom 7–12; overzoom above 12/);
   assert.equal(await page.locator('#ofm-overlay-provenance + p a').first().getAttribute('href'), 'https://openflightmaps.org/downloads/ed/');
   assert.equal(await page.getByRole('link', { name: 'Report a chart error', exact: true }).getAttribute('href'), 'mailto:info@openflightmaps.org');
   const afterPixels = await page.locator('#practice-map-panel .maplibregl-canvas').screenshot();
@@ -181,7 +184,7 @@ try {
     await page.waitForFunction(() => document.querySelector('.practice-map-ofm-overlay').dataset.status === 'zoom-in');
     assert.match(await page.locator('#ofm-overlay-status').textContent(), /Zoom in.*7/);
     await page.evaluate(() => window.__ofmMap.jumpTo({ zoom: 17 })); await loaded();
-    assert(demand.filter(path => path.endsWith('.png')).every(path => Number(path.split('/')[4]) <= 13));
+    assert(demand.filter(path => path.endsWith('.png')).every(path => Number(path.split('/')[4]) <= 12));
     await page.evaluate(() => new Promise(resolve => {
       const style = window.__ofmMap.getStyle(); delete style.sources['ofm-overlay']; style.layers = style.layers.filter(layer => layer.id !== 'ofm-overlay');
       window.__ofmMap.once('style.load', resolve);

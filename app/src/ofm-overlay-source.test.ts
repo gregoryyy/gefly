@@ -6,7 +6,7 @@ test('R-CHART-1 source metadata retains the verified edition, validity and safe 
   const source = validateOfmOverlaySource(structuredClone(OFM_OVERLAY_METADATA));
   assert.equal(source.edition, 'AIRAC 2611');
   assert.equal(source.validFrom, '2026-10-29T00:00:00Z'); assert.equal(source.validTo, '2026-11-26T00:00:00Z');
-  assert.equal(source.minzoom, 7); assert.equal(source.maxzoom, 13); assert.equal(source.tileSize, 256);
+  assert.equal(source.minzoom, 7); assert.equal(source.maxzoom, 12); assert.equal(source.tileSize, 256);
   assert.equal(source.reportUrl, 'mailto:info@openflightmaps.org');
   source.tiles[0] = '/changed';
   assert.equal(validateOfmOverlaySource(OFM_OVERLAY_METADATA).tiles[0], '/charts/ofm/2611/{z}/{x}/{y}.png');

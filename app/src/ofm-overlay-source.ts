@@ -25,7 +25,9 @@ export const OFM_OVERLAY_METADATA = Object.freeze({
   schema: 1,
   tiles: Object.freeze([OFM_OVERLAY_TILE_TEMPLATE]),
   minzoom: 7,
-  maxzoom: 13,
+  // The publisher plugin advertises13, but reviewed2611 EDFE tiles at13 are
+  // valid blank images. Select12 and let MapLibre overzoom its actual content.
+  maxzoom: 12,
   // The publisher uses logical256 tiles with512-pixel retina PNG responses.
   tileSize: 256,
   edition: 'AIRAC 2611',
