@@ -1,26 +1,11 @@
 import type { MapPoint } from './map-point-popup';
 import { distanceMeters } from './scenery-coverage';
 import './map-point-search.css';
-
-export const MAP_LOCATION_TYPES = [
-  ['airfield', 'Airfields'], ['heliport', 'Helipads'], ['seaplane', 'Seaplane bases'],
-  ['balloonport', 'Balloonports'], ['closed', 'Closed facilities'], ['nav', 'NAV aids'], ['fix', 'Fixes'],
-] as const;
-export type MapLocationType = typeof MAP_LOCATION_TYPES[number][0];
-
-/** Keep source airport types distinct without changing their popup actions. */
-export function mapLocationType(point: Readonly<MapPoint>): MapLocationType {
-  const kind = (point.airport_type ?? point.kind).toLowerCase();
-  if (kind === 'heliport' || kind === 'helipad') return 'heliport';
-  if (kind === 'seaplane_base') return 'seaplane';
-  if (kind === 'balloonport') return 'balloonport';
-  if (kind === 'closed') return 'closed';
-  if (/airport|airfield/.test(kind)) return 'airfield';
-  return /^(fix|waypoint)$/.test(kind) ? 'fix' : 'nav';
-}
+import { MAP_LOCATION_TYPES, mapLocationType, type MapLocationType } from './map-location-types';
+export { MAP_LOCATION_TYPES, mapLocationType, type MapLocationType } from './map-location-types';
 
 /** A bounded view of the source catalogue; selecting opens details, never tunes. */
-export function createMapPointSearch(options: { onSelect(point: Readonly<MapPoint>): void; onTypesChange?(types: ReadonlySet<MapLocationType>): void }): {
+export function createMapPointSearch(options: { initialTypes?: ReadonlySet<MapLocationType>; onSelect(point: Readonly<MapPoint>): void; onTypesChange?(types: ReadonlySet<MapLocationType>): void }): {
   element: HTMLElement;
   setPoints(points: readonly Readonly<MapPoint>[]): void;
   setPosition(lon_deg: number, lat_deg: number): void;
@@ -34,10 +19,10 @@ export function createMapPointSearch(options: { onSelect(point: Readonly<MapPoin
   controls.append(query);
   const filters = document.createElement('fieldset'); filters.className = 'map-location-types';
   const legend = document.createElement('legend'); legend.textContent = 'Location types'; filters.append(legend);
-  const selectedTypes = new Set<MapLocationType>(MAP_LOCATION_TYPES.map(([type]) => type));
+  const selectedTypes = new Set<MapLocationType>(options.initialTypes ?? MAP_LOCATION_TYPES.map(([type]) => type));
   for (const [type, title] of MAP_LOCATION_TYPES) {
     const label = document.createElement('label'), checkbox = document.createElement('input');
-    checkbox.type = 'checkbox'; checkbox.value = type; checkbox.checked = true;
+    checkbox.type = 'checkbox'; checkbox.value = type; checkbox.checked = selectedTypes.has(type);
     label.append(checkbox, document.createTextNode(title)); filters.append(label);
   }
   const status = document.createElement('p'); status.className = 'map-point-search-status'; status.setAttribute('role', 'status');
