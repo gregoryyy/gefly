@@ -104,12 +104,12 @@ flight-data and stall-awareness panels are half opaque until clicked; their
 first click activates the panel, and subsequent gestures operate it.
 Arrow keys control pitch/roll, Q/W rudder, 0 throttle idle and 1–9 throttle.
 In Review, **← / →** seek backward/forward one second, with repeated keys supported. **Continue live** flies from the selected frame and keeps the earlier path; **Back to live** returns to the original flight. Continuation starts a new simulation branch; older recordings without enough state remain viewable.
-**=** or the replay speed button cycles **1×, 1.5×, 2×, 5×, 10×**, independently
+With the map closed, **=** or the replay speed button cycles **1×, 1.5×, 2×, 5×, 10×**, independently
 of live-flight speed. The overlay shows **REPLAY** speed.
 
 Space pauses, R opens Review, V changes view, E toggles the engine and S toggles
 sound (initially off). **A** toggles the autopilot, capturing current heading/altitude when engaging;
-**=** cycles **1×, 1.5×, 2×, 5×, 10×**, with an on-screen simulation-rate indicator.
+With the map closed, **=** cycles **1×, 1.5×, 2×, 5×, 10×**, with an on-screen simulation-rate indicator.
 These are simulator conveniences; acceleration preserves the fixed physics step
 and the achieved rate depends on available CPU/rendering capacity.
 Restart is in Flight. The last live location is saved locally and restored paused on reload; Restart clears it. Airborne restores use the normal 90 kt launch speed, rather than a saved physics checkpoint. Click toggles touchpad yoke control;
@@ -327,3 +327,5 @@ public repository destination is [gregoryyy/gefly](https://github.com/gregoryyy/
 selected under the user's publication instruction. Gefly is licensed
 **GPL-3.0-or-later** ([LICENSE](LICENSE), GAPS Q5). Third-party material keeps its
 own license; see the [upstream notices](THIRD_PARTY_NOTICES.md) and [SBOM](docs/SBOM.md).
+
+When the flight map is open, **= / +** zooms in and **-** zooms out. Close the map to use **= / Shift+=** for simulation or replay speed; the Flight-menu speed control works in either context. Typing and modal/menu shortcuts retain their guards.

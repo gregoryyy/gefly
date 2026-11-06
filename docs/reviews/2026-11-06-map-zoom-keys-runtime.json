@@ -1,0 +1,273 @@
+{
+  "task": "2.0.176",
+  "scope": "Open-map keyboard zoom ownership; software behavior only",
+  "contexts": {
+    "working-app": {
+      "artifact_sha256": "2856b4e78a30d82794fbe14cd6eec986423cdd90b2c448575554d4b6c0bf7352",
+      "result": "pass",
+      "sourceHashes": {
+        "src/main.ts": "da8bfdd77f4f84f2c01f8421b9c77ff06a590d1db182c3f13671cc6f42cdba9a",
+        "src/practice-map.ts": "dc36cae7ca4cd7a24fdc2ca8466c615673aa9e9ac5fd5df20ca8c905434e6f8a",
+        "src/flight-assists.ts": "e0114d188fae257054635cfc02845f450776d9ba31c666cff4adbab31dcd6adb",
+        "src/map-zoom-shortcuts.ts": "7b2be897e7ad5cd9636d97eb245a33c805da2fefa747247add444b53e38aeb91",
+        "tests/map-zoom-shortcuts.browser.mjs": "3fcc4095a4093321650be17e76c807ea695263cef1c8314e42c7e75c90ef590c"
+      },
+      "checks": [
+        "open but loading map consumes zoom/German repeated = without pacing/throttle/native changes",
+        "= and + zoom in and - zooms out exactly once with scene, canvas and map-control focus; native worker stays paused and rate/throttle stay unchanged",
+        "modifier, recognized repeat, default-prevented event, editable map search, top-menu and modal guards preserve map zoom, pacing, throttle and native state",
+        "A still toggles AP with map open; Flight speed click/Shift-click changes worker rate while map remains open",
+        "closed map restores = speed cycle and + decrement without changing hidden map zoom",
+        "during live flight =/+/- change map zoom by exactly net +1 while worker steps continue and rate commands/throttle stay unchanged",
+        "Review map keys zoom map exactly once while preserving independent replay speed and paused live native state",
+        "keyboard and map buttons share the actual MapLibre min/max zoom bounds; speed shortcut hint and accessibility metadata follow map visibility"
+      ],
+      "observations": [
+        {
+          "label": "scene =",
+          "before": 13,
+          "after": 14,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "scene -",
+          "before": 14,
+          "after": 13,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "scene +",
+          "before": 13,
+          "after": 14,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "scene numpad -",
+          "before": 14,
+          "after": 13,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "MapLibre canvas =",
+          "before": 13,
+          "after": 14,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "MapLibre canvas -",
+          "before": 14,
+          "after": 13,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "MapLibre canvas +",
+          "before": 13,
+          "after": 14,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "MapLibre canvas numpad -",
+          "before": 14,
+          "after": 13,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "map control =",
+          "before": 13,
+          "after": 14,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "map control -",
+          "before": 14,
+          "after": 13,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "map control +",
+          "before": 13,
+          "after": 14,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "map control numpad -",
+          "before": 14,
+          "after": 13,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "German Shift+Digit0 =",
+          "before": 13,
+          "after": 14,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "numpad +",
+          "before": 14,
+          "after": 15,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "live map zoom",
+          "before": 15,
+          "after": 16,
+          "stepBefore": 136,
+          "stepAfter": 198,
+          "throttle_norm": 0.737595201290068,
+          "rate": 1,
+          "rateCommandCount": 4
+        }
+      ],
+      "errors": [],
+      "servedPracticeMapSha256": "8b48424bbf7f82635e154a1ac1cb5d4d462ce59b11a343710c56ac9bd7006019",
+      "observedPracticeMapSha256": "60e89fe423d04e6e8991664cab3dd896ab92123fc464d7b08bc90b3739752a59",
+      "browser": "156.0.8078.80"
+    },
+    "publication": {
+      "artifact_sha256": "52cef83599c02679c86602c75ce8cd80adf2ddb4f591eb421b564f88cf0da9ba",
+      "result": "pass",
+      "sourceHashes": {
+        "src/main.ts": "93fa2aa57bb045e8ff2ad056703d01022fe8d9caa618932c93b0e38ba5c7226c",
+        "src/practice-map.ts": "2c7d13a1734316e350a8b670b75e786e4cc169d745155a10fdcba14b82ab0161",
+        "src/flight-assists.ts": "cc8d9f61cfa6f42b479d0fe14d75352d5d4bfec5ff61923ce8c283211b81d18c",
+        "src/map-zoom-shortcuts.ts": "7b2be897e7ad5cd9636d97eb245a33c805da2fefa747247add444b53e38aeb91",
+        "tests/map-zoom-shortcuts.browser.mjs": "3fcc4095a4093321650be17e76c807ea695263cef1c8314e42c7e75c90ef590c"
+      },
+      "checks": [
+        "open but loading map consumes zoom/German repeated = without pacing/throttle/native changes",
+        "= and + zoom in and - zooms out exactly once with scene, canvas and map-control focus; native worker stays paused and rate/throttle stay unchanged",
+        "modifier, recognized repeat, default-prevented event, editable map search, top-menu and modal guards preserve map zoom, pacing, throttle and native state",
+        "A still toggles AP with map open; Flight speed click/Shift-click changes worker rate while map remains open",
+        "closed map restores = speed cycle and + decrement without changing hidden map zoom",
+        "during live flight =/+/- change map zoom by exactly net +1 while worker steps continue and rate commands/throttle stay unchanged",
+        "Review map keys zoom map exactly once while preserving independent replay speed and paused live native state",
+        "keyboard and map buttons share the actual MapLibre min/max zoom bounds; speed shortcut hint and accessibility metadata follow map visibility"
+      ],
+      "observations": [
+        {
+          "label": "scene =",
+          "before": 13,
+          "after": 14,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "scene -",
+          "before": 14,
+          "after": 13,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "scene +",
+          "before": 13,
+          "after": 14,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "scene numpad -",
+          "before": 14,
+          "after": 13,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "MapLibre canvas =",
+          "before": 13,
+          "after": 14,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "MapLibre canvas -",
+          "before": 14,
+          "after": 13,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "MapLibre canvas +",
+          "before": 13,
+          "after": 14,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "MapLibre canvas numpad -",
+          "before": 14,
+          "after": 13,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "map control =",
+          "before": 13,
+          "after": 14,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "map control -",
+          "before": 14,
+          "after": 13,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "map control +",
+          "before": 13,
+          "after": 14,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "map control numpad -",
+          "before": 14,
+          "after": 13,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "German Shift+Digit0 =",
+          "before": 13,
+          "after": 14,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "numpad +",
+          "before": 14,
+          "after": 15,
+          "rateCommandCount": 0
+        },
+        {
+          "label": "live map zoom",
+          "before": 15,
+          "after": 16,
+          "stepBefore": 134,
+          "stepAfter": 194,
+          "throttle_norm": 0.737595201290068,
+          "rate": 1,
+          "rateCommandCount": 4
+        }
+      ],
+      "errors": [],
+      "servedPracticeMapSha256": "0334989e8aefd9e3a377d19381be6537416fcf2e8b8d284dd0771dd93c5993f9",
+      "observedPracticeMapSha256": "5bfc666ffc11bb3b941d031e969f53cdbede75b87a7a759b0f972e07b0c757f6",
+      "browser": "156.0.8078.80"
+    }
+  },
+  "ci": {
+    "publication": "just ci",
+    "result": "pass",
+    "node_application": 557,
+    "python_application": 22,
+    "assurance": 85,
+    "training": 11,
+    "repository_tooling_executed": 242,
+    "repository_tooling_skipped": 1,
+    "jsbsim_study_executed": 14,
+    "jsbsim_study_skipped": 9,
+    "c172s_study_executed": 25
+  },
+  "additional_regression": {
+    "context": "working app",
+    "command": "node tests/flight-assists.browser.mjs",
+    "groups": 7,
+    "result": "pass"
+  },
+  "limits": [
+    "Fixture scenery with actual MapLibre/native WASM; no geography or aircraft acceptance.",
+    "Chrome156 only; embedded WebKit not executed.",
+    "Cross-provider peer pending under batch cadence.",
+    "CI preceded the harness-only live-flight addition; focused browser renewed afterward."
+  ]
+}

@@ -9,6 +9,7 @@ import { createOverlayPresentation } from './overlay-presentation';
 import { installMenuShortcuts } from './menu-shortcuts';
 import { installFullscreenControls } from './fullscreen';
 import { createFlightAssists } from './flight-assists';
+import { createMapZoomShortcuts } from './map-zoom-shortcuts.ts';
 import { loadTerrainPackage, sampleTerrain, type TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
 import './style.css';
 import './practice-map.css';
@@ -694,6 +695,10 @@ function flightMapShortcut(event: KeyboardEvent): void {
   el<HTMLButtonElement>(event.code === 'Slash' ? 'toggle-map-terrain' : 'toggle-map').click();
 }
 document.addEventListener('keydown', flightMapShortcut, true);
+const mapZoomShortcuts = createMapZoomShortcuts({
+  root, isOpen: () => mapVisible,
+  onZoom(direction) { practiceMap?.zoom(direction); },
+});
 function cycleLandmarks(): void {
   landmarkLevel = (landmarkLevel + 1) % LANDMARK_LEVEL_NAMES.length as LandmarkLevel;
   el('cycle-landmarks').firstChild!.textContent = `Landmarks: ${LANDMARK_LEVEL_NAMES[landmarkLevel]} `;
@@ -1282,6 +1287,7 @@ const disposeFullscreen = installFullscreenControls({
   onChange() { closeViewMenu(); if (!document.querySelector('dialog[open]')) focusFlight(); },
 });
 const flightAssists = createFlightAssists({
+  mapOpen: () => mapVisible,
   root,
   canCapture: () => controlsAvailable() && latest?.kap_profile === 1,
   isAutopilotEngaged: () => autopilotCapturePending || latest?.kap_engaged === 1,
@@ -1427,5 +1433,5 @@ function animate(now: number) {
   requestAnimationFrame(animate);
 }
 publishInput(); updateSessionUI(); requestAnimationFrame(animate);
-addEventListener('pagehide', () => { cwsControls?.dispose(); flightLocationStore.flush(); document.removeEventListener('keydown', reviewSeekShortcut, true); document.removeEventListener('keydown', flightMapShortcut, true); document.removeEventListener('keydown', landmarkShortcut, true); flightAssists.dispose(); overlayPresentation.dispose();disposeMenuShortcuts(); disposeFullscreen(); mapDisposed = true; engineAudio.dispose(); audioControls?.dispose(); document.removeEventListener('click', activateEngineAudio, true); document.removeEventListener('keydown', activateEngineAudio, true); document.removeEventListener('keydown', soundShortcut, true); document.removeEventListener('keydown', engineShortcut, true); document.removeEventListener('keydown', parkingBrakeShortcut, true); groundCollisionPanel.dispose(); loadingPanel.dispose(); aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); flightWarningsPanel.dispose(); liveWarningMonitor.reset(); reviewWarningMonitor.reset(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); systemsPanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
+addEventListener('pagehide', () => { mapZoomShortcuts.dispose(); cwsControls?.dispose(); flightLocationStore.flush(); document.removeEventListener('keydown', reviewSeekShortcut, true); document.removeEventListener('keydown', flightMapShortcut, true); document.removeEventListener('keydown', landmarkShortcut, true); flightAssists.dispose(); overlayPresentation.dispose();disposeMenuShortcuts(); disposeFullscreen(); mapDisposed = true; engineAudio.dispose(); audioControls?.dispose(); document.removeEventListener('click', activateEngineAudio, true); document.removeEventListener('keydown', activateEngineAudio, true); document.removeEventListener('keydown', soundShortcut, true); document.removeEventListener('keydown', engineShortcut, true); document.removeEventListener('keydown', parkingBrakeShortcut, true); groundCollisionPanel.dispose(); loadingPanel.dispose(); aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); flightWarningsPanel.dispose(); liveWarningMonitor.reset(); reviewWarningMonitor.reset(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); systemsPanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
 void sceneReady;
