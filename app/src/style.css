@@ -658,4 +658,7 @@ input[type=range][data-unavailable=true]::-moz-range-thumb { visibility: hidden;
 .yoke-center-marker::after { content: ''; position: absolute; width: 2px; height: 2px; left: 50%; top: 50%; transform: translate(-50%, -50%); border-radius: 50%; background: #eff7f8; box-shadow: 0 0 0 1px #041018; }
 .yoke-center-marker[hidden] { display: none; }
 
+.initial-balance-status { position: absolute; left: 16px; top: 100px; z-index: 3; padding: 4px 8px; color: #d8e6ec; background: #152832cc; font-size: 11px; letter-spacing: .08em; pointer-events: auto; }
+.initial-balance-status[hidden] { display: none; }
+
 .yoke-center-marker.needs-center { opacity: .85; border-color: #ffdc98; }

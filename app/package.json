@@ -27,6 +27,7 @@
     "test:pressure-start": "node ../studies/e1-browser/sim/pressure-start-worker.mjs && node tests/pressure-start.browser.mjs",
     "test:cws": "node --test src/cws-controls.test.ts && node tests/cws-keyboard.browser.mjs",
     "test:neutral-controls": "node tests/neutral-controls.browser.mjs",
+    "test:initial-balance": "node ../studies/e1-browser/sim/initial-balance-native.mjs && node ../studies/e1-browser/sim/initial-balance-worker.mjs && node tests/initial-balance.browser.mjs",
     "test:yoke-resize": "node --test src/pointer-yoke.test.ts && node tests/yoke-resize.browser.mjs"
   },
   "dependencies": {

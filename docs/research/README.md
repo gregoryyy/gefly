@@ -48,4 +48,6 @@ End with proposed implications, limitations and a handoff to product/orchestrato
 
 - [2026-11-06: Neutral-control merge regression](2026-11-06-neutral-controls-regression.md) — actual app command reproduction, bounded zero-start repair and remaining native-model limits.
 
+- [2026-11-06: Generic-model initial airborne equilibrium](2026-11-06-airborne-model-balance.md).
+
 - [2026-11-06: Centered-yoke resize handoff](2026-11-06-yoke-resize-handoff.md).

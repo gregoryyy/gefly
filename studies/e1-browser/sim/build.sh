@@ -77,6 +77,8 @@ DATA=(
   systems/Autopilot.xml
 )
 EMBED=()
+MODEL_HASHES='{'
+MODEL_SEPARATOR=''
 for f in "${DATA[@]}"; do
   case "$f" in
     aircraft/c172x/*) source_file="$PREPARED_AIRCRAFT/${f#aircraft/c172x/}" ;;
@@ -84,13 +86,16 @@ for f in "${DATA[@]}"; do
     *) source_file="$SRC/$f" ;;
   esac
   EMBED+=(--embed-file "$source_file@/jsbsim/$f")
+  MODEL_HASHES+="$MODEL_SEPARATOR\"$f\":\"$(sha256 "$source_file")\""
+  MODEL_SEPARATOR=,
 done
+MODEL_HASHES+='}'
 
 em++ -O2 -std=c++17 $EXC_FLAGS -I"$SRC/src" -I"$BUILD/src" "$HERE/bridge.cpp" \
   "$BUILD/src/libJSBSim.a" -o "$DIST/jsbsim.mjs" \
   -sMODULARIZE=1 -sEXPORT_ES6=1 -sEXPORT_NAME=createJSBSim -sENVIRONMENT=worker,web,node \
   -sALLOW_MEMORY_GROWTH=1 -sEXPORTED_RUNTIME_METHODS=HEAPF64,UTF8ToString \
-  -sEXPORTED_FUNCTIONS=_malloc,_free,_gf_configure_terrain_grid,_gf_set_terrain_tile,_gf_remove_terrain_tile,_gf_clear_terrain_grid,_gf_terrain_available,_gf_terrain_height_m,_gf_terrain_sample,_gf_configure_loading,_gf_loading_state,_gf_init,_gf_init_resume,_gf_init_landing,_gf_init_runway,_gf_ground_state,_gf_nose_steering_rad,_gf_set_inputs,_gf_step,_gf_state,_gf_state_len,_gf_step_index,_gf_digest_hex,_gf_trim_status,_gf_trim_throttle,_gf_trim_pitch,_gf_flap_command_norm,_gf_static_pressure_pa,_gf_sealevel_pressure_pa,_gf_set_secondary_inputs,_gf_cockpit_state,_gf_control_state,_gf_stall_state,_gf_set_pitch_trim,_gf_pitch_trim_state,_gf_set_engine_controls,_gf_set_engine_running,_gf_engine_switch_state,_gf_propeller_state,_gf_set_autopilot,_gf_set_autopilot_vertical,_gf_autopilot_vertical_state,_gf_engine_state \
+  -sEXPORTED_FUNCTIONS=_malloc,_free,_gf_configure_terrain_grid,_gf_set_terrain_tile,_gf_remove_terrain_tile,_gf_clear_terrain_grid,_gf_terrain_available,_gf_terrain_height_m,_gf_terrain_sample,_gf_configure_loading,_gf_loading_state,_gf_init,_gf_init_balanced,_gf_initial_balance_state,_gf_init_resume,_gf_init_landing,_gf_init_runway,_gf_ground_state,_gf_nose_steering_rad,_gf_set_inputs,_gf_step,_gf_state,_gf_state_len,_gf_step_index,_gf_digest_hex,_gf_trim_status,_gf_trim_throttle,_gf_trim_pitch,_gf_flap_command_norm,_gf_static_pressure_pa,_gf_sealevel_pressure_pa,_gf_set_secondary_inputs,_gf_cockpit_state,_gf_control_state,_gf_stall_state,_gf_set_pitch_trim,_gf_pitch_trim_state,_gf_set_engine_controls,_gf_set_engine_running,_gf_engine_switch_state,_gf_propeller_state,_gf_set_autopilot,_gf_set_autopilot_vertical,_gf_autopilot_vertical_state,_gf_engine_state \
   "${EMBED[@]}"
 
 # 5. Build record read by worker.js ("ready" message)
@@ -102,6 +107,9 @@ PROPELLER_ADAPTER=$(cat "$PROPELLER_ADAPTER_META")
 cat > "$DIST/build-info.json" <<EOF
 {"jsbsim_tag": "$JSBSIM_TAG", "jsbsim_commit": "$JSBSIM_COMMIT", "emsdk": "$EMSDK_VERSION",
  "emsdk_rev": "$EMSDK_REV", "emcc": "${EMCC_VERSION//\"/}", "flags": "-O2 $EXC_FLAGS",
- "wasm_bytes": $WASM_BYTES, "wasm_sha256": "$WASM_SHA", "aircraft_adapter": $AIRCRAFT_ADAPTER, "propeller_adapter": $PROPELLER_ADAPTER}
+ "wasm_bytes": $WASM_BYTES, "wasm_sha256": "$WASM_SHA",
+ "bridge_sha256": "$(sha256 "$HERE/bridge.cpp")", "terrain_grid_sha256": "$(sha256 "$HERE/terrain-grid.h")",
+ "native_library_sha256": "$(sha256 "$BUILD/src/libJSBSim.a")", "embedded_model_sha256": $MODEL_HASHES,
+ "initial_balance_profiles": [0, 1], "aircraft_adapter": $AIRCRAFT_ADAPTER, "propeller_adapter": $PROPELLER_ADAPTER}
 EOF
 cat "$DIST/build-info.json"
