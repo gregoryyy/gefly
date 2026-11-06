@@ -3,6 +3,25 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 01:32 — Resolve PR91 and integrate the merged feature branches
+
+TODO: 2.0.150/2.0.155/2.0.156/2.0.157/2.0.158/2.0.159/2.0.163; R-WORLD-11/R-SIM-2/R-AP-1/R-INPUT-1.
+Agent: Codex orchestrator; independent `quality` merge review.
+
+**Implementation notes**
+
+PR91 includes the user-merged Copernicus PR92 and now merges its updated predictive-loading target plus the pressure branch containing user-merged CWS PR93. Resolve package test registrations by retaining all commands, and preserve both sides of architecture/security/decision/task/research records. All172 complete dated DONE entries from both parents survive exactly in date order. Remove a merge-introduced duplicate pressure decision and repeated Hessen input-index line; no raw input record changes. Independent [merge review](reviews/2026-11-06-pr91-merge-quality.md) checks semantic preservation. The combined head merges cleanly into current origin/main8855358; PR91 is the remaining integration path to main, rather than another closed feature target.
+
+All507Node+22Python app cases,85assurance and11training cases passed; optional JSBSim9of23 and one platform tool case skip. The first CI attempt saw transient conflict markers while the later CWS merge was being resolved. The next full run passed executable/assurance/training/whitespace checks but failed scaffold on the duplicate input-index line. After its repair, the affected scaffold check passes. A fresh full CI confirmation is required/recorded separately; neither unsuccessful full log is represented as a terminal pass.
+
+**Deviations**
+
+This is branch integration and conflict resolution, not new flight-model behavior or aircraft/training validation. Retarget PR91 to main after pushing the complete integration. Cross-provider peer remains pending. The separate distant-overview renderer fix remains isolated and is not part of this merge resolution.
+
+**Insights**
+
+Merging a child PR after its target PR has already merged does not propagate the child into main; preserve the merged branch tips in the remaining integration PR. Union-merging input indexes can leave duplicate entries and needs the structural check before the full CI run.
+
 ## 2026-11-06 01:03 — Correct the dependent overview delivery reference
 
 TODO: 2.0.150/2.0.162; R-WORLD-11.

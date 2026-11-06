@@ -181,7 +181,6 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-05: Use Copernicus global elevation](2026-11-05-copernicus-integration.md)
 - [2026-11-05: Cape Town appears flat](2026-11-05-cape-town-flat.md)
 
-- [2026-11-05: Missing Hessen elevation after rebuild](2026-11-05-hessen-elevation-rebuild.md)
 
 - [2026-11-06: C key for momentary CWS](2026-11-06-cws-keyboard.md)
 
