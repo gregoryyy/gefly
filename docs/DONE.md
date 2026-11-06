@@ -39,6 +39,56 @@ peer review remains pending under the batching cadence.
 Persist deliberate user preferences without treating preview values, transient
 commands or a remembered sound choice as permission to resume simulation/audio.
 
+## 2026-11-06 07:47 — Publish the two bounded handling PRs
+
+TODO: 2.0.153 in progress. R-INPUT-1/R-SIM-11/R-REVIEW-1.
+Agent: Codex orchestrator; independent quality and cws_validate reviews are recorded separately.
+
+**Implementation notes**
+
+[PR96](https://github.com/gregoryyy/gefly/pull/96) isolates centered-pointer resize pickup; [PR97](https://github.com/gregoryyy/gefly/pull/97) adds source-balanced airborne initialization in separate native/worker and app commits. Merge96first;97already includes its exact ancestry. Final integrated feature CI at1f76c4d passes550Node+22Python application,85assurance and11training tests, with zero assurance integrity errors. Log SHA-256 `9e259479255e22c5277aeb8acf99900328849ff32bba35435b343d3edca4f120`. The lineage diff against the pointer dependency adds28/changes237/removes0 graph objects and was inspected. Independent native18, finalWorker8, app4/resize3 and combined AP-reload6 browser groups support the bounded implementation. A duplicate same-file input-index entry from stacking was removed; failed metadata/index gate attempts remain distinct from the passing final run.
+
+**Deviations**
+
+Nine optional JSBSim tests and one platform-specific repository test are skipped, not accepted. The wider root assurance cardinality failure, general aircraft handling/fidelity, model redistribution and cross-provider peer review remain open. Current runtime code is unchanged by this publication record.
+
+**Insights**
+
+The dependency merge preserves modular PRs while avoiding conflicting shared records after the pointer repair lands.
+
+## 2026-11-06 07:25 — Codex orchestrator with local_handling_native, balance_state_contracts and handling_housekeeping: bounded airborne initialization (Task2.0.153)
+
+Agent: Codex orchestrator, local_handling_native, balance_state_contracts, handling_housekeeping; independent quality and cws_validate.
+TODO: 2.0.153 in progress.
+
+**Implementation notes**
+
+The source full trim's solved lateral inputs transfer once into existing model trim channels. External pilot commands remain zero; the visible MODEL BALANCED START identity is recorded separately and survives AP/CWS/current-state reconstruction. Fresh ground/landing starts remain zero; failed balance cannot start a partial model. Source/model coefficients remain unchanged.18native fixtures match retained initial/final states and trajectory digests; bounded restore/ground/error cases pass. The actual app/Worker/browser runs30s atSIM1 with zero external axes and about0.00133°bank change; AP/CWS/disconnect/reload checks pass. See [source and limits](research/2026-11-06-airborne-model-balance.md), independent [quality](reviews/2026-11-06-airborne-balance-quality.md) and [validation](reviews/2026-11-06-airborne-balance-validation.md). Final post-integration CI is recorded separately after execution.
+
+**Deviations**
+
+The user removed older-recording compatibility as a requirement. Current records must preserve identity; exposed-state reconstruction still creates fresh hidden histories and is not a complete checkpoint. Broader Task153 sensitivity/pulse recovery,110kt envelope, aircraft-data rights,172S fidelity and cross-provider peer review remain open/pending. The isolated engine link reuses the existing pinned native library and records its exact hash; it is not a fresh upstream library rebuild.
+
+**Insights**
+
+Solving initial equilibrium and continuously leveling an aircraft are different behaviors; this change implements the former only.
+
+## 2026-11-06 07:25 — Codex orchestrator: bounded centered-pointer resize repair (Task2.0.153)
+
+Agent: Codex orchestrator, with independent quality and cws_validate.
+TODO: 2.0.153 in progress.
+
+**Implementation notes**
+
+After scene midpoint movement, pointer controls become neutral until pickup inside the live center marker; the pickup event stays neutral and the hint explains it. Keyboard input, relative controls and look remain independent.22unit tests, TypeScript and three actual app/Worker/native browser groups pass. Independent [quality](reviews/2026-11-06-yoke-resize-quality.md) and [validation](reviews/2026-11-06-yoke-resize-validation.md) pass at this scope. Authorized feature CI passes542Node+22Python,85assurance and11training tests;9optional JSBSim/one platform skip remain. Log SHA-256 `1eae1c0b85ce5d088f2ff68372d03494b3a367283adba5d445003cc61a33d4c2`. Earlier restricted-bind runtime failures remain failed historical attempts.
+
+**Deviations**
+
+Broader Task153 native handling, the user's embedded browser/trackpad and cross-provider peer review remain open/pending. This is an input discontinuity repair, not aircraft-response validation.
+
+**Insights**
+
+Absolute centered steering needs an explicit neutral handoff when the reference moves under a stationary pointer.
 
 ## 2026-11-06 02:59 — Reconcile the steering dependency before the terrain PR update
 
