@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "id": "rhein-main-nav810-2013-10-v1",
-  "asset": "rhein-main-v1.json",
-  "sha256": "67dee54d9fd535b15df83fabff6b548f6171ae0ce0b724c9ab5733bad9c47b67",
-  "bytes": 74294
+  "id": "world-nav810-2013-10-v1",
+  "asset": "world-v1.bin",
+  "sha256": "dafdf4c31d00094c1f1b2762949b152e8c11deeb6af8ace3a1551bad9955e8ec",
+  "bytes": 4884389
 }

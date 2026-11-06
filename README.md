@@ -209,7 +209,7 @@ To climb to a preselected altitude, engage AP, set climb power and select the al
 
 On narrow screens, open **Engine & autopilot** for those controls.
 
-**Radio stack → Stations** loads a historical Rhein-Main VOR/LOC/DME frequency into
+**Radio stack → Stations** loads a historical worldwide VOR/LOC/DME frequency into
 NAV1 or NAV2 standby; swap to activate it. **Flight → EDDF 25C ILS practice** starts
 near the sourced localizer/glideslope with NAV1 111.55 and FFM on NAV2 114.20.
 Hold AP for a quarter second, select APR and start flight to try capture.

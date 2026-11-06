@@ -6,13 +6,13 @@ import { makeFlightMapNavigation } from './flight-map-navigation.ts';
 import type { NavigationPackage, NavRecord } from '../../studies/e1-browser/sim/navigation.js';
 
 const navRoot = new URL('../public/navdata/', import.meta.url);
-const manifest = JSON.parse(await readFile(new URL('manifest.json', navRoot), 'utf8'));
-const bytes = await readFile(new URL(manifest.asset, navRoot));
+// This pure regional map converter retains its bounded86-service fixture;
+// the active receiver manifest independently selects the worldwide package.
+const bytes = await readFile(new URL('rhein-main-v1.json', navRoot));
 const sha256 = createHash('sha256').update(bytes).digest('hex');
 const pkg: NavigationPackage = { ...JSON.parse(bytes.toString('utf8')), sha256 };
 
 test('R-NAV-3/4 map preserves the real pinned inventory, frequency, coordinates and traceability', () => {
-  assert.equal(sha256, manifest.sha256);
   const data = makeFlightMapNavigation(pkg);
   const stations = data.features.filter(feature => feature.properties.component === 'station');
   assert.equal(stations.length, 86);
@@ -24,7 +24,7 @@ test('R-NAV-3/4 map preserves the real pinned inventory, frequency, coordinates 
   for (const feature of data.features) {
     assert.equal(feature.properties.edition, '2013.10');
     assert.equal(feature.properties.historical, true);
-    assert.equal(feature.properties.source_sha256, manifest.sha256);
+    assert.equal(feature.properties.source_sha256, sha256);
     assert.ok(feature.geometry.coordinates.every(Number.isFinite));
     assert.notEqual(feature.properties.station_uid, 'fictional-lab');
   }

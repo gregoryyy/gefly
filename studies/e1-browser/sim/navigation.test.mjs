@@ -73,3 +73,63 @@ test('co-channel VOR presence survives OBS ambiguity and station passage',()=>{
  const ambiguousObs=navigationSignal(cfg(113800,91),point(.1,0),[one]);assert.equal(ambiguousObs.valid,false);assert.match(ambiguousObs.reason,/ambiguity/);
  for(const p of [point(.1,0),point(0,0)]){const signal=navigationSignal(cfg(113800,91),p,[one,other]);assert.equal(signal.valid,false);assert.equal(signal.dme_valid,false);assert.match(signal.reason,/Ambiguous/);}
 });
+
+test('worldwide historical VOR/DME channels reach both receiver paths without replacing regional records',async()=>{
+ const {readFile}=await import('node:fs/promises');
+ const world=JSON.parse(await readFile(new URL('../../../app/public/navdata/world-v1.bin',import.meta.url)));
+ const regional=JSON.parse(await readFile(new URL('../../../app/public/navdata/rhein-main-v1.json',import.meta.url)));
+ assert.equal(world.records.length,7923);
+ for(const record of regional.records) assert.deepEqual(world.records.find(r=>r.uid===record.uid),record);
+ for(const uid of ['vor-klo-114850','vor-cpt-114350','vor-ctv-115700']){
+  const r=world.records.find(r=>r.uid===uid);assert(r);
+  const p=point(r.lat_deg-.05,r.lon_deg,1500);
+  const config={...cfg(r.frequency_khz),radio_nav2_active_khz:r.frequency_khz,radio_obs2_deg:0};
+  for(const receiver of [1,2]){
+   const result=navigationSignal(config,p,world.records,world.source_label,receiver);
+   assert.equal(result.valid,true,uid);assert.equal(result.dme_valid,true,uid);assert.equal(result.station_uid,uid);
+   assert.equal(result.course_reference,'MAG');assert.match(result.source_label,/Worldwide NAV 2013.10/);
+   assert(result.dme_nm>3&&result.dme_nm<3.2);
+  }
+ }
+ const dme=world.records.find(r=>r.uid==='dme-amu-116300-26030');assert(dme);
+ const result=navigationSignal(cfg(dme.frequency_khz),point(dme.lat_deg-.05,dme.lon_deg,1500),world.records,world.source_label);
+ assert.equal(result.valid,false);assert.equal(result.dme_valid,true);assert.equal(result.station_kind,'DME');assert.equal(result.bearing_true_deg,null);
+});
+
+test('worldwide paired localizer and glideslope use supplied source geometry',async()=>{
+ const {readFile}=await import('node:fs/promises');const world=JSON.parse(await readFile(new URL('../../../app/public/navdata/world-v1.bin',import.meta.url)));
+ const r=world.records.find(r=>r.uid==='loc-ikl-108300-lszh-14');assert(r?.gs&&r.dme);
+ const b=(r.front_course_true_deg+180)*Math.PI/180,d=5*1852/6371000,lat=r.gs.lat_deg*Math.PI/180,lon=r.gs.lon_deg*Math.PI/180;
+ const phi=Math.asin(Math.sin(lat)*Math.cos(d)+Math.cos(lat)*Math.sin(d)*Math.cos(b));
+ const p={lat_rad:phi,lon_rad:lon+Math.atan2(Math.sin(b)*Math.sin(d)*Math.cos(lat),Math.cos(d)-Math.sin(lat)*Math.sin(phi)),alt_msl_m:r.gs.elevation_m+Math.tan(r.gs.angle_deg*Math.PI/180)*5*1852};
+ const result=navigationSignal(cfg(r.frequency_khz),p,world.records,world.source_label);
+ assert.equal(result.station_uid,r.uid);assert.equal(result.valid,true);assert.equal(result.gs_valid,true);assert.equal(result.dme_valid,true);assert(Math.abs(result.gs_norm)<.02);
+ const conflicting=world.records.find(r=>r.uid==='vor-abb-108450');assert(conflicting);assert.equal(conflicting.dme,null);
+});
+
+test('mutable caller records are revalidated after tuning or mutation',()=>{
+ const mutable={...base},records=[mutable],p=point(.1,0);
+ assert.equal(navigationSignal(cfg(113800),p,records).valid,true);
+ mutable.frequency_khz=114000;
+ assert.equal(navigationSignal(cfg(113800),p,records).valid,false);
+ assert.equal(navigationSignal(cfg(114000),p,records).valid,true);
+ mutable.variation_deg_east=null;
+ assert.equal(navigationSignal(cfg(114000),p,records).valid,false);
+});
+
+test('worldwide loader verifies bounded opaque package, freezes/indexes services and rejects unapproved binary paths',async()=>{
+ const {readFile}=await import('node:fs/promises'),oldFetch=globalThis.fetch;
+ const bytes=await readFile(new URL('../../../app/public/navdata/world-v1.bin',import.meta.url)),manifest=JSON.parse(await readFile(new URL('../../../app/public/navdata/manifest.json',import.meta.url)));
+ try{
+  let calls=0;globalThis.fetch=async url=>{calls++;return new Response(url.endsWith('manifest.json')?JSON.stringify(manifest):bytes);};
+  const module=await import('./navigation.js?worldwide-loader');const pkg=await module.loadNavigationPackage();
+  assert.equal(pkg.sha256,manifest.sha256);assert.equal(pkg.records.length,7923);assert(Object.isFrozen(pkg.records)&&Object.isFrozen(pkg.records[0]));
+  const r=pkg.records.find(r=>r.uid==='vor-cpt-114350');
+  for(let i=0;i<20;i++) assert.equal(module.navigationSignal(cfg(r.frequency_khz),point(r.lat_deg-.05,r.lon_deg,1500),pkg.records,pkg.source_label).station_uid,r.uid);
+  await module.loadNavigationPackage();assert.equal(calls,2,'cached verified package has no repeated fetch');
+  for(const [label,changed] of [['wrong-identity',{id:'synthetic'}],['wrong-binary',{asset:'other.bin'}],['oversize',{bytes:8*1024*1024+1}]]){
+   calls=0;globalThis.fetch=async()=>{calls++;return new Response(JSON.stringify({...manifest,...changed}));};
+   const fresh=await import(`./navigation.js?${label}`);await assert.rejects(fresh.loadNavigationPackage(),/Invalid navigation manifest/);assert.equal(calls,1);
+  }
+ }finally{globalThis.fetch=oldFetch;}
+});

@@ -77,13 +77,13 @@ The original 20 cm source resolution is not a claim of 20 cm output detail.
 
 ## Historical radio navigation data
 
-`app/public/navdata/rhein-main-v1.json` and `source-nav810.dat` derive from Robin
+`app/public/navdata/world-v1.bin`, the retained `rhein-main-v1.json` and `source-nav810.dat` derive from Robin
 A. Peel's NAV810 cycle 2013.10/build20131334, retained in the pinned FlightGear
 fgdata revision `5371094f6cc81d39b5cc7d9052ba13ba4a8b8e95`. Copyright © 2013
 Robin A. Peel; **GPL-2.0-or-later**, no warranty. The complete original notice is
 preserved in the source subset and JSON provenance. A full GPL v2 copy is supplied
 in [LICENSES/GPL-2.0-or-later.txt](LICENSES/GPL-2.0-or-later.txt) and beside the
-public data. Gefly selects regional rows, explicitly pairs components and converts
+public data. The original pinned worldwide gzip is redistributed as a `.bin` source asset with its original complete notice. Gefly compiles worldwide services and retains regional fixtures, explicitly pairs components and converts
 units/encoding; it does not update their historical applicability. See the
 [data README](app/public/navdata/README.md) and
 [source research](docs/research/2026-11-03-rhein-main-navigation.md).
