@@ -526,3 +526,240 @@ Final assurance check/diff after copying records and publication remain the
 orchestrator's integration steps. Broader product/redistribution rights, offline
 packaging, source completeness/current operational accuracy, embedded WebKit and
 cross-provider peer remain limited exactly as recorded above.
+
+## 2026-11-06 18:10 — Worldwide-main integration source renewal
+
+Reviewed publication merge `4c68d4d1730eacafdea5bbac4124ff5111927bb7`,
+parents OFM `d19b8657f56008a6306e41af201d4bb6db46df74` and actual current
+main `59b39a847920e017d4b976995ec2a9985145e061` containing PR102.
+The earlier GitHub metadata's446293a target was stale; the source review covers
+this actual additional merge.
+
+**No blocking source-integration finding.** All four OFM modules and Vite remain
+byte-identical to the OFM parent. `practice-map.ts` now hashes to
+`10e4fd75d9ac02678ffc5d7c7b230b072500b9369817640ccd51c69654e7bb9c`.
+Its complete delta against the new main is the previously reviewed OFM imports,
+menu host/controller creation, visibility/disposal calls and source-specific
+error isolation. Worldwide loader/search generations, marker sources and native
+standby guards remain intact. The worldwide GeoJSON circle layer follows the
+`navigation-fixes` anchor; the OFM raster therefore stays below it. DOM markers,
+worldwide source transport, chart raster demand and physics remain separate.
+
+Independent inventory comparison confirms all script keys, Node test files,
+Python tails and browser command components from both parents survive; dependencies
+are unchanged. All183 OFM-parent and182 main-parent DONE entries survive as whole
+unchanged normalized blocks; all input/research link targets remain. GAPS/SBOM/SEC
+retain all nonblank parent lines. ARCH's one replaced OFM-parent line is main's
+intended worldwide-discovery description, preserving the regional fallback and
+source limitations. Every existing catalog record from either parent is retained;
+the merged catalog exactly equals current main, including the independently
+reviewed hash-pinned style profile. Profile implementation bytes also exactly
+equal current main. Task180's completed status is accompanied by its final
+integration evidence, with old dated records retained.
+
+Renewed publication fixture/full CI are running; old fixture728a… does not cover
+the changed map hash. Integration owner reports TypeScript exit0 (session65306).
+Final gates will be recorded separately; no pending browser/CI result is accepted
+at this source-only renewal.
+
+## 2026-11-06 18:27 — Saved-Options merge and bounded browser diagnostics
+
+Independent scoped quality renewal by Codex `/root/nav_receiver_trace` for
+`55aa17197fc06c498f52c0d7069c009ec06d5bc0`, with parents
+`4c68d4d1730eacafdea5bbac4124ff5111927bb7` and current main
+`1ac24f3bae53358d8a7bf4d9607504d7a13d4fec` (PR104).
+The reviewer did not implement OFM, its browser harness or this merge. The reviewer
+previously integrated the imported saved-Options branch and implemented the
+imported assurance profile; those implementations are explicitly excluded from
+this review's independent quality acceptance. Parent-preservation checks below
+are mechanical integration checks, not a reapproval of the reviewer's own code.
+
+**No blocking finding in this bounded source/harness renewal.** The production
+OFM modules, `practice-map.ts` and Vite are byte-identical to the OFM parent.
+The four OFM module hashes remain those reviewed above; map hash remains
+`10e4fd75d9ac02678ffc5d7c7b230b072500b9369817640ccd51c69654e7bb9c`.
+The reviewed browser harness hash is
+`de2a82c51b0556b58b1d01b3ee689e50b89c0275dd9b619015736b5837e1e8b2`.
+
+The added Node-side `bounded` helper races the three specifically named waits
+against deadlines and clears its timer on either outcome. Replacement
+`style.load` and final source-body collection have30-second deadlines; failure
+inspection has a three-second deadline. A timeout enters the existing failure
+path, records `result: fail` and rethrows; it cannot skip the remaining assertion
+or manufacture a pass. The wrapper does not change production behavior. Promise
+race does not cancel its losing browser operation; normal `finally` cleanup still
+closes the browser and server. These are targeted wait bounds, not a universal
+process/shutdown deadline.
+
+Progress snapshots remain explicitly `running` until all final assertions pass.
+They add stage and pre-replacement-style observations without changing native
+commands, chart source substitution, opacity/layer-order assertions, source
+hash checks or frozen-physics comparisons. Diagnostics may fail or time out and
+become null without replacing the original failure. The diff removes no test
+assertions and does not turn source failures into passing observations.
+
+Independent read-only inventory checks found every script key, Node/Python test
+token and browser command from both parents retained; individual command values
+and dependency declarations are unchanged. All185 OFM-parent and184 main-parent
+DONE entries remain whole unchanged normalized blocks. Both input and research
+indexes retain every parent link. GAPS retains both parents' nonblank lines.
+TODO retains every parent task identity; three current statements differ from
+main:2.0.85.1/2.0.168 preserve the OFM parent's explicit distinction between
+selected2611 streaming and unfinished full-product/packaging review, and2.0.180
+retains the OFM parent's completed integration status rather than main's older
+unchecked status. This review does not independently reapprove that imported
+implementation. These checks were performed directly against the two immutable parents
+and the frozen merge; no runtime or source files were edited by this reviewer.
+
+No CPU-heavy tests or browser suite were launched for this review, preserving
+the coordinated assurance-test window. At inspection, the current fixture
+artifact was still `running`, stage `reload and storage`, with four completed
+checks. That partial artifact is **not a passing browser result**. The renewed
+fixture/CI outcomes at this merge must be recorded separately by the integration
+owner and validator; earlier revision results do not silently renew it.
+Cross-provider peer and the previously recorded product/source/fidelity limits
+remain unchanged.
+
+
+### 2026-11-06 18:29 — Fresh bounded-harness fixture evidence inspected
+
+The integration owner's new fixture artifact at the same frozen55aa171 merge
+now reports `pass`, five groups, Chrome156.0.8078.80 and no page errors. Reviewer
+independently recomputed all seven source hashes against the actual publication
+files; every hash matches, including the new bounded harness. Artifact SHA-256:
+`3c175ed060a91e5b8ecee774f02f5b67f60d98e0c9bec2f6d4a965b095f30916`.
+The earlier partial observation above remains historical. This is inspected
+runtime evidence, not a browser rerun by this reviewer. It supports the bounded
+fixture lifecycle already asserted; it does not establish the cause of the prior
+stall, complete live-chart geography or a production-runtime repair. Current
+full CI remains pending separately; no result is inferred from its launch.
+
+## 2026-11-06 18:41 — Map-filter main integration source renewal
+
+Independent scoped source review by Codex `/root/nav_receiver_trace` at
+`2bbf107e6208519ecfeac747d5a5f0e2ec0d7f70`, parents previous OFM
+`55aa17197fc06c498f52c0d7069c009ec06d5bc0` and actual main
+`c19caa5277b1eff846fea55e280b4e500bd5ead2` (map-filter integration).
+The reviewer did not implement OFM, map-category persistence or this merge;
+the earlier explicit exclusions for the reviewer's imported saved-Options and
+assurance-profile work continue to apply.
+
+**No blocking source-integration finding.** All four OFM production modules and
+the bounded browser harness are unchanged from55aa171. The new map hash is
+`fbe2eebf8a491c29fd4a3d8e30b61e06bdf90f84f42e030d5d8d476e3830b2df`.
+Against current main, the map delta consists only of the established OFM imports,
+control host/controller, visibility/disposal hooks and source-specific error
+isolation. Against the OFM parent, the delta is main's category initialization,
+shared search selection and preference-saving path. Both imports survive the
+manual conflict; no filter or chart lifecycle is replaced.
+
+Independent script-token/command checks retain every script key, Node/Python
+test token and browser command from both parents, with no changed individually
+named commands. All187 OFM-parent and185 main-parent DONE blocks remain whole
+and unchanged after whitespace normalization. Every parent input/research link
+is retained. SPEC has exactly one R-NAV-5 declaration, byte-identical to main's
+canonical row, and exactly one R-CHART-1 declaration for the chart increment.
+R-WORLD-6 also exactly matches current main. Thus the older duplicated NAV5
+wording was removed in favor of the authoritative current criterion rather than
+removing the newly delivered single-Fixes/filter behavior.
+
+This is source inspection only; no heavy tests, browser run or current-merge
+runtime acceptance is claimed by this reviewer. Earlier55aa171 fixture results
+remain historical until the new map hash receives its own runtime evidence.
+No production stall correction is inferred from diagnostic harness bounds.
+
+## 2026-11-06 18:48 — Map-zoom main integration source renewal
+
+Independent source renewal by Codex `/root/nav_receiver_trace` at
+`102696991fc070bc055520fcd2f0e06eb38501f2`, parents previous OFM
+`2bbf107e6208519ecfeac747d5a5f0e2ec0d7f70` and actual map-zoom main
+`5cd1c6fb5053dd7511b2776130c9ec070b606ccc`.
+
+**No blocking source-integration finding.** Four OFM production modules and the
+bounded browser harness remain byte-identical to the OFM parent. The map's
+entire delta against that parent is the imported map-zoom API, toolbar shortcut
+labels, shared finite-direction/readiness/visibility/disposal guard and bounded
+zoom helper. OFM creation, source-specific failures, saved selection/opacity and
+visibility/disposal ordering remain intact. New map hash:
+`70ff22e110bd3fcacce3763119704895163eda2ec5136d83e2c6acb93a630bef`.
+No production OFM conflict resolution or receiver/model changes occur here.
+
+Independent inventory checks retain both parents' script keys, test tokens,
+Python tails and browser commands, with unchanged individually named commands.
+All188 OFM-parent and186 main-parent DONE blocks remain whole and unchanged.
+This is a source/integration outcome only; the changed map hash requires its own
+browser evidence. Earlier2bbf107 and55aa171 fixture runs remain at their recorded
+revisions. No new CPU-heavy tests or browser execution were launched by this
+reviewer. Prior authorship exclusions and peer/source/fidelity limits continue.
+
+### 2026-11-06 18:50 — Receiver-coverage caption correction
+
+Reviewer `/root/nav_receiver_trace` inspected
+`383cdf96c3076fc525f793ff389631c4398da4fc`: exactly three string replacements
+in initial map caption, `updateLayerCaption` and worldwide navaid source label.
+**The low integration-wording finding is resolved.** Both caption paths now
+separate historical NAV810 receiver inventory from regional published-fix
+coverage, without asserting that a community record supplies an RF signal or
+promising reception for every modern channel. The point label keeps its community
+source/retrieval context. The wording remains accurate before and after the
+separately reviewed worldwide-receiver merge. No coordinates, data selection,
+filtering, radio/AP commands, lifecycle or source transport changes occur.
+This is a source-only text correction check, not new runtime acceptance.
+
+## 2026-11-06 18:58 — Worldwide-receiver main integration source renewal
+
+Independent scoped source review by Codex `/root/nav_receiver_trace` at
+`0c21a23bfc2d67a25548fa8d65932046d9524259`, parents OFM metadata head
+`2c37a36dc31393175c5c92d2b688690c7e200544` and actual main
+`1a530500bf24d630f59ba10dc260869c7d4c640d` containing PR109.
+
+**No blocking source-integration finding.** Map, four OFM production modules,
+Vite and bounded browser harness are byte-identical to383cdf9; the corrected
+receiver/fix captions remain intact. Map hash is
+`4541d11db3b61968d296e339b358ea3a1f009e29e0cd399d9b8058c8e03608ec`.
+The NAV implementation, manifest, worldwide data bytes and radio panel are
+byte-identical to current main. This last comparison establishes preservation
+only: the reviewer authored earlier NAV/compiler and conflict-integration work,
+so their independent quality acceptance is explicitly excluded here and remains
+with the separately assigned eligible reviewers. Prior saved-Options/profile
+exclusions also continue.
+
+Both parent script inventories, Node/Python test tokens and browser commands
+survive, with unchanged individually named command values. All190 OFM-parent
+and187 main-parent DONE blocks remain whole and unchanged. SPEC contains exactly
+one declaration each for R-NAV-4, R-NAV-5 and R-CHART-1. No imported receiver
+service or chart lifecycle is replaced by the three manual package/GAPS/TODO
+resolutions. This is source-only renewal, without new reviewer-run tests or a
+claim that pending final browser/CI results have passed.
+
+### 2026-11-06 19:00 — Final global-receiver merge fixture inspected
+
+Reviewer `/root/nav_receiver_trace` independently checked the integration owner's
+fresh artifact at0c21a23: `pass`, five chart-lifecycle groups, Chrome156.0.8078.80,
+no page errors. All seven source hashes match the actual final publication files,
+including map hash4541d11d… and bounded-harness hashde2a82c…. Artifact SHA-256:
+`6f2606d14d989243558f197d2df5e0ece86a15cfa69a800643d9faeb3674a0ff`.
+This renews the inspected fixture evidence for the final map/source snapshot;
+it does not independently reaccept the imported NAV implementation, establish
+live-chart completeness or diagnose the earlier stalled run. No browser was
+rerun by this reviewer. Final full CI is still pending at this renewal and must
+be recorded separately rather than inferred from successful launch.
+
+### 2026-11-06 19:03 — Final bounded CI gate inspected
+
+Reviewer `/root/nav_receiver_trace` independently read the completed
+`output-ofm-final-global-ci.log` for frozen0c21a23 and verified its terminal
+`Foundation CI: passed with skipped checks` result. The log reports662 passing
+application Node cases,32 application Python tests,89 assurance cases,11 training
+cases and successful integrity with44248 nodes/66314 facts, zero errors,
+235 warnings and138 notes. Tracked whitespace passes3265 paths. Nine optional
+JSBSim study checks and one platform-specific repository-tool check remain skips;
+they are not passes. Actual browser evidence is the separately inspected five-group
+fixture above, not inferred from the CI stage named Browser application tests.
+
+**No blocking finding remains in the reviewed OFM merge/harness scope.** This
+records inspection of the integration owner's completed gate, not a reviewer-run
+full CI or independent acceptance of the reviewer's imported NAV/settings/profile
+implementations. Final documentation reconciliation and its fresh assurance
+diff/check remain integration-owner work. Prior source/fidelity/peer limitations
+and earlier timeout/partial observations remain explicit historical records.

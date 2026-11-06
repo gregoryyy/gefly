@@ -47,6 +47,44 @@ Review and broader aircraft/training fidelity remain outside this acceptance.
 Claude CLI2.1.308 reports no authenticated session; no cross-provider review
 was attempted or accepted, so peer remains pending under cadence.
 
+## 2026-11-06 19:07 — Finish worldwide receiver and OFM integration after the remaining PR merges
+
+TODO: 2.0.179; 2.0.184.
+Agent: Codex orchestrator; receiver integration `nav_receiver_trace`; OFM source
+`ofm_source`, map controller `ofm_map_layer`, source/housekeeping `ofm_housekeeping`.
+Independent quality: orchestrator for109 and `nav_receiver_trace` for111, excluding
+his own imported receiver implementation; independent validation
+`camera_return_validate` for both.
+
+**Implementation notes**
+
+Reconciled109b5b6235 with map-zoom main5cd1c6 and pushed it; user merged109.
+Its final CI passes647Node/32Python/89assurance/11training; seven actual browser
+groups pass with all six source pins. Final assurance has zero errors and its
+explicit-base diff adds26/changes265/removes0 identities, untruncated.
+
+Final111source0c21a23 integrates current main1a53050 with the optional OFM overlay,
+saved filters, map keys, worldwide discovery and historical receiver data, while
+retaining each source boundary and complete parent histories. Three caption
+strings now distinguish separate historical NAV810 receiver inventory from
+regional published-fix coverage. Fresh actual MapLibre/native-global-NAV browser
+passes five groups with all seven source pins and zero page errors. Complete CI
+passes662Node/32Python/89assurance/11training, integrity44248nodes/66314facts/zero
+errors, and3265tracked paths. Independent bounded reviews pass. Final source0c
+was pushed and GitHub confirmed it mergeable against1a53050; final documentation
+assurance/diff are renewed before the metadata publication.
+
+**Deviations**
+
+A stalled browser preparation was terminated and a later preparation superseded
+when main advanced; neither is a pass. The bounded harness now times out and
+records style-load/failure diagnostics without relaxing assertions; the original
+stall cause was not reproduced or claimed fixed. Final tools pass247/248 with one
+platform skip;14/23JSBSim cases execute with nine optional skips. Selected AIRAC2611
+native zoom12 overzoom, historical NAV810, source rights and browser/device limits
+remain explicit. Cross-provider peer remains pending under cadence; no training,
+current operational service or aircraft-fidelity acceptance is inferred.
+
 ## 2026-11-06 18:47 — Verify saved Options, map filters and map keys after conflict resolution
 
 TODO: 2.0.181; 2.0.182; 2.0.183.
