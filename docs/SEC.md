@@ -453,3 +453,26 @@ The persistent renderer separately retains32 detached overview payloads alongsid
 Custom GPS planning bounds are independent of pinned regional source catalogue
 limits. Shared validation rejects invalid coordinates before mutation; global
 custom planning adds no source downloads, receiver coverage or persistence.
+
+## Worldwide community discovery packages
+
+R-WORLD-12 adds fixed same-origin `/airports/world/` assets and a dedicated
+discovery worker; it sends no simulator state, credentials or user data to
+OurAirports. CSV download/compilation occurs separately at a pinned public commit.
+Manifest, gzip search and cell reads have byte/deadline/hash/schema/record/coordinate
+and referential bounds before presentation. Gzip expansion is bounded separately;
+paths are fixed/canonical, redirected responses are rejected, obsolete jobs are
+cancelled and failed data remains unavailable. Main-thread snapshots/search hits
+are bounded; disposal terminates the worker and rejects pending requests.
+Source strings render as text, with no imported HTML/scripts. Community NAV/COM
+selection uses existing guarded standby actions and Review locks; it cannot install
+receiver signals, alter native state or invent missing ILS/procedure components.
+The bundled regional directory remains a fallback if optional world data fails.
+
+
+R-WORLD-12 bulk transport uses a small JSON descriptor whose SHA-256 binds the
+full UTF-8 JSON `catalogue.bin`; cell `.bin` assets also contain UTF-8 JSON,
+validated by the dedicated worker. The assurance graph records descriptor and
+file-level provenance, not every generated airport-field JSON pointer. Compiler,
+source-audit and all-cell client tests provide separate semantic checks. No
+hand-authored aircraft-data extraction or assurance resource bound is relaxed.

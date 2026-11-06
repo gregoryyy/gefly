@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "outcome": "pass",
+  "scope": "Pinned source and opaque bulk-package provenance only; runtime and independent review are separate.",
+  "source_commit": "c483a76d30ee903114b777bf099de0fae1761294",
+  "source_counts": {
+    "airports": 86343,
+    "runways": 48411,
+    "com": 30394,
+    "navaids": 11008
+  },
+  "cell_count": 1034,
+  "search_count": 97351,
+  "descriptor": {
+    "path": "app/public/airports/world/manifest.json",
+    "sha256": "ed989f584a22dca515e9fd39de275949c2e3d2804aaa978c6382d340acd8d6c6"
+  },
+  "catalogue": {
+    "path": "app/public/airports/world/catalogue.bin",
+    "sha256": "185a01cc51a59694bc9000f6ddc6a3946b799613d8bc220c14db74b5503bd216"
+  },
+  "search_sha256": "38f9442cf23d4c6a4f74827cee00de7d27a1af6e1ed05e6656e4111618052f23",
+  "source_files": {
+    "airports.csv": {
+      "bytes": 12757683,
+      "sha256": "e2e65a3ddaf76170c0e2c373cb8b68597bdf3b59d243c4d6db454d48498ba6d7",
+      "rows": 86343
+    },
+    "runways.csv": {
+      "bytes": 3973977,
+      "sha256": "b0bac6ad2a802eba770d57b3e42c191c888f3d334e42780f3d12ff5930650d07",
+      "rows": 48411
+    },
+    "airport-frequencies.csv": {
+      "bytes": 1302576,
+      "sha256": "c1b1f04b42040cdb50c470ce75962459ee9d168c27843046c0c66d540fd1f171",
+      "rows": 30394
+    },
+    "navaids.csv": {
+      "bytes": 1524931,
+      "sha256": "d7292380662c33a95214945023ec0a5b13189599305fd18be739e167a97a9bd1",
+      "rows": 11008
+    }
+  },
+  "normalizations": {
+    "navaids.frequency_khz": 4,
+    "runways.he_heading_degT": 1,
+    "runways.length_ft": 6,
+    "runways.width_ft": 9
+  },
+  "granularity": "Descriptor JSON pointers plus file-level bulk package lineage; individual generated airport fields are not expanded by assurance."
+}

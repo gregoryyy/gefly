@@ -190,3 +190,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-05: simulation speed above map](2026-11-05-speed-overlay-map.md)
 
 - [2026-11-06: Renewed steering sensitivity and hands-off instability](2026-11-06-handling-regression.md)
+
+- [2026-11-06 integrate OurAirports](2026-11-06-integrate-ourairports.md): worldwide source-pinned discovery, worker search/regional loading and existing map/radio controls.

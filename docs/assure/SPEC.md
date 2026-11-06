@@ -151,3 +151,15 @@ This tool does not independently read restricted manuals, resolve every status
 contradiction, infer undocumented dependencies, validate numerical physics or
 learner benefit, authenticate external providers, or replace independent review.
 It provides inspectable evidence lineage and enforceable structural checks.
+
+
+### Generated bulk geospatial transport
+
+R-WORLD-12 uses opaque `.bin` bulk transports containing schema-validated UTF-8
+JSON. Their internal airport/runway/radio fields are not assurance JSON-pointer
+objects or accepted aircraft values. The small JSON descriptor and versioned
+catalogue evidence bind source, generator, compiled-catalogue and test hashes;
+committed asset objects retain file-level Git lineage. Required data/client
+checks separately verify every declared cell's hash/count/schema and source
+identities/units. This declared granularity does not exempt hand-authored JSON,
+change extraction/resource limits or establish source/operational fidelity.

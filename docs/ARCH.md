@@ -4,7 +4,7 @@ Status: selected stack with proposed product component boundaries. **Web applica
 
 An experimental [local browser application](../app/README.md) integrates the existing study worker with a TypeScript flight deck and Cesium scene. npm/Vite owns this bounded application; reusable package boundaries below remain the target for extraction. Its generic study aircraft is built only for local research. Normal flights combine the finer public Hessen DEM with 475 available BKG DGM200 tiles within 608 declared slots over 6–14°E / 47–51.75°N, sharing physical DHHN2016 heights and GCG2016/2023 offsets between native ground contact and the Cesium ellipsoid-height surface. Explicit flat landing studies remain separate. This is not surveyed airport/runway or full EDDF/100 NM fidelity. The project-owned 172S model, real EDFE circuit and production runtime distribution remain incomplete.
 
-A lazy-loaded MapLibre map shows selected flight position, true heading, the bounded whole retained path and 731 searchable five-state OurAirports community airfield/heliport entries with optional reported elevation. Review uses the historical marker state, while the full retained line remains visible. Airport selection moves only the map. The community inventory is not accepted airport/runway, chart, fix or procedure data; reported elevation never overwrites contact terrain. Both 2D and 3D views use bundled imagery plus fixed-source live map/photo endpoints.
+A lazy-loaded MapLibre map shows selected flight position, true heading, the bounded whole retained path and worldwide OurAirports airport/NAV discovery, with source runway/frequency details and the bundled 731-entry five-state fallback. Review uses the historical marker state, while the full retained line remains visible. Airport selection moves only the map. The community inventory is not accepted airport/runway, chart, fix or procedure data; reported elevation never overwrites contact terrain. Both 2D and 3D views use bundled imagery plus fixed-source live map/photo endpoints.
 
 The research worker also computes an ideal ISA scale-offset pressure altimeter
 from actual JSBSim static pressure at each fixed step. Read-only pressure exports
@@ -536,3 +536,25 @@ atomic ID allocation remain. The component has no worker, persistence or receive
 state access. The modular component/editor publication is separate from complete
 map/menu/popup/bearing UI integration; working-app integration evidence must not
 be represented as main-branch wiring in this increment.
+
+## Worldwide airport discovery boundary
+
+The R-WORLD-12 compiler transforms four pinned OurAirports CSVs into deterministic
+5° airport/runway/COM/radio-navaid packages and a compressed global search index.
+The manifest binds source commit/input hashes, derived byte hashes/counts, explicit
+normalization/rejection counters and retrieval date. Source IDs remain distinct
+from repeated transmitted identifiers. Source feet, COM MHz and NAV kHz are explicit.
+
+A separate browser discovery worker validates/fetches/decompresses/searches these
+static assets. The UI receives bounded nearby snapshots and at most 40 global hits,
+then uses existing map, point details and standby controls. Its cache and generation
+are independent of scenery and physics workers. OSM visual surfaces, historical
+receiver inputs and worldwide community discovery are separate inventories.
+
+
+R-WORLD-12 bulk transport uses a small JSON descriptor whose SHA-256 binds the
+full UTF-8 JSON `catalogue.bin`; cell `.bin` assets also contain UTF-8 JSON,
+validated by the dedicated worker. The assurance graph records descriptor and
+file-level provenance, not every generated airport-field JSON pointer. Compiler,
+source-audit and all-cell client tests provide separate semantic checks. No
+hand-authored aircraft-data extraction or assurance resource bound is relaxed.
