@@ -3,6 +3,23 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 09:32 — Separate terrain source work from native stepping
+
+TODO: 2.0.165; R-WORLD-11/R-SIM-2.
+Agent: Codex orchestrator; implementation `terrain_source_worker`; independent `scenery_quality` and `scenery_validate`.
+
+**Implementation notes**
+
+Move browser physical terrain source fetch/decode/compose/prefetch into a nested module Worker; retain native admission/configuration between physics steps. Move distant overview source work to a separate Worker while its synchronous display-source admission controller stays local. Inflate backend Copernicus blocks in a bounded two-thread pool. Existing source-history/coverage guards and immutable copied inputs remain. Actual browser source Worker and inline reference produce exactly equal nine grids; two real WASM engines match all14state fields and trajectory digest after120steps. Actual Chrome lifecycle proof holds253ms of synchronous source composition while native flight advances steps5→35; manual pause preserves step37/digest/all14state fields, reset replaces the source Worker and corrupt required data fails visibly without publishing a ready flight.
+
+**Deviations**
+
+Thread separation removes source CPU contention, not required-coverage waits. No native binary, aircraft coefficient or physics pacing changes. A speculative overlapping-init race was rejected after independent inspection confirmed serialized messages; no startup-admission behavior is changed. Broader terrain continuity/source availability remain separate limits. Cross-provider peer pending after timed-out attempts.
+
+**Insights**
+
+Keep source computation asynchronous while retaining synchronous source-admission decisions and native installs at the established simulation boundary.
+
 ## 2026-11-06 09:29 — Add bounded on-demand airport surface generation
 
 TODO: 2.0.164/2.0.166/2.0.168; R-AIRPORT-3/R-AIRPORT-2/R-DATA-1.

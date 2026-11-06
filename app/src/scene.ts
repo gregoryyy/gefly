@@ -1,3 +1,4 @@
+import { createTerrainOverviewSource } from './terrain-overview-source.ts';
 import { createSceneryCache } from './scenery-cache';
 import { createLandmarkLabels, LANDMARK_CREDIT } from './landmark-labels';
 import { createAirportScenery, AIRPORT_VECTOR_CREDIT } from './airport-scenery';
@@ -438,7 +439,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     } else if (tryUpdateGlobalTerrainOverview(activeTerrain, grids)) pendingOverview.delete('window');
     else if (globalProviderLive) pendingOverview.add('window');
     closeOverviewIfRequired(); presentOverviewStatus(); scene.requestRender();
-  }, { onResolved(result) {
+  }, { source: createTerrainOverviewSource(worldGrid), onResolved(result) {
     if (disposed || !overviewActive || lastState.terrain_profile !== 1) return;
     const id=`${result.col}/${result.row}`;
     if(acceptGlobalTerrainOverviewSource(activeTerrain,result))pendingOverview.delete(id);

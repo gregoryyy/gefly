@@ -1,3 +1,4 @@
+import { copernicusDecoders } from './copernicus-decode.ts';
 import { createAirportRegionMiddleware } from './airport-region-server.ts';
 import { defineConfig } from 'vite';
 import { sceneryMiddleware } from './scenery-server';
@@ -48,13 +49,13 @@ export default defineConfig({
       server.middlewares.use(hashedSceneryAssets(resolve(import.meta.dirname, 'dist')));
       server.middlewares.use(createCopernicusTerrainMiddleware());
       server.middlewares.use(airportRegions);
-      server.httpServer?.once('close', () => { airportRegions.dispose(); });
+      server.httpServer?.once('close', () => { airportRegions.dispose(); copernicusDecoders.dispose(); });
     },
     configureServer(server) {
       server.middlewares.use(hashedSceneryAssets(resolve(import.meta.dirname, 'public')));
       server.middlewares.use(createCopernicusTerrainMiddleware());
       server.middlewares.use(airportRegions);
-      server.httpServer?.once('close', () => { airportRegions.dispose(); });
+      server.httpServer?.once('close', () => { airportRegions.dispose(); copernicusDecoders.dispose(); });
       server.middlewares.use(sceneryMiddleware());
       // The research runtime remains local and is excluded from production output.
       server.middlewares.use(MOUNT, runtimeMiddleware(runtimeRoot()));
