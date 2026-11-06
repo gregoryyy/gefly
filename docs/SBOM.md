@@ -468,6 +468,17 @@ review remains separate. Only bounded server memory and normal private HTTP tile
 caching are used; no persistent app chart bulk cache, OFMX or plate bundle.
 See [source/implementation note](research/2026-11-06-ofm-overlay-implementation.md).
 
+## Worldwide airport and radio-navaid discovery
+
+Task2.0.170/R-WORLD-12 adds a separate public-domain OurAirports snapshot at commit
+`c483a76d30ee903114b777bf099de0fae1761294`: 86,343 airports, 48,411 runways, 30,394 COM
+records and 11,008 radio navaids. See [source/derived manifest](../app/public/airports/world/manifest.json)
+and [package provenance](../app/public/airports/world/README.md). Four source byte
+hashes are pinned by `utils/airports/world.py`; no airport-comment file is used.
+Generated 5° cells and gzip search index are bundled static assets, not live
+third-party API dependencies. No npm/runtime dependency is added. Existing 731-entry
+regional and historical receiver packages remain separate fallback/source records.
+
 ## On-demand OSM airport surface packages
 
 The fixed Private.coffee Overpass endpoint supplies live OpenStreetMap runway,

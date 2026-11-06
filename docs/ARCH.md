@@ -4,7 +4,7 @@ Status: selected stack with proposed product component boundaries. **Web applica
 
 An experimental [local browser application](../app/README.md) integrates the existing study worker with a TypeScript flight deck and Cesium scene. npm/Vite owns this bounded application; reusable package boundaries below remain the target for extraction. Its generic study aircraft is built only for local research. Normal flights combine the finer public Hessen DEM with 475 available BKG DGM200 tiles within 608 declared slots over 6–14°E / 47–51.75°N, sharing physical DHHN2016 heights and GCG2016/2023 offsets between native ground contact and the Cesium ellipsoid-height surface. Explicit flat landing studies remain separate. This is not surveyed airport/runway or full EDDF/100 NM fidelity. The project-owned 172S model, real EDFE circuit and production runtime distribution remain incomplete.
 
-A lazy-loaded MapLibre map shows selected flight position, true heading, the bounded whole retained path and 731 searchable five-state OurAirports community airfield/heliport entries with optional reported elevation. Review uses the historical marker state, while the full retained line remains visible. Airport selection moves only the map. The community inventory is not accepted airport/runway, chart, fix or procedure data; reported elevation never overwrites contact terrain. Both 2D and 3D views use bundled imagery plus fixed-source live map/photo endpoints.
+A lazy-loaded MapLibre map shows selected flight position, true heading, the bounded whole retained path and worldwide OurAirports airport/NAV discovery, with source runway/frequency details and the bundled 731-entry five-state fallback. Review uses the historical marker state, while the full retained line remains visible. Airport selection moves only the map. The community inventory is not accepted airport/runway, chart, fix or procedure data; reported elevation never overwrites contact terrain. Both 2D and 3D views use bundled imagery plus fixed-source live map/photo endpoints.
 
 The research worker also computes an ideal ISA scale-offset pressure altimeter
 from actual JSBSim static pressure at each fixed step. Read-only pressure exports
@@ -557,6 +557,28 @@ third-party scripts or chart pixels are bundled. Structured selectable OFMX
 features would require a separate bounded parser/converter, which could run in a
 background worker on regional demand and cache source-identified results.
 
+## Worldwide airport discovery boundary
+
+The R-WORLD-12 compiler transforms four pinned OurAirports CSVs into deterministic
+5° airport/runway/COM/radio-navaid packages and a compressed global search index.
+The manifest binds source commit/input hashes, derived byte hashes/counts, explicit
+normalization/rejection counters and retrieval date. Source IDs remain distinct
+from repeated transmitted identifiers. Source feet, COM MHz and NAV kHz are explicit.
+
+A separate browser discovery worker validates/fetches/decompresses/searches these
+static assets. The UI receives bounded nearby snapshots and at most 40 global hits,
+then uses existing map, point details and standby controls. Its cache and generation
+are independent of scenery and physics workers. OSM visual surfaces, historical
+receiver inputs and worldwide community discovery are separate inventories.
+
+
+R-WORLD-12 bulk transport uses a small JSON descriptor whose SHA-256 binds the
+full UTF-8 JSON `catalogue.bin`; cell `.bin` assets also contain UTF-8 JSON,
+validated by the dedicated worker. The assurance graph records descriptor and
+file-level provenance, not every generated airport-field JSON pointer. Compiler,
+source-audit and all-cell client tests provide separate semantic checks. No
+hand-authored aircraft-data extraction or assurance resource bound is relaxed.
+
 ## On-demand visual airport surfaces
 
 R-AIRPORT-3 adds a separate same-origin `/scenery/airports/v1/x/y.json` service.
@@ -572,3 +594,14 @@ source requests rather than claiming historical airport geometry. See the
 ### Separate terrain source execution
 
 The physics Worker retains fixed-step JSBSim calls and native terrain installation. A nested terrain-source Worker owns fetch/decode/compose/source-cache and prediction work, returning complete copied grids without detaching retained source buffers. Browser distant overview composition uses another dedicated Worker while the main-thread controller retains synchronous admission/stop guards. The optional server Copernicus decoder uses at most two Node worker threads and32 queued blocks. Failure, cancellation and bounded deadlines reject delivery; existing required-coverage waits remain. Terrain overview camera distance is render-only; airport meshes and practice PAPI never install physical terrain or airport collision geometry.
+
+
+## Generated cartography lineage budget
+
+The assurance catalog may select one fixed path/hash profile for the imported
+terrain-style JSON. Its complete byte hash and file node remain inputs to existing
+whole-file evidence; generated paint/layout field expansion is omitted. Child
+selectors are unavailable for that profile and cannot establish acceptance via
+its file node. The adapter still extracts all other JSON fields normally and
+retains the existing resource limits. This is disposable lineage compaction, not
+an application asset conversion or an aircraft/source-data deletion.
