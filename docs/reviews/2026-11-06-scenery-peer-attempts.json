@@ -1,0 +1,53 @@
+{
+  "scope": "Historical blocked review attempts; no external acceptance or observed model identity",
+  "attempts": [
+    {
+      "status": "blocked",
+      "accepted": false,
+      "author_provider": "codex",
+      "reviewer_provider": "claude",
+      "packet": {
+        "path": "output/flight/scenery-peer-packet.json",
+        "sha256": "41d1d446e9aee19b382356a5c873735f29162b323303eb6613c6b75cd8f48526",
+        "revision": "working-tree-sha256:db2b26958967ef8a86c8cd1a4acd8d16da84484fbbb1fd74961f9ec8aad4ee75"
+      },
+      "cli": {
+        "executable": "/opt/homebrew/bin/claude",
+        "version": "2.1.308"
+      },
+      "model_evidence": [
+        "unknown"
+      ],
+      "review": null,
+      "limitations": [
+        "CLI routing and returned model names are evidence, not backend attestation.",
+        "Packet review does not independently execute the packet's test commands."
+      ],
+      "diagnostic": "reviewer_timeout"
+    },
+    {
+      "status": "blocked",
+      "accepted": false,
+      "author_provider": "codex",
+      "reviewer_provider": "claude",
+      "packet": {
+        "path": "output/flight/scenery-peer-focused.json",
+        "sha256": "ae311f369ba3fffcf316608af58761afd3b1e0d8f5bd86b8d55bda0db85f51ee",
+        "revision": "working-tree:ac45c390dd60c63394e52e3f2c28e47d78daad5ad1ec9b86a8b837b95b5cd076"
+      },
+      "cli": {
+        "executable": "/opt/homebrew/bin/claude",
+        "version": "2.1.308"
+      },
+      "model_evidence": [
+        "unknown"
+      ],
+      "review": null,
+      "limitations": [
+        "CLI routing and returned model names are evidence, not backend attestation.",
+        "Packet review does not independently execute the packet's test commands."
+      ],
+      "diagnostic": "reviewer_timeout"
+    }
+  ]
+}

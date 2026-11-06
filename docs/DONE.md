@@ -3,6 +3,27 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 09:36 — Add terrain overview and repair landing-shadow receivers
+
+TODO: 2.0.167/2.0.169/2.0.165/2.0.164; R-VIEW-1/R-INPUT-1/R-WORLD-11/R-AIRPORT-3.
+Agent: Codex orchestrator; independent `scenery_quality` and `scenery_validate`.
+
+**Implementation notes**
+
+Add View → Terrain overview with heading-relative orbit and50m–20,000km scroll distance; camera/look never writes native inputs. Cockpit/chase retain FOV behavior. Airport pavement receives shadows; active sampled receiver plus actual rendered aircraft height replaces asynchronous native/readout equality gating. Existing near-ground fade/applicability remains. Independent actual shadow pixel checks pass three flat-study groups; actual camera/source/native browser proof preserves paused state/digest and equal120-step terrain trajectory.
+
+Final feature software CI passes592Node+22Python application cases,85assurance and11training cases, with9optional JSBSim study skips. TypeScript/production build and assurance integrity pass; historical stale-evidence warnings are not renewed acceptance. Lineage diff against6563c59 inspected: new airport/worker/camera sources and their records, existing renderer/main/runtime/requirements affected. [Quality](reviews/2026-11-06-scenery-quality.md) and [validation](reviews/2026-11-06-scenery-validation.md) distinguish independent tests from supplied browser evidence.
+
+Independent [working-copy integration quality](reviews/2026-11-06-scenery-root-integration-quality.md) and [validation](reviews/2026-11-06-scenery-root-integration-validation.md) preserve existing AP/map/background/handling features. Full candidate710Node+25Python,23renewed server/PAPI cases,152quality preservation cases,47validation cases and six actual AP reload groups pass, alongside candidate airport/camera/native browser checks.
+
+**Deviations**
+
+Live airport source success and the exact reported moving/sloped terrain landing remain unverified. Prepared static Frankfurt airports retain their prior generic markings/PAPI scope; streamed-source enhancements do not claim installed equipment. Wider user working-copy assurance exceeds its existing graph bound and is not a full-root gate pass. [External review attempts](reviews/2026-11-06-scenery-peer-attempts.json) timed out; peer pending. No native rebuild or aircraft tuning.
+
+**Insights**
+
+An opaque pavement must explicitly receive the shadow, and a presentation cue should use the same sampled surface and aircraft pose that are actually rendered.
+
 ## 2026-11-06 09:32 — Separate terrain source work from native stepping
 
 TODO: 2.0.165; R-WORLD-11/R-SIM-2.
