@@ -3,6 +3,29 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 11:36 — Verify, install and peer-review the bounded roll-return repair
+
+TODO: 2.0.153 (bounded repair delivered; broader handling remains open); R-SIM-11/R-SIM-5/R-INPUT-1.
+Agent: Codex orchestrator; code1 `stability_native`, code2 `stability_input`, housekeeping `stability_sources`; independent `roll_quality`, `roll_validate` and fresh external Claude peer.
+
+**Implementation notes**
+
+[Controlled evidence](research/2026-11-06-aileron-return.md) identifies retained aileron deflection after actual centering. Normal v5 build266f2016… matches the isolated two-value comparison; source coefficients/gains and other channels are unchanged. Native57-case/18signed return checks and54successive-pulse settling samples pass, while the old engine fails on actual surface residue. The completed actual installed-ROOT browser suite passes allfive expected cases,24deliberate-roll paired returns plus6neutral/control numerical guards; neutral-only and partial selectors cannot claim a full regression pass.
+
+Shared CI passes555Node+25Python application,85assurance and11training tests, with9optional JSBSim study skips. Log SHA256`0ac6fb02f73395078b12d67b120bac3221f4db2e5a19f10ee04da33d2c4c11e7`. The only later source change prepends the native regression to the normal browser gate; existing commands/dependencies remain byte-preserved and that registered command passes57+18+54. No full legacy browser-chain pass is claimed. [Quality](reviews/2026-11-06-roll-return-quality.md) and [validation](reviews/2026-11-06-roll-return-validation.md) have clear current nine-file tables and explicit historical appendices.
+
+[ROOT integration quality](reviews/2026-11-06-roll-return-root-integration-quality.md) independently verifies26initial install pairs,12unchanged core modules,193preservation tests and TypeScript; author full candidate717Node+28Python/TSC/native checks and actual installed browser proof also pass. [Integration validation](reviews/2026-11-06-roll-return-root-integration-validation.md) distinguishes preflight, post-apply identity and metadata refresh. Backups/manifests are under ignored `output/flight/roll-return-integration/`. The live5173 native file and metadata hashes match the tested build.
+
+[External peer](reviews/2026-11-06-roll-return-peer.json) runs fresh Claude Code2.1.308, observed `claude-opus-5-5`, and accepts the frozen40f7493 scoped source plusaea4d10 registration supplement. Earlier empty-data, missing browser assertion and metadata/diff-freshness findings were repaired and reviewed again; packet hashes and separate quality/criterion outcomes are retained. Coverage excludes parent PR97 and full aircraft/release acceptance.
+
+**Deviations**
+
+Task153 remains open for pitch,110kt trim, wider dynamics and selected-C172 fidelity. The user’s internal browser/physical trackpad was not directly exercised. The position-controlled yoke holds a displaced cursor command; centering, not inactivity, releases it. Source-model/binary redistribution restrictions remain and generated assets are untracked. Whole-ROOT assurance still exceeds its existing graph bound; scoped feature integrity is checked separately, with no whole-root CI claim. Nonblocking peer test-maintenance findings remain explicit.
+
+**Insights**
+
+Gate actual returned surfaces and complete observations, preserve source/model identity, and separate a control-return contract from formal dynamic stability or automatic wings-level behavior.
+
 ## 2026-11-06 10:28 — Remove the reproduced retained aileron deflection after centering
 
 TODO: 2.0.153 (bounded roll-return repair; wider handling remains open); R-SIM-11/R-SIM-5/R-INPUT-1.

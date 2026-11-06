@@ -873,3 +873,11 @@ The map stops at Web Mercator limits, separately from physical terrain coverage.
 No worldwide airport/NAV inventory or new photographs are added. See the
 [regional package](public/terrain/region/README.md),
 [world package](public/terrain/world/README.md), and [source rights](../THIRD_PARTY_NOTICES.md).
+
+## Roll-control return regression
+
+Rebuild the local engine with `just build-flight-engine` after updating the v5 aircraft adapter. `npm --prefix app run test:roll-return` runs57native diagnostic cases, checks18signed roll returns and54successive-pulse settling samples; no engine/model assets are distributed. The numeric equality check concerns command mapping, not a C172 flight tolerance.
+
+With `just fly` running from this checkout, `npm --prefix app run test:roll-return-browser` exercises actual pointer centering/keyboard release in isolated Chrome contexts. It does not touch your existing browser session. For another running checkout, set `GF_ORIGIN` and `GF_DISTURBANCE_SOURCE_ROOT` explicitly. Optional `GF_DISTURBANCE_NATIVE_DIR` supplies a local comparison runtime to the test context only. The position-control virtual yoke retains a displaced pointer command until centered or cancelled; mere finger lift is not centering.
+
+The native return regression also starts the normal `test:browser` gate. The actual-app input harness stays opt-in: it deliberately targets an already-running caller-owned server and source checkout, and does not start/stop that server. Run it explicitly for input/worker/browser changes; the full ordinary browser chain was not claimed as executed for this increment.
