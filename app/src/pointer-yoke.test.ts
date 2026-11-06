@@ -23,12 +23,14 @@ class Surface extends EventTarget {
 function fixture(centered = false) {
   const surface = new Surface();
   const yokes: number[][] = [], looks: number[][] = [], modes: PointerYokeMode[] = [];
+  const lookResets: { yoke: number[]; look: number[]; mode: PointerYokeMode }[] = [];
   let enabled = true, lookOnly = false;
   const controller = createPointerYoke({ element: surface as unknown as HTMLElement,
     centered: () => centered, enabled: () => enabled, lookOnly: () => lookOnly, onYoke: (x,y) => yokes.push([x,y]),
-    onLook: (yaw,pitch) => looks.push([yaw,pitch]), onMode: mode => modes.push(mode) });
+    onLook: (yaw,pitch) => looks.push([yaw,pitch]), onMode: mode => modes.push(mode),
+    onLookReset: () => lookResets.push({ yoke: yokes.at(-1) ?? [0, 0], look: looks.at(-1) ?? [0, 0], mode: modes.at(-1) ?? 'off' }) });
   const click = (x = 200, y = 200) => { surface.dispatchEvent(pointer('pointerdown',x,y)); surface.dispatchEvent(pointer('pointerup',x,y)); };
-  return { surface, controller, yokes, looks, modes, click,
+  return { surface, controller, yokes, looks, modes, lookResets, click,
     disable: () => { enabled = false; }, enable: () => { enabled = true; }, review: () => { lookOnly = true; } };
 }
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -441,4 +443,39 @@ test('vertical margin boost reaches raw poles within the scene, preserves ordina
   f.surface.dispatchEvent(pointer('pointermove',400,350));assert(Math.abs(f.looks.at(-1)![1]-(70*Math.PI/180-.2))<1e-12);
   f.surface.dispatchEvent(pointer('pointermove',400,600));assert.deepEqual(f.looks.at(-1),[0,-70*Math.PI/180]);
   f.surface.dispatchEvent(pointer('pointerup',400,600));assert.deepEqual(f.controller.getCenter(),{clientX:400,clientY:300});f.controller.dispose();
+});
+
+test('R-VIEW-1/R-INPUT-1 double-click explicitly recenters even when look angles are already zero', () => {
+  const f = fixture();
+  doubleClick(f.surface, 200, 200);
+  assert.equal(f.lookResets.length, 1, 'zero-angle double-click still resets camera distance');
+  assert.deepEqual(f.lookResets[0], { yoke: [0, 0], look: [0, 0], mode: 'off' });
+  f.controller.reset();
+  f.surface.dispatchEvent(Object.assign(new Event('keydown', { cancelable: true }), { code: 'Escape' }));
+  f.controller.cancel(); f.controller.neutralize(); f.controller.dispose();
+  assert.equal(f.lookResets.length, 1, 'lifecycle/Escape reset does not imply explicit chase zoom reset');
+});
+
+test('R-VIEW-1/R-INPUT-1 double-click callback sees neutral controls, cleared look and restored yoke mode', async () => {
+  const f = fixture(); f.click(200, 200);
+  f.surface.dispatchEvent(pointer('pointerdown', 200, 200)); await sleep(280);
+  f.surface.dispatchEvent(pointer('pointermove', 350, 100)); f.surface.dispatchEvent(pointer('pointerup', 350, 100));
+  assert.notDeepEqual(f.looks.at(-1), [0, 0]);
+  f.surface.dispatchEvent(pointer('pointermove', 260, 170));
+  doubleClick(f.surface, 260, 170);
+  assert.deepEqual(f.lookResets, [{ yoke: [0, 0], look: [0, 0], mode: 'yoke' }]);
+  assert.equal(f.surface.captures.size, 0, 'callback runs after gesture capture is cleared');
+  f.controller.dispose();
+});
+
+test('R-VIEW-1/R-INPUT-1 disabled, non-primary-button and control-click double-clicks never reset camera distance', () => {
+  const f = fixture();
+  for (const event of [
+    Object.assign(new Event('dblclick', { cancelable: true }), { button: 2 }),
+    Object.assign(new Event('dblclick', { cancelable: true }), { button: 0, ctrlKey: true }),
+  ]) f.surface.dispatchEvent(event);
+  f.disable(); doubleClick(f.surface, 200, 200);
+  assert.deepEqual(f.lookResets, []);
+  f.controller.dispose(); doubleClick(f.surface, 200, 200);
+  assert.deepEqual(f.lookResets, []);
 });

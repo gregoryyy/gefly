@@ -4,6 +4,8 @@ interface PointerYokeOptions {
   element: HTMLElement;
   onYoke: (x: number, y: number) => void;
   onLook: (yaw_rad: number, pitch_rad: number) => void;
+  /** Explicit scene double-click, including an already centered look. */
+  onLookReset?: () => void;
   onMode: (mode: PointerYokeMode) => void;
   enabled: () => boolean;
   lookOnly?: () => boolean;
@@ -201,6 +203,7 @@ export function createPointerYoke(options: PointerYokeOptions): {
     setYoke(0, 0); setLook(0, 0);
     neutralUntilMoveFrom = { x: event.clientX, y: event.clientY };
     setMode(yokeActive ? 'yoke' : 'off');
+    options.onLookReset?.();
   }
   function interrupted(event: PointerEvent): void {
     if (event.pointerId === activePointer) cancel();

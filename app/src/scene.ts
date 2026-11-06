@@ -1,4 +1,6 @@
 import { overviewCameraENU } from './overview-camera.ts';
+import { CHASE_DISTANCE } from './chase-distance.ts';
+import { setCameraPose } from './camera-pose.ts';
 import { createTerrainOverviewSource } from './terrain-overview-source.ts';
 import { createSceneryCache } from './scenery-cache';
 import { createLandmarkLabels, LANDMARK_CREDIT } from './landmark-labels';
@@ -610,7 +612,8 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       Matrix4.multiplyByPointAsVector(frame, localDirection, cameraDirection);
       Matrix4.multiplyByPointAsVector(frame, localUp, cameraUp);
     } else {
-      const camera = view === 'overview' ? overviewCameraENU(heading_rad, lastLook, lastLook.distance_m ?? 1500) : chaseCameraENU(heading_rad, lastLook);
+      const camera = view === 'overview' ? overviewCameraENU(heading_rad, lastLook, lastLook.distance_m ?? 1500) : chaseCameraENU(heading_rad, lastLook, lastLook.distance_m ?? CHASE_DISTANCE.initial_m);
+      container.dataset.cameraDistanceM = String(Math.hypot(...camera.offset));
       Cartesian3.fromElements(...camera.offset, local);
       Cartesian3.fromElements(...camera.direction, localDirection);
       Cartesian3.fromElements(...camera.up, localUp);
@@ -620,7 +623,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     }
     container.dataset.cameraView = view;
     container.dataset.overviewDistanceM = String(lastLook.distance_m ?? 1500);
-    scene.camera.setView({ destination: cameraPosition, orientation: { direction: cameraDirection, up: cameraUp } });
+    setCameraPose(scene.camera, cameraPosition, cameraDirection, cameraUp);
     const frustum = scene.camera.frustum;
     if (!(frustum instanceof PerspectiveFrustum)) throw new Error('Flight view requires a perspective camera');
     // Cesium uses horizontal FOV in landscape and vertical FOV in portrait.
