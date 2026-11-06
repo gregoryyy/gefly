@@ -451,3 +451,14 @@ Native runtime provenance is checked separately on the integrated revision; gene
 ## Copernicus global elevation source service
 
 The [source inventory](../app/public/terrain/copernicus/SOURCE.json), [retained licence](../app/public/terrain/copernicus/LICENSE.pdf) and [source note](research/2026-11-05-copernicus-source-provenance.md) identify the fixed public2021 GLO-30 COG collection, metre/EGM2008 reference, rights and derived sampling. Restricted Node built-in DEFLATE/Float32 decoding adds no dependency. Server v1 supplies fine world30 samples; v2 supplies quarter-degree overview samples as a common API prerequisite. The display client is a separate increment. This DSM includes vegetation/buildings and is not bare-earth or surveyed airport terrain. Existing coarse geoid and explicit fallback/source limitations remain.
+
+## On-demand OSM airport surface packages
+
+The fixed Private.coffee Overpass endpoint supplies live OpenStreetMap runway,
+taxiway and apron ways under ODbL-1.0. Generated/cache packages keep source
+way/version/timestamps, the raw response SHA and snapshot/generated dates;
+mapper identities are excluded. OSM-derived data rights remain separate from
+GPL application code. Attribution links to https://www.openstreetmap.org/copyright.
+No npm dependency, bundled worldwide directory, model/physics data or new
+OurAirports fallback is introduced. Source/cache applicability and public-service
+limits are documented in [the note](research/2026-11-06-on-demand-airports.md).

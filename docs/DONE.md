@@ -3,6 +3,23 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 09:29 — Add bounded on-demand airport surface generation
+
+TODO: 2.0.164/2.0.166/2.0.168; R-AIRPORT-3/R-AIRPORT-2/R-DATA-1.
+Agent: Codex orchestrator; code1 `airport_server`, code2 `airport_client`, housekeeping `airport_housekeeping`; independent `scenery_quality` and `scenery_validate`.
+
+**Implementation notes**
+
+Add fixed-source OSM region compilation in a Node worker, validated persistent disk cache, dedicated browser data worker, bounded terrain-draped Cesium surfaces, generic paved markings/practice PAPI and runway-above-taxiway layering. Prepared scenery retains priority; source failure is optional and cannot change native flight. Independent review found valid-cache deletion on cancelled validation and threshold-based PAPI elevation; repaired with real-worker cache regression and explicit69m/1300m sightline reference. Actual browser fixture passes four source/compiler/cache/native-isolation groups, including fresh-process disk reuse outside Germany. [Source and limits](research/2026-11-06-on-demand-airports.md).
+
+**Deviations**
+
+Live Private.coffee probes returned502/timed out; alternate official service count probe returned406. No provider rotation, fake-empty cache, positive live-source coverage or airport/equipment fidelity claim. [OpenFlightMaps assessment](research/2026-11-06-openflightmaps-overlay.md) recommends structured-data overlay; edition/full license selection and ingestion remain future work. Tasks remain open for these limits. Cross-provider Claude2.1.308 attempts on two frozen packets timed out; peer pending, no model identity/acceptance obtained. Independent reports and final integrated gates are recorded in the following stack entries.
+
+**Insights**
+
+Cancellation is not corruption. Measure practice-light sightlines from the actual unit and preserve four-head grouping when terrain heights are missing.
+
 ## 2026-11-06 02:59 — Reconcile the steering dependency before the terrain PR update
 
 TODO: 2.0.153/2.0.162; R-INPUT-1/R-SIM-11/R-WORLD-11.
