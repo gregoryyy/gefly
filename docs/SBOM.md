@@ -467,3 +467,14 @@ The old full GUL PDF still returns404; broader product redistribution/full terms
 review remains separate. Only bounded server memory and normal private HTTP tile
 caching are used; no persistent app chart bulk cache, OFMX or plate bundle.
 See [source/implementation note](research/2026-11-06-ofm-overlay-implementation.md).
+
+## On-demand OSM airport surface packages
+
+The fixed Private.coffee Overpass endpoint supplies live OpenStreetMap runway,
+taxiway and apron ways under ODbL-1.0. Generated/cache packages keep source
+way/version/timestamps, the raw response SHA and snapshot/generated dates;
+mapper identities are excluded. OSM-derived data rights remain separate from
+GPL application code. Attribution links to https://www.openstreetmap.org/copyright.
+No npm dependency, bundled worldwide directory, model/physics data or new
+OurAirports fallback is introduced. Source/cache applicability and public-service
+limits are documented in [the note](research/2026-11-06-on-demand-airports.md).

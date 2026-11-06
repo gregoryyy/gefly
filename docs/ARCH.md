@@ -556,3 +556,19 @@ in development and preview; a future deployment must provide this route. No
 third-party scripts or chart pixels are bundled. Structured selectable OFMX
 features would require a separate bounded parser/converter, which could run in a
 background worker on regional demand and cache source-identified results.
+
+## On-demand visual airport surfaces
+
+R-AIRPORT-3 adds a separate same-origin `/scenery/airports/v1/x/y.json` service.
+Canonical half-degree keys generate fixed Overpass way queries; the compiler
+retains physical geometry/source metadata while stripping mapper identities.
+Validated compiled packages pass through a bounded memory/disk cache and a
+sequential client region loader to a separate Cesium airport collection. Prepared
+EDFE/regional geometry takes priority. This pipeline cannot write Worker/native
+state, change contact heights or regenerate the terrain provider. Review disables
+source requests rather than claiming historical airport geometry. See the
+[source/cache note](research/2026-11-06-on-demand-airports.md).
+
+### Separate terrain source execution
+
+The physics Worker retains fixed-step JSBSim calls and native terrain installation. A nested terrain-source Worker owns fetch/decode/compose/source-cache and prediction work, returning complete copied grids without detaching retained source buffers. Browser distant overview composition uses another dedicated Worker while the main-thread controller retains synchronous admission/stop guards. The optional server Copernicus decoder uses at most two Node worker threads and32 queued blocks. Failure, cancellation and bounded deadlines reject delivery; existing required-coverage waits remain. Terrain overview camera distance is render-only; airport meshes and practice PAPI never install physical terrain or airport collision geometry.
