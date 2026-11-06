@@ -1,0 +1,390 @@
+{
+  "version": 1,
+  "scope": "R-WORLD-6/R-NAV-5 category visibility and local preference retention; actual map/worker with fixture scenery",
+  "publication_base": "52897de10dfdafb4f7b3252cdb41828f8a22b5f5",
+  "source_scope": "The working app had an extra historical-marker gate; published main already rendered source fixes. Publication adds persisted shared category initialization and regression coverage without backporting unrelated map features.",
+  "runs": [
+    {
+      "target": "working-app",
+      "result": "pass",
+      "browser": "156.0.8078.80",
+      "artifact_sha256": "01e97ba6587ee5d99cb3e1368698cfdbac29f7c8468c68466a9cb7acb408cdb3",
+      "source_hashes": {
+        "src/practice-map.ts": "a4ecfcf494822836f58a3e5d0111bca4e6b7ec4f6b17f764cb38707b86f68e88",
+        "src/map-point-search.ts": "1388b06f42de5551ac904a22a189dccb495c19979373aa82b96906b9bf1fefc6",
+        "src/map-location-types.ts": "4d885a01eafb450d2570a53a9dd3946ab7e4dbcce896921029ccaef87baf4549",
+        "src/map-location-preferences.ts": "e351e3c39b690c1ea2dadfeb26a1d66742e338f3fc3b309732794978d027c2aa",
+        "tests/map-location-preferences.browser.mjs": "87373aea1512db548fe8fe5e7ea94decd4ef28eaac1ffdf85594453ebfd649a1"
+      },
+      "checks": [
+        "Fixes defaults on; actual historical source, rendered ASKIK and selectable label agree with results; off hides both while retaining other categories/GPS/native state",
+        "search factory owns a copy of initial types, accepts explicit all-off, and emits no initialization callback",
+        "actual Flight restart preserves saved mixed choices and filtered map sources; fresh native baseline remains paused",
+        "mixed and explicit all-off survive close/reopen, real reload and fresh same-origin tabs; saved choices appear at first filter insertion",
+        "corrupt, future and oversized storage falls back to all types; denied storage allows session choices/reopen and safe defaults after reload"
+      ],
+      "first_display_observations": [
+        {
+          "label": "fresh defaults",
+          "selected": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ],
+          "firstDisplay": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ]
+        },
+        {
+          "label": "mixed after reload",
+          "selected": [
+            "airfield",
+            "nav"
+          ],
+          "firstDisplay": [
+            "airfield",
+            "nav"
+          ]
+        },
+        {
+          "label": "mixed fresh tab",
+          "selected": [
+            "airfield",
+            "nav"
+          ],
+          "firstDisplay": [
+            "airfield",
+            "nav"
+          ]
+        },
+        {
+          "label": "all-off after reload",
+          "selected": [],
+          "firstDisplay": []
+        },
+        {
+          "label": "all-off fresh tab",
+          "selected": [],
+          "firstDisplay": []
+        },
+        {
+          "label": "malformed",
+          "selected": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ],
+          "firstDisplay": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ]
+        },
+        {
+          "label": "future version",
+          "selected": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ],
+          "firstDisplay": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ]
+        },
+        {
+          "label": "oversized",
+          "selected": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ],
+          "firstDisplay": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ]
+        },
+        {
+          "label": "denied storage",
+          "selected": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ],
+          "firstDisplay": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ]
+        },
+        {
+          "label": "denied storage reload",
+          "selected": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ],
+          "firstDisplay": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ]
+        }
+      ]
+    },
+    {
+      "target": "publication",
+      "result": "pass",
+      "browser": "156.0.8078.80",
+      "artifact_sha256": "904cc5e747b03cd5de0cf048311e4ca3ef3d5b8d5462856a9e99f54bb87779ee",
+      "source_hashes": {
+        "src/practice-map.ts": "78b54be4d57ac3092d3c5eaf639f31600b8129d27c53f122eb0377ddb370fc58",
+        "src/map-point-search.ts": "f97d65c03d3080f2d264161b865ab182d895b4088a6575a60962db2b0a1fea45",
+        "src/map-location-types.ts": "4d885a01eafb450d2570a53a9dd3946ab7e4dbcce896921029ccaef87baf4549",
+        "src/map-location-preferences.ts": "e351e3c39b690c1ea2dadfeb26a1d66742e338f3fc3b309732794978d027c2aa",
+        "tests/map-location-preferences.browser.mjs": "87373aea1512db548fe8fe5e7ea94decd4ef28eaac1ffdf85594453ebfd649a1"
+      },
+      "checks": [
+        "Fixes defaults on; actual historical source, rendered ASKIK and selectable label agree with results; off hides both while retaining other categories/GPS/native state",
+        "search factory owns a copy of initial types, accepts explicit all-off, and emits no initialization callback",
+        "actual Flight restart preserves saved mixed choices and filtered map sources; fresh native baseline remains paused",
+        "mixed and explicit all-off survive close/reopen, real reload and fresh same-origin tabs; saved choices appear at first filter insertion",
+        "corrupt, future and oversized storage falls back to all types; denied storage allows session choices/reopen and safe defaults after reload"
+      ],
+      "first_display_observations": [
+        {
+          "label": "fresh defaults",
+          "selected": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ],
+          "firstDisplay": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ]
+        },
+        {
+          "label": "mixed after reload",
+          "selected": [
+            "airfield",
+            "nav"
+          ],
+          "firstDisplay": [
+            "airfield",
+            "nav"
+          ]
+        },
+        {
+          "label": "mixed fresh tab",
+          "selected": [
+            "airfield",
+            "nav"
+          ],
+          "firstDisplay": [
+            "airfield",
+            "nav"
+          ]
+        },
+        {
+          "label": "all-off after reload",
+          "selected": [],
+          "firstDisplay": []
+        },
+        {
+          "label": "all-off fresh tab",
+          "selected": [],
+          "firstDisplay": []
+        },
+        {
+          "label": "malformed",
+          "selected": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ],
+          "firstDisplay": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ]
+        },
+        {
+          "label": "future version",
+          "selected": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ],
+          "firstDisplay": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ]
+        },
+        {
+          "label": "oversized",
+          "selected": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ],
+          "firstDisplay": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ]
+        },
+        {
+          "label": "denied storage",
+          "selected": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ],
+          "firstDisplay": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ]
+        },
+        {
+          "label": "denied storage reload",
+          "selected": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ],
+          "firstDisplay": [
+            "airfield",
+            "heliport",
+            "seaplane",
+            "balloonport",
+            "closed",
+            "nav",
+            "fix"
+          ]
+        }
+      ]
+    }
+  ],
+  "legacy_working_app_suite": {
+    "result": "pass",
+    "command": "node tests/right-flight-map.browser.mjs",
+    "log_sha256": "29a6b593f8e85fb6a69fde08ebc7c441116d84ec28a3b13c801401a471119e90",
+    "browser": "156.0.8078.80",
+    "groups": 12
+  },
+  "publication_setup": {
+    "historical_attempt": "Initial ASKIK popup attempt timed out because old main consumes the first map interaction for activation.",
+    "repair": "Activate through the noninteractive Location types legend before control actions; runtime overlays unchanged, assertions not skipped."
+  },
+  "ci": {
+    "result": "pass_with_optional_study_skips",
+    "command": "env PATH=/Users/gregor/.pyenv/versions/3.11.12/bin:$PATH just ci",
+    "log_sha256": "67eafcb3df3210ab15be61bb212503ba90255294d12727fef296231d9224253d",
+    "application_node_pass": 560,
+    "application_python_pass": 22,
+    "assurance_pass": 85,
+    "training_pass": 11,
+    "optional_jsbsim_skips": 9,
+    "initial_failure": "A preparation-note link targeted an unmerged working-app test. Corrected to a plain working-app-only reference; scaffold then passed and the full gate was rerun."
+  }
+}

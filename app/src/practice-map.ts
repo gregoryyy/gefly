@@ -1,6 +1,8 @@
 import { createOfmMapOverlay, OFM_OVERLAY_ID } from './ofm-map-overlay.ts';
 import { loadOfmOverlaySource } from './ofm-overlay-source.ts';
 import './ofm-map-overlay.css';
+
+import { loadMapLocationPreferences, saveMapLocationPreferences } from './map-location-preferences.ts';
 import { createWorldMapStyle, worldMapLayers, worldMapLabelLayers } from './world-map-style';
 /// <reference types="vite/client" />
 import { createAirportPlayControls } from './airport-play-controls';
@@ -19,7 +21,7 @@ import type { FlightState } from './types';
 import { loadFlightMapCatalogue } from './flight-map-catalogue';
 import type { FlightMapNavigation, FlightMapNavigationFeature } from './flight-map-navigation';
 import { createMapPointPopup, type MapPoint } from './map-point-popup';
-import { createMapPointSearch, MAP_LOCATION_TYPES, mapLocationType, type MapLocationType } from './map-point-search';
+import { createMapPointSearch, mapLocationType, type MapLocationType } from './map-point-search';
 import { loadMapFixes, type MapFix } from './map-fixes';
 import { distanceMeters } from './scenery-coverage';
 import type { AirportComDirectory } from './airport-com';
@@ -226,7 +228,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   let paintedNavigationData: FlightMapNavigation | undefined;
   let navigationData: FlightMapNavigation = { type: 'FeatureCollection', features: [] };
   let aerial = false, vector = false;
-  let locationTypes: ReadonlySet<MapLocationType> = new Set(MAP_LOCATION_TYPES.map(([type]) => type));
+  const locationPreferenceStorage = (() => { try { return window.localStorage; } catch { return null; } })();
+  let locationTypes: ReadonlySet<MapLocationType> = new Set(loadMapLocationPreferences(locationPreferenceStorage));
   let airports: Airport[] = [];
   let selectedAirport = 'EDFE';
   let circuitEnabled = false, circuitFitPending = false, circuitDataKey = '', circuitLabelKey = '', circuitLegKey = '';
@@ -266,7 +269,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   const gpsReadout = document.createElement('output'); gpsReadout.id = 'map-gps-readout';
   const gpsClear = document.createElement('button'); gpsClear.type = 'button'; gpsClear.textContent = '×'; gpsClear.setAttribute('aria-label', 'Clear GPS target');
   const gpsOverlay = document.createElement('div'); gpsOverlay.className = 'practice-map-gps-target'; gpsOverlay.hidden = true; gpsOverlay.append(gpsReadout, gpsClear); viewport.append(gpsOverlay);
-  const pointSearch = createMapPointSearch({
+  const pointSearch = createMapPointSearch({ initialTypes: locationTypes,
     searchWorldwide: async query => {
       if (!worldLoader) throw new Error('Worldwide search unavailable');
       const generation = ++worldwideSearchGeneration, hits = await worldLoader.search(query);
@@ -300,6 +303,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     onInteraction();
   }, onTypesChange(types) {
     locationTypes = new Set(types);
+    saveMapLocationPreferences([...types], locationPreferenceStorage);
     paintedNavigationData = undefined; paintedFixes = undefined;
     if (selectedPoint && !locationTypes.has(mapLocationType(selectedPoint))) {
       pointPopup?.remove(); pointPopup = null; selectedPoint = null;

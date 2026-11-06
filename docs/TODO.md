@@ -351,6 +351,8 @@ future tasks, not completed by this requirements update.
 
 - [x] 2.0.163 Add hold C for existing momentary CWS with shared keyboard/panel ownership, discoverable help, guarded activation and safe lifecycle release. Preserve AP modes/reference synchronization and native physics. R-AP-1/R-INPUT-1. [Request](input/2026-11-06-cws-keyboard.md). Eight browser groups, six helper and18 existing KAP tests, CI and bounded independent reviews pass; source-inspected/unexercised contexts remain explicit in [validation](reviews/2026-11-06-cws-keyboard-validation.md). Cross-provider peer pending.
 
+- [x] 2.0.175 Make Fixes consistently visible on map and in results through one category filter, and retain all location-type choices across map recreation/new flights/reload with bounded local preferences and native/navigation isolation. R-WORLD-6/R-NAV-5. [Request](input/2026-11-06-map-fix-filters.md).
+
 - [ ] 2.0.164 Build bounded on-demand OSM airport surface generation and persistent region caching, integrate terrain-draped rendering and prepared-scenery priority, and independently verify source/cache/lifecycle/native isolation. R-AIRPORT-3/R-DATA-1. [Request](input/2026-11-06-on-demand-airport-generator.md). Separate from the original Frankfurt inventory task2.0.151.
 
 - [ ] 2.0.165 Separate browser terrain source work and server Copernicus decoding from native stepping; preserve exact grids, source history and coverage guards. R-WORLD-11/R-SIM-2. [Request](input/2026-11-06-scenery-workers-and-overview.md). Implementation and real-worker/native equivalence pass; independent acceptance pending.
@@ -368,3 +370,7 @@ Task2.0.170 verification: [quality](reviews/2026-11-06-worldwide-airports-qualit
 - [x] 2.0.180 Reconcile PR102 worldwide discovery with current main and its on-demand OSM airport generator, preserving source boundaries and history; renew integrated checks/reviews and update the existing PR. R-WORLD-12/R-NAV-2/R-DATA-1/R-COMM-2/R-AIRPORT-3. [Request](input/2026-11-06-pr102-conflicts.md).
 
 - [x] 2.0.173 Retain saved Options across new flights and page reloads with bounded device-local preferences, preview/Save/Cancel and safe storage/audio defaults. R-INPUT-1/R-UX-2. [Request](input/2026-11-06-flaps-settings.md).
+- [ ] 2.0.181 Reconcile PR104 saved Options with current main, retaining settings behavior, all airport pipelines and history; renew affected checks/reviews and push the existing PR. R-INPUT-1/R-UX-2/R-AIRPORT-3/R-WORLD-12. [Request](input/2026-11-06-pr104-conflicts.md).
+- [ ] 2.0.182 Reconcile PR107 map fixes and saved location filters with current main, preserving worldwide discovery and saved Options; renew checks/reviews and push the existing PR. R-WORLD-6/R-NAV-5/R-INPUT-1. [Request](input/2026-11-06-pr107-conflicts.md).
+- [ ] 2.0.183 Reconcile PR108 map magnification keys with current main, preserving current map/settings/data paths; renew checks/reviews and push the existing PR. R-WORLD-6/R-INPUT-1. [Request](input/2026-11-06-pr108-conflicts.md).
+- [ ] 2.0.184 Reconcile remaining PR109 receiver reception and PR111 OFM overlay with current main, preserving independent source/native boundaries and history; renew checks/reviews and push existing PRs. R-NAV-2/R-CHART-1/R-WORLD-12. [Request](input/2026-11-06-remaining-pr-conflicts.md).
