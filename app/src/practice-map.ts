@@ -167,7 +167,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   credit.append(navCredit);
   const caption = document.createElement('p');
   caption.className = 'practice-map-caption';
-  caption.textContent = 'Global OpenStreetMap · worldwide OurAirports community airport/NAV discovery near map centre; historical receiver/ILS and fix coverage remains regional. Not a navigation chart.';
+  caption.textContent = 'Global OpenStreetMap · worldwide OurAirports community airport/NAV discovery near map centre; receiver signals use a separate historical NAV810 inventory; published fix coverage remains regional. Not a navigation chart.';
   const airportsSection = document.createElement('details');
   airportsSection.className = 'practice-map-airports';
   const summary = document.createElement('summary');
@@ -329,7 +329,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   function worldNavaidPoint(nav: WorldNavaid): MapPoint {
     return { id: nav.ident, world_record_id: nav.id, name: nav.name, kind: nav.type, equipment: nav.type,
       lon_deg: nav.lon, lat_deg: nav.lat,
-      source_label: `OurAirports · ${worldSnapshot?.retrieved ?? ''} · community discovery; receiver coverage remains historical/regional`,
+      source_label: `OurAirports · ${worldSnapshot?.retrieved ?? ''} · community discovery; receiver signals use a separate historical NAV810 inventory`,
       frequencies: nav.frequency_khz === null ? [] : [{ kind: 'nav', channel_khz: nav.frequency_khz, label: nav.type }] };
   }
   function worldSearchPoint(hit: WorldSearchHit): MapPoint {
@@ -476,7 +476,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   }
 
   function updateLayerCaption(): void {
-    caption.textContent = `${aerial ? 'Public aerial imagery · capture dates vary.' : 'Public map · not a navigation chart.'}${vector ? ' Terrain: map without labels.' : ''} Worldwide community airport/NAV discovery near map centre. Historical receiver/ILS and fix coverage remains regional.`;
+    caption.textContent = `${aerial ? 'Public aerial imagery · capture dates vary.' : 'Public map · not a navigation chart.'}${vector ? ' Terrain: map without labels.' : ''} Worldwide community airport/NAV discovery near map centre. Receiver signals use a separate historical NAV810 inventory; published fix coverage remains regional.`;
   }
 
   function setVector(enabled: boolean): void {
