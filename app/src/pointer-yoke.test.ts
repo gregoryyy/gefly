@@ -278,10 +278,10 @@ test('centered yoke always uses the current scene midpoint, never click or relea
   f.click(100, 500); assert.equal(f.modes.at(-1), 'yoke');
   f.surface.dispatchEvent(pointer('pointermove', 400, 300));
   assert.deepEqual(f.yokes.at(-1), [0, 0]);
-  // A resized/repositioned scene moves the neutral point without a new click.
+  // A resized/repositioned scene moves the marker and requires neutral pickup.
   f.surface.rect = { left: 100, right: 1100, top: 50, bottom: 650 };
   f.surface.dispatchEvent(pointer('pointermove', 675, 275));
-  assert.deepEqual(f.yokes.at(-1), [.5, .5]);
+  assert.deepEqual(f.yokes.at(-1), [0, 0]);
   f.surface.dispatchEvent(pointer('pointermove', 600, 350));
   assert.deepEqual(f.yokes.at(-1), [0, 0]);
   f.surface.dispatchEvent(pointer('pointermove', 1050, 100));
@@ -441,4 +441,41 @@ test('vertical margin boost reaches raw poles within the scene, preserves ordina
   f.surface.dispatchEvent(pointer('pointermove',400,350));assert(Math.abs(f.looks.at(-1)![1]-(70*Math.PI/180-.2))<1e-12);
   f.surface.dispatchEvent(pointer('pointermove',400,600));assert.deepEqual(f.looks.at(-1),[0,-70*Math.PI/180]);
   f.surface.dispatchEvent(pointer('pointerup',400,600));assert.deepEqual(f.controller.getCenter(),{clientX:400,clientY:300});f.controller.dispose();
+});
+
+
+test('R-INPUT-1 centered layout shifts require neutral pickup before steering resumes', () => {
+  const f = fixture(true); f.click(400, 300);
+  f.surface.dispatchEvent(pointer('pointermove', 415, 285));
+  assert.deepEqual(f.yokes.at(-1), [.1, .1]);
+  f.surface.rect = {left:0, right:460, top:0, bottom:600};
+  assert.equal(f.controller.updateReference(), true);
+  assert.deepEqual(f.controller.getCenter(), {clientX:230,clientY:300});
+  assert.deepEqual(f.yokes.at(-1), [0, 0]);
+  f.surface.dispatchEvent(pointer('pointermove', 416, 285));
+  assert.deepEqual(f.yokes.at(-1), [0, 0], 'one pixel after resize cannot become full aileron');
+  f.surface.dispatchEvent(pointer('pointerenter', 416, 285));
+  assert.deepEqual(f.yokes.at(-1), [0, 0], 'outside reentry cannot bypass pickup');
+  f.surface.dispatchEvent(pointer('pointermove', 230, 300));
+  assert.equal(f.controller.updateReference(), false);
+  assert.deepEqual(f.yokes.at(-1), [0, 0], 'pickup itself is neutral');
+  f.surface.dispatchEvent(pointer('pointermove', 245, 285));
+  assert.deepEqual(f.yokes.at(-1), [.1, .1], 'existing mapping resumes at the new center');
+  f.controller.dispose();
+});
+
+test('R-INPUT-1 pointer event catches layout changes before the next frame; relative yoke unchanged', () => {
+  const f = fixture(true); f.click(400,300);
+  f.surface.rect = {left:20,right:800,top:40,bottom:600};
+  f.surface.dispatchEvent(pointer('pointermove',401,300));
+  assert.equal(f.controller.updateReference(), true);
+  assert.deepEqual(f.controller.getCenter(), {clientX:410,clientY:320});
+  assert.deepEqual(f.yokes.at(-1), undefined);
+  f.controller.cancel(); assert.equal(f.controller.updateReference(), false);
+  f.controller.dispose();
+  const r = fixture(); r.click(200,200);
+  r.surface.rect = {left:0,right:460,top:0,bottom:600};
+  assert.equal(r.controller.updateReference(), false);
+  r.surface.dispatchEvent(pointer('pointermove',215,185));
+  assert.deepEqual(r.yokes.at(-1), [.1,.1]); r.controller.dispose();
 });
