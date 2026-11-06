@@ -2,7 +2,7 @@ import { createSceneryCache } from './scenery-cache';
 import { createLandmarkLabels, LANDMARK_CREDIT } from './landmark-labels';
 import { createAirportScenery, AIRPORT_VECTOR_CREDIT } from './airport-scenery';
 import {
-  Axis, Cartesian3, Cartographic, CesiumWidget, Color, Credit, Ellipsoid, EllipsoidTerrainProvider,
+  Axis, Cartesian3, Cartographic, CesiumWidget, Color, Credit, Ellipsoid, EllipsoidTerrainProvider, GeographicTilingScheme,
   ImageryLayer, Ion, JulianDate, UrlTemplateImageryProvider,
   Matrix3, Matrix4, Model, PerspectiveFrustum, Quaternion, Rectangle, RequestScheduler, Resource, ShadowMode, SingleTileImageryProvider, Transforms,
 } from 'cesium';
@@ -14,7 +14,9 @@ import { AIRCRAFT_CONTROL_SURFACES, controlSurfaceAngle } from './aircraft-contr
 import { createAircraftShadow } from './aircraft-shadow';
 import { createPublicTerrainProvider } from './terrain-provider';
 import { createStreamedTerrainProvider } from './streamed-terrain-provider';
-import { createGlobalTerrainProvider, tryUpdateGlobalTerrainProvider } from './global-terrain-provider';
+import { createGlobalTerrainProvider, tryUpdateGlobalTerrainProvider, tryUpdateGlobalTerrainOverview, acceptGlobalTerrainOverviewSource, closeGlobalTerrainOverview, globalTerrainOverviewInfo } from './global-terrain-provider';
+import { createTerrainDetailBudget } from './terrain-detail-budget.ts';
+import { TerrainOverview, type TerrainOverviewGrid, type TerrainOverviewStatus } from './terrain-overview.ts';
 import { createTerrainDisplayInfo, sameTerrainTiles } from './terrain-display-info';
 import { REGIONAL_TERRAIN, loadRegionalManifestOptional, WorldTerrainStream, sampleAtlas, atlasGridAt, type AtlasTile } from '../../studies/e1-browser/sim/terrain-stream.js';
 import { loadWorldTerrainPackage, worldCellAt } from '../../studies/e1-browser/sim/world-terrain.js';
@@ -382,6 +384,65 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   let lastState = initialVisual;
   let lastLook: CameraLook = { yaw_rad: 0, pitch_rad: 0 };
   let lastFov_rad = DEFAULT_FOV_RAD;
+  let overviewActive = false, overviewRetain = false, overviewRevision = 0;
+  let displayOverview: readonly TerrainOverviewGrid[] = [];
+  const pendingOverview = new Set<string>();
+  let detailBudget: ReturnType<typeof createTerrainDetailBudget> | null = null, detailBudgetRevision = -1;
+  const requestOverview = (cells: Parameters<TerrainOverview['requestCells']>[0]) => {
+    if (!disposed && overviewActive && lastState.terrain_profile === 1) overviewLoader.requestCells(cells.filter(cell=>!pendingOverview.has(`${cell.col}/${cell.row}`)));
+  };
+  const closeOverviewIfRequired = () => {
+    const reason=globalTerrainOverviewInfo(activeTerrain)?.closed;
+    if(globalProviderLive&&overviewRetain&&reason&&!overviewLoader.stopped)overviewLoader.stop(reason);
+  };
+  const overviewStatus = document.createElement('div');
+  overviewStatus.setAttribute('role', 'status');
+  overviewStatus.style.cssText = 'position:absolute;left:12px;bottom:38px;max-width:330px;padding:5px 8px;border-radius:4px;background:#10272cdd;color:#e5eadd;font:10px/1.4 system-ui;z-index:2;pointer-events:none;';
+  overviewStatus.hidden = true; container.appendChild(overviewStatus);
+  let latestOverviewStatus: TerrainOverviewStatus = {state:'off',cells:0,missing:0,cache:0};
+  const presentOverviewStatus = (info = latestOverviewStatus) => {
+    latestOverviewStatus=info;
+    if(globalProviderLive&&info.state==='pending'&&overviewLoader.stopped)closeGlobalTerrainOverview(activeTerrain,overviewLoader.stopped);
+    const stopped=(globalProviderLive?globalTerrainOverviewInfo(activeTerrain)?.closed:null) ?? overviewLoader.stopped;
+    if (disposed) return;
+    container.dataset.terrainOverview = pendingOverview.size ? 'pending' : info.state;
+    container.dataset.terrainOverviewPending = String(pendingOverview.size);
+    container.dataset.terrainOverviewStopped=stopped??'';
+    container.dataset.terrainOverviewHistory = String(globalTerrainOverviewInfo(activeTerrain)?.history ?? 0);
+    container.dataset.terrainOverviewCells = String(info.cells);
+    container.dataset.terrainOverviewMissing = String(info.missing);
+    container.dataset.terrainOverviewCache = String(info.cache);
+    const copernicus = displayOverview.some(grid => grid.copernicus_nodes > 0);
+    const regional = displayOverview.some(grid => grid.regional_nodes > 0);
+    const sources = copernicus ? regional ? 'regional / 30 m Copernicus sources' : '30 m Copernicus source' : 'regional elevation';
+    overviewStatus.textContent = stopped ? `Landscape overview stopped (${stopped}) · retaining terrain; reset to resume`
+      : pendingOverview.size || info.state==='pending' ? 'Landscape detail pending · retaining previous terrain'
+      : info.state === 'unavailable' ? `Landscape overview unavailable${info.cells ? ' · retaining prior overview' : ' · current ground unchanged'}`
+      : info.state === 'loading' ? 'Landscape elevation · loading wider overview'
+      : info.cells ? `Landscape elevation · ${info.cells}/9 overview cells · ~217 m N–S grid from ${sources}`
+      : 'Landscape overview unavailable · current ground terrain unchanged';
+    overviewStatus.hidden = info.state === 'off' && !info.cells;
+  };
+  const overviewLoader = new TerrainOverview(worldGrid, grids => {
+    if (disposed || grids.length > 0 && (!overviewActive || lastState.terrain_profile !== 1 || recordingController !== null)) return;
+    displayOverview = grids;
+    if (!globalProviderLive || !overviewActive && !overviewRetain) {
+      // Explicit reset/Review/flat epoch changes can discard a provider; ordinary
+      // source-window progress must preserve its terrain and imagery cache.
+      overviewRevision++; providerKey = ''; globalProviderLive = false; pendingOverview.clear();
+    } else if (tryUpdateGlobalTerrainOverview(activeTerrain, grids)) pendingOverview.delete('window');
+    else if (globalProviderLive) pendingOverview.add('window');
+    closeOverviewIfRequired(); presentOverviewStatus(); scene.requestRender();
+  }, { onResolved(result) {
+    if (disposed || !overviewActive || lastState.terrain_profile !== 1) return;
+    const id=`${result.col}/${result.row}`;
+    if(acceptGlobalTerrainOverviewSource(activeTerrain,result))pendingOverview.delete(id);
+    else pendingOverview.add(id);
+    if(result.grid) displayOverview=displayOverview.map(grid=>grid.id===result.grid!.id?result.grid!:grid);
+    closeOverviewIfRequired(); presentOverviewStatus(); scene.requestRender();
+  }, onStatus: presentOverviewStatus
+  });
+
 
   // This visual is authored here, not fetched aircraft/model data. Loading it must
   // not delay the first geographic scene or start an alternate render loop.
@@ -416,6 +477,9 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       throw new RangeError('Cannot render a non-finite aircraft state');
     }
     const useTerrain = state.terrain_profile === 1;
+    if (!useTerrain && (overviewActive || overviewLoader.hasSources)) { overviewActive = false; overviewLoader.cancel(true); }
+    if (useTerrain && overviewActive && !overviewLoader.stopped && streamedTiles.length && recordingController === null && recordingTiles.size === 0)
+      void overviewLoader.update(state.lat_rad, state.lon_rad).catch(() => {});
     if (useTerrain) ensureWorldMap();
     // Start a new warm plan after visible tiles settle; retain nearby progress through brief camera tile work.
     sceneryCache.update(state.lat_rad, state.lon_rad, vectorScenery, useTerrain, scene.globe.tilesLoaded,
@@ -437,19 +501,24 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     if (useTerrain && streamedTiles.length) {
       const fine = state.lon_rad>=terrainGrid.west_rad && state.lon_rad<=terrainGrid.east_rad && state.lat_rad>=terrainGrid.south_rad && state.lat_rad<=terrainGrid.north_rad;
       const cell = worldCellAt(state.lat_rad, state.lon_rad);
-      const key = terrainDisplayInfo.hasWorldTerrain ? `${terrainRevision}/global` : `${terrainRevision}/${cell?.join('/')}/${fine}`;
+      const key = terrainDisplayInfo.hasWorldTerrain ? `${terrainRevision}/global/${overviewRevision}` : `${terrainRevision}/${cell?.join('/')}/${fine}`;
       if(key!==providerKey) {
         const reused = terrainDisplayInfo.hasWorldTerrain && globalProviderLive && recordingTiles.size === 0
           && tryUpdateGlobalTerrainProvider(activeTerrain, streamedTiles);
         if (!reused) {
           const provider = terrainDisplayInfo.hasWorldTerrain
-            ? createGlobalTerrainProvider(worldGrid, terrainGrid, streamedTiles)
+            ? createGlobalTerrainProvider(worldGrid, terrainGrid, streamedTiles, displayOverview, { stream: recordingController === null && recordingTiles.size === 0, request: requestOverview, outcomes: overviewLoader.sourceOutcomes })
             : createStreamedTerrainProvider(terrainGrid, streamedTiles, state);
           if (!provider) throw new Error('Required streamed terrain has not loaded.');
+          if(overviewLoader.stopped)closeGlobalTerrainOverview(provider,overviewLoader.stopped);
           activeTerrain = provider; globalProviderLive = terrainDisplayInfo.hasWorldTerrain && recordingTiles.size === 0;
           if (terrainEnabled && scene.globe.terrainProvider !== activeTerrain) scene.globe.terrainProvider = activeTerrain;
         }
         providerKey = key;
+        if (pendingOverview.size && globalProviderLive && displayOverview.length
+          && tryUpdateGlobalTerrainOverview(activeTerrain,displayOverview)) pendingOverview.delete('window');
+        if (pendingOverview.size && overviewActive) overviewLoader.requestCells([...pendingOverview].filter(id=>id!=='window').map(id=>{const [col,row]=id.split('/').map(Number);return{col,row};}));
+        presentOverviewStatus();
       }
     } else if (activeTerrain!==publicTerrain && !streamedTiles.length) {
       activeTerrain=publicTerrain;providerKey='';if(terrainEnabled)scene.globe.terrainProvider=publicTerrain;
@@ -553,6 +622,22 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     else if (separation_rad >= showDirectionsAt_rad) directionReferencesVisible = true;
     forwardMarker.update(directions?.forward ?? null, directions, directionReferencesVisible);
     landmarkLabels.update(state, useTerrain);
+    if (useTerrain && overviewRetain && globalProviderLive && liveTiles.length) {
+      if(detailBudgetRevision!==terrainRevision || !detailBudget){
+        detailBudget=createTerrainDetailBudget(activeTerrain.tilingScheme as GeographicTilingScheme,liveTiles);detailBudgetRevision=terrainRevision;
+      }
+      const frustum=scene.camera.frustum as PerspectiveFrustum;
+      const contact=Number.isFinite(state.terrain_height_ellipsoid_m)
+        ? Cartesian3.fromRadians(state.lon_rad,state.lat_rad,state.terrain_height_ellipsoid_m!) : undefined;
+      const budget=detailBudget.evaluate({cameraPosition:scene.camera.positionWC,frustumFovy_rad:frustum.fovy ?? NaN,
+        cssHeight:widget.canvas.clientHeight,drawingBufferHeight:widget.canvas.height,
+        geometricError13_m:activeTerrain.getLevelMaximumGeometricError(13),baseSSE:3,contactPosition:contact,
+        fogScreenSpaceErrorFactor:scene.fog.enabled?scene.fog.screenSpaceErrorFactor:0});
+      scene.globe.maximumScreenSpaceError=budget.maximumScreenSpaceError;
+      container.dataset.terrainDetailBudget=budget.bounded?'bounded':'unbounded';
+      container.dataset.terrainDetailSse=String(budget.maximumScreenSpaceError);
+      container.dataset.terrainContactRefines=String(budget.contactRefines??false);
+    } else scene.globe.maximumScreenSpaceError=3;
     widget.render();
 
   }
@@ -563,6 +648,13 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   observer.observe(container);
   update(initialVisual, 'cockpit');
   const flightScene: FlightScene = {
+    setDisplayOverviewActive(active, retain = false) {
+      active = active && lastState.terrain_profile === 1;
+      retain = retain && lastState.terrain_profile === 1;
+      if (disposed || active === overviewActive && retain === overviewRetain) return;
+      overviewActive = active; overviewRetain = retain;
+      if (!active) { if(!retain)pendingOverview.clear(); overviewLoader.cancel(!retain); }
+    },
     preloadScenery(state) {
       if (!disposed) sceneryCache.preload(state.lat_rad, state.lon_rad, vectorScenery, state.terrain_profile === 1);
     },
@@ -603,6 +695,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       return true;
     },
     async prepareRecording(states) {
+      overviewLoader.cancel(true);
       // The caller supplies the selected frame. Never warm an entire worldwide
       // recording: one 3×3 window per request, with at most64 retained cells.
       let state: Readonly<FlightState> | undefined;
@@ -641,6 +734,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       }
     },
     setTerrainTiles(tiles) {
+      if (!tiles.length) { globalProviderLive = false; overviewLoader.cancel(true); }
       liveTiles = Array.from(tiles);
       const nextTiles = new Map([...recordingTiles.values(), ...liveTiles].map(grid => [grid.id, grid]));
       // Validate each revision once; frame labels read copied source metadata.
@@ -663,6 +757,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     },
     dispose() {
       if (disposed) return;
+      overviewLoader.dispose(); overviewStatus.remove();
       disposed = true;
       flightScene.cancelTerrainPreparation!(); recordingTiles.clear();
       sceneryCache.dispose();
