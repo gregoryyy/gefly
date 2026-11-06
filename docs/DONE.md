@@ -3,6 +3,27 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 01:43 — Retain distant elevation and scenery through moving overview windows
+
+TODO: 2.0.162; R-WORLD-11/R-WORLD-9/R-SIM-2.
+Agent: Codex orchestrator; code1 `alps_source`; code2 `alps_renderer`; independent `quality` and `cws_validate`. Handling regression investigation is separate.
+
+**Implementation notes**
+
+Add a display-only quarter-degree overview outside the native world30 neighborhood, retaining a persistent Cesium terrain provider and immutable bounded history. Preload9cells, share one serial source owner with visible demand, and bound32payload-cache entries,32queued/active identities,32renderer overview grids and512outcome metadata records. Strict v2/source/body identity and regional-first whole-cell composition preserve exact native/fine H/N. Metadata-only updates refresh disclosure without a reset. Public source-resolution retries and geometry/FOV/viewport/fog-derived refinement limits settle visible detail. Source/history/capacity conflicts explicitly stop optional admission until an explicit display lifecycle reset; retain the immutable baseline and drain unknown meshes instead of rebuilding all scenery or retrying forever. Native contact and engine bytes are unchanged.
+
+The real-source frozen vector browser test passes13checks:880.2167simulated seconds, two quarter-degree crossings794→795→796, one initial provider assignment and zero replacements thereafter. All seven default/minimum-FOV and crossing queues drain; maximum measured far GPU error0.000356m. Near contact has public returned sourceL14 at the point, an upsampled renderedL23 descendant, and0.160075m GPU error within the declared0.25m engineering budget.135terrain HTTP replies are200, browser/render errors empty, and all seven raw source hashes match before/after. Paused AP/full published state/native terrain buffers remain exact. Artifact `output/flight/terrain-overview-no-churn.json` SHA-256 `8b76482821631306d1ccfc84209f370a053fc342ccc55b5a269e1dbcf151d4d6`; executed harness `480fb71ade120d8ca2ee8f7cc3bea1af4b67ca24dbe1f40127054bb99535e2e4`. Portable tracked harness differs only in path/output/import boilerplate and is syntax-checked.
+
+Independent59focused tests (33provider/21loader/5geometry) and TypeScript pass. Actual Worker/WASM deterministic OFF/ON/failure/cancel cases each execute1200identical fixed steps with identical H/N identities, published physics, exposed native vector and digest; explicit synthetic source fixtures make this an isolation proof, not DEM evidence. Isolation artifact SHA-256 `aa55ebc016102a635752a9d4453bc3ef7b0192cb465f7aea2b10c2e2b46a5ff9`. Full branch CI passes531Node+22Python application tests,85assurance and11training tests, with9of23 optional JSBSim and one platform tool case skipped; log SHA-256 `5be053d0aee6741b10fbd106f65e1679d15b3824728846e5e9b25f29a6e5c68d`. Independent [loader](reviews/2026-11-06-terrain-overview-loader-quality.md), [renderer](reviews/2026-11-06-terrain-overview-renderer-quality.md), [geometry](reviews/2026-11-06-terrain-detail-budget-quality.md) and [validation](reviews/2026-11-06-terrain-overview-validation.md) records retain exact pins, repaired findings and acceptance limits.
+
+**Deviations**
+
+Synthetic metadata/capacity Scene components are separate from actual public DEM/GPU flight evidence. The near-contact pose is renderer-only; no landed-aircraft or surveyed accuracy is claimed. Earlier exact-rendered-L14 assertion failed because Cesium upsamples descendants above sourceL14; the renewed proof records actual returned sourceL14 and descendant GPU parity. Whole-Scene noncooperative held-response lifecycle cases and new Hessen reproduction are not newly accepted. Task160 physical failed-owner discontinuities and Task161 user all-flat Hessen remain open. Display detail stops visibly at its bounded admission budget rather than claiming unlimited world detail. Native build-record mismatch, complete aircraft fidelity and external peer remain unresolved; no training or milestone acceptance. The root running app has not been updated during this isolated verification.
+
+**Insights**
+
+A retained provider alone is insufficient: unknown fine geometry must not become cached coarse ground, and source/capacity rejection needs a settled immutable fallback so public retry queues can drain. Separate payload, history, pending-owner and outcome-metadata budgets. GPU source level differs from the level of an upsampled visible descendant.
+
 ## 2026-11-06 01:03 — Correct the dependent overview delivery reference
 
 TODO: 2.0.150/2.0.162; R-WORLD-11.
