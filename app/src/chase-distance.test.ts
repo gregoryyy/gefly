@@ -24,8 +24,20 @@ test('R-VIEW-1 close chase zoom keeps the aircraft readable with a gentle first 
   assert(Math.abs(far / 100_000 - Math.exp(.6)) < 1e-12, 'long-range overview remains quick');
 });
 
+test('R-VIEW-1 chase zoom can move closer than the default without jumping to its limit', () => {
+  assert.equal(CHASE_DISTANCE.min_m, 16);
+  const closer = nextChaseDistance(CHASE_DISTANCE.initial_m, -100);
+  assert(closer < CHASE_DISTANCE.initial_m && closer > CHASE_DISTANCE.min_m);
+  assert(Math.abs(nextChaseDistance(closer, 100) / CHASE_DISTANCE.initial_m - 1) < 1e-12);
+  let distance = CHASE_DISTANCE.initial_m;
+  for (let i = 0; i < 30; i++) distance = nextChaseDistance(distance, -200);
+  assert.equal(distance, CHASE_DISTANCE.min_m);
+  assert(CHASE_DISTANCE.initial_m / distance >= 1.9, 'aircraft can appear nearly twice as large');
+  assert(nextChaseDistance(distance, 100) > distance, 'zoom can move away again');
+});
+
 test('R-INPUT-1 wheel event subdivision and reversal preserve distance across the response transition', () => {
-  for (const start of [CHASE_DISTANCE.initial_m, 100, 990, 1000, 1100, 100_000]) {
+  for (const start of [18, 24, CHASE_DISTANCE.initial_m, 100, 990, 1000, 1100, 100_000]) {
     const whole = nextChaseDistance(start, 100);
     let subdivided = start;
     for (let i = 0; i < 10; i++) subdivided = nextChaseDistance(subdivided, 10);

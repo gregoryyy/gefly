@@ -2,7 +2,9 @@ const INITIAL_DISTANCE_M = Math.hypot(30, 11);
 
 /** Camera radius only; the initial position is 30 m behind and 11 m above. */
 export const CHASE_DISTANCE = Object.freeze({
-  min_m: INITIAL_DISTANCE_M,
+  // Keep the camera outside the illustrative aircraft (10.7 m wingspan),
+  // while making it about twice as large as at the default chase distance.
+  min_m: 16,
   initial_m: INITIAL_DISTANCE_M,
   max_m: 20_000_000,
 });
@@ -42,6 +44,6 @@ export function nextChaseDistance(current_m: number, delta: number, deltaMode = 
   const pixels = Math.max(-200, Math.min(200, delta * scale));
   if (pixels === 0) return current;
   const travel = wheelTravel_px(current) + pixels;
-  if (travel <= 0) return CHASE_DISTANCE.min_m;
+  if (travel <= wheelTravel_px(CHASE_DISTANCE.min_m)) return CHASE_DISTANCE.min_m;
   return Math.max(CHASE_DISTANCE.min_m, Math.min(CHASE_DISTANCE.max_m, radiusFromTravel_m(travel)));
 }
