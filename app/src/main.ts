@@ -209,8 +209,8 @@ let lastMapUpdate_ms = -Infinity;
 let lastMapSample: unknown = undefined;
 let reviewTerrainRequest: string | null = null;
 let reviewTerrainGeneration = 0;
-// Existing E1 fixture's empirical input offset, not an aircraft coefficient.
-let rollOffset = -0.109375;
+// Normal flight starts without an external aileron command; the study offset is explicit.
+let rollOffset = 0;
 let controlSettings: ControlSettings = { ...DEFAULT_CONTROL_SETTINGS };
 const keys = new Set<string>();
 const pointerControls = new Map<number, string>();
