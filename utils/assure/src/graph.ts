@@ -127,8 +127,8 @@ export function buildGraph(snapshot: Snapshot): Graph {
       }
       let fields = 0;
       const walk = (item: unknown, pointer: string, parent?: string, depth = 0) => {
-        // The imported regional map style has 15,988 nodes. Keep extraction
-        // bounded while retaining every field instead of excluding that asset.
+        // Unprofiled structured JSON retains every field within the existing
+        // bounds; only the exact generated profile above omits child nodes.
         if (++fields > 20000 || depth > 48) throw new Error('JSON traversal limit');
         const id = `${path}#${pointer}`;
         merge({ kind: 'object', id, source: id, hash: sha256(canonical(item)), attrs: { scope: 'JSON pointer; value not validated by graph', file: path, pointer } });

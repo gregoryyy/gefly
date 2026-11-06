@@ -54,3 +54,28 @@ Independent review, final CI/integrity, assurance diff and publication are pendi
 at this record's initial revision. Original PR102 evidence remains historical;
 new merge checks do not retroactively change those runs. Cross-provider peer
 remains pending under batch cadence.
+
+
+## Bounded cardinality repair before renewed CI
+
+The orchestrator approved one exact path/hash extraction profile for the imported
+generated `app/public/mapdata/terrain-style.json`. Original style bytes, all
+pre-existing catalog records and accepted whole-file claims are unchanged. The
+profile omits only15988 disposable derived style pointers. It does not exempt
+hand-authored or aircraft JSON, increase any cap, or accept child selectors via a
+file fallback. Missing/changed bytes and unapproved profiles fail integrity;
+input child selectors and result child assertions make acceptance ineligible.
+
+The44 focused graph/evidence tests pass, including four new profile cases.
+The first profile-enabled `just assure check` at merge head
+`61a5acbab4a9a179ebbcc8412b54f67f9d4ad965` passed with44053 nodes/58574 facts,
+zero errors,226 warnings and138 notes. The diff against current main446293a
+contains1231 added,259 changed and15988 removed identities. Every removed ID is
+an `object:app/public/mapdata/terrain-style.json#...` child; no other IDs or
+accepted claims were removed. Its bounded impact closure was truncated and is
+not an all-clear for unknown dependencies. A review found two old explanatory
+sentences claiming universal style-field extraction; they are qualified to the
+default unprofiled structured path without changing behavior.
+
+This records the repair and executed checks, not the pending full-CI rerun or
+independent acceptance. The initial cardinality failure above remains historical.
