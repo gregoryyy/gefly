@@ -379,4 +379,4 @@ Task2.0.170 verification: [quality](reviews/2026-11-06-worldwide-airports-qualit
 
 
 - [x] 2.0.177 Restore sourced worldwide VOR/LOC/GS/DME reception outside the regional discovery/receiver gap; share exact package identity between instruments and native-worker NAV1/AP, preserve explicit components/flags and bounded per-step/picker work. R-NAV-1/R-NAV-2/R-NAV-4/R-DATA-1. [Request](input/2026-11-06-nav-reception.md).
-- [ ] 2.0.185 Scale chase-return duration with zoom-out factor up to six seconds, decelerating into the endpoint while preserving cockpit, reduced-motion, cancellation and native-state isolation. R-VIEW-1/R-INPUT-1/R-UX-2. [Request](input/2026-11-06-chase-return-duration.md).
+- [x] 2.0.185 Scale chase-return duration with zoom-out factor up to six seconds, decelerating into the endpoint while preserving cockpit, reduced-motion, cancellation and native-state isolation. R-VIEW-1/R-INPUT-1/R-UX-2. [Request](input/2026-11-06-chase-return-duration.md).

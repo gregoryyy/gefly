@@ -13,9 +13,11 @@ radius, capped6000ms; cockpit stays700ms and disabled/reduced-motion stays insta
 The coefficients are the declared presentation policy, not an aircraft value or
 additional user quote. R-INPUT-1's camera/flight-state separation remains relevant.
 
-**Current recommendation, renewed19:46: bounded source/browser acceptance passes
-for both ROOT and publication on their separate fresh wheel-guard artifacts.
-Complete CI/assurance gates remain pending.** The prior ROOT b279b00… and earlier
+**Current recommendation, renewed19:53: bounded source/browser acceptance passes
+for both contexts; complete publication CI and production build pass on the
+source frozen at d75fd17.
+Final integrated metadata assurance/diff remain pending.** No whole-ROOT CI or
+separate terrain-overview acceptance is implied. The prior ROOT b279b00… and earlier
 publication runs predate the unsupported-wheel-mode repair and remain historical.
 The current publication also has its own four-group legacy chase run. See the
 final renewal below; evidence is not substituted between contexts.
@@ -39,7 +41,7 @@ remain outside this increment unless explicitly observed.
 ## Initial source snapshots and identities — historical
 
 ROOT is the shared working application at
-`/Users/gregor/Documents/devel/gefly`, with unrelated ongoing changes. Its seven
+the working application checkout, with unrelated ongoing changes. Its seven
 camera/browser pins independently matched the completed initial browser artifact
 at19:34; the new Escape repair invalidates that current-source binding. The
 publication is the dirty, frozen feature worktree
@@ -269,3 +271,71 @@ Escape Q1 history and wheel-mode invalidation stay recorded. Remaining real
 hidden-tab/device, animated Review, moderate-factor actual timing and training
 limits are unchanged. No source/tests were edited or browser/heavy gate rerun
 by this validator.
+
+## Final complete publication gate renewal
+
+2026-11-06 19:50 Europe/Berlin, clock-derived. Reviewer independently inspected
+`output-camera-final-ci.log` through its passing terminal summary for source/
+requirements snapshot `d75fd17f67bf34760a79bce07e0cfdd6b319dad8` in the
+main-based publication. SHA-256:
+`0d35c5bfa85f0495af4f646d7131dbd4d730a2eeeb0e6475e68bb535edb87af5`.
+The subsequent provisional review commit
+`3fd63828f68638753e3b43fab452e853137294ac` changes only the three camera
+quality/runtime/validation documents. Independent Git comparison finds no code
+change after the tested snapshot, and the current publication browser remains
+219f4529… with all seven current source/harness pins matching.
+
+| Final bounded publication criterion | Observed completed evidence | Result |
+| --- | --- | --- |
+| Complete shared CI |694Node/32Python application tests,89assurance and11training tests pass; integrity and3277tracked-path whitespace pass with terminal CI success. | pass for executed checks |
+| Tested-source/evidence boundary | Log identifiesd75fd17; later3fd6382 changes only three review documents. Actual five-group and four-group browser evidence retains its previously verified current source pins. | pass |
+| Current source integrity at CI snapshot |44,299nodes/66,465facts,0errors/237warnings/138notes; source/requirement inputs explicitly identified below. | pass for structural integrity |
+| Final integrated metadata assurance/diff | Provisional/final review metadata is integrated after CI integrity; final check/diff still required by the integration owner. | blocked pending final metadata evidence |
+| Separate overview and external peer | Separate terrain-overview view is excluded from the main-based port; no live cross-provider review was executed/accepted. | not evaluated |
+
+The integrity input hash is
+`a23e495eeb58b91dbfee71222ee7b85c7a36823862c47c3b2c29a7f8e8ae8c1b`.
+Application Python stages are6+6+10+10, all successful. Repository tooling
+executes247of248 with one Linux-only skip; JSBSim study executes14of23 with nine
+optional package-unavailable skips; C172S study executes25of25. Skips remain
+not evaluated, not passes. The actual UI browser results are separate observations,
+not inferred from the CI stage named Browser application tests.
+
+The integration owner reports Claude CLI2.1.308 is present but its auth status
+is not authenticated. No external-provider review attempt or acceptance is
+claimed; the cross-provider gate remains pending under its separate cadence.
+Existing engine build-info provenance remains unverified despite observed matching
+runtime binary hashes. No physics/training or broader device fidelity follows
+from this camera software gate.
+
+**Final bounded source/browser/shared-gate recommendation: pass for the
+zoom-dependent chase-return software atd75fd17.** Both current context browsers,
+publication legacy chase regression and completed full publication CI support the
+declared timing/cap/deceleration/cancellation scope. Final metadata assurance/diff
+and publication bookkeeping remain explicitly pending and integration-owned.
+No tests, browser or heavy gate were rerun, and no source was edited by this
+validator for this renewal.
+
+## Production-build evidence renewal
+
+2026-11-06 19:53 Europe/Berlin, clock-derived. Reviewer inspected the completed
+`output-camera-main-build.log` for `npm --prefix app run build`; the integration
+owner reports exit0. The log finishes with `built in8.49s` and emitted application,
+MapLibre/airport-worker and Cesium assets. SHA-256:
+`a162453458ae297b34228188e723f0d1277de65d39a27698e62d2661f3dd15c6`.
+Independent Git comparison againstd75fd17 finds no change under app/studies/utils/
+data/packages after the tested source snapshot; the later3fd6382 commit is review
+documentation only. No build or tests were rerun by the validator.
+
+| Additional final criterion | Observed evidence | Result |
+| --- | --- | --- |
+| Production compilation/bundling | Completed TypeScript/Vite production build, emitted assets and supplied exit0 on unchanged source. | pass |
+| Honest build limits | Large-chunk and plugin-timing warnings are present, not build failures; no loading/performance SLA is inferred from successful bundling. | pass for disclosure |
+
+The integration owner separately reports remote main still757c41f…; this review
+does not independently claim a new remote query or future mergeability. The
+bounded software acceptance above is unchanged. **Final integrated metadata
+assurance/diff remain pending and integration-owned.** Cross-provider peer remains
+pending with the available CLI unauthenticated, and no provider review attempt
+or acceptance claimed. Separate overview, wider devices, engine-build provenance
+and aircraft/training limits remain as recorded above.

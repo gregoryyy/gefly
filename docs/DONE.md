@@ -3,6 +3,50 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 19:53 — Scale chase-view return time with zoom distance
+
+TODO: 2.0.185; R-VIEW-1/R-INPUT-1/R-UX-2.
+Agent: Codex orchestrator; camera production and main-based port
+`ofm_housekeeping`, focused unit tests `nav_receiver_trace`, independent
+production quality `nav_receiver_trace` excluding his own tests, and
+independent validation `camera_return_validate`.
+
+**Implementation notes**
+
+Chase double-click return uses700ms plus450ms per doubling of starting radius
+relative to the close target, capped at6000ms. The existing shortest-yaw,
+quintic easing and logarithmic radius give a decelerating endpoint; cockpit
+retains700ms and reduced motion or a disabled option returns immediately.
+Repeated requests restart from the displayed pose. Escape now cancels a pure
+radius-only return, and invalid wheel modes do not consume or cancel motion.
+
+Because earlier camera PRs merged into intermediate branches after their parents
+merged, main lacked the camera slice. This increment ports only the required
+chase distance, pose, return, preference, gesture and camera integration onto
+main; no separate terrain-overview acceptance is claimed. Actual browsers pass
+five groups in the working app and five in the main port, with fresh hashes,
+zero page errors and paused native-state invariance. Their far returns select
+6000ms and render the endpoint after6016.8ms and6010.3ms respectively; late
+log-radius steps decrease. Real wheel/Escape cancellation stays stable6200ms.
+The main legacy chase browser passes four groups including live flight/Review.
+
+Complete CI at d75fd17 passes694Node/32Python/89assurance/11training, with
+44299nodes/66465facts/zero errors and3277 tracked whitespace paths. The production
+build passes with Vite chunk/timing warnings. Independent quality and validation
+accept the bounded source/browser evidence. Final metadata assurance/diff are
+run separately before publication.
+
+**Deviations**
+
+Initial pre-repair results and an early rounded-deadline test failure remain
+historical. Nine optional JSBSim and one platform-only tooling case are skipped,
+not passes. Reused WASM hash266f2016… is observed in both contexts; build-info
+provenance is unverified and the browser harness does not itself pin the binary.
+The separate terrain-overview view, real hidden-tab/device matrix, animated
+Review and broader aircraft/training fidelity remain outside this acceptance.
+Claude CLI2.1.308 reports no authenticated session; no cross-provider review
+was attempted or accepted, so peer remains pending under cadence.
+
 ## 2026-11-06 18:47 — Verify saved Options, map filters and map keys after conflict resolution
 
 TODO: 2.0.181; 2.0.182; 2.0.183.

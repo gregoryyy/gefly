@@ -120,3 +120,30 @@ return remains stable for6200ms. Frame scheduling accounts for the measured
 rendered endpoint appearing after the six-second policy deadline. This run is
 historical because later input-guard repairs changed its source and harness.
 Current-main port checks and independent reviews are recorded separately.
+
+## Final bounded observations
+
+2026-11-06 19:53 Europe/Berlin, Codex orchestrator. After independent review
+found a zero-look Escape cancellation gap and an unsupported-wheel handling
+inconsistency, both were repaired and source-pinned browser checks renewed.
+The working app passes five actual-browser groups (artifact c8b33bc9…); the
+main-based port passes five (219f4529…), including real invalid-wheel and
+Escape interactions, with a6200ms observation after both wheel and Escape
+cancellation. Selected6000ms returns rendered their final poses after6016.8ms
+and6010.3ms respectively; the extra time is frame scheduling. Equal-time
+late log-radius intervals decreased in both contexts. The main-based legacy
+chase browser passes four groups (ee409420…), including actual moving flight
+and Review; the separate terrain-overview view was explicitly not evaluated.
+
+Complete CI at source/requirements revision d75fd17 passes694Node/32Python/
+89assurance/11training, zero integrity errors and3277 tracked whitespace paths.
+It executes247/248 repository-tool tests and14/23 JSBSim studies; one platform
+and nine optional study skips remain explicit. Production Vite build passes
+with large-chunk/timing warnings. Both locally reused WASM files hash266f2016…;
+the browser harness does not itself freeze the binary and build-info provenance
+remains unverified. Earlier pre-repair browser observations above remain
+historical. Independent quality and validation cover the bounded implementation;
+final documentation assurance/diff are separate. Claude CLI2.1.308 is installed
+but reports no authenticated session, so no external peer review was attempted
+or accepted; cross-provider peer remains pending. No terrain, aircraft fidelity,
+operational training or separate-overview acceptance follows from these checks.

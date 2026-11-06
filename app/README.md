@@ -87,7 +87,8 @@ unavailable. Returning to live restores pending control settings.
 In chase view, scroll to change the camera's distance and double-click the
 scene to return behind the aircraft. **View → Animate view return** controls
 whether that return animates. Greater zoom-out produces a longer return, up to
-six seconds, with a gradual stop. Cockpit double-click centers the view; the
+six seconds, with a gradual stop. Wheel input, dragging, Escape or a view
+switch cancels an active return. Cockpit double-click centers the view; the
 system reduced-motion preference makes both returns immediate.
 
 Press and hold the on-screen flight buttons, or drag the virtual joystick to

@@ -110,13 +110,51 @@
     "scope": "Before the final main-only wheel guard; affected wheel and lifecycle behavior was subsequently checked in both actual browser contexts."
   },
   "full_ci": {
-    "result": "pending",
-    "source_revision": "d75fd17"
+    "result": "pass",
+    "exit_code": 0,
+    "source_revision": "d75fd17f67bf34760a79bce07e0cfdd6b319dad8",
+    "code_revision": "c839051",
+    "log_sha256": "0d35c5bfa85f0495af4f646d7131dbd4d730a2eeeb0e6475e68bb535edb87af5",
+    "application_node": 694,
+    "application_python": 32,
+    "assurance_tests": 89,
+    "training_tests": 11,
+    "integrity": {
+      "nodes": 44299,
+      "facts": 66465,
+      "errors": 0,
+      "warnings": 237,
+      "notes": 138
+    },
+    "repository_tools_executed": 247,
+    "repository_tools_skipped": 1,
+    "jsbsim_studies_executed": 14,
+    "jsbsim_studies_skipped": 9,
+    "c172s_checks_passed": 25,
+    "tracked_whitespace_paths": 3277,
+    "scope": "The integrated code and scoped requirements were frozen; three review/evidence documents were added after the integrity snapshot. Final metadata assurance and diff are checked separately."
   },
   "limits": [
     "Actual Chrome/MapLibre/Cesium and native worker with fixture scenery, not terrain or aircraft fidelity validation.",
     "Frame scheduling can render the final pose after the six-second policy deadline.",
     "Real hidden-tab/device matrix and separate terrain-overview feature were not evaluated.",
     "Cross-provider peer remains pending."
+  ],
+  "production_build": {
+    "result": "pass",
+    "exit_code": 0,
+    "log_sha256": "a162453458ae297b34228188e723f0d1277de65d39a27698e62d2661f3dd15c6",
+    "warnings": "Vite reported large bundles and plugin timing."
+  },
+  "peer": {
+    "result": "pending",
+    "reviewer": "Claude CLI",
+    "cli_version": "2.1.308",
+    "reason": "The installed CLI reports no authenticated session; no external review was attempted or accepted."
+  },
+  "history": [
+    "An initial 11/12 unit run failed an exact deadline assertion due to a rounded expected decimal; the corrected test uses the actual floating-point deadline while independently checking literal expected values.",
+    "The first scaffold attempt preceded copying the two referenced test files and failed on their missing links; the complete scaffold was rerun successfully.",
+    "Earlier successful browser preparations predated the discovered Escape or invalid-wheel guard and remain historical; both current contexts were rerun after the repairs."
   ]
 }

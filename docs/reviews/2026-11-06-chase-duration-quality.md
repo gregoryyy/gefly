@@ -223,3 +223,43 @@ Production quality remains **no outstanding findings in scope**. My authored
 helper unit tests remain excluded from independent acceptance. Full CI and
 assurance are still pending; no additional test process was launched by this
 reviewer during these browser runs.
+
+## Full CI evidence renewal — 2026-11-06 19:51 Europe/Berlin
+
+Independently inspected the completed publication CI log
+`output-camera-final-ci.log`, SHA-256
+`0d35c5bfa85f0495af4f646d7131dbd4d730a2eeeb0e6475e68bb535edb87af5`.
+Its terminal result is `Foundation CI: passed with skipped checks`, not an
+all-tests-executed claim. It records694 application Node tests and32 application
+Python tests passing,89 assurance tests,11 training-package tests, and assurance
+integrity44299nodes/66465facts/zero errors/237warnings/138notes. Repository tools
+execute247 of248 tests with one Linux-only skip. JSBSim study executes14 of23
+with nine optional Python-JSBSim checks skipped; C172S study executes25 of25.
+Tracked-content whitespace passes for3277 tracked paths. These are observed
+gate outcomes, not independent acceptance of my authored camera-return tests,
+nor aircraft-model validation inferred from a green CI.
+
+The orchestrator identifies the tested source/requirements snapshot as d75fd17.
+The current inspected production main/helper/browser hashes remain exactly
+those of the final browser renewal above. Read-only Git comparison confirms
+d75fd17..3fd6382 adds only the three camera quality/runtime/validation records;
+no production code changed after the CI source snapshot. The post-CI review
+metadata and final TODO/DONE integration still require their final assurance
+check and explicit-base lineage diff; this report does not mark those pending
+steps passed. Production quality remains no outstanding findings in scope.
+
+External cross-provider peer is pending. The orchestrator reports CLI2.1.308
+present but unauthenticated; this reviewer has not treated CLI presence, these
+same-provider reviews or test success as an executed external peer gate.
+
+## Production build renewal — 2026-11-06 19:53 Europe/Berlin
+
+Independently read the publication `npm --prefix app run build` log
+`output-camera-main-build.log`, SHA-256
+`a162453458ae297b34228188e723f0d1277de65d39a27698e62d2661f3dd15c6`.
+The orchestrator's process exits0 and the log reports the TypeScript/Vite build
+complete in8.49s. Existing large-chunk and plugin-timing warnings remain visible;
+they are not concealed as an all-device performance pass. Rechecked production
+main1cc8433 and helper49758687 hashes unchanged. No source or test was edited for
+this renewal. Final metadata assurance/diff remain integration-owned and pending
+in this report; external peer remains pending, with authentication unavailable.
