@@ -1,0 +1,78 @@
+{
+  "scope": "R-UX-2/R-INPUT-1 saved Options; scenery fixtures, no aircraft/source fidelity acceptance",
+  "version": 1,
+  "runs": [
+    {
+      "target": "working-app",
+      "result": "pass",
+      "browser": "156.0.8078.80",
+      "artifact": "output/flight/settings-preferences-browser.json",
+      "artifact_sha256": "a05f221af4e28c2aef6cb0cb057f5776b8e31f95ba7c3c6ccdcad482918aaf2e",
+      "source_hashes": {
+        "src/main.ts": "9f3bf028bd1e477adf41f4a3451b2c305d548314c4ffc64bae30aa2c880d06b4",
+        "src/settings-preferences.ts": "b5fb5230d909357e3ebc24878946a3dc5823f58007408151deb4bd8c28c63295",
+        "src/control-settings-panel.ts": "761592d1e849646d9ef46c11de292217a6bc39dce19ad9e7a766971b02b98ac1",
+        "src/audio-controls.ts": "42a5376d36c77658df89ef9204c6078ea104fecacc127d00dcf87d8ae76e7548",
+        "tests/settings-preferences.browser.mjs": "b1548f9815758653fdf616b890e05ba65c6995f868dbf5447f2a1b5309856725"
+      },
+      "checks": [
+        "unsaved Options previews do not persist through a real reload",
+        "Save restores every Options preference including false/zero after reload, without audio unlock or automatic flight",
+        "Escape cancels control, scenery, sound and Advanced previews without replacing saved choices",
+        "actual backdrop click cancels previews and preserves the committed choices",
+        "S and the top sound button persist immediately outside Options and survive reload without resuming flight or unlocking audio",
+        "Flight restart preserves committed user preferences",
+        "a new page on the same device/origin restores the saved choices",
+        "malformed, oversized and future-version storage safely selects defaults",
+        "actually denied storage permits session changes and reloads with usable defaults"
+      ]
+    },
+    {
+      "target": "publication",
+      "result": "pass",
+      "browser": "156.0.8078.80",
+      "artifact": "/private/tmp/gefly-persistent-options/output/flight/settings-preferences-browser.json",
+      "artifact_sha256": "72b233b670ba670e0ea0489126331b0ee079b2f83ca8b36ecbc2ab5ba310e609",
+      "source_hashes": {
+        "src/main.ts": "3529bca9afcb980d0f216a3ce29a8761221044ea6e3e88ff741fdd423f683562",
+        "src/settings-preferences.ts": "b5fb5230d909357e3ebc24878946a3dc5823f58007408151deb4bd8c28c63295",
+        "src/control-settings-panel.ts": "52047e6bb7c8d118dedf49bd208169f82cddda30277f569408527c341793c84b",
+        "src/audio-controls.ts": "42a5376d36c77658df89ef9204c6078ea104fecacc127d00dcf87d8ae76e7548",
+        "tests/settings-preferences.browser.mjs": "b1548f9815758653fdf616b890e05ba65c6995f868dbf5447f2a1b5309856725"
+      },
+      "checks": [
+        "unsaved Options previews do not persist through a real reload",
+        "Save restores every Options preference including false/zero after reload, without audio unlock or automatic flight",
+        "Escape cancels control, scenery, sound and Advanced previews without replacing saved choices",
+        "actual backdrop click cancels previews and preserves the committed choices",
+        "S and the top sound button persist immediately outside Options and survive reload without resuming flight or unlocking audio",
+        "Flight restart preserves committed user preferences",
+        "a new page on the same device/origin restores the saved choices",
+        "malformed, oversized and future-version storage safely selects defaults",
+        "actually denied storage permits session changes and reloads with usable defaults"
+      ]
+    }
+  ],
+  "root_view_browser": {
+    "result": "pass",
+    "artifact": "output/flight/view-preferences-browser.json",
+    "artifact_sha256": "cb5e833a099d7b9c23e7d8dc4ad5146ca8b5f838407f35108c120edde336ab3d",
+    "groups": 4
+  },
+  "limitations": [
+    "No camera/aircraft-loading/held-input persistence is part of saved Options.",
+    "Combined working-app npm suite had three airport-worker deadline failures; isolated airport-region server suite passed13/13. Publication CI passed555Node/22Python application cases,85assurance and11training;9optional JSBSim skips."
+  ],
+  "publication_ci": {
+    "command": "env PATH=/Users/gregor/.pyenv/versions/3.11.12/bin:$PATH just ci",
+    "result": "pass_with_optional_study_skips",
+    "log_sha256": "350f2994159de38286aa8d60ad10e90eab9dc76e495226acc2b21c38030421ae",
+    "application_node_pass": 555,
+    "application_python_pass": 22,
+    "assurance_pass": 85,
+    "training_pass": 11,
+    "optional_jsbsim_skips": 9,
+    "package_sha256": "3c7cc49d866dd916b8bd07db9a8b67803b96af459ee7686d4f2425b679715984",
+    "view_helper_sha256": "6c8053fa1fee76f5a1c2cb64bbc7555e519cbda42d7cf88142712035cd7a4b9b"
+  }
+}

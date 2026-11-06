@@ -3,6 +3,43 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 13:50 — Keep saved Options across new flights and reloads
+
+TODO: 2.0.173; R-INPUT-1/R-UX-2.
+Agent: Codex orchestrator; implementation `world_airport_client`, source research
+`coverage_housekeeping`, independent quality `coverage_housekeeping` and
+validation `settings_validate`.
+
+**Implementation notes**
+
+Saved control gains, brake strength, coordinated rudder, centered touchpad,
+practice PAPI, experimental roll correction and sound mute/volume now restore
+from a strict bounded device-local record. Display preferences remain separate.
+Save commits a preview; Escape/outside dismissal rolls it back. Quick sound
+changes save immediately. Startup stays paused and Web Audio stays locked until
+trusted activation. [Implementation and scope](research/2026-11-06-settings-preferences.md);
+[runtime evidence](reviews/2026-11-06-settings-preferences-runtime.json).
+
+**Deviations**
+
+No native/model changes or persistence of held inputs, aircraft loading or camera
+gestures. Existing location/AP restoration stays separate. Independent
+[quality](reviews/2026-11-06-settings-preferences-quality.md) and
+[validation](reviews/2026-11-06-settings-preferences-validation.md) accept the
+bounded Options behavior in the working app and isolated publication port.
+Separate nine-group browser runs and four working-app display groups pass.
+Publication CI passes555 Node/22 application Python,85 assurance and11 training
+cases, with9 optional JSBSim study skips. The concurrent broad working-app run
+has three airport-worker deadline failures; its isolated13-case airport suite
+passes. This does not claim that the whole working tree passes CI. Cross-provider
+peer review remains pending under the batching cadence.
+
+**Insights**
+
+Persist deliberate user preferences without treating preview values, transient
+commands or a remembered sound choice as permission to resume simulation/audio.
+
+
 ## 2026-11-06 02:59 — Reconcile the steering dependency before the terrain PR update
 
 TODO: 2.0.153/2.0.162; R-INPUT-1/R-SIM-11/R-WORLD-11.
