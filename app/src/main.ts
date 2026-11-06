@@ -92,6 +92,7 @@ root.innerHTML = `
   <aside id="stall-awareness-panel" aria-label="Spatial stall awareness estimates" hidden></aside>
   <aside id="flight-warnings" aria-label="Flight warnings, simulator cues"></aside>
   <div id="camera-fov" class="camera-fov">60° FOV · two-finger scroll</div>
+  <div id="initial-balance-status" role="status" class="initial-balance-status" hidden></div>
   <div id="yoke-center-marker" class="yoke-center-marker" aria-hidden="true" hidden></div>
   <div id="pointer-mode" class="pointer-mode">Click scene: yoke · Hold-drag: look</div>
   <aside id="flight-controls-panel" class="control-panel" aria-label="Flight controls">
@@ -162,6 +163,7 @@ const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(ma
 let view: 'cockpit' | 'chase' = 'cockpit';
 let landmarkLevel: LandmarkLevel = 0;
 let pointerYoke: ReturnType<typeof createPointerYoke> | null = null;
+let centerPickupRequired = false;
 let cameraLook = { yaw_rad: 0, pitch_rad: 0 };
 let cameraFov_rad = DEFAULT_FOV_RAD;
 let flapTarget_deg = 0;
@@ -304,6 +306,7 @@ const session = createSession({
       verticalSpeedFpm += (1 - Math.exp(-dt / 0.5)) * (raw - verticalSpeedFpm);
     }
     previous = state; latest = state;
+
     if (cwsHeld && state.kap_engaged !== 1) cwsControls?.releaseAll();
     if (!reviewing && ready && startupPreloadPending && scene) {
       startupPreloadPending = false;
@@ -1009,7 +1012,7 @@ function reset(preset: LandingPreset | null | undefined = landingPreset, start: 
   radioPanel.update(null, false, false); navigationGauges.update(null, false, false); landingFeedback.update(null, false);
   updateConfiguration(null, false);
   engineNavdata = { settled: false, sha256: null, error: null }; applyNavdataCheck();
-  notice(''); session.reset(landingPreset, airborneSite, runwayStart ?? undefined, location); updateSessionUI(); focusFlight();
+  notice(''); session.reset(landingPreset, airborneSite, runwayStart ?? undefined, location, landingPreset || runwayStart || location?.mode === 'ground' ? 0 : location?.initial_balance_profile ?? 1); updateSessionUI(); focusFlight();
 }
 function setView(next: typeof view) {
   closeViewMenu(); view = next;
@@ -1136,6 +1139,7 @@ function updatePointerHint(mode = sceneContainer.dataset.pointerMode ?? 'off'): 
   el('pointer-mode').textContent = groundCollisionStopped() && !reviewing ? 'COLLISION VIEW · hold-drag to inspect'
     : reviewing ? (mode === 'look' ? 'REVIEW LOOK · release to keep view' : 'REVIEW · hold-drag: look · double-click: front')
     : (autopilotCapturePending || latest?.kap_engaged) && !cwsHeld ? 'AUTOPILOT · P disconnects · hold C to hand-fly'
+    : centerPickupRequired && mode === 'yoke' ? 'CENTERED YOKE · move pointer to the center ring to steer'
     : mode === 'look' ? 'LOOKING · release keeps view · double-click: front'
     : centered ? (mode === 'yoke' ? 'CENTERED YOKE · click off · hold-drag to look' : 'CENTERED YOKE · click on · hold-drag to look')
     : mode === 'yoke' ? 'YOKE ACTIVE · hold-drag: look · double-click: front' : 'Click: yoke · hold-drag: look · double-click: front';
@@ -1274,7 +1278,7 @@ sceneContainer.setAttribute('aria-description','I toggles the menu. O opens Opti
 
 const sceneReady = createScene(sceneContainer).then(result => {
   scene = result; scene.setLandmarkLevel?.(landmarkLevel); scene.setSceneryMode?.(!!controlSettings.vectorScenery); scene.setPracticePapi?.(!!controlSettings.practicePapi);
-  scene.setTerrainTiles?.([...regionalTiles.values()]); session.reset(undefined, undefined, undefined, initialFlightLocation ?? undefined);
+  scene.setTerrainTiles?.([...regionalTiles.values()]); session.reset(undefined, undefined, undefined, initialFlightLocation ?? undefined, initialFlightLocation ? initialFlightLocation.initial_balance_profile ?? (initialFlightLocation.mode === 'ground' ? 0 : 1) : 1);
 }).catch((error: unknown) => {
   sceneFailed = true; running = false; startWhenReady = false;
   notice(`Scene unavailable: ${error instanceof Error ? error.message : String(error)}. Reload with WebGL enabled.`);
@@ -1283,6 +1287,12 @@ const sceneReady = createScene(sceneContainer).then(result => {
 let lastFrame = performance.now();
 const yokeCenterMarker = el('yoke-center-marker');
 function animate(now: number) {
+  const pickup = pointerYoke?.updateReference() ?? false;
+  if (pickup !== centerPickupRequired) {
+    centerPickupRequired = pickup;
+    updatePointerHint(sceneContainer.dataset.pointerMode ?? 'off');
+    yokeCenterMarker.classList.toggle('needs-center', pickup);
+  }
   const yokeCenter = pointerYoke?.getCenter() ?? null;
   yokeCenterMarker.hidden = yokeCenter === null;
   if (yokeCenter) {
@@ -1376,6 +1386,11 @@ function animate(now: number) {
       el('throttle').setAttribute('aria-valuetext', `${Math.round(throttle * 100)} percent selected`);
       el('power').textContent = `${Math.round(throttle * 100)}%`;
     }
+    const balanceStatus = el('initial-balance-status');
+    balanceStatus.hidden = state.initial_balance_profile !== 1;
+    balanceStatus.textContent = state.initial_balance_profile === 1 ? 'MODEL BALANCED START' : '';
+    balanceStatus.title = state.initial_balance_profile === 1
+      ? `Generic-model initial equilibrium; fixed roll trim ${state.roll_trim_norm}, yaw trim ${state.yaw_trim_norm}. No continuous wings-level assistance.` : '';
     landingFeedback.update(state, reviewing);
     flightData.update(state, reviewing);
     stallAwareness.update(state, reviewing);

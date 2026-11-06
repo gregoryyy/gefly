@@ -33,7 +33,7 @@ Build a deterministic graph from the selected local revision or working tree,
 retaining node identity, source location, revision, relation and certainty. Repeated
 builds over the same inputs produce the same sorted substantive output. Extract
 requirements, TODO/DONE/GAPS and commit references; include Python, JavaScript/MJS
-and C++ at least as file-level objects and JSON fields by stable pointer. Do not
+and C++ at least as file-level objects and JSON fields by stable pointer. One catalog-declared exception retains only the file object/hash for the exact imported generated `app/public/mapdata/terrain-style.json` bytes (SHA-256 `f6ed255e627a3dbc74dcb0a27cc982c75872c20a31d5c7815b717ac5c150b048`). Its 15,988 disposable generated field nodes are omitted; existing whole-file evidence/claims and raw bytes remain. No aircraft or hand-authored JSON fields are exempted. Missing/changed bytes or unapproved profiles fail integrity; explicit child selectors/assertions cannot fall back to file-level acceptance. All other structured extraction and the graph resource caps remain unchanged. Do not
 claim declaration-level understanding of a language handled only at file level.
 External documents are represented by their local source records, not fetched.
 

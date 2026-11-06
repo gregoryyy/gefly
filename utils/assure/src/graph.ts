@@ -11,6 +11,7 @@ import { scanIds } from '../upstream/src/read/ids.ts';
 import { extractStatus, todoIds, type Problem } from './status.ts';
 import { sha256, type Snapshot } from './snapshot.ts';
 import { inspectEvidence } from './evidence.ts';
+import { parseJsonExtractionProfiles, type JsonExtractionProfile } from './json-extraction.ts';
 
 export interface Graph {
   schemaVersion: 1;
@@ -56,6 +57,15 @@ export function buildGraph(snapshot: Snapshot): Graph {
   const doc = (path: string) => ({ path, text: read(path) ?? '' });
   for (const required of ['docs/SPEC.md', 'docs/TODO.md', 'docs/GAPS.md', 'docs/DONE.md'])
     if (read(required) === undefined) problem('missing-authority', required, 'Missing authoritative document', [required]);
+  let jsonProfiles: JsonExtractionProfile[] = [];
+  try {
+    const catalog = JSON.parse(read('docs/assure/catalog.json') ?? '{}');
+    jsonProfiles = parseJsonExtractionProfiles(catalog.jsonExtractionProfiles);
+    for (const profile of jsonProfiles) if (!snapshot.paths.includes(profile.path))
+      problem('json-profile.missing', profile.path, 'Generated JSON profile source is missing', [profile.path, 'docs/assure/catalog.json']);
+  } catch (error) {
+    problem('json-profile.schema', 'docs/assure/catalog.json', (error as Error).message, ['docs/assure/catalog.json']);
+  }
   const declarations = extractRequirements([doc('docs/SPEC.md')], snapshot.revision);
   const status = extractStatus(doc('docs/TODO.md'), doc('docs/GAPS.md'), doc('docs/DONE.md'), snapshot.revision);
   problems.push(...status.problems);
@@ -109,6 +119,12 @@ export function buildGraph(snapshot: Snapshot): Graph {
       let value: unknown;
       try { value = JSON.parse(text); }
       catch { problem('invalid-json', path, 'Cannot parse JSON input', [path]); continue; }
+      const profile = jsonProfiles.find(profile => profile.path === path);
+      if (profile) {
+        if (sha256(text) !== profile.sha256) problem('json-profile.hash', path, 'Generated JSON profile bytes changed; child extraction unavailable', [path, 'docs/assure/catalog.json']);
+        else problem('json-profile.applied', path, 'Hash-pinned generated cartography retained at file level; child selectors unavailable', [path, 'docs/assure/catalog.json'], 'note');
+        continue;
+      }
       let fields = 0;
       const walk = (item: unknown, pointer: string, parent?: string, depth = 0) => {
         // The imported regional map style has 15,988 nodes. Keep extraction

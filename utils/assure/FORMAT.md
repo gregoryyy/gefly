@@ -8,7 +8,7 @@ numeric counts. [The assurance contract](../../docs/assure/SPEC.md) owns AS1–A
 requirements remain declared in root SPEC.
 
 The top-level object has exactly `schemaVersion: 1`, `guards`, `evidence`,
-`criteria`, `fixtureGroups` and `aircraft`; all five collections are arrays.
+`criteria`, `fixtureGroups` and `aircraft`; all five collections are arrays. An optional `jsonExtractionProfiles` array may contain at most one reviewed generated-cartography exception as specified below.
 Unknown fields, wrong types and unsupported versions are errors. Every catalog
 record ID is unique across the first four collections, matches
 `[A-Za-z][A-Za-z0-9._:-]{0,127}` and is independent of its array index. Catalog
@@ -177,3 +177,20 @@ gate fails on errors; a recorded exploratory failure is reported separately.
 Facts retain declared/stale certainty, source and extractor version; certainty
 never means a test passed. Outputs are sorted and rebuildable; changing a source
 catalog/data file, rather than a generated graph, changes the next inspection.
+
+
+## Generated cartography extraction profile
+
+Optional `jsonExtractionProfiles` contains at most one object with exactly
+`path`, `sha256`, `mode` and `reason`. The only admitted pair is
+`app/public/mapdata/terrain-style.json` with SHA-256
+`f6ed255e627a3dbc74dcb0a27cc982c75872c20a31d5c7815b717ac5c150b048`, mode
+`file-level`, and a nonempty reason of at most2000 characters. Missing or changed
+bytes and unknown path/hash/mode/fields fail integrity. Absence of the profile
+retains normal structured extraction. No configurable broad exclusion exists.
+
+The whole-file object/hash and evidence freshness remain. Explicit non-root
+`pointer` values and non-root result assertions against the profiled file are
+errors and make dependent acceptance ineligible; the adapter cannot silently use
+the file node instead. Root selectors still describe the whole JSON value. All
+other JSON fields and graph/time/resource limits remain unchanged.
