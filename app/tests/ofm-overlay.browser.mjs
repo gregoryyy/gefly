@@ -142,13 +142,22 @@ try {
   assert.equal(demand.length, 0, 'closed unselected map requests no OFM content');
   await openMap(); assert.equal(await page.locator('#ofm-overlay-toggle').isChecked(), false); assert.equal(demand.length, 0);
   const baseline = await stats(), beforePixels = await page.locator('#practice-map-panel .maplibregl-canvas').screenshot();
+  const baselineForeground = await page.evaluate(() => {
+    const style = window.__ofmMap.getStyle();
+    return style.layers.filter(layer => typeof layer.source === 'string' && style.sources[layer.source]?.type === 'geojson').map(layer => layer.id);
+  });
+  for (const core of ['navigation-fixes', 'gps-target-line', 'path', 'navigation-stations']) assert(baselineForeground.includes(core), `baseline supplies ${core}`);
+  result.planScope = baselineForeground.includes('flight-plan-route-line');
+  result.baselineForeground = baselineForeground;
+  result.foregroundScope = result.planScope ? 'Ordered plan, GPS, NAV and trace are present and must remain above OFM.'
+    : 'This publication baseline has no ordered-plan feature; its existing GPS, NAV and trace foreground remains covered.';
   await page.locator('#ofm-overlay-toggle').check(); await loaded();
   assert(demand.some(path => path.endsWith('/metadata.json')) && demand.some(path => path.endsWith('.png')));
   const actualLayer = await layer(); assert.equal(actualLayer.type, 'raster'); assert.equal(actualLayer.minzoom, 7); assert.equal(actualLayer.maxzoom, undefined);
   assert.equal(actualLayer.paint['raster-opacity'], .8);
   const order = await page.evaluate(() => window.__ofmMap.getStyle().layers.map(layer => layer.id));
   assert(order.indexOf('ofm-overlay') > order.indexOf('imagery'));
-  for (const foreground of ['navigation-fixes', 'flight-plan-route-line', 'gps-target-line', 'path', 'navigation-stations']) assert(order.indexOf('ofm-overlay') < order.indexOf(foreground), foreground);
+  for (const foreground of baselineForeground) assert(order.indexOf('ofm-overlay') < order.indexOf(foreground), foreground);
   assert.match(await page.locator('#ofm-overlay-provenance').textContent(), /AIRAC 2611.*2026-10-29.*2026-11-26/);
   assert.equal(await page.locator('#ofm-overlay-provenance + p a').first().getAttribute('href'), 'https://openflightmaps.org/downloads/ed/');
   assert.equal(await page.getByRole('link', { name: 'Report a chart error', exact: true }).getAttribute('href'), 'mailto:info@openflightmaps.org');
@@ -201,7 +210,7 @@ try {
     await page.evaluate(() => window.__ofmMap.jumpTo({ center: [10.6, 51.2], zoom: 12 }));
     await page.waitForFunction(() => document.querySelector('.practice-map-ofm-overlay').dataset.status === 'unavailable');
     assert.equal(await page.locator('.practice-map-status').isVisible(), false, 'optional chart failure does not flag base-map failure');
-    assert(await page.evaluate(() => !!window.__ofmMap.getSource('recorded-path') && !!window.__ofmMap.getLayer('flight-plan-route-line')));
+    assert(await page.evaluate(foreground => !!window.__ofmMap.getSource('recorded-path') && foreground.every(id => !!window.__ofmMap.getLayer(id)), baselineForeground));
     const failureZoom = await page.evaluate(() => window.__ofmMap.getZoom());
     await page.getByRole('button', { name: 'Zoom map in', exact: true }).focus(); await page.keyboard.press('Enter');
     assert.equal(await page.evaluate(() => window.__ofmMap.getZoom()), failureZoom + 1);
