@@ -3,6 +3,68 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 12:53 — Integrate worldwide OurAirports discovery
+
+TODO: 2.0.170; R-WORLD-12/R-NAV-2/R-DATA-1/R-COMM-2.
+Agent: Codex orchestrator; code1 `world_airport_data`, code2 `world_airport_client`,
+housekeeping `world_airport_housekeeping`; independent `world_airport_quality`
+and `coverage_validate`.
+
+**Implementation notes**
+
+[Source/transport record](research/2026-11-06-ourairports-integration.md) and
+[package provenance](../app/public/airports/world/README.md) pin upstream commit
+c483a76d30ee903114b777bf099de0fae1761294. All 86,343 airports, 48,411 runways,
+30,394 COM records and 11,008 radio navaids are retained in 1,034 bounded 5° packages.
+A dedicated worker verifies descriptor/catalogue/cell integrity, loads nearby
+records and searches 97,351 global airport/NAV entries. Map selection shows source
+runway details, supports existing standby/GPS controls and preserves historical
+receiver/ILS limits. Regional 731-entry fallback, stale jobs, capped cache/results,
+partial status, unsupported channels and worker-failure cooldowns are guarded.
+
+Independent [quality](reviews/2026-11-06-worldwide-airports-quality.md) and
+[validation](reviews/2026-11-06-worldwide-airports-validation.md) accept bounded
+source/data/runtime behavior. Final working-app browser record has 9 groups / no
+omissions; the feature-only main port has 8 groups with 3 explicit absent legacy-UI
+features not evaluated. Both check actual worker/assets, seven outside-Germany
+airports, NAV/COM standby, NDB rejection, cache reuse, native/AP invariance,
+Review locks and 503 failure/regional fallback. Versioned
+[working-app](reviews/2026-11-06-worldwide-airports-root-runtime.json) and
+[publication](reviews/2026-11-06-worldwide-airports-publication-runtime.json)
+records retain source/harness/WASM hashes. Working-app 737 Node + 38 Python checks pass;
+feature shared CI passes 560 Node + 32 Python application tests plus assurance/training
+checks, with 9 optional JSBSim study cases explicitly skipped. Production build passes.
+
+Data and UI are separate commits 0922a23 / f58cb20 on an isolated current-main branch;
+no unrelated workspace features are included. Final feature CI log SHA-256 is
+`46f1905930732705994687adb3ad8ae6a3c5580cdcb1b48c1692330b8bf0a7e8`;
+production build log `69d415ac3d93d5210a8522555ce2f72ea156a0e46ed4bc835804c1e2d1ec4db9`.
+At 2de267a, assurance reports 59,903 nodes / 72,894 facts/zero errors, 226 historical
+warnings and 136 notes; inspected diff against 6563c59 adds 1,170 / changes 254 / removes 0.
+Final metadata record checks are renewed before publication. Peer pending under
+batched cadence; no cross-provider acceptance is claimed.
+
+**Deviations**
+
+Discovery does not add current AIRAC, IFR fixes/procedures, RF reception, ILS
+pairing, surveyed runway surfaces or native aircraft behavior. Failed source cells
+remain latched in one centre generation, retrying only after another centre/reload
+and cooldown. A low future-update compiler/client text-bound consistency follow-up
+remains in quality. Opaque `.bin` transports contain schema-validated UTF-8 JSON;
+assurance traces descriptor/file-level provenance instead of millions of generated
+field pointers. All-cell/source checks remain required, and no assurance limit or
+extractor is relaxed. Whole working-copy assurance retains its pre-existing size
+limitation; publication uses the isolated feature scope. The test setup's initial
+shared node_modules symlink allowed CI to clear the ignored local install; restored
+from byte-identical lock entries and now physically separate, with no lock changes.
+
+**Insights**
+
+Browser HTTP gzip auto-decoding invalidates compressed-payload integrity checks;
+neutral archive delivery plus an explicit descriptor/catalogue boundary preserves
+exact bytes. Airport discovery, ground scenery and receiver/procedure fidelity
+need independent source and acceptance records.
+
 ## 2026-11-06 09:29 — Add bounded on-demand airport surface generation
 
 TODO: 2.0.164/2.0.166/2.0.168; R-AIRPORT-3/R-AIRPORT-2/R-DATA-1.

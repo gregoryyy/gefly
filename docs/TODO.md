@@ -358,3 +358,9 @@ future tasks, not completed by this requirements update.
 - [ ] 2.0.167 Add separate Terrain overview camera with bounded Earth-scale scroll zoom and native-state isolation. R-VIEW-1/R-INPUT-1. [Request](input/2026-11-06-scenery-workers-and-overview.md). Independent acceptance pending.
 - [ ] 2.0.168 Assess OpenFlightMaps structured-data overlay and current product/rights prerequisites. R-DATA-1/R-NAV-1. [Request](input/2026-11-06-scenery-workers-and-overview.md). Research delivered; specific current edition/license remains unselected, no data import.
 - [ ] 2.0.169 Repair landing shadow receiver visibility and height-readout gating. R-VIEW-1. [Request](input/2026-11-06-scenery-workers-and-overview.md). Flat-study pixel check passes; user terrain/landing reproduction and independent acceptance pending.
+
+- [x] 2.0.170 Integrate pinned worldwide OurAirports airport/runway/COM/radio-navaid discovery with regional packages, worker search/loading and source-marked map details/standby actions. R-WORLD-12/R-NAV-2/R-DATA-1/R-COMM-2. [Request](input/2026-11-06-integrate-ourairports.md).
+
+Task2.0.170 verification: [quality](reviews/2026-11-06-worldwide-airports-quality.md) and [validation](reviews/2026-11-06-worldwide-airports-validation.md) accept the bounded discovery increment; runtime records distinguish working-app and feature-only main scopes. Historical receiver/current-data fidelity and batched peer acceptance remain separate.
+
+- [ ] 2.0.180 Reconcile PR102 worldwide discovery with current main and its on-demand OSM airport generator, preserving source boundaries and history; renew integrated checks/reviews and update the existing PR. R-WORLD-12/R-NAV-2/R-DATA-1/R-COMM-2/R-AIRPORT-3. [Request](input/2026-11-06-pr102-conflicts.md).

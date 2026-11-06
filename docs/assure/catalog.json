@@ -1342,6 +1342,88 @@
         "reviewer": "Codex glide_housekeeping (independent of implementation)",
         "independent": true
       }
+    },
+    {
+      "id": "worldwide-airports-bulk-provenance-v1",
+      "mode": "source_record",
+      "revision": "upstream-c483a76d30ee903114b777bf099de0fae1761294",
+      "procedure": "Compile pinned four CSVs with utils/airports/world.py; verify each generated cell using app/src/world-airport-data.test.ts; independent source audit reported separately.",
+      "scope": "Pinned source and opaque bulk-package provenance only; runtime and independent review are separate.",
+      "limitations": [
+        "File-level compiled-payload provenance, not generated field-pointer coverage.",
+        "No operational completeness, AIRAC, RF/procedure or aircraft-fidelity acceptance."
+      ],
+      "outcome": "pass",
+      "requirements": [
+        "R-WORLD-12",
+        "R-DATA-1"
+      ],
+      "inputs": [
+        {
+          "path": "app/public/airports/world/manifest.json",
+          "sha256": "ed989f584a22dca515e9fd39de275949c2e3d2804aaa978c6382d340acd8d6c6",
+          "role": "source"
+        },
+        {
+          "path": "app/public/airports/world/catalogue.bin",
+          "sha256": "185a01cc51a59694bc9000f6ddc6a3946b799613d8bc220c14db74b5503bd216",
+          "role": "source"
+        },
+        {
+          "path": "utils/airports/world.py",
+          "sha256": "ec42e1a73aba942c1b3955cf02d04e58aa79dc8bd35d10de8b0d2596cf646aee",
+          "role": "build"
+        },
+        {
+          "path": "utils/airports/world_test.py",
+          "sha256": "49a4cd773cd502ca8ab683a88775ae2e4925b387bff136e39bd0a7906e814cb8",
+          "role": "fixture"
+        },
+        {
+          "path": "app/src/world-airport-data.test.ts",
+          "sha256": "c15403a3ed86eea771235bd72119cf380dcd51757b5214e48e591366da77ef20",
+          "role": "evaluator"
+        },
+        {
+          "path": "app/package-lock.json",
+          "sha256": "9a86fbec578047e0bbd849679327a0e3395ca2c6d19025060b9d8c93b92625ff",
+          "role": "environment"
+        }
+      ],
+      "unavailableRoles": [],
+      "notApplicableRoles": [
+        {
+          "role": "model",
+          "reason": "Community discovery data does not implement a flight-dynamics model."
+        },
+        {
+          "role": "criteria",
+          "reason": "This source record binds provenance only; runtime acceptance is independently reviewed against SPEC."
+        }
+      ],
+      "dependsOn": [],
+      "result": {
+        "path": "docs/reviews/2026-11-06-worldwide-airports-provenance.json",
+        "sha256": "3464563de91a45ebc3226d9b4dcefece5ef67bf0feeca3e021e73a3a0aa5523a",
+        "assertions": [
+          {
+            "pointer": "/outcome",
+            "equals": "pass"
+          },
+          {
+            "pointer": "/source_commit",
+            "equals": "c483a76d30ee903114b777bf099de0fae1761294"
+          },
+          {
+            "pointer": "/cell_count",
+            "equals": 1034
+          },
+          {
+            "pointer": "/source_counts/airports",
+            "equals": 86343
+          }
+        ]
+      }
     }
   ],
   "criteria": [
@@ -1467,6 +1549,14 @@
         "data/aircraft/c172s-classic/performance-values.json",
         "data/aircraft/c172s-classic/indication-loading-values.json"
       ]
+    }
+  ],
+  "jsonExtractionProfiles": [
+    {
+      "path": "app/public/mapdata/terrain-style.json",
+      "sha256": "f6ed255e627a3dbc74dcb0a27cc982c75872c20a31d5c7815b717ac5c150b048",
+      "mode": "file-level",
+      "reason": "Imported generated cartographic style: retain original bytes, whole-file hash and existing whole-file evidence. Omit 15988 disposable derived JSON-pointer nodes to keep the fixed graph budget; no aircraft fields or accepted child-selector claims are covered by this exception."
     }
   ]
 }

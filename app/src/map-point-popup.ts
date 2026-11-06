@@ -10,6 +10,8 @@ export interface MapPoint {
   readonly lat_deg: number;
   readonly source_label: string;
   readonly equipment?: string;
+  readonly world_record_id?: string;
+  readonly details?: readonly string[];
   readonly frequencies?: readonly { readonly kind: RadioKind; readonly channel_khz: number; readonly label: string }[];
 }
 export interface MapPointActions {
@@ -35,6 +37,7 @@ export function createMapPointPopup(input: Readonly<MapPoint>, actions: MapPoint
   section.append(node('p', `${point.kind} · ${validPosition
     ? `${coordinate(point.lat_deg, 'N', 'S')}, ${coordinate(point.lon_deg, 'E', 'W')}` : 'Coordinates unavailable'}`));
   const source = node('p', point.source_label); source.className = 'map-point-popup-source'; section.append(source);
+  for (const detail of (point.details ?? []).slice(0, 12)) section.append(node('p', detail));
   const unsupported = /\b(?:NDB|TACAN)\b/i.test(`${point.kind} ${point.equipment ?? ''}`);
   const unique = new Set<string>();
   for (const frequency of point.frequencies ?? []) {
