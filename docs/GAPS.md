@@ -4,6 +4,9 @@ All times are Europe/Berlin. Answers record the author and recording time. New a
 
 ## Recorded interaction decisions
 
+**2026-11-05 22:56, Codex confirmed app repair choice** (Europe/Berlin): 
+supported raw launch QFE is a sensor/reference value, separate from the 800–1100 hPa practice subscale. Retain complete QNH/STD indications and recording/continuation metadata at tested high launches; explain and disable unsupported QFE selection. Preserve unavailable API/atmosphere safeguards, native packing, physics and engine bytes. The user's pressure-flight altitude remains unknown; this confirmed gate does not establish terrain causality. R-AIR-3/R-SIM-2, TODO2.0.159.
+
 **2026-11-05 22:17, user report and Codex repair choice** (Europe/Berlin):
 [France fix failure](input/2026-11-05-france-gps-fix.md) is caused by obsolete
 regional validation in the custom plan store and editor. Use shared finite global
