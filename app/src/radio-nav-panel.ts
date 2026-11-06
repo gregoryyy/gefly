@@ -14,7 +14,7 @@ interface RadioNavOptions {
 const RECEIVERS = [1, 2] as const;
 const KINDS = ['com', 'nav'] as const;
 const navId = (receiver: RadioReceiver, suffix: string) => `${receiver === 1 ? 'nav' : 'nav2'}-${suffix}`;
-/** Dual session-only tuning units backed by the historical regional station catalogue. */
+/** Dual session-only tuning units backed by the historical worldwide station catalogue. */
 export function createRadioNavPanel(options: RadioNavOptions): {
   snapshot(): RadioNavSnapshot;
   update(state: Readonly<FlightState> | null, reviewing: boolean, running: boolean, flying?: boolean): void;
@@ -45,7 +45,7 @@ export function createRadioNavPanel(options: RadioNavOptions): {
       <div id="${navId(receiver, 'cdi')}" class="nav-cdi" role="img" aria-label="CDI unavailable">${'<i></i>'.repeat(11)}<b id="${navId(receiver, 'cdi-needle')}" hidden></b></div>
       <p id="${navId(receiver, 'signal-note')}" class="nav-signal-note">No historical signal in modeled range</p>
     </section>`).join('')}
-    <button type="button" id="nav-stations-open" class="nav-stations-open">Stations</button><p class="radio-limitations">Historical 2013.10 data · NOT CURRENT · teaching only. Simplified signals; no terrain or propagation. COM channel names incl. 8.33; no ATC.</p>
+    <button type="button" id="nav-stations-open" class="nav-stations-open">Stations</button><p class="radio-limitations">Worldwide historical 2013.10 data · NOT CURRENT · teaching only. Simplified signals; no terrain or propagation. COM channel names incl. 8.33; no ATC.</p>
   `;
   const dialog = document.createElement('dialog');
   dialog.id = 'radio-nav-dialog'; dialog.className = 'radio-nav-dialog'; dialog.setAttribute('aria-labelledby', 'radio-nav-title');
@@ -53,7 +53,7 @@ export function createRadioNavPanel(options: RadioNavOptions): {
   const stations = document.createElement('dialog');
   stations.className = 'nav-stations-dialog'; stations.setAttribute('aria-labelledby', 'nav-stations-title');
   stations.innerHTML = `<div class="nav-stations-header"><h2 id="nav-stations-title">Stations</h2><button type="button" class="nav-stations-close" aria-label="Close stations">×</button></div>
-    <p>2013.10 · HISTORICAL, NOT CURRENT · teaching only<br>Load to standby, then swap to activate.</p>
+    <p>Worldwide 2013.10 · HISTORICAL, NOT CURRENT · teaching only<br>Load to standby, then swap to activate.</p>
     <div class="nav-stations-filters"><label>Search name, identifier, airport or frequency <input class="nav-stations-search" type="search" autocomplete="off"></label>
     <label><input class="nav-stations-nearby" type="checkbox" checked> Within 50 NM of aircraft</label><span class="nav-stations-position"></span></div>
     <p class="nav-stations-count" role="status" aria-live="polite"></p>
@@ -156,7 +156,7 @@ export function createRadioNavPanel(options: RadioNavOptions): {
       focusInside: stationList.contains(document.activeElement), pointerInside: stationPointerInside, pressActive: stationPressActive })) return;
     stationRenderKey = key; stationCatalogue = catalogue; displayedStationEnabled = enabled; displayedPositionAvailable = positionAvailable; stationRenderedAt = performance.now();
     stationList.replaceChildren();
-    const announce = (count: number | null) => { const text = stationCountText(count); if (stationCount.textContent !== text) stationCount.textContent = text; };
+    const announce = (count: number | null) => { const text = count !== null && count > 200 ? `200 of ${count} stations shown; narrow the search to see more.` : stationCountText(count); if (stationCount.textContent !== text) stationCount.textContent = text; };
     if (!catalogue) { announce(null); return; }
     const query = stationSearch.value.trim().toLocaleLowerCase();
     const matches = catalogue.records.map(record => ({ record, distance: stationDistance(record.lat_deg, record.lon_deg) }))
@@ -165,7 +165,7 @@ export function createRadioNavPanel(options: RadioNavOptions): {
       .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity) || a.record.id.localeCompare(b.record.id));
     announce(matches.length);
     if (!matches.length) return;
-    for (const { record, distance } of matches) {
+    for (const { record, distance } of matches.slice(0, 200)) {
       const row = document.createElement('div'); row.className = 'nav-station';
       const description = document.createElement('span');
       const place = [record.airport, record.runway && `RWY ${record.runway}`].filter(Boolean).join(' ');

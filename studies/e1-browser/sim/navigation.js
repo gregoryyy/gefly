@@ -41,6 +41,13 @@ function sourceReceivable(r,g,p){
  const limit=(frontSide?(g.distance<=10*NM?35:10):10)*DEG;
  return !!dmeAvailable || (frontSide?Math.abs(front):Math.abs(back))<=limit;
 }
+// Only loader-validated, deeply frozen arrays are indexed. Ad-hoc/mutable test
+// or caller arrays retain per-call validation and cannot receive stale indexes.
+const catalogueChannels=new WeakMap();
+function channelRecords(records,frequency){
+ const index=records && catalogueChannels.get(records);
+ return index ? index.get(frequency) ?? [] : Array.isArray(records) ? records.filter(r=>validNavRecord(r)&&r.frequency_khz===frequency) : [];
+}
 const LAB=Object.freeze({uid:'fictional-lab',id:'LAB',name:'Fictional LAB',frequency_khz:113800,kind:'VOR',lat_deg:49.96,lon_deg:8.643,elevation_m:0,range_nm:60,variation_deg_east:0,front_course_true_deg:null,airport:null,runway:null,dme:{lat_deg:49.96,lon_deg:8.643,elevation_m:0,range_nm:60,bias_nm:0},gs:null,source_line_ids:[1]});
 export function navigationSignal(c,p,records=[],sourceLabel='Rhein-Main NAV 2013.10',receiver=1){
  const wholeValid=validNavigation(c);
@@ -49,7 +56,7 @@ export function navigationSignal(c,p,records=[],sourceLabel='Rhein-Main NAV 2013
  const empty={valid:false,kind:configured?(locChannel?2:1):0,cdi_norm:0,course_rad:configured?c.radio_obs_deg*DEG:0,gs_valid:false,gs_norm:0,station_id:null,station_name:null,station_uid:null,source_label:null,station_kind:null,course_reference:'NONE',course_true_deg:null,to_from:'OFF',radial_true_deg:null,radial_magnetic_deg:null,bearing_true_deg:null,dme_valid:false,dme_nm:null,dme_slant_nm:null,reason:'No station on active channel',gs_reason:'Glideslope unavailable'};
  if(!configured) return {...empty,reason:'Radio configuration unavailable'};
  if(!posValid(p)) return {...empty,reason:'Aircraft position unavailable'};
- const candidates=(c.radio_demo_enabled?[LAB]:Array.isArray(records)?records:[]).filter(r=>validNavRecord(r)&&r.frequency_khz===c.radio_nav_active_khz).map(r=>({r,g:geometry(r,p)})).filter(x=>x.g.distance<=x.r.range_nm*NM || x.r.dme && geometry(x.r.dme,p).distance<=x.r.dme.range_nm*NM).sort((a,b)=>a.g.distance-b.g.distance);
+ const candidates=(c.radio_demo_enabled?(LAB.frequency_khz===c.radio_nav_active_khz?[LAB]:[]):channelRecords(records,c.radio_nav_active_khz)).map(r=>({r,g:geometry(r,p)})).filter(x=>x.g.distance<=x.r.range_nm*NM || x.r.dme && geometry(x.r.dme,p).distance<=x.r.dme.range_nm*NM).sort((a,b)=>a.g.distance-b.g.distance);
  if(!candidates.length) return {...empty,reason:c.radio_demo_enabled?'No fictional LAB signal':'No historical signal in modeled range'};
  // Distance alone cannot identify the active runway or service. Resolve each
  // candidate's own sector and DME range first, then fail closed on overlap.
@@ -93,6 +100,8 @@ export function navigationSignal(c,p,records=[],sourceLabel='Rhein-Main NAV 2013
  return {...result,gs_valid:true,gs_norm:clip((r.gs.angle_deg-angle)/.7),gs_reason:'Historical glideslope · approximate geometry'};
 }
 
+const WORLD_NAVIGATION_ID='world-nav810-2013-10-v1', WORLD_NAVIGATION_ASSET='world-v1.bin';
+const WORLD_NAVIGATION_BYTES=8*1024*1024, WORLD_NAVIGATION_RECORDS=10000;
 let packagePromise;
 function deepFreeze(value) {
   if (value && typeof value==='object' && !Object.isFrozen(value)) {
@@ -116,16 +125,20 @@ export function loadNavigationPackage(){
   const manifestResponse=await fetch('/navdata/manifest.json',{cache:'no-store',redirect:'error'});
   if(!manifestResponse.ok) throw new Error('Navigation manifest unavailable');
   const manifest=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(await boundedBytes(manifestResponse,4096)));
-  if(!manifest||manifest.version!==1||typeof manifest.id!=='string'||!manifest.id||typeof manifest.asset!=='string'||!/^[-a-z0-9]+\.json$/.test(manifest.asset)||!Number.isSafeInteger(manifest.bytes)||manifest.bytes<1||manifest.bytes>1000000||typeof manifest.sha256!=='string'||!/^[a-f0-9]{64}$/.test(manifest.sha256)) throw new Error('Invalid navigation manifest');
+  if(!manifest||manifest.version!==1||typeof manifest.id!=='string'||!manifest.id||typeof manifest.asset!=='string'||!(/^[-a-z0-9]+\.json$/.test(manifest.asset)||manifest.id===WORLD_NAVIGATION_ID&&manifest.asset===WORLD_NAVIGATION_ASSET)||!Number.isSafeInteger(manifest.bytes)||manifest.bytes<1||manifest.bytes>(manifest.id===WORLD_NAVIGATION_ID&&manifest.asset===WORLD_NAVIGATION_ASSET?WORLD_NAVIGATION_BYTES:1000000)||typeof manifest.sha256!=='string'||!/^[a-f0-9]{64}$/.test(manifest.sha256)) throw new Error('Invalid navigation manifest');
   const response=await fetch(`/navdata/${manifest.asset}`,{cache:'no-store',redirect:'error'});
   if(!response.ok) throw new Error('Navigation package unavailable');
-  const bytes=await boundedBytes(response,1000000);
-  if(bytes.length!==manifest.bytes||bytes.length>1000000) throw new Error('Navigation package length mismatch');
+  const limit=manifest.id===WORLD_NAVIGATION_ID&&manifest.asset===WORLD_NAVIGATION_ASSET?WORLD_NAVIGATION_BYTES:1000000;
+  const bytes=await boundedBytes(response,limit);
+  if(bytes.length!==manifest.bytes) throw new Error('Navigation package length mismatch');
   const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),v=>v.toString(16).padStart(2,'0')).join('');
   if(hash!==manifest.sha256) throw new Error('Navigation package hash mismatch');
   const p=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
-  if(!p||p.version!==1||p.id!==manifest.id||p.edition!=='2013.10'||p.historical!==true||typeof p.source_label!=='string'||!p.source_label||typeof p.vertical_reference!=='string'||!p.vertical_reference||!Array.isArray(p.records)||p.records.length>1000||!p.records.every(validNavRecord)||new Set(p.records.map(r=>r.uid)).size!==p.records.length) throw new Error('Invalid navigation package');
-  return deepFreeze({...p,sha256:manifest.sha256});
+  if(!p||p.version!==1||p.id!==manifest.id||p.edition!=='2013.10'||p.historical!==true||typeof p.source_label!=='string'||!p.source_label||typeof p.vertical_reference!=='string'||!p.vertical_reference||!Array.isArray(p.records)||p.records.length>(manifest.id===WORLD_NAVIGATION_ID&&manifest.asset===WORLD_NAVIGATION_ASSET?WORLD_NAVIGATION_RECORDS:1000)||!p.records.every(validNavRecord)||new Set(p.records.map(r=>r.uid)).size!==p.records.length) throw new Error('Invalid navigation package');
+  const frozen=deepFreeze({...p,sha256:manifest.sha256}),index=new Map();
+  for(const record of frozen.records){const channel=index.get(record.frequency_khz)??[];channel.push(record);index.set(record.frequency_khz,channel);}
+  catalogueChannels.set(frozen.records,index);
+  return frozen;
  })().catch(e=>{packagePromise=undefined;throw e;});
  return packagePromise;
 }

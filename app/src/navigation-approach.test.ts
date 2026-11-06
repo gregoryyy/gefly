@@ -9,10 +9,13 @@ import { setNavigationCatalogue, navigationIndication, bearingDistanceIndication
 const bytes = readFileSync(new URL('../public/navdata/rhein-main-v1.json', import.meta.url));
 const manifest = JSON.parse(readFileSync(new URL('../public/navdata/manifest.json', import.meta.url), 'utf8'));
 const pkg = JSON.parse(bytes.toString('utf8'));
+const activeBytes = readFileSync(new URL(`../public/navdata/${manifest.asset}`, import.meta.url));
+const activePackage = JSON.parse(activeBytes.toString('utf8'));
 test('regional source inventory retains explicit components, original GS heights and historical edition', () => {
-  assert.equal(bytes.length, manifest.bytes);
-  assert.equal(createHash('sha256').update(bytes).digest('hex'), manifest.sha256);
-  assert.equal(pkg.id, manifest.id); assert.equal(pkg.edition, '2013.10'); assert.equal(pkg.historical, true);
+  assert.equal(activeBytes.length, manifest.bytes);
+  assert.equal(createHash('sha256').update(activeBytes).digest('hex'), manifest.sha256);
+  assert.equal(activePackage.id, manifest.id);
+  for (const record of pkg.records) assert.deepEqual(activePackage.records.find(r => r.uid === record.uid), record); assert.equal(pkg.edition, '2013.10'); assert.equal(pkg.historical, true);
   assert.equal(pkg.records.length, 86); assert(pkg.records.every(validNavRecord));
   const eddf = pkg.records.filter(r => r.airport === 'EDDF');
   assert.equal(eddf.length, 6); assert(eddf.every(r => r.gs?.angle_deg === 3));

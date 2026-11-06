@@ -532,3 +532,18 @@ accepted whole-file evidence are preserved. Missing/changed bytes and invalid
 profiles fail integrity. Child selectors or child result assertions on the
 profiled file are explicitly ineligible, never silently mapped to its file node.
 No graph cap, validation deadline, application asset or runtime behavior changes.
+
+
+## Worldwide historical radio reception
+
+R-NAV-4 extends the existing pinned NAV810 source; community discovery records
+remain separate from receiver services. A fixed same-origin manifest selects an
+explicit worldwide asset/identity pair; the retained smaller regional JSON loader uses the existing bounded canonical-filename/schema contract. Size (8MiB worldwide), byte hash, record count (10000 maximum),
+service fields, source row identities and uniqueness are checked before freezing
+and exposing the package to UI and worker. A private frequency index of immutable
+validated records bounds per-step work to the tuned channel; mutable test inputs
+retain validation. The picker limits DOM output to200 matching stations and labels
+truncation. No arbitrary URLs, new remote runtime queries or inferred service
+components are introduced. Missing/corrupt data remains unavailable and UI/worker
+identity mismatch remains visible. Historical reception cannot establish current
+service status, operational procedures or terrain-masked radio propagation.

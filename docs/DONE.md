@@ -3,6 +3,53 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 16:05 — Extend historical radio reception worldwide
+
+TODO: 2.0.177; R-NAV-1/R-NAV-2/R-NAV-4/R-DATA-1.
+Agent: Codex orchestrator; receiver/compiler/data implementation `nav_receiver_trace`,
+browser implementation `nav_instrument_trace`, source inventory and independent
+quality `nav_signal_housekeeping`, independent validation `nav_signal_validate`.
+
+**Implementation notes**
+
+The map's worldwide discovery inventory was disconnected from the regional-only
+receiver source. The existing pinned historical NAV810 database now supplies7923
+worldwide services to both instruments and native NAV1/AP; sourced ranges,
+calibrations and explicit GS/DME pairing remain. All86regional service records
+are unchanged. An immutable frequency index avoids full-world scans at120Hz,
+and the station picker limits output to200 searchable matches. No engine or
+invented community service values. [Scope](research/2026-11-06-nav-reception.md).
+
+Working-app and publication browser checks each pass seven groups with actual
+native guidance: both receivers at CPT/KLO/CTV, standby/swap, paused invariance,
+DME-only flags, preserved IFCW two-bar ILS and bounded picker/search. Live CPT AP
+NAV keeps valid guidance through185/220native steps. Independent raw-source audits
+match all7923services/5685DME/3171GScomponents and all86regional records.
+[Evidence](reviews/2026-11-06-nav-reception-runtime.json),
+[quality](reviews/2026-11-06-nav-reception-quality.md) and
+[validation](reviews/2026-11-06-nav-reception-validation.md).
+
+Corrected publication CI passes554Node/22applicationPython/85assurance/11training;
+247of248repository-tool tests execute, one platform skip. JSBSim study14of23
+executes, nine optional skips; C172S study25passes. Independent15navigation,
+9compiler and6affected fixture tests pass.
+
+**Deviations**
+
+Initial checks found working-app-only note links/reference and regional-fixture
+tests incorrectly reading the new world manifest. Corrected fixture scope and
+note references, then reran full CI with localhost permissions needed by server
+tests. An initial publication browser was intentionally interrupted before npm ci
+replaced dependencies; the final run passes. Historicalsource2013.10 does not
+establish current services, procedures or RF propagation. NDB/ADF/TACAN-only
+direction remain unsupported. Embedded WebKit and full-app Review runtime were
+not exercised here; cross-provider peer remains pending under batching cadence.
+
+**Insights**
+
+Discoverable tuning channels and actual modeled receiver services must share a
+clear, traceable coverage contract; standby selection alone never activates NAV.
+
 ## 2026-11-06 15:46 — Give open-map zoom keys priority over simulation speed
 
 TODO: 2.0.176; R-WORLD-6/R-SIM-9.

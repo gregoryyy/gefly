@@ -1,0 +1,206 @@
+{
+  "task": "2.0.177",
+  "scope": "Sourced historical worldwide reception; software behavior, not current radio service or training acceptance",
+  "contexts": {
+    "working-app": {
+      "artifact_sha256": "4153815f7266839362aaf13a34fa7bfaf109f44e3de112fbe23bf308d610ef8a",
+      "result": "pass",
+      "checks": [
+        "Worldwide station picker caps unfiltered DOM rows at200 and search reaches distant CapeTown beyond that initial cap",
+        "CPT: real global historical VOR/DME standby\u2192swap on both receivers, magnetic CDI/bearing/DME and native NAV1 source agree without stepping paused physics",
+        "CPT: actual live fixed-step flight retains engaged AP NAV capture and valid global VOR source across at least180 native steps without source dropout",
+        "KLO: real global historical VOR/DME standby\u2192swap on both receivers, magnetic CDI/bearing/DME and native NAV1 source agree without stepping paused physics",
+        "CTV: real global historical VOR/DME standby\u2192swap on both receivers, magnetic CDI/bearing/DME and native NAV1 source agree without stepping paused physics",
+        "DME-only source provides distance independently, retains NAV/CDI/bearing invalid and cannot provide AP lateral guidance",
+        "Preserved EDDF IFCW source still supplies independent localizer/glideslope bars on NAV1, localizer-only NAV2 and coherent native guidance"
+      ],
+      "observations": [
+        {
+          "id": "CPT",
+          "uid": "vor-cpt-114350",
+          "frequency_khz": 114350,
+          "position": {
+            "lat_rad": 0.8978270498934304,
+            "lon_rad": -0.02128816485901027,
+            "alt_msl_m": 1499.9919511673347
+          },
+          "nav1_worker_valid": 1,
+          "nav1_worker_kind": 1,
+          "nav1_dme": "DME 3.1 NM",
+          "step": 0
+        },
+        {
+          "id": "CPT-live-NAV",
+          "obs_magnetic_deg": 4,
+          "start_step": 0,
+          "final_step": 185,
+          "observed_frames": 95,
+          "ap_nav_valid_all_frames": true
+        },
+        {
+          "id": "KLO",
+          "uid": "vor-klo-114850",
+          "frequency_khz": 114850,
+          "position": {
+            "lat_rad": 0.8274112525295284,
+            "lon_rad": 0.14914855985245457,
+            "alt_msl_m": 1499.9915976043605
+          },
+          "nav1_worker_valid": 1,
+          "nav1_worker_kind": 1,
+          "nav1_dme": "DME 3.1 NM",
+          "step": 0
+        },
+        {
+          "id": "CTV",
+          "uid": "vor-ctv-115700",
+          "frequency_khz": 115700,
+          "position": {
+            "lat_rad": -0.5937522728119473,
+            "lon_rad": 0.32471894366585813,
+            "alt_msl_m": 1499.9927438017467
+          },
+          "nav1_worker_valid": 1,
+          "nav1_worker_kind": 1,
+          "nav1_dme": "DME 3.1 NM",
+          "step": 0
+        }
+      ],
+      "errors": [],
+      "sourceHashes": {
+        "src/main.ts": "65099066e4214a391eb4407ca7e9abde3f6e1e752e70d85400f51fdccec32062",
+        "src/radio-nav.ts": "ebb576b5562ef55443172afa7f608507e6abb9f361ace78e964421f0d34d7ab7",
+        "src/radio-nav-panel.ts": "d5e477f3c9485ef7c4a970c42e0ca9828007f5c5b14a25788a660a28a2eb0779",
+        "src/navigation-gauges.ts": "0ede1a58d1ce28826eadede1f25e65c76762497371d60c9dd2b107712d14e619",
+        "../studies/e1-browser/sim/navigation.js": "cb24e1e7662c5efe0c92fc8888e34af71cd04276fb00d9ad47026bb2ae297afe",
+        "tests/world-navigation.browser.mjs": "87f12a152d02e07e4624c9f1e6ea2e1338fbd309e6fbae7f242f0d59f8ab2d1a"
+      },
+      "package": {
+        "id": "world-nav810-2013-10-v1",
+        "source_label": "Worldwide NAV 2013.10 \u00b7 historical",
+        "asset": "world-v1.bin",
+        "sha256": "dafdf4c31d00094c1f1b2762949b152e8c11deeb6af8ace3a1551bad9955e8ec",
+        "bytes": 4884389,
+        "records": 7923
+      },
+      "limits": [
+        "Historical2013.10 simulator sources, not current operational data.",
+        "Actual native worker and instrument components; scenery images/optional imagery are fixtures.",
+        "No aircraft fidelity, installed receiver calibration or published approach acceptance."
+      ],
+      "browser": "156.0.8078.80"
+    },
+    "publication": {
+      "artifact_sha256": "35efe48e30dbe5dfa5b527cbf339becbd8b3def8c6a3a28743ae45433bf74120",
+      "result": "pass",
+      "checks": [
+        "Worldwide station picker caps unfiltered DOM rows at200 and search reaches distant CapeTown beyond that initial cap",
+        "CPT: real global historical VOR/DME standby\u2192swap on both receivers, magnetic CDI/bearing/DME and native NAV1 source agree without stepping paused physics",
+        "CPT: actual live fixed-step flight retains engaged AP NAV capture and valid global VOR source across at least180 native steps without source dropout",
+        "KLO: real global historical VOR/DME standby\u2192swap on both receivers, magnetic CDI/bearing/DME and native NAV1 source agree without stepping paused physics",
+        "CTV: real global historical VOR/DME standby\u2192swap on both receivers, magnetic CDI/bearing/DME and native NAV1 source agree without stepping paused physics",
+        "DME-only source provides distance independently, retains NAV/CDI/bearing invalid and cannot provide AP lateral guidance",
+        "Preserved EDDF IFCW source still supplies independent localizer/glideslope bars on NAV1, localizer-only NAV2 and coherent native guidance"
+      ],
+      "observations": [
+        {
+          "id": "CPT",
+          "uid": "vor-cpt-114350",
+          "frequency_khz": 114350,
+          "position": {
+            "lat_rad": 0.8978270498934304,
+            "lon_rad": -0.02128816485901027,
+            "alt_msl_m": 1499.9919511673347
+          },
+          "nav1_worker_valid": 1,
+          "nav1_worker_kind": 1,
+          "nav1_dme": "DME 3.1 NM",
+          "step": 0
+        },
+        {
+          "id": "CPT-live-NAV",
+          "obs_magnetic_deg": 4,
+          "start_step": 0,
+          "final_step": 220,
+          "observed_frames": 108,
+          "ap_nav_valid_all_frames": true
+        },
+        {
+          "id": "KLO",
+          "uid": "vor-klo-114850",
+          "frequency_khz": 114850,
+          "position": {
+            "lat_rad": 0.8274112525295284,
+            "lon_rad": 0.14914855985245457,
+            "alt_msl_m": 1499.9915976043605
+          },
+          "nav1_worker_valid": 1,
+          "nav1_worker_kind": 1,
+          "nav1_dme": "DME 3.1 NM",
+          "step": 0
+        },
+        {
+          "id": "CTV",
+          "uid": "vor-ctv-115700",
+          "frequency_khz": 115700,
+          "position": {
+            "lat_rad": -0.5937522728119473,
+            "lon_rad": 0.32471894366585813,
+            "alt_msl_m": 1499.9927438017467
+          },
+          "nav1_worker_valid": 1,
+          "nav1_worker_kind": 1,
+          "nav1_dme": "DME 3.1 NM",
+          "step": 0
+        }
+      ],
+      "errors": [],
+      "sourceHashes": {
+        "src/main.ts": "efe3acba3cb96629bb61ed21a37c864fa4f42d5c579ad6e87c2b7cd937868f10",
+        "src/radio-nav.ts": "ebb576b5562ef55443172afa7f608507e6abb9f361ace78e964421f0d34d7ab7",
+        "src/radio-nav-panel.ts": "d5e477f3c9485ef7c4a970c42e0ca9828007f5c5b14a25788a660a28a2eb0779",
+        "src/navigation-gauges.ts": "f995a29a895132d22a5ec8e77a5a1aab272682ff1e6d8052fbf8248c8d3dd3d7",
+        "../studies/e1-browser/sim/navigation.js": "cb24e1e7662c5efe0c92fc8888e34af71cd04276fb00d9ad47026bb2ae297afe",
+        "tests/world-navigation.browser.mjs": "87f12a152d02e07e4624c9f1e6ea2e1338fbd309e6fbae7f242f0d59f8ab2d1a"
+      },
+      "package": {
+        "id": "world-nav810-2013-10-v1",
+        "source_label": "Worldwide NAV 2013.10 \u00b7 historical",
+        "asset": "world-v1.bin",
+        "sha256": "dafdf4c31d00094c1f1b2762949b152e8c11deeb6af8ace3a1551bad9955e8ec",
+        "bytes": 4884389,
+        "records": 7923
+      },
+      "limits": [
+        "Historical2013.10 simulator sources, not current operational data.",
+        "Actual native worker and instrument components; scenery images/optional imagery are fixtures.",
+        "No aircraft fidelity, installed receiver calibration or published approach acceptance."
+      ],
+      "browser": "156.0.8078.80"
+    }
+  },
+  "ci": {
+    "result": "pass",
+    "command": "just ci",
+    "node_application": 554,
+    "python_application": 22,
+    "assurance": 85,
+    "training": 11,
+    "repository_tooling_executed": 247,
+    "repository_tooling_skipped": 1,
+    "jsbsim_study_executed": 14,
+    "jsbsim_study_skipped": 9,
+    "c172s_study_executed": 25
+  },
+  "history": [
+    "Initial scaffold found links to working-app-only discovery docs; references were qualified before CI.",
+    "Initial CI found regional-fixture tests reading the newly worldwide manifest, listener EPERM without localhost permission and a working-app-only requirement token in the note. Fixture scope/note corrected; full CI renewed with localhost permission.",
+    "First publication browser attempt was intentionally interrupted to avoid concurrent npm ci replacing its dependency tree; the final publication browser was renewed after installation."
+  ],
+  "limits": [
+    "Historical NAV8102013.10; no current AIS/service/procedure claim.",
+    "Chromium156 with fixture scenery and actual native WASM/MapLibre; embedded WebKit not run.",
+    "NDB/ADF/TACAN-only direction and RF propagation/terrain masking remain unsupported.",
+    "Cross-provider peer pending under batching cadence."
+  ]
+}

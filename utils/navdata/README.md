@@ -1,7 +1,7 @@
-# Historical NAV810 subset compiler
+# Historical NAV810 receiver compiler
 
 Standard-library, offline tool. Supply the exact gzip pinned in `build_navdata.py`;
-other input hashes are rejected. It selects a provisional 100 NM spherical extent
+other input hashes are rejected. `--worldwide` compiles the complete supported service inventory into compact `world-v1.bin`, with the exact original source gzip beside it. The default mode retains the provisional 100 NM spherical extent
 around a pinned OurAirports EDDF row (`CENTER_RECORD`),
 converts ft/MHz representations to SI/kHz, preserves explicit GS/DME components
 and the complete original license header, and writes deterministic JSON/source
@@ -15,6 +15,4 @@ See [source research](../../docs/research/2026-11-03-rhein-main-navigation.md) a
 establish current operational facilities/procedures.
 
 `test_build_navdata.py` checks offline that the shipped package, its manifest,
-the compiler hash and the pinned anchor record agree. It cannot recompile without
-the pinned gzip. After changing the compiler, regenerate `app/public/navdata`
-from that gzip.
+the compiler hash and the pinned anchor record agree. The distributed original gzip now permits offline reproduction of both modes. After changing the compiler, regenerate the regional fixture first, then the worldwide package/active manifest from the pinned gzip.
