@@ -23,14 +23,15 @@ class Surface extends EventTarget {
 function fixture(centered = false) {
   const surface = new Surface();
   const yokes: number[][] = [], looks: number[][] = [], modes: PointerYokeMode[] = [];
+  const previousLooks: number[][] = [];
   const lookResets: { yoke: number[]; look: number[]; mode: PointerYokeMode }[] = [];
   let enabled = true, lookOnly = false;
   const controller = createPointerYoke({ element: surface as unknown as HTMLElement,
     centered: () => centered, enabled: () => enabled, lookOnly: () => lookOnly, onYoke: (x,y) => yokes.push([x,y]),
     onLook: (yaw,pitch) => looks.push([yaw,pitch]), onMode: mode => modes.push(mode),
-    onLookReset: () => lookResets.push({ yoke: yokes.at(-1) ?? [0, 0], look: looks.at(-1) ?? [0, 0], mode: modes.at(-1) ?? 'off' }) });
+    onLookReset: previous => { previousLooks.push([previous.yaw_rad, previous.pitch_rad]); lookResets.push({ yoke: yokes.at(-1) ?? [0, 0], look: looks.at(-1) ?? [0, 0], mode: modes.at(-1) ?? 'off' }); } });
   const click = (x = 200, y = 200) => { surface.dispatchEvent(pointer('pointerdown',x,y)); surface.dispatchEvent(pointer('pointerup',x,y)); };
-  return { surface, controller, yokes, looks, modes, lookResets, click,
+  return { surface, controller, yokes, looks, modes, lookResets, previousLooks, click,
     disable: () => { enabled = false; }, enable: () => { enabled = true; }, review: () => { lookOnly = true; } };
 }
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -478,4 +479,23 @@ test('R-VIEW-1/R-INPUT-1 disabled, non-primary-button and control-click double-c
   assert.deepEqual(f.lookResets, []);
   f.controller.dispose(); doubleClick(f.surface, 200, 200);
   assert.deepEqual(f.lookResets, []);
+});
+
+test('R-VIEW-1 animated pose synchronization retains the next drag reference without flight callbacks', async () => {
+  const f = fixture();
+  f.controller.synchronizeLook(1, .3);
+  assert.deepEqual(f.looks, []); assert.deepEqual(f.yokes, []); assert.deepEqual(f.modes, []);
+  f.surface.dispatchEvent(pointer('dblclick'));
+  assert.deepEqual(f.previousLooks.at(-1), [1, .3]);
+  assert.deepEqual(f.looks.at(-1), [0, 0]);
+  f.controller.synchronizeLook(.4, .2);
+  f.surface.dispatchEvent(pointer('pointerdown', 300, 300)); await sleep(280);
+  f.surface.dispatchEvent(pointer('pointermove', 325, 300));
+  assert(Math.abs(f.looks.at(-1)![0] - .5) < 1e-12, 'new drag starts from displayed animated yaw');
+  assert.equal(f.looks.at(-1)![1], .2);
+  f.surface.dispatchEvent(pointer('pointerup', 325, 300));
+  f.controller.synchronizeLook(NaN, 0);
+  f.surface.dispatchEvent(pointer('dblclick'));
+  assert(Math.abs(f.previousLooks.at(-1)![0] - .5) < 1e-12);
+  f.controller.dispose();
 });

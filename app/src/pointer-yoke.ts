@@ -5,7 +5,7 @@ interface PointerYokeOptions {
   onYoke: (x: number, y: number) => void;
   onLook: (yaw_rad: number, pitch_rad: number) => void;
   /** Explicit scene double-click, including an already centered look. */
-  onLookReset?: () => void;
+  onLookReset?: (previous: { yaw_rad: number; pitch_rad: number }) => void;
   onMode: (mode: PointerYokeMode) => void;
   enabled: () => boolean;
   lookOnly?: () => boolean;
@@ -25,6 +25,8 @@ export function createPointerYoke(options: PointerYokeOptions): {
   neutralize(): void;
   cancel(): void;
   reset(): void;
+  /** Update animated camera look without flight callbacks. */
+  synchronizeLook(yaw_rad: number, pitch_rad: number): void;
   dispose(): void;
 } {
   const { element } = options;
@@ -200,10 +202,11 @@ export function createPointerYoke(options: PointerYokeOptions): {
       anchorX = clickPair.anchorX; anchorY = clickPair.anchorY;
     }
     pressState = completedClick = clickPair = undefined;
+    const previous = { yaw_rad: lookYaw, pitch_rad: lookPitch };
     setYoke(0, 0); setLook(0, 0);
     neutralUntilMoveFrom = { x: event.clientX, y: event.clientY };
     setMode(yokeActive ? 'yoke' : 'off');
-    options.onLookReset?.();
+    options.onLookReset?.(previous);
   }
   function interrupted(event: PointerEvent): void {
     if (event.pointerId === activePointer) cancel();
@@ -242,6 +245,10 @@ export function createPointerYoke(options: PointerYokeOptions): {
         ? { clientX, clientY } : null;
     },
     neutralize, cancel, reset,
+    synchronizeLook(yaw_rad, pitch_rad) {
+      if (disposed || activePointer !== null || !Number.isFinite(yaw_rad) || !Number.isFinite(pitch_rad)) return;
+      lookYaw = yaw_rad; lookPitch = clamp(pitch_rad, Math.PI / 2);
+    },
     dispose() {
       if (disposed) return;
       reset(); disposed = true;
