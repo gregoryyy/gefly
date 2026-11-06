@@ -30,7 +30,7 @@ export function createAirportComPanel(options: AirportComPanelOptions) {
   credits.textContent = `OurAirports · ${options.directory.retrieved} snapshot · Not operational/current. Standby only; no ATC audio. Missing data means unknown.`;
   filters.append(query, service, nearLabel, selected); element.append(filters, status, results, credits);
   let airportId = ''; let enabled = true; let position: { lat: number; lon: number } | undefined; let lastPaintKey = '';
-  const byId = new Map(options.airports.map(a => [a.id, a]));
+  let byId = new Map(options.airports.map(a => [a.id, a]));
   const render = () => {
     const stations = filterAirportComStations(options.directory.stations, options.airports, {
       airportId, query: query.value, service: service.value, position, nearby_nm: nearby.checked ? 50 : undefined,
@@ -63,6 +63,17 @@ export function createAirportComPanel(options: AirportComPanelOptions) {
   render();
   return {
     element,
+    updateDirectory(airports: readonly Airport[], directory: AirportComDirectory) {
+      options.airports = airports; options.directory = directory;
+      byId = new Map(airports.map(a => [a.id, a]));
+      const previousService = service.value; service.replaceChildren();
+      for (const value of ['', ...new Set(directory.stations.map(s => s.service.toUpperCase()))].sort()) {
+        const option = document.createElement('option'); option.value = value; option.textContent = value || 'All services'; service.append(option);
+      }
+      service.value = [...service.options].some(option => option.value === previousService) ? previousService : '';
+      credits.textContent = `OurAirports · ${directory.retrieved} snapshot · Not operational/current. Standby only; no ATC audio. Missing data means unknown.`;
+      lastPaintKey = ''; render();
+    },
     selectAirport(id: string) {
       airportId = id; selected.hidden = !id; selected.textContent = `${id} ×`; query.value = ''; service.value = ''; nearby.checked = false;
       element.open = true; render();

@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "scope": "Saved Options renewal after integrating main PRs96/97; no aircraft-model acceptance",
+  "merge_revision": "1f0239e418e557aaace7bdb5c76bbfa03f936d43",
+  "target_main": "52897de10dfdafb4f7b3252cdb41828f8a22b5f5",
+  "browser": "156.0.8078.80",
+  "result": "pass",
+  "artifact_sha256": "3564485e33ee0d38818ab4200991608fedc4d9db18952237a1b4e9c3b4eaf8a6",
+  "source_hashes": {
+    "src/main.ts": "02b317ec45c5a3ee2ea920f57867cff3247da78055b2090bc22f0145a6eea53d",
+    "src/settings-preferences.ts": "b5fb5230d909357e3ebc24878946a3dc5823f58007408151deb4bd8c28c63295",
+    "src/control-settings-panel.ts": "52047e6bb7c8d118dedf49bd208169f82cddda30277f569408527c341793c84b",
+    "src/audio-controls.ts": "42a5376d36c77658df89ef9204c6078ea104fecacc127d00dcf87d8ae76e7548",
+    "tests/settings-preferences.browser.mjs": "b1548f9815758653fdf616b890e05ba65c6995f868dbf5447f2a1b5309856725"
+  },
+  "checks": [
+    "unsaved Options previews do not persist through a real reload",
+    "Save restores every Options preference including false/zero after reload, without audio unlock or automatic flight",
+    "Escape cancels control, scenery, sound and Advanced previews without replacing saved choices",
+    "actual backdrop click cancels previews and preserves the committed choices",
+    "S and the top sound button persist immediately outside Options and survive reload without resuming flight or unlocking audio",
+    "Flight restart preserves committed user preferences",
+    "a new page on the same device/origin restores the saved choices",
+    "malformed, oversized and future-version storage safely selects defaults",
+    "actually denied storage permits session changes and reloads with usable defaults"
+  ],
+  "ci": {
+    "result": "pass_with_optional_study_skips",
+    "log_sha256": "4d0f88bdf9859e7cc4300c8e36480b5b30b36c8ccd26e1e186b5feba019a73f3",
+    "application_node_pass": 565,
+    "application_python_pass": 22,
+    "assurance_pass": 85,
+    "training_pass": 11,
+    "optional_jsbsim_skips": 9
+  }
+}

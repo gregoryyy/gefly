@@ -1,0 +1,1 @@
+{"schema":1,"id":"60-0","airports":[],"runways":[],"com":[],"navaids":[{"id":"oa-nav-96115","source_id":"96115","ident":"ZSP","name":"South Pole Station","type":"TACAN","lat":-89.99520111083984,"lon":120.92900085449219,"elevation_ft":9327.0,"iso_country":"AQ","frequency_khz":115300.0,"associated_airport":"NZSP"}]}

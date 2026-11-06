@@ -352,3 +352,19 @@ future tasks, not completed by this requirements update.
 - [x] 2.0.163 Add hold C for existing momentary CWS with shared keyboard/panel ownership, discoverable help, guarded activation and safe lifecycle release. Preserve AP modes/reference synchronization and native physics. R-AP-1/R-INPUT-1. [Request](input/2026-11-06-cws-keyboard.md). Eight browser groups, six helper and18 existing KAP tests, CI and bounded independent reviews pass; source-inspected/unexercised contexts remain explicit in [validation](reviews/2026-11-06-cws-keyboard-validation.md). Cross-provider peer pending.
 
 - [x] 2.0.175 Make Fixes consistently visible on map and in results through one category filter, and retain all location-type choices across map recreation/new flights/reload with bounded local preferences and native/navigation isolation. R-WORLD-6/R-NAV-5. [Request](input/2026-11-06-map-fix-filters.md).
+
+- [ ] 2.0.164 Build bounded on-demand OSM airport surface generation and persistent region caching, integrate terrain-draped rendering and prepared-scenery priority, and independently verify source/cache/lifecycle/native isolation. R-AIRPORT-3/R-DATA-1. [Request](input/2026-11-06-on-demand-airport-generator.md). Separate from the original Frankfurt inventory task2.0.151.
+
+- [ ] 2.0.165 Separate browser terrain source work and server Copernicus decoding from native stepping; preserve exact grids, source history and coverage guards. R-WORLD-11/R-SIM-2. [Request](input/2026-11-06-scenery-workers-and-overview.md). Implementation and real-worker/native equivalence pass; independent acceptance pending.
+- [ ] 2.0.166 Add generic paved airport markings, optional larger-runway practice PAPI and runway/taxiway/apron layering to Task164. R-AIRPORT-3/R-AIRPORT-2. [Request](input/2026-11-06-scenery-workers-and-overview.md). Source geometry/equipment fidelity remains illustrative.
+- [ ] 2.0.167 Add separate Terrain overview camera with bounded Earth-scale scroll zoom and native-state isolation. R-VIEW-1/R-INPUT-1. [Request](input/2026-11-06-scenery-workers-and-overview.md). Independent acceptance pending.
+- [ ] 2.0.168 Assess OpenFlightMaps structured-data overlay and current product/rights prerequisites. R-DATA-1/R-NAV-1. [Request](input/2026-11-06-scenery-workers-and-overview.md). Research delivered; specific current edition/license remains unselected, no data import.
+- [ ] 2.0.169 Repair landing shadow receiver visibility and height-readout gating. R-VIEW-1. [Request](input/2026-11-06-scenery-workers-and-overview.md). Flat-study pixel check passes; user terrain/landing reproduction and independent acceptance pending.
+
+- [x] 2.0.170 Integrate pinned worldwide OurAirports airport/runway/COM/radio-navaid discovery with regional packages, worker search/loading and source-marked map details/standby actions. R-WORLD-12/R-NAV-2/R-DATA-1/R-COMM-2. [Request](input/2026-11-06-integrate-ourairports.md).
+
+Task2.0.170 verification: [quality](reviews/2026-11-06-worldwide-airports-quality.md) and [validation](reviews/2026-11-06-worldwide-airports-validation.md) accept the bounded discovery increment; runtime records distinguish working-app and feature-only main scopes. Historical receiver/current-data fidelity and batched peer acceptance remain separate.
+
+- [x] 2.0.173 Retain saved Options across new flights and page reloads with bounded device-local preferences, preview/Save/Cancel and safe storage/audio defaults. R-INPUT-1/R-UX-2. [Request](input/2026-11-06-flaps-settings.md).
+
+- [ ] 2.0.180 Reconcile PR102 worldwide discovery with current main and its on-demand OSM airport generator, preserving source boundaries and history; renew integrated checks/reviews and update the existing PR. R-WORLD-12/R-NAV-2/R-DATA-1/R-COMM-2/R-AIRPORT-3. [Request](input/2026-11-06-pr102-conflicts.md).

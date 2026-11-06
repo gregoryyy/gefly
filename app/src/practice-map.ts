@@ -21,6 +21,8 @@ import { createMapPointSearch, mapLocationType, type MapLocationType } from './m
 import { loadMapFixes, type MapFix } from './map-fixes';
 import { distanceMeters } from './scenery-coverage';
 import type { AirportComDirectory } from './airport-com';
+import { createWorldAirportLoader } from './world-airport-loader';
+import { worldAirportCellId, type WorldAirportSnapshot, type WorldNavaid, type WorldSearchHit, type WorldRunway } from './world-airport-contract';
 
 export interface PracticeMap {
   update(state: Readonly<FlightState>, path: readonly Readonly<FlightState>[], mode: 'live' | 'review'): void;
@@ -158,7 +160,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   credit.append(navCredit);
   const caption = document.createElement('p');
   caption.className = 'practice-map-caption';
-  caption.textContent = 'Southern Germany map · community inventory, not a navigation chart · historical ILS · no airspace, NOTAM or published procedures. Aerial imagery and flight terrain remain regionally bounded.';
+  caption.textContent = 'Global OpenStreetMap · worldwide OurAirports community airport/NAV discovery near map centre; historical receiver/ILS and fix coverage remains regional. Not a navigation chart.';
   const airportsSection = document.createElement('details');
   airportsSection.className = 'practice-map-airports';
   const summary = document.createElement('summary');
@@ -231,6 +233,24 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   let comPanel: ReturnType<typeof createAirportComPanel> | undefined;
   let reviewing = false;
   let comDirectory: AirportComDirectory | null = null;
+  let regionalAirports: Airport[] = [];
+  let regionalComDirectory: AirportComDirectory | null = null;
+  let worldSnapshot: WorldAirportSnapshot | null = null;
+  let latestWorldSnapshot: WorldAirportSnapshot | null = null;
+  let worldLoader: ReturnType<typeof createWorldAirportLoader> | undefined;
+  let worldSelectionGeneration = 0;
+  let selectedWorldHit: WorldSearchHit | null = null;
+  let worldwideSearchGeneration = 0;
+  let worldwideSearchHits = new Map<string, WorldSearchHit>();
+  const worldNavMarkers: Marker[] = [];
+  let worldNavMarkerKey = '';
+  let paintedWorldNavaids: readonly WorldNavaid[] | undefined;
+  let worldAirportIds = new Set<string>();
+  let runwayByAirport = new Map<string, WorldRunway[]>();
+  let comByAirport = new Map<string, AirportComDirectory['stations']>();
+  const worldStatus = document.createElement('p'); worldStatus.className = 'practice-map-world-status';
+  worldStatus.setAttribute('role', 'status'); worldStatus.textContent = 'Loading worldwide airport discovery…';
+  extendedMenu.prepend(worldStatus);
   let fixes: readonly MapFix[] = [];
   let fixMarkerKey = '';
   let paintedFixes: readonly MapFix[] | undefined;
@@ -243,8 +263,31 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   const gpsReadout = document.createElement('output'); gpsReadout.id = 'map-gps-readout';
   const gpsClear = document.createElement('button'); gpsClear.type = 'button'; gpsClear.textContent = '×'; gpsClear.setAttribute('aria-label', 'Clear GPS target');
   const gpsOverlay = document.createElement('div'); gpsOverlay.className = 'practice-map-gps-target'; gpsOverlay.hidden = true; gpsOverlay.append(gpsReadout, gpsClear); viewport.append(gpsOverlay);
-  const pointSearch = createMapPointSearch({ initialTypes: locationTypes, onSelect(point) {
+  const pointSearch = createMapPointSearch({ initialTypes: locationTypes,
+    searchWorldwide: async query => {
+      if (!worldLoader) throw new Error('Worldwide search unavailable');
+      const generation = ++worldwideSearchGeneration, hits = await worldLoader.search(query);
+      if (generation === worldwideSearchGeneration) worldwideSearchHits = new Map(hits.map(hit => [hit.id, hit]));
+      return hits.map(worldSearchPoint);
+    },
+    onSelect(point) {
     setFollowing(false); map?.jumpTo({ center: [point.lon_deg, point.lat_deg], zoom: Math.max(map.getZoom(), 11) });
+    if (point.world_record_id && worldLoader) {
+      const source = worldSnapshot?.airports.find(a => a.id === point.world_record_id) ?? worldSnapshot?.navaids.find(n => n.id === point.world_record_id);
+      const hit: WorldSearchHit = worldwideSearchHits.get(point.world_record_id) ?? { kind: point.kind === 'airport' ? 'airport' : 'navaid', id: point.world_record_id,
+        name: point.name, codes: point.id, type: point.airport_type ?? point.equipment ?? point.kind,
+        lat: point.lat_deg, lon: point.lon_deg, iso_country: source?.iso_country ?? '', cell: worldAirportCellId(point.lon_deg, point.lat_deg) };
+      selectedWorldHit = hit;
+      const generation = ++worldSelectionGeneration;
+      openPoint(point, true);
+      void worldLoader.select(hit).then(snapshot => {
+        if (disposed || generation !== worldSelectionGeneration || selectedWorldHit !== hit) return;
+        const airport = snapshot.airports.find(a => a.id === hit.id);
+        const nav = snapshot.navaids.find(n => n.id === hit.id);
+        if (airport) selectAirport(airport); else if (nav) openPoint(worldNavaidPoint(nav));
+      }).catch(() => { if (!disposed && generation === worldSelectionGeneration) worldStatus.textContent = 'Selected location details unavailable; verified search position remains.'; });
+      onInteraction(); return;
+    }
     const airport = point.kind === 'airport' ? airports.find(a => a.id === point.id || a.icao === point.id) : undefined;
     if (airport) selectAirport(airport);
     else {
@@ -260,13 +303,31 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       pointPopup?.remove(); pointPopup = null; selectedPoint = null;
     }
     if (!locationTypes.has('nav')) navigationDetail.hidden = true;
-    renderAirports(); paintNavigation(); paintFixes(); onInteraction();
+    paintedWorldNavaids = undefined; worldNavMarkerKey = ''; renderAirports(); paintNavigation(); paintWorldNavigation(); paintFixes(); onInteraction();
   } });
   extendedMenu.prepend(pointSearch.element, fixesStatus);
   function airportPoint(airport: Airport): MapPoint {
+    const worldAirport = worldAirportIds.has(airport.id);
+    const runways = runwayByAirport.get(airport.id) ?? [];
     return { id: airport.icao || airport.id, name: airport.name, kind: 'airport', airport_type: airport.type, lon_deg: airport.lon, lat_deg: airport.lat,
+      ...(worldAirport ? { world_record_id: airport.id, details: runways.length ? runways.slice(0, 8).map(r =>
+        `Runway ${r.le.ident || '?'} / ${r.he.ident || '?'} · ${r.length_ft === null ? 'length unknown' : `${r.length_ft} ft`}${r.width_ft === null ? '' : ` × ${r.width_ft} ft`} · ${r.surface || 'surface unknown'}${r.closed ? ' · CLOSED' : ''}`)
+        : ['Runway details unavailable in this snapshot.'] } : {}),
       source_label: `OurAirports community snapshot${comDirectory ? ` · COM ${comDirectory.retrieved}` : ''}`,
-      frequencies: (comDirectory?.stations ?? []).filter(station => station.airport_id === airport.id).map(station => ({ kind: 'com', channel_khz: station.channel_khz, label: station.service })) };
+      frequencies: (comByAirport.get(airport.id) ?? []).filter(station => Math.abs(Number(station.source_frequency_mhz) * 1000 - station.channel_khz) < 1e-6)
+        .map(station => ({ kind: 'com', channel_khz: station.channel_khz, label: station.service })) };
+  }
+  function worldNavaidPoint(nav: WorldNavaid): MapPoint {
+    return { id: nav.ident, world_record_id: nav.id, name: nav.name, kind: nav.type, equipment: nav.type,
+      lon_deg: nav.lon, lat_deg: nav.lat,
+      source_label: `OurAirports · ${worldSnapshot?.retrieved ?? ''} · community discovery; receiver coverage remains historical/regional`,
+      frequencies: nav.frequency_khz === null ? [] : [{ kind: 'nav', channel_khz: nav.frequency_khz, label: nav.type }] };
+  }
+  function worldSearchPoint(hit: WorldSearchHit): MapPoint {
+    return { id: hit.kind === 'airport' ? hit.id : hit.codes.split(' ')[0] || hit.id,
+      world_record_id: hit.id, name: hit.name, kind: hit.kind === 'airport' ? 'airport' : hit.type,
+      ...(hit.kind === 'airport' ? { airport_type: hit.type } : { equipment: hit.type }),
+      lon_deg: hit.lon, lat_deg: hit.lat, source_label: 'OurAirports worldwide search · select to load frequencies and details' };
   }
   function navigationPoint(feature: FlightMapNavigationFeature): MapPoint {
     const p = feature.properties;
@@ -275,7 +336,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       frequencies: [{ kind: 'nav', channel_khz: p.frequency_mhz ? Math.round(Number(p.frequency_mhz) * 1000) : Number(p.frequency_label.split(' ')[0]), label: p.equipment }] };
   }
   const fixPoint = (fix: MapFix): MapPoint => ({ ...fix, id: fix.name, kind: 'fix' });
-  function refreshPointSearch(): void { pointSearch.setPoints([...airports.map(airportPoint), ...navigationData.features.map(navigationPoint), ...fixes.map(fixPoint)]); }
+  function refreshPointSearch(): void { pointSearch.setPoints([...airports.map(airportPoint), ...navigationData.features.map(navigationPoint), ...(worldSnapshot?.navaids.map(worldNavaidPoint) ?? []), ...fixes.map(fixPoint)]); }
   function refreshPointPopup(): void {
     if (!selectedPoint || !pointPopup) return;
     const point = selectedPoint;
@@ -288,7 +349,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       onGpsTarget(target) { gpsTarget = target; gpsDataKey = ''; paintGpsTarget(); onInteraction(); },
     }));
   }
-  function openPoint(point: Readonly<MapPoint>): void {
+  function openPoint(point: Readonly<MapPoint>, preserveWorldSelection = false): void {
+    if (!preserveWorldSelection) { ++worldSelectionGeneration; selectedWorldHit = null; }
     if (!map || disposed || !locationTypes.has(mapLocationType(point))) return;
     pointPopup?.remove(); selectedPoint = point;
     pointPopup = new Popup({ closeButton: true, closeOnClick: true, maxWidth: '290px', offset: 10 }).setLngLat([point.lon_deg, point.lat_deg]);
@@ -405,7 +467,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   }
 
   function updateLayerCaption(): void {
-    caption.textContent = `${aerial ? 'Public aerial imagery · capture dates vary.' : 'Southern Germany public map · not a navigation chart.'}${vector ? ' Terrain: map without labels.' : ''}`;
+    caption.textContent = `${aerial ? 'Public aerial imagery · capture dates vary.' : 'Public map · not a navigation chart.'}${vector ? ' Terrain: map without labels.' : ''} Worldwide community airport/NAV discovery near map centre. Historical receiver/ILS and fix coverage remains regional.`;
   }
 
   function setVector(enabled: boolean): void {
@@ -548,6 +610,74 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     container.dataset.navLabels = String(map.getZoom() >= 10);
   }
 
+  function paintWorldNavigation(): void {
+    if (!map || !ready) return;
+    const visibleNavs = locationTypes.has('nav') ? worldSnapshot?.navaids ?? [] : [];
+    if (paintedWorldNavaids !== visibleNavs) {
+      const source = map.getSource('world-navigation-aids') as GeoJSONSource | undefined;
+      source?.setData({ type: 'FeatureCollection', features: visibleNavs.map(nav => ({
+        type: 'Feature', id: nav.id, geometry: { type: 'Point', coordinates: [nav.lon, nav.lat] }, properties: { id: nav.id, type: nav.type },
+      })) });
+      paintedWorldNavaids = visibleNavs;
+    }
+    const labelled = nearby(visibleNavs.filter(nav => !navigationData.features.some(feature =>
+      feature.properties.identifier === nav.ident && Math.abs(feature.geometry.coordinates[0] - nav.lon) < .01
+      && Math.abs(feature.geometry.coordinates[1] - nav.lat) < .01)), nav => [nav.lon, nav.lat]);
+    const key = labelled.map(nav => nav.id).join(',');
+    if (key === worldNavMarkerKey) return;
+    worldNavMarkerKey = key; worldNavMarkers.splice(0).forEach(marker => marker.remove());
+    for (const nav of labelled) {
+      const element = document.createElement('button'); element.type = 'button'; element.className = 'practice-map-navigation-marker';
+      element.dataset.kind = nav.type; element.dataset.worldRecordId = nav.id;
+      element.setAttribute('aria-label', `Show navigation aid ${nav.ident}, ${nav.type}, OurAirports community discovery`);
+      const symbol = document.createElement('span'); symbol.className = 'practice-map-navigation-symbol'; symbol.textContent = nav.type.includes('VOR') ? '◇' : '○';
+      const label = document.createElement('span'); label.className = 'practice-map-navigation-label'; label.textContent = `${nav.ident} ${nav.type}`;
+      element.append(symbol, label); element.addEventListener('click', event => { event.stopPropagation(); openPoint(worldNavaidPoint(nav)); onInteraction(); });
+      worldNavMarkers.push(new Marker({ element, offset: [0, -15] }).setLngLat([nav.lon, nav.lat]).addTo(map));
+    }
+  }
+
+  function updateComDirectory(): void {
+    if (!comDirectory) return;
+    comByAirport = new Map();
+    for (const station of comDirectory.stations) {
+      const rows = comByAirport.get(station.airport_id) ?? []; rows.push(station); comByAirport.set(station.airport_id, rows);
+    }
+    if (comPanel) { comPanel.updateDirectory(airports, comDirectory); return; }
+    comPanel = createAirportComPanel({ airports, directory: comDirectory,
+      onTune(receiver, channel) { if (!reviewing && (options.canTuneCom?.() ?? true)) options.onTuneCom?.(receiver, channel); },
+      onSelectAirport(id) { const airport = airports.find(a => a.id === id); if (airport) selectAirport(airport); },
+    });
+    airportsSection.after(comPanel.element); comPanel.selectAirport(selectedAirport); comPanel.element.open = false;
+    comPanel.setEnabled(!reviewing && !!options.onTuneCom && (options.canTuneCom?.() ?? true));
+  }
+
+  function applyWorldSnapshot(snapshot: WorldAirportSnapshot | null): void {
+    if (disposed) return;
+    worldSnapshot = snapshot; airports = snapshot?.airports ?? regionalAirports;
+    worldAirportIds = new Set(snapshot?.airports.map(a => a.id) ?? []); runwayByAirport = new Map();
+    for (const runway of snapshot?.runways ?? []) {
+      const rows = runwayByAirport.get(runway.airport_id) ?? []; rows.push(runway); runwayByAirport.set(runway.airport_id, rows);
+    }
+    comDirectory = snapshot ? { stations: snapshot.com, source: snapshot.source, retrieved: snapshot.retrieved } : regionalComDirectory;
+    container.dataset.worldAirportsCount = String(snapshot?.airports.length ?? 0);
+    container.dataset.worldNavaidsCount = String(snapshot?.navaids.length ?? 0);
+    container.dataset.worldAirportsRevision = snapshot?.source_commit ?? '';
+    container.dataset.worldAirportsFallback = String(!snapshot);
+    updateComDirectory(); refreshPointSearch(); renderAirports(); paintWorldNavigation();
+    if (selectedPoint?.world_record_id) {
+      const airport = snapshot?.airports.find(a => a.id === selectedPoint!.world_record_id);
+      const nav = snapshot?.navaids.find(n => n.id === selectedPoint!.world_record_id);
+      if (airport || nav) { selectedPoint = airport ? airportPoint(airport) : worldNavaidPoint(nav!); refreshPointPopup(); }
+      else { pointPopup?.remove(); pointPopup = null; selectedPoint = null; }
+    }
+  }
+
+  function requestWorldCenter(): void {
+    const center = following && frame ? frame.position : map ? [map.getCenter().lng, map.getCenter().lat] : null;
+    if (center) worldLoader?.updateCenter(((center[0] + 180) % 360 + 360) % 360 - 180, center[1]);
+  }
+
   const selectNavigation = (feature: FlightMapNavigationFeature) => {
     const p = feature.properties;
     const components = navigationData.features.filter(item => item.properties.station_uid === p.station_uid)
@@ -638,6 +768,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       }
       refreshCircuit();
       const [longitude_deg, latitude_deg] = frame.position;
+      if (following) requestWorldCenter();
       const lat = latitude_deg * Math.PI / 180, lon = longitude_deg * Math.PI / 180;
       if (!searchPosition || distanceMeters(lat, lon, searchPosition.lat, searchPosition.lon) >= 500) {
         searchPosition = { lat, lon }; pointSearch.setPosition(longitude_deg, latitude_deg);
@@ -657,12 +788,12 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       visible = value;
       if (!value) { pointPopup?.remove(); pointPopup = null; }
       container.hidden = !value;
-      if (value) { map?.resize(); paint(); }
+      if (value) { map?.resize(); requestWorldCenter(); paint(); }
     },
     dispose() {
       if (disposed) return;
       disposed = true; pointPopup?.remove(); pointSearch.dispose(); fixMarkers.splice(0).forEach(marker => marker.remove());
-      abort.abort(); comPanel?.dispose();
+      abort.abort(); worldLoader?.dispose(); ++worldSelectionGeneration; ++worldwideSearchGeneration; worldwideSearchHits.clear(); comPanel?.dispose();
       observer.disconnect();
       removers.forEach((remove) => remove());
       container.removeEventListener('pointerdown', onInteraction);
@@ -671,6 +802,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       container.removeEventListener('keyup', stopKey);
       airportMarkers.forEach((marker) => marker.remove());
       navigationMarkers.forEach((marker) => marker.remove());
+      worldNavMarkers.forEach((marker) => marker.remove());
       circuitMarkers.forEach((marker) => marker.remove());
       aircraft?.remove();
       start?.remove();
@@ -691,6 +823,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
         'recorded-path': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
         airfields: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
         'navigation-aids': { type: 'geojson', data: navigationData },
+        'world-navigation-aids': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
         'practice-circuit': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
       },
       layers: [
@@ -707,6 +840,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
           'circle-stroke-color': '#15222d', 'circle-stroke-width': 1,
         } },
         { id: 'navigation-stations', type: 'circle', source: 'navigation-aids', filter: ['==', ['get', 'component'], 'station'],
+          paint: { 'circle-radius': 4, 'circle-color': '#d7a6ef', 'circle-stroke-color': '#24202d', 'circle-stroke-width': 1.5 } },
+        { id: 'world-navigation-stations', type: 'circle', source: 'world-navigation-aids',
           paint: { 'circle-radius': 4, 'circle-color': '#d7a6ef', 'circle-stroke-color': '#24202d', 'circle-stroke-width': 1.5 } },
         { id: 'navigation-components', type: 'circle', source: 'navigation-aids',
           filter: ['!=', ['get', 'component'], 'station'],
@@ -741,7 +876,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     map.on('move', paintTrajectory); map.on('resize', paintTrajectory);
     map.dragRotate.disable();
     map.touchZoomRotate.disableRotation();
-    map.on('moveend', () => { paintAirports(); paintNavigation(); paintFixes(); paintCircuit(); });
+    map.on('moveend', () => { requestWorldCenter(); paintAirports(); paintNavigation(); paintWorldNavigation(); paintFixes(); paintCircuit(); });
+    map.on('click', 'world-navigation-stations', event => { const nav = worldSnapshot?.navaids.find(n => n.id === event.features?.[0]?.properties.id); if (nav) { openPoint(worldNavaidPoint(nav)); onInteraction(); } });
     map.on('click', 'airfields', event => {
       const airport = airports.find(a => a.id === event.features?.[0]?.properties.id);
       if (airport) selectAirport(airport);
@@ -772,20 +908,36 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     });
     map.on('dragstart', () => { setFollowing(false); onInteraction(); });
     map.on('zoomstart', (event) => { if (event.originalEvent) { setFollowing(false); onInteraction(); } });
+    try {
+      worldLoader = createWorldAirportLoader({
+        onStatus(state) {
+          if (disposed) return;
+          worldStatus.textContent = `${state.message} · details near map centre · community source`;
+          container.dataset.worldAirportsStatus = state.status;
+          container.dataset.worldAirportsCached = String(state.cached);
+          container.dataset.worldAirportsCacheBytes = String(state.cacheBytes);
+          if (state.status === 'empty' && latestWorldSnapshot) applyWorldSnapshot(latestWorldSnapshot);
+          if (state.status === 'unavailable') applyWorldSnapshot(null);
+        },
+        onSnapshot(snapshot) {
+          if (disposed) return;
+          latestWorldSnapshot = snapshot;
+          // An empty loading/failed publication is not verified empty coverage.
+          // Keep the regional fallback until actual records or an empty status arrive.
+          applyWorldSnapshot(snapshot.airports.length || snapshot.navaids.length ? snapshot : null);
+        },
+      });
+      requestWorldCenter();
+    } catch { worldStatus.textContent = 'Worldwide discovery unavailable; bundled regional inventory remains available.'; }
     void loadAirportCatalogue(abort.signal).then((data) => {
       if (disposed || !map) return;
-      airports = data; refreshPointSearch();
+      regionalAirports = data; if (!worldSnapshot) airports = data; refreshPointSearch();
       renderAirports();
       void loadAirportComDirectory(abort.signal).then(directory => {
         if (disposed) return;
-        comDirectory = directory; refreshPointSearch();
+        regionalComDirectory = directory; if (!worldSnapshot) comDirectory = directory;
+        updateComDirectory(); refreshPointSearch();
         if (selectedPoint?.kind === 'airport') { const airport = airports.find(a => a.id === selectedPoint!.id || a.icao === selectedPoint!.id); if (airport) { selectedPoint = airportPoint(airport); refreshPointPopup(); } }
-        comPanel = createAirportComPanel({ airports, directory,
-          onTune(receiver, channel) { if (!reviewing) options.onTuneCom?.(receiver, channel); },
-          onSelectAirport(id) { const airport = airports.find(a => a.id === id); if (airport) selectAirport(airport); },
-        });
-        airportsSection.after(comPanel.element); comPanel.selectAirport(selectedAirport); comPanel.element.open = false;
-        comPanel.setEnabled(!reviewing && !!options.onTuneCom);
       }).catch(() => { if (!disposed) { const notice = document.createElement('p'); notice.textContent = 'COM directory unavailable'; airportsSection.after(notice); } });
     }).catch(() => { if (!disposed) airportStatus.textContent = 'Airport catalogue unavailable.'; });
     const arrow = document.createElement('div');
@@ -811,11 +963,12 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       [...buttons, ...layerButtons].forEach((button) => { button.disabled = false; });
       circuitToggle.disabled = false;
       circuitDataKey = ''; circuitLabelKey = ''; circuitLegKey = ''; paintedFixes = undefined;
-      airportSourceKey = ''; paintedNavigationData = undefined;
+      airportSourceKey = ''; paintedNavigationData = undefined; paintedWorldNavaids = undefined;
       refreshCircuit();
       const savedVector = vector; setAerial(aerial); if (savedVector) setVector(true);
       paintAirports();
       paintNavigation();
+      paintWorldNavigation(); requestWorldCenter();
       paintFixes();
       gpsDataKey = '';
       paint();

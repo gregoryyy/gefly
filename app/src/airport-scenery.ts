@@ -1,5 +1,6 @@
+import { createStreamedAirportScenery } from './streamed-airport-scenery.ts';
 import {
-  Cartesian3, Color, ColorGeometryInstanceAttribute, GeometryInstance, PerInstanceColorAppearance,
+  ShadowMode, Cartesian3, Color, ColorGeometryInstanceAttribute, GeometryInstance, PerInstanceColorAppearance,
   PolygonGeometry, PolygonHierarchy, Primitive, PrimitiveCollection, PointPrimitiveCollection,
   CylinderGeometry, Transforms, Matrix3, Matrix4, type Scene,
 } from 'cesium';
@@ -14,6 +15,7 @@ const colors: Record<string, string> = {apron:'#727779', taxiway:'#4c5054', runw
 /** Renders only; sampleHeight must use the same active terrain + geoid as aircraft.
  * Returns null while unavailable; the overlay waits rather than assuming sea level. */
 export function createAirportScenery(scene: Scene, sampleHeight: (lat_rad: number, lon_rad: number) => number | null) {
+  const streamed = createStreamedAirportScenery(scene, sampleHeight);
   const airport = scene.primitives.add(new PrimitiveCollection()) as PrimitiveCollection;
   const landscape = scene.primitives.add(new PrimitiveCollection()) as PrimitiveCollection;
   const papi = scene.primitives.add(new PointPrimitiveCollection()) as PointPrimitiveCollection;
@@ -46,7 +48,7 @@ export function createAirportScenery(scene: Scene, sampleHeight: (lat_rad: numbe
     }
   };
   const batch = (collection: PrimitiveCollection, instances: GeometryInstance[]) => {
-    if(instances.length) collection.add(new Primitive({geometryInstances:instances,appearance:new PerInstanceColorAppearance({flat:true,translucent:false}),asynchronous:false}));
+    if(instances.length) collection.add(new Primitive({geometryInstances:instances,appearance:new PerInstanceColorAppearance({flat:true,translucent:false}),asynchronous:false,shadows:ShadowMode.RECEIVE_ONLY}));
   };
   const makeRunway = () => {
     const surfaces: GeometryInstance[] = [], paint: GeometryInstance[] = [];
@@ -77,7 +79,7 @@ export function createAirportScenery(scene: Scene, sampleHeight: (lat_rad: numbe
     const fixed=Transforms.eastNorthUpToFixedFrame(Cartesian3.fromRadians(lon,lat,h));
     const cylinder=(length:number,bottomRadius:number,topRadius:number,color:string,height:number,horizontal=false)=>{
       const local=Matrix4.fromRotationTranslation(horizontal?Matrix3.fromRotationY(Math.PI/2):Matrix3.IDENTITY,new Cartesian3(horizontal?length/2:0,0,height));
-      airport.add(new Primitive({geometryInstances:new GeometryInstance({geometry:new CylinderGeometry({length,bottomRadius,topRadius,slices:12,vertexFormat:PerInstanceColorAppearance.VERTEX_FORMAT}),modelMatrix:Matrix4.multiply(fixed,local,new Matrix4()),attributes:{color:ColorGeometryInstanceAttribute.fromColor(Color.fromCssColorString(color))}}),appearance:new PerInstanceColorAppearance({flat:true,translucent:false}),asynchronous:false}));
+      airport.add(new Primitive({geometryInstances:new GeometryInstance({geometry:new CylinderGeometry({length,bottomRadius,topRadius,slices:12,vertexFormat:PerInstanceColorAppearance.VERTEX_FORMAT}),modelMatrix:Matrix4.multiply(fixed,local,new Matrix4()),attributes:{color:ColorGeometryInstanceAttribute.fromColor(Color.fromCssColorString(color))}}),appearance:new PerInstanceColorAppearance({flat:true,translucent:false}),asynchronous:false,shadows:ShadowMode.RECEIVE_ONLY}));
     };
     cylinder(4,.045,.045,'#deddd5',2);
     cylinder(1.7,.4,.12,'#ef743a',4,true);
@@ -115,12 +117,16 @@ export function createAirportScenery(scene: Scene, sampleHeight: (lat_rad: numbe
   };
   void load();
   return {
-    setVisible(value:boolean) {airportVisible=value;airport.show=value;papi.show=value&&practicePapi;lights.show=value&&practicePapi;},
+    setVisible(value:boolean) {streamed.setVisible(value);airportVisible=value;airport.show=value;papi.show=value&&practicePapi;lights.show=value&&practicePapi;},
     setVectorVisible(value:boolean) {vectorVisible=value;landscape.show=value;},
-    setPracticePapi(value:boolean) {practicePapi=value;papi.show=airportVisible&&value;lights.show=airportVisible&&value;},
+    setPracticePapi(value:boolean) {streamed.setPracticePapi(value);practicePapi=value;papi.show=airportVisible&&value;lights.show=airportVisible&&value;},
     get status() {return fetchStatus;},
-    update(state:{lat_rad:number;lon_rad:number;alt_msl_m:number;terrain_geoid_m?:number}) {
+    get streamedStatus() { return streamed.stats.status; },
+    get streamedStats() { return streamed.stats; },
+    setExcludedSourceIds(ids: Iterable<string>) { streamed.setExcludedSourceIds(ids); },
+    update(state:{lat_rad:number;lon_rad:number;alt_msl_m:number;terrain_geoid_m?:number}, terrainRevision = 0, options: {live:boolean} = {live:false}) {
       if(disposed)return;
+      streamed.update(state, terrainRevision, options.live);
       if(!built && fetchStatus!=='loading' && sampleHeight(EDFE_REFERENCE.lat_rad,EDFE_REFERENCE.lon_rad)!==null) {
         makeFeatures();makeRunway();makeWindsock();built=true;
       }
@@ -156,6 +162,6 @@ export function createAirportScenery(scene: Scene, sampleHeight: (lat_rad: numbe
         for(let i=0;i<4;i++){const point=papi.get(j*4+i);point.show=visible;point.color=i<whites?Color.WHITE:Color.RED;}
       }
     },
-    dispose(){if(disposed)return;disposed=true;abort.abort();scene.primitives.remove(airport);scene.primitives.remove(landscape);scene.primitives.remove(papi);scene.primitives.remove(lights);},
+    dispose(){if(disposed)return;disposed=true;streamed.dispose();abort.abort();scene.primitives.remove(airport);scene.primitives.remove(landscape);scene.primitives.remove(papi);scene.primitives.remove(lights);},
   };
 }
