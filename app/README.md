@@ -65,7 +65,7 @@ unavailable. Returning to live restores pending control settings.
 | 0 | Set throttle to idle |
 | P | Autopilot on / off (simulator shortcut) |
 | A | Engage autopilot HDG + ALT at current heading/pressure altitude |
-| = | Cycle simulation rate 1× → 1.5× → 2× → 5× → 10× → 1× |
+| = / + / - | Map open: zoom in / in / out; map closed: = cycles simulation rate, + steps down |
 | M | Open / close the flight map |
 | , | Toggle the extended menu below the map |
 | . | Cycle terrain landmark labels: Off / Places / Landmarks / Detailed |
@@ -216,7 +216,7 @@ Keyboard shortcuts keep typing, modal and repeat guards.
 
 ## Simulation rate
 
-Press **=** to cycle the requested live-flight rate through **1×, 1.5×, 2×, 5×,
+With the map closed, press **=** to cycle the requested live-flight rate through **1×, 1.5×, 2×, 5×,
 10×** and back to **1×**. The on-screen overlay identifies the rate. Acceleration
 changes the worker's wall-clock pacing, not its fixed **1/120 s** integration
 step, aircraft coefficients or control gains. High requested rates are best
@@ -873,6 +873,8 @@ The map stops at Web Mercator limits, separately from physical terrain coverage.
 No worldwide airport/NAV inventory or new photographs are added. See the
 [regional package](public/terrain/region/README.md),
 [world package](public/terrain/world/README.md), and [source rights](../THIRD_PARTY_NOTICES.md).
+
+When the flight map is open, **= / +** zooms in and **-** zooms out. Close the map to use **= / Shift+=** for simulation or replay speed; the Flight-menu speed control works in either context. Typing and modal/menu shortcuts retain their guards.
 
 ## Worldwide airport discovery
 

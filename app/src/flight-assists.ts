@@ -10,6 +10,8 @@ interface FlightAssistsOptions {
   canCapture(): boolean;
   isAutopilotEngaged(): boolean;
   canChangeRate(): boolean;
+  /** Open-map zoom shortcuts take precedence over keyboard pacing controls. */
+  mapOpen?(): boolean;
 }
 
 /** Keyboard/menu conveniences; the worker remains authoritative for flight and pacing. */
@@ -35,8 +37,8 @@ export function createFlightAssists(options: FlightAssistsOptions): {
   capture.setAttribute('aria-keyshortcuts', 'A');
   const speed = document.createElement('button');
   speed.type = 'button'; speed.id = 'simulation-rate';
-  speed.setAttribute('aria-keyshortcuts', '= Shift+=');
-  speed.append(document.createElement('span'), ' ', shortcut('= / Shift+='));
+  const speedShortcut = shortcut('= / Shift+=');
+  speed.append(document.createElement('span'), ' ', speedShortcut);
   menu.append(capture, speed);
 
   const overlay = document.createElement('output');
@@ -56,8 +58,16 @@ export function createFlightAssists(options: FlightAssistsOptions): {
     if (overlay.dataset.review !== String(reviewing)) overlay.dataset.review = String(reviewing);
     const ariaLabel = reviewing ? 'Replay speed' : 'Simulation speed';
     if (overlay.getAttribute('aria-label') !== ariaLabel) overlay.setAttribute('aria-label', ariaLabel);
-    const title = `${reviewing ? 'Replay' : 'Simulation'} speed; = cycles 1×, 1.5×, 2×, 5×, 10×; Shift+= steps down to 1×; Shift-click steps down`;
+    const mapOpen = options.mapOpen?.() ?? false;
+    const keyboardHelp = mapOpen ? '= / + / - zoom the open map; click cycles speed, Shift-click steps down'
+      : '= cycles 1×, 1.5×, 2×, 5×, 10×; Shift+= steps down to 1×; Shift-click steps down';
+    const title = `${reviewing ? 'Replay' : 'Simulation'} speed; ${keyboardHelp}`;
     if (overlay.title !== title) overlay.title = title;
+    if (speed.title !== title) speed.title = title;
+    const shortcutText = mapOpen ? 'Menu' : '= / Shift+=';
+    if (speedShortcut.textContent !== shortcutText) speedShortcut.textContent = shortcutText;
+    if (mapOpen) speed.removeAttribute('aria-keyshortcuts');
+    else if (!speed.hasAttribute('aria-keyshortcuts')) speed.setAttribute('aria-keyshortcuts', '= Shift+=');
     const span = speed.querySelector('span')!;
     const menuLabel = `${reviewing ? 'Replay' : 'Simulation'} speed: ${label}`;
     if (span.textContent !== menuLabel) span.textContent = menuLabel;
@@ -92,11 +102,12 @@ export function createFlightAssists(options: FlightAssistsOptions): {
         'input, textarea, select, [contenteditable]:not([contenteditable="false"]), .practice-map-panel'));
   }
   function onKey(event: KeyboardEvent): void {
-    if (blocked(event)) return;
+    if (event.defaultPrevented || blocked(event)) return;
     if (event.code === 'KeyA') {
       if (event.shiftKey || reviewing || !options.canCapture()) return;
       event.preventDefault(); event.stopPropagation(); captureCurrent();
     } else if (event.key === '=' || event.key === '+' || event.code === 'Equal' && event.shiftKey) {
+      if (options.mapOpen?.()) return;
       // Match the character: German keyboards produce '=' with Shift+Digit0.
       // Consume it before the global digit/throttle handler sees that code.
       if (!options.canChangeRate()) return;

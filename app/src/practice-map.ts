@@ -25,6 +25,7 @@ import { createWorldAirportLoader } from './world-airport-loader';
 import { worldAirportCellId, type WorldAirportSnapshot, type WorldNavaid, type WorldSearchHit, type WorldRunway } from './world-airport-contract';
 
 export interface PracticeMap {
+  zoom(direction: 1 | -1): void;
   update(state: Readonly<FlightState>, path: readonly Readonly<FlightState>[], mode: 'live' | 'review'): void;
   setVisible(visible: boolean): void;
   setVector(enabled: boolean): void;
@@ -144,6 +145,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   navigationKey.textContent = '◇ VOR · ▰ LOC/ILS · □ DME · ○ NDB · △ TACAN · dots: separate antennas';
   zoomOut.setAttribute('aria-label', 'Zoom map out');
   zoomIn.setAttribute('aria-label', 'Zoom map in');
+  zoomOut.setAttribute('aria-keyshortcuts', '-'); zoomOut.title = '- · Zoom map out';
+  zoomIn.setAttribute('aria-keyshortcuts', '= +'); zoomIn.title = '= / + · Zoom map in';
   follow.setAttribute('aria-pressed', 'true');
   const readout = document.createElement('p');
   readout.className = 'practice-map-readout';
@@ -714,8 +717,12 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     container.dataset.markerHeadingDeg = frame.heading_deg.toFixed(1);
   }
 
-  listen(zoomOut, () => { if (map) map.jumpTo({ zoom: Math.max(map.getMinZoom(), map.getZoom() - 1) }); });
-  listen(zoomIn, () => { if (map) map.jumpTo({ zoom: Math.min(map.getMaxZoom(), map.getZoom() + 1) }); });
+  function changeZoom(direction: 1 | -1): void {
+    if (!map || !ready || disposed || !visible || (direction !== 1 && direction !== -1)) return;
+    map.jumpTo({ zoom: Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), map.getZoom() + direction)) });
+  }
+  listen(zoomOut, () => changeZoom(-1));
+  listen(zoomIn, () => changeZoom(1));
   listen(fit, () => {
     if (!map || !frame) return;
     const coordinates = frame.path.length ? frame.path : [frame.position];
@@ -732,6 +739,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   observer.observe(viewport);
 
   const controller: PracticeMap = {
+    zoom(direction) { if (!disposed && visible && ready) { onInteraction(); changeZoom(direction); } },
     toggleOverlap() {
       if (disposed) return;
       const enabled = container.dataset.extendedMenu !== 'true';
