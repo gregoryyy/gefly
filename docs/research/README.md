@@ -47,3 +47,5 @@ End with proposed implications, limitations and a handoff to product/orchestrato
 - [2026-11-05: Alps terrain and pressure diagnosis](2026-11-05-alps-terrain-pressure.md) — source/pressure separation and bounded high-altitude app repair.
 
 - [2026-11-06: Neutral-control merge regression](2026-11-06-neutral-controls-regression.md) — actual app command reproduction, bounded zero-start repair and remaining native-model limits.
+
+- [2026-11-06: Generic-model initial airborne equilibrium](2026-11-06-airborne-model-balance.md).

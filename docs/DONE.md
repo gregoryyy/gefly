@@ -3,6 +3,23 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 07:25 — Codex orchestrator with local_handling_native, balance_state_contracts and handling_housekeeping: bounded airborne initialization (Task2.0.153)
+
+Agent: Codex orchestrator, local_handling_native, balance_state_contracts, handling_housekeeping; independent quality and cws_validate.
+TODO: 2.0.153 in progress.
+
+**Implementation notes**
+
+The source full trim's solved lateral inputs transfer once into existing model trim channels. External pilot commands remain zero; the visible MODEL BALANCED START identity is recorded separately and survives AP/CWS/current-state reconstruction. Fresh ground/landing starts remain zero; failed balance cannot start a partial model. Source/model coefficients remain unchanged.18native fixtures match retained initial/final states and trajectory digests; bounded restore/ground/error cases pass. The actual app/Worker/browser runs30s atSIM1 with zero external axes and about0.00133°bank change; AP/CWS/disconnect/reload checks pass. See [source and limits](research/2026-11-06-airborne-model-balance.md), independent [quality](reviews/2026-11-06-airborne-balance-quality.md) and [validation](reviews/2026-11-06-airborne-balance-validation.md). Final post-integration CI is recorded separately after execution.
+
+**Deviations**
+
+The user removed older-recording compatibility as a requirement. Current records must preserve identity; exposed-state reconstruction still creates fresh hidden histories and is not a complete checkpoint. Broader Task153 sensitivity/pulse recovery,110kt envelope, aircraft-data rights,172S fidelity and cross-provider peer review remain open/pending. The isolated engine link reuses the existing pinned native library and records its exact hash; it is not a fresh upstream library rebuild.
+
+**Insights**
+
+Solving initial equilibrium and continuously leveling an aircraft are different behaviors; this change implements the former only.
+
 ## 2026-11-06 02:59 — Reconcile the steering dependency before the terrain PR update
 
 TODO: 2.0.153/2.0.162; R-INPUT-1/R-SIM-11/R-WORLD-11.
