@@ -152,9 +152,9 @@ try {
   await prepareFlightUI(page);
   const hold=await page.locator('#roll-left').boundingBox();
   await page.mouse.move(hold.x+hold.width/2,hold.y+hold.height/2);await page.mouse.down();
-  await page.waitForTimeout(100);assert(Number(await page.locator('#roll-control').textContent()) < -0.5,'on-screen left button sends control');
+  await page.waitForTimeout(100);assert(Math.abs(Number(await page.locator('#roll-control').textContent()) + .45) < .01,'on-screen left button sends the normal pilot command');
   await page.mouse.move(900,200);await page.mouse.up();
-  assert(Math.abs(Number(await page.locator('#roll-control').textContent())+0.109375)<0.01,'button release outside clears held input');
+  assert(Math.abs(Number(await page.locator('#roll-control').textContent()))<0.01,'button release outside clears held input');
   await prepareFlightUI(page);
   const stick=await page.locator('#joystick').boundingBox();
   await page.mouse.move(stick.x+stick.width/2,stick.y+stick.height/2);await page.mouse.down();
@@ -162,7 +162,7 @@ try {
   assert(Number(await page.locator('#pitch-control').textContent())>0,'draggable stick sends pitch');
   await page.mouse.move(1000,300);await page.mouse.up();
   assert.equal(Number(await page.locator('#pitch-control').textContent()),0,'stick release outside pad clears pitch');
-  assert(Math.abs(Number(await page.locator('#roll-control').textContent())+0.109375)<0.01,'stick release retains only visible study offset');
+  assert(Math.abs(Number(await page.locator('#roll-control').textContent()))<0.01,'stick release returns the command to neutral');
   await page.locator('#altimeter-open').click(); await page.locator('#altimeter-qfe').click();
   await page.waitForFunction(()=>{const s=window.__flightStates.at(-1);return s.altimeter_setting_pa===s.altimeter_qfe_pa;});
   const recordedQfe=(await state()).altimeter_qfe_pa;
@@ -245,11 +245,11 @@ try {
   assert.equal(await page.evaluate(()=>document.activeElement.id),'scene','settings restore flight focus');
   assert.equal(await page.locator('#status').textContent(),'Paused','closing settings does not resume');
   await startOrResume(page);await page.keyboard.down('ArrowRight');
-  assert(Math.abs(Number(await page.locator('#roll-control').textContent())-(0.45*0.5-0.109375))<0.01,'gentle preset scales pilot input without scaling offset');
+  assert(Math.abs(Number(await page.locator('#roll-control').textContent())-(0.45*0.5-0.109375))<0.01,'gentle preset scales pilot input without scaling the explicit legacy offset');
   await page.keyboard.up('ArrowRight');
   await page.locator('#flight-menu > summary').click(); await page.locator('#reset').click();await page.waitForFunction(()=>document.querySelector('#status').textContent==='Flying');
   await page.keyboard.down('ArrowRight');
-  assert(Math.abs(Number(await page.locator('#roll-control').textContent())-(0.45*0.5-0.109375))<0.01,'flight reset preserves selected sensitivity');
+  assert(Math.abs(Number(await page.locator('#roll-control').textContent())-(0.45*0.5-0.109375))<0.01,'flight reset preserves selected sensitivity and explicit legacy offset');
   await page.keyboard.up('ArrowRight');
   await page.locator('#controls-settings').click();
   await page.locator('#sensitivity-pitch').focus();await page.keyboard.press('End');

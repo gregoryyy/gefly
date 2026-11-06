@@ -45,3 +45,5 @@ End with proposed implications, limitations and a handoff to product/orchestrato
 - [2026-11-05: Copernicus native/data foundation](2026-11-05-copernicus-native-integration.md) — bounded source service/native integration and independent decoder/runtime evidence; broader gates remain open.
 
 - [2026-11-05: Alps terrain and pressure diagnosis](2026-11-05-alps-terrain-pressure.md) — source/pressure separation and bounded high-altitude app repair.
+
+- [2026-11-06: Neutral-control merge regression](2026-11-06-neutral-controls-regression.md) — actual app command reproduction, bounded zero-start repair and remaining native-model limits.
