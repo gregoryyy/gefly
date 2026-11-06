@@ -3,6 +3,23 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 07:47 — Publish the two bounded handling PRs
+
+TODO: 2.0.153 in progress. R-INPUT-1/R-SIM-11/R-REVIEW-1.
+Agent: Codex orchestrator; independent quality and cws_validate reviews are recorded separately.
+
+**Implementation notes**
+
+[PR96](https://github.com/gregoryyy/gefly/pull/96) isolates centered-pointer resize pickup; [PR97](https://github.com/gregoryyy/gefly/pull/97) adds source-balanced airborne initialization in separate native/worker and app commits. Merge96first;97already includes its exact ancestry. Final integrated feature CI at1f76c4d passes550Node+22Python application,85assurance and11training tests, with zero assurance integrity errors. Log SHA-256 `9e259479255e22c5277aeb8acf99900328849ff32bba35435b343d3edca4f120`. The lineage diff against the pointer dependency adds28/changes237/removes0 graph objects and was inspected. Independent native18, finalWorker8, app4/resize3 and combined AP-reload6 browser groups support the bounded implementation. A duplicate same-file input-index entry from stacking was removed; failed metadata/index gate attempts remain distinct from the passing final run.
+
+**Deviations**
+
+Nine optional JSBSim tests and one platform-specific repository test are skipped, not accepted. The wider root assurance cardinality failure, general aircraft handling/fidelity, model redistribution and cross-provider peer review remain open. Current runtime code is unchanged by this publication record.
+
+**Insights**
+
+The dependency merge preserves modular PRs while avoiding conflicting shared records after the pointer repair lands.
+
 ## 2026-11-06 07:25 — Codex orchestrator with local_handling_native, balance_state_contracts and handling_housekeeping: bounded airborne initialization (Task2.0.153)
 
 Agent: Codex orchestrator, local_handling_native, balance_state_contracts, handling_housekeeping; independent quality and cws_validate.
