@@ -20,6 +20,25 @@ No new terrain or aircraft validation is claimed. Display rendering remains open
 
 Use stable task IDs until a pull request actually exists.
 
+## 2026-11-06 00:59 — Hold C for momentary control wheel steering
+
+TODO: 2.0.163; R-AP-1/R-INPUT-1.
+Agent: Codex orchestrator; housekeeping `cws_records`; independent `quality` and `cws_validate`. Terrain code1/code2 work remains separate.
+
+**Implementation notes**
+
+Hold C operates existing momentary CWS during running AP flight, leaving the pointer free. Keyboard and panel holds share ownership; only the final release resumes the existing AP guidance/reference behavior. The button tooltip, accessible shortcut and active AP pointer hint expose C. Loading, pause, blur, AP-off, reset, Review and disposal cancel holds; typing/modifiers/menus/dialogs/map/plan/unavailable contexts cannot start the shortcut. No native dynamics, engine bytes or dependencies change.
+
+Six input helper tests,18 existing KAP controller tests, TypeScript and eight author-run real-app/Worker/native browser groups pass. The final browser includes actual pointer and elevator commands while retaining AP/ALT; artifact `output/flight/cws-keyboard.json` SHA-256 `d4ce04b2e65927247ab39149a4784255dd46e5ddeede6c68d26775b0eaa1e2bf`. Independent [quality](reviews/2026-11-06-cws-keyboard-quality.md) and [validation](reviews/2026-11-06-cws-keyboard-validation.md) distinguish source-inspected guards and unexercised integrated contexts. Full branch CI passes478Node+22Python app cases,85assurance and11training cases;243tool tests include one platform skip, and9of23 optional JSBSim study checks skip. CI log `output/flight/cws-ci.log` SHA-256 `543d66a0cf56adc0030d1723303cd718de75c030967072087aab9f0e42bd66e2`. Scaffold and assurance integrity pass with zero integrity errors.
+
+**Deviations**
+
+Momentary hold follows the preceding CWS discussion; the user did not request a latch. Scenery, dispatched blur and injected terrain-loading notification are explicit fixtures; the rest uses trusted browser keys and actual native state. The browser does not quantify recapture/servo fidelity, test every guarded context or reset while C is still held. Existing KAP tests cover exact ALT/VS reference recapture. CWS fit on the selected C172 and the rebuilt engine's stale build record remain unverified. Cross-provider peer remains pending following earlier provider timeout/access evidence; this is no milestone, aircraft or training acceptance. Terrain reload work remains open.
+
+**Insights**
+
+Keyboard and pointer operation of a momentary control need separate ownership; releasing one source must not cancel the other. Automatic loading also needs explicit release even when the UI retains its running intent.
+
 ## 2026-11-06 00:07 — Add the modular Copernicus native/data foundation
 
 TODO: 2.0.150 (bounded foundation; broader gates remain open); R-WORLD-11/R-SIM-2/R-REVIEW-1.
