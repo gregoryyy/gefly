@@ -833,7 +833,7 @@ The collapsed flight map keeps almost all front-window height for the map, with
 compact view controls over it. Click an airport, aid or fix for an on-map popup;
 supported channel buttons load COM1/2 or NAV1/2 **standby**, with activation still
 on the radio stack. Search, filters and full source details are in the comma menu
-below the map. **Location types** checkboxes filter both map markers and search results; airfields, helipads, NAV aids, fixes and other facility types can be toggled independently. Tuning is read-only during Review. GPS target draws a map line and
+below the map. **Location types** checkboxes filter both map markers and search results; airfields, helipads, NAV aids, fixes and other facility types can be toggled independently. These seven choices, including all-off, are saved on this device and restored on map reopening and application reload. Fixes controls both published markers and directory results. Tuning is read-only during Review. GPS target draws a map line and
 shows true bearing/distance; it does not command the aircraft or an installed GPS.
 Fixes are the pinned historical 2013.10 regional inventory, including duplicate
 identifiers at separate coordinates. Original rows and license are retained in
@@ -870,3 +870,27 @@ The map stops at Web Mercator limits, separately from physical terrain coverage.
 No worldwide airport/NAV inventory or new photographs are added. See the
 [regional package](public/terrain/region/README.md),
 [world package](public/terrain/world/README.md), and [source rights](../THIRD_PARTY_NOTICES.md).
+
+## Worldwide airport discovery
+
+Open the Flight map with **M**, then press **comma** for its extended menu.
+Use **Search map points** to find an airport by code/name worldwide (for example
+LFPG, LOWW, LSZH, FACT, KJFK, RJTT or NZQN). Select a result to centre the map and
+load its local source details. Airport popups show available runway metadata and
+COM1/2 standby buttons; supported radio-navaid channels offer NAV1/2 standby.
+Swap on the radio panel to activate a selected standby channel. Review blocks tuning.
+Nearby airport/NAV details follow map panning; type checkboxes filter their layers.
+
+The snapshot is OurAirports community data dated 2026-11-06, not current operational
+airport information or a complete IFR/ILS database. Missing source values remain
+unknown; unsupported channels cannot be tuned. Radio reception/AP coverage remains
+the separate historical regional model. Existing GPS/plan controls retain their
+current behavior. Source files are bundled; flying/searching needs no OurAirports
+account or live connection. See [package provenance](public/airports/world/README.md).
+
+Checks: `npm run test:world-airports` exercises the actual discovery worker/assets
+and local native engine, with deterministic scenery fixtures. `npm test` includes
+compiler and bounded loader/source tests. The browser case requires the existing
+local JSBSim build and Chrome; it does not establish navigation or aircraft fidelity.
+
+Failed world cells remain unavailable for the current map-centre generation. Change to another region or reload to retry; reentry has a one-minute minimum cooldown. This avoids repeated failed fetches.

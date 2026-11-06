@@ -1,5 +1,6 @@
 /** Bounded, offline catalog inspection. A supplied reader owns filesystem containment. */
 import { createHash } from 'node:crypto';
+import { parseJsonExtractionProfiles, type JsonExtractionProfile } from './json-extraction.ts';
 import type { NewFact, NodeInfo, NodeRef } from '../upstream/src/model/facts.ts';
 
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
@@ -25,7 +26,7 @@ type FixtureGroup = {
   spent: string[]; dependsOn: string[]; model?: Pin;
   freeze?: { calibrationSha256: string; holdoutSha256: string };
 };
-type Catalog = { schemaVersion: 1; guards: Guard[]; evidence: Evidence[]; criteria: Criterion[]; fixtureGroups: FixtureGroup[]; aircraft: { manifest: string; values: string[] }[] };
+type Catalog = { jsonExtractionProfiles: JsonExtractionProfile[]; schemaVersion: 1; guards: Guard[]; evidence: Evidence[]; criteria: Criterion[]; fixtureGroups: FixtureGroup[]; aircraft: { manifest: string; values: string[] }[] };
 export type Problem = { check: string; severity: 'error' | 'warning' | 'note'; id: string; message: string; sources: string[] };
 type State = { fresh: boolean; valid: boolean; eligible: boolean };
 const CATALOG = 'docs/assure/catalog.json';
@@ -121,7 +122,9 @@ function reasons(value: unknown, at: string): RoleReason[] {
 }
 
 function parseCatalog(raw: unknown): Catalog {
-  const root = object(raw, CATALOG, ['schemaVersion', 'guards', 'evidence', 'criteria', 'fixtureGroups', 'aircraft']);
+  const required = ['schemaVersion', 'guards', 'evidence', 'criteria', 'fixtureGroups', 'aircraft'];
+  const root = object(raw, CATALOG, [...required, 'jsonExtractionProfiles'], required);
+  const jsonExtractionProfiles = parseJsonExtractionProfiles(root.jsonExtractionProfiles);
   if (root.schemaVersion !== 1) throw new Error('unsupported catalog schemaVersion (expected 1)');
   const guards = list(root.guards, 'guards', (raw, at): Guard => {
     const item = object(raw, at, ['id', 'sources', 'rules']);
@@ -192,7 +195,7 @@ function parseCatalog(raw: unknown): Catalog {
     const item = object(raw, at, ['manifest', 'values']);
     return { manifest: path(item.manifest, at), values: list(item.values, at, path) };
   });
-  return { schemaVersion: 1, guards, evidence, criteria, fixtureGroups, aircraft };
+  return { schemaVersion: 1, guards, evidence, criteria, fixtureGroups, aircraft, jsonExtractionProfiles };
 }
 
 export function inspectEvidence(readFile: (path: string) => string | undefined, paths: readonly string[]) {
@@ -227,7 +230,13 @@ export function inspectEvidence(readFile: (path: string) => string | undefined, 
     const fresh = sha(content) === input.sha256;
     if (!fresh) problem('evidence.stale', 'warning', owner.id, `Pinned content changed: ${input.path}`, [source, input.path]);
     let valid = true;
-    if (input.pointer !== undefined) {
+    const profile = catalog.jsonExtractionProfiles.find(profile => profile.path === input.path);
+    if (profile && sha(content) !== profile.sha256) {
+      valid = false; problem('evidence.json-profile', 'error', owner.id, 'Generated JSON profile bytes changed', [source, input.path]);
+    }
+    if (profile && input.pointer !== undefined && input.pointer !== '') {
+      valid = false; problem('evidence.pointer', 'error', owner.id, 'Child JSON selector unavailable under file-level extraction profile', [source, input.path]);
+    } else if (input.pointer !== undefined) {
       try {
         const value = select(JSON.parse(content), input.pointer);
         const field = { kind: 'object' as const, id: `${input.path}#${input.pointer}` };
@@ -289,6 +298,10 @@ export function inspectEvidence(readFile: (path: string) => string | undefined, 
       if (record.result.assertions.length || /\.json$/i.test(record.result.path)) {
         state.valid = false; problem('evidence.assertion', 'error', record.id, 'Cannot parse required JSON result artifact', [source, record.result.path]);
       }
+    }
+    if (catalog.jsonExtractionProfiles.some(profile => profile.path === record.result.path)
+      && record.result.assertions.some(assertion => assertion.pointer !== '')) {
+      state.valid = false; problem('evidence.assertion', 'error', record.id, 'Child JSON result selector unavailable under file-level extraction profile', [source, record.result.path]);
     }
     if (record.result.assertions.length && resultIsJson) {
       try {

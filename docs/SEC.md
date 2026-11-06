@@ -136,7 +136,7 @@ accounts, personal telemetry, persistence or runtime AI calls are used. Generate
 generic aircraft data stays local and outside the production UI build. The
 UI-only production build is not a published simulator deployment.
 
-Control sensitivity settings, including the 0–100% keyboard/button wheel-brake command gain, are bounded dimensionless gains held only in page memory. They have no persistence or network path, preserve throttle, and leave the declared study roll offset separate and initially zero. Opening the settings dialog pauses flight and releases held inputs; closing it does not resume automatically. These input preferences do not calibrate or modify aircraft physics.
+Saved Options use a separate bounded, strict version-1 localStorage record (at most1024 UTF-8 bytes) for dimensionless pitch/roll/rudder/brake gains, coordinated rudder, centered touchpad, practice PAPI, experimental roll offset and sound mute/volume. Save commits the preview; Escape/outside dismissal restores opening values without writing the preview. Sound changes outside Options save immediately. Unknown fields, invalid ranges/types/version, malformed/oversized records and denied storage fall back to defaults/session use. This path has no network access and stores no aircraft controls, loading, recordings, position or navigation state. Absent an explicit saved choice, roll offset is zero. Restoring sound preferences does not create/unlock an audio context or start flight. Opening the settings dialog pauses flight and releases held inputs; closing it does not resume automatically. These input preferences do not calibrate or modify aircraft physics.
 
 The parking-brake latch is separate page-session input state. A guarded N/button
 toggle requests full bounded wheel braking independently of the momentary brake
@@ -182,8 +182,8 @@ pointer axes neutral. Camera offsets never enter dynamics. Numeric throttle shor
 AP shortcuts are suppressed inside open dialogs and editable controls. The live
 mobile engine dialog releases held inputs and keeps flight running, as labeled.
 
-The optional centered-touchpad preference is a session-only boolean, initially
-off. It uses the current scene element's visible rectangle to define neutral,
+The optional centered-touchpad preference is a saved boolean, initially
+on unless the user saves another choice. It uses the current scene element's visible rectangle to define neutral,
 not hardware coordinates, device calibration or a stored click position. Resizing
 therefore changes the visible reference without installing a new pointer anchor.
 Captured hold-drag changes bounded camera offsets while pilot pointer axes remain
@@ -192,7 +192,7 @@ only subsequent real pointer movement/re-entry produces center-relative input.
 Ordinary cancellation, pause, focus loss and Options retain that camera offset
 while neutralizing controls; Escape and flight restart explicitly reset it.
 Review can inspect the view without changing live or recorded aircraft state.
-The preference adds no persistence, pointer lock, device permission, network
+Apart from the bounded local Options record, this preference adds no pointer lock, device permission, network
 request or telemetry, and does not alter sensitivity gains or native physics.
 
 Cockpit/engine state groups are validated atomically before copying and display;
@@ -224,7 +224,7 @@ retained separately from aircraft/review state and reset to default on reload.
 Web Audio is activated by explicit browser/user interaction. The original local
 synthesis graph uses existing engine telemetry; it fetches no audio assets and
 requests no microphone, media-device, network or recording access. Mute/volume
-are session-only preferences, independent of flight input. Pause/hidden/failure/
+are bounded device-local Options preferences, independent of flight input. Pause/hidden/failure/
 reset/paused Review silence the graph; page teardown closes it. Missing or denied
 audio leaves flight usable with a retry/unavailable indication. Test-only local
 WAV previews are disposable outputs, not runtime telemetry or recordings.
@@ -327,7 +327,7 @@ research did not activate a commercial service or add remote runtime endpoints.
 
 ## Right-side flight map
 
-The right-side map adds no provider or storage flow: its base layers use the
+The right-side map adds no provider flow; location-category choices use the bounded local preference described below: its base layers use the
 already bounded public scenery proxy, and aviation overlays use the existing
 local hash-verified airport/navigation packages. Marker details use textContent;
 no source field becomes HTML, code or an external request URL. Position and path
@@ -453,6 +453,73 @@ The persistent renderer separately retains32 detached overview payloads alongsid
 Custom GPS planning bounds are independent of pinned regional source catalogue
 limits. Shared validation rejects invalid coordinates before mutation; global
 custom planning adds no source downloads, receiver coverage or persistence.
+
+## Saved flight-map location categories
+
+`gefly.map-location-preferences.v1` stores only an exact version1 record with a
+canonical array of the seven known location categories, bounded to512 UTF-8
+bytes. An empty array means all categories off. Unknown/duplicate categories,
+extra fields, coercible values and malformed/oversized/future records fall back
+to detached all-on defaults; denied/quota storage leaves session controls usable.
+The map and directory receive the same initial selection before first rendering.
+Checkbox changes save immediately. No search text, coordinates, GPS fixes,
+flight plans, receiver settings or aircraft state enter this record. There is no
+network path; clearing browser site data removes the preference. Existing custom
+fix/plan state remains session-only. This is the map's additional storage flow;
+existing display and Options records stay separate.
+
+## Worldwide community discovery packages
+
+R-WORLD-12 adds fixed same-origin `/airports/world/` assets and a dedicated
+discovery worker; it sends no simulator state, credentials or user data to
+OurAirports. CSV download/compilation occurs separately at a pinned public commit.
+Manifest, gzip search and cell reads have byte/deadline/hash/schema/record/coordinate
+and referential bounds before presentation. Gzip expansion is bounded separately;
+paths are fixed/canonical, redirected responses are rejected, obsolete jobs are
+cancelled and failed data remains unavailable. Main-thread snapshots/search hits
+are bounded; disposal terminates the worker and rejects pending requests.
+Source strings render as text, with no imported HTML/scripts. Community NAV/COM
+selection uses existing guarded standby actions and Review locks; it cannot install
+receiver signals, alter native state or invent missing ILS/procedure components.
+The bundled regional directory remains a fallback if optional world data fails.
+
+
+R-WORLD-12 bulk transport uses a small JSON descriptor whose SHA-256 binds the
+full UTF-8 JSON `catalogue.bin`; cell `.bin` assets also contain UTF-8 JSON,
+validated by the dedicated worker. The assurance graph records descriptor and
+file-level provenance, not every generated airport-field JSON pointer. Compiler,
+source-audit and all-cell client tests provide separate semantic checks. No
+hand-authored aircraft-data extraction or assurance resource bound is relaxed.
+
+## On-demand airport surface service
+
+Only canonical bounded integer region keys are accepted; clients cannot supply
+upstream URLs, Overpass expressions or cache paths. The fixed HTTPS provider is
+requested without credentials/redirects, under independent job, byte, timeout
+and cooldown budgets. Region extents are sent upstream; exact flight samples,
+controls and accounts are not. No broad crawl or provider failover is performed.
+Compiled packages retain OSM provenance but strip mapper names/UIDs/changesets.
+Persistent local cache files are versioned, atomically written, size/count bounded,
+content-hashed and schema/geometry checked again on read; corruption is a miss,
+not trusted executable input. Source text is inert and cannot create HTML or
+flight commands. Missing data/failures remain optional scenery availability;
+Review/flat/disposal cancellation cannot resume or reposition the aircraft.
+
+### Scenery worker boundaries
+
+Worker messages use fixed operations, bounded queues, request/generation identities and deadlines. Terrain Workers resolve existing allowlisted sources; callers cannot supply arbitrary code or upstream URLs. Cancelled/late results cannot be admitted. Source arrays are copied before transfer to retain cache/history ownership. Backend block decoding has two active workers,32 queued requests and a15-second job deadline. These are CPU/lifecycle boundaries, not isolation from a compromised same-origin application. No flight telemetry is sent to airport-source services.
+
+
+## Hash-pinned generated cartography extraction
+
+Task2.0.180 adds one optional catalog extraction profile for the exact path and
+SHA-256 of the imported generated terrain-style JSON. Core allowlisting admits
+only that reviewed pair and file-level mode. Original bytes and whole-file
+identity/freshness remain; default structured extraction, aircraft inputs and
+accepted whole-file evidence are preserved. Missing/changed bytes and invalid
+profiles fail integrity. Child selectors or child result assertions on the
+profiled file are explicitly ineligible, never silently mapped to its file node.
+No graph cap, validation deadline, application asset or runtime behavior changes.
 
 
 ## Worldwide historical radio reception

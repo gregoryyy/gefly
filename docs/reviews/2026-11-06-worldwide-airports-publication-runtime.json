@@ -1,0 +1,3120 @@
+{
+  "result": "pass",
+  "variant": "publication",
+  "checks": [
+    "a source airport can become the visual GPS target without an autopilot command",
+    "seven distant airports resolve through real global search and cells, show source runway details and load COM1 standby without changing active channels",
+    "worldwide VOR-DME selection loads the source110.050MHz into NAV2 standby only, with historical receiver coverage still disclosed",
+    "a source NDB retains its kHz frequency and exposes no unsupported NAV tuning action",
+    "map pan/return reuses cached source cells and all observed search, label, source and cache counts stay bounded",
+    "paused native step, digest, complete physical state, AP state and active radio channels remain unchanged during worldwide discovery and standby loading",
+    "recorded Review allows worldwide inspection while disabling COM tuning without sending navigation mutations",
+    "injected optional cell failures disclose unavailability and preserve the731entry regional fallback and paused native state"
+  ],
+  "not_evaluated": [
+    "Standby confirmation wording is absent from this branch; WORLD_AIRPORT_ALLOW_NO_FEEDBACK=1 limits only that presentation check. Actual standby mutation and unchanged active channels are still mandatory.",
+    "Flight-plan action is absent from this branch; WORLD_AIRPORT_ALLOW_NO_PLAN=1 explicitly limits this run.",
+    "Map relocation is absent from this branch; WORLD_AIRPORT_ALLOW_NO_RELOCATION=1 limits only that Review presentation check. Native state and radio guards remain mandatory."
+  ],
+  "airports": [
+    {
+      "id": "LOWW",
+      "channel_khz": 134675,
+      "centre": {
+        "lon": 16.5697,
+        "lat": 48.110298
+      },
+      "bounds": {
+        "rows": 1,
+        "airports": 1,
+        "navaids": 0,
+        "cached": 15,
+        "cacheBytes": 3080282,
+        "sourceAirports": 3231,
+        "sourceNavaids": 564
+      },
+      "details": "LOWW · Vienna International Airportairport · 48.11030° N, 16.56970° EOurAirports community snapshot · COM 2026-11-06Runway 11 / 29 · 11483 ft × 148 ft · ASPRunway 16 / 34 · 11811 ft × 148 ft · ASPAPP · 134.675 MHzCOM1 standbyCOM2 standbyATIS · 121.730 MHzCOM1 standbyCOM2 standbyCLD · 122.125 MHzCOM1 standbyCOM2 standbyDIR · 119.800 MHzCOM1 standbyCOM2 standbyGND · 121.600 MHzCOM1 standbyCOM2 standbyINFO · 118520 kHzTuning unavailableRMP · 131.625 MHzCOM1 standbyCOM2 standbyTWR · 119.400 MHzCOM1 standbyCOM2 standbyGPS target"
+    },
+    {
+      "id": "LFPG",
+      "channel_khz": 121150,
+      "centre": {
+        "lon": 2.554117,
+        "lat": 49.00896
+      },
+      "bounds": {
+        "rows": 1,
+        "airports": 1,
+        "navaids": 0,
+        "cached": 18,
+        "cacheBytes": 3734622,
+        "sourceAirports": 5107,
+        "sourceNavaids": 626
+      },
+      "details": "LFPG · Charles de Gaulle International Airportairport · 49.00896° N, 2.55412° EOurAirports community snapshot · COM 2026-11-06Runway 08R / 26L · 8858 ft × 197 ft · CONRunway 08L / 26R · 13829 ft × 148 ft · ASPRunway 09R / 27L · 13780 ft × 148 ft · ASPRunway 09L / 27R · 8858 ft × 197 ft · ASPRunway 08H / 26H · 1444 ft × 99 ft · GRASSAPP · 121.150 MHzCOM1 standbyCOM2 standbyAPP · 136.275 MHzCOM1 standbyCOM2 standbyATIS · 127.125 MHzCOM1 standbyCOM2 standbyDEP · 124.350 MHzCOM1 standbyCOM2 standbyGND · 121.600 MHzCOM1 standbyCOM2 standbyGND · 118.100 MHzCOM1 standbyCOM2 standbyPFLT · 126.650 MHzCOM1 standbyCOM2 standbyTWR · 119.250 MHzCOM1 standbyCOM2 standbyGPS target"
+    },
+    {
+      "id": "LSZH",
+      "channel_khz": 125325,
+      "centre": {
+        "lon": 8.548056,
+        "lat": 47.458056
+      },
+      "bounds": {
+        "rows": 1,
+        "airports": 1,
+        "navaids": 1,
+        "cached": 18,
+        "cacheBytes": 3734622,
+        "sourceAirports": 5234,
+        "sourceNavaids": 666
+      },
+      "details": "LSZH · Zürich Airportairport · 47.45806° N, 8.54806° EOurAirports community snapshot · COM 2026-11-06Runway 10 / 28 · 8202 ft × 197 ft · CONRunway 14 / 32 · 10827 ft × 197 ft · CONRunway 16 / 34 · 12139 ft × 197 ft · CONRunway 01H / 19H · 1010 ft × 91 ft · GRASSAPP · 125.325 MHzCOM1 standbyCOM2 standbyATIS · 125.725 MHzCOM1 standbyCOM2 standbyCLD · 121.925 MHzCOM1 standbyCOM2 standbyDEP · 125.950 MHzCOM1 standbyCOM2 standbyGND · 121902 kHzTuning unavailableRMP SOUTH · 121.755 MHzCOM1 standbyCOM2 standbyTMA · 127.755 MHzCOM1 standbyCOM2 standbyTWR · 118.100 MHzCOM1 standbyCOM2 standbyGPS target"
+    },
+    {
+      "id": "FACT",
+      "channel_khz": 127600,
+      "centre": {
+        "lon": 18.604333,
+        "lat": -33.97403
+      },
+      "bounds": {
+        "rows": 23,
+        "airports": 1,
+        "navaids": 1,
+        "cached": 18,
+        "cacheBytes": 2467833,
+        "sourceAirports": 270,
+        "sourceNavaids": 38
+      },
+      "details": "FACT · Cape Town International Airportairport · 33.97403° S, 18.60433° EOurAirports community snapshot · COM 2026-11-06Runway 01 / 19 · 10502 ft × 200 ft · ASPRunway 16 / 34 · 5581 ft × 151 ft · ASPATIS · 127.600 MHzCOM1 standbyCOM2 standbyAPP · 119.700 MHzCOM1 standbyCOM2 standbyAPP · 124.500 MHzCOM1 standbyCOM2 standbyATIS · 127.000 MHzCOM1 standbyCOM2 standbyGND · 121.900 MHzCOM1 standbyCOM2 standbyAC · 122.650 MHzCOM1 standbyCOM2 standbyTWR · 118.100 MHzCOM1 standbyCOM2 standbyDEL · 122.100 MHzCOM1 standbyCOM2 standbyGPS target"
+    },
+    {
+      "id": "KJFK",
+      "channel_khz": 127400,
+      "centre": {
+        "lon": -73.779317,
+        "lat": 40.639447
+      },
+      "bounds": {
+        "rows": 1,
+        "airports": 1,
+        "navaids": 1,
+        "cached": 18,
+        "cacheBytes": 3431872,
+        "sourceAirports": 5476,
+        "sourceNavaids": 500
+      },
+      "details": "KJFK · John F. Kennedy International Airportairport · 40.63945° N, 73.77932° WOurAirports community snapshot · COM 2026-11-06Runway 04R / 22L · 8400 ft × 200 ft · ASPRunway 04L / 22R · 12079 ft × 200 ft · PEMRunway 13R / 31L · 14511 ft × 200 ft · PEMRunway 13L / 31R · 10000 ft × 200 ft · PEMAPP · 127.400 MHzCOM1 standbyCOM2 standbyAPP · 132.400 MHzCOM1 standbyCOM2 standbyTWR · 123.900 MHzCOM1 standbyCOM2 standbyGND · 121.650 MHzCOM1 standbyCOM2 standbyAPP · 125.700 MHzCOM1 standbyCOM2 standbyATIS · 115100 kHzTuning unavailableCLD · 135.050 MHzCOM1 standbyCOM2 standbyDEP · 135.900 MHzCOM1 standbyCOM2 standbyGPS target"
+    },
+    {
+      "id": "RJTT",
+      "channel_khz": 120800,
+      "centre": {
+        "lon": 139.786958,
+        "lat": 35.549678
+      },
+      "bounds": {
+        "rows": 1,
+        "airports": 1,
+        "navaids": 0,
+        "cached": 18,
+        "cacheBytes": 4233398,
+        "sourceAirports": 3659,
+        "sourceNavaids": 179
+      },
+      "details": "RJTT · Tokyo Haneda International Airportairport · 35.54968° N, 139.78696° EOurAirports community snapshot · COM 2026-11-06Runway 04 / 22 · 8202 ft × 200 ft · ASPRunway 16R / 34L · 9843 ft × 200 ft · ASPRunway 16L / 34R · 11024 ft × 200 ft · ASPRunway 05 / 23 · 8202 ft × 200 ft · ASPDEP · 120.800 MHzCOM1 standbyCOM2 standbyGND · 121.625 MHzCOM1 standbyCOM2 standbyGND · 121.975 MHzCOM1 standbyCOM2 standbyGND · 118.225 MHzCOM1 standbyCOM2 standbyTWR · 124.350 MHzCOM1 standbyCOM2 standbyTWR · 118.725 MHzCOM1 standbyCOM2 standbyTWR · 118.575 MHzCOM1 standbyCOM2 standbyTCA · 119.450 MHzCOM1 standbyCOM2 standbyGPS target"
+    },
+    {
+      "id": "NZQN",
+      "channel_khz": 128000,
+      "centre": {
+        "lon": 168.746379,
+        "lat": -45.019205
+      },
+      "bounds": {
+        "rows": 1,
+        "airports": 1,
+        "navaids": 0,
+        "cached": 18,
+        "cacheBytes": 988461,
+        "sourceAirports": 149,
+        "sourceNavaids": 32
+      },
+      "details": "NZQN · Queenstown Airportairport · 45.01920° S, 168.74638° EOurAirports community snapshot · COM 2026-11-06Runway 05 / 23 · 6204 ft × 148 ft · ASPRunway 14 / 32 · 2920 ft × 33 ft · BITUMAFIS · 128.000 MHzCOM1 standbyCOM2 standbyAPP · 125.750 MHzCOM1 standbyCOM2 standbyATIS · 126.400 MHzCOM1 standbyCOM2 standbyCTAF · 118.100 MHzCOM1 standbyCOM2 standbyDLV · 121.900 MHzCOM1 standbyCOM2 standbyGPS target"
+    }
+  ],
+  "errors": [],
+  "worldResponses": [
+    {
+      "path": "/airports/world/manifest.json",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "165"
+    },
+    {
+      "path": "/airports/world/catalogue.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "164096"
+    },
+    {
+      "path": "/airports/world/cells/37-27.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "478185"
+    },
+    {
+      "path": "/airports/world/cells/38-27.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "319369"
+    },
+    {
+      "path": "/airports/world/cells/37-28.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "324626"
+    },
+    {
+      "path": "/airports/world/cells/36-27.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "257542"
+    },
+    {
+      "path": "/airports/world/cells/37-26.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "107872"
+    },
+    {
+      "path": "/airports/world/cells/38-28.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "278388"
+    },
+    {
+      "path": "/airports/world/cells/36-28.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "278528"
+    },
+    {
+      "path": "/airports/world/cells/36-26.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "160891"
+    },
+    {
+      "path": "/airports/world/cells/38-26.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "160292"
+    },
+    {
+      "path": "/airports/world/search.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "3043698"
+    },
+    {
+      "path": "/airports/world/cells/39-27.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "232711"
+    },
+    {
+      "path": "/airports/world/cells/40-27.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "80214"
+    },
+    {
+      "path": "/airports/world/cells/39-28.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "128668"
+    },
+    {
+      "path": "/airports/world/cells/39-26.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "92957"
+    },
+    {
+      "path": "/airports/world/cells/40-28.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "80681"
+    },
+    {
+      "path": "/airports/world/cells/40-26.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "99358"
+    },
+    {
+      "path": "/airports/world/cells/35-27.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "103530"
+    },
+    {
+      "path": "/airports/world/cells/35-28.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "449045"
+    },
+    {
+      "path": "/airports/world/cells/35-26.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "101765"
+    },
+    {
+      "path": "/airports/world/cells/39-11.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "25572"
+    },
+    {
+      "path": "/airports/world/cells/40-11.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "24239"
+    },
+    {
+      "path": "/airports/world/cells/39-12.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "23016"
+    },
+    {
+      "path": "/airports/world/cells/40-12.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "29313"
+    },
+    {
+      "path": "/airports/world/cells/21-26.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "1043238"
+    },
+    {
+      "path": "/airports/world/cells/22-26.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "78855"
+    },
+    {
+      "path": "/airports/world/cells/21-27.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "122363"
+    },
+    {
+      "path": "/airports/world/cells/20-26.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "907507"
+    },
+    {
+      "path": "/airports/world/cells/21-25.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "56609"
+    },
+    {
+      "path": "/airports/world/cells/22-27.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "97251"
+    },
+    {
+      "path": "/airports/world/cells/20-27.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "91053"
+    },
+    {
+      "path": "/airports/world/cells/20-25.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "932856"
+    },
+    {
+      "path": "/airports/world/cells/63-25.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "371480"
+    },
+    {
+      "path": "/airports/world/cells/64-25.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "71122"
+    },
+    {
+      "path": "/airports/world/cells/63-26.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "4405"
+    },
+    {
+      "path": "/airports/world/cells/62-25.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "20363"
+    },
+    {
+      "path": "/airports/world/cells/63-24.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "195395"
+    },
+    {
+      "path": "/airports/world/cells/64-26.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "67349"
+    },
+    {
+      "path": "/airports/world/cells/62-26.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "18367"
+    },
+    {
+      "path": "/airports/world/cells/62-24.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "155185"
+    },
+    {
+      "path": "/airports/world/cells/69-8.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "13893"
+    },
+    {
+      "path": "/airports/world/cells/70-8.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "4339"
+    },
+    {
+      "path": "/airports/world/cells/69-9.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "8731"
+    },
+    {
+      "path": "/airports/world/cells/70-9.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "57832"
+    },
+    {
+      "path": "/airports/world/cells/37-27.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "478185"
+    },
+    {
+      "path": "/airports/world/cells/38-27.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "319369"
+    },
+    {
+      "path": "/airports/world/cells/37-28.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "324626"
+    },
+    {
+      "path": "/airports/world/cells/36-27.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "257542"
+    },
+    {
+      "path": "/airports/world/cells/37-26.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "107872"
+    },
+    {
+      "path": "/airports/world/cells/38-28.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "278388"
+    },
+    {
+      "path": "/airports/world/cells/36-28.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "278528"
+    },
+    {
+      "path": "/airports/world/cells/36-26.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "160891"
+    },
+    {
+      "path": "/airports/world/cells/38-26.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "160292"
+    },
+    {
+      "path": "/airports/world/cells/39-11.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "25572"
+    },
+    {
+      "path": "/airports/world/cells/40-11.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "24239"
+    },
+    {
+      "path": "/airports/world/cells/39-12.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "23016"
+    },
+    {
+      "path": "/airports/world/cells/40-12.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "29313"
+    },
+    {
+      "path": "/airports/world/cells/69-8.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "13893"
+    },
+    {
+      "path": "/airports/world/cells/70-8.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "4339"
+    },
+    {
+      "path": "/airports/world/cells/69-9.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "8731"
+    },
+    {
+      "path": "/airports/world/cells/70-9.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "57832"
+    },
+    {
+      "path": "/airports/world/cells/71-9.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "12348"
+    },
+    {
+      "path": "/airports/world/cells/36-27.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "257542"
+    },
+    {
+      "path": "/airports/world/cells/37-27.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "478185"
+    },
+    {
+      "path": "/airports/world/cells/36-28.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "278528"
+    },
+    {
+      "path": "/airports/world/cells/35-27.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "103530"
+    },
+    {
+      "path": "/airports/world/cells/36-26.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "160891"
+    },
+    {
+      "path": "/airports/world/cells/37-28.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "324626"
+    },
+    {
+      "path": "/airports/world/cells/35-28.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "449045"
+    },
+    {
+      "path": "/airports/world/cells/35-26.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "101765"
+    },
+    {
+      "path": "/airports/world/cells/37-26.bin",
+      "status": 200,
+      "content_encoding": null,
+      "content_length": "107872"
+    }
+  ],
+  "workers": [
+    "http://127.0.0.1:5439/node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs?worker_file&type=module",
+    "http://127.0.0.1:5439/studies/e1-browser/sim/worker.js",
+    "http://127.0.0.1:5439/cesium/Workers/transferTypedArrayTest.js",
+    "http://127.0.0.1:5439/cesium/Workers/createVerticesFromHeightmap.js",
+    "http://127.0.0.1:5439/cesium/Workers/incrementallyBuildTerrainPicker.js",
+    "http://127.0.0.1:5439/src/world-airport.worker.ts?worker_file&type=module"
+  ],
+  "limits": [
+    "Actual local generated OurAirports data, discovery Worker and installed native engine are used; cartographic pixels and optional Copernicus failures are deterministic scenery fixtures.",
+    "The separately labelled negative page injects unavailable world cells to test regional fallback.",
+    "Discovery and standby tuning are checked, not current navigation-data completeness, signal reception, airport geometry accuracy or aircraft fidelity."
+  ],
+  "baseline": {
+    "step": 202,
+    "digest": "8e5f7c52f38a4742",
+    "kap": {
+      "kap_profile": 1,
+      "kap_engaged": 1,
+      "kap_lateral": 1,
+      "kap_lateral_arm": 0,
+      "kap_vertical": 1,
+      "kap_alt_arm": 0,
+      "kap_gs_arm": 0,
+      "kap_lateral_alert": 0,
+      "kap_vertical_alert": 0,
+      "kap_hdg_prompt": 0,
+      "kap_heading_bug_rad": 1.43116998663535,
+      "kap_selected_altitude_m": 396.1716285107109,
+      "kap_vs_target_mps": -3.2486013878951784e-15,
+      "kap_hold_pressure_altitude_m": 396.1716285107109,
+      "kap_baro_setting_pa": 101325,
+      "kap_baro_units": 0,
+      "kap_display_page": 0,
+      "kap_indicated_altitude_m": 395.6714973444059,
+      "kap_nav_valid": 0,
+      "kap_nav_kind": 1,
+      "kap_gs_valid": 0,
+      "kap_elevator_norm": -0.1552195350716699,
+      "kap_sensor_fault": 0,
+      "kap_cws": 0,
+      "kap_gs_base_mps": 0,
+      "kap_alert_state": 2,
+      "kap_alert_sequence": 0
+    },
+    "active": [
+      "118.000",
+      "113.80",
+      "121.500",
+      "114.00"
+    ]
+  },
+  "catalogueDelivery": {
+    "bytes": 164096,
+    "sha256": "185a01cc51a59694bc9000f6ddc6a3946b799613d8bc220c14db74b5503bd216",
+    "content_encoding": null
+  },
+  "searchDelivery": {
+    "bytes": 3043698,
+    "sha256": "38f9442cf23d4c6a4f74827cee00de7d27a1af6e1ed05e6656e4111618052f23",
+    "content_encoding": null
+  },
+  "cacheReturn": {
+    "beforeReturn": 60,
+    "afterReturn": 60,
+    "bounds": {
+      "rows": 1,
+      "airports": 1,
+      "navaids": 1,
+      "cached": 18,
+      "cacheBytes": 126456,
+      "sourceAirports": 149,
+      "sourceNavaids": 32
+    }
+  },
+  "negative": {
+    "injected": "all optional world cells503; manifest/index/regional assets untouched",
+    "retained_regional_airports": 731,
+    "status": "Worldwide airport data unavailable · 0/9 cells · 2026-11-06 community snapshot · details near map centre · community source"
+  },
+  "sourceCounts": {
+    "airports": 86343,
+    "runways": 48411,
+    "com": 30394,
+    "navaids": 11008
+  },
+  "identities": {
+    "wasm_sha256": "266f201652e8fc3fb6c5ee384bad3ef1f66b335ee9885fa4a14de9a797c1edcc",
+    "manifest_sha256": "ed989f584a22dca515e9fd39de275949c2e3d2804aaa978c6382d340acd8d6c6",
+    "catalogue_sha256": "185a01cc51a59694bc9000f6ddc6a3946b799613d8bc220c14db74b5503bd216",
+    "harness_sha256": "099ba27185cc87c7d089815f46c085005124d7e914a980c445f19c7eee6dd63e",
+    "source_sha256": {
+      "../src/world-airport-contract.ts": "c9a99737b2486a0a0bcde9a2cad31c64bd39e7cf2a8fcf766ed7b2992d411cdd",
+      "../src/world-airport.worker.ts": "29a9f5b272c94fe2b1bb25142097ed1a3e3ec4ec052c004fd0019bed36daf5df",
+      "../src/world-airport-loader.ts": "5c944f21df8a4b0ba7d55332a68376a011933889c05ff92e9c5960d830ed163b",
+      "../src/world-airport-repository.ts": "40128a3f2f3dee4e2b52d32df9412c320c0b1bd926645c48c2334d46e7556bc9",
+      "../src/world-airport-data.ts": "1c35e457bb4143de3f5e3065e560b2b4d9f22480ff9c78194461c549cd6704cd",
+      "../src/practice-map.ts": "c92cab59919988fcba0d2380eba3b7d12756cadeed26540a0b9ac1a33200fd72",
+      "../src/main.ts": "2a41cba6b3acea514b29dc23388b808dbcd2e2dc93f62b0eec5b9b1834dd0c0f",
+      "../../studies/e1-browser/sim/worker.js": "936cbf6516ac11d56be84c49bbbf683e43eaffa458a575c3dc660b7f2f8fd96f"
+    }
+  },
+  "final": {
+    "step": 202,
+    "digest": "8e5f7c52f38a4742"
+  },
+  "discovery": {
+    "requests": [
+      {
+        "at_ms": 8801.099999904633,
+        "type": "center"
+      },
+      {
+        "at_ms": 8805.599999904633,
+        "type": "center"
+      },
+      {
+        "at_ms": 8806,
+        "type": "center"
+      },
+      {
+        "at_ms": 8811,
+        "type": "center"
+      },
+      {
+        "at_ms": 8823.099999904633,
+        "type": "center"
+      },
+      {
+        "at_ms": 8823.900000095367,
+        "type": "center"
+      },
+      {
+        "at_ms": 8835.099999904633,
+        "type": "center"
+      },
+      {
+        "at_ms": 9030.799999713898,
+        "type": "center"
+      },
+      {
+        "at_ms": 9036.400000095367,
+        "type": "center"
+      },
+      {
+        "at_ms": 9360.799999713898,
+        "type": "center"
+      },
+      {
+        "at_ms": 9361.099999904633,
+        "type": "center"
+      },
+      {
+        "at_ms": 9652.299999713898,
+        "type": "center"
+      },
+      {
+        "at_ms": 9652.699999809265,
+        "type": "center"
+      },
+      {
+        "at_ms": 9888.099999904633,
+        "type": "center"
+      },
+      {
+        "at_ms": 9889.099999904633,
+        "type": "center"
+      },
+      {
+        "at_ms": 10179.299999713898,
+        "type": "center"
+      },
+      {
+        "at_ms": 10179.699999809265,
+        "type": "center"
+      },
+      {
+        "at_ms": 10360.199999809265,
+        "type": "search",
+        "id": 1,
+        "query": "LOWW"
+      },
+      {
+        "at_ms": 10419.900000095367,
+        "type": "center"
+      },
+      {
+        "at_ms": 10420.799999713898,
+        "type": "center"
+      },
+      {
+        "at_ms": 10669.199999809265,
+        "type": "center"
+      },
+      {
+        "at_ms": 10669.599999904633,
+        "type": "center"
+      },
+      {
+        "at_ms": 10885.699999809265,
+        "type": "center"
+      },
+      {
+        "at_ms": 10896.599999904633,
+        "type": "select",
+        "id": 2
+      },
+      {
+        "at_ms": 11003.299999713898,
+        "type": "center"
+      },
+      {
+        "at_ms": 11549.099999904633,
+        "type": "search",
+        "id": 3,
+        "query": "LFPG"
+      },
+      {
+        "at_ms": 12087.5,
+        "type": "center"
+      },
+      {
+        "at_ms": 12096.599999904633,
+        "type": "select",
+        "id": 4
+      },
+      {
+        "at_ms": 12193.5,
+        "type": "center"
+      },
+      {
+        "at_ms": 12997.799999713898,
+        "type": "search",
+        "id": 5,
+        "query": "LSZH"
+      },
+      {
+        "at_ms": 13170.099999904633,
+        "type": "center"
+      },
+      {
+        "at_ms": 13196.799999713898,
+        "type": "select",
+        "id": 6
+      },
+      {
+        "at_ms": 13280.799999713898,
+        "type": "center"
+      },
+      {
+        "at_ms": 14166,
+        "type": "search",
+        "id": 7,
+        "query": "FACT"
+      },
+      {
+        "at_ms": 14368.099999904633,
+        "type": "center"
+      },
+      {
+        "at_ms": 14376.400000095367,
+        "type": "select",
+        "id": 8
+      },
+      {
+        "at_ms": 14460,
+        "type": "center"
+      },
+      {
+        "at_ms": 14945.599999904633,
+        "type": "search",
+        "id": 9,
+        "query": "KJFK"
+      },
+      {
+        "at_ms": 15062.299999713898,
+        "type": "center"
+      },
+      {
+        "at_ms": 15064.099999904633,
+        "type": "select",
+        "id": 10
+      },
+      {
+        "at_ms": 15152.699999809265,
+        "type": "center"
+      },
+      {
+        "at_ms": 16642.599999904633,
+        "type": "search",
+        "id": 11,
+        "query": "RJTT"
+      },
+      {
+        "at_ms": 16813.5,
+        "type": "center"
+      },
+      {
+        "at_ms": 16822.799999713898,
+        "type": "select",
+        "id": 12
+      },
+      {
+        "at_ms": 16897.5,
+        "type": "center"
+      },
+      {
+        "at_ms": 17448,
+        "type": "search",
+        "id": 13,
+        "query": "NZQN"
+      },
+      {
+        "at_ms": 17528.799999713898,
+        "type": "center"
+      },
+      {
+        "at_ms": 17532.599999904633,
+        "type": "select",
+        "id": 14
+      },
+      {
+        "at_ms": 17667.099999904633,
+        "type": "center"
+      },
+      {
+        "at_ms": 18314.400000095367,
+        "type": "search",
+        "id": 15,
+        "query": "Zurich East"
+      },
+      {
+        "at_ms": 18430.599999904633,
+        "type": "center"
+      },
+      {
+        "at_ms": 18434.400000095367,
+        "type": "select",
+        "id": 16
+      },
+      {
+        "at_ms": 19181.400000095367,
+        "type": "search",
+        "id": 17,
+        "query": "Cape Town"
+      },
+      {
+        "at_ms": 19248.699999809265,
+        "type": "center"
+      },
+      {
+        "at_ms": 19255.699999809265,
+        "type": "select",
+        "id": 18
+      },
+      {
+        "at_ms": 19715.699999809265,
+        "type": "search",
+        "id": 19,
+        "query": "NZQN"
+      },
+      {
+        "at_ms": 19922.900000095367,
+        "type": "center"
+      },
+      {
+        "at_ms": 19925.400000095367,
+        "type": "select",
+        "id": 20
+      },
+      {
+        "at_ms": 19980.299999713898,
+        "type": "center"
+      },
+      {
+        "at_ms": 20119,
+        "type": "center"
+      },
+      {
+        "at_ms": 21299.5,
+        "type": "center"
+      },
+      {
+        "at_ms": 25168.199999809265,
+        "type": "search",
+        "id": 21,
+        "query": "LFPG"
+      },
+      {
+        "at_ms": 25446.900000095367,
+        "type": "center"
+      },
+      {
+        "at_ms": 25449.599999904633,
+        "type": "select",
+        "id": 22
+      },
+      {
+        "at_ms": 25660.099999904633,
+        "type": "center"
+      }
+    ],
+    "responses": [
+      {
+        "at_ms": 9028.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 9128.5,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 9148.5,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 9180.599999904633,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 9214.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 9214.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 9218,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 9242.199999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 9242.299999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 9248.900000095367,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 9271.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 9271.699999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 9287.799999713898,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 9381.699999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 9381.799999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 9390.699999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 9428.400000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 9428.5,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 9433.299999713898,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 9465.5,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 9465.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 9471,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 9516.5,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 9516.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 9522.199999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 9564.400000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 9564.400000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 9571.400000095367,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 9625.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 9625.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 10718.5,
+        "type": "result",
+        "id": 1,
+        "result_count": 1,
+        "error": null
+      },
+      {
+        "at_ms": 10920.400000095367,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 10946.199999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 10946.199999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 10987.699999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 10999.799999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 10999.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 11002.5,
+        "type": "result",
+        "id": 2,
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 11025.599999904633,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 11040.299999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 11040.299999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 11043.5,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 11056.299999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 11056.299999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 11064.799999713898,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 11085,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 11085,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 11089.299999713898,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 11102.199999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 11102.199999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 11114.5,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 11135.799999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 11135.799999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 11730.400000095367,
+        "type": "result",
+        "id": 3,
+        "result_count": 1,
+        "error": null
+      },
+      {
+        "at_ms": 12130.900000095367,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 12185.5,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 12185.5,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 12190.5,
+        "type": "result",
+        "id": 4,
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 12208.799999713898,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 12237.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 12238,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 12271.5,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 12313.099999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 12313.299999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 12319.5,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 12347.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 12347.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 13077.900000095367,
+        "type": "result",
+        "id": 5,
+        "result_count": 1,
+        "error": null
+      },
+      {
+        "at_ms": 13224.400000095367,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 13271.699999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 13271.699999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 13272.099999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 13278.299999713898,
+        "type": "result",
+        "id": 6,
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 14233.900000095367,
+        "type": "result",
+        "id": 7,
+        "result_count": 23,
+        "error": null
+      },
+      {
+        "at_ms": 14398.299999713898,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 14419.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 14431.299999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 14434.699999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 14459.099999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 14459.199999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 14459.400000095367,
+        "type": "result",
+        "id": 8,
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 14464,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 14473.5,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 14473.5,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 14473.799999713898,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 14482.5,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 14482.699999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 14491.299999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 14491.5,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 14500.299999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 14500.400000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 14517,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 14532,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 14532.400000095367,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 14540.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 14541.400000095367,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 14549.299999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 14549.599999904633,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 14556.299999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 14556.400000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 14978.5,
+        "type": "result",
+        "id": 9,
+        "result_count": 1,
+        "error": null
+      },
+      {
+        "at_ms": 15079.699999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 15094.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 15095.099999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 15128,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 15148.400000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 15148.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 15151.299999713898,
+        "type": "result",
+        "id": 10,
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 15172,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 15188.199999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 15188.400000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 15207.299999713898,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 15220.5,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 15220.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 15241.699999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 15260.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 15260.699999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 15267.299999713898,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 15289.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 15289.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 15309.799999713898,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 15333.699999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 15333.799999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 15339.900000095367,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 15359,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 15359.099999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 15367.799999713898,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 15393.099999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 15402,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 15438.199999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 15438.299999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 16725.799999713898,
+        "type": "result",
+        "id": 11,
+        "result_count": 1,
+        "error": null
+      },
+      {
+        "at_ms": 16844.199999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 16862.099999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 16862.199999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 16866.799999713898,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 16893.099999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 16893.199999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 16896.199999809265,
+        "type": "result",
+        "id": 12,
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 16924.299999713898,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 16937.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 16937.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 16938.900000095367,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 16952.099999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 16952.099999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 16953.599999904633,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 16969,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 16969.099999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 16970.799999713898,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 16994.400000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 16994.5,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 16998.5,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 17013.199999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 17013.199999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 17028.5,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 17042.799999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 17042.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 17047.5,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 17071.699999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 17073.900000095367,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 17088.5,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 17088.5,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 17468.400000095367,
+        "type": "result",
+        "id": 13,
+        "result_count": 1,
+        "error": null
+      },
+      {
+        "at_ms": 17545.099999904633,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 17562,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 17562.099999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 17661.099999904633,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 17665.699999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 17665.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 17666.199999809265,
+        "type": "result",
+        "id": 14,
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 17772.699999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 17779.199999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 17779.199999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 17893,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 17899.5,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 17899.699999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 17906,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 17906.099999904633,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 17911.400000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 17911.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 17922.599999904633,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 17929.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 17929.900000095367,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 17937,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 17937.199999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 17943.799999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 17944.099999904633,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 17950.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 17950.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 18366.199999809265,
+        "type": "result",
+        "id": 15,
+        "result_count": 1,
+        "error": null
+      },
+      {
+        "at_ms": 18446.400000095367,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 18476,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 18476,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 18481.199999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 18517.5,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 18517.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 18519.099999904633,
+        "type": "result",
+        "id": 16,
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 18534.5,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 18561.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 18561.799999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 18577.799999713898,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 18596.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 18596.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 18602.599999904633,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 18626.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 18626.699999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 18649.199999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 18683.400000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 18683.5,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 18688,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 18706.799999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 18706.799999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 18712.699999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 18751.799999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 18751.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 18758.199999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 18784.400000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 18784.400000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 18799.400000095367,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 18824.799999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 18824.799999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 19199.799999713898,
+        "type": "result",
+        "id": 17,
+        "result_count": 4,
+        "error": null
+      },
+      {
+        "at_ms": 19265.699999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 19282.099999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 19282.199999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 19283.900000095367,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 19297.5,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 19297.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 19297.799999713898,
+        "type": "result",
+        "id": 18,
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 19301.099999904633,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 19315.5,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 19315.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 19318.199999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 19342.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 19342.900000095367,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 19349.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 19350.199999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 19358.299999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 19358.299999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 19392.5,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 19399.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 19400.199999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 19407.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 19408.199999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 19414.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 19415.199999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 19421.199999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 19421.299999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 19847.900000095367,
+        "type": "result",
+        "id": 19,
+        "result_count": 1,
+        "error": null
+      },
+      {
+        "at_ms": 19945.400000095367,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 19964.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 19965,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 19966.099999904633,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 19979.400000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 19979.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 19979.699999809265,
+        "type": "result",
+        "id": 20,
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 19983.099999904633,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 19999,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 19999.099999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 19999.299999713898,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 20015.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 20016,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 20022.199999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 20022.299999713898,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 20030.799999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 20030.799999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 20031.199999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 20044.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 20045,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 20053.299999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 20053.599999904633,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 20060.699999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 20061.099999904633,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 20068,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 20068,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 20439.199999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 20448,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 20448.299999713898,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 20455.5,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 20455.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 20456,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 20463.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 20464.199999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 20471.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 20471.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 21627.599999904633,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 21643.5,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 21643.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 25243.599999904633,
+        "type": "result",
+        "id": 21,
+        "result_count": 1,
+        "error": null
+      },
+      {
+        "at_ms": 25471.5,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 25490.299999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 25490.400000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 25642.299999713898,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 25650.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 25651,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 25659,
+        "type": "result",
+        "id": 22,
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 25762.900000095367,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 25861,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 25861.099999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 25881.900000095367,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 25917.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 25917.900000095367,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 26057.5,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 26084.099999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 26084.199999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 26102.799999713898,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 26135.299999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 26135.299999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 26158.699999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 26179.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 26179.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 26236.199999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 26267.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 26267.699999809265,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 26305.699999809265,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 26335.599999904633,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 26335.799999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "loading"
+      },
+      {
+        "at_ms": 26375.799999713898,
+        "type": "snapshot",
+        "result_count": null,
+        "error": null
+      },
+      {
+        "at_ms": 26402.799999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      },
+      {
+        "at_ms": 26402.799999713898,
+        "type": "status",
+        "result_count": null,
+        "error": null,
+        "status": "ready"
+      }
+    ]
+  }
+}

@@ -371,3 +371,15 @@ all rights reserved.
 
 The organisations in charge of the Copernicus programme by law or by delegation
 do not incur any liability for any use of the Copernicus WorldDEM-30.
+
+## Worldwide OurAirports discovery snapshot
+
+`app/public/airports/world/` contains source-derived airport, runway, COM frequency
+and radio-navaid discovery records from [OurAirports](https://ourairports.com/data/),
+Git commit `c483a76d30ee903114b777bf099de0fae1761294`, retrieved 2026-11-06.
+The publisher releases these data to the public domain without accuracy/fitness
+warranty. The [package notice](app/public/airports/world/README.md) and manifest
+record the four input hashes, transformation limits and generated package hashes.
+Airport comments, personal mapper metadata and unrelated website content are not
+included. Original historical/regional navigation packages retain their separate
+licences; this inventory adds no current AIRAC/procedure or RF-service claim.
