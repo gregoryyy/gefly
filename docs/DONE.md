@@ -3,6 +3,49 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 15:17 — Show fixes consistently and retain map category choices
+
+TODO: 2.0.175; R-WORLD-6/R-NAV-5.
+Agent: Codex orchestrator; category/search/browser implementation `map_fix_filters`,
+persistence implementation `map_filter_storage`, source inventory and independent
+quality `map_filters_housekeeping`, independent validation `map_filters_validate`.
+
+**Implementation notes**
+
+Fixes now controls both source-fix markers and directory results in the working
+app, removing its extra historical-marker gate. Published main already displayed
+those fixes; the modular PR adds shared restored filter initialization and actual
+rendered-fix regression coverage. All seven choices save immediately in a strict
+512-byte versioned local record, including explicit all-off. Map/search checkboxes
+share the restored selection before first display. No query, GPS, plan or aircraft
+state is stored. [Behavior and scope](research/2026-11-06-map-fix-filters.md).
+
+[Separate browser evidence](reviews/2026-11-06-map-fix-filters-runtime.json) passes
+five groups in working-app and publication contexts: rendered/selectable ASKIK,
+consistent map/results, GPS/native isolation, actual flight Restart, mixed/all-off
+reopening/reload/new tabs and corrupt/denied storage. The working app's existing
+right-map regression passes12 groups. Ten focused pure tests pass independently.
+[Quality](reviews/2026-11-06-map-fix-filters-quality.md) and
+[validation](reviews/2026-11-06-map-fix-filters-validation.md) accept bounded
+runtime behavior. Corrected publication CI passes560 Node/22 application Python,
+85 assurance and11 training cases;9 optional study cases remain skipped.
+
+**Deviations**
+
+The initial publication harness needed the older map's activation gesture; an
+inert legend click supplies it without a runtime backport or skipped assertions.
+An initial preparation-note link failed the scaffold gate; corrected to an
+explicit working-app-only reference before the full CI rerun. Both observations
+remain historical. No source package, marker limits, engine, receiver, route or
+recording changes; fixture scenery does not establish current or worldwide-fix
+coverage. Cross-provider peer remains pending under the batching cadence.
+
+**Insights**
+
+One category switch should govern the map and directory, and empty saved state
+must remain distinct from a missing or invalid preference.
+
+
 ## 2026-11-06 07:47 — Publish the two bounded handling PRs
 
 TODO: 2.0.153 in progress. R-INPUT-1/R-SIM-11/R-REVIEW-1.

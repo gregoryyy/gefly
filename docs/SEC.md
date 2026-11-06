@@ -327,7 +327,7 @@ research did not activate a commercial service or add remote runtime endpoints.
 
 ## Right-side flight map
 
-The right-side map adds no provider or storage flow: its base layers use the
+The right-side map adds no provider flow; location-category choices use the bounded local preference described below: its base layers use the
 already bounded public scenery proxy, and aviation overlays use the existing
 local hash-verified airport/navigation packages. Marker details use textContent;
 no source field becomes HTML, code or an external request URL. Position and path
@@ -453,3 +453,17 @@ The persistent renderer separately retains32 detached overview payloads alongsid
 Custom GPS planning bounds are independent of pinned regional source catalogue
 limits. Shared validation rejects invalid coordinates before mutation; global
 custom planning adds no source downloads, receiver coverage or persistence.
+
+## Saved flight-map location categories
+
+`gefly.map-location-preferences.v1` stores only an exact version1 record with a
+canonical array of the seven known location categories, bounded to512 UTF-8
+bytes. An empty array means all categories off. Unknown/duplicate categories,
+extra fields, coercible values and malformed/oversized/future records fall back
+to detached all-on defaults; denied/quota storage leaves session controls usable.
+The map and directory receive the same initial selection before first rendering.
+Checkbox changes save immediately. No search text, coordinates, GPS fixes,
+flight plans, receiver settings or aircraft state enter this record. There is no
+network path; clearing browser site data removes the preference. Existing custom
+fix/plan state remains session-only. This is the map's additional storage flow;
+existing display and Options records stay separate.
