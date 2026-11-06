@@ -68,3 +68,4 @@ End with proposed implications, limitations and a handoff to product/orchestrato
 
 - [2026-11-06 nav reception](2026-11-06-nav-reception.md)
 - [Chase return duration: source inventory and evidence plan](2026-11-06-chase-return-duration.md).
+- [Airport 3° visual glidepath](2026-11-06-airport-glidepath.md).
