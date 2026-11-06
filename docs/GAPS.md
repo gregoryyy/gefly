@@ -14,6 +14,12 @@ This is a modular planner-core/editor publication slice; full map/popup/bearing
 integration in the working app is tested separately and remains a later PR slice.
 R-NAV-5/R-WORLD-6, TODO2.0.157.
 
+**2026-11-05 22:06, user request and Codex interpretation** (Europe/Berlin):
+[Simulation speed above the map](input/2026-11-05-speed-overlay-map.md) means
+the existing SIM/REPLAY badge remains visible in front of the open map. Raise
+its presentation layer above the map and below menus/dialogs, preserving the
+current position and pointer pass-through. R-SIM-9/R-UX-2, TODO2.0.156.
+
 **2026-11-05 21:32, user request and Codex implementation choice** (Europe/Berlin):
 [Predictive terrain loading](input/2026-11-05-predictive-terrain-loading.md) uses
 consecutive simulated positions/time for actual ground track, with20wall-seconds

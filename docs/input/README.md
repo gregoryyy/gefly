@@ -176,3 +176,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-05: predictive terrain loading](2026-11-05-predictive-terrain-loading.md)
 
 - [2026-11-05: France GPS fix restriction](2026-11-05-france-gps-fix.md)
+- 
+- [2026-11-05: simulation speed above map](2026-11-05-speed-overlay-map.md)
