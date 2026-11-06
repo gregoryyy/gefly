@@ -162,6 +162,7 @@ const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(ma
 let view: 'cockpit' | 'chase' = 'cockpit';
 let landmarkLevel: LandmarkLevel = 0;
 let pointerYoke: ReturnType<typeof createPointerYoke> | null = null;
+let centerPickupRequired = false;
 let cameraLook = { yaw_rad: 0, pitch_rad: 0 };
 let cameraFov_rad = DEFAULT_FOV_RAD;
 let flapTarget_deg = 0;
@@ -1136,6 +1137,7 @@ function updatePointerHint(mode = sceneContainer.dataset.pointerMode ?? 'off'): 
   el('pointer-mode').textContent = groundCollisionStopped() && !reviewing ? 'COLLISION VIEW · hold-drag to inspect'
     : reviewing ? (mode === 'look' ? 'REVIEW LOOK · release to keep view' : 'REVIEW · hold-drag: look · double-click: front')
     : (autopilotCapturePending || latest?.kap_engaged) && !cwsHeld ? 'AUTOPILOT · P disconnects · hold C to hand-fly'
+    : centerPickupRequired && mode === 'yoke' ? 'CENTERED YOKE · move pointer to the center ring to steer'
     : mode === 'look' ? 'LOOKING · release keeps view · double-click: front'
     : centered ? (mode === 'yoke' ? 'CENTERED YOKE · click off · hold-drag to look' : 'CENTERED YOKE · click on · hold-drag to look')
     : mode === 'yoke' ? 'YOKE ACTIVE · hold-drag: look · double-click: front' : 'Click: yoke · hold-drag: look · double-click: front';
@@ -1283,6 +1285,12 @@ const sceneReady = createScene(sceneContainer).then(result => {
 let lastFrame = performance.now();
 const yokeCenterMarker = el('yoke-center-marker');
 function animate(now: number) {
+  const pickup = pointerYoke?.updateReference() ?? false;
+  if (pickup !== centerPickupRequired) {
+    centerPickupRequired = pickup;
+    updatePointerHint(sceneContainer.dataset.pointerMode ?? 'off');
+    yokeCenterMarker.classList.toggle('needs-center', pickup);
+  }
   const yokeCenter = pointerYoke?.getCenter() ?? null;
   yokeCenterMarker.hidden = yokeCenter === null;
   if (yokeCenter) {

@@ -19,6 +19,7 @@ const clamp = (value: number, limit: number) => Math.max(-limit, Math.min(limit,
 
 /** Scene-only click/hold gestures; relative or fixed-center yoke. */
 export function createPointerYoke(options: PointerYokeOptions): {
+  updateReference(): boolean;
   getCenter(): { clientX: number; clientY: number } | null;
   neutralize(): void;
   cancel(): void;
@@ -40,6 +41,8 @@ export function createPointerYoke(options: PointerYokeOptions): {
   let mode: PointerYokeMode = 'off';
   let yokeX = 0, yokeY = 0, lookYaw = 0, lookPitch = 0;
   let holdTimer: ReturnType<typeof setTimeout> | undefined;
+  let centeredReference: { x: number; y: number } | undefined;
+  let centerRequired = false;
   let neutralUntilMoveFrom: { x: number; y: number } | undefined;
   type ClickState = { yokeActive: boolean; anchorX: number; anchorY: number };
   let pressState: ClickState | undefined, completedClick: ClickState | undefined, clickPair: ClickState | undefined;
@@ -75,11 +78,30 @@ export function createPointerYoke(options: PointerYokeOptions): {
     setYoke(0, 0);
     setMode(yokeActive ? 'yoke' : 'off');
   }
+  function updateReference(): boolean {
+    if (disposed || !options.centered?.() || !yokeActive || options.lookOnly?.()) {
+      centeredReference = undefined; centerRequired = false; return false;
+    }
+    const rect = element.getBoundingClientRect();
+    const x = (rect.left + rect.right) / 2, y = (rect.top + rect.bottom) / 2;
+    if (![x, y, rect.left, rect.top, rect.right, rect.bottom].every(Number.isFinite)
+      || rect.right <= rect.left || rect.bottom <= rect.top) {
+      setYoke(0, 0); centerRequired = true; return true;
+    }
+    if (centeredReference && (x !== centeredReference.x || y !== centeredReference.y)) {
+      // Layout movement must not reinterpret a stationary pointer as steering.
+      // Retain the live neutral marker, then pick up at that marker explicitly.
+      centerRequired = true; setYoke(0, 0);
+    }
+    centeredReference = { x, y };
+    return centerRequired;
+  }
   function cancel(): void {
     if (disposed) return;
     clearPress(); looking = false; yokeActive = false;
     pressState = completedClick = clickPair = undefined;
     neutralUntilMoveFrom = undefined;
+    centeredReference = undefined; centerRequired = false;
     setYoke(0, 0);
     setMode('off');
   }
@@ -146,8 +168,18 @@ export function createPointerYoke(options: PointerYokeOptions): {
       else if (!inside(event)) suspendOutside();
       return;
     }
+    updateReference();
     if (options.lookOnly?.() || !yokeActive) return;
     if (!inside(event)) { suspendOutside(); return; }
+    if (centerRequired && centeredReference) {
+      // Seven CSS pixels is the visible neutral marker's radius, not an
+      // aircraft dead zone. The pickup event itself always stays neutral.
+      if (Math.hypot(event.clientX - centeredReference.x, event.clientY - centeredReference.y) <= 7) {
+        centerRequired = false;
+        neutralUntilMoveFrom = { x: event.clientX, y: event.clientY };
+      }
+      return;
+    }
     // A click/drag release cannot introduce a control jump at the drop point.
     // Pointer entry is authoritative even if its coordinates match the release.
     if (event.type === 'pointermove' && neutralUntilMoveFrom
@@ -181,6 +213,7 @@ export function createPointerYoke(options: PointerYokeOptions): {
     setYoke(0, 0);
     neutralUntilMoveFrom = { x: event.clientX, y: event.clientY };
     setMode(yokeActive ? 'yoke' : 'off');
+    updateReference();
   }
   function click(event: MouseEvent): void {
     if (disposed || !options.enabled() || event.button !== 0 || event.ctrlKey) return;
@@ -238,7 +271,7 @@ export function createPointerYoke(options: PointerYokeOptions): {
       return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom
         ? { clientX, clientY } : null;
     },
-    neutralize, cancel, reset,
+    updateReference, neutralize, cancel, reset,
     dispose() {
       if (disposed) return;
       reset(); disposed = true;

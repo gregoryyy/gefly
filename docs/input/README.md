@@ -190,3 +190,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-05: simulation speed above map](2026-11-05-speed-overlay-map.md)
 
 - [2026-11-06: Renewed steering sensitivity and hands-off instability](2026-11-06-handling-regression.md)
+
+- [2026-11-06: Remaining handling report at localhost:5173 and SIM 1×](2026-11-06-local-handling-context.md)

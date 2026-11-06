@@ -657,3 +657,5 @@ input[type=range][data-unavailable=true]::-moz-range-thumb { visibility: hidden;
 .yoke-center-marker { position: fixed; z-index: 3; width: 14px; height: 14px; box-sizing: border-box; border: 1px solid #eff7f8; border-radius: 50%; box-shadow: 0 0 0 1px #041018; opacity: .3; transform: translate(-50%, -50%); pointer-events: none; }
 .yoke-center-marker::after { content: ''; position: absolute; width: 2px; height: 2px; left: 50%; top: 50%; transform: translate(-50%, -50%); border-radius: 50%; background: #eff7f8; box-shadow: 0 0 0 1px #041018; }
 .yoke-center-marker[hidden] { display: none; }
+
+.yoke-center-marker.needs-center { opacity: .85; border-color: #ffdc98; }
