@@ -8,8 +8,9 @@ Task 2.0.170; R-WORLD-12/R-DATA-1/R-NAV-2/R-COMM-2.
 **No blocking quality findings remain in the frozen code/data and browser scope.**
 The reviewer authored no implementation. This is same-provider independent quality,
 not specification validation, cross-provider peer review or release approval.
-Full final publication CI is pending at this report's recording time; no full-CI
-or whole-dirty-workspace assurance pass is inferred here.
+The final scoped publication pipeline is observed passing in the logs recorded
+below. This does not imply whole-dirty-workspace assurance, full legacy-browser
+execution, cross-provider peer acceptance or release approval.
 
 Reviewed the ROOT integration and the feature-only publication worktree at
 `/private/tmp/gefly-world-airports`, base `6563c59`, data commit `0922a23` and UI
@@ -103,6 +104,25 @@ aircraft fidelity. Specification validation must assess the meaning of these lin
 independently. This review does not promote the provenance-only source record into
 runtime or per-airport operational acceptance.
 
+## Observed publication pipeline update
+
+Updated 2026-11-06 12:58 Europe/Berlin after inspecting the final publication logs. The orchestrator
+executed these gates; this reviewer independently checked the actual summaries,
+hashes and scope rather than rerunning the complete pipeline:
+
+| Log under publication `output/ourairports/` | Observed result | SHA-256 |
+| --- | --- | --- |
+| `ci-final.log` | Foundation CI passed: 560 Node + 32 Python application tests, 85 assurance tests and 11 assessment tests; nine optional JSBSim study skips remain skips | `46f1905930732705994687adb3ad8ae6a3c5580cdcb1b48c1692330b8bf0a7e8` |
+| `build.log` | TypeScript and Vite production build complete | `69d415ac3d93d5210a8522555ce2f72ea156a0e46ed4bc835804c1e2d1ec4db9` |
+| `assure-release.log` | 59,903 nodes, 72,894 facts, 0 errors, 226 warnings, 136 notes | `7c74b7388b2ba445b8144f74331576c57c1da23d0fd71c4f64db209569148f0c` |
+| `assure-diff-release.log` | Against base 6563c59: 1,170 added, 254 changed, 0 removed; declared provenance graph only | `6de67db62131174322f854912020dfc03d8170e46029acacb931ad00532b429c` |
+
+These results supersede this report's earlier pending-CI condition for the
+scoped publication revision. Final report/DONE bookkeeping commits require the
+orchestrator's affected metadata checks; this paragraph is not an attestation of
+future edits. Same-provider review, explicit browser-profile omissions, Q4 and
+batched cross-provider peer-pending limitations remain unchanged.
+
 ## Frozen shared identities
 
 The common-source manifest itself is
@@ -138,5 +158,7 @@ Currentness/completeness, actual RF service, ILS geometry, real airport/terrain
 accuracy, WebKit/mobile behavior and wider existing ROOT work are not accepted.
 The historical regional receiver remains distinct from worldwide community
 markers and standby selection. Q4 remains a low-priority future-update concern.
-Final CI/publication and batched cross-provider peer outcomes must be recorded
-separately; this report does not substitute for either gate.
+The observed scoped publication pipeline is recorded above. Actual publication
+and batched cross-provider peer outcomes remain separate; this quality report
+does not authorize merging, establish external-provider review or replace
+post-bookkeeping integrity checks.

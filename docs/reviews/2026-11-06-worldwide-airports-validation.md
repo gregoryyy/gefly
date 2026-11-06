@@ -8,8 +8,10 @@ catalogue, map integration or browser harness. Only this report is owned here.
 Current disposition: **pass for the bounded source/data and discovery runtime
 increment**. ROOT's strict nine-group browser run passes without omissions; the
 publication port passes eight groups with three explicit existing-UI exclusions.
-Those exclusions are not accepted passes. Final shared CI/assurance publication
-gates are separate and remain pending until their results are recorded.
+Those exclusions are not accepted passes. Bounded publication CI/build/assurance
+gates were observed passing at HEAD `2de267ac3d8c1e2b03f101d2539dda43cbdbe8f7`;
+the final metadata-only integration requires renewed record checks as described
+below. No whole-ROOT CI or cross-provider acceptance is inferred.
 
 ## Snapshot and scope
 
@@ -185,7 +187,7 @@ counts/normalizations and result assertion pointers. Its relationships do not
 claim runtime or independent acceptance through the source author. This is a
 pass for the meaning and freshness of those declared links.
 
-Final feature assurance check/diff results remain to be inspected; the separate
+Final feature assurance check/diff observations are recorded below; the separate
 pre-existing whole-ROOT graph bound is not waived by this scoped review.
 
 
@@ -214,3 +216,29 @@ app/tests/world-airports.browser.mjs
 app/public/airports/world/manifest.json
 app/public/airports/world/catalogue.bin
 ```
+
+
+## Observed bounded publication gates
+
+This reviewer independently read the following logs under
+`/private/tmp/gefly-world-airports/output/ourairports/`, verified their SHA-256
+identities and inspected the substantive totals/outcomes. The recorded release
+assurance report identifies worktree HEAD
+`2de267ac3d8c1e2b03f101d2539dda43cbdbe8f7`, input hash
+`cd36d6969d6fa1485c89ace96ef5d0346de301088de1757d0e3bd5464f4c5826`.
+
+| Gate | Evidence SHA-256 | Observed outcome |
+| --- | --- | --- |
+| Shared CI, `ci-final.log` | `46f1905930732705994687adb3ad8ae6a3c5580cdcb1b48c1692330b8bf0a7e8` | Pass with declared skips: application 560 Node + 32 Python, 85 assurance and 11 assessment tests pass. Nine of 23 optional JSBSim study cases are skipped, not accepted passes. Whitespace and integrity gates pass. |
+| UI production build, `build.log` | `69d415ac3d93d5210a8522555ce2f72ea156a0e46ed4bc835804c1e2d1ec4db9` | Build completes successfully. Chunk-size/plugin-timing warnings are retained; no performance or simulator-deployment acceptance inferred. |
+| Release assurance, `assure-release.log` | `7c74b7388b2ba445b8144f74331576c57c1da23d0fd71c4f64db209569148f0c` | 59,903 nodes, 72,894 facts, zero errors, 226 warnings and 136 notes. Bounded integrity passes; warnings/unknown values do not become accepted fidelity claims. |
+| Assurance diff versus `6563c5936f6c74dc3f34d04b5000c6d7a8328b85`, `assure-diff-release.log` | `6de67db62131174322f854912020dfc03d8170e46029acacb931ad00532b429c` | Independently counted 1,170 added, 254 changed, zero removed objects; inspected the worldwide-airport source/provenance/review additions and file-level opaque-asset coverage. |
+
+The CI integrity snapshot has 59,894 nodes/72,862 facts; the later release snapshot
+has the larger counts above as metadata/commit objects are added. They are
+separate observed inputs, not contradictory counts from a claimed identical
+revision. Final report/status integration changes require renewed `just check`
+and assurance integrity/diff inspection by the integration owner. These records
+accept the bounded publication code/data gates and their declared coverage; they
+do not claim full working-ROOT CI, completed optional study cases, cross-provider
+peer review or navigation/aircraft/training fidelity.

@@ -36,8 +36,12 @@ feature shared CI passes 560 Node + 32 Python application tests plus assurance/t
 checks, with 9 optional JSBSim study cases explicitly skipped. Production build passes.
 
 Data and UI are separate commits 0922a23 / f58cb20 on an isolated current-main branch;
-no unrelated workspace features are included. Final documentation/registration
-and publication integrity checks are recorded with the PR. Peer pending under
+no unrelated workspace features are included. Final feature CI log SHA-256 is
+`46f1905930732705994687adb3ad8ae6a3c5580cdcb1b48c1692330b8bf0a7e8`;
+production build log `69d415ac3d93d5210a8522555ce2f72ea156a0e46ed4bc835804c1e2d1ec4db9`.
+At 2de267a, assurance reports 59,903 nodes / 72,894 facts/zero errors, 226 historical
+warnings and 136 notes; inspected diff against 6563c59 adds 1,170 / changes 254 / removes 0.
+Final metadata record checks are renewed before publication. Peer pending under
 batched cadence; no cross-provider acceptance is claimed.
 
 **Deviations**
