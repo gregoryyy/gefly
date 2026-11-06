@@ -395,6 +395,11 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     const reason=globalTerrainOverviewInfo(activeTerrain)?.closed;
     if(globalProviderLive&&overviewRetain&&reason&&!overviewLoader.stopped)overviewLoader.stop(reason);
   };
+  const airportRegionStatus = document.createElement('div');
+  airportRegionStatus.id = 'airport-region-status';
+  airportRegionStatus.setAttribute('role', 'status');
+  airportRegionStatus.style.cssText = 'position:absolute;left:12px;bottom:74px;max-width:330px;padding:4px 8px;border-radius:4px;background:#10272cdd;color:#e5eadd;font:10px/1.4 system-ui;z-index:2;pointer-events:none;';
+  airportRegionStatus.hidden = true; container.appendChild(airportRegionStatus);
   const overviewStatus = document.createElement('div');
   overviewStatus.setAttribute('role', 'status');
   overviewStatus.style.cssText = 'position:absolute;left:12px;bottom:38px;max-width:330px;padding:5px 8px;border-radius:4px;background:#10272cdd;color:#e5eadd;font:10px/1.4 system-ui;z-index:2;pointer-events:none;';
@@ -486,7 +491,24 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       { t_s: state.t_s, simulation_rate: state.simulation_rate, live: livePrediction });
     airportScenery.setVisible(useTerrain);
     airportScenery.setVectorVisible(false);
-    airportScenery.update(state);
+    airportScenery.update(state, terrainRevision, { live: useTerrain && (overviewActive || overviewRetain)
+      && recordingController === null && recordingTiles.size === 0 });
+    const airportRegions = airportScenery.streamedStats;
+    const airportFields = { airportRegions: airportRegions.status, airportRegionsResident: airportRegions.resident,
+      airportRegionsReady: airportRegions.readyMeshes, airportRegionsInstances: airportRegions.instances,
+      airportRegionsLoaded: airportRegions.loadedRegions.join(','), airportRegionsSourceDates: airportRegions.sourceDates.join(','),
+      airportRegionsRejected: airportRegions.rejected, airportRegionsDeferred: airportRegions.deferred,
+      airportRegionsTruncated: airportRegions.truncated };
+    for (const [key, value] of Object.entries(airportFields)) if (container.dataset[key] !== String(value)) container.dataset[key] = String(value);
+    const airportMessage = airportRegions.status === 'disabled' ? '' : airportRegions.status === 'loading' ? 'Airport surfaces · loading nearby OSM geometry'
+      : airportRegions.status === 'empty' ? 'Airport surfaces · no mapped layout in this region'
+      : airportRegions.status === 'unavailable' ? 'Airport surfaces unavailable · flight continues'
+      : airportRegions.status === 'terrain-pending' ? 'Airport surfaces · waiting for terrain heights'
+      : airportRegions.status === 'limited' || airportRegions.status === 'partial' || airportRegions.rejected
+        ? 'Airport surfaces · partial source/detail coverage' : '';
+    if (airportRegionStatus.textContent !== airportMessage) airportRegionStatus.textContent = airportMessage;
+    airportRegionStatus.hidden = !airportMessage;
+    airportRegionStatus.title = `OpenStreetMap · ODbL · source snapshots ${airportRegions.sourceDates.join(', ') || 'unavailable'}`;
     container.dataset.airportScenery = airportScenery.status;
     applyImageryMode(useTerrain);
     const terrainSample = useTerrain ? atlasSample(state.lat_rad, state.lon_rad) : null;
@@ -757,7 +779,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     },
     dispose() {
       if (disposed) return;
-      overviewLoader.dispose(); overviewStatus.remove();
+      overviewLoader.dispose(); overviewStatus.remove(); airportRegionStatus.remove();
       disposed = true;
       flightScene.cancelTerrainPreparation!(); recordingTiles.clear();
       sceneryCache.dispose();
