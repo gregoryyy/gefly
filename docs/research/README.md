@@ -51,3 +51,7 @@ End with proposed implications, limitations and a handoff to product/orchestrato
 - [2026-11-06: Generic-model initial airborne equilibrium](2026-11-06-airborne-model-balance.md).
 
 - [2026-11-06: Centered-yoke resize handoff](2026-11-06-yoke-resize-handoff.md).
+
+- [Disturbance stability sources](2026-11-06-disturbance-stability-sources.md) — FAA stability distinctions, executing model and source actuator evidence.
+
+- [Aileron return repair](2026-11-06-aileron-return.md) — controlled native and actual-app mechanism comparison with explicit limits.
