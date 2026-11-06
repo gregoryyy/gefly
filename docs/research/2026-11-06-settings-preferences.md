@@ -32,3 +32,5 @@ helper, because current main did not yet contain its local working-app wiring.
 It retains existing palette metadata without adding a new palette UI.
 
 The [runtime record](../reviews/2026-11-06-settings-preferences-runtime.json) preserves the working-app and publication browser evidence. Independent outcomes are recorded with the task's review records. Model coefficients and native physics are unchanged.
+
+The [renewed publication record](../reviews/2026-11-06-settings-preferences-merged-runtime.json) reruns all nine browser groups and CI after integrating the subsequently merged pointer and balanced-start changes from main. Earlier publication records remain historical.

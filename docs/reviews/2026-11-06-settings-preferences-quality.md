@@ -110,3 +110,74 @@ pinned publication-port browser result.
 The orchestrator's broader CI and TypeScript checks were not repeated. A
 publication-port browser run, whole-root CI/assurance, cross-provider peer and
 aircraft-fidelity validation are not claimed by this review.
+
+## Renewal after current-main integration, 2026-11-06 14:04
+
+Independent source-quality renewal covers publication merge
+`1f0239e418e557aaace7bdb5c76bbfa03f936d43` against incoming main
+`52897de10dfdafb4f7b3252cdb41828f8a22b5f5` in
+`/private/tmp/gefly-persistent-options`. Earlier pins/results above remain
+historical; this section identifies the current merged publication source.
+
+Current merged main SHA-256 is
+`02b317ec45c5a3ee2ea920f57867cff3247da78055b2090bc22f0145a6eea53d`.
+The seven-case helper, helper tests, view-preference module, panel, audio-controls
+and settings browser harness retain their previously reviewed publication bytes.
+The added eight-case view test hash is
+`d0b1bb0aa2e1e6db366cff3628fe64364166ea86d4d0f97e0ca4aa281934edcf`.
+Package hash is
+`b05e580e5c242f6c0f50ac2c525f94f015799042021272c22a4a9c186f3826a2`;
+SPEC hash is
+`e18a61f227898186fcd18a0a9d6fa8fbfbbed2d6cf96fed15c66d500c2cf07ac`.
+
+The reviewer inspected `git diff origin/main..HEAD` and the merge's combined
+diff. No blocking source-quality finding was identified. The main settings
+delta remains narrowly scoped, while incoming centered-yoke pickup and balanced
+startup/reset-profile/status code remain intact. Native sources, pointer-yoke,
+session and types have no feature delta against incoming main. Startup preference
+restore still does not issue a run command or unlock audio.
+
+Package conflict resolution preserves every incoming named script and both
+dependency sections. A direct JSON comparison confirms that removing only the
+two added helper/view test paths yields the incoming unit-test command exactly;
+removing the settings-browser prefix yields the incoming browser command exactly.
+The incoming initial-balance and yoke-resize scripts remain unchanged. SPEC keeps
+the incoming resize-pickup paragraph while replacing only the relevant saved
+control-preference clauses; GAPS retains the incoming decisions and adds the
+dated settings decision, and the research index retains both upstream links.
+`git diff --check origin/main..HEAD` passed.
+
+This is a source renewal. New merged-port CI and browser executions were pending
+at this inspection; earlier root/premerge browser evidence is not promoted to a
+postmerge runtime pass. Final merged artifact/runtime pins require a separate
+renewal once those outputs exist.
+
+## Final merged-runtime evidence, 2026-11-06 14:07
+
+The reviewer inspected the completed postmerge publication artifact in
+`/private/tmp/gefly-persistent-options/output/flight/settings-preferences-browser.json`.
+Its SHA-256 is
+`3564485e33ee0d38818ab4200991608fedc4d9db18952237a1b4e9c3b4eaf8a6`.
+Chrome156.0.8078.80 reports pass for all nine settings groups, twelve observation
+snapshots and no page errors. The reviewer recomputed every declared source pin
+and confirmed a match against the merged port: main `02b317ec…`, settings helper
+`b5fb5230…`, panel `52047e6b…`, audio controls `42a5376d…` and browser harness
+`b1548f98…`. This renews the earlier source-only port assessment with actual
+postmerge browser evidence, including Save/Cancel/reload, exact false/zero,
+restart/new page, denied storage and paused/locked-audio restoration.
+
+The completed merged CI log `output-settings-ci-merged.log` has SHA-256
+`4d0f88bdf9859e7cc4300c8e36480b5b30b36c8ccd26e1e186b5feba019a73f3`.
+The reviewer inspected its successful final summary and focused count records:
+565 application Node tests,22 application Python tests,85 assurance tests and
+11 training tests pass. Foundation CI reports9 optional JSBSim study checks
+skipped, with those skips explicit rather than promoted to passes. Tracked
+whitespace and assurance integrity pass. The reviewer did not rerun this CI or
+browser execution; these are inspected completed author-run outputs with source
+pins, in addition to the reviewer's earlier independent seven-test helper run.
+
+**Final scoped quality disposition remains no blocking findings.** The merged
+publication settings behavior has supporting runtime evidence. Full legacy
+browser-chain execution, optional skipped studies, aircraft fidelity and
+cross-provider peer acceptance remain outside this quality result. Future source
+changes invalidate the affected pins and require renewed review/evidence.

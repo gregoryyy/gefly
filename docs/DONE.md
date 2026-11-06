@@ -3,6 +3,37 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 14:08 — Resolve saved-Options PR against newly merged main
+
+TODO: 2.0.173; R-INPUT-1/R-UX-2; PR104.
+Agent: Codex orchestrator; renewed independent quality `coverage_housekeeping`
+and validation `settings_validate`.
+
+**Implementation notes**
+
+Main advanced to52897de while PR104 was being checked. Merge1f0239e preserves
+PR96 pointer pickup and PR97 balanced initialization, all incoming tests/scripts
+and complete shared records. Resolve the package, specification, decision-log
+and research-index conflicts while retaining saved Options. The
+[renewed runtime record](reviews/2026-11-06-settings-preferences-merged-runtime.json)
+pins the actual merged application: nine browser groups pass again, all five
+source hashes match and startup stays paused/audio locked. Independent quality
+and validation renew scoped acceptance. Merged CI passes565 Node/22 application
+Python,85 assurance and11 training cases;9 optional study cases remain skipped.
+
+**Deviations**
+
+Earlier publication records are historical snapshots of the old target, not
+acceptance of the conflict resolution. Root runtime was already using the
+upstream features and remains unchanged. No model or control-gain change.
+Cross-provider peer remains pending under the batching cadence.
+
+**Insights**
+
+Refresh the actual target before publication and renew affected evidence after
+merging; a clean merge against an older target cannot settle current PR status.
+
+
 ## 2026-11-06 13:50 — Keep saved Options across new flights and reloads
 
 TODO: 2.0.173; R-INPUT-1/R-UX-2.
