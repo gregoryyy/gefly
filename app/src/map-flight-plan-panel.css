@@ -1,0 +1,53 @@
+.map-flight-plan { margin: 4px 10px; padding: 6px; border: 1px solid #89b9ca55; border-radius: 5px; color: #e5eef1; font: 12px/1.4 system-ui,sans-serif; overflow-wrap: anywhere; }
+.map-flight-plan > details > summary { cursor: pointer; font-weight: 600; padding: 6px 0; }
+.map-flight-plan h4 { margin: 12px 0 5px; font-size: 12px; }
+.map-flight-plan p { margin: 6px 0; }
+.map-flight-plan .map-flight-plan-note { color: #b4c5cc; font-size: 10px; }
+.map-flight-plan .map-flight-plan-context { color: #e4ba77; font-size: 10px; }
+.map-flight-plan .map-flight-plan-error { color: #ffd2c8; background: #3a1f1c; border: 1px solid #ff9a8a88; padding: 6px; }
+.map-flight-plan .map-flight-plan-error[hidden], .map-flight-plan button[hidden] { display: none; }
+.map-flight-plan-form { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 6px; }
+.map-flight-plan-form label { display: flex; flex-direction: column; gap: 3px; min-width: 0; font-size: 10px; }
+.map-flight-plan-form label:first-child, .map-flight-plan-form > .map-flight-plan-actions { grid-column: 1 / -1; }
+.map-flight-plan-form .map-flight-plan-anonymous { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 6px; }
+.map-flight-plan .map-flight-plan-anonymous input { width: auto; margin: 0; }
+.map-flight-plan input { box-sizing: border-box; width: 100%; min-width: 0; padding: 5px 7px; border: 1px solid #abc8d940; border-radius: 4px; background: #132632; color: #e5eef1; font: 12px system-ui,sans-serif; }
+.map-flight-plan input:disabled { opacity: .5; }
+.map-flight-plan button { min-height: 27px; padding: 4px 7px; border: 1px solid #abc8d94d; border-radius: 4px; background: #223743; color: #e5eef1; font: 11px/1.3 system-ui,sans-serif; cursor: pointer; }
+.map-flight-plan button:disabled { opacity: .5; cursor: default; }
+.map-flight-plan button:focus-visible, .map-flight-plan input:focus-visible, .map-flight-plan summary:focus-visible { outline: 2px solid #e4ba77; outline-offset: 2px; }
+.map-flight-plan-actions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.map-flight-plan-fixes, .map-flight-plan-points, .map-flight-plan-legs { list-style: none; margin: 6px 0; padding: 0; max-height: 240px; overflow-y: auto; overscroll-behavior: contain; }
+.map-flight-plan li { padding: 6px 0; border-bottom: 1px solid #abc8d924; }
+.map-flight-plan li strong, .map-flight-plan li small, .map-flight-plan li > span { display: block; }
+.map-flight-plan li small { color: #b4c5cc; font-size: 10px; }
+.map-flight-plan-legs li > button { margin-top: 4px; }
+.map-flight-plan-legs button[aria-pressed=true] { border-color: #e4ba77; background: #3b412f; }
+.map-flight-plan-total { font-variant-numeric: tabular-nums; font-weight: 600; }
+.map-flight-plan-navigation { white-space: pre-line; font-variant-numeric: tabular-nums; }
+
+.map-flight-plan-card { position: absolute; z-index: 4; top: 72px; left: 8px; box-sizing: border-box; width: min(300px, calc(100% - 16px)); max-height: min(190px, calc(100% - 84px)); overflow-y: auto; overscroll-behavior: contain; padding: 6px 8px; border: 1px solid #f0c463aa; border-radius: 6px; background: #0b202eaa; color: #f0f5f7; font: 11px/1.35 system-ui,sans-serif; overflow-wrap: anywhere; }
+.map-flight-plan-card[hidden], .map-flight-plan-card-error[hidden] { display: none; }
+.map-flight-plan-card-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.map-flight-plan-card-heading strong { font-size: 13px; color: #ffdf95; }
+.map-flight-plan-card-heading small { margin-left: auto; color: #b6cbd6; font-size: 9px; }
+.map-flight-plan-card p { margin: 5px 0; }
+.map-flight-plan-card-route { font-weight: 600; }
+.map-flight-plan-card-summary { color: #b6cbd6; font-variant-numeric: tabular-nums; }
+.map-flight-plan-card-active { color: #ffdf95; }
+.map-flight-plan-card-actions { display: flex; flex-wrap: wrap; gap: 4px; }
+.map-flight-plan-card button { min-height: 25px; padding: 3px 6px; border: 1px solid #a8c7d66b; border-radius: 4px; background: #253f50; color: #f0f5f7; cursor: pointer; font: 10px/1.3 system-ui,sans-serif; }
+.map-flight-plan-card button:first-child { border-color: #f0c463; color: #ffdf95; }
+.map-flight-plan-card button:disabled { opacity: .5; cursor: default; }
+.map-flight-plan-card button:focus-visible { outline: 2px solid #f0c463; outline-offset: 2px; }
+.map-flight-plan-card .map-flight-plan-card-error { padding: 5px; color: #ffd2c8; background: #3a1f1c; border: 1px solid #ff9a8a88; }
+
+/* A nonmodal planner stays independent of the map's visibility and menu. */
+.flight-plan-overlay { position: absolute; z-index: 9; top: 82px; left: 12px; width: min(420px, calc(100% - 24px)); max-height: calc(100% - 98px); overflow: auto; overscroll-behavior: contain; border: 1px solid #bdd9e080; border-radius: 7px; background: #10212bbd; color: #eef5f7; text-shadow: 0 1px 2px #061322; font: 12px/1.4 system-ui,sans-serif; }
+.flight-plan-overlay[hidden], .flight-plan-overlay [hidden] { display: none; }
+.flight-plan-overlay-heading { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: #10212be6; border-bottom: 1px solid #bdd9e040; }
+.flight-plan-overlay-heading > strong { margin-right: auto; }
+.flight-plan-overlay-heading > button { min-height: 25px; padding: 2px 7px; font-size: 11px; }
+.flight-plan-overlay-heading > button:last-child { font-size: 20px; line-height: 20px; background: transparent; border: 0; }
+.flight-plan-overlay .map-flight-plan { margin: 0; padding: 6px 10px; border: 0; }
+.flight-plan-overlay[data-picking=true] .map-flight-plan { display: none; }
