@@ -21,7 +21,7 @@ class MockWorker {
   emit(data: unknown) { this.onmessage?.({ data }); }
 }
 
-function fixture(t: TestContext) {
+function fixture(t: TestContext, options: {initial_balance_profile?:0|1} = {}) {
   const original = globalThis.Worker;
   globalThis.Worker = MockWorker as unknown as typeof Worker;
   MockWorker.instances = [];
@@ -30,7 +30,7 @@ function fixture(t: TestContext) {
     onState: (state) => states.push(state), onReady: value => {readies.push(value);}, onTerrainTile: value => {tiles.push(value);}, onTerrainRemove: id => {removed.push(id);},
     onAutopilotRejected: message => autopilotRejections.push(message),
     onError: (error) => errors.push(error), onStatus: (status) => statuses.push(status),
-  });
+  }, options);
   t.after(() => { session.dispose(); globalThis.Worker = original; });
   return { session, states, errors, statuses, readies, tiles, removed, autopilotRejections };
 }
@@ -605,4 +605,40 @@ test('R-WORLD-11 fine Copernicus cells reach the view without being misclassifie
       worker.emit({ type: 'terrain-tile', grid: {...grid,...change} });
       assert.equal(f.tiles.length,0); assert.equal(f.errors.length,1);
     });
+});
+
+const balanced = { initial_balance_profile: 1 as const, roll_trim_norm: -.011, yaw_trim_norm: -.0008 };
+test('R-SIM-11 airborne launches retain balance choices while fresh ground uses zero', t => {
+  const f=fixture(t,{initial_balance_profile:1});f.session.reset();
+  assert.equal(MockWorker.instances.at(-1)!.messages[0].initial_balance_profile,1);
+  f.session.reset();assert.equal(MockWorker.instances.at(-1)!.messages[0].initial_balance_profile,1);
+  f.session.reset('normal');assert.equal(MockWorker.instances.at(-1)!.messages[0].initial_balance_profile,0);
+  const location={version:1 as const,lat_rad:.87,lon_rad:.15,alt_msl_m:1000,heading_rad:1,mode:'airborne' as const};
+  f.session.reset(undefined,undefined,undefined,location);assert.equal(MockWorker.instances.at(-1)!.messages[0].initial_balance_profile,1);
+  f.session.reset(undefined,undefined,undefined,{...location,initial_balance_profile:1});assert.equal(MockWorker.instances.at(-1)!.messages[0].initial_balance_profile,1);
+  f.session.reset(undefined,undefined,undefined,{...location,mode:'ground'});assert.equal(MockWorker.instances.at(-1)!.messages[0].initial_balance_profile,0);
+  f.session.reset(undefined,undefined,undefined,undefined,0);assert.equal(MockWorker.instances.at(-1)!.messages[0].initial_balance_profile,0);
+});
+test('R-SIM-11 requested balance rejects old engines and failed trim before running', t=>{
+  const f=fixture(t,{initial_balance_profile:1});f.session.start();let worker=MockWorker.instances.at(-1)!;worker.emit(ready);
+  assert(worker.terminated);assert.match(f.errors.at(-1)!,/initial balance/);assert(!worker.messages.some(m=>m.type==='run'));
+  f.session.reset();worker=MockWorker.instances.at(-1)!;worker.emit({...ready,...balanced,trim:{...ready.trim,status:-1}});
+  assert(worker.terminated);assert(!worker.messages.some(m=>m.type==='run'));
+});
+test('R-SIM-11 acknowledged balance stays separate from pilot inputs and state must match ready', t=>{
+  const f=fixture(t,{initial_balance_profile:1});f.session.start();const worker=MockWorker.instances.at(-1)!;
+  worker.emit({...ready,...balanced});worker.emit({...state,...balanced});
+  assert.deepEqual((f.states[0] as FlightState).roll_trim_norm,balanced.roll_trim_norm);
+  assert.equal((f.readies[0] as FlightState).initial_balance_profile,1);
+  const input=worker.messages.find(m=>m.type==='input')!;assert.equal(input.aileron,0);assert.equal(input.rudder,0);assert.equal(input.roll_trim_norm,undefined);
+  worker.emit({...state,...balanced,step:4,t_s:4/120,roll_trim_norm:-.012});assert(worker.terminated);assert.match(f.errors.at(-1)!,/initial balance/);
+});
+test('R-SIM-11 continuation rejects lost or changed trim without replacing the live worker',async t=>{
+  const f=fixture(t);f.session.reset();const old=MockWorker.instances[0];old.emit(ready);
+  const selected={...continuationFrame(),...balanced};
+  let pending=f.session.restoreFromReview(selected),rejected=assert.rejects(pending,/initial balance|supported frame/),candidate=MockWorker.instances.at(-1)!;
+  candidate.emit({...ready,...balanced});candidate.emit({...selected,roll_trim_norm:-.012});await rejected;assert(!old.terminated);assert(candidate.terminated);
+  pending=f.session.restoreFromReview(selected);candidate=MockWorker.instances.at(-1)!;
+  candidate.emit(selected);candidate.emit({...ready,...balanced});const restored=await pending;assert(old.terminated);assert.equal(restored.roll_trim_norm,balanced.roll_trim_norm);
+  f.session.reset();assert.equal(MockWorker.instances.at(-1)!.messages[0].initial_balance_profile,1,'restored profile remains the selected request');
 });
