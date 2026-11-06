@@ -350,3 +350,5 @@ future tasks, not completed by this requirements update.
 - [x] 2.0.159 Repair confirmed high-altitude startup pressure gating: preserve supported QNH/STD indications and raw launch QFE in recording/continuation, explain unsupported QFE selection and retain unavailable sensor/envelope safeguards. R-AIR-3/R-SIM-2. [Report](input/2026-11-05-alps-terrain-walls.md).
 
 - [x] 2.0.163 Add hold C for existing momentary CWS with shared keyboard/panel ownership, discoverable help, guarded activation and safe lifecycle release. Preserve AP modes/reference synchronization and native physics. R-AP-1/R-INPUT-1. [Request](input/2026-11-06-cws-keyboard.md). Eight browser groups, six helper and18 existing KAP tests, CI and bounded independent reviews pass; source-inspected/unexercised contexts remain explicit in [validation](reviews/2026-11-06-cws-keyboard-validation.md). Cross-provider peer pending.
+
+- [x] 2.0.172 Check actual native flap effectiveness at matched initial conditions, separate manual/AP response and source provenance, and repair only an evidenced defect. R-SIM-5/R-AIR-2/R-FID-3. [Request](input/2026-11-06-flaps-settings.md).

@@ -3,6 +3,43 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 13:52 — Check current native flap effectiveness
+
+TODO: 2.0.172; R-SIM-5/R-AIR-2/R-FID-3.
+Agent: Codex orchestrator; diagnostic implementation `world_airport_data`, source
+research `coverage_housekeeping`, independent quality and separate validation
+outcomes `world_airport_client` (not a flap implementation author).
+
+**Implementation notes**
+
+Added an exact-v5 native32-case diagnostic, source-model arithmetic and bounded
+evidence admission. At the75kt CAS initial condition, full flap versus clean
+with AP off gives4.724kt more deceleration and4.299° more pitch after4s. Generic
+VS compensation masks much of the pitch response through actual elevator.
+Source static subsets at α5° increase30.34% in lift and92.60% in drag. Six
+actuator transitions,39 paused-command checks and a repeated trajectory pass.
+The isolated publication replay reproduces all numerical/native and source
+values; only explicitly documented metadata differs.
+[Results and reproduction](research/2026-11-06-flap-effectiveness.md);
+[independent review](reviews/2026-11-06-flap-effectiveness-review.md).
+
+**Deviations**
+
+No flap coefficient, engine, bridge or aircraft edits: the controls have a
+substantial response and no disconnected/angle-unit defect is demonstrated.
+Three new evidence-admission defects found by review are repaired and rechecked;
+10 Node and3 Python admission/arithmetic tests pass. These pure tests are separate
+from the actual32-case measurement. Publication CI passes565 Node/28 application Python,85 assurance and11 training cases, with9 optional JSBSim study skips. Real C172P/172S calibration, stall and steady
+glide remain not evaluated; idle cases end at different airspeeds. Broader
+handling/fidelity tasks remain open. Cross-provider peer remains pending under
+the batching cadence.
+
+**Insights**
+
+Compare matched conditions and actual elevator corrections before interpreting
+small visual attitude changes as weak flaps; test the evidence checker itself.
+
+
 ## 2026-11-06 11:36 — Verify, install and peer-review the bounded roll-return repair
 
 TODO: 2.0.153 (bounded repair delivered; broader handling remains open); R-SIM-11/R-SIM-5/R-INPUT-1.
