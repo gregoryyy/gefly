@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "task": "2.0.185",
+  "code_revision": "c839051",
+  "baseline": "757c41f525e7fc530e6b9ea10a87685590f26db7",
+  "policy": {
+    "cockpit_ms": 700,
+    "chase_base_ms": 700,
+    "chase_ms_per_doubling": 450,
+    "chase_max_ms": 6000,
+    "disabled_or_reduced_motion_ms": 0
+  },
+  "contexts": {
+    "working_app": {
+      "artifact_sha256": "c8b33bc981b0002c3d4672c4fabe11078608d289e551a86f39ec491b45fe849c",
+      "result": "pass",
+      "browser": "156.0.8078.80",
+      "checks": [
+        "gentle near-aircraft zoom keeps the lens fixed; the distance-scaled chase return decelerates into the heading-following pose without native changes",
+        "cockpit double-click animates actual look direction to centre while preserving selected field of view and paused native state",
+        "repeated double-click restarts a rendered chase return from its visible pose and reaches the exact endpoint",
+        "wheel, Escape during a pure-radius return, view switch, fresh drag and explicit synthetic blur cancel without a delayed camera jump or native integration",
+        "View-menu animation preference saves immediately and survives reload; disabled and reduced-motion returns snap to the correct actual chase pose"
+      ],
+      "errors": [],
+      "source_hashes": {
+        "src/main.ts": "839d9464ebfec3ca59fdded36e8787ed38283885e2cd73f074d1374410529212",
+        "src/scene.ts": "63de768859232ac66544292eb7f4da4b1588df777a0419d08894dd2319d12e3a",
+        "src/pointer-yoke.ts": "01b70ea4c83891835535449e97eed4c89a60f0d07703f286b4d9a4c85f686d76",
+        "src/chase-distance.ts": "aa786ff673050d4059220da44ccf13a92405b4b6c2e0eac38c90cf40c9da9745",
+        "src/camera-return.ts": "497586871c1ad4b568d171095391087c7085b8b16ea55e2c99176776975d7904",
+        "src/camera-preferences.ts": "fbd5e9963b3712426a8dd1a07a4211fac696432260ea28e378de72f5c618f055",
+        "tests/camera-return.browser.mjs": "b82d6793683e1f67e197a33b167ecafda6aa0ce770fb9556b183db252a9ad07a"
+      },
+      "elapsed_ms": 6016.800000190735,
+      "policy_ms": 6000,
+      "late_log_radii": [
+        5.566622318406942,
+        4.3794380853042885,
+        3.695883991078639,
+        3.4729671443292185
+      ]
+    },
+    "main_port": {
+      "artifact_sha256": "219f45294913dd71a4ec959f83340d7a77a694ba0967b667ce09af09ecd05c30",
+      "result": "pass",
+      "browser": "156.0.8078.80",
+      "checks": [
+        "gentle near-aircraft zoom keeps the lens fixed; the distance-scaled chase return decelerates into the heading-following pose without native changes",
+        "cockpit double-click animates actual look direction to centre while preserving selected field of view and paused native state",
+        "repeated double-click restarts a rendered chase return from its visible pose and reaches the exact endpoint",
+        "wheel, Escape during a pure-radius return, view switch, fresh drag and explicit synthetic blur cancel without a delayed camera jump or native integration",
+        "View-menu animation preference saves immediately and survives reload; disabled and reduced-motion returns snap to the correct actual chase pose"
+      ],
+      "errors": [],
+      "source_hashes": {
+        "src/main.ts": "1cc8433b113dc2fa1a517c23002f770319a389ffd3603f20936574a9c228c037",
+        "src/scene.ts": "f7e960f20004eff00e4cbe4f8a3abdda0556b75b059519b81ad1de7c80efa8d9",
+        "src/pointer-yoke.ts": "40f0c562f214906bb83535fa3f55e355d9e9d8c4988cdba25033cde00c4ebe6c",
+        "src/chase-distance.ts": "aa786ff673050d4059220da44ccf13a92405b4b6c2e0eac38c90cf40c9da9745",
+        "src/camera-return.ts": "497586871c1ad4b568d171095391087c7085b8b16ea55e2c99176776975d7904",
+        "src/camera-preferences.ts": "fbd5e9963b3712426a8dd1a07a4211fac696432260ea28e378de72f5c618f055",
+        "tests/camera-return.browser.mjs": "b82d6793683e1f67e197a33b167ecafda6aa0ce770fb9556b183db252a9ad07a"
+      },
+      "elapsed_ms": 6010.299999713898,
+      "policy_ms": 6000,
+      "late_log_radii": [
+        5.58155368398641,
+        4.406149370236596,
+        3.7063659434745313,
+        3.474877498699125
+      ]
+    },
+    "main_legacy_chase": {
+      "artifact_sha256": "ee409420f30ae64e940932f4e0b9df086c748bbcbb0b3ade5ea2d6c7c218b0b4",
+      "result": "pass",
+      "checks": [
+        "chase wheel changes actual Cesium distance with a fixed lens; zero-angle double-click returns close behind the plane without changing paused native state",
+        "chase reaches 20000km, hold-drag gives a top-down overview and double-click restores ordinary heading-relative chase",
+        "horizontal/modifier/editable/dialog guards and cockpit field-of-view zoom remain independent",
+        "actual native flight moves the heading-relative chase target; paused Review supports zoom/recenter without changing the live worker"
+      ],
+      "errors": [],
+      "source_hashes": {
+        "src/main.ts": "1cc8433b113dc2fa1a517c23002f770319a389ffd3603f20936574a9c228c037",
+        "src/scene.ts": "f7e960f20004eff00e4cbe4f8a3abdda0556b75b059519b81ad1de7c80efa8d9",
+        "src/aircraft-orientation.ts": "b8438d67c7ab8abd739f567fb0d88f9fff8e5c4a8299b0115b0565b3ff21a68f",
+        "src/chase-distance.ts": "aa786ff673050d4059220da44ccf13a92405b4b6c2e0eac38c90cf40c9da9745",
+        "src/camera-pose.ts": "445ca24283032513b7adb4dacb058e1a1089dff4b0853651b7e4ceffeed9029e",
+        "src/pointer-yoke.ts": "40f0c562f214906bb83535fa3f55e355d9e9d8c4988cdba25033cde00c4ebe6c",
+        "src/camera-return.ts": "497586871c1ad4b568d171095391087c7085b8b16ea55e2c99176776975d7904",
+        "src/camera-preferences.ts": "fbd5e9963b3712426a8dd1a07a4211fac696432260ea28e378de72f5c618f055",
+        "tests/chase-zoom.browser.mjs": "26ef6fc795d3eb415b79e6b3acf7883369b2b1a35c2e61dc576c16d1aca8bcca"
+      },
+      "not_evaluated": [
+        "Separate terrain-overview view is outside this camera-only main-based increment."
+      ]
+    }
+  },
+  "engine": {
+    "wasm_sha256_observed_in_both": "266f201652e8fc3fb6c5ee384bad3ef1f66b335ee9885fa4a14de9a797c1edcc",
+    "qualification": "Exact locally reused binary; its build-record provenance remains unverified, and the browser harness did not itself pin this binary."
+  },
+  "focused_main": {
+    "tests": 63,
+    "passed": 63,
+    "failed": 0,
+    "skipped": 0,
+    "log_sha256": "f66479cd0d94824690d02901f9604766b5a7d931fdddbf6d360e0f165d148322",
+    "scope": "Before the final main-only wheel guard; affected wheel and lifecycle behavior was subsequently checked in both actual browser contexts."
+  },
+  "full_ci": {
+    "result": "pass",
+    "exit_code": 0,
+    "source_revision": "d75fd17f67bf34760a79bce07e0cfdd6b319dad8",
+    "code_revision": "c839051",
+    "log_sha256": "0d35c5bfa85f0495af4f646d7131dbd4d730a2eeeb0e6475e68bb535edb87af5",
+    "application_node": 694,
+    "application_python": 32,
+    "assurance_tests": 89,
+    "training_tests": 11,
+    "integrity": {
+      "nodes": 44299,
+      "facts": 66465,
+      "errors": 0,
+      "warnings": 237,
+      "notes": 138
+    },
+    "repository_tools_executed": 247,
+    "repository_tools_skipped": 1,
+    "jsbsim_studies_executed": 14,
+    "jsbsim_studies_skipped": 9,
+    "c172s_checks_passed": 25,
+    "tracked_whitespace_paths": 3277,
+    "scope": "The integrated code and scoped requirements were frozen; three review/evidence documents were added after the integrity snapshot. Final metadata assurance and diff are checked separately."
+  },
+  "limits": [
+    "Actual Chrome/MapLibre/Cesium and native worker with fixture scenery, not terrain or aircraft fidelity validation.",
+    "Frame scheduling can render the final pose after the six-second policy deadline.",
+    "Real hidden-tab/device matrix and separate terrain-overview feature were not evaluated.",
+    "Cross-provider peer remains pending."
+  ],
+  "production_build": {
+    "result": "pass",
+    "exit_code": 0,
+    "log_sha256": "a162453458ae297b34228188e723f0d1277de65d39a27698e62d2661f3dd15c6",
+    "warnings": "Vite reported large bundles and plugin timing."
+  },
+  "peer": {
+    "result": "pending",
+    "reviewer": "Claude CLI",
+    "cli_version": "2.1.308",
+    "reason": "The installed CLI reports no authenticated session; no external review was attempted or accepted."
+  },
+  "history": [
+    "An initial 11/12 unit run failed an exact deadline assertion due to a rounded expected decimal; the corrected test uses the actual floating-point deadline while independently checking literal expected values.",
+    "The first scaffold attempt preceded copying the two referenced test files and failed on their missing links; the complete scaffold was rerun successfully.",
+    "Earlier successful browser preparations predated the discovered Escape or invalid-wheel guard and remain historical; both current contexts were rerun after the repairs."
+  ]
+}

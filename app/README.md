@@ -84,6 +84,13 @@ unavailable. Returning to live restores pending control settings.
 | Two-finger vertical scroll over the scene | Up: zoom in; down: zoom out |
 | Escape | Release scene yoke control and reset the view |
 
+In chase view, scroll to change the camera's distance and double-click the
+scene to return behind the aircraft. **View → Animate view return** controls
+whether that return animates. Greater zoom-out produces a longer return, up to
+six seconds, with a gradual stop. Wheel input, dragging, Escape or a view
+switch cancels an active return. Cockpit double-click centers the view; the
+system reduced-motion preference makes both returns immediate.
+
 Press and hold the on-screen flight buttons, or drag the virtual joystick to
 control pitch and roll; releasing returns the stick to neutral. The flight deck
 displays control positions. Flight buttons return keyboard focus to the scene; range controls

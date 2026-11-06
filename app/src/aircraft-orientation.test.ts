@@ -5,6 +5,7 @@ import {
   aircraftBasisENU, boundedCameraLook, cockpitCameraENU, chaseCameraENU, MAX_LOOK_PITCH_RAD,
   type AircraftBasisENU, type VectorENU,
 } from './aircraft-orientation.ts';
+import { CHASE_DISTANCE } from './chase-distance.ts';
 
 const EPS = 1e-12;
 function near(actual: number, expected: number): void {
@@ -136,4 +137,51 @@ test('outer look reaches both real poles with stable analytic up and unchanged o
       assert(elevation>=previous-1e-12,'outer mapping is monotonic');previous=elevation;
     }
   }
+});
+
+test('R-VIEW-1 distance zoom keeps the chase camera behind each cardinal aircraft heading', () => {
+  const cases: Array<[number, VectorENU]> = [
+    [0, [0, -30, 11]], [Math.PI / 2, [-30, 0, 11]],
+    [Math.PI, [0, 30, 11]], [3 * Math.PI / 2, [30, 0, 11]],
+  ];
+  for (const [heading, legacyOffset] of cases) {
+    vector(chaseCameraENU(heading).offset, legacyOffset);
+    const close = chaseCameraENU(heading);
+    for (const distance of [CHASE_DISTANCE.initial_m, 1500, CHASE_DISTANCE.max_m]) {
+      const pose = chaseCameraENU(heading, undefined, distance);
+      assert(Math.abs(Math.hypot(...pose.offset) - distance) < distance * EPS);
+      vector(pose.direction, pose.offset.map(value => -value / distance) as unknown as VectorENU);
+      assert.deepEqual(pose.direction, close.direction);
+      assert.deepEqual(pose.up, close.up);
+    }
+  }
+});
+
+test('R-VIEW-1 Earth-scale chase orbit reaches top-down and underside poles with stable axes', () => {
+  for (const yaw_rad of [-Math.PI, -.8, 0, 1.1, Math.PI]) for (const sign of [-1, 1]) {
+    const look = { yaw_rad, pitch_rad: sign * MAX_LOOK_PITCH_RAD };
+    const pose = chaseCameraENU(.7, look, CHASE_DISTANCE.max_m);
+    vector(pose.direction, [0, 0, -sign]);
+    vector(pose.offset.map(value => value / CHASE_DISTANCE.max_m) as unknown as VectorENU, [0, 0, sign]);
+    near(dot(pose.direction, pose.up), 0);
+    near(dot(pose.direction, pose.direction), 1);
+    near(dot(pose.up, pose.up), 1);
+    const approaching = chaseCameraENU(.7, { ...look, pitch_rad: look.pitch_rad - sign * 1e-6 }, CHASE_DISTANCE.max_m);
+    assert(dot(pose.up, approaching.up) > .999999, 'up vector does not flip approaching either pole');
+  }
+});
+
+test('R-VIEW-1 explicit bounded distance changes only chase offset and preserves look/lens input', () => {
+  const look = { yaw_rad: .7, pitch_rad: -.3, fov_rad: .8, distance_m: CHASE_DISTANCE.max_m };
+  const before = structuredClone(look);
+  const ordinary = chaseCameraENU(.4, look);
+  assert.equal(Math.hypot(...ordinary.offset), Math.hypot(...chaseCameraENU(.4, { yaw_rad: .7, pitch_rad: -.3 }).offset));
+  for (const invalid of [NaN, Infinity, -Infinity, -1, 0]) {
+    assert.deepEqual(chaseCameraENU(.4, look, invalid), ordinary);
+  }
+  assert.deepEqual(chaseCameraENU(.4, look, 1e100), chaseCameraENU(.4, look, CHASE_DISTANCE.max_m));
+  const far = chaseCameraENU(.4, look, 10_000);
+  assert.deepEqual(far.direction, ordinary.direction);
+  assert.deepEqual(far.up, ordinary.up);
+  assert.deepEqual(look, before);
 });

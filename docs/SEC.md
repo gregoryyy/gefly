@@ -570,3 +570,10 @@ truncation. No arbitrary URLs, new remote runtime queries or inferred service
 components are introduced. Missing/corrupt data remains unavailable and UI/worker
 identity mismatch remains visible. Historical reception cannot establish current
 service status, operational procedures or terrain-masked radio propagation.
+
+## Camera-return presentation
+
+The saved view-return preference stores only a bounded strict boolean. The
+700–6000ms wall-time interpolation affects camera presentation only; reduced
+motion bypasses it. Input and lifecycle cancellation does not write physics,
+position, flight data or telemetry, and adds no network access.
