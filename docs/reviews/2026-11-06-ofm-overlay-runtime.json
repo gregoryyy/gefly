@@ -63,17 +63,19 @@
       }
     },
     "publication": {
-      "artifact_sha256": "728aeded25d89d7c0628f32a66d4a14d97083d2a45c7e0cab8fdf233a63337a4",
+      "artifact_sha256": "6f2606d14d989243558f197d2df5e0ece86a15cfa69a800643d9faeb3674a0ff",
+      "source_head": "0c21a23",
+      "merged_main": "1a53050",
       "result": "pass",
       "mode": "synthetic transparent OFM pixels",
       "sourceHashes": {
-        "src/practice-map.ts": "524b120b55e6f851096917d83c9917e14c2969f4d2e973ad883938de09108900",
+        "src/practice-map.ts": "4541d11db3b61968d296e339b358ea3a1f009e29e0cd399d9b8058c8e03608ec",
         "src/ofm-map-overlay.ts": "9b4b2ee197d4e19ef45d979bf7a07d67b197af50e2e5ccaeb92ebfc58436cebc",
         "src/ofm-overlay-preferences.ts": "12327038830ec8690be14ffe69449d56067f04fc83323dbe7e4b7fef1fd51193",
         "src/ofm-overlay-source.ts": "3c27997fbf945bbc95d81f8459b1bb47ce09a6fb5576741cb423f0e8753ab20e",
         "ofm-overlay-server.ts": "eb7001479da77e2c6fbbdf789af570b12811fb1ab0cf200dbbf8f60d5d3c28e1",
         "vite.config.ts": "822b1dceacff039a4007a12bea65f784f1d7d101c6313e42f2e646e41078c9f7",
-        "tests/ofm-overlay.browser.mjs": "266e38092b361a9e56c30b83db171554e8b57b02f882f29ed5d13f7016905f88"
+        "tests/ofm-overlay.browser.mjs": "de2a82c51b0556b58b1d01b3ee689e50b89c0275dd9b619015736b5837e1e8b2"
       },
       "checks": [
         "Default-off and closed map make no chart demand; enabling actual MapLibre raster changes pixels with correct source/date/credit links and foreground order",
@@ -92,8 +94,8 @@
             "navigation-stations",
             "path"
           ],
-          "beforePixelSha256": "c83e6cd7e380d556d222aa92f549b69b3d8a8360ee3243901ca0c2d0f9be8951",
-          "afterPixelSha256": "f67fe491d38bafc10ccbe079d6caaeb8288f7fe715306c4c6c0d5d63aed876b9"
+          "beforePixelSha256": "1b4921a3a62b2e16545efa51a33fffe5fdbe5806e2bb8a8af8201542d593b679",
+          "afterPixelSha256": "00fe4f882d7753bea4a73c6300502af900da33b91da3dbd285045d153f296c3b"
         }
       ],
       "errors": [],
@@ -104,6 +106,7 @@
         "gps-target-point",
         "airfields",
         "navigation-stations",
+        "world-navigation-stations",
         "navigation-components",
         "practice-circuit-guide",
         "practice-circuit-nearest",
@@ -169,6 +172,58 @@
         "200": 43,
         "503": 4
       }
+    },
+    "publication_before_global_nav": {
+      "artifact_sha256": "728aeded25d89d7c0628f32a66d4a14d97083d2a45c7e0cab8fdf233a63337a4",
+      "result": "pass",
+      "mode": "synthetic transparent OFM pixels",
+      "sourceHashes": {
+        "src/practice-map.ts": "524b120b55e6f851096917d83c9917e14c2969f4d2e973ad883938de09108900",
+        "src/ofm-map-overlay.ts": "9b4b2ee197d4e19ef45d979bf7a07d67b197af50e2e5ccaeb92ebfc58436cebc",
+        "src/ofm-overlay-preferences.ts": "12327038830ec8690be14ffe69449d56067f04fc83323dbe7e4b7fef1fd51193",
+        "src/ofm-overlay-source.ts": "3c27997fbf945bbc95d81f8459b1bb47ce09a6fb5576741cb423f0e8753ab20e",
+        "ofm-overlay-server.ts": "eb7001479da77e2c6fbbdf789af570b12811fb1ab0cf200dbbf8f60d5d3c28e1",
+        "vite.config.ts": "822b1dceacff039a4007a12bea65f784f1d7d101c6313e42f2e646e41078c9f7",
+        "tests/ofm-overlay.browser.mjs": "266e38092b361a9e56c30b83db171554e8b57b02f882f29ed5d13f7016905f88"
+      },
+      "checks": [
+        "Default-off and closed map make no chart demand; enabling actual MapLibre raster changes pixels with correct source/date/credit links and foreground order",
+        "Opacity saves and changes paint; viewport pan fetches new tiles, low zoom is explicit, native source overzooms to17 and style replacement restores the chart below local overlays",
+        "Off and hidden maps remove the chart source and stop new tile demand; aborted late metadata cannot restore a closed layer",
+        "Optional tile failure is distinct from base-map status; local flight overlays and real zoom controls remain usable, and Retry recovers the chart",
+        "Saved enabled/opacity choices restore on reopening after page reload; corrupt or denied preferences default off and remain operable without stepping native physics"
+      ],
+      "observations": [
+        {
+          "layerOrder": [
+            "imagery",
+            "ofm-overlay",
+            "navigation-fixes",
+            "gps-target-line",
+            "navigation-stations",
+            "path"
+          ],
+          "beforePixelSha256": "c83e6cd7e380d556d222aa92f549b69b3d8a8360ee3243901ca0c2d0f9be8951",
+          "afterPixelSha256": "f67fe491d38bafc10ccbe079d6caaeb8288f7fe715306c4c6c0d5d63aed876b9"
+        }
+      ],
+      "errors": [],
+      "planScope": false,
+      "baselineForeground": [
+        "navigation-fixes",
+        "gps-target-line",
+        "gps-target-point",
+        "airfields",
+        "navigation-stations",
+        "navigation-components",
+        "practice-circuit-guide",
+        "practice-circuit-nearest",
+        "path-shadow",
+        "path"
+      ],
+      "foregroundScope": "This publication baseline has no ordered-plan feature; its existing GPS, NAV and trace foreground remains covered.",
+      "mapErrors": [],
+      "browser": "156.0.8078.80"
     }
   },
   "checks": {
@@ -207,6 +262,37 @@
       "jsbsim_study_skipped": 9,
       "c172s_study_executed": 25,
       "typescript": "pass"
+    },
+    "final_global_native_browser": {
+      "result": "pass",
+      "groups": 5,
+      "artifact_sha256": "6f2606d14d989243558f197d2df5e0ece86a15cfa69a800643d9faeb3674a0ff",
+      "source_head": "0c21a23",
+      "native_navigation": "Actual native worker initialized with merged worldwide historical NAV810 package; paused state remains unchanged through chart interactions."
+    },
+    "final_global_full_ci": {
+      "result": "pass",
+      "exit_code": 0,
+      "source_head": "0c21a23bfc2d67a25548fa8d65932046d9524259",
+      "merged_main": "1a530500bf24d630f59ba10dc260869c7d4c640d",
+      "log_sha256": "9478010f6aefc0b97c41c0aef5e4e6fefbffbcb0cc2b817e266c59117c42af9a",
+      "application_node": 662,
+      "application_python": 32,
+      "assurance_tests": 89,
+      "training_tests": 11,
+      "integrity": {
+        "nodes": 44248,
+        "facts": 66314,
+        "errors": 0,
+        "warnings": 235,
+        "notes": 138
+      },
+      "tracked_whitespace_paths": 3265,
+      "tooling_executed": 247,
+      "tooling_skipped": 1,
+      "jsbsim_executed": 14,
+      "jsbsim_skipped": 9,
+      "revision_scope": "Code and runtime sources frozen at0c21a23; integration worktree also contained the versioned current-browser runtime record. Final documentation revision gets separate assurance/diff."
     }
   },
   "history": [
@@ -216,7 +302,9 @@
     "An initial publication browser assumed the ROOT-only ordered-plan layer; the final shared harness requires all baseline GeoJSON foreground layers and records plan capability separately.",
     "All preparatory timeout/source-freeze/capability failures remain unaccepted historical local artifacts.",
     "An actual default-view publisher run found valid fully transparent grayscale-alpha PNGs at the tested z13 positions. The original RGBA-only guard rejected them. Final source admits verified 8-bit PNG types4/6 and deliberately selects native max12, overzooming the observed nonempty parent. This does not claim all provider z13 tiles are empty. All source/unit/app/browser checks were renewed on final pins.",
-    "Main advanced to446293a during PR111 publication. Merge f4c16e4 retains both airport and OFM middleware/test sets and complete shared records; inherited package missing comma and blank-index whitespace repaired. An initial parallel-CI assurance CLI child timeout was resolved by serial85-case renewal and a passing complete merged CI. The current publication browser was renewed with its changed Vite pin; OFM source/controller/practice-map bytes are unchanged."
+    "Main advanced to446293a during PR111 publication. Merge f4c16e4 retains both airport and OFM middleware/test sets and complete shared records; inherited package missing comma and blank-index whitespace repaired. An initial parallel-CI assurance CLI child timeout was resolved by serial85-case renewal and a passing complete merged CI. The current publication browser was renewed with its changed Vite pin; OFM source/controller/practice-map bytes are unchanged.",
+    "Final publication source0c21a23 integrates merged PRs102/104/107/108/109. All parent script inventories, complete histories and separate discovery/receiver/chart boundaries are retained. Three map-caption strings now distinguish historical NAV810 receiver inventory from regional published-fix coverage. A final actual global-native browser passes five groups on current seven source/harness pins. Complete final CI remains pending at this record; no earlier pass substitutes for it. A superseded browser preparation was stopped when main advanced and is not accepted evidence.",
+    "Final integrated complete CI exits0 after the fresh five-group current global-NAV browser:662Node/32Python/89assurance/11training, zero integrity errors. Source/runtime remains0c21a23. Final metadata assurance/diff and GitHub publication are integration-owned; earlier failed or superseded preparations are not passes."
   ],
   "limits": [
     "AIRAC2611 published dates/one verified Germany view; coverage of other published OFM regions varies.",
