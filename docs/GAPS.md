@@ -4,6 +4,8 @@ All times are Europe/Berlin. Answers record the author and recording time. New a
 
 ## Recorded interaction decisions
 
+**2026-11-06 19:27, user request and Codex timing choice** (Europe/Berlin): [chase return duration](input/2026-11-06-chase-return-duration.md) requests a longer chase return for greater zoom-out, capped at six seconds with final deceleration. Use 700ms plus450ms per doubling of starting radius relative to the close target, capped at6000ms; keep cockpit700ms and reduced-motion/disabled returns immediate. The formula is an implementation choice, not an additional user statement. Task2.0.185.
+
 **2026-11-06 18:32, user request and live repository interpretation** (Europe/Berlin): [remainingtwo](input/2026-11-06-remaining-pr-conflicts.md) refers to PR109 and111: the live open list contained108,109,111 after the request to fix108. Reconcile both existing branches with current main, preserving reception and optional visual-chart boundaries, history and checks; Task2.0.184, alongside overlay implementation179.
 
 **2026-11-06 18:31, user request and Codex merge interpretation** (Europe/Berlin): [108same](input/2026-11-06-pr108-conflicts.md) extends the ongoing conflict reconciliation to PR108. Preserve map magnification key routing and existing map/settings/data behavior, renew affected checks and update the existing PR. Task2.0.183.
