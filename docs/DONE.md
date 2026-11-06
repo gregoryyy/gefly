@@ -3,6 +3,35 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 18:47 — Verify saved Options, map filters and map keys after conflict resolution
+
+TODO: 2.0.181; 2.0.182; 2.0.183.
+Agent: Codex orchestrator; implementation `nav_receiver_trace` for104 and
+`ofm_housekeeping` for107/108. Independent source quality: `ofm_housekeeping`
+for104 and orchestrator for107/108; independent validation `camera_return_validate`.
+
+**Implementation notes**
+
+Reconciled and pushed104a66e7eb,107f05a539 and1085d43748, preserving whole parent
+histories, source boundaries, all script inventories and saved/map behavior.
+GitHub confirmed each conflict-free;104/107/108 subsequently merged. Final
+complete CI passes at their tested bases:104626Node/32Python/89assurance/11training;
+107636/32/89/11;108643/32/89/11. Actual browsers pass nine/five/eight groups,
+respectively, with unchanged source pins and zero page errors. Final assurance
+checks have zero errors. Explicit-base diffs add/change/remove38/233/0,
+29/245/0 and24/248/0, all untruncated. Versioned runtime and independent review
+records retain actual hashes, test scopes and publication revisions. These
+results apply to the named snapshots, not untested later integrations.
+
+**Deviations**
+
+Retained initial104AS6timeouts,107hostPython3.15XML failure and output-file
+self-scan preparation as unsuccessful history. Unchanged89-case assurance and
+complete104CI renewals pass; correctedPython3.11 full107CI passes. Test deadlines
+and graph caps were not relaxed. One platform tool and nine optional JSBSim cases
+remain skipped per full gate. Cross-provider peer remains pending under cadence;
+no flight/source completeness or training-credit claim follows from these checks.
+
 ## 2026-11-06 18:03 — Reconcile PR102 with airport-generation main
 
 TODO: 2.0.180; R-WORLD-12/R-NAV-2/R-DATA-1/R-COMM-2/R-AIRPORT-3.
