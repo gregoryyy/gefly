@@ -1,4 +1,5 @@
 import { nextOverviewDistance } from './overview-camera.ts';
+import { CHASE_DISTANCE, nextChaseDistance } from './chase-distance.ts';
 import { createCwsControls } from './cws-controls';
 import { worldCellAt } from '../../studies/e1-browser/sim/world-terrain.js';
 import { REGIONAL_FLIGHTS, isRegionalFlight } from './regional-flights';
@@ -166,6 +167,7 @@ let pointerYoke: ReturnType<typeof createPointerYoke> | null = null;
 let cameraLook = { yaw_rad: 0, pitch_rad: 0 };
 let cameraFov_rad = DEFAULT_FOV_RAD;
 let overviewDistance_m = 1500;
+let chaseDistance_m = CHASE_DISTANCE.initial_m;
 let flapTarget_deg = 0;
 let pitchTrimTarget: number | null = null;
 let controlsVisible = false;
@@ -622,19 +624,28 @@ const cockpitLayout = createCockpitLayout(document.querySelector<HTMLElement>('.
 
 const fieldOfView = createFieldOfViewControl({
   element: sceneContainer, getFov: () => cameraFov_rad,
-  isBlocked: () => view === 'overview' || !!document.querySelector('dialog[open]'),
+  isBlocked: () => view !== 'cockpit' || !!document.querySelector('dialog[open]'),
   onChange(fov_rad) {
     cameraFov_rad = fov_rad;
-    el('camera-fov').textContent = `${Math.round(fov_rad * 180 / Math.PI)}° FOV · two-finger scroll`;
+    renderCameraZoom();
   },
 });
+function renderCameraZoom(): void {
+  el('camera-fov').textContent = view === 'chase'
+    ? `Chase · ${chaseDistance_m < 1000 ? `${Math.round(chaseDistance_m)} m` : `${(chaseDistance_m / 1000).toFixed(1)} km`} · scroll to zoom · double-click to follow`
+    : view === 'overview' ? `Overview · ${(overviewDistance_m / 1000).toFixed(1)} km · two-finger zoom`
+    : `${Math.round(cameraFov_rad * 180 / Math.PI)}° FOV · two-finger scroll`;
+}
 function overviewWheel(event: WheelEvent): void {
- if (view !== 'overview' || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey
+ const target = event.target instanceof Element ? event.target : null;
+ if (target?.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"]),dialog')) return;
+ if ((view !== 'overview' && view !== 'chase') || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey
   || menuOpen() || document.querySelector('dialog[open]') || !Number.isFinite(event.deltaX)
   || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
  event.preventDefault(); event.stopPropagation();
- overviewDistance_m = nextOverviewDistance(overviewDistance_m, event.deltaY, event.deltaMode, sceneContainer.clientHeight);
- el('camera-fov').textContent = `Overview · ${(overviewDistance_m / 1000).toFixed(1)} km · two-finger zoom`;
+ if (view === 'chase') chaseDistance_m = nextChaseDistance(chaseDistance_m, event.deltaY, event.deltaMode, sceneContainer.clientHeight);
+ else overviewDistance_m = nextOverviewDistance(overviewDistance_m, event.deltaY, event.deltaMode, sceneContainer.clientHeight);
+ renderCameraZoom();
 }
 sceneContainer.addEventListener('wheel', overviewWheel, {passive:false,capture:true});
 
@@ -1026,7 +1037,7 @@ function setView(next: typeof view) {
   closeViewMenu(); view = next;
   for (const name of ['cockpit', 'chase', 'overview']) { el(name).classList.toggle('selected', name === view); el(name).setAttribute('aria-pressed', String(name === view)); }
   el('view-label').textContent = view === 'overview' ? 'TERRAIN OVERVIEW' : `${view.toUpperCase()} VIEW`;
-  el('camera-fov').textContent = view === 'overview' ? `Overview · ${(overviewDistance_m / 1000).toFixed(1)} km · two-finger zoom` : `${Math.round(cameraFov_rad * 180 / Math.PI)}° FOV · two-finger scroll`;
+  renderCameraZoom(); updatePointerHint();
 }
 async function launchPractice(kind: 'takeoff' | 'landing' | 'circuit'): Promise<void> {
   if (!ready || reviewing || practiceLaunchPending) return;
@@ -1146,12 +1157,13 @@ el('flaps-retract').onclick = () => { setFlaps(flapTarget_deg - 10); focusFlight
 el('flaps-extend').onclick = () => { setFlaps(flapTarget_deg + 10); focusFlight(); };
 function updatePointerHint(mode = sceneContainer.dataset.pointerMode ?? 'off'): void {
   const centered = controlSettings.centeredTouchpad === true;
+  const resetHint = view === 'chase' ? 'double-click: follow aircraft' : 'double-click: front';
   el('pointer-mode').textContent = groundCollisionStopped() && !reviewing ? 'COLLISION VIEW · hold-drag to inspect'
-    : reviewing ? (mode === 'look' ? 'REVIEW LOOK · release to keep view' : 'REVIEW · hold-drag: look · double-click: front')
+    : reviewing ? (mode === 'look' ? 'REVIEW LOOK · release to keep view' : `REVIEW · hold-drag: look · ${resetHint}`)
     : (autopilotCapturePending || latest?.kap_engaged) && !cwsHeld ? 'AUTOPILOT · P disconnects · hold C to hand-fly'
-    : mode === 'look' ? 'LOOKING · release keeps view · double-click: front'
+    : mode === 'look' ? `LOOKING · release keeps view · ${resetHint}`
     : centered ? (mode === 'yoke' ? 'CENTERED YOKE · click off · hold-drag to look' : 'CENTERED YOKE · click on · hold-drag to look')
-    : mode === 'yoke' ? 'YOKE ACTIVE · hold-drag: look · double-click: front' : 'Click: yoke · hold-drag: look · double-click: front';
+    : mode === 'yoke' ? `YOKE ACTIVE · hold-drag: look · ${resetHint}` : `Click: yoke · hold-drag: look · ${resetHint}`;
 }
 pointerYoke = createPointerYoke({
   element: sceneContainer,
@@ -1165,6 +1177,13 @@ pointerYoke = createPointerYoke({
     continuedAxes = null; stickX = x; stickY = y; publishInput();
   },
   onLook(yaw_rad, pitch_rad) { cameraLook = { yaw_rad, pitch_rad }; },
+  onLookReset() {
+    if (view !== 'chase') return;
+    chaseDistance_m = CHASE_DISTANCE.initial_m;
+    cameraLook = { yaw_rad: 0, pitch_rad: 0 };
+    renderCameraZoom();
+  },
+
   onMode(mode) {
     updatePointerHint(mode);
     sceneContainer.dataset.pointerMode = mode;
@@ -1283,7 +1302,7 @@ const flightAssists = createFlightAssists({
     focusFlight();
   },
 });
-sceneContainer.setAttribute('aria-description','I toggles the menu. O opens Options. F toggles full screen. M toggles the flight map. Comma toggles the extended menu below the map. Period cycles terrain labels. Slash switches vector and photo terrain on a US keyboard.');
+sceneContainer.setAttribute('aria-description','I toggles the menu. O opens Options. F toggles full screen. M toggles the flight map. Comma toggles the extended menu below the map. Period cycles terrain labels. Slash switches vector and photo terrain on a US keyboard. Cockpit scroll changes field of view; chase scroll changes distance. Hold-drag to orbit; double-click chase to return behind the aircraft.');
 
 const sceneReady = createScene(sceneContainer).then(result => {
   scene = result; scene.setLandmarkLevel?.(landmarkLevel); scene.setSceneryMode?.(!!controlSettings.vectorScenery); scene.setPracticePapi?.(!!controlSettings.practicePapi);
@@ -1351,7 +1370,7 @@ function animate(now: number) {
       cancelReviewTerrain();
     }
     if (scene && !sceneFailed && terrainReady) {
-      try { scene.update(state, view, { ...cameraLook, fov_rad: cameraFov_rad, distance_m: overviewDistance_m }, ready && running && !reviewing && !terrainLoading && !failed && !sceneFailed); } catch {
+      try { scene.update(state, view, { ...cameraLook, fov_rad: cameraFov_rad, distance_m: view === 'chase' ? chaseDistance_m : overviewDistance_m }, ready && running && !reviewing && !terrainLoading && !failed && !sceneFailed); } catch {
         sceneFailed = true; pauseFlight(); notice('The 3D scene stopped rendering. Reload to restart.'); updateSessionUI();
       }
     }

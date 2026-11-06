@@ -1,3 +1,5 @@
+import { CHASE_DISTANCE, nextChaseDistance } from './chase-distance.ts';
+
 /** Aircraft body directions resolved in local east/north/up coordinates. */
 export type VectorENU = readonly [east: number, north: number, up: number];
 export interface AircraftBasisENU {
@@ -68,12 +70,14 @@ export function cockpitCameraENU(basis: AircraftBasisENU, look?: Readonly<Camera
   };
 }
 
-/** Heading-relative orbit, horizon level; zero is the original 30 m behind/11 m above view. */
-export function chaseCameraENU(heading_rad: number, look?: Readonly<CameraLook>): CameraPoseENU & { readonly offset: VectorENU } {
+/** Heading-relative orbit; omitted distance retains the original close chase view. */
+export function chaseCameraENU(
+  heading_rad: number, look?: Readonly<CameraLook>, distance_m = CHASE_DISTANCE.initial_m,
+): CameraPoseENU & { readonly offset: VectorENU } {
   finite(heading_rad);
   const bounded = boundedCameraLook(look);
   const heading = heading_rad + bounded.yaw_rad;
-  const radius = Math.hypot(CHASE_HORIZONTAL_M, CHASE_HEIGHT_M);
+  const radius = nextChaseDistance(distance_m, 0);
   // Analytic direction/up remain perpendicular even at the exact vertical poles.
   const elevation = polePitch(bounded.pitch_rad, Math.atan2(CHASE_HEIGHT_M, CHASE_HORIZONTAL_M));
   const sh = Math.sin(heading), ch = Math.cos(heading);
