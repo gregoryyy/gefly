@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import { sceneryMiddleware } from './scenery-server';
+import { createCopernicusTerrainMiddleware } from './copernicus-terrain-server';
 import { MOUNT, runtimeMiddleware, runtimeRoot } from './runtime.ts';
 import { resolve, extname, sep } from 'node:path';
 import { createReadStream } from 'node:fs';
@@ -43,9 +44,11 @@ export default defineConfig({
     name: 'local-flight-assets',
     configurePreviewServer(server) {
       server.middlewares.use(hashedSceneryAssets(resolve(import.meta.dirname, 'dist')));
+      server.middlewares.use(createCopernicusTerrainMiddleware());
     },
     configureServer(server) {
       server.middlewares.use(hashedSceneryAssets(resolve(import.meta.dirname, 'public')));
+      server.middlewares.use(createCopernicusTerrainMiddleware());
       server.middlewares.use(sceneryMiddleware());
       // The research runtime remains local and is excluded from production output.
       server.middlewares.use(MOUNT, runtimeMiddleware(runtimeRoot()));

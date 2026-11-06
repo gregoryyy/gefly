@@ -174,3 +174,16 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-05 repeated vector-terrain reloads](2026-11-05-vector-terrain-reload.md) — accelerated-flight repeated detail loss and reload investigation.
 
 - [2026-11-05: predictive terrain loading](2026-11-05-predictive-terrain-loading.md)
+
+- [2026-11-05: Swiss terrain walls and later missing pressure](2026-11-05-alps-terrain-walls.md)
+- [2026-11-05: Missing Hessen elevation after rebuild](2026-11-05-hessen-elevation-rebuild.md)
+
+- [2026-11-05: Use Copernicus global elevation](2026-11-05-copernicus-integration.md)
+- [2026-11-05: Cape Town appears flat](2026-11-05-cape-town-flat.md)
+
+
+- [2026-11-06: C key for momentary CWS](2026-11-06-cws-keyboard.md)
+
+- [2026-11-05: France GPS fix restriction](2026-11-05-france-gps-fix.md)
+
+- [2026-11-05: simulation speed above map](2026-11-05-speed-overlay-map.md)

@@ -156,7 +156,9 @@ export function createStreamedTerrainProvider(fine: TerrainGrid, tiles: readonly
 
 /** Live source credits reused by the window and global-horizon providers. */
 export function streamedTerrainCredit(tiles: readonly TerrainGrid[], globalHorizon = false): Credit {
+  const copernicus = tiles.some(grid => (grid.copernicus_nodes ?? 0) > 0);
   const global = globalHorizon || tiles.some(grid => validWorldTerrainTile(grid) && (grid.source === 'global' || grid.source === 'mixed'));
-  const globalCredit = global ? 'NOAA ETOPO 2022; EGM2008 geoid; Natural Earth ocean mask · coarse derived global baseline; approximate datum transitions. ' : '';
+  const globalCredit = (copernicus ? 'produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. <a href="/terrain/copernicus/LICENSE.pdf">Licence / disclaimer</a>. ' : '')
+    + (global ? 'EGM2008 geoid / last fallback: NOAA ETOPO 2022; Natural Earth ocean mask · coarse derived baseline; approximate datum transitions. ' : '');
   return new Credit(globalCredit + 'Terrain: © GeoBasis-DE / <a href="https://www.bkg.bund.de" target="_blank" rel="noopener noreferrer">BKG</a> (2026), DGM200, <a href="https://www.govdata.de/dl-de/by-2-0" target="_blank" rel="noopener noreferrer">dl-de/by-2-0</a>; GCG2016 © <a href="https://www.bkg.bund.de" target="_blank" rel="noopener noreferrer">BKG</a> (2026), <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>; Hessen DGM, <a href="https://www.govdata.de/dl-de/zero-2-0" target="_blank" rel="noopener noreferrer">dl-de/zero-2-0</a> · <a href="/terrain/BKG-SOURCES.pdf" target="_blank" rel="noopener noreferrer">Sources</a> · resampled and blended', true);
 }

@@ -4,32 +4,52 @@ const RAD = Math.PI / 180;
 const PACKAGE_URL = '/terrain/world/world-v1.json';
 const DATA_URL = '/terrain/world/world-v1.f32';
 const WIDTH = 361, HEIGHT = 181, BYTES = WIDTH * HEIGHT * 8;
-export const WORLD_TERRAIN = Object.freeze({ step: .25, cols: 1440, rows: 720, nodes: 129,
+export const LEGACY_WORLD_TERRAIN = Object.freeze({ step: .25, cols: 1440, rows: 720, nodes: 129,
   south: -89.5, north: 89.5, firstRow: 1, lastRow: 718, maxResident: 9 });
-export const LEGACY_WORLD_TERRAIN = WORLD_TERRAIN;
+export const WORLD_TERRAIN = Object.freeze({ step: 1 / 32, cols: 11520, rows: 5760, nodes: 129,
+  south: -89.5, north: 89.5, firstRow: 16, lastRow: 5743, maxResident: 9 });
+
 export function worldCellAt(lat, lon, profile = WORLD_TERRAIN) {
   if (![lat, lon].every(Number.isFinite) || lat <= profile.south * RAD || lat >= profile.north * RAD
     || lon < -Math.PI || lon > Math.PI) return null;
   return [Math.min(profile.cols - 1, Math.floor((lon / RAD + 180) / profile.step)) % profile.cols,
     Math.floor((lat / RAD + 90) / profile.step)];
 }
-export const worldTileId = (col, row) => `world-c${col}-r${row}`;
+export const worldTileId = (col, row) => `world30-c${col}-r${row}`;
+
+/** A different prefix preserves the interpretation of recorded quarter-degree
+ * cells; old IDs may never silently acquire the new 1/32-degree geometry. */
 export function worldTerrainProfile(grid) {
   if (!grid || typeof grid !== 'object' || typeof grid.id !== 'string') return null;
-  const match = /^world-c(0|[1-9]\d*)-r(0|[1-9]\d*)$/.exec(grid.id);
+  const match = /^(world30|world)-c(0|[1-9]\d*)-r(0|[1-9]\d*)$/.exec(grid.id);
   if (!match) return null;
-  const col = Number(match[1]), row = Number(match[2]);
-  if (col >= WORLD_TERRAIN.cols || row < WORLD_TERRAIN.firstRow || row > WORLD_TERRAIN.lastRow) return null;
-  const bounds = [-180 + col / 4, -90 + row / 4, -180 + (col + 1) / 4, -90 + (row + 1) / 4];
+  const profile = match[1] === 'world30' ? WORLD_TERRAIN : LEGACY_WORLD_TERRAIN;
+  const col = Number(match[2]), row = Number(match[3]);
+  if (col >= profile.cols || row < profile.firstRow || row > profile.lastRow) return null;
+  const bounds = [-180 + col * profile.step, -90 + row * profile.step,
+    -180 + (col + 1) * profile.step, -90 + (row + 1) * profile.step];
   return [grid.west_rad, grid.south_rad, grid.east_rad, grid.north_rad]
-    .every((value, i) => Number.isFinite(value) && Math.abs(value - bounds[i] * RAD) < 1e-12) ? WORLD_TERRAIN : null;
+    .every((value, i) => Number.isFinite(value) && Math.abs(value - bounds[i] * RAD) < 1e-12) ? profile : null;
 }
-/** Shared worker/session/render identity boundary; slots are reusable, geographic IDs are not. */
+
+/** Shared worker/session/render identity boundary. Native slots are reusable,
+ * not geographic IDs. Polar guard rows keep all native grid bounds off ±90°. */
 export function validWorldTerrainTile(grid) {
-  return validateTerrainGrid(grid) && grid.width === 129 && grid.height === 129 && grid.masked === undefined
-    && Number.isInteger(grid.slot) && grid.slot >= 0 && grid.slot <= 8
-    && ['regional', 'global', 'mixed'].includes(grid.source) && /^[a-f0-9]{64}$/.test(grid.sha256)
-    && worldTerrainProfile(grid) !== null;
+  if (!validateTerrainGrid(grid) || grid.width !== 129 || grid.height !== 129 || grid.masked !== undefined
+    || !Number.isInteger(grid.slot) || grid.slot < 0 || grid.slot > 8
+    || !['regional', 'global', 'mixed'].includes(grid.source) || !/^[a-f0-9]{64}$/.test(grid.sha256)) return false;
+  const profile = worldTerrainProfile(grid);
+  if (!profile) return false;
+  if (profile === WORLD_TERRAIN) {
+    const c = grid.copernicus_nodes, b = grid.coarse_nodes, count = 129 * 129;
+    if (![c, b].every(value => Number.isInteger(value) && value >= 0 && value <= count) || c + b > count) return false;
+    const regional = count - c - b;
+    const expectedSource = regional === count ? 'regional' : regional ? 'mixed' : 'global';
+    const expectedDetail = regional === count ? 'regional' : c === count ? 'copernicus' : b === count ? 'coarse' : 'mixed';
+    if (grid.source !== expectedSource || grid.source_detail !== expectedDetail) return false;
+  }
+  if (grid.source_detail !== undefined && !['copernicus', 'coarse', 'regional', 'mixed'].includes(grid.source_detail)) return false;
+  return true;
 }
 
 export async function terrainDigest(bytes) {

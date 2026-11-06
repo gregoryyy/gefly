@@ -3,7 +3,7 @@ export interface WorldTerrainProfile { readonly step: number; readonly cols: num
 export const WORLD_TERRAIN: Readonly<WorldTerrainProfile>;
 export const LEGACY_WORLD_TERRAIN: Readonly<WorldTerrainProfile>;
 export function worldTerrainProfile(grid: unknown): Readonly<WorldTerrainProfile> | null;
-export interface WorldTerrainTile extends TerrainGrid { slot: number; source: 'regional' | 'global' | 'mixed'; sha256: string }
+export interface WorldTerrainTile extends TerrainGrid { slot: number; source: 'regional' | 'global' | 'mixed'; source_detail?: 'copernicus' | 'coarse' | 'regional' | 'mixed'; copernicus_nodes?: number; coarse_nodes?: number; sha256: string }
 export function validWorldTerrainTile(grid: unknown): grid is WorldTerrainTile;
 export function worldCellAt(lat: number, lon: number, profile?: Readonly<WorldTerrainProfile>): [number, number] | null;
 export function worldTileId(col: number, row: number): string;

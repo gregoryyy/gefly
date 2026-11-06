@@ -10,6 +10,13 @@ export function tryUpdateGlobalTerrainProvider(provider: TerrainProvider, tiles:
   return tileUpdates.get(provider)?.(tiles) ?? false;
 }
 const HISTORY_LIMIT = 64, STATIC_LIMIT = 73, PREVIEW_LIMIT = 512, ROUNDING = 1e-12;
+// Exterior display transition only: one eighth of the coarse one-degree pitch.
+// This does not add measured terrain or alter any resident/native source height.
+const COLLAR = Math.PI / 180 / 8;
+const expanded = (bounds: Rectangle) => new Rectangle(bounds.west - COLLAR,
+  Math.max(-Math.PI / 2, bounds.south - COLLAR), bounds.east + COLLAR,
+  Math.min(Math.PI / 2, bounds.north + COLLAR));
+
 const geometryEqual = (a: TerrainGrid, b: TerrainGrid) =>
   a.width === b.width && a.height === b.height
   && a.west_rad === b.west_rad && a.east_rad === b.east_rad
@@ -52,10 +59,9 @@ const SIZE = 181;
 // avoid rebuilding thousands of off-screen meshes when resident cells change.
 // From level six, 181 samples give a vertex pitch of 2^-level degrees.
 const meshWidth = (level: number) => Math.min(SIZE, 2 ** (level + 2) + 1);
-/** Two hemisphere roots with 180 mesh intervals align the quarter-degree,
- * 129-node native source at level nine. Distant terrain stops at level twelve;
- * starter terrain reaches level fourteen, preserving their prior finest pitches.
- * A global coarse horizon remains outside the resident native cells;
+/** Two hemisphere roots with 180 mesh intervals align the 1/32-degree,
+ * 129-node native source at level twelve; level fourteen retains the prior finest
+ * starter mesh pitch. A global coarse horizon remains outside resident cells;
  * renderer LOD interpolation does not establish additional terrain measurements. */
 export function createGlobalTerrainProvider(world: TerrainGrid, fine: TerrainGrid,
   tiles: readonly TerrainGrid[]): TerrainProvider {
@@ -72,19 +78,16 @@ export function createGlobalTerrainProvider(world: TerrainGrid, fine: TerrainGri
     && new Set(worldTiles.map(grid => grid.id)).size === worldTiles.length
     && worldTiles.every(grid => worldTerrainProfile(grid) === profile);
   for (const grid of worldTiles) selected.set(grid.id, snapshot(grid));
+  let collarSources: readonly TerrainGrid[] = [fine, ...[...selected.values()].filter(grid => !innerFine(fine, rectangleOf(grid)))];
   const coarsePreviews = new Map<string, Rectangle>();
   const finestSources = new Set<string>();
   let previewOverflow = false;
   let copernicusExample = [...selected.values()].find(grid => (grid.copernicus_nodes ?? 0) > 0);
   const tilingScheme = new GeographicTilingScheme({ numberOfLevelZeroTilesX: 2, numberOfLevelZeroTilesY: 1 });
   const maximum = 14;
-  const fineBounds = new Rectangle(fine.west_rad, fine.south_rad, fine.east_rad, fine.north_rad);
-  const insideFine = (x: number, y: number, level: number) =>
-    Rectangle.intersection(tilingScheme.tileXYToRectangle(x, y, level), fineBounds) !== undefined;
   const available = (x: number, y: number, level: number) => Number.isInteger(level) && level >= 0 && level <= maximum
     && Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0
-    && x < 2 * 2 ** level && y < 1 * 2 ** level
-    && (level <= 12 || insideFine(x, y, level));
+    && x < 2 * 2 ** level && y < 1 * 2 ** level;
   let latitudeEdges = [...new Set([fine.south_rad, fine.north_rad, ...[...selected.values()].flatMap(grid => [grid.south_rad, grid.north_rad])])];
   let longitudeEdges = [...new Set([fine.west_rad, fine.east_rad, ...[...selected.values()].flatMap(grid => [grid.west_rad, grid.east_rad])])];
   let samplingFinest = false, usedCoarsePreview = false;
@@ -98,12 +101,51 @@ export function createGlobalTerrainProvider(world: TerrainGrid, fine: TerrainGri
       if (coarse) finestSources.add(coarse.id);
       else usedCoarsePreview = true;
     }
-    return sampleAtlas(fine, selected, latitude, longitude) ?? sampleWorldTerrain(world, latitude, longitude);
+    const actual = sampleAtlas(fine, selected, latitude, longitude);
+    if (actual) return actual;
+    const coarse = sampleWorldTerrain(world, latitude, longitude);
+    if (!coarse) return null;
+    // Project onto each nearby source rectangle. Inverse-distance normalized
+    // weights avoid discontinuities where disconnected history cells are equally
+    // near; compact smoothstep support recovers the exact coarse horizon.
+    const corrections: { distance: number; taper: number; physical: number; geoid: number }[] = [];
+    let nearest = Infinity;
+    for (const grid of collarSources) {
+      const center = (grid.west_rad + grid.east_rad) / 2;
+      const unwrapped = longitude + Math.round((center - longitude) / (2 * Math.PI)) * 2 * Math.PI;
+      const lat = Math.max(grid.south_rad, Math.min(grid.north_rad, latitude));
+      const lon = Math.max(grid.west_rad, Math.min(grid.east_rad, unwrapped));
+      const distance = Math.hypot(latitude - lat, unwrapped - lon);
+      if (distance >= COLLAR) continue;
+      // A masked source contributes only where the normal atlas actually has a
+      // valid sample. Preserve its existing fine/streamed precedence and feather.
+      const boundary = sampleAtlas(fine, selected, lat, lon);
+      const baseline = sampleWorldTerrain(world, lat, lon);
+      if (!boundary || !baseline) continue;
+      if (distance === 0) return boundary;
+      const fraction = distance / COLLAR;
+      corrections.push({ distance, taper: (1 - fraction) ** 2 * (1 + 2 * fraction),
+        physical: boundary.physical_m - baseline.physical_m,
+        geoid: boundary.geoid_m - baseline.geoid_m });
+      nearest = Math.min(nearest, distance);
+    }
+    if (!corrections.length) return coarse;
+    let weights = 0, physical = 0, geoid = 0, amplitude = 0;
+    for (const correction of corrections) {
+      const weight = (nearest / correction.distance) ** 2 * correction.taper;
+      weights += weight;
+      physical += weight * correction.physical;
+      geoid += weight * correction.geoid;
+      amplitude = Math.max(amplitude, correction.taper);
+    }
+    const physical_m = coarse.physical_m + amplitude * physical / weights;
+    const geoid_m = coarse.geoid_m + amplitude * geoid / weights;
+    return { physical_m, geoid_m, ellipsoid_m: physical_m + geoid_m };
   };
   const heightsFor = (x: number, y: number, level: number, width = meshWidth(level)) => {
       if (!available(x, y, level)) return undefined;
       const bounds = tilingScheme.tileXYToRectangle(x, y, level);
-      samplingFinest = level === (insideFine(x, y, level) ? maximum : 12);
+      samplingFinest = level === maximum;
       usedCoarsePreview = false;
       const heights = new Float64Array(width * width), cells = width - 1;
       for (let row = 0; row < width; row++) {
@@ -137,14 +179,13 @@ export function createGlobalTerrainProvider(world: TerrainGrid, fine: TerrainGri
     return Math.max(curvatureError, level >= maximum ? 1e-6 : spacing * .25);
   };
   provider.getTileDataAvailable = available;
-  // Both the advertised coverage and child mask stop distant coarse rendering
-  // at level twelve; the detailed starter area can refine to level fourteen.
+  // Use one consistent global child hierarchy. Higher LOD subdivides the same
+  // source planes; it does not invent additional measurements in coarse areas.
   provider.requestTileGeometry = (x, y, level) => {
     const width = meshWidth(level), heights = heightsFor(x, y, level, width);
     if (!heights) return undefined;
-    const finest = insideFine(x, y, level) ? maximum : 12;
     return Promise.resolve(new HeightmapTerrainData({ buffer: heights, width, height: width,
-      childTileMask: level < finest ? 15 : 0 }));
+      childTileMask: level < maximum ? 15 : 0 }));
   };
 
   let liveCredit = streamedTerrainCredit([...selected.values()], true);
@@ -161,7 +202,7 @@ export function createGlobalTerrainProvider(world: TerrainGrid, fine: TerrainGri
       const existing = selected.get(grid.id);
       if (existing && !geometryEqual(existing, grid)) return false;
       if (!existing && !innerFine(fine, rectangleOf(grid)) && (previewOverflow
-        || [...coarsePreviews.values()].some(bounds => intersects(bounds, rectangleOf(grid))))) return false;
+        || [...coarsePreviews.values()].some(bounds => intersects(bounds, expanded(rectangleOf(grid)))))) return false;
       for (const old of selected.values()) if (!sharedNodesEqual(old, grid, incomingProfile)) return false;
       for (const other of grids) if (!sharedNodesEqual(grid, other, incomingProfile)) return false;
     }
@@ -180,12 +221,14 @@ export function createGlobalTerrainProvider(world: TerrainGrid, fine: TerrainGri
       if (current.has(id)) continue;
       // A finest mesh may remain cached in Cesium. Do not drop its source and
       // silently regenerate that geometry from coarse data on a later request.
-      if (finestSources.has(id)) return false;
+      if (finestSources.has(id) || !innerFine(fine, rectangleOf(next.get(id)!)) && (previewOverflow
+        || [...coarsePreviews.values()].some(bounds => intersects(bounds, expanded(rectangleOf(next.get(id)!)))))) return false;
       next.delete(id);
     }
     if (next.size > HISTORY_LIMIT) return false;
     selected.clear();
     for (const [id, grid] of next) selected.set(id, previous.has(id) ? grid : snapshot(grid));
+    collarSources = [fine, ...[...selected.values()].filter(grid => !innerFine(fine, rectangleOf(grid)))];
     profile = incomingProfile;
     copernicusExample ??= [...selected.values()].find(grid => (grid.copernicus_nodes ?? 0) > 0);
     liveCredit = streamedTerrainCredit([...selected.values(), ...(copernicusExample ? [copernicusExample] : [])], true);

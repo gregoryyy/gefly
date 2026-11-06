@@ -1,0 +1,24 @@
+{
+  "status": "blocked",
+  "accepted": false,
+  "author_provider": "codex",
+  "reviewer_provider": "claude",
+  "packet": {
+    "path": "output/flight/terrain-horizon-peer.md",
+    "sha256": "0f73dc64fff38a6a5908da85ff53e6012fca5d229519b0780af37dba690384d9",
+    "revision": "c1378d21e110622aba688545a6bd17cc41c86760"
+  },
+  "cli": {
+    "executable": "/opt/homebrew/bin/claude",
+    "version": "2.1.308"
+  },
+  "model_evidence": [
+    "unknown"
+  ],
+  "review": null,
+  "limitations": [
+    "CLI routing and returned model names are evidence, not backend attestation.",
+    "Packet review does not independently execute the packet's test commands."
+  ],
+  "diagnostic": "reviewer_timeout"
+}

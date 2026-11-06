@@ -15,6 +15,8 @@ const MIN_SETTING_PA = 80_000;
 const MAX_SETTING_PA = 110_000;
 const STANDARD_PA = 101_325;
 const METRES_PER_FOOT = 0.3048;
+const selectablePressure = (pressure_pa: number) => Number.isFinite(pressure_pa)
+  && pressure_pa >= MIN_SETTING_PA && pressure_pa <= MAX_SETTING_PA;
 
 interface Indication {
   p_static_pa: number;
@@ -189,9 +191,14 @@ export function createPressureAltimeterPanel(options: PressureAltimeterOptions):
       indicated.textContent = `${(Math.round(altitude_ft!) || 0).toLocaleString('en-US')} ft indicated`;
       qnh.textContent = `Use QNH · ${pressureText(latest.altimeter_qnh_pa)}`;
       qfe.textContent = `Use launch QFE · ${pressureText(latest.altimeter_qfe_pa)}`;
+      qnh.disabled ||= !selectablePressure(latest.altimeter_qnh_pa);
+      const qfeSelectable = selectablePressure(latest.altimeter_qfe_pa);
+      qfe.disabled ||= !qfeSelectable;
+      qfe.title = qfeSelectable ? '' : 'Launch QFE is outside the 800–1100 hPa practice setting range.';
       standard.textContent = `Use standard · ${pressureText(STANDARD_PA)}`;
       datum.textContent = `Launch-point QFE · not airport elevation. Its zero is the launch point at ${Math.round(latest.altimeter_qfe_datum_m / METRES_PER_FOOT).toLocaleString('en-US')} ft in the study datum.`;
       if (Math.abs(latest.altimeter_qnh_pa - STANDARD_PA) <= 1) datum.textContent += ' QNH and standard pressure coincide in this atmosphere fixture.';
+      if (!qfeSelectable) datum.textContent += ' Launch QFE is outside the 800–1100 hPa practice setting range; use QNH or standard.';
     }
     draw();
   }

@@ -1,0 +1,3 @@
+# Pressure cross-provider review attempt
+
+Codex/OpenAI authored the bounded pressure delta. A fresh external Claude packet review used source revisioncbcc1920ff2fa8fec47fbea0b978df63e5478f15 and packet SHA-256da557b84f578e7e4d23b0963d748258beeaf6f6240ad3fc66c8c1cadb33b975c. The [actual envelope](2026-11-05-high-altitude-pressure-peer.json) records `/opt/homebrew/bin/claude`2.1.308, a60-second reviewer timeout and unknown model evidence. No review was returned; external quality/validation remain pending. The packet did not include later documentation/gate records, so it cannot accept them. Independent local quality/validation and final CI are separate. No milestone/release, aircraft or training acceptance follows.

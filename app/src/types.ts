@@ -83,7 +83,7 @@ export function validPitchTrimState(input: object): boolean {
 /** Shared physical/render height snapshot; regional or derived global surface. */
 export const TERRAIN_FIELDS = ['terrain_profile', 'terrain_height_msl_m', 'terrain_geoid_m', 'terrain_height_ellipsoid_m'] as const;
 export const TERRAIN_SOURCE_FIELDS = ['terrain_source'] as const;
-/** 1 regional, 2 coarse global, 3 mixed; absence is legacy unknown. */
+/** 1 regional, 2 global (Copernicus or coarse fallback), 3 mixed; absence is legacy unknown. */
 export type TerrainState = Partial<Record<typeof TERRAIN_FIELDS[number] | typeof TERRAIN_SOURCE_FIELDS[number], number>>;
 export function validTerrainState(input: object): boolean {
   const value = input as TerrainState;

@@ -15,8 +15,9 @@ import { createAircraftShadow } from './aircraft-shadow';
 import { createPublicTerrainProvider } from './terrain-provider';
 import { createStreamedTerrainProvider } from './streamed-terrain-provider';
 import { createGlobalTerrainProvider, tryUpdateGlobalTerrainProvider } from './global-terrain-provider';
+import { createTerrainDisplayInfo, sameTerrainTiles } from './terrain-display-info';
 import { REGIONAL_TERRAIN, loadRegionalManifestOptional, WorldTerrainStream, sampleAtlas, atlasGridAt, type AtlasTile } from '../../studies/e1-browser/sim/terrain-stream.js';
-import { loadWorldTerrainPackage, validWorldTerrainTile, worldCellAt } from '../../studies/e1-browser/sim/world-terrain.js';
+import { loadWorldTerrainPackage, worldCellAt } from '../../studies/e1-browser/sim/world-terrain.js';
 import { createRegionalImageryProvider } from './regional-imagery';
 import { createMapTerrainImagery } from './map-terrain-imagery';
 import { imageryStatusText } from './imagery-status';
@@ -86,7 +87,8 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   let recordingController: AbortController | null = null;
   let streamedTiles: TerrainGrid[] = [], atlasTiles = new Map<string,AtlasTile>();
   let terrainRevision = 0, providerKey = '';
-  let hasWorldTiles = false, globalProviderLive = false;
+  let globalProviderLive = false;
+  let terrainDisplayInfo = createTerrainDisplayInfo([]);
   let liveLayers = false;
   const atlasSample=(lat:number,lon:number)=>streamedTiles.length ? sampleAtlas(terrainGrid,atlasTiles,lat,lon) : sampleTerrain(terrainGrid,lat,lon);
   const flatTerrain = new EllipsoidTerrainProvider();
@@ -263,7 +265,17 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     container.dataset.worldMapLoaded = String(worldMap?.getStats().loadedTiles ?? 0);
     container.dataset.worldMapCache = String(worldMap?.getStats().cacheSize ?? 0);
     container.dataset.worldMapQueued = String(worldMap?.getStats().queuedTiles ?? 0);
-    const globalTerrainText = 'coarse global fallback · 1° source grid';
+    const activeGrid = atlasGridAt(terrainGrid, atlasTiles, state.lat_rad, state.lon_rad);
+    const displayInfo = terrainDisplayInfo.at(activeGrid);
+    const globalDetail = displayInfo?.detail ?? 'regional';
+    const copernicusNodes = displayInfo?.copernicusNodes ?? 0;
+    const coarseNodes = displayInfo?.coarseNodes ?? 0;
+    container.dataset.terrainDetail = globalDetail;
+    container.dataset.terrainCopernicusNodes = String(copernicusNodes);
+    container.dataset.terrainCoarseNodes = String(coarseNodes);
+    const globalTerrainText = copernicusNodes > 0
+      ? `Copernicus global DSM · 30 m source${coarseNodes ? ' with coarse fallback gaps' : ''}`
+      : globalDetail === 'regional' ? 'regional terrain' : 'coarse global fallback · detailed elevation unavailable';
     if (state.terrain_profile === 1 && outside) {
       text = polar ? `${globalTerrainText} · OSM map unavailable beyond Web Mercator coverage.`
         : worldMapStatus === 'degraded' ? 'Global OSM map unavailable in parts of this view; physical terrain remains available.'
@@ -425,16 +437,16 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     if (useTerrain && streamedTiles.length) {
       const fine = state.lon_rad>=terrainGrid.west_rad && state.lon_rad<=terrainGrid.east_rad && state.lat_rad>=terrainGrid.south_rad && state.lat_rad<=terrainGrid.north_rad;
       const cell = worldCellAt(state.lat_rad, state.lon_rad);
-      const key = hasWorldTiles ? `${terrainRevision}/global` : `${terrainRevision}/${cell?.join('/')}/${fine}`;
+      const key = terrainDisplayInfo.hasWorldTerrain ? `${terrainRevision}/global` : `${terrainRevision}/${cell?.join('/')}/${fine}`;
       if(key!==providerKey) {
-        const reused = hasWorldTiles && globalProviderLive && recordingTiles.size === 0
+        const reused = terrainDisplayInfo.hasWorldTerrain && globalProviderLive && recordingTiles.size === 0
           && tryUpdateGlobalTerrainProvider(activeTerrain, streamedTiles);
         if (!reused) {
-          const provider = hasWorldTiles
+          const provider = terrainDisplayInfo.hasWorldTerrain
             ? createGlobalTerrainProvider(worldGrid, terrainGrid, streamedTiles)
             : createStreamedTerrainProvider(terrainGrid, streamedTiles, state);
           if (!provider) throw new Error('Required streamed terrain has not loaded.');
-          activeTerrain = provider; globalProviderLive = hasWorldTiles && recordingTiles.size === 0;
+          activeTerrain = provider; globalProviderLive = terrainDisplayInfo.hasWorldTerrain && recordingTiles.size === 0;
           if (terrainEnabled && scene.globe.terrainProvider !== activeTerrain) scene.globe.terrainProvider = activeTerrain;
         }
         providerKey = key;
@@ -631,11 +643,11 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     setTerrainTiles(tiles) {
       liveTiles = Array.from(tiles);
       const nextTiles = new Map([...recordingTiles.values(), ...liveTiles].map(grid => [grid.id, grid]));
-      // Revalidate installation classification; input order alone is not geometry.
-      hasWorldTiles = [...nextTiles.values()].some(validWorldTerrainTile);
+      // Validate each revision once; frame labels read copied source metadata.
+      terrainDisplayInfo = createTerrainDisplayInfo([...nextTiles.values()]);
       container.dataset.reviewTerrainCached = String(recordingTiles.size);
       if (!nextTiles.size) globalProviderLive = false;
-      if (nextTiles.size === atlasTiles.size && [...nextTiles].every(([id, grid]) => atlasTiles.get(id) === grid)) return;
+      if (sameTerrainTiles(atlasTiles, nextTiles)) return;
       streamedTiles = [...nextTiles.values()];
       atlasTiles = nextTiles as Map<string, AtlasTile>; terrainRevision++;
       if(tiles.length && !liveLayers) {

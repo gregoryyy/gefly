@@ -1,0 +1,24 @@
+{
+  "status": "blocked",
+  "accepted": false,
+  "author_provider": "codex",
+  "reviewer_provider": "claude",
+  "packet": {
+    "path": "output/flight/copernicus-native-peer.md",
+    "sha256": "88a5ee01a3e60ee0c557784e9a895f2fd5449dbafdf25d862e011a3db2c17587",
+    "revision": "4c69e860d38e37aa416b2c4a2c45232506434f3e"
+  },
+  "cli": {
+    "executable": "/opt/homebrew/bin/claude",
+    "version": "2.1.308"
+  },
+  "model_evidence": [
+    "unknown"
+  ],
+  "review": null,
+  "limitations": [
+    "CLI routing and returned model names are evidence, not backend attestation.",
+    "Packet review does not independently execute the packet's test commands."
+  ],
+  "diagnostic": "reviewer_timeout"
+}

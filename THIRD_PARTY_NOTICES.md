@@ -352,3 +352,22 @@ separate from Gefly's GPL code. The coarse surface has no surveyed landing,
 shoreline or inland-lake-surface fidelity. OSM/OpenFreeMap cartography remains
 separate from physical heights, with the credits described above; the same
 on-demand source now also provides the global baseline beneath regional scenery.
+
+## Copernicus GLO-30 global elevation enhancement
+
+The optional global height service uses selected ranges from the public
+Copernicus GLO-30 COG DSM collection. See its
+[source record](app/public/terrain/copernicus/SOURCE.json),
+[original licence](app/public/terrain/copernicus/LICENSE.pdf) and
+[attribution/disclaimer](app/public/terrain/copernicus/README.md).
+The licence grants reproduction, distribution and adaptation without fees,
+subject to its source/modified-data notice, disclaimer and other obligations.
+No full global raster is bundled. This is a surface model; neither its inclusion
+nor the existing geoid/terrain conversion establishes surveyed airport fidelity.
+
+produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence
+and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA;
+all rights reserved.
+
+The organisations in charge of the Copernicus programme by law or by delegation
+do not incur any liability for any use of the Copernicus WorldDEM-30.

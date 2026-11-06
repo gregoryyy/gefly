@@ -447,3 +447,7 @@ external style, glyph or sprite service is introduced. Country-specific
 remain researched candidates requiring edition-specific rights and datum work.
 
 Native runtime provenance is checked separately on the integrated revision; generated local engine files are not distributed by this source change.
+
+## Copernicus global elevation source service
+
+The [source inventory](../app/public/terrain/copernicus/SOURCE.json), [retained licence](../app/public/terrain/copernicus/LICENSE.pdf) and [source note](research/2026-11-05-copernicus-source-provenance.md) identify the fixed public2021 GLO-30 COG collection, metre/EGM2008 reference, rights and derived sampling. Restricted Node built-in DEFLATE/Float32 decoding adds no dependency. Server v1 supplies fine world30 samples; v2 supplies quarter-degree overview samples as a common API prerequisite. The display client is a separate increment. This DSM includes vegetation/buildings and is not bare-earth or surveyed airport terrain. Existing coarse geoid and explicit fallback/source limitations remain.

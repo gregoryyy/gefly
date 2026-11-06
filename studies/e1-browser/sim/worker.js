@@ -161,7 +161,7 @@ let altimeterFields = {};
 function updateAltimeter() {
   // Clear first, so unsupported/out-of-domain pressure never leaves ghost values.
   altimeterFields = {};
-  if (!altimeterReferences) return;
+  if (!altimeterReferences || typeof M._gf_static_pressure_pa !== 'function') return;
   const p_static_pa = M._gf_static_pressure_pa();
   const indicated_m = indicatedAltitude_m(p_static_pa, altimeterSettingPa);
   if (indicated_m === null) return;
@@ -181,7 +181,10 @@ function initializeAltimeter() {
   const qnh_pa = M._gf_sealevel_pressure_pa();
   const qfe_pa = M._gf_static_pressure_pa();
   const datum_m = readState()[3];
-  if (!validSetting(qnh_pa) || !validSetting(qfe_pa) || !Number.isFinite(datum_m)) return;
+  // Launch QFE records a sensor reference, which can be below the selectable
+  // subscale range at a supported high-altitude start. It must not hide an
+  // otherwise valid QNH/standard indication.
+  if (!validSetting(qnh_pa) || pressureAltitude_m(qfe_pa) === null || !Number.isFinite(datum_m)) return;
   altimeterReferences = {
     altimeter_qnh_pa: qnh_pa, altimeter_qfe_pa: qfe_pa,
     altimeter_qfe_datum_m: datum_m,
@@ -190,6 +193,10 @@ function initializeAltimeter() {
 }
 
 function onAltimeter(msg) {
+  if (altimeterReferences && msg.setting_pa === altimeterReferences.altimeter_qfe_pa && !validSetting(msg.setting_pa)) {
+    postMessage({ type: 'altimeter-rejected', message: 'Launch QFE is outside the 800–1100 hPa practice setting range. Use QNH or standard pressure.' });
+    return;
+  }
   if (!validSetting(msg.setting_pa) || !altimeterReferences) {
     postMessage({ type: 'altimeter-rejected', message: 'Pressure setting unavailable or outside practice bounds.' });
     return;

@@ -586,3 +586,23 @@ test('R-WORLD-11 saved world position initializes the actual global terrain mode
   assert.equal(worker.messages[0].streaming_terrain, true); worker.emit(ready);
   assert(!worker.messages.some(m => m.type === 'run'));
 });
+
+test('R-WORLD-11 fine Copernicus cells reach the view without being misclassified as regional terrain', async t => {
+  const col = 3391, row = 4182, rad = Math.PI / 180, nodes = 129 * 129;
+  const grid = { ...worldGrid(col, row, 0), id: `world30-c${col}-r${row}`,
+    west_rad: (-180 + col / 32) * rad, east_rad: (-180 + (col + 1) / 32) * rad,
+    south_rad: (-90 + row / 32) * rad, north_rad: (-90 + (row + 1) / 32) * rad,
+    source_detail: 'copernicus', copernicus_nodes: nodes, coarse_nodes: 0 };
+  await t.test('valid cell forwards its provenance and allows Ready', t => {
+    const f = fixture(t); f.session.reset(); const worker = MockWorker.instances[0];
+    worker.emit({ type: 'terrain-tile', grid }); worker.emit(ready);
+    assert.deepEqual(f.errors, []); assert.equal(f.tiles.length,1); assert.equal(f.readies.length,1);
+    assert.equal((f.tiles[0] as typeof grid).copernicus_nodes,nodes);
+  });
+  for (const change of [{ copernicus_nodes: nodes + 1 }, { coarse_nodes: 1 },
+    { source_detail: 'coarse' }, { west_rad: grid.west_rad + .001 }]) await t.test(JSON.stringify(change), t => {
+      const f = fixture(t); f.session.reset(); const worker = MockWorker.instances[0];
+      worker.emit({ type: 'terrain-tile', grid: {...grid,...change} });
+      assert.equal(f.tiles.length,0); assert.equal(f.errors.length,1);
+    });
+});
