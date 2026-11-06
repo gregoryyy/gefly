@@ -108,6 +108,42 @@ Already-rendered tiles need runtime fetch/cache, not conversion. A single succes
 source tile and synthetic chart fixtures did not establish the producer's format
 or native-detail behavior; the actual default-view test exposed both assumptions.
 
+## 2026-11-06 15:46 — Give open-map zoom keys priority over simulation speed
+
+TODO: 2.0.176; R-WORLD-6/R-SIM-9.
+Agent: Codex orchestrator; router implementation `map_zoom_keys`, speed/browser
+implementation `map_speed_precedence`, source inventory and independent quality
+`map_zoom_housekeeping`, independent validation `map_zoom_validate`.
+
+**Implementation notes**
+
+An open map owns =/+/- before flight shortcuts, including scenery focus,
+German/numpad keys and loading. Each press moves one bounded zoom level;
+repeats are consumed. Closed-map rate shortcuts and Flight-menu speed controls
+remain usable. Existing editing, modal, menu, modifier and disposal guards remain.
+[Scope and checks](research/2026-11-06-map-zoom-keys.md).
+
+Separate working-app and publication browser runs pass eight groups each,
+including actual live stepping, paused native isolation, Review, loading,
+focus, keyboard layouts and zoom bounds. The existing working-app flight-assists
+regression passes seven groups. Publication CI passes557 Node/22 application
+Python/85 assurance/11 training tests; nine optional JSBSim study tests and one
+platform-specific repository-tool test remain skipped. Seven router tests also
+pass independently. [Evidence](reviews/2026-11-06-map-zoom-keys-runtime.json),
+[quality](reviews/2026-11-06-map-zoom-keys-quality.md) and
+[validation](reviews/2026-11-06-map-zoom-keys-validation.md).
+
+**Deviations**
+
+The initial seven-group browser run lacked live key input; a harness-only group
+was added after CI and both browser contexts were rerun. Runtime source remained
+fixed. Scenery fixtures do not establish geography or aircraft fidelity. Embedded
+WebKit remains untested; cross-provider peer remains pending under batch cadence.
+
+**Insights**
+
+Map visibility must determine shortcut ownership before focus-dependent handlers.
+
 ## 2026-11-06 15:17 — Show fixes consistently and retain map category choices
 
 TODO: 2.0.175; R-WORLD-6/R-NAV-5.

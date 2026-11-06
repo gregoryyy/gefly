@@ -203,6 +203,7 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-06: Remaining handling report at localhost:5173 and SIM 1×](2026-11-06-local-handling-context.md)
 
 - [2026-11-06 OpenFlightMaps overlay](2026-11-06-ofm-overlay.md)
+- [2026-11-06 map zoom keys](2026-11-06-map-zoom-keys.md): map magnification takes priority over simulation speed while open.
 - [2026-11-06 map fixes/filter retention](2026-11-06-map-fix-filters.md): fix marker visibility and persist location-type selections.
 - [2026-11-06: Reconcile PR102 conflicts](2026-11-06-pr102-conflicts.md).
 - [2026-11-06: Reconcile PR104 conflicts](2026-11-06-pr104-conflicts.md).

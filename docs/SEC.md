@@ -351,7 +351,7 @@ the existing guarded KAP/native interfaces; it cannot claim installed-aircraft
 performance or bypass manual-input priority. The = rate union accepts only
 1/1.5/2/5/10×. It changes pacing, never the fixed integration step or aircraft
 parameters. Shortcuts are guarded against typing, modifiers, repeats, modal
-dialogs and read-only Review. The rate overlay reports confirmed state rather
+dialogs. AP is unavailable in read-only Review; rate controls there change independent replay pacing. Open-map zoom keys are intercepted before rate controls. The rate overlay reports confirmed state rather
 than an unacknowledged command. Reset returns to normal speed; failed/paused
 loading does not create catch-up integration. These controls add no persistence,
 permissions, telemetry or external traffic.
@@ -476,6 +476,18 @@ GUL PDF link remains unavailable; this does not establish unrestricted rendered
 product redistribution, permanent offline packaging or a provider SLA. No chart
 pixels or complete OFMX/plate product are bundled. Complete terms/product review
 remains separate for distribution scope beyond this opt-in documented API use.
+
+## Open-map zoom shortcut ownership
+
+A page-lifetime document-capture router owns eligible =/+ and - keys while the
+map is open, even while focus remains on the flight scene. It forwards only a
+bounded zoom direction to the existing map control; recognized repeats are
+consumed without another action, including German Shift+Digit0. Flight-assist
+keyboard rates defer to that context while menu/API rate controls remain usable.
+Editable, modifier, modal/top-menu/credit and already-prevented events keep their
+existing boundaries. Loading or unavailable maps do not queue zoom or leak a key
+into throttle. Review changes only its map view. Listener disposal is explicit;
+this adds no storage, permissions, telemetry or new network source.
 
 ## Saved flight-map location categories
 
