@@ -24,6 +24,25 @@ Synthetic metadata/capacity Scene components are separate from actual public DEM
 
 A retained provider alone is insufficient: unknown fine geometry must not become cached coarse ground, and source/capacity rejection needs a settled immutable fallback so public retry queues can drain. Separate payload, history, pending-owner and outcome-metadata budgets. GPU source level differs from the level of an upsampled visible descendant.
 
+## 2026-11-06 01:32 — Resolve PR91 and integrate the merged feature branches
+
+TODO: 2.0.150/2.0.155/2.0.156/2.0.157/2.0.158/2.0.159/2.0.163; R-WORLD-11/R-SIM-2/R-AP-1/R-INPUT-1.
+Agent: Codex orchestrator; independent `quality` merge review.
+
+**Implementation notes**
+
+PR91 includes the user-merged Copernicus PR92 and now merges its updated predictive-loading target plus the pressure branch containing user-merged CWS PR93. Resolve package test registrations by retaining all commands, and preserve both sides of architecture/security/decision/task/research records. All172 complete dated DONE entries from both parents survive exactly in date order. Remove a merge-introduced duplicate pressure decision and repeated Hessen input-index line; no raw input record changes. Independent [merge review](reviews/2026-11-06-pr91-merge-quality.md) checks semantic preservation. The combined head merges cleanly into current origin/main8855358; PR91 is the remaining integration path to main, rather than another closed feature target.
+
+All507Node+22Python app cases,85assurance and11training cases passed; optional JSBSim9of23 and one platform tool case skip. The first CI attempt saw transient conflict markers while the later CWS merge was being resolved. The next full run passed executable/assurance/training/whitespace checks but failed scaffold on the duplicate input-index line. After its repair, the affected scaffold check passes. A fresh full CI confirmation is required/recorded separately; neither unsuccessful full log is represented as a terminal pass.
+
+**Deviations**
+
+This is branch integration and conflict resolution, not new flight-model behavior or aircraft/training validation. Retarget PR91 to main after pushing the complete integration. Cross-provider peer remains pending. The separate distant-overview renderer fix remains isolated and is not part of this merge resolution.
+
+**Insights**
+
+Merging a child PR after its target PR has already merged does not propagate the child into main; preserve the merged branch tips in the remaining integration PR. Union-merging input indexes can leave duplicate entries and needs the structural check before the full CI run.
+
 ## 2026-11-06 01:03 — Correct the dependent overview delivery reference
 
 TODO: 2.0.150/2.0.162; R-WORLD-11.
@@ -40,6 +59,25 @@ No new terrain or aircraft validation is claimed. Display rendering remains open
 **Insights**
 
 Use stable task IDs until a pull request actually exists.
+
+## 2026-11-06 00:59 — Hold C for momentary control wheel steering
+
+TODO: 2.0.163; R-AP-1/R-INPUT-1.
+Agent: Codex orchestrator; housekeeping `cws_records`; independent `quality` and `cws_validate`. Terrain code1/code2 work remains separate.
+
+**Implementation notes**
+
+Hold C operates existing momentary CWS during running AP flight, leaving the pointer free. Keyboard and panel holds share ownership; only the final release resumes the existing AP guidance/reference behavior. The button tooltip, accessible shortcut and active AP pointer hint expose C. Loading, pause, blur, AP-off, reset, Review and disposal cancel holds; typing/modifiers/menus/dialogs/map/plan/unavailable contexts cannot start the shortcut. No native dynamics, engine bytes or dependencies change.
+
+Six input helper tests,18 existing KAP controller tests, TypeScript and eight author-run real-app/Worker/native browser groups pass. The final browser includes actual pointer and elevator commands while retaining AP/ALT; artifact `output/flight/cws-keyboard.json` SHA-256 `d4ce04b2e65927247ab39149a4784255dd46e5ddeede6c68d26775b0eaa1e2bf`. Independent [quality](reviews/2026-11-06-cws-keyboard-quality.md) and [validation](reviews/2026-11-06-cws-keyboard-validation.md) distinguish source-inspected guards and unexercised integrated contexts. Full branch CI passes478Node+22Python app cases,85assurance and11training cases;243tool tests include one platform skip, and9of23 optional JSBSim study checks skip. CI log `output/flight/cws-ci.log` SHA-256 `543d66a0cf56adc0030d1723303cd718de75c030967072087aab9f0e42bd66e2`. Scaffold and assurance integrity pass with zero integrity errors.
+
+**Deviations**
+
+Momentary hold follows the preceding CWS discussion; the user did not request a latch. Scenery, dispatched blur and injected terrain-loading notification are explicit fixtures; the rest uses trusted browser keys and actual native state. The browser does not quantify recapture/servo fidelity, test every guarded context or reset while C is still held. Existing KAP tests cover exact ALT/VS reference recapture. CWS fit on the selected C172 and the rebuilt engine's stale build record remain unverified. Cross-provider peer remains pending following earlier provider timeout/access evidence; this is no milestone, aircraft or training acceptance. Terrain reload work remains open.
+
+**Insights**
+
+Keyboard and pointer operation of a momentary control need separate ownership; releasing one source must not cancel the other. Automatic loading also needs explicit release even when the UI retains its running intent.
 
 ## 2026-11-06 00:07 — Add the modular Copernicus native/data foundation
 
@@ -80,6 +118,92 @@ This is a derived exterior visual transition, not measured extra resolution or a
 **Insights**
 
 A correct native grid can still meet a radically different distant display surface. Diagnose both sides before changing data or physics, and extend cache invalidation to the full visual influence area.
+
+## 2026-11-05 23:00 — Preserve pressure indication at supported high-altitude starts
+
+TODO: 2.0.159; R-AIR-3/R-SIM-2.
+Agent: Codex orchestrator; code1 `alps_source`; code2 `alps_renderer` on the separate terrain slice; housekeeping `alps_pressure`; independent `quality` and `panel_validate_final`.
+
+**Implementation notes**
+
+The app incorrectly required raw launch QFE to fit the 800–1100 hPa practice subscale before publishing any pressure fields. Supported high starts now retain complete indications and raw launch metadata. QNH/STD/manual settings work; unsupported QFE is disabled/explained and rejected without mutation. Continuation preserves its native first32 packing and JSON launch references. Missing APIs/out-of-atmosphere values remain unavailable. Source commits5c846ca andcbcc192 are separated from terrain work on `fix/high-altitude-pressure`, based on the predictive-terrain branch.
+
+Four actual unchanged-WASM starts at3/5km with terrain on/off, two-frame JSON/continuation, low-launch QFE zero and unsupported11.2km pressure pass. Three actual real-Worker/component browser groups preserve paused native state and every engaged AP field. The working app also passes the same browser checks. Independent quality/validation find no blocking repair defect. Full branch app472Node+22Python, TypeScript,85assurance and11training tests pass. `just ci` completes with9of23 optional JSBSim study checks skipped; these are not passed cases. Final CI log `output/flight/pressure-ci-final.log` SHA-256 `4757d0912bc85c133c206f1f28a5f7a5db965ef241515c824edb80b66b7b68f4`. Final record checks and assurance diff are recorded separately at publication.
+
+**Deviations**
+
+The user's actual pressure-flight altitude remains unknown; no connection to the earlier Swiss walls is established. Native bytes11a92abd… remain unchanged and disagree with the stale build record, so build provenance and installed-aircraft fidelity are unverified. A fresh external Claude2.1.308 packet review times out with unknown model evidence: cross-provider peer remains pending, with its actual envelope recorded. This is an app repair, not milestone/release or training acceptance. The separate all-flat Hessen observation remains unresolved.
+
+**Insights**
+
+Sensor/reference validity and selectable instrument settings need separate domains; accepting truthful metadata must remain consistent across live state, recordings and continuation.
+
+## 2026-11-05 22:25 — Remove the regional restriction from custom GPS planning
+
+TODO: 2.0.157; R-NAV-5/R-WORLD-6.
+Agent: Codex orchestrator; code1 `world_gps_store`; code2 `world_gps_editor`;
+`world_gps_housekeeping`; independent `quality` and `panel_validate_final`.
+
+**Implementation notes**
+
+Custom fixes, anonymous waypoints and route roles now share finite worldwide
+WGS84 validation, latitude±90°/longitude±180°. Manual and picked editor coordinates
+use the same policy; southern/western metadata uses correct hemisphere labels.
+Existing count/name/provenance/ID and failed-operation atomicity remain.
+Historical published-source region validators stay unchanged.
+
+Store/editor are modular commits1c2998c and4b921b0. In the published slice these
+are new planning components; full map/menu/popup/bearing wiring remains a later
+map-UX publication slice. The working app already consumes the repaired modules.
+Core22tests pass in each tree; the actual editor/store component browser passes
+five groups. Root actual map/right-click/manual/target/invalid cases pass five
+groups, preserving paused native step/digest/fullstate, AP and active radios.
+Root596Node+25Python unit checks pass, no skips. Isolated sharedCI passes with
+491Node+22Python app tests,85assurance and11training; nine optional JSBSim and
+one Linux-only repository case skip on macOS, not accepted.
+See [scope/evidence](research/2026-11-05-world-gps-planning.md).
+
+**Deviations**
+
+Global custom planning does not enlarge the published airport/NAV/fix inventory,
+Mercator map-display or strict±89.5° flight-start bounds. No persistence, receiver
+or native model change. Native build provenance remains unverified. External
+Claude returned no review; peer acceptance stays pending, not replaced by local
+reviews. Full interactive main-branch map wiring is not accepted by this module PR.
+
+**Insights**
+
+Custom coordinates must not inherit a regional source inventory's envelope.
+Testing both editor and actual map creation catches independent validation paths.
+
+## 2026-11-05 22:09 — Keep simulation speed visible above the flight map
+
+TODO: 2.0.156; R-SIM-9/R-UX-2.
+Agent: Codex orchestrator; code1 `speed_overlay_css`; code2
+`speed_overlay_browser`; `speed_overlay_housekeeping`; independent `quality`
+and `panel_validate_final`.
+
+**Implementation notes**
+
+Badge layer changes3→7 above the map6 and below menu/dialog layers. Existing
+position and pointer pass-through remain. Browser component checks at1440×900
+and390×844 pass for SIM/REPLAY, map open/closed, paint order, map clicks and
+menu/modal priority; screenshots inspected. CSS source commit5a18ec5.
+See [bounded evidence](research/2026-11-05-speed-overlay-map.md).
+Required sharedCI passes with9optional JSBSim and one Linux-only case skipped
+on macOS; skips are not accepted. Foundation/link and final assurance gates
+accompany the document-only completion records.
+
+**Deviations**
+
+Chrome component verification, not full native/map-source or WebKit acceptance.
+No new permanent test or engine/data/dependency change. Peer pending under the
+existing batched gate. Separate branch is stacked on PR87 until it is merged.
+
+**Insights**
+
+The badge was hidden by a sibling stacking layer; raising only its layer keeps
+map interaction and current placement intact.
 
 ## 2026-11-05 21:53 — Predict terrain crossings and preload the flight direction
 
@@ -125,7 +249,6 @@ A prepared window must survive a crossed-boundary publication until required
 promotion. A divergent stall-warning publication needed its own executable hook
 regression. Actual flight tests also check AP capability before treating a no-hit
 result as loading evidence.
-
 
 ## 2026-11-05 20:09 — Repair vector terrain loading starvation and safe window retention
 

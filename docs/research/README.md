@@ -43,3 +43,5 @@ End with proposed implications, limitations and a handoff to product/orchestrato
 - [2026-11-05: Terrain horizon cliffs](2026-11-05-terrain-horizon-cliffs.md) — exterior transition, source/renderer separation and bounded runtime evidence.
 
 - [2026-11-05: Copernicus native/data foundation](2026-11-05-copernicus-native-integration.md) — bounded source service/native integration and independent decoder/runtime evidence; broader gates remain open.
+
+- [2026-11-05: Alps terrain and pressure diagnosis](2026-11-05-alps-terrain-pressure.md) — source/pressure separation and bounded high-altitude app repair.

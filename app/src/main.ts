@@ -1,3 +1,4 @@
+import { createCwsControls } from './cws-controls';
 import { worldCellAt } from '../../studies/e1-browser/sim/world-terrain.js';
 import { REGIONAL_FLIGHTS, isRegionalFlight } from './regional-flights';
 import { EDFE_RUNWAYS, airportOffset } from './airport-geometry';
@@ -171,6 +172,7 @@ let airborneSite: AirborneSite = 'edfe';
 const regionalTiles = new Map<string,TerrainGrid>();
 let terrainLoading = false;
 let mixtureCommand = 1, mixtureAutomatic = true, apDisconnectPending = false, cwsHeld = false;
+let cwsControls: ReturnType<typeof createCwsControls> | null = null;
 let autopilotCapturePending = false;
 let startupPreloadPending = false;
 const flightLocationStore = createFlightLocationStore();
@@ -289,7 +291,7 @@ function updateSessionUI() {
 const session = createSession({
   onTerrainTile(grid) { regionalTiles.set(grid.id,grid); },
   onTerrainRemove(id) { regionalTiles.delete(id); },
-  onTerrainLoading(loading) { terrainLoading=loading; if (!loading) scene?.setTerrainTiles?.([...regionalTiles.values()]); },
+  onTerrainLoading(loading) { terrainLoading=loading; if (loading) neutralize(); if (!loading) scene?.setTerrainTiles?.([...regionalTiles.values()]); },
   onState(workerState) {
     if (continuingReplay) return;
     const state = { ...radioPanel.snapshot(), ...workerState, systems_switch_mask: systemsPanel.snapshot() };
@@ -302,6 +304,7 @@ const session = createSession({
       verticalSpeedFpm += (1 - Math.exp(-dt / 0.5)) * (raw - verticalSpeedFpm);
     }
     previous = state; latest = state;
+    if (cwsHeld && state.kap_engaged !== 1) cwsControls?.releaseAll();
     if (!reviewing && ready && startupPreloadPending && scene) {
       startupPreloadPending = false;
       scene.preloadScenery?.(state);
@@ -525,14 +528,22 @@ const autopilotPanel = createAutopilotPanel({
   onCommand(command) {
     const release = (command.action === 'vertical' || command.action === 'cws') && command.value === 0;
     if (!release && (reviewing || (!controlsAvailable() && command.action !== 'disconnect'))) return;
-    if (command.action === 'cws') {
-      if (command.value === 0) { neutralize(); return; }
-      neutralize(); cwsHeld = true;
-    }
+    if (command.action === 'cws') { cwsControls?.setPanel(command.value === 1); return; }
     if (continuedAxes && command.action === 'ap') { continuedAxes = null; publishInput(); }
     apDisconnectPending = false; session.setKap140(command);
   },
   onOpen: neutralize, onClose: focusFlight,
+});
+cwsControls = createCwsControls({
+  target: document, cancelTarget: window,
+  canStart: event => running && !terrainLoading && latest?.kap_engaged === 1 && controlsAvailable() && !reviewing
+    && !editing(event.target) && !menuOpen() && !document.querySelector('dialog[open]')
+    && !(event.target instanceof Element && event.target.closest('.practice-map-panel,.flight-plan-overlay')),
+  beforeChange: neutralizeAxes,
+  onChange(held) {
+    cwsHeld = held; apDisconnectPending = false;
+    session.setKap140({ action: 'cws', value: held ? 1 : 0 });
+  },
 });
 const systemsPanel = createAircraftSystemsPanel({
   container: el('aircraft-systems'), opener: el<HTMLButtonElement>('systems-open'),
@@ -938,7 +949,7 @@ function publishInput() {
   el('joystick-knob').style.transform = `translate(${stickX * 46}px, ${-stickY * 46}px)`;
   document.querySelectorAll<HTMLElement>('[data-code]').forEach(button => button.classList.toggle('held', held(button.dataset.code!)));
 }
-function neutralize() {
+function neutralizeAxes() {
   continuedAxes = null;
   if (latest?.kap_profile === 1) session.setKap140({action:'vertical', value:0});
   if (failed || sceneFailed || groundCollisionStopped()) pointerYoke?.cancel();
@@ -949,7 +960,9 @@ function neutralize() {
     if (el('joystick').hasPointerCapture(pointer)) el('joystick').releasePointerCapture(pointer);
   }
   publishInput();
-  if (cwsHeld) { cwsHeld = false; session.setKap140({action: 'cws', value: 0}); }
+}
+function neutralize() {
+  if (!cwsControls?.releaseAll()) neutralizeAxes();
 }
 function pauseFlight() {
   if (mapDisposed) return;
@@ -1122,7 +1135,7 @@ function updatePointerHint(mode = sceneContainer.dataset.pointerMode ?? 'off'): 
   const centered = controlSettings.centeredTouchpad === true;
   el('pointer-mode').textContent = groundCollisionStopped() && !reviewing ? 'COLLISION VIEW · hold-drag to inspect'
     : reviewing ? (mode === 'look' ? 'REVIEW LOOK · release to keep view' : 'REVIEW · hold-drag: look · double-click: front')
-    : (autopilotCapturePending || latest?.kap_engaged) && !cwsHeld ? 'AUTOPILOT · P disconnects · CWS to hand-fly'
+    : (autopilotCapturePending || latest?.kap_engaged) && !cwsHeld ? 'AUTOPILOT · P disconnects · hold C to hand-fly'
     : mode === 'look' ? 'LOOKING · release keeps view · double-click: front'
     : centered ? (mode === 'yoke' ? 'CENTERED YOKE · click off · hold-drag to look' : 'CENTERED YOKE · click on · hold-drag to look')
     : mode === 'yoke' ? 'YOKE ACTIVE · hold-drag: look · double-click: front' : 'Click: yoke · hold-drag: look · double-click: front';
@@ -1372,5 +1385,5 @@ function animate(now: number) {
   requestAnimationFrame(animate);
 }
 publishInput(); updateSessionUI(); requestAnimationFrame(animate);
-addEventListener('pagehide', () => { flightLocationStore.flush(); document.removeEventListener('keydown', reviewSeekShortcut, true); document.removeEventListener('keydown', flightMapShortcut, true); document.removeEventListener('keydown', landmarkShortcut, true); flightAssists.dispose(); overlayPresentation.dispose();disposeMenuShortcuts(); disposeFullscreen(); mapDisposed = true; engineAudio.dispose(); audioControls?.dispose(); document.removeEventListener('click', activateEngineAudio, true); document.removeEventListener('keydown', activateEngineAudio, true); document.removeEventListener('keydown', soundShortcut, true); document.removeEventListener('keydown', engineShortcut, true); document.removeEventListener('keydown', parkingBrakeShortcut, true); groundCollisionPanel.dispose(); loadingPanel.dispose(); aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); flightWarningsPanel.dispose(); liveWarningMonitor.reset(); reviewWarningMonitor.reset(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); systemsPanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
+addEventListener('pagehide', () => { cwsControls?.dispose(); flightLocationStore.flush(); document.removeEventListener('keydown', reviewSeekShortcut, true); document.removeEventListener('keydown', flightMapShortcut, true); document.removeEventListener('keydown', landmarkShortcut, true); flightAssists.dispose(); overlayPresentation.dispose();disposeMenuShortcuts(); disposeFullscreen(); mapDisposed = true; engineAudio.dispose(); audioControls?.dispose(); document.removeEventListener('click', activateEngineAudio, true); document.removeEventListener('keydown', activateEngineAudio, true); document.removeEventListener('keydown', soundShortcut, true); document.removeEventListener('keydown', engineShortcut, true); document.removeEventListener('keydown', parkingBrakeShortcut, true); groundCollisionPanel.dispose(); loadingPanel.dispose(); aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); flightWarningsPanel.dispose(); liveWarningMonitor.reset(); reviewWarningMonitor.reset(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); systemsPanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
 void sceneReady;
