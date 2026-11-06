@@ -3,6 +3,23 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-06 02:31 — Verify the terrain display increment against merged main
+
+TODO: 2.0.162; R-WORLD-11/R-WORLD-9/R-SIM-2.
+Agent: Codex orchestrator; source implementation `alps_source`/`alps_renderer`; existing independent `quality`/`cws_validate` reviews retained for unchanged renderer/loader/geometry bodies.
+
+**Implementation notes**
+
+Integrate origin/mainc3d850a, preserving user-merged pressure, planning, CWS and overlay features and all174 complete dated entries from both parents. The renderer/provider/loader/geometry implementation bodies retain their frozen measured hashes; main gains the separately tested CWS integration. Structural check passes before full CI. The integrated full CI passes540Node+22Python application tests,85assurance and11training tests;9of23 optional JSBSim and one platform tool test skip. Log SHA-256 `ba275460bdf2878ca525d9d91f77cfac247d1e825db1114e5f446411753fdb5a`. The actual Worker/WASM four-case1200-step isolation proof is renewed against merged worker/pressure code, artifact SHA-256 `9e6ec1a53ecae1de4fa4854a00e605bf3574a9608127ef883b27480f119f81b8`.
+
+**Deviations**
+
+The earlier880-second real-source renderer proof and its exact source pins remain distinct from the newer root working-copy integration. The root has broader unpublished features and its complete snapshot CI exceeds the unchanged60000-node assurance bound; it is not represented as a full-root gate pass by this540-case feature-branch result. Native source-history safety guards remain and can conservatively rebuild at their separate bounds. Broader physical terrain/aircraft fidelity and peer remain open. The separate hidden-input repair is PR94; this terrain increment changes no aircraft coefficient or control gain.
+
+**Insights**
+
+Preserve complete shared records and test registrations when integrating merged feature stacks, then renew affected gates on the final target. Keep feature-branch, broader-working-copy, actual-source and synthetic-component observations distinct.
+
 ## 2026-11-06 01:43 — Retain distant elevation and scenery through moving overview windows
 
 TODO: 2.0.162; R-WORLD-11/R-WORLD-9/R-SIM-2.
