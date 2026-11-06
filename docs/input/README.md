@@ -178,3 +178,7 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-05: Swiss terrain walls and later missing pressure](2026-11-05-alps-terrain-walls.md)
 
 - [2026-11-05: Missing Hessen elevation after rebuild](2026-11-05-hessen-elevation-rebuild.md)
+
+- [2026-11-05: France GPS fix restriction](2026-11-05-france-gps-fix.md)
+ 
+- [2026-11-05: simulation speed above map](2026-11-05-speed-overlay-map.md)
