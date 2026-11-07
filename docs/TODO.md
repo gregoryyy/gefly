@@ -385,3 +385,5 @@ Task2.0.170 verification: [quality](reviews/2026-11-06-worldwide-airports-qualit
 - [x] 2.0.187 Add an airport-selected illustrative 3° approach line with runway-direction choice, source and terrain-height limitations, and independent visual verification. R-NAV-3. [Request](input/2026-11-06-airport-glidepath.md).
 - [x] 2.0.188 Keep keyboard steering and trim from disconnecting AP outside CWS while preventing stale held inputs; retain explicit disconnect and other controls. R-AP-1/R-INPUT-1. [Request](input/2026-11-06-ap-keyboard-input.md).
 - [x] 2.0.189 Add terrain-face shading to 3D vector OSM scenery without changing photographic or flat-study views, terrain loading or simulation state. R-AIRPORT-1/R-WORLD-11. [Request](input/2026-11-07-osm-terrain-relief.md).
+- [x] 2.0.190 Restore running flight in background on main, release transient inputs and preserve explicit pauses. R-SIM-2/R-INPUT-1. [Request](input/2026-11-07-main-background.md).
+- [x] 2.0.191 Restore the P/top-bar flight-plan overlay and map planning on main, with A controlling AP and robust retry. R-NAV-5/R-AP-2. [Request](input/2026-11-07-main-flight-plan.md).

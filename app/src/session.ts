@@ -459,6 +459,11 @@ export function createSession(callbacks: SessionCallbacks, options: { initial_ba
       userControls = true;
       controlsChanged = true;
     },
+    flushInput() {
+      if (disposed || restoring) return;
+      // Flush the neutral release before background timer throttling.
+      sendInput();
+    },
     dispose() {
       if (disposed) return;
       cancelRestore('Continuation cancelled because the flight session closed.');

@@ -216,3 +216,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [Airport 3° visual glidepath](2026-11-06-airport-glidepath.md).
 - [AP keyboard input](2026-11-06-ap-keyboard-input.md).
 - [OSM terrain relief](2026-11-07-osm-terrain-relief.md).
+- [Restore background flight on main](2026-11-07-main-background.md).
+- [Restore flight plan shortcut on main](2026-11-07-main-flight-plan.md).

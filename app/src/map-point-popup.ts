@@ -1,3 +1,4 @@
+import type { PlanRole } from './map-flight-plan-types';
 import { validFrequency, type RadioKind, type RadioReceiver } from './radio-nav';
 import './map-point-popup.css';
 import type { ApproachGuide } from './approach-guide.ts';
@@ -11,6 +12,7 @@ export interface MapPoint {
   readonly lat_deg: number;
   readonly source_label: string;
   readonly equipment?: string;
+  readonly custom?: true;
   readonly world_record_id?: string;
   readonly details?: readonly string[];
   readonly approach_guides?: readonly ApproachGuide[];
@@ -23,6 +25,7 @@ export interface MapPointActions {
   onTune(kind: RadioKind, receiver: RadioReceiver, channel_khz: number): void;
   /** A visual map target/bearing; this does not command aircraft guidance. */
   onGpsTarget(point: Readonly<MapPoint>): void;
+  onPlanPoint?(point: Readonly<MapPoint>, role: PlanRole): void;
 }
 
 /** Inert source text and standby-only actions; no radio or aircraft state lives here. */
@@ -99,5 +102,10 @@ export function createMapPointPopup(input: Readonly<MapPoint>, actions: MapPoint
   const target = node('button', 'GPS target'); target.type = 'button'; target.disabled = !validPosition;
   target.className = 'map-point-popup-target'; target.title = 'Set a visual map target and bearing';
   target.addEventListener('click', () => { if (validPosition) actions.onGpsTarget(point); });
-  section.append(target); return section;
+  section.append(target);
+  if (actions.onPlanPoint) for (const [role, label] of [['start', 'Set start'], ['waypoint', 'Add waypoint'], ['destination', 'Set destination']] as const) {
+    const button = node('button', label); button.type = 'button'; button.disabled = !validPosition;
+    button.addEventListener('click', () => { if (validPosition) actions.onPlanPoint?.(point, role); }); section.append(button);
+  }
+  return section;
 }

@@ -4,6 +4,9 @@ import type { ApproachGuide } from './approach-guide.ts';
 import { loadOfmOverlaySource } from './ofm-overlay-source.ts';
 import './ofm-map-overlay.css';
 
+import { createFlightPlanStore, planPoints, planLegs, pointNavigation } from './map-flight-plan';
+import { createFlightPlanPanel } from './map-flight-plan-panel';
+import type { FlightPlanPanelAction, PlannerPoint, PlanResult } from './map-flight-plan-types';
 import { loadMapLocationPreferences, saveMapLocationPreferences } from './map-location-preferences.ts';
 import { createWorldMapStyle, worldMapLayers, worldMapLabelLayers } from './world-map-style';
 /// <reference types="vite/client" />
@@ -32,6 +35,8 @@ import { worldAirportCellId, type WorldAirportSnapshot, type WorldNavaid, type W
 
 export interface PracticeMap {
   zoom(direction: 1 | -1): void;
+  getGpsTarget(): Readonly<PlannerPoint> | null;
+  setPlanVisible(visible: boolean): void;
   update(state: Readonly<FlightState>, path: readonly Readonly<FlightState>[], mode: 'live' | 'review'): void;
   setVisible(visible: boolean): void;
   setVector(enabled: boolean): void;
@@ -44,6 +49,9 @@ interface MapOptions {
   initialApproachGuide?: Readonly<ApproachGuide> | null;
   onApproachGuide?: (guide: ApproachGuide | null) => void;
   container: HTMLElement;
+  planContainer?: HTMLElement;
+  onPlanVisibilityChange?: (visible: boolean) => void;
+  onRequestMap?: () => void;
   onClose: () => void;
   onInteraction: () => void;
   onVectorChange?: (enabled: boolean) => void;
@@ -271,6 +279,13 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   let selectedPoint: Readonly<MapPoint> | null = null, pointPopup: Popup | null = null;
   let approachGuide: Readonly<ApproachGuide> | null = options.initialApproachGuide ?? null;
   let gpsTarget: Readonly<MapPoint> | null = null, gpsDataKey = '';
+  let pickingGpsFix = false;
+  const customFixMarkers: Marker[] = [], planPointMarkers: Marker[] = [];
+  let plannerMarkerKey = '', plannerRouteKey = '';
+  const planStore = createFlightPlanStore(() => {
+    if (gpsTarget?.custom && !planStore.getSnapshot().fixes.some(fix => fix.id === gpsTarget!.id)) gpsTarget = null;
+    gpsDataKey = ''; refreshPointSearch(); paintPlanner(); paintGpsTarget();
+  });
   let searchPosition: { lat: number; lon: number } | null = null;
   const fixesStatus = document.createElement('p'); fixesStatus.className = 'practice-map-navigation-status';
   fixesStatus.textContent = 'Loading historical navigation fixes…';
@@ -317,9 +332,38 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       pointPopup?.remove(); pointPopup = null; selectedPoint = null;
     }
     if (!locationTypes.has('nav')) navigationDetail.hidden = true;
-    paintedWorldNavaids = undefined; worldNavMarkerKey = ''; renderAirports(); paintNavigation(); paintWorldNavigation(); paintFixes(); onInteraction();
+    plannerMarkerKey = ''; paintedWorldNavaids = undefined; worldNavMarkerKey = ''; renderAirports(); paintNavigation(); paintWorldNavigation(); paintFixes(); paintPlanner(); onInteraction();
   } });
+  const planner = createFlightPlanPanel({ onAction: handlePlannerAction });
+  const planOverlay = document.createElement('section');
+  planOverlay.id = 'flight-plan-overlay'; planOverlay.className = 'flight-plan-overlay'; planOverlay.hidden = true;
+  planOverlay.setAttribute('aria-label', 'Flight plan');
+  const planHeading = document.createElement('header'); planHeading.className = 'flight-plan-overlay-heading';
+  const planTitle = document.createElement('strong'); planTitle.textContent = 'Flight plan';
+  const planPickCancel = document.createElement('button'); planPickCancel.type = 'button';
+  planPickCancel.textContent = 'Cancel picking'; planPickCancel.hidden = true;
+  planPickCancel.onclick = () => { handlePlannerAction({ type: 'cancel-pick' }); };
+  const planClose = document.createElement('button'); planClose.type = 'button'; planClose.textContent = '×';
+  planClose.setAttribute('aria-label', 'Close flight plan');
+  planClose.onclick = () => setPlanVisible(false, true);
+  planHeading.append(planTitle, planPickCancel, planClose); planOverlay.append(planHeading, planner.element);
+  (options.planContainer ?? container.parentElement ?? container).append(planOverlay);
+  function setPlanVisible(value: boolean, notify = false): void {
+    if (disposed || planOverlay.hidden === !value) return;
+    planOverlay.hidden = !value; planButton.setAttribute('aria-expanded', String(value));
+    if (!value && pickingGpsFix) { pickingGpsFix = false; updatePlannerPanel(); }
+    if (notify) options.onPlanVisibilityChange?.(value);
+  }
+  const planButton = document.createElement('button'); planButton.type = 'button';
+  planButton.textContent = 'Flight plan'; planButton.setAttribute('aria-label', 'Edit flight plan');
+  planButton.setAttribute('aria-controls', 'flight-plan-overlay'); planButton.setAttribute('aria-expanded', 'false');
+  planButton.onclick = () => { handlePlannerAction({ type: 'edit-plan' }); };
+  header.insertBefore(planButton, overlap);
+  const pickNotice = document.createElement('p'); pickNotice.className = 'practice-map-pick-notice';
+  pickNotice.textContent = 'Click a map position, then name and create the GPS fix.'; pickNotice.hidden = true;
+  viewport.append(pickNotice);
   extendedMenu.prepend(pointSearch.element, fixesStatus);
+  updatePlannerPanel();
   function airportPoint(airport: Airport): MapPoint {
     const worldAirport = worldAirportIds.has(airport.id);
     const runways = runwayByAirport.get(airport.id) ?? [];
@@ -351,7 +395,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       frequencies: [{ kind: 'nav', channel_khz: p.frequency_mhz ? Math.round(Number(p.frequency_mhz) * 1000) : Number(p.frequency_label.split(' ')[0]), label: p.equipment }] };
   }
   const fixPoint = (fix: MapFix): MapPoint => ({ ...fix, id: fix.name, kind: 'fix' });
-  function refreshPointSearch(): void { pointSearch.setPoints([...airports.map(airportPoint), ...navigationData.features.map(navigationPoint), ...(worldSnapshot?.navaids.map(worldNavaidPoint) ?? []), ...fixes.map(fixPoint)]); }
+  function refreshPointSearch(): void { pointSearch.setPoints([...airports.map(airportPoint), ...navigationData.features.map(navigationPoint), ...(worldSnapshot?.navaids.map(worldNavaidPoint) ?? []), ...fixes.map(fixPoint), ...planStore.getSnapshot().fixes]); }
   function refreshPointPopup(): void {
     if (!selectedPoint || !pointPopup) return;
     const point = selectedPoint, popup = pointPopup;
@@ -371,36 +415,143 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
         if (reviewing || !(options.canTuneCom?.() ?? true)) return;
         (kind === 'com' ? options.onTuneCom : options.onTuneNav)?.(receiver, channel); onInteraction();
       },
-      onGpsTarget(target) { gpsTarget = target; gpsDataKey = ''; paintGpsTarget(); onInteraction(); },
+      onGpsTarget(target) { setDirectTo(target); },
+      onPlanPoint(target, role) {
+        if (disposed || pointPopup !== popup || selectedPoint !== point || !content.isConnected || !popup.getElement().contains(content)) return;
+        const result = handlePlannerAction({ type: 'set-point', role, point: target });
+        feedback.textContent = result.ok ? `${target.id}: ${role} added to current flight plan.` : result.error;
+      },
     });
+    const feedback = document.createElement('p'); feedback.setAttribute('role', 'status'); content.append(feedback);
     popup.setDOMContent(content);
   }
   function openPoint(point: Readonly<MapPoint>, preserveWorldSelection = false): void {
     if (!preserveWorldSelection) { ++worldSelectionGeneration; selectedWorldHit = null; }
+    if (pickingGpsFix) { pickGpsPosition(point.lon_deg, point.lat_deg); return; }
     if (!map || disposed || !locationTypes.has(mapLocationType(point))) return;
     pointPopup?.remove(); selectedPoint = point;
     pointPopup = new Popup({ closeButton: true, closeOnClick: true, maxWidth: '290px', offset: 10 }).setLngLat([point.lon_deg, point.lat_deg]);
     refreshPointPopup(); pointPopup.addTo(map);
   }
-  function paintGpsTarget(): void {
+  function pickGpsPosition(lon: number, lat: number): void { pickingGpsFix = false; planner.setPickedPosition(lon, lat); updatePlannerPanel(); onInteraction(); }
+  function navigationTarget(): Readonly<PlannerPoint> | null {
+    const state = planStore.getSnapshot();
+    return state.activeLegIndex === null ? gpsTarget : state.waypoints[state.activeLegIndex] ?? state.destination;
+  }
+  function navigationText(): string {
+    const target = navigationTarget();
+    if (!target) return 'Select GPS target or navigate a complete flight plan.';
+    if (!frame) return `GPS ${target.id} · Aircraft position unavailable`;
+    const nav = pointNavigation({ lon_deg: frame.position[0], lat_deg: frame.position[1], heading_true_deg: frame.heading_deg }, target);
+    if (!nav) return `GPS ${target.id} · Navigation unavailable`;
+    const degrees = (value: number) => (Math.round(value) % 360).toString().padStart(3, '0');
+    const bearing = nav.bearing_true_deg === null ? (nav.distance_nm < 1e-6 ? 'BRG — (at fix)' : 'BRG — (course unavailable)') : `BRG ${degrees(nav.bearing_true_deg)}°T`;
+    const turn = nav.heading_error_deg === null ? '' : ` · ${nav.heading_error_deg < 0 ? 'L' : 'R'} ${Math.abs(nav.heading_error_deg).toFixed(0)}°`;
+    const prefix = planStore.getSnapshot().activeLegIndex === null ? 'GPS' : 'PLAN GPS';
+    return `${prefix} ${target.id} · ${bearing} · ${nav.distance_nm.toFixed(1)} NM · HDG ${degrees(frame.heading_deg)}°T${turn}${reviewing ? ' · Current plan / Review position' : ''}`;
+  }
+  function updatePlannerPanel(): void {
+    const state = planStore.getSnapshot();
+    const view = { state, legs: planLegs(state), navigationText: navigationText(), picking: pickingGpsFix, reviewing };
+    planner.update(view);
+    pickNotice.hidden = !pickingGpsFix; container.dataset.pickingGpsFix = String(pickingGpsFix);
+    planOverlay.dataset.picking = String(pickingGpsFix); planPickCancel.hidden = !pickingGpsFix;
+    planTitle.textContent = pickingGpsFix ? 'Pick a map position' : 'Flight plan';
+  }
+  function setDirectTo(point: Readonly<PlannerPoint>): PlanResult {
+    const custom = planStore.getSnapshot().fixes.some(fix => fix.id === point.id && fix.lon_deg === point.lon_deg && fix.lat_deg === point.lat_deg && fix.source_label === point.source_label);
+    if ((point as MapPoint).custom && !custom) return { ok: false, error: 'This custom GPS fix no longer exists.' };
+    gpsTarget = Object.freeze({ ...point, ...(custom ? { custom: true as const } : {}) }); planStore.stopNavigation();
+    gpsDataKey = 'dirty'; paintGpsTarget(); onInteraction();
+    return { ok: true, value: undefined };
+  }
+  function handlePlannerAction(action: FlightPlanPanelAction): PlanResult<unknown> {
+    const ok = { ok: true as const, value: undefined };
+    let result: PlanResult<unknown> = ok;
+    switch (action.type) {
+      case 'create-fix': result = planStore.createFix(action.name, action.lat_deg, action.lon_deg); break;
+      case 'remove-fix': result = planStore.removeFix(action.id); break;
+      case 'set-point': result = planStore.setPoint(action.role, action.point); break;
+      case 'remove-waypoint': result = planStore.removeWaypoint(action.index); break;
+      case 'move-waypoint': result = planStore.moveWaypoint(action.index, action.direction); break;
+      case 'activate-leg': result = planStore.activateLeg(action.index); if (result.ok) gpsTarget = null; break;
+      case 'next-leg': result = planStore.nextLeg(); break;
+      case 'stop-plan': planStore.stopNavigation(); break;
+      case 'clear-plan': planStore.clearPlan(); break;
+      case 'direct-to': result = setDirectTo(action.point); break;
+      case 'pick-map':
+        if (!visible) options.onRequestMap?.();
+        if (!visible) return { ok: false, error: 'Open the flight map to pick a position.' };
+        pickingGpsFix = true; break;
+      case 'cancel-pick': pickingGpsFix = false; break;
+      case 'edit-plan': {
+        setPlanVisible(true, true);
+        const details = planner.element.querySelector('details'); if (details) details.open = true;
+        planOverlay.scrollTop = 0;
+        planner.element.querySelector<HTMLInputElement>('input:not([disabled])')?.focus({ preventScroll: true }); break;
+      }
+      case 'fit-plan': {
+        const points = planPoints(planStore.getSnapshot());
+        if (!map || !points.length) return { ok: false, error: 'Add a start, waypoint or destination first.' };
+        const bounds = new LngLatBounds(); points.forEach(point => bounds.extend([point.lon_deg, point.lat_deg]));
+        setFollowing(false); map.fitBounds(bounds, { padding: 45, maxZoom: 13, duration: 0 }); break;
+      }
+    }
+    if (result.ok) { gpsDataKey = 'dirty'; paintPlanner(); paintGpsTarget(); onInteraction(); }
+    return result;
+  }
+  function paintPlanner(): void {
+    updatePlannerPanel();
     if (!ready || !map) return;
-    gpsOverlay.hidden = !gpsTarget || !frame;
-    const key = gpsTarget && frame ? `${gpsTarget.id}/${gpsTarget.lon_deg}/${gpsTarget.lat_deg}/${frame.position.map(n => n.toFixed(5)).join('/')}` : '';
-    if (key === gpsDataKey) return;
-    gpsDataKey = key;
-    const features = gpsTarget && frame ? [
-      { type: 'Feature' as const, properties: {}, geometry: { type: 'LineString' as const, coordinates: [frame.position, [gpsTarget.lon_deg, gpsTarget.lat_deg]] } },
-      { type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: [gpsTarget.lon_deg, gpsTarget.lat_deg] } },
-    ] : [];
-    (map.getSource('gps-target') as GeoJSONSource).setData({ type: 'FeatureCollection', features });
-    if (gpsTarget && frame) {
-      const rad = Math.PI / 180, lon = frame.position[0] * rad, lat = frame.position[1] * rad;
-      const tlat = gpsTarget.lat_deg * rad, dl = gpsTarget.lon_deg * rad - lon;
-      const bearing = (Math.atan2(Math.sin(dl) * Math.cos(tlat), Math.cos(lat) * Math.sin(tlat) - Math.sin(lat) * Math.cos(tlat) * Math.cos(dl)) / rad + 360) % 360;
-      gpsReadout.textContent = `GPS ${gpsTarget.id} · ${Math.round(bearing).toString().padStart(3, '0')}°T · ${(distanceMeters(lat, lon, tlat, gpsTarget.lon_deg * rad) / 1852).toFixed(1)} NM`;
+    const state = planStore.getSnapshot(), points = planPoints(state), legs = planLegs(state);
+    const key = JSON.stringify([points, state.activeLegIndex]);
+    if (key !== plannerRouteKey) {
+      plannerRouteKey = key;
+      (map.getSource('flight-plan-route') as GeoJSONSource).setData({ type: 'FeatureCollection', features:
+        legs.map(leg => ({ type: 'Feature', properties: { leg: leg.index, active: leg.index === state.activeLegIndex },
+          geometry: { type: 'LineString', coordinates: [[leg.from.lon_deg, leg.from.lat_deg], [leg.to.lon_deg, leg.to.lat_deg]] } })) });
+      planPointMarkers.splice(0).forEach(marker => marker.remove());
+      points.forEach((point, index) => {
+        const role = state.start && index === 0 ? 'Start' : state.destination && index === points.length - 1 ? 'Destination' : `Waypoint ${state.start ? index : index + 1}`;
+        const button = document.createElement('button'); button.type = 'button'; button.className = 'practice-map-plan-point';
+        button.textContent = `${role === 'Start' ? 'S' : role === 'Destination' ? 'D' : role.split(' ')[1]} · ${point.id}`;
+        button.dataset.planPointId = point.id;
+        button.setAttribute('aria-label', `Flight plan ${role.toLowerCase()} ${point.name}`);
+        button.dataset.active = String(state.activeLegIndex !== null && index === state.activeLegIndex + 1);
+        button.onclick = event => { event.stopPropagation(); openPoint(point); onInteraction(); };
+        planPointMarkers.push(new Marker({ element: button, anchor: 'top', offset: [0, 7] }).setLngLat([point.lon_deg, point.lat_deg]).addTo(map!));
+      });
+    }
+    const markers = locationTypes.has('fix') ? state.fixes.filter(fix => !points.some(point => point.id === fix.id
+      && point.lon_deg === fix.lon_deg && point.lat_deg === fix.lat_deg && point.source_label === fix.source_label)) : [];
+    const markerKey = JSON.stringify(markers);
+    if (markerKey !== plannerMarkerKey) {
+      plannerMarkerKey = markerKey; customFixMarkers.splice(0).forEach(marker => marker.remove());
+      for (const fix of markers) {
+        const button = document.createElement('button'); button.type = 'button'; button.className = 'practice-map-custom-fix';
+        button.textContent = `◇ ${fix.name}`; button.setAttribute('aria-label', `Select custom GPS fix ${fix.name}`);
+        button.dataset.customFixId = fix.id;
+        button.onclick = event => { event.stopPropagation(); openPoint(fix); onInteraction(); };
+        customFixMarkers.push(new Marker({ element: button, anchor: 'bottom' }).setLngLat([fix.lon_deg, fix.lat_deg]).addTo(map));
+      }
     }
   }
-  gpsClear.onclick = () => { gpsTarget = null; gpsDataKey = 'clear'; paintGpsTarget(); onInteraction(); };
+  function paintGpsTarget(): void {
+    updatePlannerPanel();
+    if (!ready || !map) return;
+    const target = navigationTarget();
+    gpsOverlay.hidden = !target;
+    const key = target ? `${target.id}/${target.lon_deg}/${target.lat_deg}/${frame?.position.join('/')}/${frame?.heading_deg}/${reviewing}` : '';
+    if (key === gpsDataKey) return;
+    gpsDataKey = key;
+    const features = target && frame ? [
+      { type: 'Feature' as const, properties: {}, geometry: { type: 'LineString' as const, coordinates: [frame.position, [target.lon_deg, target.lat_deg]] } },
+      { type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: [target.lon_deg, target.lat_deg] } },
+    ] : [];
+    (map.getSource('gps-target') as GeoJSONSource).setData({ type: 'FeatureCollection', features });
+    gpsReadout.textContent = navigationText();
+  }
+  gpsClear.onclick = () => { gpsTarget = null; planStore.stopNavigation(); gpsDataKey = 'clear'; paintGpsTarget(); onInteraction(); };
   function paintFixes(): void {
     if (!map || !ready) return;
     const matches = locationTypes.has('fix') ? fixes : [];
@@ -463,6 +614,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   airportType.addEventListener('change', renderAirports);
   // Keep map and search keyboard gestures away from flight-control shortcuts.
   const stopKey = (event: KeyboardEvent) => event.stopPropagation();
+  planOverlay.addEventListener('pointerdown', onInteraction); planOverlay.addEventListener('focusin', onInteraction);
+  planOverlay.addEventListener('keydown', stopKey); planOverlay.addEventListener('keyup', stopKey);
   container.addEventListener('pointerdown', onInteraction);
   container.addEventListener('focusin', onInteraction);
   container.addEventListener('keydown', stopKey);
@@ -763,6 +916,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
 
   const controller: PracticeMap = {
     zoom(direction) { if (!disposed && visible && ready) { onInteraction(); changeZoom(direction); } },
+    getGpsTarget() { return disposed ? null : navigationTarget(); },
+    setPlanVisible,
     toggleOverlap() {
       if (disposed) return;
       const enabled = container.dataset.extendedMenu !== 'true';
@@ -806,6 +961,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       }
       readout.textContent = `${Math.abs(latitude_deg).toFixed(4)}° ${latitude_deg < 0 ? 'S' : 'N'}  ${Math.abs(longitude_deg).toFixed(4)}° ${longitude_deg < 0 ? 'W' : 'E'}  ·  ${(Math.round(frame.heading_deg) % 360).toString().padStart(3, '0')}° true`;
       if (ready && !failed) status.hidden = true;
+      if (!visible) updatePlannerPanel();
       // Render failures propagate so the host can dispose and offer a retry.
       paint();
     },
@@ -823,7 +979,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     },
     dispose() {
       if (disposed) return;
-      disposed = true; pointPopup?.remove(); pointSearch.dispose(); fixMarkers.splice(0).forEach(marker => marker.remove());
+      disposed = true; pointPopup?.remove(); pointSearch.dispose(); planner.dispose(); planOverlay.remove(); customFixMarkers.splice(0).forEach(marker => marker.remove()); planPointMarkers.splice(0).forEach(marker => marker.remove()); fixMarkers.splice(0).forEach(marker => marker.remove());
       abort.abort(); worldLoader?.dispose(); ++worldSelectionGeneration; ++worldwideSearchGeneration; worldwideSearchHits.clear(); comPanel?.dispose();
       observer.disconnect();
       removers.forEach((remove) => remove());
@@ -848,6 +1004,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       sources: {
         ...createWorldMapStyle().sources,
         'navigation-fixes': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
+        'flight-plan-route': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
         'gps-target': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
         basemap: { type: 'raster', tiles: ['/scenery/map/{z}/{x}/{y}.png'], tileSize: 256, minzoom: 5, maxzoom: 16, bounds: [...AIRFIELD_BOUNDS] },
         imagery: { type: 'raster', tiles: ['/scenery/imagery/{z}/{x}/{y}.png'], tileSize: 512, minzoom: 7, maxzoom: 15, bounds: [6, 47, 14, 51.75] },
@@ -863,6 +1020,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
         { id: 'basemap', type: 'raster', source: 'basemap', layout: { visibility: 'none' }, paint: { 'raster-fade-duration': 0 } },
         { id: 'imagery', type: 'raster', source: 'imagery', layout: { visibility: 'none' }, paint: { 'raster-fade-duration': 0 } },
         { id: 'navigation-fixes', type: 'circle', source: 'navigation-fixes', minzoom: 8, paint: { 'circle-radius': 3, 'circle-color': '#e3a1e8', 'circle-stroke-color': '#34203e', 'circle-stroke-width': 1 } },
+        { id: 'flight-plan-route-casing', type: 'line', source: 'flight-plan-route', paint: { 'line-color': '#123342', 'line-width': 8, 'line-opacity': .95 } },
+        { id: 'flight-plan-route-line', type: 'line', source: 'flight-plan-route', paint: { 'line-color': ['case', ['get', 'active'], '#ffdb6c', '#6fd9ff'], 'line-width': ['case', ['get', 'active'], 5, 3.5] } },
         { id: 'gps-target-line', type: 'line', source: 'gps-target', filter: ['==', ['geometry-type'], 'LineString'], paint: { 'line-color': '#ff8af1', 'line-width': 2, 'line-dasharray': [3, 2] } },
         { id: 'gps-target-point', type: 'circle', source: 'gps-target', filter: ['==', ['geometry-type'], 'Point'], paint: { 'circle-radius': 7, 'circle-color': '#ff8af1', 'circle-stroke-color': '#fff', 'circle-stroke-width': 1 } },
         { id: 'airfields', type: 'circle', source: 'airfields', paint: {
@@ -938,6 +1097,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     map.on('click', 'navigation-fixes', event => {
       const fix = fixes.find(f => f.id === event.features?.[0]?.properties.fixId); if (fix) { openPoint(fixPoint(fix)); onInteraction(); }
     });
+    map.on('click', event => { if (pickingGpsFix) pickGpsPosition(event.lngLat.lng, event.lngLat.lat); });
     map.on('dragstart', () => { setFollowing(false); onInteraction(); });
     map.on('zoomstart', (event) => { if (event.originalEvent) { setFollowing(false); onInteraction(); } });
     try {
@@ -1002,7 +1162,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       paintNavigation();
       paintWorldNavigation(); requestWorldCenter();
       paintFixes();
-      gpsDataKey = '';
+      gpsDataKey = ''; plannerRouteKey = ''; plannerMarkerKey = ''; paintPlanner();
       paint();
     });
   } catch {

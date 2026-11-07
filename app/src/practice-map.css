@@ -113,3 +113,10 @@
 
 .practice-map-panel .maplibregl-ctrl-attrib { max-width: calc(100% - 70px); background: #102532e8; color: #b7cbd2; font-size: 8px; line-height: 12px; }
 .practice-map-panel .maplibregl-ctrl-attrib a { color: inherit; }
+.practice-map-custom-fix { background: #292036ee; color: #ffbcf4; border: 1px solid #ff8af1; border-radius: 4px; padding: 3px 5px; font-size: 10px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.practice-map-pick-notice { position: absolute; top: 76px; left: 8px; right: 8px; z-index: 4; margin: 0; padding: 6px; color: #ffe8b0; background: #252d37ee; pointer-events: none; font-size: 11px; }
+.practice-map-pick-notice[hidden] { display: none; }
+.practice-map-panel[data-picking-gps-fix="true"] .maplibregl-canvas { cursor: crosshair; }
+
+.practice-map-plan-point { padding: 3px 5px; color: #c0f0ff; background: #102e3eee; border: 1px solid #6fd9ff; border-radius: 3px; font: 700 11px ui-monospace, monospace; }
+.practice-map-plan-point[data-active="true"] { border-color: #ffdb6c; color: #ffdb6c; }

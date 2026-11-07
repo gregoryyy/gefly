@@ -3,6 +3,41 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-07 04:09 — Restore flight plan and background flight on main
+
+TODO: 2.0.190/2.0.191; R-SIM-2/R-INPUT-1/R-NAV-5/R-AP-2. Agent: Codex
+orchestrator; main-based implementation and browser tests `next_tasks`;
+independent quality `continuity_quality`; independent browser validation
+`continuity_validate`. The feature branch includes PR #117 as an ancestor to
+preserve both histories and avoid shared-record conflicts.
+
+**Implementation notes**
+
+P and the top-bar control open the current plan overlay independently of the
+map; A retains AP capture/disconnect. The existing plan store, map route and
+point actions are connected. Failed planner initialization/update clears the
+open state, presents a visible error and allows one-P retry, without erasing
+unrelated notices. Focus loss and hidden visibility synchronously release
+transient inputs without pausing running flight; explicit Pause, Review and
+other stops retain their behavior.
+
+Independent Chrome validation passed four flight-plan/AP groups, three planner
+failure/retry groups and six real hidden-tab native-worker groups. The latter
+verified fixed-step progression, input release, latched controls and explicit
+pause/Review; the worldwide airport browser passed ten groups with allowances
+for unrelated features absent from main. TypeScript, production build and 25
+focused plan/AP tests passed on the pre-merge implementation. PR #117's shaded
+terrain was reviewed and tested separately; its source did not change here.
+
+**Deviations**
+
+Hidden-tab observation covered short 1–2 second intervals, not prolonged
+browser throttling, suspension or OS sleep. Fixture scenery was used. This does
+not establish full R-NAV-5 acceptance: unrelated GPS-instrument integration,
+right-click creation and other root-only map features remain separate. Browser
+and simulation results do not establish aircraft or training fidelity.
+Cross-provider peer review is pending.
+
 ## 2026-11-07 04:01 — Shade OSM terrain faces in the 3D view
 
 TODO: 2.0.189; R-AIRPORT-1/R-WORLD-11. Agent: Codex orchestrator;
