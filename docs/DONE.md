@@ -28,8 +28,8 @@ Independent validation accepted product-level Swiss OGD terms for the composite,
 without claiming an independent licence to raw Planet imagery. Configured live
 Vite fetched real Zurich and Vienna images and a partial Austrian border tile.
 Independent Chrome fixture checks on the integrated branch passed four cases:
-3D/2D pixels in both cities, attribution metadata/order/mode switches, 502 and transparent
-fallback, repeated outage/recovery and unchanged paused native state. During two
+3D/2D pixels in both cities, visible provider credits and attribution links,
+order/mode switches, 502 and transparent fallback, repeated outage/recovery and unchanged paused native state. During two
 five-second Swiss-blocked observations, Swiss made zero requests; the unaffected
 Austrian layer made requests with no repeated path within either window. Sixteen focused proxy/client tests and
 the overlay first-interaction regression passed. Production build and
@@ -39,8 +39,8 @@ TypeScript checks passed on the relevant snapshots.
 
 A Swiss real-provider view remained partially filled after 14 seconds in one
 fixture-heavy test; sustained load, real-network throughput, all geographic
-coverage, precise borders, visible final-port credit presentation, WebKit/VS Code
-and live-flight streaming were not established. Browser fixture images are synthetic; real-source tile sampling is
+coverage, precise borders, WebKit/VS Code and live-flight streaming were not
+established. Browser fixture images are synthetic; real-source tile sampling is
 limited. The first isolated browser lacked the ignored engine build; copied
 runtime files enabled the rerun, but engine build provenance was not verified.
 Default Python may lack Pillow; setup and `PYTHON` override are documented.
