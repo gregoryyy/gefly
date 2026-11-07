@@ -505,3 +505,12 @@ Natural Earth Admin 0 1:10m v5.1.1, public domain; see
 [service research](research/2026-11-07-swiss-austrian-imagery.md). The mask is
 generalized and conservatively inset, not a surveyed footprint. Pillow 11.2.1
 is the existing local imagery decoder; no new npm dependency is introduced.
+
+Official NRW orthophotos are provided under Datenlizenz Deutschland Zero 2.0;
+Berlin/Brandenburg's live service specifies © GeoBasis-DE/LGB,
+dl-de/by-2-0 and © Geoportal Berlin, dl-de/by-2-0; another official metadata
+page lists Berlin as dl-de/zero-2-0, so the current service's attribution is
+used. The dataset URI is https://registry.gdi-de.org/id/de.bb.metadata/253b7d3d-6b42-47dc-b127-682de078b7ae. The services are streamed,
+not bundled. Dates, service availability and source footprints vary; the
+increment is not nationwide German coverage. See the [NRW inventory](https://www.sig-gr.eu/de/outils-donnees/convention-echange-donnees/donnees-geographiques-nrw.html)
+and [Berlin/Brandenburg metadata](https://geoportal.brandenburg.de/detailansichtdienst/render?url=https%3A%2F%2Fgeoportal.brandenburg.de%2Fgs-json%2Fxml%3Ffileid%3D7a503f0f-db46-4772-80e3-b27733fd7acd&view=gdibb).

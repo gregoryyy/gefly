@@ -15,13 +15,13 @@ from PIL import Image, ImageDraw
 Image.MAX_IMAGE_PIXELS = 256 * 256
 LIMIT = 2 * 1024 * 1024
 source, z, x, y = sys.argv[1], *map(int, sys.argv[2:])
-if source not in ('ch', 'at') or not 7 <= z <= 20 or not 0 <= x < 2**z or not 0 <= y < 2**z:
+if source not in ('ch', 'at', 'nrw', 'bb') or not 7 <= z <= 20 or not 0 <= x < 2**z or not 0 <= y < 2**z:
     raise ValueError('invalid tile')
 body = sys.stdin.buffer.read(LIMIT + 1)
 if not 0 < len(body) <= LIMIT:
     raise ValueError('invalid image size')
 im = Image.open(io.BytesIO(body))
-if im.size != (256, 256) or im.format != ('PNG' if source == 'ch' else 'JPEG'):
+if im.size != (256, 256) or im.format != ('JPEG' if source == 'at' else 'PNG'):
     raise ValueError('invalid image format or dimensions')
 im.load()
 image = im.convert('RGBA')

@@ -219,3 +219,4 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [Restore background flight on main](2026-11-07-main-background.md).
 - [Restore flight plan shortcut on main](2026-11-07-main-flight-plan.md).
 - [Swiss and Austrian photographic scenery](2026-11-07-swiss-austrian-imagery.md).
+- [Additional German photographic scenery](2026-11-07-german-state-imagery.md).

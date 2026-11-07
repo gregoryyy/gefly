@@ -600,3 +600,9 @@ Python/Pillow is a local scenery dependency; `PYTHON` may select an interpreter.
 Country tiles are requested on visual demand and are not admitted to the
 existing persistent service-worker cache or predictive prefetch. Their source
 terms, attribution and boundary limitations are recorded in the imagery note.
+
+The same bounded country service additionally allows canonical `nrw` and `bb`
+identities, routed only to fixed official NRW and Berlin/Brandenburg WMS hosts.
+Their PNG alpha is retained; separate breaker states and source errors cannot
+turn an unavailable provider into an opaque map replacement. The same network,
+decoder, cache and disclosure boundaries apply.
