@@ -12,6 +12,9 @@ export const COUNTRY_IMAGERY = Object.freeze([
   Object.freeze({ id: 'bb' as const, name: 'Berlin / Brandenburg', bounds: [11.1, 51.2, 15.1, 53.7] as const,
     attribution: '© <a href="https://registry.gdi-de.org/id/de.bb.metadata/253b7d3d-6b42-47dc-b127-682de078b7ae">GeoBasis-DE/LGB</a>, <a href="https://www.govdata.de/dl-de/by-2-0">dl-de/by-2-0</a>; © <a href="https://www.berlin.de/geoportal/">Geoportal Berlin</a>, <a href="https://www.govdata.de/dl-de/by-2-0">dl-de/by-2-0</a>',
   }),
+  Object.freeze({ id: 'es' as const, name: 'Spain PNOA 2024 (partial coverage)', bounds: [-18.3, 27.5, 4.4, 43.9] as const,
+    attribution: 'Obra derivada de <a href="https://pnoa.ign.es/pnoa-imagen/visualizadores-y-servicios-web">PNOA 2024</a> <a href="https://creativecommons.org/licenses/by/4.0/">CC-BY 4.0</a> <a href="https://www.scne.es/">scne.es</a>',
+  }),
 ]);
 
 export type PhotoCountry = typeof COUNTRY_IMAGERY[number]['id'];

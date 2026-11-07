@@ -25,6 +25,10 @@ function inspect(bytes:Buffer): {size:number[];alpha:number[];pixel:number[]} {
   const r=spawnSync('python3',['-c',"from PIL import Image; import io,json,sys; im=Image.open(io.BytesIO(sys.stdin.buffer.read())).convert('RGBA');print(json.dumps({'size':im.size,'alpha':im.getchannel('A').getextrema(),'pixel':im.getpixel((128,128))}))"],{input:bytes});
   assert.equal(r.status,0,String(r.stderr));return JSON.parse(r.stdout.toString());
 }
+function inspectAt(bytes:Buffer, x:number, y:number): number[] {
+  const r=spawnSync('python3',['-c',`from PIL import Image; import io,json,sys; im=Image.open(io.BytesIO(sys.stdin.buffer.read())).convert('RGBA');print(json.dumps(im.getpixel((${x},${y}))))`],{input:bytes});
+  assert.equal(r.status,0,String(r.stderr));return JSON.parse(r.stdout.toString());
+}
 const endpoint=(country:string,z:number,x:number,y:number)=>`/scenery/photo-country/${country}/${z}/${x}/${y}.png`;
 function tile(lat:number,lon:number,z=14):[number,number,number] {
   const n=2**z; return [z,Math.floor((lon+180)/360*n),Math.floor((1-Math.asinh(Math.tan(lat*Math.PI/180))/Math.PI)/2*n)];
@@ -100,6 +104,50 @@ test('Austrian border mask excludes outside and bounds high-zoom processing',asy
   const start=Date.now(), edge=request(mw,endpoint('at',z,x,y));await edge.finished;assert.equal(edge.status,200);assert.deepEqual(inspect(edge.body).alpha,[0,0]);assert(Date.now()-start<20000,'deep zoom boundary processing is bounded');
   const vx=Math.floor((16.37+180)/360*n),vy=Math.floor((1-Math.asinh(Math.tan(48.208*Math.PI/180))/Math.PI)/2*n);
   const inside=request(mw,endpoint('at',z,vx,vy));await inside.finished;assert.equal(inside.status,200);assert.deepEqual(inspect(inside.body).pixel,[255,255,255,255]);mw.dispose();
+});
+
+test('Spain PNOA 2024 uses fixed WMS bounding boxes and preserves source alpha',async()=>{
+  const generated=spawnSync('python3',['-c',"from PIL import Image,ImageDraw; import io,sys; im=Image.new('RGBA',(256,256),(0,0,0,0));ImageDraw.Draw(im).rectangle((128,0,255,255),fill=(255,0,0,255));s=io.BytesIO();im.save(s,'PNG');sys.stdout.buffer.write(s.getvalue())"]);assert.equal(generated.status,0,String(generated.stderr));
+  const urls:string[]=[];
+  const mw=createCountryImageryMiddleware({fetcher:async input=>{urls.push(String(input));return new Response(generated.stdout,{headers:{'content-type':'image/png'}});}});
+  for (const [z,x,y] of [[6,32,22],[14,8058,6473],[14,7750,6500]] as const) {
+    const r=request(mw,endpoint('es',z,x,y));await r.finished;
+    assert.equal(r.status,200);assert.deepEqual(inspect(r.body).alpha,[0,0]);
+  }
+  assert.equal(urls.length,0);
+  for(const [lat,lon] of [[27.9319,-15.3866],[28.9455,-13.6052],[39.55,2.74],[40.42,-3.7]] as const) {
+    for(const z of [7,14,20]) {
+      const n=2**z,fx=(lon+180)/360*n,fy=(1-Math.asinh(Math.tan(lat*Math.PI/180))/Math.PI)/2*n,x=Math.floor(fx),y=Math.floor(fy);
+      const r=request(mw,endpoint('es',z,x,y));await r.finished;
+      assert.equal(r.status,200,`${lat},${lon} z${z}`);
+      assert.deepEqual(inspect(r.body).alpha,[0,255]);assert.equal(inspectAt(r.body,20,128)[3],0);assert.equal(inspectAt(r.body,220,128)[3],255);
+      const u=new URL(urls.at(-1)!);assert.equal(u.origin,'https://www.ign.es');
+      assert.equal(u.pathname,'/wms/pnoa-historico');assert.equal(u.searchParams.get('LAYERS'),'PNOA2024');assert.equal(u.searchParams.get('CRS'),'EPSG:3857');
+      assert.equal(u.searchParams.get('TRANSPARENT'),'TRUE');assert.equal(u.searchParams.get('FORMAT'),'image/png');
+      const b=u.searchParams.get('BBOX')!.split(',').map(Number), half=20037508.342789244, span=40075016.68557849/n;
+      for(const [actual,expected] of b.map((v,i)=>[v,[-half+x*span,half-(y+1)*span,-half+(x+1)*span,half-y*span][i]])) assert(Math.abs(actual-expected)<0.000001);
+    }
+  }
+  mw.dispose();
+});
+
+test('Spain source outage is isolated from Swiss photo and suppresses retry bursts',async()=>{
+  let calls=0,clock=1000;const png=image('PNG');
+  const mw=createCountryImageryMiddleware({now:()=>clock,fetcher:async input=>{
+    calls++;return String(input).includes('ign.es')?new Response(null,{status:503}):new Response(png,{headers:{'content-type':'image/png'}});
+  },processor:async (_c,_z,_x,_y,b)=>({bytes:b,empty:false})});
+  for(let i=0;i<3;i++){const r=request(mw,endpoint('es',14,8312+i,6228));await r.finished;assert.equal(r.status,502);}
+  const blocked=request(mw,endpoint('es',14,8317,6228));await blocked.finished;assert.equal(blocked.status,503);assert.equal(calls,3);
+  const ch=request(mw,endpoint('ch',10,536,358));await ch.finished;assert.equal(ch.status,200);assert.equal(calls,4);
+  clock+=30001;const probe=request(mw,endpoint('es',14,8318,6228));await probe.finished;assert.equal(probe.status,502);assert.equal(calls,5);mw.dispose();
+});
+
+test('Spain derivative proxy exposes a fixed source and attribution description',async()=>{
+  const mw=createCountryImageryMiddleware();
+  const r=request(mw,'/scenery/photo-country/es/metadata.json');await r.finished;assert.equal(r.status,200);
+  const data=JSON.parse(r.body.toString());assert.equal(data.attribution,'Obra derivada de PNOA 2024 CC-BY 4.0 scne.es');assert.equal(data.sourceLayer,'PNOA2024');assert.equal(data.sourceService,'https://www.ign.es/wms/pnoa-historico');
+  for(const url of ['/scenery/photo-country/es/metadata.json?x=1','/scenery/photo-country/es/metadata.json/extra']) {const bad=request(mw,url);await bad.finished;assert.equal(bad.status,404);}
+  mw.dispose();
 });
 
 test('bad upstream MIME, dimensions, body and redirects fail without fabricated coverage',async()=>{

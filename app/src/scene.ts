@@ -1,6 +1,7 @@
 import { createOsmReliefMaterial, supportsOsmRelief } from './osm-relief.ts';
 import { COUNTRY_IMAGERY, COUNTRY_PHOTO_MAX_LEVEL, COUNTRY_PHOTO_MIN_LEVEL, countryPhotoCandidates, countryPhotoUrl, type PhotoCountry } from './country-imagery.ts';
 import { countryPhotoBackoff } from './country-photo-backoff.ts';
+import { showVisibleSpainCredit } from './visible-photo-credit.ts';
 import { CHASE_DISTANCE } from './chase-distance.ts';
 import { setCameraPose } from './camera-pose.ts';
 import { createSceneryCache } from './scenery-cache';
@@ -117,6 +118,7 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
   credits.className = 'scene-credits';
   if (!creditContainer) credits.style.cssText = 'position:absolute;left:10px;right:10px;bottom:5px;z-index:1;font:10px/1.3 system-ui;color:white;text-shadow:0 1px 3px #000;';
   (creditContainer ?? container).appendChild(credits);
+  const removeVisibleSpainCredit = showVisibleSpainCredit(container, credits, 4);
   let widget: CesiumWidget;
   try { widget = new CesiumWidget(container, {
     creditContainer: credits,
@@ -130,7 +132,7 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
     shadows: true,
     msaaSamples: 2,
     contextOptions: { webgl: { alpha: false, antialias: true, powerPreference: 'high-performance' } },
-  }); } catch (error) { credits.remove(); throw error; }
+  }); } catch (error) { removeVisibleSpainCredit(); credits.remove(); throw error; }
   widget.resolutionScale = Math.min(window.devicePixelRatio || 1, 1.5);
   widget.canvas.setAttribute('aria-label', 'Hessen aerial imagery and public terrain flight scene');
   widget.canvas.setAttribute('tabindex', '-1');
@@ -210,7 +212,7 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
   let livePhotoLayer: ImageryLayer | null = null;
   const countryPhotoLayers = new Map<PhotoCountry, ImageryLayer>();
   const countryPhotoFailures = new Set<PhotoCountry>();
-  const countryPhotoEpoch: Record<PhotoCountry, number> = { ch: 0, at: 0, nrw: 0, bb: 0 };
+  const countryPhotoEpoch: Record<PhotoCountry, number> = { ch: 0, at: 0, nrw: 0, bb: 0, es: 0 };
   let worldMap: Awaited<ReturnType<typeof createMapTerrainImagery>> | null = null;
   let worldMapLayer: ImageryLayer | null = null;
   let worldMapLoad: Promise<void> | null = null;
@@ -889,7 +891,7 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
       approachGuide.dispose(); aircraftShadow.dispose(); airportScenery.dispose(); landmarkLabels.dispose();
       status.remove();
       widget.destroy();
-      credits.remove();
+      removeVisibleSpainCredit(); credits.remove();
       if (modelUrl) URL.revokeObjectURL(modelUrl);
     },
   };
