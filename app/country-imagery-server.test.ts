@@ -26,6 +26,49 @@ function inspect(bytes:Buffer): {size:number[];alpha:number[];pixel:number[]} {
   assert.equal(r.status,0,String(r.stderr));return JSON.parse(r.stdout.toString());
 }
 const endpoint=(country:string,z:number,x:number,y:number)=>`/scenery/photo-country/${country}/${z}/${x}/${y}.png`;
+function tile(lat:number,lon:number,z=14):[number,number,number] {
+  const n=2**z; return [z,Math.floor((lon+180)/360*n),Math.floor((1-Math.asinh(Math.tan(lat*Math.PI/180))/Math.PI)/2*n)];
+}
+
+test('German state WMS sources use fixed Web Mercator tile bounds and preserve source alpha',async()=>{
+  const png=spawnSync('python3',['-c',"from PIL import Image; import io,sys; im=Image.new('RGBA',(256,256),(0,0,0,0)); im.putpixel((128,128),(5,6,7,255)); s=io.BytesIO(); im.save(s,'PNG'); sys.stdout.buffer.write(s.getvalue())"]);assert.equal(png.status,0);
+  const urls:URL[]=[]; const mw=createCountryImageryMiddleware({fetcher:async input=>{urls.push(new URL(String(input)));return new Response(png.stdout,{headers:{'content-type':'image/png'}});}});
+  for(const [id,lat,lon] of [['nrw',51.22,6.78],['bb',52.52,13.40]] as const) {
+    const [z,x,y]=tile(lat,lon),r=request(mw,endpoint(id,z,x,y));await r.finished;assert.equal(r.status,200);assert.equal(r.headers['X-Scenery-Empty'],'0');assert.deepEqual(inspect(r.body).alpha,[0,255]);assert.deepEqual(inspect(r.body).pixel,[5,6,7,255]);
+    const url=urls.at(-1)!;assert.equal(url.host,id==='nrw'?'www.wms.nrw.de':'isk.geobasis-bb.de');
+    assert.equal(url.searchParams.get('LAYERS'),id==='nrw'?'nw_dop_rgb':'bebb_dop20c');assert.equal(url.searchParams.get('SRS'),'EPSG:3857');
+    assert.equal(url.searchParams.get('TRANSPARENT'),'TRUE');assert.equal(url.searchParams.get('FORMAT'),'image/png');
+    const box=url.searchParams.get('BBOX')!.split(',').map(Number);
+    assert.equal(box.length,4); assert(box[0]<box[2] && box[1]<box[3]);assert(Math.abs((box[2]-box[0])-40075016.68557849/2**z)<1e-6);
+  }
+  const outside=request(mw,endpoint('nrw',...tile(52.52,13.4)));await outside.finished;assert.equal(outside.status,200);assert.equal(outside.headers['X-Scenery-Empty'],'1');assert.equal(urls.length,2);
+  const bad=request(mw,'/scenery/photo-country/nrw/14/1/2.png?host=evil');await bad.finished;assert.equal(bad.status,404);
+  mw.dispose();
+});
+
+test('German state source failures remain isolated and do not cache invalid responses',async()=>{
+  let nrw=0,bb=0;const png=image('PNG');
+  const mw=createCountryImageryMiddleware({fetcher:async input=>{if(String(input).includes('wms.nrw.de')){nrw++;return new Response(null,{status:503});}bb++;return new Response(png,{headers:{'content-type':'image/png'}});}});
+  const [z,x,y]=tile(51.22,6.78);for(let i=0;i<3;i++){const r=request(mw,endpoint('nrw',z,x+i,y));await r.finished;assert.equal(r.status,502);}
+  const blocked=request(mw,endpoint('nrw',z,x+3,y));await blocked.finished;assert.equal(blocked.status,503);assert.equal(nrw,3);
+  const other=request(mw,endpoint('bb',...tile(52.52,13.4)));await other.finished;assert.equal(other.status,200);assert.equal(bb,1);mw.dispose();
+});
+
+test('Berlin Brandenburg service layer bbox is admitted at each edge',async()=>{
+  let calls=0;const png=image('PNG');const mw=createCountryImageryMiddleware({fetcher:async()=>{calls++;return new Response(png,{headers:{'content-type':'image/png'}});}});
+  for(const [lat,lon] of [[52,11.2291258],[52,14.7701928],[51.3063097,13],[53.5726199,13]]) {
+    const r=request(mw,endpoint('bb',...tile(lat,lon,20)));await r.finished;assert.equal(r.status,200);assert.equal(r.headers['X-Scenery-Empty'],'0');
+  }
+  assert.equal(calls,4);mw.dispose();
+});
+
+test('NRW service layer bbox is admitted at each edge',async()=>{
+  let calls=0;const png=image('PNG');const mw=createCountryImageryMiddleware({fetcher:async()=>{calls++;return new Response(png,{headers:{'content-type':'image/png'}});}});
+  for(const [lat,lon] of [[51,5.593338],[51,9.741582],[50.057798,7],[52.799797,7]]) {
+    const r=request(mw,endpoint('nrw',...tile(lat,lon,20)));await r.finished;assert.equal(r.status,200);assert.equal(r.headers['X-Scenery-Empty'],'0');
+  }
+  assert.equal(calls,4);mw.dispose();
+});
 
 test('country tile routes are fixed, low zoom and outside coverage decode as transparent',async()=>{
   let calls=0; const mw=createCountryImageryMiddleware({fetcher:async()=>{calls++;throw Error('unexpected');}});

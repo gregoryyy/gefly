@@ -17,6 +17,8 @@ export function createCountryPhotoBackoff(options: Options = {}) {
   const states: Record<PhotoCountry, { failures: number; first: number; blocked: boolean; timer: Timer | null; generation: number }> = {
     ch: { failures: 0, first: 0, blocked: false, timer: null, generation: 0 },
     at: { failures: 0, first: 0, blocked: false, timer: null, generation: 0 },
+    nrw: { failures: 0, first: 0, blocked: false, timer: null, generation: 0 },
+    bb: { failures: 0, first: 0, blocked: false, timer: null, generation: 0 },
   };
   const notify = (id: PhotoCountry, blocked: boolean) => { for (const listener of listeners) listener(id, blocked); };
   function retry(id: PhotoCountry): void {

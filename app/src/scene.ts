@@ -210,7 +210,7 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
   let livePhotoLayer: ImageryLayer | null = null;
   const countryPhotoLayers = new Map<PhotoCountry, ImageryLayer>();
   const countryPhotoFailures = new Set<PhotoCountry>();
-  const countryPhotoEpoch: Record<PhotoCountry, number> = { ch: 0, at: 0 };
+  const countryPhotoEpoch: Record<PhotoCountry, number> = { ch: 0, at: 0, nrw: 0, bb: 0 };
   let worldMap: Awaited<ReturnType<typeof createMapTerrainImagery>> | null = null;
   let worldMapLayer: ImageryLayer | null = null;
   let worldMapLoad: Promise<void> | null = null;
@@ -234,14 +234,13 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
     for (let i = 0; i < scene.imageryLayers.length; i++) {
       const layer = scene.imageryLayers.get(i);
       // Failed or unavailable photographs expose OSM beneath them.
+      const photoSource = COUNTRY_IMAGERY.find(source => layer === countryPhotoLayers.get(source.id));
       const show = layer === baseLayer ? true : layer === reliefLayer ? useTerrain
         : layer === worldMapLayer ? useTerrain
-        : layer === countryPhotoLayers.get('ch') ? useTerrain && !vectorScenery && !countryPhotoBackoff.isBlocked('ch')
-        : layer === countryPhotoLayers.get('at') ? useTerrain && !vectorScenery && !countryPhotoBackoff.isBlocked('at')
+        : photoSource ? useTerrain && !vectorScenery && !countryPhotoBackoff.isBlocked(photoSource.id)
         : !vectorScenery;
       if (layer.show !== show) {
-        if (layer === countryPhotoLayers.get('ch')) countryPhotoEpoch.ch++;
-        if (layer === countryPhotoLayers.get('at')) countryPhotoEpoch.at++;
+        if (photoSource) countryPhotoEpoch[photoSource.id]++;
         layer.show = show;
       }
     }

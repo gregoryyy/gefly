@@ -2,8 +2,8 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
-/** Fixed-source proxy for user-requested Swiss/Austrian photographic tiles. */
-type Country = 'ch' | 'at';
+/** Fixed-source proxy for user-requested country and state photographic tiles. */
+type Country = 'ch' | 'at' | 'nrw' | 'bb';
 type Fetcher = typeof fetch;
 type ImageResult = { bytes: Buffer; empty: boolean };
 type Processor = (country: Country, z: number, x: number, y: number, bytes: Buffer, signal: AbortSignal) => Promise<ImageResult>;
@@ -13,6 +13,7 @@ const OUTAGE_THRESHOLD = 3, OUTAGE_COOLDOWN_MS = 30_000;
 class SourceUnavailable extends Error {}
 const BOUNDS: Record<Country, readonly [number, number, number, number]> = {
   ch: [5.14, 45.39, 11.48, 48.24], at: [8.78, 46.35, 17.5, 49.04],
+  nrw: [5.5, 50.0, 9.85, 52.9], bb: [11.1, 51.2, 15.1, 53.7],
 };
 const TRANSPARENT = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAABFUlEQVR4nO3BMQEAAADCoPVP7WsIoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA6AwBPAABo9vSmwAAAABJRU5ErkJggg==', 'base64');
 function pngValid(b: Buffer): boolean {
@@ -27,16 +28,22 @@ function intersects(country: Country, z: number, x: number, y: number): boolean 
   return lon(x+1) >= w && lon(x) <= e && lat(y) >= s && lat(y+1) <= north;
 }
 function upstream(country: Country, z: number, x: number, y: number): string {
-  return country === 'ch'
-    ? `https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/current/3857/${z}/${x}/${y}.png`
-    : `https://mapsneu.wien.gv.at/basemap/bmaporthofoto30cm/normal/google3857/${z}/${y}/${x}.jpeg`;
+  if (country === 'ch') return `https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/current/3857/${z}/${x}/${y}.png`;
+  if (country === 'at') return `https://mapsneu.wien.gv.at/basemap/bmaporthofoto30cm/normal/google3857/${z}/${y}/${x}.jpeg`;
+  const extent = 20037508.342789244, size = extent * 2 / (2 ** z);
+  const west = -extent + x * size, east = west + size, north = extent - y * size, south = north - size;
+  const params = new URLSearchParams({ SERVICE:'WMS', VERSION:'1.1.1', REQUEST:'GetMap',
+    LAYERS:country === 'nrw' ? 'nw_dop_rgb' : 'bebb_dop20c', STYLES:'', SRS:'EPSG:3857',
+    BBOX:[west,south,east,north].join(','), WIDTH:'256', HEIGHT:'256', FORMAT:'image/png', TRANSPARENT:'TRUE' });
+  const host = country === 'nrw' ? 'https://www.wms.nrw.de/geobasis/wms_nw_dop' : 'https://isk.geobasis-bb.de/mapproxy/dop20c/service/wms';
+  return `${host}?${params}`;
 }
 function discardBody(response: Response): void {
   // Cancellation starts immediately; don't let a slow stream's cancellation promise block a request slot.
   if (response.body) void response.body.cancel().catch(() => {});
 }
 async function readBounded(response: Response, country: Country): Promise<Buffer> {
-  const mime = country === 'ch' ? /^image\/png(?:;|$)/i : /^image\/jpeg(?:;|$)/i;
+  const mime = country !== 'at' ? /^image\/png(?:;|$)/i : /^image\/jpeg(?:;|$)/i;
   const length = response.headers.get('content-length');
   if (!response.ok || !response.body || !mime.test(response.headers.get('content-type') || '')
       || (length !== null && (!/^\d+$/.test(length) || Number(length) > MAX_BYTES))) { discardBody(response); throw new Error('invalid imagery response'); }
@@ -76,6 +83,7 @@ export function createCountryImageryMiddleware(options: CountryImageryOptions = 
   // Epochs keep late completions from older requests from resetting a newer outage.
   const breakers: Record<Country,{ failures:number; openUntil:number; probe:boolean; epoch:number }> = {
     ch:{failures:0,openUntil:0,probe:false,epoch:0}, at:{failures:0,openUntil:0,probe:false,epoch:0},
+    nrw:{failures:0,openUntil:0,probe:false,epoch:0}, bb:{failures:0,openUntil:0,probe:false,epoch:0},
   };
   function unavailable(res: ServerResponse, country: Country): void {
     const seconds = Math.max(1, Math.ceil((breakers[country].openUntil - now()) / 1000));
@@ -96,7 +104,7 @@ export function createCountryImageryMiddleware(options: CountryImageryOptions = 
   const middleware = ((req: IncomingMessage,res: ServerResponse,next: () => void) => {
     const raw=req.url ?? '';
     if (!raw.startsWith('/scenery/photo-country/')) { next(); return; }
-    const match=/^\/scenery\/photo-country\/(ch|at)\/(\d{1,2})\/(\d{1,7})\/(\d{1,7})\.png$/.exec(raw);
+    const match=/^\/scenery\/photo-country\/(ch|at|nrw|bb)\/(\d{1,2})\/(\d{1,7})\/(\d{1,7})\.png$/.exec(raw);
     if(disposed || !match || !['GET','HEAD'].includes(req.method ?? '')) { res.writeHead(404,{'Cache-Control':'no-store'}).end(); return; }
     const country=match[1] as Country,z=Number(match[2]),x=Number(match[3]),y=Number(match[4]),n=2**z;
     if(z>20 || x>=n || y>=n || String(z)!==match[2] || String(x)!==match[3] || String(y)!==match[4] ) {
@@ -122,7 +130,7 @@ export function createCountryImageryMiddleware(options: CountryImageryOptions = 
         const abandonProbe=()=>{ if(probe && breaker.epoch===epoch && breaker.probe) {breaker.probe=false;breaker.epoch++;} };
         controller.signal.addEventListener('abort',abandonProbe,{once:true});
         try {
-          const response=await fetcher(upstream(country,z,x,y),{signal,redirect:'error',headers:{Accept:country==='ch'?'image/png':'image/jpeg'}});
+          const response=await fetcher(upstream(country,z,x,y),{signal,redirect:'error',headers:{Accept:country==='at'?'image/jpeg':'image/png'}});
           if(response.status===404) discardBody(response);
           const result=response.status===404
             ? {bytes:TRANSPARENT,empty:true}

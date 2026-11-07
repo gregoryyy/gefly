@@ -269,7 +269,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   let aerial = false, vector = false;
   const countryPhotoProblems = new Set<PhotoCountry>();
   const countryPhotoNeedsRefresh = new Set<PhotoCountry>();
-  const countryPhotoEpoch: Record<PhotoCountry, number> = { ch: 0, at: 0 };
+  const countryPhotoEpoch: Record<PhotoCountry, number> = { ch: 0, at: 0, nrw: 0, bb: 0 };
   const countryPhotoTiles = new WeakMap<object, { id: PhotoCountry; generation: number; epoch: number }>();
   const removeCountryPhotoBackoff = countryPhotoBackoff.subscribe((id, blocked) => {
     if (disposed) return;
@@ -680,8 +680,9 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
         countryPhotoEpoch[source.id]++;
         map.removeLayer(layerId); if (map.getSource(layerId)) map.removeSource(layerId);
         map.addSource(layerId, countryRasterSource(source));
-        const before = source.id === 'ch' && map.getLayer('country-photo-at') ? 'country-photo-at'
-          : map.getLayer('imagery') ? 'imagery' : undefined;
+        const index = COUNTRY_IMAGERY.findIndex(item => item.id === source.id);
+        const next = COUNTRY_IMAGERY.slice(index + 1).find(item => map!.getLayer(`country-photo-${item.id}`));
+        const before = next ? `country-photo-${next.id}` : map.getLayer('imagery') ? 'imagery' : undefined;
         map.addLayer(countryRasterLayer(source), before);
         countryPhotoNeedsRefresh.delete(source.id);
       }
