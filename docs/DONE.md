@@ -3,6 +3,38 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-07 07:24 — Add NRW and Berlin/Brandenburg photographic scenery
+
+TODO: 2.0.195; R-WORLD-14/R-DATA-1. Agent: Codex orchestrator; source audit
+`photo_housekeeping`, backend `german_server`, frontend and follow-up
+`german_client`, independent quality `imagery_quality`, independent validation
+`german_validation`.
+
+**Implementation notes**
+
+Photo terrain and 2D Aerial stream official NRW and Berlin/Brandenburg WMS
+imagery on demand using fixed, bounded routes, preserving source transparency,
+existing source priority and per-source outage isolation. Capture dates and
+coverage vary. Current Berlin/Brandenburg service capabilities credit Berlin
+under dl-de/by-2-0; a separate official Geoportal metadata page states
+dl-de/zero-2-0. The application follows the current service text and includes
+the supplied dataset URI; the discrepancy is recorded in SBOM.
+
+The independent quality review found no additional functional blocker; 21
+focused backend/client tests and TypeScript checks passed. Independent Chrome
+156 synthetic-tile checks rendered Düsseldorf and Berlin in both views and
+checked credits, mode/priority and paused-worker digest. Real proxy samples
+returned opaque interior tiles and mixed-alpha borders for both sources; they
+do not establish complete coverage or availability. Validation accepts the
+bounded R-WORLD-14 scope with these limits: a rendered German-provider outage,
+running-flight/replay trajectory, actual WebKit, native build provenance and
+sustained performance were not evaluated. Other German states remain open.
+**Deviations**
+
+None from the bounded NRW/BB scope; complete national coverage
+remains future work.
+Cross-provider peer review is pending; no flight or terrain fidelity is claimed.
+
 ## 2026-11-07 05:59 — Add Swiss and Austrian photographic scenery
 
 TODO: 2.0.192; R-WORLD-13/R-DATA-1/R-UX-2. Agent: Codex orchestrator;
