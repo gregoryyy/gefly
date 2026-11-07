@@ -50,6 +50,8 @@ try {
   }
   browser = await chromium.launch({ headless: true, ...(process.env.CHROME ? { executablePath: process.env.CHROME } : { channel: 'chrome' }) });
   for (const place of [{ id: 'ch', lat: 47.3769, lon: 8.5417, name: 'Zürich' }, { id: 'at', lat: 48.2082, lon: 16.3738, name: 'Vienna' },
+    { id: 'nrw', lat: 51.2277, lon: 6.7735, name: 'Düsseldorf' }, { id: 'bb', lat: 52.52, lon: 13.405, name: 'Berlin' },
+    { id: 'es', lat: 39.5696, lon: 2.6502, name: 'Mallorca' }, { id: 'es', lat: 28.4636, lon: -16.2518, name: 'Tenerife' },
     { id: 'ch', lat: 47.3769, lon: 8.5417, name: 'Zürich photo failure', fail: true },
     { id: 'ch', lat: 47.3769, lon: 8.5417, name: 'Zürich transparent coverage gap', transparent: true }].filter(p => !process.env.GEFLY_COUNTRY_PHOTO_CASE || p.name === process.env.GEFLY_COUNTRY_PHOTO_CASE)) {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, serviceWorkers: 'block' });
@@ -73,7 +75,7 @@ try {
     await page.route('**/scenery/osm/**', route => route.fulfill({ contentType: 'application/x-protobuf', body: Buffer.alloc(0) }));
     const opaque = tile(191, 48, 41), transparent = tile(0, 0, 0, 0);
     await page.route('**/scenery/photo-country/**', route => {
-      const match = new URL(route.request().url()).pathname.match(/^\/scenery\/photo-country\/(ch|at)\/(\d+)\/(\d+)\/(\d+)\.png$/);
+      const match = new URL(route.request().url()).pathname.match(/^\/scenery\/photo-country\/(ch|at|nrw|bb|es)\/(\d+)\/(\d+)\/(\d+)\.png$/);
       if (!match) return route.abort();
       requests.push({ path: match[0], id: match[1], z: Number(match[2]), phase: requestPhase, at: Date.now(), priority: route.request().headers()['x-gefly-scenery-priority'] });
       if (match[1] === place.id && (!recovered || mapOnlyFailure) && Number(match[2]) >= 7) { failures.push(match[0]); return route.fulfill({ status: 503, headers: { 'cache-control': 'no-store' }, body: '' }); }
@@ -139,8 +141,10 @@ try {
       await page.evaluate(() => { Object.defineProperty(Element.prototype, 'checkVisibility', { configurable: true, value: undefined }); });
       if (!await page.locator('.topbar').isVisible()) { await page.locator('#scene').focus(); await page.keyboard.press('i'); }
       await page.locator('#credits-menu > summary').click();
-      const expected = place.id === 'ch' ? /Includes material © \(2016-2018\) Planet\. All rights reserved/ : /Datenquelle: basemap\.at/;
+      const expected = {ch: /Includes material © \(2016-2018\) Planet\. All rights reserved/, at: /Datenquelle: basemap\.at/,
+        nrw: /Geobasis NRW/, bb: /GeoBasis-DE\/LGB.*Geoportal Berlin/, es: /Obra derivada de PNOA 2024/}[place.id];
       await page.waitForFunction(pattern => new RegExp(pattern).test(document.querySelector('#scene-credits')?.textContent || ''), expected.source, { timeout: 45000 });
+      if (place.id === 'es') assert(await page.locator('#scene .visible-spain-photo-credit').isVisible(), 'Spanish imagery credit remains visible beside the 3D view');
       assert(await page.locator('#scene-credits').isVisible(), 'live Cesium provider credit is readable in menu');
       assert(await page.locator('#scene-credits a').count() > 0, 'credit links remain accessible');
       await page.setViewportSize({ width: 390, height: 900 });
@@ -169,15 +173,21 @@ try {
     await page.locator('#scene').focus(); await page.keyboard.press(',');
     await page.waitForFunction(() => document.querySelector('#practice-map-panel')?.dataset.extendedMenu === 'true');
     requestPhase = 'map-aerial'; await map.getByRole('button', { name: 'Show aerial imagery' }).click();
+    if (place.id === 'es') {
+      await page.evaluate(({ lat, lon }) => window.__countryMap.jumpTo({ center: [lon, lat], zoom: 5 }), place);
+      await page.waitForFunction(() => document.querySelector('.practice-map-status')?.textContent?.includes('available from map zoom 7'), null, { timeout: 10000 });
+      assert.equal(await page.evaluate(() => window.__countryMap.getStyle().sources['country-photo-es'].minzoom), 7, 'Spain source starts at level 7');
+    }
     await page.evaluate(({ lat, lon }) => window.__countryMap.jumpTo({ center: [lon, lat], zoom: 10 }), place);
     await page.waitForFunction(({id,fail}) => window.__countryMap.getLayoutProperty(`country-photo-${id}`, 'visibility') === (fail ? 'none' : 'visible'), place);
     const style = await page.evaluate(() => window.__countryMap.getStyle());
     const ids = style.layers.map(layer => layer.id);
     assert(ids.indexOf('imagery') > ids.indexOf(`country-photo-${place.id}`), 'German imagery is composited last');
     const attr = style.sources[`country-photo-${place.id}`].attribution;
-    assert.match(attr, place.id === 'ch' ? /swisstopo.*Planet/ : /basemap\.at.*CC BY 4\.0/);
+    assert.match(attr, {ch: /swisstopo.*Planet/, at: /basemap\.at.*CC BY 4\.0/, nrw: /Geobasis NRW.*Zero 2\.0/, bb: /GeoBasis-DE\/LGB.*Geoportal Berlin/, es: /Obra derivada de.*PNOA 2024.*CC-BY 4\.0/}[place.id]);
     if (!place.fail && !place.transparent) {
-      await page.waitForFunction(id => document.querySelector('#map-credits')?.textContent?.includes(id === 'ch' ? 'swisstopo' : 'basemap.at'), place.id, { timeout: 45000 });
+      await page.waitForFunction(id => document.querySelector('#map-credits')?.textContent?.includes(({ch:'swisstopo', at:'basemap.at', nrw:'Geobasis NRW', bb:'GeoBasis-DE/LGB', es:'PNOA 2024'})[id]), place.id, { timeout: 45000 });
+      if (place.id === 'es') assert(await map.locator('.visible-spain-photo-credit').isVisible(), 'Spanish imagery credit remains visible beside the flight map');
       if (!await page.locator('.topbar').isVisible()) { await page.locator('#scene').focus(); await page.keyboard.press('i'); }
       await page.locator('#credits-menu > summary').click();
       assert(await page.locator('#map-credits').isVisible(), 'live MapLibre attribution is readable in Credits');
@@ -204,9 +214,11 @@ try {
     await map.getByRole('button', { name: 'Show public map', exact: true }).click();
     assert.equal(await page.evaluate(id => window.__countryMap.getLayoutProperty(`country-photo-${id}`, 'visibility'), place.id), 'none');
     await page.waitForTimeout(500);
+    if (place.id === 'es') await map.locator('.visible-spain-photo-credit').waitFor({ state: 'hidden' });
     if (!place.fail && !place.transparent) assert(await visibleRedPixels(map.locator('.maplibregl-canvas')) < aerialPixels * .1, 'Map mode removes the photo pixels and reveals the underlying map');
     await map.getByRole('button', { name: /Use (?:detailed OSM map|map without labels) as terrain texture/ }).click();
     await page.waitForFunction(id => [...window.__countryScene.imageryLayers._layers].some(layer => layer.imageryProvider?.url?.includes(`/scenery/photo-country/${id}/`) && !layer.show), place.id);
+    if (place.id === 'es') await page.locator('#scene .visible-spain-photo-credit').waitFor({ state: 'hidden' });
     if (place.id === 'ch' && !place.fail && !place.transparent) {
       mapOnlyFailure = true;
       await page.evaluate(() => { window.__sourceBeforeModeReturn = window.__countryMap.getSource('country-photo-ch'); });
@@ -228,8 +240,9 @@ try {
       await page.waitForTimeout(1000); const stableAgain = requests.length; await page.waitForTimeout(5000);
       assert(requests.length - stableAgain <= 5, 'persistent failure remains bounded after a second retry');
       const idsAfterRetry = await page.evaluate(() => window.__countryMap.getStyle().layers.map(layer => layer.id));
-      assert(idsAfterRetry.indexOf('country-photo-ch') < idsAfterRetry.indexOf('country-photo-at')
-        && idsAfterRetry.indexOf('country-photo-at') < idsAfterRetry.indexOf('imagery'), 'country retry preserves CH / AT / German imagery ordering');
+      const expectedOrder = ['country-photo-ch', 'country-photo-at', 'country-photo-nrw', 'country-photo-bb', 'country-photo-es', 'imagery'];
+      assert(expectedOrder.every((id, index) => idsAfterRetry.includes(id)
+        && (!index || idsAfterRetry.indexOf(expectedOrder[index - 1]) < idsAfterRetry.indexOf(id))), 'country retry preserves all country and German imagery ordering');
       assert(idsAfterRetry.includes('flight-plan-route-line') && idsAfterRetry.includes('gps-target-line'), 'country retry preserves plan and GPS overlays');
       mapOnlyFailure = false; const retryStart = requests.length;
       await page.evaluate(async () => (await import('/src/country-photo-backoff.ts')).countryPhotoBackoff.retry('ch'));

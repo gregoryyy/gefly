@@ -643,6 +643,22 @@ include the provider-required Planet lake-imagery notice; Austria uses CC BY 4.0
 attribution. Imagery is requested on demand and source capture dates vary. See
 [imagery sources and limits](../docs/research/2026-11-07-swiss-austrian-imagery.md).
 
+Photo terrain and Aerial also request NRW and Berlin/Brandenburg official
+orthophotos. Their transparent gaps fall back to the existing imagery or map;
+other German states are not added by this increment. NRW data uses
+[Datenlizenz Deutschland Zero 2.0](https://www.govdata.de/dl-de/zero-2-0);
+Berlin/Brandenburg attribution follows the live service: © GeoBasis-DE/LGB,
+dl-de/by-2-0; © Geoportal Berlin, dl-de/by-2-0. Source dates and coverage vary.
+
+Photo terrain and Aerial also request the official PNOA 2024 annual orthophoto
+layer, with partial coverage including the Balearics and Canaries and selected
+mainland regions. This is imagery from 2024, not a current nationwide mosaic.
+Provider alpha reveals the map where the layer is empty; low-zoom views fall
+back until photo detail is requested. The displayed and service credits read
+“Obra derivada de PNOA 2024 CC-BY 4.0 scne.es”. See the [official layer
+capabilities](https://www.ign.es/wms/pnoa-historico?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.3.0)
+and [CNIG terms](https://www.ign.es/resources/licencia/Condiciones_licenciaUso_IGN.pdf).
+
 The proxy uses a 32 MiB memory cache and bounded requests/compositing. It needs
 Python/Pillow from `utils/scenery/requirements.txt`; without Pillow, photos fail
 while map/bundled scenery can remain usable. There are no accounts, API keys,
@@ -651,8 +667,9 @@ the development server's requests for simulated scenery coordinates. Live
 photographs can change: Review freezes aircraft state and versioned terrain,
 not the visual bytes supplied later by those services.
 
-The German scenery proxy is installed in Vite's development server; the Swiss
-and Austrian country proxy is installed in Vite development and preview servers.
+The original German scenery proxy is installed in Vite's development server;
+the Swiss, Austrian, additional German state and Spanish country proxy is
+installed in Vite development and preview servers.
 A static UI build does not host these endpoints or the generated local research engine. Production hosting and
 an equivalent endpoint service remain undecided.
 

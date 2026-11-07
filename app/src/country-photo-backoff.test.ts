@@ -15,6 +15,7 @@ test('country errors share a bounded cooldown and ignore late old-generation res
   assert.equal(backoff.isBlocked('ch'), false);
   backoff.failure('ch', old);
   assert.equal(backoff.isBlocked('ch'), true); assert.equal(backoff.isBlocked('at'), false);
+  assert.equal(backoff.isBlocked('es'), false, 'a Swiss outage does not block Spain');
   assert.equal(timers.size, 1); assert.deepEqual(events, ['scene:ch:true', 'map:ch:true']);
   for (let i = 0; i < 100; i++) backoff.failure('ch', old);
   assert.equal(timers.size, 1, 'old in-flight failures cannot extend cooldown');
@@ -33,4 +34,32 @@ test('country errors share a bounded cooldown and ignore late old-generation res
   assert.equal(backoff.isBlocked('ch'), false);
   backoff.failure('ch', current); backoff.failure('ch', current); backoff.failure('ch', current);
   assert.equal(timers.size, 0, 'late errors after disposal cannot resurrect work');
+});
+
+test('German state photo failures do not block neighboring sources', () => {
+  const timers: (() => void)[] = [];
+  const backoff = createCountryPhotoBackoff({ now: () => 1, schedule: fn => { timers.push(fn); return 1 as unknown as ReturnType<typeof setTimeout>; }, cancel: () => {} });
+  const dispose = backoff.subscribe(() => {});
+  for (let i = 0; i < 3; i++) backoff.failure('nrw');
+  assert.equal(backoff.isBlocked('nrw'), true);
+  assert.equal(backoff.isBlocked('bb'), false);
+  assert.equal(backoff.isBlocked('ch'), false);
+  assert.equal(backoff.isBlocked('at'), false);
+  timers[0]();
+  assert.equal(backoff.isBlocked('nrw'), false);
+  dispose();
+});
+
+test('Spain source has an independent failure circuit', () => {
+  const timers: Array<() => void> = [];
+  const backoff = createCountryPhotoBackoff({ schedule: run => { timers.push(run); return 1 as unknown as ReturnType<typeof setTimeout>; }, cancel: () => {} });
+  const release = backoff.subscribe(() => {});
+  const generation = backoff.generation('es');
+  for (let i = 0; i < 3; i++) backoff.failure('es', generation);
+  assert.equal(backoff.isBlocked('es'), true);
+  assert.equal(backoff.isBlocked('ch'), false);
+  assert.equal(backoff.isBlocked('at'), false);
+  timers[0]();
+  assert.equal(backoff.isBlocked('es'), false);
+  release();
 });

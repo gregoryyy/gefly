@@ -3,6 +3,68 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-07 08:03 — Add dated Spanish island photographic scenery
+
+TODO: 2.0.198; R-WORLD-16/R-DATA-1. Agent: Codex orchestrator; research
+`imagery_research` and `spain_credit`, backend `spain_server`, frontend
+`spain_client`, independent quality `spain_quality`, independent validation
+`spain_validate`.
+
+**Implementation notes**
+
+The dated PNOA2024 WMS is streamed on demand in 3D Photo and 2D Aerial modes.
+The official layer advertises partial coverage including Balearics and Canaries;
+source transparency reveals underlying maps. The source's dated derivative
+credit appears directly beside each view and in the proxy self-description.
+This is not the continuously updated PNOA mosaic or nationwide coverage.
+
+Independent quality and bounded R-WORLD-16 validation passed: 20 focused
+proxy/client tests, TypeScript, Chrome 156 synthetic Mallorca and Tenerife
+views, credits, mode changes, zoom fallback and paused-worker digest. Real
+Vite-to-IGN samples returned opaque interiors, a transparent Atlantic tile and
+mixed-alpha coastal tiles for both islands; samples do not establish complete
+coverage. Source-date and derived-credit wording are based on official annual
+layer capabilities, product table and CNIG terms. Spain-specific rendered
+outages, sustained live performance, running-flight/replay isolation, actual
+WebKit and native build provenance remain unevaluated. Peer review is pending.
+
+**Deviations**
+
+Other destinations on the user list and imagery outside the source's 2024
+coverage remain separate work. No aircraft, terrain or training fidelity is claimed.
+
+## 2026-11-07 07:24 — Add NRW and Berlin/Brandenburg photographic scenery
+
+TODO: 2.0.195; R-WORLD-14/R-DATA-1. Agent: Codex orchestrator; source audit
+`photo_housekeeping`, backend `german_server`, frontend and follow-up
+`german_client`, independent quality `imagery_quality`, independent validation
+`german_validation`.
+
+**Implementation notes**
+
+Photo terrain and 2D Aerial stream official NRW and Berlin/Brandenburg WMS
+imagery on demand using fixed, bounded routes, preserving source transparency,
+existing source priority and per-source outage isolation. Capture dates and
+coverage vary. Current Berlin/Brandenburg service capabilities credit Berlin
+under dl-de/by-2-0; a separate official Geoportal metadata page states
+dl-de/zero-2-0. The application follows the current service text and includes
+the supplied dataset URI; the discrepancy is recorded in SBOM.
+
+The independent quality review found no additional functional blocker; 21
+focused backend/client tests and TypeScript checks passed. Independent Chrome
+156 synthetic-tile checks rendered Düsseldorf and Berlin in both views and
+checked credits, mode/priority and paused-worker digest. Real proxy samples
+returned opaque interior tiles and mixed-alpha borders for both sources; they
+do not establish complete coverage or availability. Validation accepts the
+bounded R-WORLD-14 scope with these limits: a rendered German-provider outage,
+running-flight/replay trajectory, actual WebKit, native build provenance and
+sustained performance were not evaluated. Other German states remain open.
+**Deviations**
+
+None from the bounded NRW/BB scope; complete national coverage
+remains future work.
+Cross-provider peer review is pending; no flight or terrain fidelity is claimed.
+
 ## 2026-11-07 05:59 — Add Swiss and Austrian photographic scenery
 
 TODO: 2.0.192; R-WORLD-13/R-DATA-1/R-UX-2. Agent: Codex orchestrator;
