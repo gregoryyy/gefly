@@ -14,6 +14,8 @@ test('country photo candidates are bounded service envelopes, not inferred actua
   for (const [lat, lon] of [[51, 5.593338], [51, 9.741582], [50.057798, 7], [52.799797, 7]]) {
     assert(countryPhotoCandidates(lat, lon).includes('nrw'), 'official NRW imagery layer bounds fit inside client envelope');
   }
+  assert.deepEqual(countryPhotoCandidates(39.5696, 2.6502), ['es']); // Palma de Mallorca
+  assert.deepEqual(countryPhotoCandidates(28.4636, -16.2518), ['es']); // Tenerife
   assert.deepEqual(countryPhotoCandidates(40.7128, -74.006), []);
   assert.deepEqual(countryPhotoCandidates(NaN, 8), []);
 });
@@ -23,6 +25,7 @@ test('fixed same-origin photo URLs retain source credits and advertised zoom bou
   assert.equal(countryPhotoUrl('at'), '/scenery/photo-country/at/{z}/{x}/{y}.png');
   assert.equal(countryPhotoUrl('nrw'), '/scenery/photo-country/nrw/{z}/{x}/{y}.png');
   assert.equal(countryPhotoUrl('bb'), '/scenery/photo-country/bb/{z}/{x}/{y}.png');
+  assert.equal(countryPhotoUrl('es'), '/scenery/photo-country/es/{z}/{x}/{y}.png');
   assert.equal(COUNTRY_PHOTO_MIN_LEVEL, 0);
   assert.equal(COUNTRY_PHOTO_DETAIL_MIN_LEVEL, 7);
   assert.equal(COUNTRY_PHOTO_MAX_LEVEL, 20);
@@ -34,4 +37,6 @@ test('fixed same-origin photo URLs retain source credits and advertised zoom bou
   assert.match(COUNTRY_IMAGERY[2].attribution, /Geobasis NRW.*Zero 2\.0/);
   assert.match(COUNTRY_IMAGERY[3].attribution, /GeoBasis-DE\/LGB.*dl-de\/by-2-0.*Geoportal Berlin.*dl-de\/by-2-0/);
   assert.match(COUNTRY_IMAGERY[3].attribution, /registry\.gdi-de\.org\/id\/de\.bb\.metadata\/253b7d3d-6b42-47dc-b127-682de078b7ae/);
+  assert.match(COUNTRY_IMAGERY[4].attribution, /Obra derivada de.*PNOA 2024.*CC-BY 4\.0.*scne\.es/);
+  assert.match(COUNTRY_IMAGERY[4].name, /partial coverage/);
 });
