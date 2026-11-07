@@ -85,7 +85,7 @@ function elevationRelief(grid: TerrainGrid): HTMLCanvasElement {
  * Explicit flat-ground/legacy studies retain their ellipsoid receiver.
  * Renderer state never feeds the flight model.
  */
-export async function createScene(container: HTMLElement): Promise<FlightScene> {
+export async function createScene(container: HTMLElement, creditContainer?: HTMLElement): Promise<FlightScene> {
   const [terrainGrid, worldGrid] = await Promise.all([loadTerrainPackage(), loadWorldTerrainPackage()]);
   const sceneryCache = createSceneryCache(container);
   const publicTerrain = createPublicTerrainProvider(terrainGrid);
@@ -114,11 +114,13 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   // terrain data instead of filling every connection with live photographs.
   RequestScheduler.maximumRequestsPerServer = 2;
   const credits = document.createElement('div');
-  credits.style.cssText = 'position:absolute;left:10px;right:10px;bottom:5px;z-index:1;font:10px/1.3 system-ui;color:white;text-shadow:0 1px 3px #000;';
-  container.appendChild(credits);
+  credits.className = 'scene-credits';
+  if (!creditContainer) credits.style.cssText = 'position:absolute;left:10px;right:10px;bottom:5px;z-index:1;font:10px/1.3 system-ui;color:white;text-shadow:0 1px 3px #000;';
+  (creditContainer ?? container).appendChild(credits);
   let widget: CesiumWidget;
   try { widget = new CesiumWidget(container, {
     creditContainer: credits,
+    creditViewport: creditContainer ? document.body : container,
     baseLayer: false,
     terrainProvider: publicTerrain,
     useDefaultRenderLoop: false,
@@ -185,7 +187,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   // The app hosts live credits in its Credits menu; standalone scenes retain
   // their original overlay. Keep Cesium/provider content and source links intact.
   const credit = credits.querySelector('.cesium-widget-credits') as HTMLElement | null;
-  if (credit) { credit.style.right = '0'; credit.style.left = 'auto'; credit.style.maxWidth = '100%'; credit.style.textAlign = 'right'; }
+  if (credit && !creditContainer) { credit.style.right = '0'; credit.style.left = 'auto'; credit.style.maxWidth = '100%'; credit.style.textAlign = 'right'; }
   const status = document.createElement('div');
   status.id = 'imagery-status';
   status.setAttribute('role', 'status');
@@ -248,7 +250,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   const creditObserver = new ResizeObserver(() => {
     if (!disposed && credit) status.style.bottom = `${Math.max(38, credit.getBoundingClientRect().height + 12)}px`;
   });
-  if (credit) creditObserver.observe(credit);
+  if (credit && !creditContainer) creditObserver.observe(credit);
   const sourceCredit = new Credit('Hessen HVBG aerial imagery · DL-DE Zero 2.0', true);
   // A constant-color local base prevents Cesium from stretching photographic
   // edge pixels across the globe outside their actual geographic coverage.

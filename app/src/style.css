@@ -32,6 +32,7 @@ button kbd { margin-left: 8px; }
 #scene:focus { outline: none; }
 #scene canvas { display: block; }
 .topbar { position: absolute; inset: 14px 18px auto; min-height: 56px; display: flex; align-items: center; gap: 22px; padding: 10px 16px; background: var(--panel); border: 1px solid var(--border); border-radius: 9px; box-shadow: 0 7px 30px #0613223d; z-index: 4; }
+.brand-area { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
 .brand { display: flex; align-items: center; gap: 11px; font-size: 26px; font-weight: 700; letter-spacing: -1.5px; }
 .brand span { font-size: 8px; letter-spacing: 1.7px; color: #9bb3c2; font-weight: 500; }
 .location { display: flex; flex-direction: column; gap: 4px; margin-right: auto; }
@@ -170,7 +171,7 @@ footer { display: flex; justify-content: space-between; border-top: 1px solid #8
 }
 @media (max-width: 620px) {
   .topbar { display: grid; grid-template-columns: auto 1fr auto auto; gap: 6px 8px; }
-  .topbar .brand { grid-column: 1; grid-row: 1; }
+  .topbar .brand-area { grid-column: 1; grid-row: 1; }
   .topbar .session-status { grid-column: 2; grid-row: 1; margin: 0; font-size: 9px; }
   #view-menu { grid-column: 3 / 5; grid-row: 1; justify-self: end; }
   #review-button-slot { grid-column: 1; grid-row: 2; }
@@ -217,12 +218,25 @@ footer { display: flex; justify-content: space-between; border-top: 1px solid #8
 }
 
 /* Session actions stay in the top menu; the stick overlay is a view preference. */
-.topbar { gap: 14px; z-index: 8; }
+.topbar { gap: 14px; z-index: 10; }
 .top-menu { position: relative; }
 .top-menu > summary { cursor: pointer; border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; font-size: 11px; }
 .top-menu .menu-content { position: absolute; top: calc(100% + 8px); right: 0; min-width: 185px; display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 7px; background: #142633; box-shadow: 0 9px 25px #0007; }
 .top-menu .menu-content button { text-align: left; padding: 10px 12px; font-size: 12px; }
 #flight-menu .menu-content { min-width: 260px; max-height: calc(100dvh - 110px); overflow-y: auto; overscroll-behavior: contain; }
+/* The live provider attribution remains readable in the brand's Credits menu. */
+#credits-menu > summary { padding: 7px 9px; font-size: 10px; white-space: nowrap; }
+#credits-menu .credits-content { left: 0; right: auto; width: min(520px, calc(100vw - 44px)); min-width: 0; max-height: min(560px, calc(100dvh - 130px)); overflow: auto; overscroll-behavior: contain; padding: 14px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; line-height: 1.65; overflow-wrap: anywhere; }
+.credits-content h2 { margin: 0 0 9px; font-size: 13px; font-weight: 600; }
+#scene-credits .cesium-widget-credits { position: static; padding: 0; font: inherit; text-shadow: none; text-align: left; }
+#scene-credits a { text-decoration: underline; text-underline-offset: 2px; }
+#scene-credits img { max-width: 100%; height: auto; vertical-align: middle; }
+@media (max-width: 620px) {
+  .brand-area { gap: 6px; }
+  #credits-menu > summary { padding: 5px 6px; font-size: 9px; }
+  #credits-menu .credits-content { left: 0; right: 0; width: auto; max-height: calc(100dvh - 150px); }
+}
+
 .practice-runway-choice { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 10px; font-size: 12px; color: #c6d6de; }
 .practice-runway-choice select { padding: 5px 9px; background: #0d202c; color: #eef3f5; border: 1px solid #617684; border-radius: 4px; }
 .flight-research { border-block: 1px solid #8fa5b933; margin-block: 4px; padding-block: 4px; }

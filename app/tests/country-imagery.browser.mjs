@@ -134,6 +134,26 @@ try {
       }, null, { timeout: 45000 });
 
     } else threeDimensionalPixels = await waitForRedPixels(sceneCanvas);
+    if (!place.fail && !place.transparent) {
+      assert.equal(await page.locator('#scene .cesium-widget-credits').count(), 0, 'live Cesium credits do not cover the scenery');
+      await page.evaluate(() => { Object.defineProperty(Element.prototype, 'checkVisibility', { configurable: true, value: undefined }); });
+      if (!await page.locator('.topbar').isVisible()) { await page.locator('#scene').focus(); await page.keyboard.press('i'); }
+      await page.locator('#credits-menu > summary').click();
+      const expected = place.id === 'ch' ? /Includes material © \(2016-2018\) Planet\. All rights reserved/ : /Datenquelle: basemap\.at/;
+      await page.waitForFunction(pattern => new RegExp(pattern).test(document.querySelector('#scene-credits')?.textContent || ''), expected.source, { timeout: 45000 });
+      assert(await page.locator('#scene-credits').isVisible(), 'live Cesium provider credit is readable in menu');
+      assert(await page.locator('#scene-credits a').count() > 0, 'credit links remain accessible');
+      await page.setViewportSize({ width: 390, height: 900 });
+      const mobileCreditBox = await page.locator('#credits-menu .credits-content').boundingBox();
+      assert(mobileCreditBox && mobileCreditBox.x >= 0 && mobileCreditBox.x + mobileCreditBox.width <= 390, 'Credits remains inside a narrow viewport');
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.keyboard.press('Escape');
+      await page.evaluate(() => { const lightbox = document.createElement('div'); lightbox.className = 'cesium-credit-lightbox-overlay'; lightbox.id = 'test-visible-credit-lightbox'; lightbox.style.cssText = 'display:block;position:fixed;top:0;left:0;width:50px;height:50px;'; document.body.append(lightbox); });
+      await page.locator('#scene').focus(); await page.keyboard.press('m');
+      assert(await page.locator('#practice-map-panel').isHidden(), 'visible credit lightbox guards flight shortcuts without checkVisibility');
+      await page.evaluate(() => document.querySelector('#test-visible-credit-lightbox').remove());
+      if (await page.locator('.topbar').isVisible()) { await page.locator('#scene').focus(); await page.keyboard.press('i'); }
+    }
     const order = await page.evaluate(() => [...window.__countryScene.imageryLayers._layers].map(layer => ({ url: layer.imageryProvider?.url || '', show: layer.show })));
     const layerAt = id => order.findIndex(layer => layer.url.includes(`/scenery/photo-country/${id}/`));
     assert(layerAt(place.id) >= 0 && order[layerAt(place.id)].show === !place.fail, `${place.name}: country layer is enabled unless in backoff`);
@@ -156,6 +176,15 @@ try {
     assert(ids.indexOf('imagery') > ids.indexOf(`country-photo-${place.id}`), 'German imagery is composited last');
     const attr = style.sources[`country-photo-${place.id}`].attribution;
     assert.match(attr, place.id === 'ch' ? /swisstopo.*Planet/ : /basemap\.at.*CC BY 4\.0/);
+    if (!place.fail && !place.transparent) {
+      await page.waitForFunction(id => document.querySelector('#map-credits')?.textContent?.includes(id === 'ch' ? 'swisstopo' : 'basemap.at'), place.id, { timeout: 45000 });
+      if (!await page.locator('.topbar').isVisible()) { await page.locator('#scene').focus(); await page.keyboard.press('i'); }
+      await page.locator('#credits-menu > summary').click();
+      assert(await page.locator('#map-credits').isVisible(), 'live MapLibre attribution is readable in Credits');
+      assert(await page.locator('#map-credits a').count() > 0, 'map attribution links remain accessible');
+      await page.keyboard.press('Escape');
+      if (await page.locator('.topbar').isVisible()) { await page.locator('#scene').focus(); await page.keyboard.press('i'); }
+    }
     await page.waitForFunction(id => performance.getEntriesByType('resource').filter(e => e.name.includes(`/scenery/photo-country/${id}/`)).length > 0, place.id);
     let aerialPixels;
     if (place.fail || place.transparent) {

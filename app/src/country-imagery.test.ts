@@ -20,4 +20,5 @@ test('fixed same-origin photo URLs retain source credits and advertised zoom bou
   assert.match(COUNTRY_IMAGERY[0].attribution, /Planet\. All rights reserved/);
   assert.match(COUNTRY_IMAGERY[1].attribution, /basemap\.at/);
   assert.match(COUNTRY_IMAGERY[1].attribution, /CC BY 4\.0/);
+  assert.match(COUNTRY_IMAGERY[1].attribution, /masked near borders/);
 });

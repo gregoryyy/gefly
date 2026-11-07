@@ -4,7 +4,7 @@ export const COUNTRY_IMAGERY = Object.freeze([
     attribution: '©<a href="https://www.swisstopo.admin.ch/en/terms-of-use-free-geodata-and-geoservices">swisstopo</a> · Includes material © (2016-2018) Planet. All rights reserved',
   }),
   Object.freeze({ id: 'at' as const, name: 'Austria', bounds: [8.78, 46.35, 17.5, 49.04] as const,
-    attribution: 'Datenquelle: <a href="https://basemap.at/">basemap.at</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>',
+    attribution: 'Datenquelle: <a href="https://basemap.at/">basemap.at</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · masked near borders',
   }),
 ]);
 

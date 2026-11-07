@@ -58,6 +58,7 @@ function countryRasterLayer(source: typeof COUNTRY_IMAGERY[number]) {
 }
 
 interface MapOptions {
+  creditsContainer?: HTMLElement;
   initialApproachGuide?: Readonly<ApproachGuide> | null;
   onApproachGuide?: (guide: ApproachGuide | null) => void;
   container: HTMLElement;
@@ -224,6 +225,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   viewport.append(status);
 
   let map: LibreMap | undefined;
+  let mapCreditObserver: MutationObserver | undefined;
   let ofmOverlay: ReturnType<typeof createOfmMapOverlay> | undefined;
   let aircraft: Marker | undefined;
   let start: Marker | undefined;
@@ -1052,6 +1054,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       circuitMarkers.forEach((marker) => marker.remove());
       aircraft?.remove();
       start?.remove();
+      mapCreditObserver?.disconnect();
+      if (options.creditsContainer) { options.creditsContainer.replaceChildren(); options.creditsContainer.parentElement!.hidden = true; }
       ofmOverlay?.dispose(); map?.remove();
       container.replaceChildren();
     },
@@ -1122,6 +1126,17 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
         return { url };
       },
     });
+    const mapAttribution = viewport.querySelector('.maplibregl-ctrl-attrib-inner');
+    if (mapAttribution && options.creditsContainer) {
+      const target = options.creditsContainer;
+      const syncMapCredits = () => {
+        target.replaceChildren(...Array.from(mapAttribution.childNodes, child => child.cloneNode(true)));
+        if (target.parentElement) target.parentElement.hidden = !target.textContent?.trim();
+      };
+      mapCreditObserver = new MutationObserver(syncMapCredits);
+      mapCreditObserver.observe(mapAttribution, { childList: true, subtree: true, characterData: true });
+      syncMapCredits();
+    }
     ofmOverlay = createOfmMapOverlay({ map, controls: ofmControls, visible, onInteraction, loadSource: loadOfmOverlaySource });
     map.addControl(new ScaleControl({ unit: 'nautical', maxWidth: 100 }), 'bottom-left');
     viewport.append(trajectory);
