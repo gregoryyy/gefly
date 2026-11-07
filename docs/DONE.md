@@ -3,6 +3,37 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-07 04:01 — Shade OSM terrain faces in the 3D view
+
+TODO: 2.0.189; R-AIRPORT-1/R-WORLD-11. Agent: Codex orchestrator;
+Cesium research `relief_design`; production `relief_code`; browser harness
+`relief_runtime`; independent quality `relief_quality`; independent browser
+validation `relief_validate`; main-based port `relief_port`.
+
+**Implementation notes**
+
+A bounded neutral faceted darkening uses rendered terrain face direction and a
+fixed local light over vector OSM scenery. Photo and flat-ground study modes
+remain unshaded. No new source request or simulation input is introduced.
+Missing fragment derivatives, inadequate highp range or shader errors fall back
+to the unshaded map. The effect is illustrative slope shading, not actual
+weather or terrain-cast shadows.
+
+Two capability-gate tests passed. Independent Chrome/Cesium browser validation
+passed synthetic opposing faces, flat control, 180° camera rotation, vector and
+photo switching, repeated relief toggles without provider replacement or new
+OSM requests, and paused native-state isolation. A fixed bundled Hessen terrain
+view using synthetic empty OSM tiles showed a subtle pixel change. The main-based
+port passed four browser groups and the same focused tests.
+
+**Deviations**
+
+Real OSM label legibility, actual full flat-study sessions, live flight and
+terrain streaming, GPU performance, far-horizon detail, WebKit/VS Code and
+cast shadows were not evaluated. The near-empty OSM fixture does not establish
+perceived improvement with real cartography. Cross-provider peer review remains
+pending; no aircraft, terrain-data accuracy or training fidelity is established.
+
 ## 2026-11-06 22:13 — Keep keyboard flight inputs from disconnecting AP
 
 TODO: 2.0.188; R-AP-1/R-INPUT-1. Agent: Codex orchestrator; production and

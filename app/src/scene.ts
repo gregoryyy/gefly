@@ -1,3 +1,4 @@
+import { createOsmReliefMaterial, supportsOsmRelief } from './osm-relief.ts';
 import { CHASE_DISTANCE } from './chase-distance.ts';
 import { setCameraPose } from './camera-pose.ts';
 import { createSceneryCache } from './scenery-cache';
@@ -131,6 +132,22 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   widget.canvas.setAttribute('tabindex', '-1');
   const scene = widget.scene;
   let vectorScenery = false;
+  // This optional visual aid needs fragment derivatives. Keep ordinary
+  // imagery usable on older contexts and if the material fails to compile.
+  let reliefFailed = !supportsOsmRelief(widget.canvas);
+  let osmRelief: ReturnType<typeof createOsmReliefMaterial> | undefined;
+  if (!reliefFailed) {
+    try { osmRelief = createOsmReliefMaterial(); }
+    catch { reliefFailed = true; }
+  }
+  const removeReliefError = scene.renderError.addEventListener((_scene, error) => {
+    if (osmRelief && scene.globe.material === osmRelief && /shader.*(?:compile|link)|(?:compile|link).*shader|program.*link/i.test(String(error))) {
+      reliefFailed = true;
+      scene.globe.material = undefined;
+      container.dataset.osmRelief = 'unsupported';
+      scene.requestRender();
+    }
+  });
   const airportScenery = createAirportScenery(scene, (lat, lon) => atlasSample(lat, lon)?.ellipsoid_m ?? null);
   widget.creditDisplay.addStaticCredit(new Credit(AIRPORT_VECTOR_CREDIT + ' · <a href="https://www.openstreetmap.org/copyright">Source / licence</a>', true));
   const landmarkLabels = createLandmarkLabels(scene, container, (lat, lon) => {
@@ -201,6 +218,11 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     applyImageryMode();
   }
   function applyImageryMode(useTerrain = lastState.terrain_profile === 1): void {
+    const wantsRelief = vectorScenery && useTerrain;
+    const nextMaterial = wantsRelief && !reliefFailed ? osmRelief : undefined;
+    if (scene.globe.material !== nextMaterial) scene.globe.material = nextMaterial;
+    const reliefStatus = wantsRelief ? (nextMaterial ? 'active' : 'unsupported') : 'off';
+    if (container.dataset.osmRelief !== reliefStatus) container.dataset.osmRelief = reliefStatus;
     for (let i = 0; i < scene.imageryLayers.length; i++) {
       const layer = scene.imageryLayers.get(i);
       // Failed or unavailable photographs expose OSM beneath them.
@@ -798,7 +820,8 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       observer.disconnect();
       creditObserver.disconnect();
       clearTimeout(loadTimeout);
-      forwardMarker.dispose();
+      forwardMarker.dispose(); removeReliefError();
+      scene.globe.material = undefined; osmRelief?.destroy(); delete container.dataset.osmRelief;
       approachGuide.dispose(); aircraftShadow.dispose(); airportScenery.dispose(); landmarkLabels.dispose();
       status.remove();
       widget.destroy();
