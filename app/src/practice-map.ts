@@ -1,3 +1,5 @@
+import { COUNTRY_IMAGERY, COUNTRY_PHOTO_DETAIL_MIN_LEVEL, COUNTRY_PHOTO_MAX_LEVEL, COUNTRY_PHOTO_MIN_LEVEL, countryPhotoCandidates, countryPhotoUrl, type PhotoCountry } from './country-imagery.ts';
+import { countryPhotoBackoff } from './country-photo-backoff.ts';
 import { createOfmMapOverlay, OFM_OVERLAY_ID } from './ofm-map-overlay.ts';
 import { airportApproachGuides } from './approach-guide-airports.ts';
 import type { ApproachGuide } from './approach-guide.ts';
@@ -43,6 +45,16 @@ export interface PracticeMap {
   setCircuitGuide(enabled: boolean): void;
   toggleOverlap(): void;
   dispose(): void;
+}
+
+function countryRasterSource(source: typeof COUNTRY_IMAGERY[number]) {
+  return { type: 'raster' as const, tiles: [countryPhotoUrl(source.id)], tileSize: 256,
+    minzoom: COUNTRY_PHOTO_MIN_LEVEL, maxzoom: COUNTRY_PHOTO_MAX_LEVEL,
+    bounds: [...source.bounds] as [number, number, number, number], attribution: source.attribution };
+}
+function countryRasterLayer(source: typeof COUNTRY_IMAGERY[number]) {
+  return { id: `country-photo-${source.id}`, type: 'raster' as const, source: `country-photo-${source.id}`,
+    minzoom: COUNTRY_PHOTO_DETAIL_MIN_LEVEL, layout: { visibility: 'none' as const }, paint: { 'raster-fade-duration': 0 } };
 }
 
 interface MapOptions {
@@ -235,6 +247,16 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   let disposed = false;
   let following = true;
   let failed = false;
+  function refreshMapStatus(): void {
+    if (!ready && !failed) return;
+    const center = map?.getCenter();
+    const candidates = center && aerial && visible ? countryPhotoCandidates(center.lat, center.lng) : [];
+    const affected = COUNTRY_IMAGERY.filter(source => candidates.includes(source.id)
+      && (countryPhotoBackoff.isBlocked(source.id) || countryPhotoProblems.has(source.id)));
+    const country = affected.length ? `${affected.map(source => source.name).join(' / ')} photography temporarily unavailable; map fallback remains.` : '';
+    status.hidden = !failed && !country;
+    status.textContent = [country, failed ? 'Some map tiles unavailable. Aircraft and path remain local.' : ''].filter(Boolean).join(' ');
+  }
   const airportMarkers: Marker[] = [];
   let airportMarkerKey = '';
   let airportSourceKey = '';
@@ -243,6 +265,15 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   let paintedNavigationData: FlightMapNavigation | undefined;
   let navigationData: FlightMapNavigation = { type: 'FeatureCollection', features: [] };
   let aerial = false, vector = false;
+  const countryPhotoProblems = new Set<PhotoCountry>();
+  const countryPhotoNeedsRefresh = new Set<PhotoCountry>();
+  const countryPhotoEpoch: Record<PhotoCountry, number> = { ch: 0, at: 0 };
+  const countryPhotoTiles = new WeakMap<object, { id: PhotoCountry; generation: number; epoch: number }>();
+  const removeCountryPhotoBackoff = countryPhotoBackoff.subscribe((id, blocked) => {
+    if (disposed) return;
+    if (!blocked) { countryPhotoProblems.delete(id); countryPhotoNeedsRefresh.add(id); }
+    syncCountryPhotoLayers(); refreshMapStatus();
+  });
   const locationPreferenceStorage = (() => { try { return window.localStorage; } catch { return null; } })();
   let locationTypes: ReadonlySet<MapLocationType> = new Set(loadMapLocationPreferences(locationPreferenceStorage));
   let airports: Airport[] = [];
@@ -636,17 +667,44 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     legend.textContent = `Whole retained path · ${value ? 'Following aircraft' : 'Fit view · press Follow to recenter'} · North up`;
   }
 
+  function syncCountryPhotoLayers(): void {
+    if (!ready || !map) return;
+    for (const source of COUNTRY_IMAGERY) {
+      const layerId = `country-photo-${source.id}`, show = visible && aerial && !countryPhotoBackoff.isBlocked(source.id);
+      if (!map.getLayer(layerId)) continue;
+      if (show && countryPhotoNeedsRefresh.has(source.id)) {
+        // Recreate only this source and its layer, so every retry gets fresh
+        // MapLibre tile objects and late errors cannot inherit a new ticket.
+        countryPhotoEpoch[source.id]++;
+        map.removeLayer(layerId); if (map.getSource(layerId)) map.removeSource(layerId);
+        map.addSource(layerId, countryRasterSource(source));
+        const before = source.id === 'ch' && map.getLayer('country-photo-at') ? 'country-photo-at'
+          : map.getLayer('imagery') ? 'imagery' : undefined;
+        map.addLayer(countryRasterLayer(source), before);
+        countryPhotoNeedsRefresh.delete(source.id);
+      }
+      const next = show ? 'visible' : 'none';
+      const current = map.getLayoutProperty(layerId, 'visibility');
+      if (current !== next) {
+        if (current === 'visible' && next === 'none') countryPhotoNeedsRefresh.add(source.id);
+        countryPhotoEpoch[source.id]++; map.setLayoutProperty(layerId, 'visibility', next);
+      }
+    }
+  }
   function setAerial(value: boolean): void {
     aerial = value;
     updateLayerCaption();
     mapLayer.setAttribute('aria-pressed', String(!value));
     aerialLayer.setAttribute('aria-pressed', String(value));
     viewport.setAttribute('aria-label', `North-up ${value ? 'aerial imagery' : 'public map'} and recorded flight path`);
-    if (ready) map?.setLayoutProperty('imagery', 'visibility', value ? 'visible' : 'none');
+    if (ready && map) {
+      map.setLayoutProperty('imagery', 'visibility', value ? 'visible' : 'none');
+      syncCountryPhotoLayers(); refreshMapStatus();
+    }
   }
 
   function updateLayerCaption(): void {
-    caption.textContent = `${aerial ? 'Public aerial imagery · capture dates vary.' : 'Public map · not a navigation chart.'}${vector ? ' Terrain: map without labels.' : ''} Worldwide community airport/NAV discovery near map centre. Receiver signals use a separate historical NAV810 inventory; published fix coverage remains regional.`;
+    caption.textContent = `${aerial ? 'Regional aerial imagery, including Switzerland and Austria where available · capture dates vary; global OSM fallback.' : 'Public map · not a navigation chart.'}${vector ? ' Terrain: map without labels.' : ''} Worldwide community airport/NAV discovery near map centre. Receiver signals use a separate historical NAV810 inventory; published fix coverage remains regional.`;
   }
 
   function setVector(enabled: boolean): void {
@@ -960,7 +1018,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
         searchPosition = { lat, lon }; pointSearch.setPosition(longitude_deg, latitude_deg);
       }
       readout.textContent = `${Math.abs(latitude_deg).toFixed(4)}° ${latitude_deg < 0 ? 'S' : 'N'}  ${Math.abs(longitude_deg).toFixed(4)}° ${longitude_deg < 0 ? 'W' : 'E'}  ·  ${(Math.round(frame.heading_deg) % 360).toString().padStart(3, '0')}° true`;
-      if (ready && !failed) status.hidden = true;
+      refreshMapStatus();
       if (!visible) updatePlannerPanel();
       // Render failures propagate so the host can dispose and offer a retry.
       paint();
@@ -973,6 +1031,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     setVisible(value) {
       if (disposed) return;
       visible = value; ofmOverlay?.setVisible(value);
+      syncCountryPhotoLayers(); refreshMapStatus();
       if (!value) { pointPopup?.remove(); pointPopup = null; }
       container.hidden = !value;
       if (value) { map?.resize(); requestWorldCenter(); paint(); }
@@ -980,7 +1039,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     dispose() {
       if (disposed) return;
       disposed = true; pointPopup?.remove(); pointSearch.dispose(); planner.dispose(); planOverlay.remove(); customFixMarkers.splice(0).forEach(marker => marker.remove()); planPointMarkers.splice(0).forEach(marker => marker.remove()); fixMarkers.splice(0).forEach(marker => marker.remove());
-      abort.abort(); worldLoader?.dispose(); ++worldSelectionGeneration; ++worldwideSearchGeneration; worldwideSearchHits.clear(); comPanel?.dispose();
+      removeCountryPhotoBackoff(); abort.abort(); worldLoader?.dispose(); ++worldSelectionGeneration; ++worldwideSearchGeneration; worldwideSearchHits.clear(); comPanel?.dispose();
       observer.disconnect();
       removers.forEach((remove) => remove());
       container.removeEventListener('pointerdown', onInteraction);
@@ -1008,6 +1067,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
         'gps-target': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
         basemap: { type: 'raster', tiles: ['/scenery/map/{z}/{x}/{y}.png'], tileSize: 256, minzoom: 5, maxzoom: 16, bounds: [...AIRFIELD_BOUNDS] },
         imagery: { type: 'raster', tiles: ['/scenery/imagery/{z}/{x}/{y}.png'], tileSize: 512, minzoom: 7, maxzoom: 15, bounds: [6, 47, 14, 51.75] },
+        ...Object.fromEntries(COUNTRY_IMAGERY.map(source => [`country-photo-${source.id}`, countryRasterSource(source)])),
         'recorded-path': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
         airfields: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
         'navigation-aids': { type: 'geojson', data: navigationData },
@@ -1018,6 +1078,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
         ...worldMapLayers(),
         ...worldMapLabelLayers(),
         { id: 'basemap', type: 'raster', source: 'basemap', layout: { visibility: 'none' }, paint: { 'raster-fade-duration': 0 } },
+        ...COUNTRY_IMAGERY.map(countryRasterLayer),
         { id: 'imagery', type: 'raster', source: 'imagery', layout: { visibility: 'none' }, paint: { 'raster-fade-duration': 0 } },
         { id: 'navigation-fixes', type: 'circle', source: 'navigation-fixes', minzoom: 8, paint: { 'circle-radius': 3, 'circle-color': '#e3a1e8', 'circle-stroke-color': '#34203e', 'circle-stroke-width': 1 } },
         { id: 'flight-plan-route-casing', type: 'line', source: 'flight-plan-route', paint: { 'line-color': '#123342', 'line-width': 8, 'line-opacity': .95 } },
@@ -1054,7 +1115,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
         if (visible && resourceType === 'Tile') {
           try {
             const target = new URL(url, window.location.href);
-            if (target.origin === window.location.origin && /^\/scenery\/(?:map|imagery|osm)\//.test(target.pathname))
+            if (target.origin === window.location.origin && /^\/scenery\/(?:map|imagery|osm|photo-country)\//.test(target.pathname))
               return { url, headers: { 'X-Gefly-Scenery-Priority': 'visible' } };
           } catch { /* Preserve MapLibre's handling of other request URLs. */ }
         }
@@ -1064,7 +1125,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     ofmOverlay = createOfmMapOverlay({ map, controls: ofmControls, visible, onInteraction, loadSource: loadOfmOverlaySource });
     map.addControl(new ScaleControl({ unit: 'nautical', maxWidth: 100 }), 'bottom-left');
     viewport.append(trajectory);
-    map.on('move', paintTrajectory); map.on('resize', paintTrajectory);
+    map.on('move', () => { paintTrajectory(); refreshMapStatus(); }); map.on('resize', paintTrajectory);
     map.dragRotate.disable();
     map.touchZoomRotate.disableRotation();
     map.on('moveend', () => { requestWorldCenter(); paintAirports(); paintNavigation(); paintWorldNavigation(); paintFixes(); paintCircuit(); });
@@ -1141,17 +1202,38 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     origin.className = 'practice-map-start';
     origin.textContent = 'Trace start';
     start = new Marker({ element: origin, anchor: 'left', offset: [5, 0] });
+    map.on('sourcedataloading', event => {
+      const sourceId = event.sourceId, tile = (event as typeof event & { tile?: object }).tile;
+      const source = COUNTRY_IMAGERY.find(item => sourceId === `country-photo-${item.id}`);
+      if (source && tile && visible && aerial) countryPhotoTiles.set(tile, { id: source.id,
+        generation: countryPhotoBackoff.generation(source.id), epoch: countryPhotoEpoch[source.id] });
+    });
+    map.on('sourcedata', event => {
+      const tile = (event as unknown as { tile?: { state?: string } }).tile;
+      const ticket = tile ? countryPhotoTiles.get(tile) : undefined;
+      if (ticket && tile?.state === 'loaded' && visible && aerial && ticket.epoch === countryPhotoEpoch[ticket.id]
+        && ticket.generation === countryPhotoBackoff.generation(ticket.id) && countryPhotoProblems.delete(ticket.id)) refreshMapStatus();
+    });
     map.on('error', event => {
-      if (disposed || (event as typeof event & { sourceId?: string }).sourceId === OFM_OVERLAY_ID) return;
+      const sourceId = (event as typeof event & { sourceId?: string }).sourceId;
+      if (disposed || sourceId === OFM_OVERLAY_ID) return;
+      const country = COUNTRY_IMAGERY.find(source => sourceId === `country-photo-${source.id}`);
+      if (country) {
+        const tile = (event as typeof event & { tile?: object }).tile, ticket = tile && countryPhotoTiles.get(tile);
+        if (visible && aerial && ticket && ticket.id === country.id && ticket.epoch === countryPhotoEpoch[country.id]
+          && ticket.generation === countryPhotoBackoff.generation(country.id)) {
+          countryPhotoProblems.add(country.id); countryPhotoBackoff.failure(country.id, ticket.generation); refreshMapStatus();
+        }
+        return;
+      }
       failed = true;
-      status.hidden = false;
-      status.textContent = 'Some map tiles unavailable. Aircraft and path remain local.';
+      refreshMapStatus();
     });
     // Local overlays must initialize even when the first raster tiles fail.
     map.on('style.load', () => {
       if (disposed) return;
       ready = true;
-      status.hidden = !failed;
+      refreshMapStatus();
       [...buttons, ...layerButtons].forEach((button) => { button.disabled = false; });
       circuitToggle.disabled = false;
       circuitDataKey = ''; circuitLabelKey = ''; circuitLegKey = ''; paintedFixes = undefined;

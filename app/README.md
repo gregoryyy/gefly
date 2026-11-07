@@ -29,6 +29,10 @@ just build-flight-engine   # first run: downloads the pinned SDK and JSBSim sour
 just fly
 ```
 
+The country-photo proxy invokes `python3` from the server PATH; set
+`PYTHON=/path/to/python3` when starting the server to choose an interpreter with
+Pillow. Without it, country imagery falls back to the map.
+
 Open the local URL printed by the development server, then select **Start flight**.
 The application loads paused so the aircraft cannot fly away while you inspect
 the controls. Starting or resetting uses the same airborne initial state near
@@ -631,6 +635,14 @@ resolution is not effective output resolution, and current capture dates are
 unknown. Missing border photography can reveal the map underneath; no complete
 photographic coverage or current airport condition is claimed.
 
+Photo terrain and the map's Aerial mode also request swisstopo SWISSIMAGE
+product imagery for Switzerland and basemap.at orthophotos for Austria. An
+approximate, inward-buffered Austria mask leaves fallback strips near borders;
+transparent or unavailable imagery reveals the existing map. Swiss credits
+include the provider-required Planet lake-imagery notice; Austria uses CC BY 4.0
+attribution. Imagery is requested on demand and source capture dates vary. See
+[imagery sources and limits](../docs/research/2026-11-07-swiss-austrian-imagery.md).
+
 The proxy uses a 32 MiB memory cache and bounded requests/compositing. It needs
 Python/Pillow from `utils/scenery/requirements.txt`; without Pillow, photos fail
 while map/bundled scenery can remain usable. There are no accounts, API keys,
@@ -639,8 +651,9 @@ the development server's requests for simulated scenery coordinates. Live
 photographs can change: Review freezes aircraft state and versioned terrain,
 not the visual bytes supplied later by those services.
 
-Only Vite's development server currently installs this proxy. A static UI build
-does not host it or the generated local research engine. Production hosting and
+The German scenery proxy is installed in Vite's development server; the Swiss
+and Austrian country proxy is installed in Vite development and preview servers.
+A static UI build does not host these endpoints or the generated local research engine. Production hosting and
 an equivalent endpoint service remain undecided.
 
 ## What the prototype represents

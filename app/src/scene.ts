@@ -1,4 +1,6 @@
 import { createOsmReliefMaterial, supportsOsmRelief } from './osm-relief.ts';
+import { COUNTRY_IMAGERY, COUNTRY_PHOTO_MAX_LEVEL, COUNTRY_PHOTO_MIN_LEVEL, countryPhotoCandidates, countryPhotoUrl, type PhotoCountry } from './country-imagery.ts';
+import { countryPhotoBackoff } from './country-photo-backoff.ts';
 import { CHASE_DISTANCE } from './chase-distance.ts';
 import { setCameraPose } from './camera-pose.ts';
 import { createSceneryCache } from './scenery-cache';
@@ -204,6 +206,9 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   const starterLayers: ImageryLayer[] = [];
   let localRegionalLayer: ImageryLayer | null = null;
   let livePhotoLayer: ImageryLayer | null = null;
+  const countryPhotoLayers = new Map<PhotoCountry, ImageryLayer>();
+  const countryPhotoFailures = new Set<PhotoCountry>();
+  const countryPhotoEpoch: Record<PhotoCountry, number> = { ch: 0, at: 0 };
   let worldMap: Awaited<ReturnType<typeof createMapTerrainImagery>> | null = null;
   let worldMapLayer: ImageryLayer | null = null;
   let worldMapLoad: Promise<void> | null = null;
@@ -212,6 +217,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     // Photographs cover the OSM map only in Photo mode. Vector mode uses the
     // same detailed OSM presentation everywhere, independent of regional bounds.
     if(worldMapLayer)scene.imageryLayers.raiseToTop(worldMapLayer);
+    for (const layer of countryPhotoLayers.values()) scene.imageryLayers.raiseToTop(layer);
     if(livePhotoLayer)scene.imageryLayers.raiseToTop(livePhotoLayer);
     if(localRegionalLayer)scene.imageryLayers.raiseToTop(localRegionalLayer);
     for(const layer of starterLayers)scene.imageryLayers.raiseToTop(layer);
@@ -226,8 +232,16 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     for (let i = 0; i < scene.imageryLayers.length; i++) {
       const layer = scene.imageryLayers.get(i);
       // Failed or unavailable photographs expose OSM beneath them.
-      layer.show = layer === baseLayer ? true : layer === reliefLayer ? useTerrain
-        : layer === worldMapLayer ? useTerrain : !vectorScenery;
+      const show = layer === baseLayer ? true : layer === reliefLayer ? useTerrain
+        : layer === worldMapLayer ? useTerrain
+        : layer === countryPhotoLayers.get('ch') ? useTerrain && !vectorScenery && !countryPhotoBackoff.isBlocked('ch')
+        : layer === countryPhotoLayers.get('at') ? useTerrain && !vectorScenery && !countryPhotoBackoff.isBlocked('at')
+        : !vectorScenery;
+      if (layer.show !== show) {
+        if (layer === countryPhotoLayers.get('ch')) countryPhotoEpoch.ch++;
+        if (layer === countryPhotoLayers.get('at')) countryPhotoEpoch.at++;
+        layer.show = show;
+      }
     }
   }
   let loadSlow = false;
@@ -288,6 +302,8 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     const lat = state.lat_rad / DEG_RAD, lon = state.lon_rad / DEG_RAD;
     const outside = lon < bounds[0] || lon > bounds[2] || lat < bounds[1] || lat > bounds[3];
     const polar = Math.abs(lat) > WORLD_MAP_MAX_LATITUDE;
+    const countryCandidates = state.terrain_profile === 1 && !vectorScenery ? countryPhotoCandidates(lat, lon) : [];
+    container.dataset.countryImagery = countryCandidates.length ? countryCandidates.join(',') : 'off';
     container.dataset.sceneryFallback = state.terrain_profile !== 1 ? 'off-flat-study' : polar ? 'outside-map-coverage' : vectorScenery || outside ? 'osm' : 'regional';
     container.dataset.worldMap = worldMapStatus;
     container.dataset.worldMapLoaded = String(worldMap?.getStats().loadedTiles ?? 0);
@@ -312,6 +328,13 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
           : 'Loading global OSM fallback; regional photography unavailable here.'
         : vectorScenery ? `Global OpenStreetMap · ${globalTerrainText}.`
         : `Global OSM fallback · regional photography unavailable here · ${globalTerrainText}.`;
+    }
+    if (countryCandidates.length) {
+      const names = (blocked: boolean) => COUNTRY_IMAGERY.filter(source => countryCandidates.includes(source.id)
+        && countryPhotoBackoff.isBlocked(source.id) === blocked).map(source => source.name).join(' / ');
+      const available = names(false), blocked = names(true);
+      text = [available && `${available} photography requested · coverage and capture dates vary${countryCandidates.some(id => !countryPhotoBackoff.isBlocked(id) && countryPhotoFailures.has(id)) ? ' · some tile requests failed' : ''}`,
+        blocked && `${blocked} photography temporarily unavailable · retrying shortly`, `OSM fallback · ${globalTerrainText}`].filter(Boolean).join(' · ') + '.';
     }
     container.dataset.mapTerrain = vectorScenery && state.terrain_profile === 1 ? worldMapStatus : vectorScenery ? 'flat-study' : 'off';
     container.dataset.mapTerrainLoaded = String(worldMap?.getStats().loadedTiles ?? 0);
@@ -409,6 +432,46 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   let lastView: 'cockpit' | 'chase' = 'cockpit';
   let lastState = initialVisual;
   let lastLook: CameraLook = { yaw_rad: 0, pitch_rad: 0 };
+  // Country services are independent of the German regional terrain stream.
+  // Their transparent tiles reveal the OSM base outside actual coverage.
+  for (const source of COUNTRY_IMAGERY) {
+    const provider = new UrlTemplateImageryProvider({
+      url: new Resource({ url: countryPhotoUrl(source.id), headers: { 'X-Gefly-Scenery-Priority': 'visible' } }),
+      minimumLevel: COUNTRY_PHOTO_MIN_LEVEL, maximumLevel: COUNTRY_PHOTO_MAX_LEVEL,
+      tileWidth: 256, tileHeight: 256, rectangle: Rectangle.fromDegrees(...source.bounds),
+      credit: new Credit(source.attribution, true),
+    });
+    // Error accounting is attached to each request below so stale completions
+    // after a mode change or retry cannot reopen the shared circuit.
+    provider.errorEvent.addEventListener(() => {});
+    const requestImage = provider.requestImage.bind(provider);
+    provider.requestImage = (x, y, level, request) => {
+      const generation = countryPhotoBackoff.generation(source.id), epoch = countryPhotoEpoch[source.id];
+      const result = requestImage(x, y, level, request);
+      if (!result) return undefined;
+      return result.then(image => {
+        if (!disposed && epoch === countryPhotoEpoch[source.id] && generation === countryPhotoBackoff.generation(source.id)
+          && level >= 7 && countryPhotoFailures.delete(source.id)) imageryStatus(lastState);
+        return image;
+      }, error => {
+        if (!disposed && epoch === countryPhotoEpoch[source.id] && generation === countryPhotoBackoff.generation(source.id)
+          && !countryPhotoBackoff.isBlocked(source.id)) {
+          const first = !countryPhotoFailures.has(source.id);
+          countryPhotoFailures.add(source.id); countryPhotoBackoff.failure(source.id, generation);
+          if (first) imageryStatus(lastState);
+        }
+        throw error;
+      });
+    };
+    const layer = new ImageryLayer(provider, { show: false });
+    countryPhotoLayers.set(source.id, layer); scene.imageryLayers.add(layer);
+  }
+  const removeCountryPhotoBackoff = countryPhotoBackoff.subscribe((id, blocked) => {
+    if (disposed) return;
+    if (!blocked) countryPhotoFailures.delete(id);
+    applyImageryMode(lastState.terrain_profile === 1); imageryStatus(lastState); scene.requestRender();
+  });
+  orderPhotographs();
   let lastFov_rad = DEFAULT_FOV_RAD;
   let overviewActive = false, overviewRetain = false, overviewRevision = 0;
   let displayOverview: readonly TerrainOverviewGrid[] = [];
@@ -820,7 +883,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       observer.disconnect();
       creditObserver.disconnect();
       clearTimeout(loadTimeout);
-      forwardMarker.dispose(); removeReliefError();
+      forwardMarker.dispose(); removeReliefError(); removeCountryPhotoBackoff();
       scene.globe.material = undefined; osmRelief?.destroy(); delete container.dataset.osmRelief;
       approachGuide.dispose(); aircraftShadow.dispose(); airportScenery.dispose(); landmarkLabels.dispose();
       status.remove();

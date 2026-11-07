@@ -1463,7 +1463,7 @@ addEventListener('blur', releaseBackgroundInput);
 addEventListener('focusin', event => { if (editing(event.target) && !reviewing) neutralize(); });
 document.addEventListener('visibilitychange', backgroundVisibility);
 
-const overlayPresentation = createOverlayPresentation({root, title:document.querySelector<HTMLElement>('.topbar')!, onActivate:neutralize});
+const overlayPresentation = createOverlayPresentation({root, title:document.querySelector<HTMLElement>('.topbar')!, onActivate:neutralize, immediatePanels: ['#practice-map-panel', '#flight-plan-overlay']});
 const disposeMenuShortcuts=installMenuShortcuts(root);
 const disposeFullscreen = installFullscreenControls({
   button: el<HTMLButtonElement>('toggle-fullscreen'), onError: notice,
