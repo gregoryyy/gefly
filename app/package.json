@@ -36,6 +36,9 @@
     "test:map-location-preferences": "node tests/map-location-preferences.browser.mjs",
     "test:map-zoom-keys": "node tests/map-zoom-shortcuts.browser.mjs",
     "test:world-navigation": "node tests/world-navigation.browser.mjs",
+    "test:background-flight": "node tests/background-flight.browser.mjs",
+    "test:flight-continuity": "node tests/flight-continuity.browser.mjs",
+    "test:flight-plan-failure": "node tests/flight-plan-failure.browser.mjs",
     "test:camera-return": "node tests/camera-return.browser.mjs",
     "test:ap-keyboard": "node tests/ap-keyboard.browser.mjs",
     "test:chase-zoom": "node tests/chase-zoom.browser.mjs"

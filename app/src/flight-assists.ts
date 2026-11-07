@@ -99,7 +99,7 @@ export function createFlightAssists(options: FlightAssistsOptions): {
       || !!document.querySelector('dialog[open]')
       || !!root.querySelector('#view-menu[open], #flight-menu[open]')
       || (event.target instanceof Element && !!event.target.closest(
-        'input, textarea, select, [contenteditable]:not([contenteditable="false"]), .practice-map-panel'));
+        'input, textarea, select, [contenteditable]:not([contenteditable="false"]), .practice-map-panel, .flight-plan-overlay'));
   }
   function onKey(event: KeyboardEvent): void {
     if (event.defaultPrevented || blocked(event)) return;

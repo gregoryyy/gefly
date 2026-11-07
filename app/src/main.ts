@@ -283,7 +283,7 @@ let continuedAxes: Pick<Controls, 'elevator' | 'aileron' | 'rudder' | 'brake_nor
 let reviewRate = 1;
 let liveStatus = 'Loading flight…';
 let practiceMap: PracticeMap | null = null;
-let mapVisible = false, mapLoading = false, mapDisposed = false;
+let mapVisible = false, flightPlanVisible = false, mapLoading = false, mapDisposed = false;
 let lastMapUpdate_ms = -Infinity;
 let lastMapSample: unknown = undefined;
 let reviewTerrainRequest: string | null = null;
@@ -463,7 +463,7 @@ const session = createSession({
       notice(`${trimNotice} EDDF 25C practice guidance disabled: navigation data is unavailable or does not match.`.trim());
     }
     publishInput();
-    if (startWhenReady && !document.hidden && !sceneFailed) { startWhenReady = false; startFlight(); }
+    if (startWhenReady && !sceneFailed) { startWhenReady = false; startFlight(); }
     updateSessionUI();
   },
   onStatus(message) { liveStatus = message; el('status').textContent = reviewing ? 'Review' : groundCollisionStopped() ? 'Ground collision' : message; },
@@ -798,6 +798,34 @@ el('toggle-stall-awareness').onclick = () => setStallAwarenessVisible(el('stall-
 el('toggle-map').onclick = () => {
   setFlightDataVisible(false); void setMapVisible(!mapVisible); closeViewMenu(); focusFlight();
 };
+const PLAN_UNAVAILABLE_NOTICE = 'Flight plan unavailable. Press P to try again.';
+function clearPlanUnavailableNotice(): void {
+  // Do not erase an unrelated notice that arrived while the planner loaded.
+  if (el('notice').textContent === PLAN_UNAVAILABLE_NOTICE) notice('');
+}
+const planToggle = document.createElement('button'); planToggle.id = 'toggle-flight-plan'; planToggle.type = 'button';
+planToggle.innerHTML = 'Flight plan <kbd>P</kbd>';
+planToggle.setAttribute('aria-controls', 'flight-plan-overlay'); planToggle.setAttribute('aria-keyshortcuts', 'P');
+planToggle.setAttribute('aria-pressed', 'false');
+viewMenu.before(planToggle);
+planToggle.onclick = () => { void setFlightPlanVisible(!flightPlanVisible); closeViewMenu(); };
+function renderFlightPlanVisibility(): void {
+  document.querySelector<HTMLElement>('.flight-app')!.dataset.flightPlan = String(flightPlanVisible);
+  planToggle.setAttribute('aria-pressed', String(flightPlanVisible));
+}
+async function setFlightPlanVisible(visible: boolean): Promise<void> {
+  if (visible !== flightPlanVisible) neutralize();
+  flightPlanVisible = visible; renderFlightPlanVisibility(); lastMapUpdate_ms = -Infinity;
+  if (practiceMap) {
+    try { practiceMap.setPlanVisible(visible); if (visible) clearPlanUnavailableNotice(); } catch { mapUnavailable(); }
+  } else if (visible) await ensurePracticeMap();
+}
+function flightPlanShortcut(event: KeyboardEvent): void {
+  if (event.code !== 'KeyP' || event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
+    || editing(event.target) || menuOpen() || document.querySelector('dialog[open]')) return;
+  event.preventDefault(); event.stopPropagation(); void setFlightPlanVisible(!flightPlanVisible);
+}
+document.addEventListener('keydown', flightPlanShortcut, true);
 function flightMapShortcut(event: KeyboardEvent): void {
   if (!['KeyM', 'Comma', 'Slash'].includes(event.code) || event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
     || editing(event.target) || menuOpen() || document.querySelector('dialog[open]')) return;
@@ -830,8 +858,15 @@ document.addEventListener('keydown', landmarkShortcut, true);
 
 
 function mapUnavailable() {
-  practiceMap?.dispose(); practiceMap = null;
+  const planWasVisible = flightPlanVisible;
+  try { practiceMap?.dispose(); } catch { /* A failed map must not strand its host controls. */ }
+  practiceMap = null;
+  // Even if a partially created or failed controller cannot dispose cleanly,
+  // it must not leave an orphaned editor over a false pressed state.
+  document.getElementById('flight-plan-overlay')?.remove();
+  flightPlanVisible = false; renderFlightPlanVisibility();
   el('practice-map-panel').textContent = 'Practice map unavailable. Close and reopen to retry; flight controls still work.';
+  if (planWasVisible) notice(PLAN_UNAVAILABLE_NOTICE);
 }
 async function setMapVisible(visible: boolean) {
   if (visible !== mapVisible) neutralize();
@@ -846,13 +881,20 @@ async function setMapVisible(visible: boolean) {
   panel.hidden = !visible;
   el('toggle-map').setAttribute('aria-pressed', String(visible));
   if (practiceMap) { try { practiceMap.setVisible(visible); } catch { mapUnavailable(); } lastMapUpdate_ms = -Infinity; return; }
-  if (!visible || mapLoading || mapDisposed) return;
+  if (visible) await ensurePracticeMap();
+}
+async function ensurePracticeMap(): Promise<void> {
+  if (practiceMap || mapLoading || mapDisposed) return;
+  const panel = el('practice-map-panel');
   mapLoading = true; panel.textContent = 'Loading practice map…';
   try {
     const { createPracticeMap } = await import('./practice-map');
     if (mapDisposed) return;
     const created = await createPracticeMap({
       container: panel,
+      planContainer: document.querySelector<HTMLElement>('.flight-app')!,
+      onRequestMap: () => { void setMapVisible(true); },
+      onPlanVisibilityChange(visible) { flightPlanVisible = visible; renderFlightPlanVisibility(); neutralize(); lastMapUpdate_ms = -Infinity; },
       onClose: () => { void setMapVisible(false); focusFlight(); },
       onInteraction: neutralize,
       initialApproachGuide: approachGuide,
@@ -898,9 +940,9 @@ async function setMapVisible(visible: boolean) {
       },
     });
     if (mapDisposed) { created.dispose(); return; }
-    practiceMap = created; created.setVector(!!controlSettings.vectorScenery); created.setVisible(mapVisible); lastMapUpdate_ms = -Infinity;
+    practiceMap = created; created.setVector(!!controlSettings.vectorScenery); created.setVisible(mapVisible); created.setPlanVisible(flightPlanVisible); clearPlanUnavailableNotice(); lastMapUpdate_ms = -Infinity;
   } catch {
-    if (!mapDisposed) panel.textContent = 'Practice map unavailable. Close and reopen to retry; flight controls still work.';
+    if (!mapDisposed) mapUnavailable();
   } finally { mapLoading = false; }
 }
 
@@ -984,7 +1026,7 @@ function exitReview() {
   updateConfiguration(latest, false);
   focusFlight();
   const resume = resumeAfterReview; resumeAfterReview = false;
-  if (resume && !document.hidden) startFlight();
+  if (resume) startFlight();
 }
 async function continueLiveFromReview() {
   if (!reviewing || continuingReplay || !ready || failed || sceneFailed) return;
@@ -1032,7 +1074,7 @@ async function continueLiveFromReview() {
     el<HTMLInputElement>('throttle').value = String(throttle * 100);
     pressureAltimeter.update(initial, false); updateConfiguration(initial, false);
     hasFlown = true; startWhenReady = false;
-    running = !document.hidden && document.hasFocus();
+    running = !sceneFailed;
     if (running) session.start();
     el('status').textContent = running ? 'Flying' : 'Paused';
     notice(`Continuing from ${initial.t_s.toFixed(1)} s${running ? '.' : ' · paused.'}`);
@@ -1365,7 +1407,7 @@ for (const button of Array.from(document.querySelectorAll<HTMLButtonElement>('[d
 }
 
 addEventListener('keydown', event => {
-  if ((event.target instanceof Element && event.target.closest('.practice-map-panel')) || document.querySelector('dialog[open]') || menuOpen() || event.ctrlKey || event.metaKey || event.altKey) return;
+  if ((event.target instanceof Element && event.target.closest('.practice-map-panel,.flight-plan-overlay')) || document.querySelector('dialog[open]') || menuOpen() || event.ctrlKey || event.metaKey || event.altKey) return;
   if (event.code === 'KeyR' && !reviewing) {
     if (!editing(event.target)) { event.preventDefault(); if (!event.repeat) enterReview(); }
     return;
@@ -1396,9 +1438,6 @@ addEventListener('keydown', event => {
     event.preventDefault(); throttle = Number(event.code.at(-1)) / 10;
     el<HTMLInputElement>('throttle').value = String(throttle * 100); publishInput();
   }
-  if (event.code === 'KeyP' && controlsAvailable() && latest?.ap_mode !== undefined) {
-    event.preventDefault(); if (!latest.kap_engaged) autopilotCapturePending = true; session.setKap140({action: latest.kap_engaged ? 'disconnect' : 'ap'});
-  }
   if (['BracketLeft', 'BracketRight'].includes(event.code) && controlsAvailable() && latest?.flap_rad !== undefined) {
     event.preventDefault(); flapTarget_deg = clamp(flapTarget_deg + (event.code === 'BracketLeft' ? -10 : 10), 0, 30); publishInput();
   }
@@ -1412,9 +1451,17 @@ addEventListener('keyup', event => {
   for (const code of ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyQ', 'KeyW', 'Quote', 'Backslash']) apKeyboardGuard.release(`button:${code}:${event.code}`);
   if (keys.delete(event.code)) { event.preventDefault(); publishInput(); }
 });
-addEventListener('blur', () => { pauseFlight(); apKeyboardGuard.clear(); });
+function releaseBackgroundInput(): void {
+  if (mapDisposed) return;
+  // Release held controls before browser timers become throttled, while keeping
+  // the explicitly requested flight state unchanged.
+  neutralize(); apKeyboardGuard.clear(); session.flushInput();
+  if (document.hidden) engineAudio.update(null, false);
+}
+function backgroundVisibility(): void { if (document.hidden) releaseBackgroundInput(); }
+addEventListener('blur', releaseBackgroundInput);
 addEventListener('focusin', event => { if (editing(event.target) && !reviewing) neutralize(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) pauseFlight(); });
+document.addEventListener('visibilitychange', backgroundVisibility);
 
 const overlayPresentation = createOverlayPresentation({root, title:document.querySelector<HTMLElement>('.topbar')!, onActivate:neutralize});
 const disposeMenuShortcuts=installMenuShortcuts(root);
@@ -1492,7 +1539,7 @@ function animate(now: number) {
     const state = reviewSample?.state ?? latest;
     flightAssists.update(reviewing ? reviewRate : (state.simulation_rate ?? 1), reviewing);
     const shownVsiFpm = reviewSample ? reviewSample.vertical_speed_mps / 0.3048 * 60 : verticalSpeedFpm;
-    if (practiceMap && mapVisible && practiceMapUpdateDue({ reviewing, now_ms: now, lastUpdate_ms: lastMapUpdate_ms, sample: reviewSample, lastSample: lastMapSample })) {
+    if (practiceMap && (mapVisible || flightPlanVisible) && practiceMapUpdateDue({ reviewing, now_ms: now, lastUpdate_ms: lastMapUpdate_ms, sample: reviewSample, lastSample: lastMapSample })) {
       try {
         practiceMap.update(state, recordedTrace().sampledStates(600), reviewing ? 'review' : 'live');
         lastMapUpdate_ms = now; lastMapSample = reviewSample;
@@ -1570,5 +1617,5 @@ function animate(now: number) {
   requestAnimationFrame(animate);
 }
 publishInput(); updateSessionUI(); requestAnimationFrame(animate);
-addEventListener('pagehide', () => { cancelCameraReturn(); cameraMotionPreference.removeEventListener('change', cameraMotionChanged); removeEventListener('blur', cancelCameraReturn); document.removeEventListener('visibilitychange', cancelHiddenCameraReturn); sceneContainer.removeEventListener('keydown', cancelCameraReturnOnEscape); sceneContainer.removeEventListener('pointerdown', cancelCameraReturn, { capture: true }); sceneContainer.removeEventListener('wheel', chaseWheel, { capture: true }); mapZoomShortcuts.dispose(); cwsControls?.dispose(); flightLocationStore.flush(); document.removeEventListener('keydown', reviewSeekShortcut, true); document.removeEventListener('keydown', flightMapShortcut, true); document.removeEventListener('keydown', landmarkShortcut, true); flightAssists.dispose(); overlayPresentation.dispose();disposeMenuShortcuts(); disposeFullscreen(); mapDisposed = true; engineAudio.dispose(); audioControls?.dispose(); document.removeEventListener('click', activateEngineAudio, true); document.removeEventListener('keydown', activateEngineAudio, true); document.removeEventListener('keydown', soundShortcut, true); document.removeEventListener('keydown', engineShortcut, true); document.removeEventListener('keydown', parkingBrakeShortcut, true); groundCollisionPanel.dispose(); loadingPanel.dispose(); aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); flightWarningsPanel.dispose(); liveWarningMonitor.reset(); reviewWarningMonitor.reset(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); systemsPanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
+addEventListener('pagehide', () => { cancelCameraReturn(); cameraMotionPreference.removeEventListener('change', cameraMotionChanged); removeEventListener('blur', cancelCameraReturn); removeEventListener('blur', releaseBackgroundInput); document.removeEventListener('visibilitychange', backgroundVisibility); document.removeEventListener('visibilitychange', cancelHiddenCameraReturn); sceneContainer.removeEventListener('keydown', cancelCameraReturnOnEscape); sceneContainer.removeEventListener('pointerdown', cancelCameraReturn, { capture: true }); sceneContainer.removeEventListener('wheel', chaseWheel, { capture: true }); mapZoomShortcuts.dispose(); cwsControls?.dispose(); flightLocationStore.flush(); document.removeEventListener('keydown', reviewSeekShortcut, true); document.removeEventListener('keydown', flightMapShortcut, true); document.removeEventListener('keydown', flightPlanShortcut, true); document.removeEventListener('keydown', landmarkShortcut, true); flightAssists.dispose(); overlayPresentation.dispose();disposeMenuShortcuts(); disposeFullscreen(); mapDisposed = true; engineAudio.dispose(); audioControls?.dispose(); document.removeEventListener('click', activateEngineAudio, true); document.removeEventListener('keydown', activateEngineAudio, true); document.removeEventListener('keydown', soundShortcut, true); document.removeEventListener('keydown', engineShortcut, true); document.removeEventListener('keydown', parkingBrakeShortcut, true); groundCollisionPanel.dispose(); loadingPanel.dispose(); aircraftHandbook.dispose(); flightData.dispose(); stallAwareness.dispose(); flightWarningsPanel.dispose(); liveWarningMonitor.reset(); reviewWarningMonitor.reset(); cockpitLayout.dispose(); practiceMap?.dispose(); session.dispose(); controlSettingsPanel.dispose(); pressureAltimeter.dispose(); enginePanel.dispose(); systemsPanel.dispose(); autopilotPanel.dispose(); radioPanel.dispose(); navigationMedia.removeEventListener('change', placeNavigationOpener); navigationGauges.dispose(); pitchTrimControl.dispose(); landingFeedback.dispose(); fieldOfView.dispose(); pointerYoke?.dispose(); sixPack.dispose(); reviewControls.dispose(); flightTrace.clear(); scene?.dispose(); });
 void sceneReady;
