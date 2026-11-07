@@ -66,7 +66,10 @@ root.innerHTML = `
 <main class="flight-app">
   <div id="scene" aria-label="Flight scene" tabindex="0" data-pointer-mode="off"></div>
   <header class="topbar">
-    <a class="brand" href="https://github.com/gregoryyy/gefly" target="_blank" rel="noreferrer">gefly<span>FLIGHT LAB</span></a>
+    <div class="brand-area">
+      <a class="brand" href="https://github.com/gregoryyy/gefly" target="_blank" rel="noreferrer">gefly<span>FLIGHT LAB</span></a>
+      <details id="credits-menu" class="top-menu"><summary>Credits</summary><section class="menu-content credits-content" aria-label="Data and imagery credits"><strong>Data &amp; imagery credits</strong><div id="scene-credits"></div><section id="map-credits-section" hidden><strong>Flight map</strong><div id="map-credits"></div></section></section></details>
+    </div>
     <div class="location"><strong>EGELSBACH</strong><span>C172 research aircraft · airborne practice</span></div>
     <div class="session-status"><i id="status-dot"></i><span id="status" role="status">Loading flight…</span><span id="clock">00:00</span><span id="audio-button-slot"></span></div>
     <details id="view-menu" class="top-menu"><summary>View</summary><nav class="menu-content view-controls" aria-label="Flight views"><button id="cockpit" class="selected" aria-pressed="true">Cockpit</button><button id="chase" aria-pressed="false">Chase <kbd>V</kbd></button><button id="toggle-camera-return" type="button" aria-pressed="true">Animate view return</button><button id="toggle-fullscreen" type="button" aria-keyshortcuts="F" aria-pressed="false"><span data-fullscreen-label>Full screen</span> <kbd>F</kbd></button><button id="toggle-map-terrain" type="button" aria-pressed="false" aria-keyshortcuts="/" title="/ · Switch vector/photo terrain (US keyboard)">Terrain: photos <kbd>/</kbd></button><button id="toggle-map" aria-pressed="false" aria-controls="practice-map-panel" aria-keyshortcuts="M">Flight map <kbd>M</kbd></button><button id="cycle-landmarks" type="button" aria-keyshortcuts="." title=". · Cycle landmark labels">Landmarks: Off <kbd>.</kbd></button><button id="toggle-flight-data" aria-pressed="false" aria-controls="flight-data-panel">Flight data</button><button id="toggle-stall-awareness" aria-pressed="false" aria-controls="stall-awareness-panel">Stall awareness</button><button id="toggle-controls" aria-pressed="true" aria-controls="flight-controls-panel">Flight controls</button></nav></details>
@@ -599,15 +602,21 @@ function toggleEngine(): void {
 
 el('controls-settings').onclick = () => { closeViewMenu(); controlSettingsPanel.open(); };
 const viewMenu = el<HTMLDetailsElement>('view-menu');
-function closeViewMenu() { for (const id of ['view-menu', 'flight-menu']) el<HTMLDetailsElement>(id).open = false; }
-for (const menu of [viewMenu, el<HTMLDetailsElement>('flight-menu')]) {
-  menu.addEventListener('toggle', () => { if (menu.open) { neutralize(); for (const other of [viewMenu, el<HTMLDetailsElement>('flight-menu')]) if (other !== menu) other.open = false; } });
+const topMenus = [viewMenu, el<HTMLDetailsElement>('flight-menu'), el<HTMLDetailsElement>('credits-menu')];
+function closeViewMenu() { for (const menu of topMenus) menu.open = false; }
+for (const menu of topMenus) {
+  menu.addEventListener('toggle', () => { if (menu.open) { neutralize(); for (const other of topMenus) if (other !== menu) other.open = false; } });
   menu.addEventListener('keydown', event => {
     if (event.code === 'Escape') { event.preventDefault(); closeViewMenu(); menu.querySelector('summary')!.focus(); }
   });
-  document.addEventListener('pointerdown', event => { if (event.target instanceof Node && !menu.contains(event.target)) menu.open = false; });
+  document.addEventListener('pointerdown', event => {
+    if (menu.id === 'credits-menu' && event.target instanceof Element && event.target.closest('.cesium-credit-lightbox-overlay')) return;
+    if (event.target instanceof Node && !menu.contains(event.target)) menu.open = false;
+  });
 }
-function menuOpen() { return viewMenu.open || el<HTMLDetailsElement>('flight-menu').open; }
+function menuOpen() { return topMenus.some(menu => menu.open)
+  || [...document.querySelectorAll<HTMLElement>('.cesium-credit-lightbox-overlay')].some(popup =>
+    typeof popup.checkVisibility === 'function' ? popup.checkVisibility() : popup.getClientRects().length > 0); }
 el('toggle-controls').onclick = () => {
   controlsVisible = !controlsVisible; neutralize(); updateSessionUI();
   el('toggle-controls').setAttribute('aria-pressed', String(controlsVisible)); closeViewMenu(); focusFlight();
@@ -892,6 +901,7 @@ async function ensurePracticeMap(): Promise<void> {
     if (mapDisposed) return;
     const created = await createPracticeMap({
       container: panel,
+      creditsContainer: el('map-credits'),
       planContainer: document.querySelector<HTMLElement>('.flight-app')!,
       onRequestMap: () => { void setMapVisible(true); },
       onPlanVisibilityChange(visible) { flightPlanVisible = visible; renderFlightPlanVisibility(); neutralize(); lastMapUpdate_ms = -Infinity; },
@@ -1463,7 +1473,7 @@ addEventListener('blur', releaseBackgroundInput);
 addEventListener('focusin', event => { if (editing(event.target) && !reviewing) neutralize(); });
 document.addEventListener('visibilitychange', backgroundVisibility);
 
-const overlayPresentation = createOverlayPresentation({root, title:document.querySelector<HTMLElement>('.topbar')!, onActivate:neutralize});
+const overlayPresentation = createOverlayPresentation({root, title:document.querySelector<HTMLElement>('.topbar')!, onActivate:neutralize, immediatePanels: ['#practice-map-panel', '#flight-plan-overlay']});
 const disposeMenuShortcuts=installMenuShortcuts(root);
 const disposeFullscreen = installFullscreenControls({
   button: el<HTMLButtonElement>('toggle-fullscreen'), onError: notice,
@@ -1492,7 +1502,7 @@ const flightAssists = createFlightAssists({
 });
 sceneContainer.setAttribute('aria-description','I toggles the menu. O opens Options. F toggles full screen. M toggles the flight map. Comma toggles the extended menu below the map. Period cycles terrain labels. Slash switches vector and photo terrain on a US keyboard. Cockpit scroll changes field of view; chase scroll changes distance. Hold-drag to orbit; double-click chase to return behind the aircraft.');
 
-const sceneReady = createScene(sceneContainer).then(result => {
+const sceneReady = createScene(sceneContainer, el('scene-credits')).then(result => {
   scene = result; scene.setLandmarkLevel?.(landmarkLevel); scene.setSceneryMode?.(!!controlSettings.vectorScenery); scene.setPracticePapi?.(!!controlSettings.practicePapi); scene.setApproachGuide?.(approachGuide);
   scene.setTerrainTiles?.([...regionalTiles.values()]); session.reset(undefined, undefined, undefined, initialFlightLocation ?? undefined, initialFlightLocation ? initialFlightLocation.initial_balance_profile ?? (initialFlightLocation.mode === 'ground' ? 0 : 1) : 1);
 }).catch((error: unknown) => {

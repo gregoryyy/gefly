@@ -577,3 +577,26 @@ The saved view-return preference stores only a bounded strict boolean. The
 700–6000ms wall-time interpolation affects camera presentation only; reduced
 motion bypasses it. Input and lifecycle cancellation does not write physics,
 position, flight data or telemetry, and adds no network access.
+
+## Swiss and Austrian photographic imagery
+
+The local Vite dev/preview service accepts only canonical bounded GET/HEAD
+`/scenery/photo-country/{ch|at}/{z}/{x}/{y}.png` tile paths through a fixed
+allowlist. Zurich/Swiss tiles use the swisstopo transparent product PNG;
+Austria uses basemap.at JPEG and a conservative approximate Natural Earth
+boundary mask. Low zoom and unavailable coverage return transparent tiles;
+upstream/decoder failures return no-store errors and fall through to the map.
+The fixed HTTPS services receive the server IP and requested tile coordinates;
+no browser location permission, account or key is involved. Redirects, arbitrary
+origins, invalid dimensions/types and oversized bodies are rejected. Queue,
+parallelism, subprocess input/output, deadlines, cache size and TTL are bounded:
+at most four active and 64 pending keys, 2 MiB per source and output, 12 s
+including queue time, and a 32 MiB memory LRU with 15-minute expiry. Valid
+empty/low-zoom tiles are transparent; replies advertise empty coverage. Three
+provider failures open a per-country 30-second circuit, with non-cacheable
+503 responses and a single recovery probe. The browser pauses only the affected
+source and performs bounded retry; empty coverage does not trip the breaker.
+Python/Pillow is a local scenery dependency; `PYTHON` may select an interpreter.
+Country tiles are requested on visual demand and are not admitted to the
+existing persistent service-worker cache or predictive prefetch. Their source
+terms, attribution and boundary limitations are recorded in the imagery note.

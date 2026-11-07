@@ -1,4 +1,5 @@
 import { createOfmOverlayMiddleware } from './ofm-overlay-server.ts';
+import { createCountryImageryMiddleware } from './country-imagery-server.ts';
 
 import { createAirportRegionMiddleware } from './airport-region-server.ts';
 import { defineConfig } from 'vite';
@@ -49,6 +50,9 @@ export default defineConfig({
   plugins: [{
     name: 'local-flight-assets',
     configurePreviewServer(server) {
+      const countryImagery = createCountryImageryMiddleware();
+      server.middlewares.use(countryImagery);
+      server.httpServer?.once('close', () => countryImagery.dispose());
       server.middlewares.use(ofmOverlay);
       server.httpServer?.once('close', () => ofmOverlay.dispose());
       server.middlewares.use(hashedSceneryAssets(resolve(import.meta.dirname, 'dist')));
@@ -57,6 +61,9 @@ export default defineConfig({
       server.httpServer?.once('close', () => { airportRegions.dispose(); });
     },
     configureServer(server) {
+      const countryImagery = createCountryImageryMiddleware();
+      server.middlewares.use(countryImagery);
+      server.httpServer?.once('close', () => countryImagery.dispose());
       server.middlewares.use(ofmOverlay);
       server.httpServer?.once('close', () => ofmOverlay.dispose());
       server.middlewares.use(hashedSceneryAssets(resolve(import.meta.dirname, 'public')));

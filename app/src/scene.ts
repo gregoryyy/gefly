@@ -1,4 +1,6 @@
 import { createOsmReliefMaterial, supportsOsmRelief } from './osm-relief.ts';
+import { COUNTRY_IMAGERY, COUNTRY_PHOTO_MAX_LEVEL, COUNTRY_PHOTO_MIN_LEVEL, countryPhotoCandidates, countryPhotoUrl, type PhotoCountry } from './country-imagery.ts';
+import { countryPhotoBackoff } from './country-photo-backoff.ts';
 import { CHASE_DISTANCE } from './chase-distance.ts';
 import { setCameraPose } from './camera-pose.ts';
 import { createSceneryCache } from './scenery-cache';
@@ -83,7 +85,7 @@ function elevationRelief(grid: TerrainGrid): HTMLCanvasElement {
  * Explicit flat-ground/legacy studies retain their ellipsoid receiver.
  * Renderer state never feeds the flight model.
  */
-export async function createScene(container: HTMLElement): Promise<FlightScene> {
+export async function createScene(container: HTMLElement, creditContainer?: HTMLElement): Promise<FlightScene> {
   const [terrainGrid, worldGrid] = await Promise.all([loadTerrainPackage(), loadWorldTerrainPackage()]);
   const sceneryCache = createSceneryCache(container);
   const publicTerrain = createPublicTerrainProvider(terrainGrid);
@@ -112,11 +114,13 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   // terrain data instead of filling every connection with live photographs.
   RequestScheduler.maximumRequestsPerServer = 2;
   const credits = document.createElement('div');
-  credits.style.cssText = 'position:absolute;left:10px;right:10px;bottom:5px;z-index:1;font:10px/1.3 system-ui;color:white;text-shadow:0 1px 3px #000;';
-  container.appendChild(credits);
+  credits.className = 'scene-credits';
+  if (!creditContainer) credits.style.cssText = 'position:absolute;left:10px;right:10px;bottom:5px;z-index:1;font:10px/1.3 system-ui;color:white;text-shadow:0 1px 3px #000;';
+  (creditContainer ?? container).appendChild(credits);
   let widget: CesiumWidget;
   try { widget = new CesiumWidget(container, {
     creditContainer: credits,
+    creditViewport: creditContainer ? document.body : container,
     baseLayer: false,
     terrainProvider: publicTerrain,
     useDefaultRenderLoop: false,
@@ -183,7 +187,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   // The app hosts live credits in its Credits menu; standalone scenes retain
   // their original overlay. Keep Cesium/provider content and source links intact.
   const credit = credits.querySelector('.cesium-widget-credits') as HTMLElement | null;
-  if (credit) { credit.style.right = '0'; credit.style.left = 'auto'; credit.style.maxWidth = '100%'; credit.style.textAlign = 'right'; }
+  if (credit && !creditContainer) { credit.style.right = '0'; credit.style.left = 'auto'; credit.style.maxWidth = '100%'; credit.style.textAlign = 'right'; }
   const status = document.createElement('div');
   status.id = 'imagery-status';
   status.setAttribute('role', 'status');
@@ -204,6 +208,9 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   const starterLayers: ImageryLayer[] = [];
   let localRegionalLayer: ImageryLayer | null = null;
   let livePhotoLayer: ImageryLayer | null = null;
+  const countryPhotoLayers = new Map<PhotoCountry, ImageryLayer>();
+  const countryPhotoFailures = new Set<PhotoCountry>();
+  const countryPhotoEpoch: Record<PhotoCountry, number> = { ch: 0, at: 0 };
   let worldMap: Awaited<ReturnType<typeof createMapTerrainImagery>> | null = null;
   let worldMapLayer: ImageryLayer | null = null;
   let worldMapLoad: Promise<void> | null = null;
@@ -212,6 +219,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     // Photographs cover the OSM map only in Photo mode. Vector mode uses the
     // same detailed OSM presentation everywhere, independent of regional bounds.
     if(worldMapLayer)scene.imageryLayers.raiseToTop(worldMapLayer);
+    for (const layer of countryPhotoLayers.values()) scene.imageryLayers.raiseToTop(layer);
     if(livePhotoLayer)scene.imageryLayers.raiseToTop(livePhotoLayer);
     if(localRegionalLayer)scene.imageryLayers.raiseToTop(localRegionalLayer);
     for(const layer of starterLayers)scene.imageryLayers.raiseToTop(layer);
@@ -226,15 +234,23 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     for (let i = 0; i < scene.imageryLayers.length; i++) {
       const layer = scene.imageryLayers.get(i);
       // Failed or unavailable photographs expose OSM beneath them.
-      layer.show = layer === baseLayer ? true : layer === reliefLayer ? useTerrain
-        : layer === worldMapLayer ? useTerrain : !vectorScenery;
+      const show = layer === baseLayer ? true : layer === reliefLayer ? useTerrain
+        : layer === worldMapLayer ? useTerrain
+        : layer === countryPhotoLayers.get('ch') ? useTerrain && !vectorScenery && !countryPhotoBackoff.isBlocked('ch')
+        : layer === countryPhotoLayers.get('at') ? useTerrain && !vectorScenery && !countryPhotoBackoff.isBlocked('at')
+        : !vectorScenery;
+      if (layer.show !== show) {
+        if (layer === countryPhotoLayers.get('ch')) countryPhotoEpoch.ch++;
+        if (layer === countryPhotoLayers.get('at')) countryPhotoEpoch.at++;
+        layer.show = show;
+      }
     }
   }
   let loadSlow = false;
   const creditObserver = new ResizeObserver(() => {
     if (!disposed && credit) status.style.bottom = `${Math.max(38, credit.getBoundingClientRect().height + 12)}px`;
   });
-  if (credit) creditObserver.observe(credit);
+  if (credit && !creditContainer) creditObserver.observe(credit);
   const sourceCredit = new Credit('Hessen HVBG aerial imagery · DL-DE Zero 2.0', true);
   // A constant-color local base prevents Cesium from stretching photographic
   // edge pixels across the globe outside their actual geographic coverage.
@@ -288,6 +304,8 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
     const lat = state.lat_rad / DEG_RAD, lon = state.lon_rad / DEG_RAD;
     const outside = lon < bounds[0] || lon > bounds[2] || lat < bounds[1] || lat > bounds[3];
     const polar = Math.abs(lat) > WORLD_MAP_MAX_LATITUDE;
+    const countryCandidates = state.terrain_profile === 1 && !vectorScenery ? countryPhotoCandidates(lat, lon) : [];
+    container.dataset.countryImagery = countryCandidates.length ? countryCandidates.join(',') : 'off';
     container.dataset.sceneryFallback = state.terrain_profile !== 1 ? 'off-flat-study' : polar ? 'outside-map-coverage' : vectorScenery || outside ? 'osm' : 'regional';
     container.dataset.worldMap = worldMapStatus;
     container.dataset.worldMapLoaded = String(worldMap?.getStats().loadedTiles ?? 0);
@@ -312,6 +330,13 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
           : 'Loading global OSM fallback; regional photography unavailable here.'
         : vectorScenery ? `Global OpenStreetMap · ${globalTerrainText}.`
         : `Global OSM fallback · regional photography unavailable here · ${globalTerrainText}.`;
+    }
+    if (countryCandidates.length) {
+      const names = (blocked: boolean) => COUNTRY_IMAGERY.filter(source => countryCandidates.includes(source.id)
+        && countryPhotoBackoff.isBlocked(source.id) === blocked).map(source => source.name).join(' / ');
+      const available = names(false), blocked = names(true);
+      text = [available && `${available} photography requested · coverage and capture dates vary${countryCandidates.some(id => !countryPhotoBackoff.isBlocked(id) && countryPhotoFailures.has(id)) ? ' · some tile requests failed' : ''}`,
+        blocked && `${blocked} photography temporarily unavailable · retrying shortly`, `OSM fallback · ${globalTerrainText}`].filter(Boolean).join(' · ') + '.';
     }
     container.dataset.mapTerrain = vectorScenery && state.terrain_profile === 1 ? worldMapStatus : vectorScenery ? 'flat-study' : 'off';
     container.dataset.mapTerrainLoaded = String(worldMap?.getStats().loadedTiles ?? 0);
@@ -409,6 +434,46 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
   let lastView: 'cockpit' | 'chase' = 'cockpit';
   let lastState = initialVisual;
   let lastLook: CameraLook = { yaw_rad: 0, pitch_rad: 0 };
+  // Country services are independent of the German regional terrain stream.
+  // Their transparent tiles reveal the OSM base outside actual coverage.
+  for (const source of COUNTRY_IMAGERY) {
+    const provider = new UrlTemplateImageryProvider({
+      url: new Resource({ url: countryPhotoUrl(source.id), headers: { 'X-Gefly-Scenery-Priority': 'visible' } }),
+      minimumLevel: COUNTRY_PHOTO_MIN_LEVEL, maximumLevel: COUNTRY_PHOTO_MAX_LEVEL,
+      tileWidth: 256, tileHeight: 256, rectangle: Rectangle.fromDegrees(...source.bounds),
+      credit: new Credit(source.attribution, true),
+    });
+    // Error accounting is attached to each request below so stale completions
+    // after a mode change or retry cannot reopen the shared circuit.
+    provider.errorEvent.addEventListener(() => {});
+    const requestImage = provider.requestImage.bind(provider);
+    provider.requestImage = (x, y, level, request) => {
+      const generation = countryPhotoBackoff.generation(source.id), epoch = countryPhotoEpoch[source.id];
+      const result = requestImage(x, y, level, request);
+      if (!result) return undefined;
+      return result.then(image => {
+        if (!disposed && epoch === countryPhotoEpoch[source.id] && generation === countryPhotoBackoff.generation(source.id)
+          && level >= 7 && countryPhotoFailures.delete(source.id)) imageryStatus(lastState);
+        return image;
+      }, error => {
+        if (!disposed && epoch === countryPhotoEpoch[source.id] && generation === countryPhotoBackoff.generation(source.id)
+          && !countryPhotoBackoff.isBlocked(source.id)) {
+          const first = !countryPhotoFailures.has(source.id);
+          countryPhotoFailures.add(source.id); countryPhotoBackoff.failure(source.id, generation);
+          if (first) imageryStatus(lastState);
+        }
+        throw error;
+      });
+    };
+    const layer = new ImageryLayer(provider, { show: false });
+    countryPhotoLayers.set(source.id, layer); scene.imageryLayers.add(layer);
+  }
+  const removeCountryPhotoBackoff = countryPhotoBackoff.subscribe((id, blocked) => {
+    if (disposed) return;
+    if (!blocked) countryPhotoFailures.delete(id);
+    applyImageryMode(lastState.terrain_profile === 1); imageryStatus(lastState); scene.requestRender();
+  });
+  orderPhotographs();
   let lastFov_rad = DEFAULT_FOV_RAD;
   let overviewActive = false, overviewRetain = false, overviewRevision = 0;
   let displayOverview: readonly TerrainOverviewGrid[] = [];
@@ -820,7 +885,7 @@ export async function createScene(container: HTMLElement): Promise<FlightScene> 
       observer.disconnect();
       creditObserver.disconnect();
       clearTimeout(loadTimeout);
-      forwardMarker.dispose(); removeReliefError();
+      forwardMarker.dispose(); removeReliefError(); removeCountryPhotoBackoff();
       scene.globe.material = undefined; osmRelief?.destroy(); delete container.dataset.osmRelief;
       approachGuide.dispose(); aircraftShadow.dispose(); airportScenery.dispose(); landmarkLabels.dispose();
       status.remove();

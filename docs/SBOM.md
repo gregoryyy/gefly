@@ -489,3 +489,19 @@ GPL application code. Attribution links to https://www.openstreetmap.org/copyrig
 No npm dependency, bundled worldwide directory, model/physics data or new
 OurAirports fallback is introduced. Source/cache applicability and public-service
 limits are documented in [the note](research/2026-11-06-on-demand-airports.md).
+
+## Swiss and Austrian photographic sources
+
+The Swiss `ch.swisstopo.swissimage-product` and Austrian basemap.at Orthofoto
+services provide live imagery; no imagery tiles are bundled. The Swiss
+provider permits use and distribution with attribution; its mosaic includes
+Planet lake-centre imagery and requires “Includes material © (2016-2018)
+Planet. All rights reserved”. The official product metadata identifies the delivered SWISSIMAGE product as
+Opendata BY; a separate Planet-specific grant was not located.
+basemap.at supplies orthophotos under CC BY 4.0 with linked attribution. Source
+acquisition dates and coverage vary. The bundled Austria mask derives from
+Natural Earth Admin 0 1:10m v5.1.1, public domain; see
+[mask provenance](../utils/scenery/austria-boundary-source.md) and
+[service research](research/2026-11-07-swiss-austrian-imagery.md). The mask is
+generalized and conservatively inset, not a surveyed footprint. Pillow 11.2.1
+is the existing local imagery decoder; no new npm dependency is introduced.

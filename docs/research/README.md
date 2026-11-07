@@ -71,3 +71,4 @@ End with proposed implications, limitations and a handoff to product/orchestrato
 - [Airport 3° visual glidepath](2026-11-06-airport-glidepath.md).
 - [AP keyboard input](2026-11-06-ap-keyboard-input.md).
 - [OSM terrain relief](2026-11-07-osm-terrain-relief.md).
+- [Swiss and Austrian photographic scenery](2026-11-07-swiss-austrian-imagery.md).

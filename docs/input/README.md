@@ -218,3 +218,4 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [OSM terrain relief](2026-11-07-osm-terrain-relief.md).
 - [Restore background flight on main](2026-11-07-main-background.md).
 - [Restore flight plan shortcut on main](2026-11-07-main-flight-plan.md).
+- [Swiss and Austrian photographic scenery](2026-11-07-swiss-austrian-imagery.md).

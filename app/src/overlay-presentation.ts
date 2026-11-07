@@ -2,22 +2,31 @@ import './overlay-presentation.css';
 
 const panelSelector = '#flight-controls-panel, #practice-map-panel, #flight-data-panel, #stall-awareness-panel';
 
-/** Floating panels require an initial activation gesture before their controls operate. */
-export function createOverlayPresentation({ root, title, onActivate }: { root: HTMLElement; title: HTMLElement; onActivate?: () => void }): { dispose(): void } {
+/** Selected floating panels activate deliberately; immediate panels retain native first gestures. */
+export function createOverlayPresentation({ root, title, onActivate, immediatePanels = [] }: {
+  root: HTMLElement; title: HTMLElement; onActivate?: () => void; immediatePanels?: readonly string[];
+}): { dispose(): void } {
+  const immediateSelector = immediatePanels.join(',');
+  const isImmediate = (target: Element) => !!immediateSelector && !!target.closest(immediateSelector);
+  const observedSelector = [panelSelector, ...immediatePanels].join(',');
   let active: HTMLElement | null = null;
   let interceptedPointer: number | null = null;
   let keyboardNavigation = false;
-  const panels = () => Array.from(root.querySelectorAll<HTMLElement>(panelSelector));
+  const panels = () => Array.from(root.querySelectorAll<HTMLElement>(panelSelector)).filter(panel => !isImmediate(panel));
   const activate = (panel: HTMLElement | null) => {
     if (panel && panel !== active) onActivate?.();
     active = panel;
     for (const item of panels()) item.classList.toggle('overlay-active', item === panel);
   };
   const prepare = () => {
-    for (const panel of panels()) panel.classList.add('floating-overlay');
-    if (active?.hidden) activate(null);
+    for (const panel of root.querySelectorAll<HTMLElement>(`${observedSelector}, .floating-overlay, .overlay-active`)) {
+      if (isImmediate(panel)) panel.classList.remove('floating-overlay', 'overlay-active');
+      else if (panel.matches(panelSelector)) panel.classList.add('floating-overlay');
+    }
+    if (active && (active.hidden || isImmediate(active) || !root.contains(active))) activate(null);
   };
-  const panelFor = (target: EventTarget | null) => target instanceof Element ? target.closest<HTMLElement>(panelSelector) : null;
+  const panelFor = (target: EventTarget | null) => target instanceof Element && !isImmediate(target)
+    ? target.closest<HTMLElement>(panelSelector) : null;
   const onPointerDown = (event: PointerEvent) => {
     keyboardNavigation = false;
     interceptedPointer = null;
@@ -74,7 +83,7 @@ export function createOverlayPresentation({ root, title, onActivate }: { root: H
   prepare();
   const observer = new MutationObserver(records => {
     if (records.some(record => (record.type === 'attributes' && record.target === active) ||
-      Array.from(record.addedNodes).some(node => node instanceof Element && (node.matches(panelSelector) || node.querySelector(panelSelector))))) prepare();
+      Array.from(record.addedNodes).some(node => node instanceof Element && (node.matches(observedSelector) || node.querySelector(observedSelector))))) prepare();
   });
   observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
   document.addEventListener('pointerdown', onPointerDown, true);
