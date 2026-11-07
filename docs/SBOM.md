@@ -490,7 +490,7 @@ No npm dependency, bundled worldwide directory, model/physics data or new
 OurAirports fallback is introduced. Source/cache applicability and public-service
 limits are documented in [the note](research/2026-11-06-on-demand-airports.md).
 
-## Swiss and Austrian photographic sources
+## Swiss, Austrian, German state and Spanish photographic sources
 
 The Swiss `ch.swisstopo.swissimage-product` and Austrian basemap.at Orthofoto
 services provide live imagery; no imagery tiles are bundled. The Swiss
@@ -514,3 +514,10 @@ used. The dataset URI is https://registry.gdi-de.org/id/de.bb.metadata/253b7d3d-
 not bundled. Dates, service availability and source footprints vary; the
 increment is not nationwide German coverage. See the [NRW inventory](https://www.sig-gr.eu/de/outils-donnees/convention-echange-donnees/donnees-geographiques-nrw.html)
 and [Berlin/Brandenburg metadata](https://geoportal.brandenburg.de/detailansichtdienst/render?url=https%3A%2F%2Fgeoportal.brandenburg.de%2Fgs-json%2Fxml%3Ffileid%3D7a503f0f-db46-4772-80e3-b27733fd7acd&view=gdibb).
+
+The fixed-year Spanish PNOA 2024 annual WMS supplies partial-coverage imagery
+including the Balearics and Canaries. Its official capabilities and product
+table identify the layer and CC BY 4.0 source credit; derived imagery displays
+“Obra derivada de PNOA 2024 CC-BY 4.0 scne.es”. The service is streamed, not
+bundled. The source's transparent gaps and availability vary; it is not the
+changing PNOA Máxima Actualidad mosaic or a claim of nationwide coverage.

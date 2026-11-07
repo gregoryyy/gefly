@@ -3,6 +3,36 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-07 08:03 — Add dated Spanish island photographic scenery
+
+TODO: 2.0.198; R-WORLD-16/R-DATA-1. Agent: Codex orchestrator; research
+`imagery_research` and `spain_credit`, backend `spain_server`, frontend
+`spain_client`, independent quality `spain_quality`, independent validation
+`spain_validate`.
+
+**Implementation notes**
+
+The dated PNOA2024 WMS is streamed on demand in 3D Photo and 2D Aerial modes.
+The official layer advertises partial coverage including Balearics and Canaries;
+source transparency reveals underlying maps. The source's dated derivative
+credit appears directly beside each view and in the proxy self-description.
+This is not the continuously updated PNOA mosaic or nationwide coverage.
+
+Independent quality and bounded R-WORLD-16 validation passed: 20 focused
+proxy/client tests, TypeScript, Chrome 156 synthetic Mallorca and Tenerife
+views, credits, mode changes, zoom fallback and paused-worker digest. Real
+Vite-to-IGN samples returned opaque interiors, a transparent Atlantic tile and
+mixed-alpha coastal tiles for both islands; samples do not establish complete
+coverage. Source-date and derived-credit wording are based on official annual
+layer capabilities, product table and CNIG terms. Spain-specific rendered
+outages, sustained live performance, running-flight/replay isolation, actual
+WebKit and native build provenance remain unevaluated. Peer review is pending.
+
+**Deviations**
+
+Other destinations on the user list and imagery outside the source's 2024
+coverage remain separate work. No aircraft, terrain or training fidelity is claimed.
+
 ## 2026-11-07 07:24 — Add NRW and Berlin/Brandenburg photographic scenery
 
 TODO: 2.0.195; R-WORLD-14/R-DATA-1. Agent: Codex orchestrator; source audit

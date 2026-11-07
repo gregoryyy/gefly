@@ -1,5 +1,6 @@
 import { COUNTRY_IMAGERY, COUNTRY_PHOTO_DETAIL_MIN_LEVEL, COUNTRY_PHOTO_MAX_LEVEL, COUNTRY_PHOTO_MIN_LEVEL, countryPhotoCandidates, countryPhotoUrl, type PhotoCountry } from './country-imagery.ts';
 import { countryPhotoBackoff } from './country-photo-backoff.ts';
+import { showVisibleSpainCredit } from './visible-photo-credit.ts';
 import { createOfmMapOverlay, OFM_OVERLAY_ID } from './ofm-map-overlay.ts';
 import { airportApproachGuides } from './approach-guide-airports.ts';
 import type { ApproachGuide } from './approach-guide.ts';
@@ -49,7 +50,7 @@ export interface PracticeMap {
 
 function countryRasterSource(source: typeof COUNTRY_IMAGERY[number]) {
   return { type: 'raster' as const, tiles: [countryPhotoUrl(source.id)], tileSize: 256,
-    minzoom: COUNTRY_PHOTO_MIN_LEVEL, maxzoom: COUNTRY_PHOTO_MAX_LEVEL,
+    minzoom: source.id === 'es' ? COUNTRY_PHOTO_DETAIL_MIN_LEVEL : COUNTRY_PHOTO_MIN_LEVEL, maxzoom: COUNTRY_PHOTO_MAX_LEVEL,
     bounds: [...source.bounds] as [number, number, number, number], attribution: source.attribution };
 }
 function countryRasterLayer(source: typeof COUNTRY_IMAGERY[number]) {
@@ -226,6 +227,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
 
   let map: LibreMap | undefined;
   let mapCreditObserver: MutationObserver | undefined;
+  let removeVisibleSpainCredit: (() => void) | undefined;
   let ofmOverlay: ReturnType<typeof createOfmMapOverlay> | undefined;
   let aircraft: Marker | undefined;
   let start: Marker | undefined;
@@ -256,8 +258,10 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     const affected = COUNTRY_IMAGERY.filter(source => candidates.includes(source.id)
       && (countryPhotoBackoff.isBlocked(source.id) || countryPhotoProblems.has(source.id)));
     const country = affected.length ? `${affected.map(source => source.name).join(' / ')} photography temporarily unavailable; map fallback remains.` : '';
-    status.hidden = !failed && !country;
-    status.textContent = [country, failed ? 'Some map tiles unavailable. Aircraft and path remain local.' : ''].filter(Boolean).join(' ');
+    const spainZoom = candidates.includes('es') && map && map.getZoom() < COUNTRY_PHOTO_DETAIL_MIN_LEVEL
+      ? 'Spain PNOA 2024 is available from map zoom 7 in some areas; showing map fallback.' : '';
+    status.hidden = !failed && !country && !spainZoom;
+    status.textContent = [country, spainZoom, failed ? 'Some map tiles unavailable. Aircraft and path remain local.' : ''].filter(Boolean).join(' ');
   }
   const airportMarkers: Marker[] = [];
   let airportMarkerKey = '';
@@ -269,7 +273,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   let aerial = false, vector = false;
   const countryPhotoProblems = new Set<PhotoCountry>();
   const countryPhotoNeedsRefresh = new Set<PhotoCountry>();
-  const countryPhotoEpoch: Record<PhotoCountry, number> = { ch: 0, at: 0, nrw: 0, bb: 0 };
+  const countryPhotoEpoch: Record<PhotoCountry, number> = { ch: 0, at: 0, nrw: 0, bb: 0, es: 0 };
   const countryPhotoTiles = new WeakMap<object, { id: PhotoCountry; generation: number; epoch: number }>();
   const removeCountryPhotoBackoff = countryPhotoBackoff.subscribe((id, blocked) => {
     if (disposed) return;
@@ -1056,6 +1060,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       aircraft?.remove();
       start?.remove();
       mapCreditObserver?.disconnect();
+      removeVisibleSpainCredit?.();
       if (options.creditsContainer) { options.creditsContainer.replaceChildren(); options.creditsContainer.parentElement!.hidden = true; }
       ofmOverlay?.dispose(); map?.remove();
       container.replaceChildren();
@@ -1128,6 +1133,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       },
     });
     const mapAttribution = viewport.querySelector('.maplibregl-ctrl-attrib-inner');
+    if (mapAttribution) removeVisibleSpainCredit = showVisibleSpainCredit(viewport, mapAttribution, 28);
     if (mapAttribution && options.creditsContainer) {
       const target = options.creditsContainer;
       const syncMapCredits = () => {

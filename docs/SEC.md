@@ -581,7 +581,7 @@ position, flight data or telemetry, and adds no network access.
 ## Swiss and Austrian photographic imagery
 
 The local Vite dev/preview service accepts only canonical bounded GET/HEAD
-`/scenery/photo-country/{ch|at}/{z}/{x}/{y}.png` tile paths through a fixed
+`/scenery/photo-country/{ch|at|es}/{z}/{x}/{y}.png` tile paths through a fixed
 allowlist. Zurich/Swiss tiles use the swisstopo transparent product PNG;
 Austria uses basemap.at JPEG and a conservative approximate Natural Earth
 boundary mask. Low zoom and unavailable coverage return transparent tiles;
@@ -601,8 +601,10 @@ Country tiles are requested on visual demand and are not admitted to the
 existing persistent service-worker cache or predictive prefetch. Their source
 terms, attribution and boundary limitations are recorded in the imagery note.
 
-The same bounded country service additionally allows canonical `nrw` and `bb`
-identities, routed only to fixed official NRW and Berlin/Brandenburg WMS hosts.
-Their PNG alpha is retained; separate breaker states and source errors cannot
-turn an unavailable provider into an opaque map replacement. The same network,
-decoder, cache and disclosure boundaries apply.
+The same bounded country service additionally allows canonical `nrw`, `bb` and
+`es` tile identities, routed only to fixed official NRW, Berlin/Brandenburg and
+PNOA 2024 annual WMS hosts and layers. It also exposes a fixed Spanish metadata
+endpoint identifying the source, modification and derived credit. Source PNG
+alpha and separate breaker states preserve underlying imagery on failure. The
+same network, decoder, cache and disclosure boundaries apply; none of these
+live tiles are bundled or written to the persistent service-worker cache.
