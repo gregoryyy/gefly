@@ -7,7 +7,7 @@ import { createWorldMapStyle, WORLD_MAP_BOUNDS, WORLD_MAP_CREDIT } from './world
 
 const SIZE = 512, MIN_LEVEL = 6, MAX_LEVEL = 16;
 const BOUNDS = [5.8, 47.2, 15.1, 55.1] as const;
-const MAX_STYLE_BYTES = 1024 * 1024, MAX_QUEUED = 48, MAX_SUBSCRIBERS = 8, TIMEOUT_MS = 12000;
+const MAX_STYLE_BYTES = 1024 * 1024, MAX_SUBSCRIBERS = 8, TIMEOUT_MS = 12000;
 // Each owned RGBA canvas is fixed-size. This bounds cache pixel storage, not
 // MapLibre/Cesium GPU storage or references retained by imagery consumers.
 // Regional and global renderers together retain at most the original 64 MiB.
@@ -23,6 +23,18 @@ interface Subscriber {
   request?: MutableRequest; promise: Promise<HTMLCanvasElement>;
   resolve: (canvas: HTMLCanvasElement) => void; reject: (error: Error) => void;
   cancel: () => void; done: boolean; cleanup: () => void;
+}
+interface FailedSourceTile { sourceId: string; x: number; y: number; z: number }
+
+// A 512px MapLibre viewport can also require neighboring source tiles for
+// clipping and label placement. Be conservative when matching a source error
+// to an output XYZ; non-intersecting errors from an old view do not poison the
+// new job. This uses normalized Web Mercator tile coordinates.
+function mayAffectJob(tile: FailedSourceTile, job: Job): boolean {
+  const scale = 2 ** (tile.z - job.level);
+  const west = job.x * scale - 1, east = (job.x + 1) * scale + 1;
+  const north = job.y * scale - 1, south = (job.y + 1) * scale + 1;
+  return tile.x + 1 >= west && tile.x <= east && tile.y + 1 >= north && tile.y <= south;
 }
 
 async function readStyle(signal: AbortSignal): Promise<StyleSpecification> {
@@ -83,7 +95,12 @@ export async function createMapTerrainImagery(options: {
   getStats(): { loadedTiles: number; failedTiles: number; queuedTiles: number; cacheSize: number;
     cacheBytes: number; cacheHits: number; coalescedRequests: number };
 }> {
-  const notify = (status: Status) => { try { options.onStatus?.(status); } catch { /* UI callbacks cannot break tile jobs. */ } };
+  let lastNotifiedStatus: Status | undefined;
+  const notify = (status: Status) => {
+    if (lastNotifiedStatus === status) return;
+    lastNotifiedStatus = status;
+    try { options.onStatus?.(status); } catch { /* UI callbacks cannot break tile jobs. */ }
+  };
   const controller = new AbortController();
   const world = options.profile === 'world', minimumLevel = world ? 0 : MIN_LEVEL;
   notify('loading');
@@ -116,11 +133,32 @@ export async function createMapTerrainImagery(options: {
   } catch (error) { container.remove(); notify('degraded'); throw error; }
   const tilingScheme = new WebMercatorTilingScheme(), coverage = Rectangle.fromDegrees(...(world ? WORLD_MAP_BOUNDS : BOUNDS));
   const cache = new Map<string, HTMLCanvasElement>(), failed = new Map<string, number>();
+  const failedSourceTiles = new Map<string, FailedSourceTile>();
   const pending = new Map<string, Job>();
   const queue: Job[] = [];
   const blank = document.createElement('canvas'); blank.width = SIZE; blank.height = SIZE;
   let active: Job | null = null, disposed = false, loadedTiles = 0, failedTiles = 0, restoreStyle = false;
   let cacheHits = 0, coalescedRequests = 0;
+  let reportActiveError: ((tile: FailedSourceTile | null) => void) | null = null;
+  // Source responses can arrive after an output job has timed out. Observe
+  // tile errors for the entire provider lifetime, so an idle late error is
+  // still selectively refreshed if that view is requested again.
+  const onSourceError = (event: unknown) => {
+    if (disposed) return;
+    const value = event as { sourceId?: unknown; tile?: { tileID?: { canonical?: { x?: unknown; y?: unknown; z?: unknown } } } };
+    const tile = value.tile?.tileID?.canonical, sourceId = value.sourceId;
+    if (typeof sourceId !== 'string' || !Object.hasOwn(style.sources, sourceId) || !tile
+        || !Number.isInteger(tile.x) || !Number.isInteger(tile.y) || !Number.isInteger(tile.z)
+        || (tile.z as number) < 0 || (tile.z as number) > MAX_LEVEL) {
+      reportActiveError?.(null); return;
+    }
+    const item: FailedSourceTile = { sourceId, x: tile.x as number, y: tile.y as number, z: tile.z as number };
+    const key = `${sourceId}/${item.z}/${item.x}/${item.y}`;
+    failedSourceTiles.delete(key); failedSourceTiles.set(key, item);
+    while (failedSourceTiles.size > 128) failedSourceTiles.delete(failedSourceTiles.keys().next().value!);
+    reportActiveError?.(item);
+  };
+  map.on('error', onSourceError);
   const resetRenderer = (): void => {
     restoreStyle = true;
     // Clearing sources cancels MapLibre's in-flight source work without creating
@@ -155,24 +193,39 @@ export async function createMapTerrainImagery(options: {
   };
   function next(): void {
     if (active || disposed) return;
-    const job = queue.pop(); if (!job) return;
+    // Admission permits at most one unique job for this single renderer.
+    const job = queue.shift(); if (!job) return;
     cancelSubscribers(job); if (job.done) return;
     const cached = cache.get(job.key);
     if (cached) { cacheHits++; cache.delete(job.key); cache.set(job.key, cached); notify(completedStatus()); finish(job, cached); return; }
     active = job; notify('loading');
     if (restoreStyle) { restoreStyle = false; map.setStyle(style, { diff: false }); }
-    let renderingFailed = false;
-    const onError = () => { renderingFailed = true; };
-    const fail = () => {
+    let renderingFailed = false, unknownError = false;
+    const onError = (tile: FailedSourceTile | null) => {
+      if (!tile) { renderingFailed = true; unknownError = true; }
+      else if (mayAffectJob(tile, job)) renderingFailed = true;
+    };
+    reportActiveError = onError;
+    const fail = (reset = false) => {
       if (job.done) return;
       failedTiles++; failed.set(job.key, Date.now() + 30000);
       while (failed.size > MAX_CACHE) failed.delete(failed.keys().next().value!);
-      notify('degraded'); finish(job, null); if (!disposed) resetRenderer();
+      notify('degraded');
+      // Cesium's imagery state machine retries a cancelled Request, whereas a
+      // resolved transparent canvas would be treated as a permanently ready
+      // tile. Direct non-Cesium callers retain the existing blank fallback.
+      for (const subscriber of [...job.subscribers]) {
+        if (subscriber.request) settle(job, subscriber, null, true);
+      }
+      finish(job, null);
+      if (reset && !disposed) resetRenderer();
     };
+    let refreshPending = false;
     const onIdle = () => {
       if (job.done || disposed) return;
+      if (refreshPending) return;
       cancelSubscribers(job); if (job.done) return;
-      if (renderingFailed || !map.loaded() || !map.areTilesLoaded()) { fail(); return; }
+      if (renderingFailed || !map.loaded() || !map.areTilesLoaded()) { fail(unknownError); return; }
       try {
         const canvas = document.createElement('canvas'); canvas.width = SIZE; canvas.height = SIZE;
         const context = canvas.getContext('2d'); if (!context) throw new Error('Map tile copy unavailable');
@@ -182,12 +235,30 @@ export async function createMapTerrainImagery(options: {
         cache.set(job.key, canvas); loadedTiles++;
         while (cache.size > MAX_CACHE) cache.delete(cache.keys().next().value!);
         failed.delete(job.key); notify(completedStatus()); finish(job, canvas);
-      } catch { fail(); }
+      } catch { fail(true); }
+    };
+    const refreshErrored = () => {
+      if (job.done || disposed) return;
+      refreshPending = false;
+      for (const [key, tile] of [...failedSourceTiles]) {
+        if (!mayAffectJob(tile, job)) continue;
+        try {
+          map.refreshTiles(tile.sourceId, [{ x: tile.x, y: tile.y, z: tile.z }]);
+          failedSourceTiles.delete(key);
+        } catch { renderingFailed = true; unknownError = true; }
+      }
+      map.triggerRepaint();
     };
     const previousCleanup = job.cleanup;
-    const timer = setTimeout(fail, TIMEOUT_MS);
-    job.cleanup = () => { previousCleanup(); clearTimeout(timer); map.off('idle', onIdle); map.off('error', onError); };
-    map.on('idle', onIdle); map.on('error', onError);
+    // Slow source work is not proof the renderer is corrupt. Leave its style
+    // and source cache intact; the next jump cancels obsolete viewport work.
+    const timer = setTimeout(() => fail(false), TIMEOUT_MS);
+    job.cleanup = () => { previousCleanup(); clearTimeout(timer); map.off('idle', onIdle); map.off('render', refreshErrored);
+      if (reportActiveError === onError) reportActiveError = null; };
+    map.on('idle', onIdle);
+    if ([...failedSourceTiles.values()].some(tile => mayAffectJob(tile, job))) {
+      refreshPending = true; map.once('render', refreshErrored);
+    }
     const rectangle = tilingScheme.tileXYToRectangle(job.x, job.y, job.level);
     map.jumpTo({ center: [(rectangle.west + rectangle.east) / 2 * 180 / Math.PI,
       Math.atan(Math.sinh(Math.PI * (1 - 2 * (job.y + .5) / 2 ** job.level))) * 180 / Math.PI],
@@ -209,13 +280,22 @@ export async function createMapTerrainImagery(options: {
       if (mutable?.cancelled) { mutable.state = RequestState.CANCELLED; return Promise.reject(new Error('Map terrain request cancelled')); }
       const cached = cache.get(key);
       if (cached) { cacheHits++; cache.delete(key); cache.set(key, cached); notify(completedStatus()); return Promise.resolve(cached); }
-      if ((failed.get(key) ?? 0) > Date.now()) { notify('degraded'); return Promise.resolve(blank); }
+      if ((failed.get(key) ?? 0) > Date.now()) {
+        notify('degraded');
+        // Leave a Cesium retry unissued until the cooldown expires. Returning a
+        // transparent success here would permanently suppress that tile.
+        return mutable ? undefined : Promise.resolve(blank);
+      }
       let job = pending.get(key);
       if (job) {
         if (mutable) for (const subscriber of job.subscribers) if (subscriber.request === mutable) return subscriber.promise;
         if (job.subscribers.size >= MAX_SUBSCRIBERS) return undefined;
         coalescedRequests++;
       }
+      // The single renderer has no useful parallel queue. Cesium treats
+      // undefined as backpressure and retries according to its current view,
+      // so old view requests cannot occupy a long stale FIFO after a pan.
+      if (!job && (active || queue.length)) return undefined;
       const newJob = !job;
       if (!job) { job = { key, x, y, level, subscribers: new Set(), done: false, cleanup: () => {} }; pending.set(key, job); }
       const shared = job;
@@ -235,7 +315,6 @@ export async function createMapTerrainImagery(options: {
       shared.subscribers.add(subscriber);
       if (newJob) {
         queue.push(job);
-        while (queue.length > MAX_QUEUED) finish(queue[0], null, true);
         next();
       }
       return promise;
@@ -251,7 +330,7 @@ export async function createMapTerrainImagery(options: {
     disposed = true; controller.abort();
     cancelQueued(); if (active) finish(active, null, true);
     options.signal?.removeEventListener('abort', dispose);
-    cache.clear(); failed.clear(); pending.clear(); map.remove(); container.remove();
+    cache.clear(); failed.clear(); failedSourceTiles.clear(); pending.clear(); map.off('error', onSourceError); map.remove(); container.remove();
   };
   options.signal?.addEventListener('abort', dispose, { once: true });
   if (options.signal?.aborted) dispose();
