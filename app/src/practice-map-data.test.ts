@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { imageryCorners, makePracticeMapFrame, practiceMapUpdateDue } from './practice-map-data.ts';
+import { imageryCorners, makePracticeMapFrame, practiceMapUpdateDue, unwrapMapPath } from './practice-map-data.ts';
 import type { FlightState } from './types';
 
 function state(overrides: Partial<FlightState> = {}): FlightState {
@@ -10,6 +10,14 @@ function state(overrides: Partial<FlightState> = {}): FlightState {
     ...overrides,
   };
 }
+
+test('dateline track projects through adjacent world copies and fits the nearby path', () => {
+  const path: [number, number][] = [[179, 10], [-179, 11], [-178, 12]];
+  assert.deepEqual(unwrapMapPath(path, -178), [[-181, 10], [-179, 11], [-178, 12]]);
+  assert.deepEqual(unwrapMapPath(path, 182), [[179, 10], [181, 11], [182, 12]]);
+  assert.deepEqual(path, [[179, 10], [-179, 11], [-178, 12]]);
+  assert.deepEqual(unwrapMapPath([], 0), []);
+});
 
 test('plotting converts radians to longitude/latitude degrees and copies each coordinate', () => {
   const current = state();

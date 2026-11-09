@@ -1,0 +1,362 @@
+{
+  "scope": "Connected command/actuator and measurable generic-model response pass; real C172P/S flap calibration and stall/steady-glide acceptance remain not evaluated.",
+  "criteria": {
+    "matrix": "32 complete unique cases",
+    "actuator": "source timing within one fixed step; actual target within1e-7degree",
+    "effects": "early response differs above numerical detectability guards (g1e-6, pitch/CAS1e-5); not aircraft tolerances",
+    "matched_source": "positive lift/drag source increments at alpha0/5/10/15,beta0,ground-effect1; negative directCmDf",
+    "repeat": "75cas-manual-trim-flap30",
+    "stall": "0cases with native warning; stall-speed comparison not evaluated",
+    "glide": "idle trajectories have different final airspeeds; no stabilized glide acceptance"
+  },
+  "source_pins": {
+    "wasm": "266f201652e8fc3fb6c5ee384bad3ef1f66b335ee9885fa4a14de9a797c1edcc",
+    "reconstructed_prepared_aircraft": "cd85bb2afcd50b10238addf2f43493368b2266b83530786d1b3f6ccf3cc87595",
+    "bridge": "e71646929a6f13dbf9abd3eddc2f158fb79fd0ae16e8ed929038d22a3bd893c8",
+    "adapter": "0f0b3913598bdac84f66dec663cd70b7ea687fd3b8a601c3fd7a6f964d910678",
+    "native_diagnostic": "297492a6071d3924ed45b5a56ae79f276fa3dc963281f124cacdc01299609096",
+    "source_diagnostic": "4e260eeea6485acd2ad2b8ecbfffa42e52dcbce19d94600c0d9d13ed50dc10df"
+  },
+  "matched_source_alpha5": [
+    {
+      "flap_deg": 0,
+      "CL": 1.10824,
+      "CD": 0.07624,
+      "direct_CmDf": 0,
+      "lift_change_percent": 0,
+      "drag_change_percent": 0
+    },
+    {
+      "flap_deg": 10,
+      "CL": 1.35465,
+      "CD": 0.11081,
+      "direct_CmDf": -0.03,
+      "lift_change_percent": 22.23369,
+      "drag_change_percent": 45.33548
+    },
+    {
+      "flap_deg": 20,
+      "CL": 1.40006,
+      "CD": 0.13208,
+      "direct_CmDf": -0.05,
+      "lift_change_percent": 26.33187,
+      "drag_change_percent": 73.23755
+    },
+    {
+      "flap_deg": 30,
+      "CL": 1.4445,
+      "CD": 0.14684,
+      "direct_CmDf": -0.06,
+      "lift_change_percent": 30.34114,
+      "drag_change_percent": 92.59612
+    }
+  ],
+  "representative_75CAS": [
+    {
+      "profile": "manual-trim",
+      "flap_deg": 0,
+      "delta_at4s": {
+        "cas_kt": 0,
+        "pitch_deg": 0,
+        "climb_mps": 0,
+        "elevator_actual_deg": 0
+      },
+      "delta_at10s": {
+        "cas_kt": 0,
+        "pitch_deg": 0,
+        "climb_mps": 0,
+        "elevator_actual_deg": 0
+      }
+    },
+    {
+      "profile": "manual-trim",
+      "flap_deg": 10,
+      "delta_at4s": {
+        "cas_kt": -4.19724,
+        "pitch_deg": 4.96968,
+        "climb_mps": 3.68997,
+        "elevator_actual_deg": 0
+      },
+      "delta_at10s": {
+        "cas_kt": -14.79288,
+        "pitch_deg": 2.33177,
+        "climb_mps": 1.25776,
+        "elevator_actual_deg": 0
+      }
+    },
+    {
+      "profile": "manual-trim",
+      "flap_deg": 20,
+      "delta_at4s": {
+        "cas_kt": -4.5852,
+        "pitch_deg": 4.25904,
+        "climb_mps": 3.43563,
+        "elevator_actual_deg": 0
+      },
+      "delta_at10s": {
+        "cas_kt": -13.83046,
+        "pitch_deg": -0.14293,
+        "climb_mps": 0.10397,
+        "elevator_actual_deg": 0
+      }
+    },
+    {
+      "profile": "manual-trim",
+      "flap_deg": 30,
+      "delta_at4s": {
+        "cas_kt": -4.72381,
+        "pitch_deg": 4.29875,
+        "climb_mps": 3.56083,
+        "elevator_actual_deg": 0
+      },
+      "delta_at10s": {
+        "cas_kt": -15.64004,
+        "pitch_deg": -0.10832,
+        "climb_mps": 0.13332,
+        "elevator_actual_deg": 0
+      }
+    },
+    {
+      "profile": "VS0-compensation",
+      "flap_deg": 0,
+      "delta_at4s": {
+        "cas_kt": 0,
+        "pitch_deg": 0,
+        "climb_mps": 0,
+        "elevator_actual_deg": 0
+      },
+      "delta_at10s": {
+        "cas_kt": 0,
+        "pitch_deg": 0,
+        "climb_mps": 0,
+        "elevator_actual_deg": 0
+      }
+    },
+    {
+      "profile": "VS0-compensation",
+      "flap_deg": 10,
+      "delta_at4s": {
+        "cas_kt": -2.18715,
+        "pitch_deg": -0.09751,
+        "climb_mps": 0.82613,
+        "elevator_actual_deg": 1.18856
+      },
+      "delta_at10s": {
+        "cas_kt": -4.1504,
+        "pitch_deg": -1.13079,
+        "climb_mps": -0.09172,
+        "elevator_actual_deg": 0.78396
+      }
+    },
+    {
+      "profile": "VS0-compensation",
+      "flap_deg": 20,
+      "delta_at4s": {
+        "cas_kt": -2.63851,
+        "pitch_deg": -0.4663,
+        "climb_mps": 0.76861,
+        "elevator_actual_deg": 0.99722
+      },
+      "delta_at10s": {
+        "cas_kt": -5.6284,
+        "pitch_deg": -1.46136,
+        "climb_mps": -0.26061,
+        "elevator_actual_deg": 0.34006
+      }
+    },
+    {
+      "profile": "VS0-compensation",
+      "flap_deg": 30,
+      "delta_at4s": {
+        "cas_kt": -2.77861,
+        "pitch_deg": -0.44228,
+        "climb_mps": 0.90364,
+        "elevator_actual_deg": 1.05864
+      },
+      "delta_at10s": {
+        "cas_kt": -6.98786,
+        "pitch_deg": -1.55375,
+        "climb_mps": -0.25333,
+        "elevator_actual_deg": 0.32048
+      }
+    }
+  ],
+  "cases": [
+    {
+      "id": "60cas-manual-trim-flap0",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "60cas-manual-trim-flap10",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "60cas-manual-trim-flap20",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "60cas-manual-trim-flap30",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "60cas-VS0-compensation-flap0",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "60cas-VS0-compensation-flap10",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "60cas-VS0-compensation-flap20",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "60cas-VS0-compensation-flap30",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "75cas-manual-trim-flap0",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "75cas-manual-trim-flap10",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "75cas-manual-trim-flap20",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "75cas-manual-trim-flap30",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "75cas-VS0-compensation-flap0",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "75cas-VS0-compensation-flap10",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "75cas-VS0-compensation-flap20",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "75cas-VS0-compensation-flap30",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "85cas-manual-trim-flap0",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "85cas-manual-trim-flap10",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "85cas-manual-trim-flap20",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "85cas-manual-trim-flap30",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "85cas-VS0-compensation-flap0",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "85cas-VS0-compensation-flap10",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "85cas-VS0-compensation-flap20",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "85cas-VS0-compensation-flap30",
+      "end_s": 30,
+      "stop": "declared duration"
+    },
+    {
+      "id": "60cas-idle-lateral-level-flap0",
+      "end_s": 120,
+      "stop": "declared duration"
+    },
+    {
+      "id": "60cas-idle-lateral-level-flap10",
+      "end_s": 120,
+      "stop": "declared duration"
+    },
+    {
+      "id": "60cas-idle-lateral-level-flap20",
+      "end_s": 120,
+      "stop": "declared duration"
+    },
+    {
+      "id": "60cas-idle-lateral-level-flap30",
+      "end_s": 120,
+      "stop": "declared duration"
+    },
+    {
+      "id": "75cas-idle-lateral-level-flap0",
+      "end_s": 120,
+      "stop": "declared duration"
+    },
+    {
+      "id": "75cas-idle-lateral-level-flap10",
+      "end_s": 120,
+      "stop": "declared duration"
+    },
+    {
+      "id": "75cas-idle-lateral-level-flap20",
+      "end_s": 120,
+      "stop": "declared duration"
+    },
+    {
+      "id": "75cas-idle-lateral-level-flap30",
+      "end_s": 120,
+      "stop": "declared duration"
+    }
+  ],
+  "artifacts": {
+    "native": {
+      "path": "output/flight/flap-effectiveness/native.json",
+      "sha256": "d1841ec4690599f7650e239f08c11295d7958ae1e49f67eb1d35719ebe306fe3"
+    },
+    "source": {
+      "path": "output/flight/flap-effectiveness/source.json",
+      "sha256": "b217e5abaac3284318a213778a2ed4fa230ad5d1dc87c432dfff1deabf89dc0e"
+    },
+    "checks_sha256": "81de366344b8b5d59ec94fb10f25f9e6f5fbb551aed0cbb4a7f98c0741419096"
+  },
+  "commands": [
+    "python3 studies/e1-browser/sim/flap-effectiveness-source.py",
+    "node studies/e1-browser/sim/flap-effectiveness-native.mjs",
+    "node studies/e1-browser/sim/flap-effectiveness-checks.mjs"
+  ]
+}

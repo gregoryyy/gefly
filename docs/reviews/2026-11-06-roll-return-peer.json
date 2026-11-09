@@ -1,0 +1,280 @@
+{
+  "scope": "Bounded roll-return implementation at40f7493 plus package-only gated-registration delta ataea4d10; no parent-PR, wider aircraft fidelity or release-milestone acceptance",
+  "author_provider": "codex",
+  "current_accepted_source_review": {
+    "status": "completed",
+    "accepted": true,
+    "author_provider": "codex",
+    "reviewer_provider": "claude",
+    "packet": {
+      "path": "output/flight/roll-return-peer-complete-packet.json",
+      "sha256": "c18403cd24bfec4376fe5b4669e82333a7c10441abd32d80fab2160c63d85508",
+      "revision": "40f7493:3e4a2dc42227ca3b8e3f25fdd1ce2d0edd2fed904b632d797eb4b54d3b04c02a"
+    },
+    "cli": {
+      "executable": "/opt/homebrew/bin/claude",
+      "version": "2.1.308"
+    },
+    "model_evidence": [
+      "claude-opus-5-5"
+    ],
+    "review": {
+      "quality": [
+        {
+          "severity": "medium",
+          "location": "app/package.json scripts (test, test:browser) / studies/e1-browser/sim/roll-return-native.mjs",
+          "description": "The core R-SIM-11 regression is never run by an automated gate. Only the synthetic-data unit test `roll-return-checks.test.mjs` and the Python adapter tests are added to `test`. `roll-return-native.mjs` is registered only as the opt-in script `test:roll-return`, and `disturbance-input.browser.mjs` only as `test:roll-return-browser`. Neither is chained into `test:browser`, while many comparable native and browser regressions are. A future adapter, model or bridge change could reintroduce retained aileron history without any CI or browser-suite failure. Expected: chain `node ../studies/e1-browser/sim/roll-return-native.mjs` into `test:browser` (or an equivalent gated suite), and preferably the browser harness too. Reproduction: inspect the `test:browser` chain; neither roll-return entry point appears in it.",
+          "evidence": "packet sources app/package.json `test:browser` value; source_diff adds only `test:roll-return` and `test:roll-return-browser`; ci.summary lists 555 Node tests with no native roll-return wrapper output."
+        },
+        {
+          "severity": "low",
+          "location": "studies/e1-browser/sim/roll-return-checks.mjs (sampled-rate guard)",
+          "description": "The admission function hard-fails unless every sampled post-release roll rate (from 1 s on) is below the release-instant rate (`initialRate > 0 && laterRate < initialRate`). That is an aircraft-dynamics assertion inside a contract that explicitly is not a prescribed self-leveling rate. A legitimate future aerodynamic or loading change could fail the control-return regression even though surfaces still return exactly. Expected: report the guard as a diagnostic or keep it in a separately named check, so the surface-return identity is not coupled to dynamic response.",
+          "evidence": "packet roll-return-checks.mjs lines computing initialRate/laterRate and the assert; criterion text 'not a prescribed self-leveling rate'."
+        },
+        {
+          "severity": "low",
+          "location": "app/tests/disturbance-input.browser.mjs (pointer-right-15px camera block and case push)",
+          "description": "Maintainability: `record.camera` is assigned twice; the first assignment, which includes `final_state`, is immediately overwritten after the asserts. `if(!result.cases.includes(record))result.cases.push(record)` is dead code because the record was already pushed. `const lon=s?...final_state[2]:0` guards on `s` while `lat` is read unguarded on the same stats object. The behaviour is correct, but the redundancy obscures which fields are artifact contract.",
+          "evidence": "packet disturbance-input.browser.mjs camera block and the line following it."
+        },
+        {
+          "severity": "low",
+          "location": "app/tests/disturbance-input.browser.mjs catch block",
+          "description": "On failure the catch block runs `result.after=await hashes()` before `throw e`. If `hashes()` itself rejects (missing file, unreadable root), the original assertion error is replaced and lost from both the process exit and the artifact. Expected: wrap the post-failure hashing in its own try/catch, record any secondary error in `result.errors`, and rethrow the original `e`.",
+          "evidence": "packet disturbance-input.browser.mjs final `catch(e){...result.after=await hashes();throw e;}`."
+        },
+        {
+          "severity": "low",
+          "location": "app/tests/disturbance-input.browser.mjs `paths` provenance list",
+          "description": "In installed (no-override) mode the harness pins only `dist/jsbsim.wasm`, not `dist/jsbsim.mjs` or `dist/build-info.json`. The installed-ROOT artifact therefore records no glue or metadata identity (`variant: unchanged ROOT`), so the prepared-model identity of the actual-app run is inferred from the WASM hash alone. Expected: add the glue and build-info paths to the before/after source hashes.",
+          "evidence": "packet `paths` constant; browsers.new_installed.variant and before/after maps."
+        }
+      ],
+      "validation": [
+        {
+          "criterion": "R-SIM-11: remove only the two source aileron actuator hysteresis bands in the generic prepared manual-control model",
+          "expected": "Only the `hysteresis_width` of `fcs/left-aileron-actuator` and `fcs/right-aileron-actuator` changes, 0.005 to 0, with fail-closed handling of unknown, partial or duplicate wiring.",
+          "observed": "The source code establishes the narrow change. `patch_aileron_hysteresis` replaces exactly one line-exact width inside each uniquely named actuator block and rejects missing, duplicate, nested, unclosed, renamed, unknown-value and partial-pair cases. Production is gated by the pinned source SHA, and the patch is idempotent. Adapter tests cover these branches. The preservation record says exactly two values changed (prepared model 02d1811a\u2192cd85bb2a), and the AP XML is unchanged (5e97d48b).",
+          "status": "pass",
+          "evidence": "sources prepare-aircraft.py; prepare-aircraft.test.py (missing/unknown/duplicate/partial/unclosed cases); preservation.only_two_values_changed; old_build/new_build aircraft_adapter hashes."
+        },
+        {
+          "criterion": "R-SIM-11: preserve source aileron rate limits/scales, trim handoff, pilot gain, mass, pitch/yaw channels and aerodynamic functions byte-for-byte",
+          "expected": "Every byte other than the two width values is identical; bridge, loading and aerodynamics are unchanged; initial trim is identical.",
+          "observed": "The transform is a single in-place byte replacement per actuator, and the other v4 patches are unchanged, so the remaining bytes are preserved by construction. Hashes are unchanged for the bridge (e7164692), `loading.js` (b36361f5), the AP XML, the engine/propeller and the native library (85bbfda4); `aerodynamics_equal` is true. Native neutral fixtures produce identical digests old vs new (for example 60-neutral 187d5adb098bf633), and initial surface angles and roll are identical. Browser `roll_trim_norm`/`yaw_trim_norm` and initial surface angles are identical. Native `balance()` identity is asserted unchanged through every run.",
+          "status": "pass",
+          "evidence": "prepare-aircraft.py; preservation (aerodynamics_equal, bridge_equal, build hashes); native_old vs native_new neutral digests and initial rows; test_only_named_roll_actuators_have_zero_width_while_other_source_bytes_stay."
+        },
+        {
+          "criterion": "R-SIM-11: signed pulse/release fixtures return the same command/trim to the same actual surface position (native)",
+          "expected": "For \u00b10.02/\u00b10.05/\u00b10.1 aileron pulses at 60/80/100 kt, both actual surfaces return to their own pre-pulse positions after the rate-limit delay, within the 1e-10 degree numerical budget.",
+          "observed": "All 18 signed cases report `max_returned_surface_residual_deg` of 0. Raw native_new release rows at +0.5..20 s equal the initial left/right values exactly (for example 60-aileron--0.1: -0.1963465685635314 / 0.14725992642264854). The strict admission checker requires complete ordered samples, unique identities, finite telemetry and raw-derived deltas, and compares each returned surface to its own initial value.",
+          "status": "pass",
+          "evidence": "regression.cases; native_new cases release arrays; roll-return-checks.mjs; roll-return-checks.test.mjs."
+        },
+        {
+          "criterion": "R-SIM-11: same returned position regardless of prior pulse (history independence)",
+          "expected": "Successive opposite pulses within one flight leave no retained surface history.",
+          "observed": "There are 54 within-flight checks: six alternating pulses (\u00b10.1, \u00b10.05, \u00b10.02) at each of three CAS values, sampled at 0.5/1/2 s after release, all measured against the pre-first-pulse surface positions. Every `surface_residual_rad` is 0, and commands are asserted to be zero.",
+          "status": "pass",
+          "evidence": "successive_pulses.checks; roll-return-sequence-native.mjs; regression.sequence_check_count=54."
+        },
+        {
+          "criterion": "R-SIM-11: native-rate observations included",
+          "expected": "Post-release native roll-rate and bank observations are recorded against a matched neutral run.",
+          "observed": "The native diagnostic records p, bank, beta and surface data at seven integer-aligned release samples, with delta_vs_neutral, for all 57 cases. The regression reports release and later roll rates. For example, at 80 kt +0.02, the 20 s bank delta is +0.476\u00b0 new vs +8.46\u00b0 old. The criterion prescribes no rate tolerance, and none is claimed.",
+          "status": "pass",
+          "evidence": "native_new/native_old release and delta_vs_neutral; regression.cases release_roll_rate_degps/max_later_roll_rate_degps."
+        },
+        {
+          "criterion": "R-SIM-11 / R-INPUT-1: actual-app observations of the returned command/trim reaching the same surface position",
+          "expected": "In the actual installed app, pointer and keyboard pulses of both signs release all axes to zero, and both finite actual surfaces return to their own initial trimmed angles.",
+          "observed": "The installed five-case run, with no native override, executed the exact expected IDs with `suite.complete` true and result/return status pass. The four signed pointer/keyboard rows pass 24 paired return checks with zero residual at +0.5..20 s; the neutral row is correctly `not_evaluated`. Released axes are zero, AP is off and the simulation rate is 1\u00d7. ROOT hashes match before and after (wasm 266f2016). The harness hash e3e44f81 matches the manifest. Neutral-only reports not_evaluated and the subset reports partial.",
+          "status": "pass",
+          "evidence": "browsers.new_installed; browsers.neutral_only; browsers.positive_subset; disturbance-input.browser.mjs surfaceReturn and suite logic."
+        },
+        {
+          "criterion": "R-SIM-11: regression is meaningful (detects the original defect)",
+          "expected": "The same checks fail against the pre-repair engine for the return criterion itself, not for a startup reason.",
+          "observed": "The old engine retains about \u00b10.0025 rad (0.143239\u00b0) after every signed pulse in native_old. The strict browser negative fails at +0.5 s with a -0.0025/+0.0025 rad residual, and its return_check is fail. Observe-only is correctly labeled observed/not_evaluated.",
+          "status": "pass",
+          "evidence": "native_old release rows (for example 60-aileron--0.1 left -0.33958\u2026 vs initial -0.19634\u2026); browsers.old_strict_negative.failure; browsers.old_observation_only."
+        },
+        {
+          "criterion": "Scope boundary: control-return contract, not a prescribed self-leveling rate or C172S tolerance",
+          "expected": "No aircraft tolerance, wings-level requirement or fitted gain is introduced; the budget is numerical only.",
+          "observed": "The budget is 1e-10 degree (1.745e-12 rad), documented as numerical equality. No gains, continuous assist or trim changes are made. The sampled-rate guard is labeled a sanity check only; see low finding Q2 about coupling it to the pass condition.",
+          "status": "pass",
+          "evidence": "roll-return-checks.mjs comments/scope; disturbance-input.browser.mjs returnBudget_rad; prepare-aircraft.py comments."
+        },
+        {
+          "criterion": "Test and shared CI evidence at the frozen revision",
+          "expected": "Adapter and checker tests are registered and the shared gate passes on the frozen source.",
+          "observed": "CI at 40f7493 exited 0: 555/555 Node tests, the Python suites (9/6/10), 85 assurance and 11 training tests passed. 9 of 23 optional JSBSim study checks were explicitly skipped, and integrity reported 0 errors. The native and browser roll-return regressions are not part of this gate (medium finding Q1); their passing executions are supplied separately.",
+          "status": "pass",
+          "evidence": "ci summary/process_exit; app/package.json test script; independent_reviews validation 'Final shared gate'."
+        },
+        {
+          "criterion": "Source/evidence provenance consistency",
+          "expected": "Manifest hashes, executed-checker pins and artifact source hashes agree.",
+          "observed": "The regression `checked_by` hashes equal the manifest for roll-return-native, checks, sequence and the producer. `native_new.sources` matches the producer hash 6b350252, the installed browser harness_sha256 equals the manifest e3e44f81, and build metadata cbbe0f59 is consistent across the native and candidate browser runs.",
+          "status": "pass",
+          "evidence": "manifest; regression.checked_by; native_new.sources; browsers.new_installed.harness_sha256; browsers.new.variant.files."
+        }
+      ],
+      "recommendation": "accept",
+      "limitations": [
+        "Review of the frozen packet only. No commands were executed, and SHA-256 values and manifest-to-source correspondence were not recomputed; the hashes are taken as supplied and cross-checked only for internal consistency.",
+        "The full pinned c172x.xml source and prepared XML are not in the packet. Byte-for-byte preservation rests on the adapter code (a deterministic single-line replacement behind a source-hash gate), the supplied preservation record, and matching neutral-fixture digests.",
+        "The native_old diagnostic was produced by an earlier producer version (fd61ab04\u2026) than the current one (6b350252\u2026). Equality of the integer-step sampling with the earlier float sampling is a supplied claim.",
+        "Browser runs used headless Chrome with scenery fixtures and are timing-variable behavioural observations. The user's internal browser and physical touchpad are not covered.",
+        "Out of scope and not evaluated, as the scope statement excludes them: parent balance/load/recording clauses, broader C172S stability and fidelity, pitch hysteresis, the 110 kt initialization, formal modal stability, aircraft-data rights and other pending PRs.",
+        "The remaining quality findings are medium/low and non-blocking under the stated acceptance rule. Q1 (the regression is not CI-gated) is recommended as follow-up work."
+      ]
+    },
+    "limitations": [
+      "CLI routing and returned model names are evidence, not backend attestation.",
+      "Packet review does not independently execute the packet's test commands."
+    ]
+  },
+  "accepted_registration_supplement": {
+    "status": "completed",
+    "accepted": true,
+    "author_provider": "codex",
+    "reviewer_provider": "claude",
+    "packet": {
+      "path": "output/flight/roll-return-peer-registration-packet.json",
+      "sha256": "e1e603430ca331d39b422de24af05a19cb954356e2cc27452949486cbb53ec16",
+      "revision": "aea4d10-registration-supplement"
+    },
+    "cli": {
+      "executable": "/opt/homebrew/bin/claude",
+      "version": "2.1.308"
+    },
+    "model_evidence": [
+      "claude-opus-5-5"
+    ],
+    "review": {
+      "quality": [
+        {
+          "severity": "low",
+          "location": "app/package.json scripts.test:browser / scripts.test:roll-return-browser",
+          "description": "The supplement chains only the native roll-return regression into `test:browser`. The actual-app browser harness `tests/disturbance-input.browser.mjs` is still opt-in through `test:roll-return-browser`. The prior medium finding asked for the native script and said 'preferably the browser harness too'. As it stands, a regression in the UI input path (pointer or keyboard release not reaching zero, or a bridge or worker change) that does not show up natively would not fail the normal browser gate. Expected: append `node tests/disturbance-input.browser.mjs` to `test:browser`, or record its exclusion with a reason, such as runtime or flakiness. Reproduction: inspect `new_package.scripts.test:browser`; `disturbance-input.browser.mjs` does not appear in it.",
+          "evidence": "packet new_package.scripts.test:browser (native roll-return entry only); new_package.scripts.test:roll-return-browser unchanged; prior_accepted_review.review.quality[0].description 'and preferably the browser harness too'."
+        }
+      ],
+      "validation": [
+        {
+          "criterion": "Supplement criterion: chain the native roll-return regression into the normal browser verification gate",
+          "expected": "`test:browser` invokes `node ../studies/e1-browser/sim/roll-return-native.mjs` with `&&` semantics, so its failure fails the gate.",
+          "observed": "The new `test:browser` begins with `node ../studies/e1-browser/sim/roll-return-native.mjs && node tests/terrain-horizon.browser.mjs && ...`. The command is first in the `&&` chain, so a non-zero exit stops the suite and fails it. The path is relative to `app`, the same convention used by other native entries such as `../studies/e1-browser/sim/bridge-native.mjs`.",
+          "status": "pass",
+          "evidence": "packet diff hunk @@ -11,7 +11,7 @@ (+ line for test:browser); new_package.scripts.test:browser."
+        },
+        {
+          "criterion": "Supplement criterion: preserve every existing browser command in test:browser",
+          "expected": "The old `test:browser` chain appears unchanged, with the same commands in the same order, after the new prefix.",
+          "observed": "The new value is exactly `node ../studies/e1-browser/sim/roll-return-native.mjs && ` followed by the old value. All existing entries, from `terrain-horizon.browser.mjs` through `neutral-controls.browser.mjs`, appear in the original order with no edits, removals or reorderings.",
+          "status": "pass",
+          "evidence": "packet old_package.scripts.test:browser vs new_package.scripts.test:browser; diff -/+ lines differ only by the prepended command."
+        },
+        {
+          "criterion": "Supplement criterion: preserve every other script and dependency",
+          "expected": "All other scripts, including `test`, `test:roll-return` and `test:roll-return-browser`, and all dependencies, devDependencies, engines and metadata are unchanged.",
+          "observed": "The diff contains one changed line, `test:browser`. In old_package vs new_package, the `test` script, all other scripts (including `test:roll-return` and `test:roll-return-browser`), dependencies, devDependencies, engines, name, version, license and type are identical.",
+          "status": "pass",
+          "evidence": "packet diff (single -/+ pair); old_package vs new_package objects; verification.only_registration_delta=true."
+        },
+        {
+          "criterion": "Registered command executes successfully at the supplement revision",
+          "expected": "The newly chained command, run from `app`, exits successfully with results consistent with the accepted evidence.",
+          "observed": "The supplied execution record shows the command run with cwd `app`. The output tail reports `result: pass`, 57 cases, `exact_repeat: true`, and a sequence `result: pass` with 54 checks over 18 cases and `max_surface_residual_deg` 0. These match the accepted review's 57 native cases and 54 sequence checks. The full log is not in the packet; only the tail and log_sha256 b09617\u20262b9 are supplied.",
+          "status": "pass",
+          "evidence": "packet verification.registered_command_executed, cwd, output_tail, log_sha256; prior_accepted_review validation rows on native cases and successive pulses."
+        },
+        {
+          "criterion": "Resolution of prior accepted review medium finding Q1 (native regression not run by any gated suite)",
+          "expected": "The native roll-return regression runs as part of a normal gated suite.",
+          "observed": "The native regression is now part of the normal `test:browser` gate, which addresses the finding's primary expected action. The optional browser-harness part of that finding is not addressed; see the low quality finding. The shared `test` CI script is unchanged, and the full `test:browser` chain is explicitly not claimed as executed.",
+          "status": "pass",
+          "evidence": "prior_accepted_review.review.quality[0]; new_package.scripts.test:browser; verification.shared_ci_unchanged_test_script 'Full browser chain not claimed as executed.'"
+        },
+        {
+          "criterion": "Supplement scope integrity: eight implementation/test files unchanged from the accepted review",
+          "expected": "The supplied hashes of the eight files are consistent with the accepted review's evidence.",
+          "observed": "Where the accepted review cited hashes, the supplied hashes agree. The `disturbance-input.browser.mjs` hash e3e44f81\u2026 equals the accepted harness_sha256 e3e44f81, and the `disturbance-response-native.mjs` hash 6b350252\u2026 equals the accepted producer hash 6b350252. The other six hashes cannot be cross-checked, because the accepted review's text reports manifest equality without listing their values; they are taken as supplied.",
+          "status": "pass",
+          "evidence": "packet unchanged_eight_file_sha256; prior_accepted_review.review.validation 'Source/evidence provenance consistency' observed text."
+        }
+      ],
+      "recommendation": "accept",
+      "limitations": [
+        "This review covers the frozen packet only. No commands were executed, and the SHA-256 values (new_package_sha256, log_sha256, the eight file hashes) were not recomputed. They are cross-checked only for internal consistency.",
+        "The full execution log is not supplied, only its tail and hash. The full `test:browser` chain with the new prefix is explicitly not claimed as executed, so the interaction with later suite entries (for example artifact-path collisions in output/flight or added runtime) is not evidenced.",
+        "The packet contains no CI configuration. Whether `test:browser` runs in any automated CI pipeline, as opposed to a manually invoked gate, cannot be determined. The shared `test` script is unchanged and still excludes the native regression.",
+        "Six of the eight 'unchanged' file hashes cannot be cross-checked against values in the accepted review, which lists those as manifest-equal without values.",
+        "Per the stated scope, the remaining low-priority follow-ups from the accepted review were not re-evaluated: sampled-rate guard coupling, camera record cleanup, failure-path hash masking and installed metadata pins. Broader C172, parent and ROOT release acceptance is out of scope.",
+        "The prior accepted review is supplied as packet data and was treated as untrusted evidence. This supplement review relies on it only for the scope baseline and cross-referenced values."
+      ]
+    },
+    "limitations": [
+      "CLI routing and returned model names are evidence, not backend attestation.",
+      "Packet review does not independently execute the packet's test commands."
+    ]
+  },
+  "historical_attempts": [
+    {
+      "status": "blocked",
+      "accepted": false,
+      "diagnostic": "review_blocked",
+      "packet": {
+        "path": "output/flight/roll-return-peer-packet.json",
+        "sha256": "645f22bd712eb5640e1fa4b3e2c12fe4b24227c921cf163ba8f12ee751d44795",
+        "revision": "scoped-source-sha256:a51e1dafba2c95575abc24fd580e33725e588a95518057864302121e82e0cfa1"
+      },
+      "cli": {
+        "executable": "/opt/homebrew/bin/claude",
+        "version": "2.1.308"
+      },
+      "model_evidence": [
+        "claude-opus-5-5"
+      ]
+    },
+    {
+      "status": "completed",
+      "accepted": false,
+      "diagnostic": null,
+      "packet": {
+        "path": "output/flight/roll-return-peer-final-packet.json",
+        "sha256": "3f6bf27ab5dc1426bc82045cd3cac92e5738d2c94834969a3fa6d864b4b0944c",
+        "revision": "source-manifest:ddf7c48ee670f9ed359f7eb0d85a03feb9ac92cb79d015e7a1bd1136936d52ac"
+      },
+      "cli": {
+        "executable": "/opt/homebrew/bin/claude",
+        "version": "2.1.308"
+      },
+      "model_evidence": [
+        "claude-opus-5-5"
+      ]
+    },
+    {
+      "status": "completed",
+      "accepted": false,
+      "diagnostic": null,
+      "packet": {
+        "path": "output/flight/roll-return-peer-renewed-packet.json",
+        "sha256": "707344e8f6bb06977afb4c9669a4472a1941da167f589f79ee0e479d2c1fc064",
+        "revision": "source-manifest:5af1c0d67e9ec666f92b83fffb47b967bfe340b51c265700b9720fadb65c38bd"
+      },
+      "cli": {
+        "executable": "/opt/homebrew/bin/claude",
+        "version": "2.1.308"
+      },
+      "model_evidence": [
+        "claude-opus-5-5"
+      ]
+    }
+  ],
+  "remaining_nonblocking_findings": "Sampled-rate guard coupling, browser camera-record cleanup, failure-path secondary hash errors and richer installed metadata pins remain follow-up. UI browser harness is opt-in because it targets a caller-owned running app; see app/README.md."
+}

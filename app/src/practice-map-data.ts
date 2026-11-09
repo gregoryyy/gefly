@@ -2,6 +2,7 @@ import type { FlightState } from './types';
 
 /** MapLibre's WGS84 longitude/latitude degrees, in that order. */
 export type MapCoordinate = [number, number];
+export type MapPathPosition = Readonly<Pick<FlightState, 'lat_rad' | 'lon_rad'>>;
 
 export interface PracticeMapFrame {
   position: MapCoordinate;
@@ -9,7 +10,7 @@ export interface PracticeMapFrame {
   path: MapCoordinate[];
 }
 
-function coordinate(state: Readonly<FlightState>): MapCoordinate {
+function coordinate(state: MapPathPosition): MapCoordinate {
   if (!state || !Number.isFinite(state.lon_rad) || !Number.isFinite(state.lat_rad)
     || Math.abs(state.lon_rad) > Math.PI || Math.abs(state.lat_rad) > Math.PI / 2) {
     throw new RangeError('Map position must be finite WGS84 longitude/latitude radians');
@@ -19,7 +20,7 @@ function coordinate(state: Readonly<FlightState>): MapCoordinate {
 
 /** Detached plotting data; this conversion does not establish navigation accuracy. */
 export function makePracticeMapFrame(
-  state: Readonly<FlightState>, path: readonly Readonly<FlightState>[],
+  state: Readonly<FlightState>, path: readonly MapPathPosition[],
 ): PracticeMapFrame {
   const position = coordinate(state);
   if (!Number.isFinite(state.heading_rad)) {
@@ -28,6 +29,18 @@ export function makePracticeMapFrame(
   // Reduce radians first so even a large finite input cannot overflow conversion.
   const heading_deg = ((state.heading_rad % (2 * Math.PI)) * 180 / Math.PI + 360) % 360;
   return { position, heading_deg, path: Array.from(path, coordinate) };
+}
+
+/** Unwrap successive longitudes around the final point's nearest visible world. */
+export function unwrapMapPath(path: readonly MapCoordinate[], referenceLongitude_deg: number): MapCoordinate[] {
+  if (!path.length || !Number.isFinite(referenceLongitude_deg)) return [];
+  const result = path.map(([lon, lat]) => [lon, lat] as MapCoordinate);
+  const last = result.length - 1;
+  result[last][0] += 360 * Math.round((referenceLongitude_deg - result[last][0]) / 360);
+  for (let i = last - 1; i >= 0; i--) {
+    result[i][0] += 360 * Math.round((result[i + 1][0] - result[i][0]) / 360);
+  }
+  return result;
 }
 
 /** Convert [west, south, east, north] to MapLibre image-source NW, NE, SE, SW. */
