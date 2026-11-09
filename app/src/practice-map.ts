@@ -41,6 +41,8 @@ export interface PracticeMap {
   zoom(direction: 1 | -1): void;
   /** Current explicit GPS direct-to or active plan-leg target, independent of map visibility. */
   getGpsTarget(): Readonly<PlannerPoint> | null;
+  /** Airports and COM rows the map currently holds (worldwide cells or the bundled fallback), for simulated airport contact. */
+  getComContactSource(): { airports: readonly Airport[]; directory: AirportComDirectory } | null;
   setPlanVisible(visible: boolean): void;
   update(state: Readonly<FlightState>, path: readonly MapPathPosition[], mode: 'live' | 'review', options?: { simplified?: boolean; recordingStart?: boolean }): void;
   setVisible(visible: boolean): void;
@@ -1078,6 +1080,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   const controller: PracticeMap = {
     zoom(direction) { if (!disposed && visible && ready) { onInteraction(); changeZoom(direction); } },
     getGpsTarget() { return disposed ? null : navigationTarget(); },
+    getComContactSource() { return disposed || !comDirectory ? null : { airports, directory: comDirectory }; },
     setPlanVisible,
     toggleOverlap() {
       if (disposed) return;
