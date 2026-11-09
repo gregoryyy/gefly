@@ -88,7 +88,10 @@ and the Python standard library. Package installation includes the app's npm dep
 from the lockfile via `npm ci --ignore-scripts` (no lifecycle scripts), in the
 browser-application job and in the runner's app phase. The browser-application
 job separately installs pinned Pillow with Python 3.11 for offline scenery-proxy
-tests; those tests use supplied responses rather than live WMS. It invokes no live peer
+tests (`test:scenery`: scenery, country-photo and vector-map proxies plus the
+world-fallback terrain builder); those tests use supplied responses rather than
+live WMS. Pillow-dependent tests stay out of `npm test`, which the shared
+standard-library gate also runs. It invokes no live peer
 provider, PDF/browser/TeX process or simulator runtime. Tests mock provider calls.
 Value files pin the aircraft manifest by id, version and SHA-256 of the file bytes;
 the validator rejects duplicate JSON keys.
