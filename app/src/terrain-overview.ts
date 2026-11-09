@@ -151,7 +151,14 @@ export async function composeTerrainOverview(world: TerrainGrid, col: number, ro
 export interface TerrainOverviewStatus { readonly state: 'off' | 'loading' | 'ready' | 'partial' | 'unavailable' | 'pending'; readonly cells: number; readonly missing: number; readonly cache: number }
 export interface OverviewCellIdentity { readonly col: number; readonly row: number }
 export interface OverviewResolution extends OverviewCellIdentity { readonly grid: TerrainOverviewGrid | null; readonly reason?: string }
+export interface TerrainOverviewSource {
+  regional(lat: number, lon: number, signal: AbortSignal): Promise<readonly RegionalTile[]>;
+  read(col: number, row: number, signal: AbortSignal): Promise<CopernicusOverviewCell>;
+  compose(col: number, row: number, raw: CopernicusOverviewCell | null, regional: readonly TerrainGrid[], signal: AbortSignal): Promise<TerrainOverviewGrid | null>;
+  dispose(): void;
+}
 interface Options {
+  source?: TerrainOverviewSource;
   onResolved?: (result: OverviewResolution) => void;
   fetcher?: typeof fetch; budgetMs?: number; onStatus?: (status: TerrainOverviewStatus) => void;
   regional?: (lat: number, lon: number, signal: AbortSignal) => Promise<readonly TerrainGrid[]>;
@@ -187,7 +194,13 @@ export class TerrainOverview {
     this.fetcher = options.fetcher ?? globalThis.fetch;
     this.budget = options.budgetMs ?? 15000;
     if (!Number.isFinite(this.budget) || this.budget < 1 || this.budget > 15000) throw new Error('Invalid display overview deadline');
-    this.regional = options.regional ?? ((lat, lon, signal) => this.loadRegional(lat, lon, signal));
+    this.regional = options.regional ?? options.source?.regional ?? ((lat, lon, signal) => this.loadRegional(lat, lon, signal));
+  }
+  private read(col: number, row: number, signal: AbortSignal) {
+    return this.options.source ? this.options.source.read(col, row, signal) : readCopernicusOverview(col, row, this.fetcher, signal);
+  }
+  private compose(col: number, row: number, raw: CopernicusOverviewCell | null, regional: readonly TerrainGrid[], signal: AbortSignal) {
+    return this.options.source ? this.options.source.compose(col, row, raw, regional, signal) : composeTerrainOverview(this.world, col, row, raw, regional);
   }
   private notify(state: TerrainOverviewStatus['state'], missing = 0) {
     try { this.options.onStatus?.(Object.freeze({ state, cells: this.current.length, missing, cache: this.cache.size })); } catch { /* Optional presentation callback. */ }
@@ -243,14 +256,14 @@ export class TerrainOverview {
           let grid = entry.regionalKey === regionalKey ? entry.grid : undefined;
           if (grid === undefined) {
             // Regional-only completion avoids an unnecessary remote DSM request.
-            grid = await composeTerrainOverview(this.world, col, row, null, regional);
+            grid = await this.compose(col, row, null, regional, controller.signal);
             if (!grid) {
               let raw = entry.raw;
               if (raw === undefined) try {
-                raw = await readCopernicusOverview(col, row, this.fetcher, controller.signal);
+                raw = await this.read(col, row, controller.signal);
               } catch { raw = null; }
               if (!valid()) { if (expired && generation === this.generation) break; return; }
-              grid = await composeTerrainOverview(this.world, col, row, raw, regional);
+              grid = await this.compose(col, row, raw, regional, controller.signal);
               if (raw) entry.raw = raw;
             }
             entry.grid = grid ?? (entry.raw ? null : undefined); entry.regionalKey = regionalKey;
@@ -339,10 +352,10 @@ export class TerrainOverview {
             if (!valid()) return;
             let grid: TerrainOverviewGrid | null = null, rawCandidate:CopernicusOverviewCell|undefined;
             try {
-              grid = await composeTerrainOverview(this.world, cell.col, cell.row, null, regional);
+              grid = await this.compose(cell.col, cell.row, null, regional, controller.signal);
               if (!grid && !controller.signal.aborted) {
-                const raw = cached?.raw ?? await readCopernicusOverview(cell.col, cell.row, this.fetcher, controller.signal);
-                grid = await composeTerrainOverview(this.world, cell.col, cell.row, raw, regional);
+                const raw = cached?.raw ?? await this.read(cell.col, cell.row, controller.signal);
+                grid = await this.compose(cell.col, cell.row, raw, regional, controller.signal);
                 rawCandidate=raw;
               }
             } catch { /* This epoch will disclose this optional source as missing. */ }
@@ -372,5 +385,5 @@ export class TerrainOverview {
     if (clear) { this.current = []; this.cache.clear(); this.outcomes.clear(); this.exhausted = false; this.stoppedReason=null; this.install(this.current); }
     if (clear || interrupted) this.notify('off');
   }
-  dispose(): void { if (this.disposed) return; this.cancel(true); this.disposed = true; }
+  dispose(): void { if (this.disposed) return; this.cancel(true); this.options.source?.dispose(); this.disposed = true; }
 }

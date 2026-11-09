@@ -3,6 +3,36 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-09 15:59 — Port the orphaned terrain source and overview stack to main
+
+TODO: 2.0.165, 2.0.167, 2.0.169, 2.0.174, 2.0.178; R-WORLD-11/R-SIM-2/R-VIEW-1/R-INPUT-1.
+Agent: Claude orchestrator; port worker code2 (fork).
+
+**Implementation notes**
+
+PRs #99, #100, #106 and #110 were each merged into an intermediate feature
+branch after its parent had already merged, so none reached main. This merge
+brings `origin/feat/animated-camera-return` into main, preserving the original
+commits and their records. Ported: browser terrain-source worker and server
+Copernicus decode workers (2.0.165), the separate Terrain overview view
+(2.0.167), and the landing-shadow receiver repair (2.0.169). Main's newer chase
+camera from #113/#114 (zoom-scaled return, closer zoom, centered-yoke pickup,
+AP keyboard guard) wins over the stack versions. The stack's duplicate wheel
+handler is folded into main's guarded chase handler, so overview distance shares
+its guards. 2.0.174 and 2.0.178 are recorded as delivered on main via #113.
+
+Unit tests 741/741 passed; typecheck and build passed. Browser
+terrain-source lifecycle, view-and-thread, chase zoom, camera return and
+aircraft shadow passed. `tests/smoke.mjs` and `tests/pointer-yoke.browser.mjs`
+time out identically on unmodified main (pre-existing, not caused by this port).
+
+**Deviations**
+
+The stack's independent reviews cover its original revision, not this
+integration. Renewed quality/validation and cross-provider peer review are
+pending, and the TODO statuses say so. This does not establish terrain or
+shadow fidelity.
+
 ## 2026-11-07 11:24 — Limit vector imagery reloads after tile failures
 
 TODO: 2.0.199; R-WORLD-11/R-VIEW-1. Agent: Codex orchestrator; diagnosis
@@ -516,6 +546,54 @@ Already-rendered tiles need runtime fetch/cache, not conversion. A single succes
 source tile and synthetic chart fixtures did not establish the producer's format
 or native-detail behavior; the actual default-view test exposed both assumptions.
 
+## 2026-11-06 16:25 — Add optional animated view return and gentle chase zoom
+
+TODO: 2.0.178; R-VIEW-1/R-INPUT-1/R-UX-2.
+Agent: Codex orchestrator; pure return helper `camera_return`, chase mapping/browser
+implementation `chase_zoom_response`, source inventory and independent quality
+`camera_return_housekeeping`, independent validation `camera_return_validate`.
+
+**Implementation notes**
+
+View → Animate view return saves a separate strict128-byte boolean preference,
+on by default with reduced-motion instant override. Cockpit double-click centers
+look; chase also returns close behind the current aircraft heading. The700ms
+wall-time helper eases shortest yaw and logarithmic radius; new gestures/views/
+lifecycle boundaries cancel it and silently synchronize the next pointer reference.
+Chase retains fixed FOV; first100px distance growth falls from82%to17%, with
+reversible/subdivision-consistent travel and20Mm reach. [Behavior](research/2026-11-06-camera-return.md).
+
+Both working-app and publication checkouts pass five new actual-camera browser
+groups and four retained chase groups. Rendered intermediate poses/endpoints,
+restart/interruption, saved-off reload, reduced motion, constant lens and paused
+native isolation are observed. Legacy live follow/poles/Review remain covered;
+39actualgazes per context have maximum direction error about3.071e−11.
+[Evidence](reviews/2026-11-06-camera-return-runtime.json),
+[quality](reviews/2026-11-06-camera-return-quality.md) and
+[validation](reviews/2026-11-06-camera-return-validation.md).
+
+Publication CI passes620Node/22applicationPython/85assurance/11training tests;
+242of243tool cases execute (one platform skip),14of23JSBSim cases execute
+(nine optional skips),25C172S pass. Focused tests pass42working-app/40publication;
+both TypeScript checks pass. Independent quality/validation have no blockers.
+
+**Deviations**
+
+The initial pointer port missed a return-object method because the parent branch
+has older pointer surroundings; TSC/focused tests caught it before the final freeze.
+A new reference test initially assumed the opposite yaw sign; corrected the test
+to the existing convention. No runtime repairs were needed after four frozen
+browser passes. Publication is stacked on the existing chase-overview PR, keeping
+unrelated navigation/settings features separate. Compact evidence pins raw rendered
+frame artifacts without flooding assurance extraction. Synthetic blur is explicit;
+true hidden/pagehide, live animated return and embedded WebKit are not runtime
+accepted here. Cross-provider peer remains pending under batch cadence.
+
+**Insights**
+
+Camera motion needs a synchronized input reference as well as smooth interpolation;
+close zoom response can improve without changing focal length or far-range reach.
+
 ## 2026-11-06 16:05 — Extend historical radio reception worldwide
 
 TODO: 2.0.177; R-NAV-1/R-NAV-2/R-NAV-4/R-DATA-1.
@@ -640,6 +718,47 @@ coverage. Cross-provider peer remains pending under the batching cadence.
 
 One category switch should govern the map and directory, and empty saved state
 must remain distinct from a missing or invalid preference.
+
+## 2026-11-06 14:36 — Add Earth-scale chase zoom and close follow reset
+
+TODO: 2.0.174; R-VIEW-1/R-INPUT-1.
+Agent: Codex orchestrator; camera math/public pose implementation
+`chase_camera_math`, pointer/browser implementation `chase_pointer`, source
+inventory and independent quality `chase_housekeeping`, independent validation
+`chase_validate`.
+
+**Implementation notes**
+
+Chase scroll now changes actual distance from the original approximately32m
+orbit to20,000km. Hold-drag reaches a top-down overview. Double-click resets
+orbit and distance to30m behind/11m above the current aircraft heading, even
+when only zoom changed. Cockpit FOV, separate overview distance, normal pointer
+ownership and paused/Review inspection remain intact. Guard editable/modal,
+horizontal and modifier wheel gestures. [Interaction and renderer details](research/2026-11-06-chase-overview.md).
+
+Review caught a65.8km actual target miss at20Mm that pure orbit math and the first
+loose browser assertion missed. A validated public camera-basis helper avoids
+Cesium's lossy near-pole HPR conversion. Five actual-Cesium Camera regressions
+and strict target-ray browser assertions cover the repair. Separate working-app
+and publication runs each pass four groups and32 gaze evaluations with vector
+error below1e-10. [Runtime record](reviews/2026-11-06-chase-overview-runtime.json),
+[independent quality](reviews/2026-11-06-chase-overview-quality.md) and
+[validation](reviews/2026-11-06-chase-overview-validation.md) accept the bounded
+camera behavior. Publication CI passes607 Node/22 application Python,85 assurance
+and11 training cases;9 optional JSBSim study cases remain skipped.
+
+**Deviations**
+
+No engine, physics, native navigation, stored Options or recording changes.
+Scenery pixels are fixtures; map/terrain coverage, aircraft fidelity and broad
+device performance are not accepted. The prior failed renderer claim is retained
+as resolved history. Cross-provider peer remains pending under the batching
+cadence. This increment is stacked on the existing overview/shadow feature.
+
+**Insights**
+
+Pure camera geometry can be correct while renderer orientation conversion loses
+the target. Measure the actual applied camera sightline independently.
 
 ## 2026-11-06 14:08 — Resolve saved-Options PR against newly merged main
 
@@ -768,6 +887,44 @@ Browser HTTP gzip auto-decoding invalidates compressed-payload integrity checks;
 neutral archive delivery plus an explicit descriptor/catalogue boundary preserves
 exact bytes. Airport discovery, ground scenery and receiver/procedure fidelity
 need independent source and acceptance records.
+
+## 2026-11-06 09:36 — Add terrain overview and repair landing-shadow receivers
+
+TODO: 2.0.167/2.0.169/2.0.165/2.0.164; R-VIEW-1/R-INPUT-1/R-WORLD-11/R-AIRPORT-3.
+Agent: Codex orchestrator; independent `scenery_quality` and `scenery_validate`.
+
+**Implementation notes**
+
+Add View → Terrain overview with heading-relative orbit and50m–20,000km scroll distance; camera/look never writes native inputs. Cockpit/chase retain FOV behavior. Airport pavement receives shadows; active sampled receiver plus actual rendered aircraft height replaces asynchronous native/readout equality gating. Existing near-ground fade/applicability remains. Independent actual shadow pixel checks pass three flat-study groups; actual camera/source/native browser proof preserves paused state/digest and equal120-step terrain trajectory.
+
+Final feature software CI passes592Node+22Python application cases,85assurance and11training cases, with9optional JSBSim study skips. TypeScript/production build and assurance integrity pass; historical stale-evidence warnings are not renewed acceptance. Lineage diff against6563c59 inspected: new airport/worker/camera sources and their records, existing renderer/main/runtime/requirements affected. [Quality](reviews/2026-11-06-scenery-quality.md) and [validation](reviews/2026-11-06-scenery-validation.md) distinguish independent tests from supplied browser evidence.
+
+Independent [working-copy integration quality](reviews/2026-11-06-scenery-root-integration-quality.md) and [validation](reviews/2026-11-06-scenery-root-integration-validation.md) preserve existing AP/map/background/handling features. Full candidate710Node+25Python,23renewed server/PAPI cases,152quality preservation cases,47validation cases and six actual AP reload groups pass, alongside candidate airport/camera/native browser checks.
+
+**Deviations**
+
+Live airport source success and the exact reported moving/sloped terrain landing remain unverified. Prepared static Frankfurt airports retain their prior generic markings/PAPI scope; streamed-source enhancements do not claim installed equipment. Wider user working-copy assurance exceeds its existing graph bound and is not a full-root gate pass. [External review attempts](reviews/2026-11-06-scenery-peer-attempts.json) timed out; peer pending. No native rebuild or aircraft tuning.
+
+**Insights**
+
+An opaque pavement must explicitly receive the shadow, and a presentation cue should use the same sampled surface and aircraft pose that are actually rendered.
+
+## 2026-11-06 09:32 — Separate terrain source work from native stepping
+
+TODO: 2.0.165; R-WORLD-11/R-SIM-2.
+Agent: Codex orchestrator; implementation `terrain_source_worker`; independent `scenery_quality` and `scenery_validate`.
+
+**Implementation notes**
+
+Move browser physical terrain source fetch/decode/compose/prefetch into a nested module Worker; retain native admission/configuration between physics steps. Move distant overview source work to a separate Worker while its synchronous display-source admission controller stays local. Inflate backend Copernicus blocks in a bounded two-thread pool. Existing source-history/coverage guards and immutable copied inputs remain. Actual browser source Worker and inline reference produce exactly equal nine grids; two real WASM engines match all14state fields and trajectory digest after120steps. Actual Chrome lifecycle proof holds253ms of synchronous source composition while native flight advances steps5→35; manual pause preserves step37/digest/all14state fields, reset replaces the source Worker and corrupt required data fails visibly without publishing a ready flight.
+
+**Deviations**
+
+Thread separation removes source CPU contention, not required-coverage waits. No native binary, aircraft coefficient or physics pacing changes. A speculative overlapping-init race was rejected after independent inspection confirmed serialized messages; no startup-admission behavior is changed. Broader terrain continuity/source availability remain separate limits. Cross-provider peer pending after timed-out attempts.
+
+**Insights**
+
+Keep source computation asynchronous while retaining synchronous source-admission decisions and native installs at the established simulation boundary.
 
 ## 2026-11-06 09:29 — Add bounded on-demand airport surface generation
 

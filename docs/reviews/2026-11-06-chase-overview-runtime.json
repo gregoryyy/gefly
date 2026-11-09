@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "scope": "R-VIEW-1/R-INPUT-1 camera geometry and gestures; fixture scenery, no terrain or aircraft fidelity acceptance",
+  "publication_base": "06dbfb29fe0e1b1ef4e8c8d8a2334da479ffb3e7",
+  "maximum_gaze_vector_error_allowed": 1e-10,
+  "runs": [
+    {
+      "target": "working-app",
+      "result": "pass",
+      "browser": "156.0.8078.80",
+      "artifact_sha256": "b7831407e0eef46cf826eca8e40e6999e09a7a02f780de17a63c763e7c66f779",
+      "source_hashes": {
+        "src/main.ts": "6766b4ef43d43e4355f0b988a67818fbcd11dfb16637e0175f2f8ef76350a0f8",
+        "src/scene.ts": "63de768859232ac66544292eb7f4da4b1588df777a0419d08894dd2319d12e3a",
+        "src/aircraft-orientation.ts": "b8438d67c7ab8abd739f567fb0d88f9fff8e5c4a8299b0115b0565b3ff21a68f",
+        "src/chase-distance.ts": "cbfce2c4219fa78fcc1d1a4dce91d488ef9e50bad633877b8915704f18345711",
+        "src/camera-pose.ts": "445ca24283032513b7adb4dacb058e1a1089dff4b0853651b7e4ceffeed9029e",
+        "src/pointer-yoke.ts": "416b7169a2007dc7f81213a749b61ec5b03446c825d628bb6a8752a0ac0ea643",
+        "tests/chase-zoom.browser.mjs": "704acc165192809ce03a0b1553d5235646440a2d3b0857f6ff7a035286058b6f"
+      },
+      "checks": [
+        "chase wheel changes actual Cesium distance with a fixed lens; zero-angle double-click returns close behind the plane without changing paused native state",
+        "chase reaches 20000km, hold-drag gives a top-down overview and double-click restores ordinary heading-relative chase",
+        "horizontal/modifier/editable/dialog guards, cockpit field-of-view zoom and separate overview distance remain independent",
+        "actual native flight moves the heading-relative chase target; paused Review supports zoom/recenter without changing the live worker"
+      ],
+      "gaze_evaluations": 32,
+      "maximum_gaze_vector_error": 3.0222322093672e-11,
+      "top_down": {
+        "offset_ENU_m": [
+          -8.149072527885437e-10,
+          4.656612873077393e-10,
+          19999999.999999993
+        ],
+        "direction_ENU": [
+          5.551115123125783e-17,
+          -1.6653345369377348e-16,
+          -1
+        ],
+        "up_ENU": [
+          0.9902680687415705,
+          0.13917310096006458,
+          5.551115123125783e-17
+        ]
+      },
+      "served_scene_sha256": "d04d833b403200b9333892b5080d2b1b11a646fcb85ec557cea7f684826eaabb",
+      "observed_scene_sha256": "150fe35d15ab0139ee2ca0b5039f16d056487a16562f9b013e770e1b09101b7c"
+    },
+    {
+      "target": "publication",
+      "result": "pass",
+      "browser": "156.0.8078.80",
+      "artifact_sha256": "8f159df0c05fe58369e168abdac15e87e1bc2d02ee3c5b246b9b75de963ac537",
+      "source_hashes": {
+        "src/main.ts": "508a283c5b580e09c4402e3484b6f1b859f2627b9ea74f1ee288c0c17f703106",
+        "src/scene.ts": "d7e74750c5e3992ae08829abc2f27aa5c3a20da070c86f8c952ff353a4c110bb",
+        "src/aircraft-orientation.ts": "b8438d67c7ab8abd739f567fb0d88f9fff8e5c4a8299b0115b0565b3ff21a68f",
+        "src/chase-distance.ts": "cbfce2c4219fa78fcc1d1a4dce91d488ef9e50bad633877b8915704f18345711",
+        "src/camera-pose.ts": "445ca24283032513b7adb4dacb058e1a1089dff4b0853651b7e4ceffeed9029e",
+        "src/pointer-yoke.ts": "c93d3453c3bd59d28f31ec91c915908e9d95cc5cfe0c9354b4d9f8094b6bb24a",
+        "tests/chase-zoom.browser.mjs": "704acc165192809ce03a0b1553d5235646440a2d3b0857f6ff7a035286058b6f"
+      },
+      "checks": [
+        "chase wheel changes actual Cesium distance with a fixed lens; zero-angle double-click returns close behind the plane without changing paused native state",
+        "chase reaches 20000km, hold-drag gives a top-down overview and double-click restores ordinary heading-relative chase",
+        "horizontal/modifier/editable/dialog guards, cockpit field-of-view zoom and separate overview distance remain independent",
+        "actual native flight moves the heading-relative chase target; paused Review supports zoom/recenter without changing the live worker"
+      ],
+      "gaze_evaluations": 32,
+      "maximum_gaze_vector_error": 3.2889407792843e-11,
+      "top_down": {
+        "offset_ENU_m": [
+          -8.149072527885437e-10,
+          4.656612873077393e-10,
+          19999999.999999993
+        ],
+        "direction_ENU": [
+          5.551115123125783e-17,
+          -1.6653345369377348e-16,
+          -1
+        ],
+        "up_ENU": [
+          0.9902680687415703,
+          0.13917310096006524,
+          -1.3877787807814457e-17
+        ]
+      },
+      "served_scene_sha256": "ac110821ef9b70238500a0e1400815efc39ec5417b31eb6f0dd640b8b98dc23f",
+      "observed_scene_sha256": "a4cb35fbe34bdf18beed71f5f3c1e4cf9118e1efb7e9a8fed0f4da27a102a92a"
+    }
+  ],
+  "prior_failure": {
+    "artifact_sha256": "00f4a2cbfd3e9102b52e6ddccef89ff077f07c9ad936d5ebb6f345f833e78404",
+    "accepted": false,
+    "reason": "Initial loose browser assertion admitted0.18855degree actual target miss at20Mm; tightened after independent review and repaired public camera basis."
+  },
+  "ci": {
+    "result": "pass_with_optional_study_skips",
+    "command": "env PATH=/Users/gregor/.pyenv/versions/3.11.12/bin:$PATH just ci",
+    "log_sha256": "bf737951ad33cd3bc36560feea49ed3ba06061a289bbcd3312f893136971e0b5",
+    "application_node_pass": 607,
+    "application_python_pass": 22,
+    "assurance_pass": 85,
+    "training_pass": 11,
+    "optional_jsbsim_skips": 9
+  }
+}

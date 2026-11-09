@@ -28,9 +28,9 @@ import { initialBalanceFields, initialBalanceProfile, validInitialBalanceState }
 // runs steps back to back while paused (no pacing) and replies with the mean
 // cost per step for each block, separating compute cost from post-idle wake cost.
 import createJSBSim from './dist/jsbsim.mjs';
-import { loadTerrainPackage, sampleTerrain, sampleTerrainGradient, terrainContainsInterior } from './terrain.js';
-import { loadRegionalManifestOptional, WorldTerrainStream, sampleAtlas, sampleAtlasGradient } from './terrain-stream.js';
-import { loadWorldTerrainPackage } from './world-terrain.js';
+import { sampleTerrain, sampleTerrainGradient, terrainContainsInterior } from './terrain.js';
+import { sampleAtlas, sampleAtlasGradient } from './terrain-stream.js';
+import { createTerrainSourceStream } from './terrain-source-client.js';
 import { createTerrainPrediction } from './terrain-prediction.js';
 import { pressureAltitude_m, indicatedAltitude_m, validSetting } from './altimeter.js';
 import { stallFields, controlFields, cockpitFields, pitchTrimFields, groundFields } from './cockpit.js';
@@ -90,6 +90,7 @@ let untilStep = Infinity;
 let terrainGrid = null;
 let terrainFault = false;
 let terrainStream = null;
+let terrainSource = null;
 const terrainPrediction = createTerrainPrediction();
 let terrainLoad = null;
 let terrainGeneration = 0;
@@ -632,7 +633,7 @@ function stats() {
 }
 
 async function onInit(msg) {
-  terrainStream?.cancel();
+  terrainSource?.cancel(); terrainSource = null;
   initialized = false; terrainGeneration++; terrainLoad = null; resumeAfterTerrain = false; terrainStream = null; terrainFault = false; kap = null; altitudeAlert = null; pilotOverrideActive = false; navigation = { ...DEFAULT_NAVIGATION }; navigationPackage = null; navdataError = null; collisionAvailable = false; kapSensorsInvalid = false;
   const requestedBalance = msg.initial_balance_profile ?? 0;
   if ((Object.hasOwn(msg, 'initial_balance_profile') && msg.initial_balance_profile !== 0 && msg.initial_balance_profile !== 1)
@@ -696,7 +697,14 @@ async function onInit(msg) {
     if (['_gf_configure_terrain_grid', '_gf_terrain_available', '_malloc', '_free'].some(name => typeof M[name] !== 'function')) {
       fail('Public terrain requires the updated local engine. Run just build-flight-engine and restart.'); return;
     }
-    terrainGrid = await loadTerrainPackage();
+    const generation = terrainGeneration;
+    terrainSource = createTerrainSourceStream(
+      grid => { if (generation === terrainGeneration) installTile(grid); },
+      grid => { if (generation === terrainGeneration) removeTile(grid); },
+      { fine: true, streaming: !!msg.streaming_terrain });
+    if (msg.streaming_terrain) terrainStream = terrainSource;
+    await terrainSource.ready;
+    terrainGrid = terrainSource.fine;
     if (!msg.streaming_terrain && !terrainContainsInterior(terrainGrid, ic.lat_rad, ic.lon_rad)) { fail('Initial position is outside public terrain coverage.'); return; }
     const pointer = M._malloc(terrainGrid.physical_m.byteLength);
     if (!pointer) { fail('Cannot allocate the public terrain grid.'); return; }
@@ -707,15 +715,14 @@ async function onInit(msg) {
         terrainGrid.north_rad, terrainGrid.width, terrainGrid.height, pointer, terrainGrid.physical_m.length);
     } finally { M._free(pointer); }
     if (configured !== 0) { fail(`Terrain grid rejected: ${configured}`); return; }
+    if (!msg.streaming_terrain) { terrainSource.cancel(); terrainSource = null; }
   }
   if (msg.streaming_terrain) {
     if (typeof M._gf_set_terrain_tile !== 'function' || typeof M._gf_remove_terrain_tile !== 'function') {
       fail('Regional terrain requires the updated local engine. Run just build-flight-engine and restart.'); return;
     }
     const generation = terrainGeneration;
-    const world = await loadWorldTerrainPackage();
-    const regional = await loadRegionalManifestOptional();
-    terrainStream = new WorldTerrainStream(world, regional,
+    terrainStream ??= terrainSource = createTerrainSourceStream(
       grid => { if (generation === terrainGeneration) installTile(grid); },
       grid => { if (generation === terrainGeneration) removeTile(grid); });
     await terrainStream.move(ic.lat_rad, ic.lon_rad);
