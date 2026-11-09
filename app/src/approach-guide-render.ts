@@ -1,5 +1,5 @@
 import { Cartesian3, Cartographic, Color, LabelCollection, LabelStyle, Material, PolylineCollection, type Scene } from 'cesium';
-import { approachGuideDisclosure, approachPoints, approachThreshold, guideDestination, validApproachGuide, type ApproachGuide } from './approach-guide.ts';
+import { approachGuideDisclosure, approachGuideLimitations, approachPoints, approachThreshold, guideDestination, validApproachGuide, type ApproachGuide } from './approach-guide.ts';
 
 /** Display-only terrain-anchored instructional line; never feeds the worker or avionics. */
 export function createApproachGuideRenderer(scene: Scene, container: HTMLElement,
@@ -11,7 +11,7 @@ export function createApproachGuideRenderer(scene: Scene, container: HTMLElement
   status.setAttribute('role', 'status');
   // One compact line over the flying view. The full disclosure is the tooltip,
   // visually hidden text for assistive technology, and the airport popup.
-  status.style.cssText = 'position:absolute;top:140px;left:12px;z-index:2;max-width:min(300px, calc(100% - 24px));padding:2px 7px;background:#10272cb3;color:#e5eadd;border-radius:10px;font:10px/1.5 system-ui;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:none';
+  status.style.cssText = 'position:absolute;top:140px;left:12px;z-index:2;max-width:min(380px, calc(100% - 24px));padding:2px 7px;background:#10272cb3;color:#e5eadd;border-radius:10px;font:10px/1.5 system-ui;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:none';
   const summary = document.createElement('span'), detail = document.createElement('span');
   detail.className = 'approach-guide-detail';
   detail.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap';
@@ -23,8 +23,9 @@ export function createApproachGuideRenderer(scene: Scene, container: HTMLElement
   function setStatus(state: 'off' | 'waiting' | 'ready'): void {
     container.dataset.approachGuide = state; status.hidden = state === 'off';
     if (!guide || state === 'off') { summary.textContent = detail.textContent = status.title = ''; return; }
-    summary.textContent = `3° visual guide · ${guide.airportId} ${guide.runwayIdent}${guide.displaced_threshold_ft === null ? ' · threshold ≈ runway end' : ''} · ${state === 'waiting' ? 'waiting for terrain' : 'illustrative'}`;
-    status.title = approachGuideDisclosure(guide); detail.textContent = ` · ${status.title}`;
+    // The state comes before the optional note, so narrow views clip the note, not the state.
+    summary.textContent = `3° guide · ${guide.airportId} ${guide.runwayIdent} · ${state === 'waiting' ? 'waiting for terrain' : 'illustrative'}${guide.displaced_threshold_ft === null ? ' · threshold ≈ runway end' : ''}`;
+    status.title = approachGuideDisclosure(guide); detail.textContent = ` · ${approachGuideLimitations(guide)}`;
   }
   function build(anchor_m: number): void {
     clear(); height = anchor_m;

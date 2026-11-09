@@ -202,8 +202,10 @@ try {
       assert((await page.locator('#scene .approach-guide-status').getAttribute('title')).includes(`revision ${revision}`), 'guide discloses exact source revision');
       { const chip = page.locator('#scene .approach-guide-status'), box = await chip.boundingBox();
         assert(box && box.height <= 24, `guide status is a one-line chip: ${JSON.stringify(box)}`);
-        assert.match(await chip.locator('span').first().textContent(), new RegExp(`^3° visual guide · \\S+ ${label.split(' · ')[0]}.* · (waiting for terrain|illustrative)$`));
-        assert((await chip.locator('.approach-guide-detail').textContent()).includes(`revision ${revision}`), 'assistive text carries the full disclosure');
+        assert.match(await chip.locator('span').first().textContent(), new RegExp(`^3° guide · \\S+ ${label.split(' · ')[0]} · (waiting for terrain|illustrative)( · threshold ≈ runway end)?$`));
+        assert(await chip.evaluate(element => element.scrollWidth <= element.clientWidth), 'chip text is not clipped at 1440 px');
+        const assistive = await chip.locator('.approach-guide-detail').textContent();
+        assert.match(assistive, /not a published or obstacle-cleared approach/); assert(!assistive.includes('revision'), 'assistive text omits the revision hash');
         const shown = await popup.textContent();
         assert.match(shown, /terrain-height approximation/); assert(shown.includes(`revision ${revision}`), 'popup discloses the source revision'); }
       assert.equal(await page.locator('#scene').getAttribute('data-approach-guide-runway'), label.split(' · ')[0]);

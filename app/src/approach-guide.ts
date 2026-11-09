@@ -49,9 +49,14 @@ export function approachPoints(guide: ApproachGuide): GuidePoint[] {
   });
 }
 
-/** The guide's full limitations: the popup's "Shown" line, the in-view chip's tooltip and its assistive text. */
-export function approachGuideDisclosure(guide: ApproachGuide): string {
+/** The guide's limitations without its name or source: assistive text and the popup. */
+export function approachGuideLimitations(guide: ApproachGuide): string {
   const threshold = guide.displaced_threshold_ft === null
     ? 'runway end used; threshold position unknown; terrain-height approximation' : 'terrain-height approximation';
-  return `3° visual guide · ${guide.airportName} ${guide.runwayIdent} · ${threshold} · not a published or obstacle-cleared approach · ${guide.source}`;
+  return `${threshold} · not a published or obstacle-cleared approach`;
+}
+
+/** The full disclosure, including the source revision: the in-view chip's tooltip. */
+export function approachGuideDisclosure(guide: ApproachGuide): string {
+  return `3° visual guide · ${guide.airportName} ${guide.runwayIdent} · ${approachGuideLimitations(guide)} · ${guide.source}`;
 }
