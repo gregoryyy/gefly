@@ -3,6 +3,43 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-09 18:35 — Simulated airport COM contact with an explicit QNH action
+
+TODO: 2.0.194; R-COMM-2/R-DATA-1/R-AIR-3. Agent: Claude orchestrator (Claude
+Code, Opus 5.5); code2 subagent (Claude Opus 5.5) implemented commit 78cf437.
+[Request](input/2026-11-07-remaining-flight-tasks.md),
+[repeat](input/2026-11-09-guide-imagery-qnh-runways.md).
+
+**Implementation notes**
+
+`app/src/airport-contact.ts` matches the ACTIVE COM1/COM2 channel exactly
+against source-listed aerodrome channels of airports within 25 NM (an
+established contact holds to 27 NM; horizontal great-circle range, no terrain
+or RF model). One airport gives a once-per-contact message, e.g. `COM1 118.405
+· EDFE Egelsbach Radio / Welcome to Frankfurt-Egelsbach Airport. QNH 1013 hPa
+(29.92 inHg)`, labelled simulated text, not ATC, with the snapshot date. Shared
+channels (several airports in range, or a channel/description pair listed for
+three or more airports, such as Langen Information 119.150) give a notice
+without QNH. FIS/ACC/VOLMET/PMSV/radar/approach/departure/GCA/VDF/EMR services,
+121.500 and closed airports never count. QNH is the worker's
+`altimeter_qnh_pa` (JSBSim sea-level pressure, ISA 1013.25 hPa; no weather).
+`airport-contact-panel.ts` shows a small box above the radio stack
+(`role=status`), collapsing after 10 s to a one-line pill that keeps the
+"Set altimeter QNH" button; × dismisses. The button uses the existing altimeter
+setting path behind the controls/Review guards; nothing changes automatically.
+Review freezes contact tracking. Sources: the flight map's loaded airports/COM
+(new `PracticeMap.getComContactSource()`) before the bundled snapshot.
+
+**Deviations**
+
+No keyboard shortcut (no safe free key). Shared channels get no QNH rather than
+a nearest-airport guess. The action sets the exact simulator QNH (1013.25 hPa),
+not the spoken rounded value. Service exclusions and the shared-name threshold
+are heuristics over OurAirports labels. Checks: tsc clean; `npm test` 845/845
+plus Python suites; `tests/airport-contact.browser.mjs` 6 checks and
+`radio-layout` pass; `just check` passes; `just assure check` 0 errors. The full
+browser suite was not run. Independent quality/validation and peer pending.
+
 ## 2026-11-09 17:30 — Restore green CI by keeping Pillow tests in the scenery gate
 
 TODO: 2.0.192/2.0.195/2.0.198 follow-up; R-WORLD-11/R-DATA-1. Agent: Claude
