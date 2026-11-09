@@ -14,9 +14,26 @@ are not installed IAS markings or current-weight stall predictions. See the
 [source/applicability note](../docs/research/2026-11-02-c172p-airspeed-markings.md).
 Legacy TAS-only engines suppress these CAS markings.
 
-The panel fits its contents and scales inline controls together. On narrow
-views, Engine and Radio open separately while primary instruments and
-autopilot/flap/trim controls remain inline.
+The panel frame stays fixed at the bottom and automatically fits its contents,
+scaling inline controls together. Vertical two-finger scrolling over the panel
+zooms its instrument surface from **1× to 3×**, anchored to the detail under the
+pointer in both dimensions. Edge clamping takes priority over pointer anchoring:
+zoom never exposes an empty strip at the top or bottom. The panel frame and
+flying-view height stay unchanged.
+
+Scroll back to **1×**, resize the window, or double-click noninteractive panel
+housing or an instrument face to restore the centered fit and clear previous
+pan offsets, including when narrowing the window. While zoomed, drag a
+noninteractive panel background, header or face in either direction, or use
+two-finger horizontal scrolling to pan left/right. Panning stops at content edges
+and keeps the top and bottom covered; the normal **1×** fit does not pan. Controls,
+OBS faces and editable fields keep their own gestures. Pointer entry, focus and
+ordinary control interaction do not reposition the panel. Release, cancellation
+or window focus loss ends a drag; resetting the fit also clears it, without a
+stray control click after dragging. Panel zoom works while paused
+and in Review, independently of camera FOV and map zoom. On narrow views, Engine
+and Radio open separately while primary instruments and autopilot/flap/trim
+controls remain inline.
 
 ## Run locally
 
@@ -36,7 +53,7 @@ Pillow. Without it, country imagery falls back to the map.
 Open the local URL printed by the development server, then select **Start flight**.
 The application loads paused so the aircraft cannot fly away while you inspect
 the controls. Starting or resetting uses the same airborne initial state near
-approximate EDFE coordinates: 1,300 ft MSL (DHHN2016 physical height) and 90 kt true airspeed. Press **I** to show the initially hidden menu. Choose **Flight → Taunus ridge flight**, **Darmstadt flight**, **Odenwald ridge flight** **Spessart flight**, **Westerwald flight**, **Marburg / Lahn flight** or **Kassel flight** for separate airborne demonstrations.
+approximate EDFE coordinates: 1,300 ft MSL (DHHN2016 physical height) and 90 kt true airspeed. A visible **PAUSED · Space to resume** marker stays on the flight view while paused; power changes apply when resumed. Press **I** to show the initially hidden menu. Choose **Flight → Taunus ridge flight**, **Darmstadt flight**, **Odenwald ridge flight** **Spessart flight**, **Westerwald flight**, **Marburg / Lahn flight** or **Kassel flight** for separate airborne demonstrations.
 
 The engine build reuses the [existing browser study recipe](../studies/e1-browser/sim/README.md).
 Its generated WASM and bundled research-model data stay in ignored local build
@@ -47,12 +64,14 @@ A missing or failed engine build is an error, not a switch to scripted flight.
 
 The top title/menu bar and flight-control overlay start hidden. **I** toggles the
 top bar; it does not control the central Start/Pause card. **View → Flight controls** toggles
-the flight controls. Floating controls, map, flight-data and stall-awareness
+the flight controls. Floating controls, flight-data and stall-awareness
 panels show at 50% opacity until activated. The first click activates and consumes
 that gesture; click again to operate a control. Clicking elsewhere deactivates
 the panel. Activation releases held flight axes and scene yoke mode. Keyboard Tab
-can activate a panel for accessible use. The main cockpit deck and modal dialogs
-retain their normal opacity and behavior.
+can activate a panel for accessible use. The map and transparent flight-plan
+overlay respond to the first click without this dimming/activation step. Their
+interaction still releases held flight inputs. The main cockpit deck and modal
+dialogs retain their normal opacity and behavior.
 
 Restart flight is in the top **Flight** menu. Review keeps the live flight paused
 and displays the selected recorded throttle, commands and available actuator
@@ -98,9 +117,10 @@ system reduced-motion preference makes both returns immediate.
 Press and hold the on-screen flight buttons, or drag the virtual joystick to
 control pitch and roll; releasing returns the stick to neutral. The flight deck
 displays control positions. Flight buttons return keyboard focus to the scene; range controls
-retain focus for accessible adjustment. Losing window focus pauses the flight
-and releases held inputs. Optional flight hardware and phone orientation are
-later work.
+retain focus for accessible adjustment. Losing window focus or hiding the page
+releases transient held inputs and scene steering, while a running flight
+continues with its latched selections and autopilot state preserved. Optional
+flight hardware and phone orientation are later work.
 
 The default touchpad yoke uses the **center of the visible flight window** as
 neutral, above the cockpit and beside a docked map. **Short-click the unobstructed
@@ -113,7 +133,7 @@ the camera angle and restores the prior yoke mode with neutral input until actua
 movement or re-entry. Start, pause and Options release commands without forgetting
 the selected center. Window focus loss cancels steering; Escape or flight restart
 resets the view. Instrument controls do not toggle scene yoke. Passive pointer
-movement during AP control does not disconnect it; use P or deliberate manual
+movement during AP control does not disconnect it; use **A** or deliberate manual
 controls to take over, or hold CWS to hand-fly temporarily.
 
 **Options → Centered touchpad controls** starts on and survives Default/Gentle
@@ -219,10 +239,14 @@ Q is left rudder and W right rudder. Positive `rudder_cmd_norm` yaws left in the
 pinned generic model.
 
 **M** opens and closes the flight map. **Comma (,)** opens the extended menu below it over the right cockpit panels.
+**P** independently opens and closes the transparent flight-plan overlay.
 **Period (.)** cycles terrain landmark labels. **/** (Slash on a US keyboard)
-toggles vector/photo terrain. **O** opens Options and **I** toggles the title/menu bar. Unassigned menu
+toggles vector/photo terrain. The chosen terrain mode and landmark-label level
+are restored after reloading this browser origin; other input preferences retain
+their existing page-session behavior. **O** opens Options and **I** toggles the title/menu bar. Unassigned menu
 actions remain clickable; no Option/Alt–Shift combinations are installed.
 Keyboard shortcuts keep typing, modal and repeat guards.
+With labels on, right-click terrain (Mac Ctrl-click also works) to find its nearest mapped name; click outside the popup or use its close button to dismiss it.
 
 ## Simulation rate
 
@@ -234,6 +258,14 @@ effort on the current machine; rendering or physics load can reduce the achieved
 rate. Pause and terrain-loading stops remain real stops, without integrating the
 waiting interval as a giant physics step. Restart returns to 1×. Recorded Review
 does not command the live flight's acceleration or restore physics from history.
+
+A running flight continues when the window loses focus or the page is hidden;
+backgrounding alone does not pause it. Explicit **Pause**, Review, settings that
+pause flight, terrain loading and faults still stop integration. Returning focus
+does not resume a paused flight. The worker keeps its fixed **1/120 s** step
+independently of rendering; hidden-page audio remains suppressed. Browser/OS
+throttling or suspension can delay progress, and flight cannot be guaranteed to
+advance while the computer sleeps.
 
 ## Elevator trim
 
@@ -299,18 +331,34 @@ retain their requested lever positions and apply when physics resumes; displayed
 engine indications remain actual values. Use **Mixture** to change its command. Automatic mixture is
 retained initially; entering a manual setting disables the generic model's
 automatic-mixture channel. The panel distinguishes automatic/manual operation and
-the applied value. Throttle shortcuts 1–9 select 10–90%, while 0 selects idle;
-the throttle slider provides finer adjustment.
+the applied value. Throttle shortcuts 1–9 select 10–90%, **0** selects 100%,
+and **§** (left of 1) selects idle (0%); the throttle slider provides finer
+adjustment.
 
 The separate autopilot box models the **KAP 140 two-axis unit with altitude
 preselection**. A browser click represents the physical quarter-second AP press;
 a long press also works. Click **AP** to engage ROL plus current vertical speed;
-press AP to disconnect. **P** is
-a simulator shortcut for AP on/off. **A** is a separate simulator convenience:
+press AP to disconnect. **A** is a separate simulator convenience:
 with manual axes released, it engages **HDG + ALT** at the worker's current true
 heading and pressure altitude. Press A again to disconnect; pressing it while
 capture is pending also cancels the engagement. This is not a physical KAP 140 button. **HDG** follows the separate **DG BUG · TRUE**
 control; HDG alone does not engage a disconnected unit.
+To enter a heading directly, click the small numeric **DG BUG · TRUE** box
+between **− / +**, press **Cmd+A** (Mac) or **Ctrl+A**, enter **0–359.9**, then
+press **Enter** or **Tab**. The −/+ buttons change it by 10°. The BRG dial is a
+read-only source-following pointer, not another heading selector. **AP NAV**
+continues to follow valid **NAV1 radio** guidance; a GPS target on BRG does not
+couple the autopilot to that waypoint. GPS autopilot guidance is not implemented.
+
+Reload restores the last saved live location together with AP engagement and
+modes, the heading bug, selected/held altitude, commanded VS, arming, AP BARO
+units/setting and coupled NAV tuning. Flight remains **paused** until Start or
+Space. Momentary CWS is released and transient controllers restart; the aircraft
+uses the normal launch state, including 90 kt true airspeed for airborne restores,
+rather than an engine or physics checkpoint. This bounded storage stays local to
+the browser. Older location-only saves still work; invalid AP data restores only
+the valid location. **Restart flight** clears the saved restore state.
+
 
 **ALT captures the current pressure altitude**, independent of the altitude
 selector. Press it again for VS. Change the selected altitude and set a VS toward
@@ -508,7 +556,7 @@ mutes/unmutes at any time, including Review. **Options → Engine sound** adjust
 volume. A locked/blocked browser can be retried with the speaker button; missing
 Web Audio does not block flying.
 
-Pause, hidden/focus-lost pages, failed/reset flights and paused Review are silent.
+Pause, hidden pages, failed/reset flights and paused Review are silent.
 Playing Review synthesizes the selected captured engine state. Zero RPM or missing engine telemetry silences engine channels; independent
 airflow noise follows valid actual TAS. Fuel cutoff or actual stopped-engine
 state removes combustion while a rotating propeller can retain mechanical sound. This is a procedural
@@ -527,6 +575,14 @@ above the current surface and closure from descent or consecutive clearance
 loss. Ground contact suppresses both warnings. Missing or invalid telemetry is
 shown as unavailable, rather than clear.
 
+Brief native stall-warning events are captured at each physics step so a signal
+between worker updates can still reach the display and sound. Live presentation
+keeps an observed event for at least **200 ms of wall time**; **RECENT STALL**
+means that minimum is still running while the current native signal is already
+clear. This is a simulator presentation aid, not a changed stall threshold or an
+aircraft warning calibration. The recent-event hold clears on pause, hiding,
+loading/failure/reset or disabled delivery, and is not replayed in Review.
+
 These cues do not scan terrain ahead, detect obstacles, recognize a landing
 approach or reproduce an installed TAWS/EGPWS. A steep approach can trigger
 TERRAIN; its thresholds are simulator design choices, not aircraft operating
@@ -536,7 +592,7 @@ limits. Neither cue changes the controls or physics. See the
 Enable sound with **S** to hear the stall horn, pulsed terrain cue and a distinct
 tone when the actual autopilot engagement state changes from on to off. For a
 simple demonstration, engage the autopilot while flying, then disconnect with
-**P**. The tones share the existing speaker mute and Options volume; sound
+**A**. The tones share the existing speaker mute and Options volume; sound
 remains off by default. They are original synthesized cues, not calibrated
 aircraft sounds or a recreation of the installed KAP 140 disconnect tone.
 
@@ -591,8 +647,9 @@ To try it, fly a gentle turn, open **Map**, then enter **Review** and drag the
 timeline. The aircraft marker follows the selected recorded state. The route
 shows the retained Review recording, including any part flown after the selected
 review time; it is not a historical-only path. Its **Recording start** may be
-later than departure. Use the map's zoom or **Fit** controls to inspect it. Map
-interaction keeps keyboard focus in the map and releases held flight controls.
+later than departure. Use the map's zoom or **Fit** controls to inspect it. Map controls respond
+immediately; map interaction keeps keyboard focus in the map and releases held
+flight controls.
 Return focus to the scene before using ordinary flight keys.
 
 The map has **731 searchable community airfield and heliport entries** from a pinned OurAirports
@@ -704,7 +761,13 @@ See [ARCH](../docs/ARCH.md), [SPEC](../docs/SPEC.md) and
 ```sh
 npm --prefix app run build     # strict TypeScript and UI bundle; excludes research runtime
 npm --prefix app test          # worker/session lifecycle, input validation, served engine path
+npm --prefix app run test:map-waypoint # explicit right-click popup actions and native-state isolation
+npm --prefix app run test:view-preferences # terrain/label reload choices and Options rollback
+npm --prefix app run test:map-ux # P plan, A autopilot, focused controls and closed-map Review
+npm --prefix app run test:panel-resize # standalone current-component resize/zoom/focus geometry
+npm --prefix app run test:gps-bearing # GPS dial sources, map-close/Review and native-state isolation
 npm --prefix app run test:browser  # real JSBSim; local engine and installed Chrome required
+npm --prefix app run test:world-fallback  # actual worker, global map and terrain handoff
 ```
 
 The browser smoke also serves a temporary runtime copy without
@@ -745,11 +808,26 @@ acoustics or simulated weather gusts; it uses no microphone or downloaded audio.
 ### Compact classic panel
 
 The separate six-pack housing sits beside a 2×2 secondary block: NAV1/NAV2
-above **BRG/DME** and **PROP RPM**. BRG points to a received VOR (including opt-in LAB)
-using true heading and direct spherical bearing; it is independent of the VOR OBS
-setting and is not an installed ADF/NDB receiver. DME uses its independently sourced antenna and geometric slant
-distance minus source bias; a LOC can provide DME without a bearing pointer. RPM follows actual propeller rotation, with a sourced generic model
-2700 RPM marker, without invented operating arcs.
+above **BRG/DME** and **PROP RPM**. With an explicit **GPS direct-to** or active
+flight-plan leg, BRG shows **GPS**, target identity and true bearing; **DIST NM**
+is geographic waypoint distance, not radio DME slant range. Creating draft points
+alone does not activate this source. With no active GPS target, the dial returns
+to NAV1's received VOR bearing (including opt-in LAB), independent of OBS, and
+radio DME from its separately sourced antenna, geometric slant distance and bias.
+A LOC can provide radio DME without a bearing pointer. RPM follows actual
+propeller rotation, with a sourced generic model 2700 RPM marker and no invented
+operating arcs.
+
+Close the map to keep the selected target on BRG; **Next / Stop / Clear** update
+the display immediately. During Review, the dial marks the **current GPS**
+selection against the selected **recorded position**, rather than claiming
+recorded GPS avionics state. Missing or coincident geometry does not invent a
+bearing. NAV radio tuning, OBS, AP guidance and RPM remain independent.
+
+GPS/VOR bearing pointers are an established display pattern; see the
+[Garmin G5 Pilot's Guide, Rev. G, pp. 27–28](https://static.garmin.com/pumac/190-01112-12_g.pdf#page=39).
+Gefly's combined true-reference dial is a generic teaching display, not a claim
+about installed C172 equipment or an ADF/NDB receiver.
 
 The engine column precedes autopilot/flaps/trim and includes a distinct round
 left/right fuel gauge plus vertical throttle and mixture. Amber lower-quarter
@@ -770,63 +848,13 @@ the active terrain receiver near the ground (or the flat receiver in explicit co
 state, fades with height and is hidden at or above 120 m AGL or when compatible
 ground data is missing. The scene uses a fixed sun/date; the shadow is a viewing cue, not another source of contact physics.
 
-## Public terrain and sharper imagery
-
-If the regional imagery package fails, a notice says that coarse starter imagery and
-relief are shown. Queued tiles for an old view are dropped when the camera moves.
-
-Normal flights retain the local public Hessen package spanning 8.45–8.90°E and
-49.85–50.35°N. It contains real Rhine–Main/Taunus elevations from the official
-32 m overview of DGM1, resampled to approximately 32–54m point spacing. Native
-wheel/structure contacts sample this surface with slope normals at fixed steps.
-DHHN2016 physical heights drive the atmosphere and dynamics; GCG2016/2023
-quasigeoid offsets are added only for rendering. Review retains the actual
-height fields. A surrounding BKG DGM200 package declares **608 slots** over
-**6–14°E / 47–51.75°N**, with **475 available source assets** and explicit gaps.
-Native and rendered world cells prefer valid regional samples, using the coarse
-world baseline otherwise. Optional regional failures no longer impose the old
-regional boundary stop; missing required world/native assets still stop visibly.
-The worker keeps nine cells, preserves flight state during loading and resumes
-only prior running intent. A derived **0.02° inward blend** joins the fine and
-coarser surfaces using the same interpolation for contact and rendering. This
-transition is not surveyed terrain. Source surveys date approximately 2000–2019;
-display subdivision adds no measured detail. See the
-[streamed package](public/terrain/region/README.md) and global limits below.
-Rebuild the local engine after updating.
-
-Try **Flight → Taunus ridge flight**, then Start and Chase, for an immediate
-terrain demonstration. It is not a published route or procedure. The four
-**Flat-ground landing study** presets retain their previous isolated fixtures.
-
-The sharper airport overlay has approximately 0.75 m output pixels, sampled from
-public 20 cm orthophotography, over the wider starter photograph. Derived relief
-shading covers the DEM outside photographic coverage. A bundled 723-tile pyramid now covers 8.48–8.80°E / 49.93–50.12°N, with approximately
-3.07 m output pixels across the area and 1.54 m around Frankfurt/approaches and
-Egelsbach. Tiles load by view, with two concurrent requests and 64 decoded source
-images; coarse ancestors/relief remain available when detail is missing. The
-separate 0.75 m airport photograph stays above regional tiles. Current imagery has no established capture date and
-is not airport/runway reference data. See the [terrain package](public/terrain/README.md),
-[imagery provenance](public/imagery/DETAIL-SOURCE.json) and
-[third-party notices](../THIRD_PARTY_NOTICES.md).
-
-Try **Flight → EDDF 25C ILS practice**, then Chase, for the Frankfurt imagery.
-Reload an already-open development page after updating assets. The package is
-67.2 MiB on disk; a flight requests only needed tiles. See the
-[regional imagery manifest and rights](public/imagery/rhein-main/README.md).
-
-The **Stations** picker supports a 50 NM nearby filter, name/identifier/airport/
-frequency search and distance ordering. Click outside or press Escape to close;
-the header filters remain visible while only the results scroll. Review uses its
-selected recorded position and leaves loading frequencies read-only.
-
-
 ## Right-side flight map
 
 Press **M** or choose **View → Flight map**. On desktop the
 map opens beside the outside view while the cockpit keeps its full width; smaller
-viewports use a bounded floating map. Its first click activates the panel.
-The default **Map** uses BKG TopPlusOpen; **Aerial** shows the existing public
-photography. **NAV aids** toggles community NDB/VOR/DME/TACAN beacons and historical LOC/ILS reference points,
+viewports use a bounded floating map. Its controls respond to the first click.
+The default **Map** uses detailed, labeled global OSM cartography; **Aerial** shows
+the existing regional public photography over global OSM fallback. **NAV aids** toggles community NDB/VOR/DME/TACAN beacons and historical LOC/ILS reference points,
 with separate antenna dots where sourced, station details and visible source age.
 The nautical scale, aircraft heading/position and contrasted flown path support
 orientation. Pan/zoom, **Fit path** and **Follow** change the view only. The
@@ -848,7 +876,13 @@ separate required flight-startup packages retain their fail-closed behavior. See
 
 Recordings can be saved and loaded as version 1 JSON using **Flight → Save/Load recording JSON** or the replay bar. Loading opens a validated, read-only state trace and preserves the current live flight; **Back to live** restores its previous flying/paused state. Files retain at most ten minutes/36,000 samples (256 MB import limit), in SI units; they are not native physics checkpoints.
 
+Open **Credits** beside **gefly** for the live terrain, map and imagery source
+attributions and licence links, moved from the multiline flight-view footer.
+
 Use **Comma (,)** or **Map menu** to show search and details below the full-height map, over the right cockpit panels. The map itself does not resize. **M** opens/closes the map and **N** remains the parking brake.
+Use the **Dark map** checkbox there: off selects original light colors (default),
+and on selects darker terrain colors. This preference is restored on reload and
+leaves the 3D terrain palette unchanged.
 
 Flight map → **Charts** opens the official OFM Germany VFR viewer and DFS AIP
 airport/approach chart access. The selected airport identifier remains visible.
@@ -871,6 +905,61 @@ shows true bearing/distance; it does not command the aircraft or an installed GP
 Fixes are the pinned historical 2013.10 regional inventory, including duplicate
 identifiers at separate coordinates. Original rows and license are retained in
 [the source package](public/mapdata/fixes-README.md).
+
+Press **P** to open the transparent flight-plan overlay, or use **Flight plan**
+in the top menu or on the map. It starts closed and remains available when the map is
+closed. Press **P** again or use its close button to hide it. Start/destination,
+leg/total summaries, route editing and **Fit / Navigate / Next / Stop** controls
+share this overlay. The map header's **Flight plan** button opens the same editor
+directly. Routes and fixes remain on the map without a persistent flight-plan card.
+
+Create a custom fix from WGS84 latitude and longitude, or pick a map location and
+confirm it. Enter a name, select **Anonymous GPS fix**, or leave the name blank
+for a unique generated label. “Anonymous” means unnamed; it does not change data
+flows. Custom markers remain explicitly user-defined and do not become published
+navigation fixes. Select a user-created GPS point on the map and choose
+**Delete GPS fix** to remove it. A fix used in the flight plan must be removed
+from the plan first; published navaids are not deleted. The session holds
+at most **64 custom fixes** at valid worldwide coordinates.
+
+**Right-click the map canvas** to inspect a location popup. Choose
+**Create GPS fix** to retain an anonymous **USER** fix, or **Add waypoint** to
+create the fix and append it as an intermediate waypoint. Opening the popup
+alone creates nothing. Existing start and destination points stay in place.
+Right-dragging does not create a waypoint, and native control menus retain their
+own behavior. The same coordinate and capacity limits apply. If creation or
+insertion fails, neither an orphan fix nor a partial plan edit remains. These
+actions supplement the named, coordinate-entry and confirmed map-pick controls
+above. Plan edits affect the same session-only current plan, including during
+Review, and stop active plan navigation like other plan edits.
+
+The location popup also offers **Ground**, **1,000 ft AGL**, **5,000 ft AGL** and
+**10,000 ft AGL** starts. Choose one, then press **Fly from here** to relocate the
+aircraft and start paused. Ground starts at rest with the parking brake set;
+airborne starts use 90 kt TAS and the existing generic-model trim. AGL is height
+above local terrain, not altitude above mean sea level. Saved-location restore retains its existing −500 to 6,000 m MSL limit; higher starts are not saved.
+
+Use a custom fix or an existing airport, NAV aid or historical-fix popup to
+**Set start**, **Add waypoint**, **Set destination** or select **GPS direct-to**.
+The draft route accepts a start, up to **30 intermediate waypoints** and a
+destination. A route line with contrasting casing and **S / numbered / D**
+point labels distinguishes the start, intermediate waypoints and destination.
+The plan shows each leg's true course and nautical distance, and total distance. Reorder or remove intermediate points,
+fit the map to the plan, select an active leg explicitly, advance to the next
+leg, stop navigation or clear the plan. Activation requires a complete plan
+with nonzero legs. Editing the plan stops active navigation; selecting direct-to
+also stops plan navigation while retaining the draft. A custom fix referenced by
+the plan must be removed from that plan before deleting the fix. Points retain
+their coordinate/source identity, including identical published names at different
+locations.
+
+Closing and reopening the map retains fixes and the draft during this page
+session; reloading clears them. During Review, **current plan** overlays use the
+selected recorded aircraft position; they are not recorded flight-plan state.
+Planning remains available when map tiles or optional source layers fail. These
+planning controls do not tune radios, engage the autopilot, alter flight dynamics or
+modify recordings. They are a visual planning aid, without GPS receiver/FMS,
+current-procedure or operational flight-planning acceptance.
 
 After native initialization, startup preloading warms up to 16 map/vector tiles
 near the actual starting position, including saved locations. It uses the same

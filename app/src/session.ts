@@ -2,6 +2,8 @@ import { INITIAL_BALANCE_FIELDS, validInitialBalanceState, initialBalanceProfile
 import { REGIONAL_FLIGHTS, isRegionalFlight } from './regional-flights.ts';
 import { validLoading, validLoadingState, loadingFromState, LOADING_FIELDS, type LoadingConfiguration } from '../../studies/e1-browser/sim/loading.js';
 import { validFlightLocation } from './flight-location.ts';
+import { validMapStart, type MapStart } from '../../studies/e1-browser/sim/map-start.js';
+import { copyAutopilotReload } from '../../studies/e1-browser/sim/autopilot-reload.js';
 import { EMPTY_COLLISION } from '../../studies/e1-browser/sim/collision.js';
 import { resumeProblem } from '../../studies/e1-browser/sim/continue-flight.js';
 import { validWorldTerrainTile } from '../../studies/e1-browser/sim/world-terrain.js';
@@ -12,7 +14,7 @@ import { getNavigationCatalogue } from './radio-nav.ts';
 import { validKapCommand } from '../../studies/e1-browser/sim/kap140.js';
 import { validSimulationRate } from '../../studies/e1-browser/sim/simulation-rate.js';
 import { NAVIGATION_FIELDS, validNavigation } from '../../studies/e1-browser/sim/navigation.js';
-import { ALERT_FIELDS, validAlertState, KAP_FIELDS, validKapState, TERRAIN_FIELDS, TERRAIN_SOURCE_FIELDS, validTerrainState, COLLISION_FIELDS, validCollisionState, STALL_FIELDS, validStallState, CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, ENGINE_SWITCH_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
+import { ALERT_FIELDS, validAlertState, KAP_FIELDS, validKapState, TERRAIN_FIELDS, TERRAIN_SOURCE_FIELDS, validTerrainState, COLLISION_FIELDS, validCollisionState, STALL_FIELDS, validStallState, STALL_WARNING_PEAK_FIELDS, validStallWarningPeakState, CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, ENGINE_SWITCH_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
 import type { Controls, FlightSession, FlightState, LandingPreset, AirborneSite, RunwayStart, FlightLocation } from './types';
 
 /** Worker navdata identity from `ready` (see studies/e1-browser/sim/README.md).
@@ -54,7 +56,7 @@ function validState(value: Record<string, unknown>): value is Record<string, unk
     && Number.isInteger(value.step) && (value.step as number) >= 0
     && (value.t_s as number) >= 0 && (value.tas_mps as number) >= 0
     && Math.abs(value.lat_rad as number) <= Math.PI / 2
-    && Math.abs(value.lon_rad as number) <= Math.PI && validInitialBalanceState(value) && validLoadingState(value) && validAltimeterState(value) && validCockpitState(value) && validEngineState(value) && validPitchTrimState(value) && validGroundState(value) && validControlState(value) && validStallState(value) && validCollisionState(value) && validTerrainState(value) && validKapState(value) && validAlertState(value)
+    && Math.abs(value.lon_rad as number) <= Math.PI && validInitialBalanceState(value) && validLoadingState(value) && validAltimeterState(value) && validCockpitState(value) && validEngineState(value) && validPitchTrimState(value) && validGroundState(value) && validControlState(value) && validStallState(value) && validStallWarningPeakState(value) && validCollisionState(value) && validTerrainState(value) && validKapState(value) && validAlertState(value)
     && (value.simulation_rate === undefined || validSimulationRate(value.simulation_rate))
     && (!NAVIGATION_FIELDS.some(k => value[k] !== undefined) || validNavigation(value));
 }
@@ -97,6 +99,7 @@ export function createSession(callbacks: SessionCallbacks, options: { initial_ba
   let airborneSite: AirborneSite = 'edfe';
   let runwayStart: RunwayStart | undefined;
   let initialLocation: FlightLocation | undefined;
+  let mapStart: MapStart | undefined;
   let loading: LoadingConfiguration | undefined;
   let inputTimer: ReturnType<typeof setInterval> | undefined;
   let loadTimer: ReturnType<typeof setTimeout> | undefined;
@@ -118,7 +121,7 @@ export function createSession(callbacks: SessionCallbacks, options: { initial_ba
     const old = worker; worker = attempt.worker; ready = true; wantedRunning = false;
     latestStep = state.step; collided = false; collisionState = null;
     selectedBalanceProfile = initialBalanceProfile(state)!;
-    initialLocation = undefined; landingPreset = undefined; runwayStart = undefined;
+    initialLocation = undefined; mapStart = undefined; landingPreset = undefined; runwayStart = undefined;
     const restoredLoading = loadingFromState(state); loading = restoredLoading ? {...restoredLoading} : undefined;
     controls = { elevator: state.elevator_cmd_norm!, aileron: state.aileron_cmd_norm!, rudder: state.rudder_cmd_norm!,
       throttle: state.throttle_norm!, flap_norm: state.flap_command_norm!, brake_norm: Math.max(state.brake_left_norm!,state.brake_right_norm!),
@@ -179,7 +182,7 @@ export function createSession(callbacks: SessionCallbacks, options: { initial_ba
   function initialize(resumeState?: Readonly<FlightState>): void {
     const attempt = resumeState ? restoring : null;
     const requestedBalanceProfile = resumeState ? initialBalanceProfile(resumeState)
-      : (runwayStart || initialLocation?.mode === 'ground' || landingPreset) ? 0
+      : (runwayStart || initialLocation?.mode === 'ground' || mapStart?.height_agl_ft === 0 || landingPreset) ? 0
       : initialLocation ? initialLocation.initial_balance_profile ?? 1 : selectedBalanceProfile;
     let readyBalance: Record<string, unknown> | null = null;
     let firstStateBalance: Record<string, unknown> | null = null;
@@ -279,7 +282,7 @@ export function createSession(callbacks: SessionCallbacks, options: { initial_ba
         const navdata = { navdata_sha256: sha as string | null | undefined, navdata_error: navError as string | null | undefined };
         if (attempt && restoring === attempt) { attempt.ready = { trim: result, navdata }; commitRestore(attempt); return; }
         clearTimeout(loadTimer); loadTimer = undefined; ready = true;
-        if (!userControls) controls = { ...controls, throttle: result.throttle };
+        if (!userControls) controls = { ...controls, throttle: mapStart?.height_agl_ft === 0 ? 0 : result.throttle };
         callbacks.onReady(result, { navdata_sha256: sha as string | null | undefined, navdata_error: navError as string | null | undefined });
         // Callbacks may pause, reset or dispose the session.
         if (disposed || worker !== current && restoring?.worker !== current) return;
@@ -307,7 +310,7 @@ export function createSession(callbacks: SessionCallbacks, options: { initial_ba
           failCurrent('The flight model changed or omitted its initial balance. Flight stopped; reset to restart.'); return;
         }
         firstStateBalance ??= Object.fromEntries(INITIAL_BALANCE_FIELDS.filter(key => m[key] !== undefined).map(key => [key, m[key]]));
-        const fields = [...STATE_FIELDS, ...[...INITIAL_BALANCE_FIELDS, 'simulation_rate', ...LOADING_FIELDS, ...ALERT_FIELDS, ...KAP_FIELDS, ...NAVIGATION_FIELDS, ...TERRAIN_FIELDS, ...TERRAIN_SOURCE_FIELDS, ...COLLISION_FIELDS, ...STALL_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...ENGINE_SWITCH_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS].filter((key) => m[key] !== undefined)];
+        const fields = [...STATE_FIELDS, ...[...INITIAL_BALANCE_FIELDS, 'simulation_rate', ...LOADING_FIELDS, ...ALERT_FIELDS, ...KAP_FIELDS, ...NAVIGATION_FIELDS, ...TERRAIN_FIELDS, ...TERRAIN_SOURCE_FIELDS, ...COLLISION_FIELDS, ...STALL_FIELDS, ...STALL_WARNING_PEAK_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...ENGINE_SWITCH_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS].filter((key) => m[key] !== undefined)];
         const state = Object.fromEntries(fields.map(key => [key, m[key]])) as unknown as FlightState;
         if (attempt && restoring === attempt) { attempt.state = state; commitRestore(attempt); return; }
         if (collisionState && Object.keys({ ...collisionState, ...state })
@@ -330,16 +333,19 @@ export function createSession(callbacks: SessionCallbacks, options: { initial_ba
       }
     };
     let approach: ReturnType<typeof eddfApproachPractice> | null = null;
-    try { if (!attempt && airborneSite === 'eddf-ils' && !landingPreset && !runwayStart && !initialLocation) approach = eddfApproachPractice(getNavigationCatalogue()); }
+    try { if (!attempt && airborneSite === 'eddf-ils' && !landingPreset && !runwayStart && !initialLocation && !mapStart) approach = eddfApproachPractice(getNavigationCatalogue()); }
     catch { failCurrent('Historical approach source unavailable. Reload before selecting EDDF practice.'); return; }
     // Every mode requests the regional database so tuned NAV sources match the
     // instruments; a worker load failure degrades NAV and is reported in ready
     // (navdata_error) instead of stopping the flight.
     try { current.postMessage({
       ...(approach ? { navigation: approach.navigation } : {}),
-      type: 'init', ...(!resumeState ? { initial_balance_profile: requestedBalanceProfile } : {}), ...(!resumeState && loading ? {loading:{...loading}} : {}), ...(resumeState ? { resume_state: { ...resumeState } } : {}), ...(!resumeState && (runwayStart || initialLocation?.mode === 'ground') ? { runway_start: true } : {}),
+      type: 'init', ...(!resumeState ? { initial_balance_profile: requestedBalanceProfile } : {}), ...(!resumeState && loading ? {loading:{...loading}} : {}), ...(resumeState ? { resume_state: { ...resumeState } } : {}), ...(!resumeState && (runwayStart || initialLocation?.mode === 'ground' || mapStart?.height_agl_ft === 0) ? { runway_start: true } : {}),
+      ...(!resumeState && mapStart ? { height_agl_ft: mapStart.height_agl_ft } : {}),
+      ...(!resumeState && initialLocation?.autopilot ? { autopilot_reload: copyAutopilotReload(initialLocation.autopilot) } : {}),
       kap140: true, regional_navigation: true, streaming_terrain: resumeState ? resumeState.terrain_profile === 1 : landingPreset === undefined, terrain: resumeState ? resumeState.terrain_profile === 1 : landingPreset === undefined, ...(!resumeState && landingPreset ? { landing_preset: landingPreset } : {}), ground_collision: true, dt_s: 1 / 120, aircraft: 'c172x', state_hz: 60,
-      ic: (resumeState ? { lat_rad: resumeState.lat_rad, lon_rad: resumeState.lon_rad, alt_msl_m: resumeState.alt_msl_m, heading_rad: resumeState.heading_rad, tas_mps: resumeState.tas_mps } : null) ?? (initialLocation ? { lat_rad: initialLocation.lat_rad, lon_rad: initialLocation.lon_rad,
+      ic: (resumeState ? { lat_rad: resumeState.lat_rad, lon_rad: resumeState.lon_rad, alt_msl_m: resumeState.alt_msl_m, heading_rad: resumeState.heading_rad, tas_mps: resumeState.tas_mps } : null) ?? (mapStart ? { lat_rad: mapStart.lat_rad, lon_rad: mapStart.lon_rad,
+        heading_rad: mapStart.heading_rad, alt_msl_m: 0, tas_mps: mapStart.height_agl_ft === 0 ? 0 : 90 * 1852 / 3600 } : null) ?? (initialLocation ? { lat_rad: initialLocation.lat_rad, lon_rad: initialLocation.lon_rad,
         alt_msl_m: initialLocation.alt_msl_m, heading_rad: initialLocation.heading_rad, tas_mps: initialLocation.mode === 'ground' ? 0 : 90 * 1852 / 3600 } : null) ?? (runwayStart ? { ...runwayStart, alt_msl_m: 0, tas_mps: 0 } : null) ?? approach?.ic ?? regionalInitialCondition(airborneSite) ?? {
         lat_rad: (airborneSite === 'taunus' ? 50.20 : 49.96) * DEG_RAD, lon_rad: (airborneSite === 'taunus' ? 8.52 : 8.643) * DEG_RAD,
         alt_msl_m: airborneSite === 'taunus' ? 1100 : 1300 * 0.3048, heading_rad: (airborneSite === 'taunus' ? 300 : 82) * DEG_RAD,
@@ -361,6 +367,9 @@ export function createSession(callbacks: SessionCallbacks, options: { initial_ba
       if (restoring) return Promise.reject(new Error('A continuation is already being prepared.'));
       return new Promise<FlightState>((resolve, reject) => {
         const selected = { ...state };
+        // Publication envelopes are never physical continuation inputs, including
+        // callers that supply a live state directly instead of a trace frame.
+        for (const key of STALL_WARNING_PEAK_FIELDS) delete selected[key];
         restoring = {worker: null, selected, tiles: [], resolve, reject};
         initialize(restoring.selected);
       });
@@ -406,8 +415,9 @@ export function createSession(callbacks: SessionCallbacks, options: { initial_ba
       if (ready && worker) worker.postMessage({ type: 'pause' });
       callbacks.onStatus(collided ? 'Ground collision' : 'Paused');
     },
-    reset(preset, site, runway, location, balanceProfile) {
+    reset(preset, site, runway, location, balanceProfile, pickedStart) {
       if (balanceProfile !== undefined && ![0, 1].includes(balanceProfile)) return;
+      if (pickedStart !== undefined && (!validMapStart(pickedStart) || preset !== undefined || runway !== undefined || location !== undefined)) return;
       if (location !== undefined && (!validFlightLocation(location) || preset !== undefined || runway !== undefined)) return;
       if (runway && (!/^[A-Z0-9-]{2,12}$/.test(runway.airport) || (!/^[0-3][0-9][LRC]?$/.test(runway.runway) || Number(runway.runway.slice(0,2)) < 1 || Number(runway.runway.slice(0,2)) > 36) || ![runway.lat_rad, runway.lon_rad, runway.heading_rad].every(Number.isFinite) || Math.abs(runway.lat_rad) > Math.PI/2 || Math.abs(runway.lon_rad) > Math.PI)) return;
       if (disposed) return;
@@ -415,11 +425,12 @@ export function createSession(callbacks: SessionCallbacks, options: { initial_ba
       if (site !== undefined && !['edfe', 'taunus', 'eddf-ils'].includes(site) && !isRegionalFlight(site)) return;
       airborneSite = site ?? airborneSite;
       if (balanceProfile !== undefined) selectedBalanceProfile = balanceProfile;
-      initialLocation = location ? { ...location } : undefined;
-      if (location) wantedRunning = false;
+      initialLocation = location ? { ...location, ...(location.autopilot ? { autopilot: copyAutopilotReload(location.autopilot) } : {}) } : undefined;
+      mapStart = pickedStart ? { ...pickedStart } : undefined;
+      if (location || mapStart) wantedRunning = false;
       runwayStart = runway ? { ...runway } : undefined;
       landingPreset = runway ? undefined : preset;
-      const ground = runway || location?.mode === 'ground';
+      const ground = runway || location?.mode === 'ground' || mapStart?.height_agl_ft === 0;
       controls = { elevator: 0, aileron: 0, rudder: 0, throttle: ground ? 0 : 0.7, ...(ground ? { brake_norm: 1 } : {}) };
       userControls = false;
       controlsChanged = true;

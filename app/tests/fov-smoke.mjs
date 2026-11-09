@@ -1,4 +1,4 @@
-import { installSceneryFixture, prepareFlightUI, startOrResume } from './flight-actions.mjs';
+import { installSceneryFixture, prepareFlightUI, startOrResume, activateFlightMap } from './flight-actions.mjs';
 // Actual Chrome renderer and JSBSim input regression; not aircraft fidelity validation.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -86,62 +86,55 @@ try {
   const paused = await stats();
   assert.equal(await page.evaluate(() => document.elementFromPoint(1000, 180)?.closest('#scene')?.id), 'scene',
     'native scroll point must lie in the unobstructed scene');
-  // Panel scrolling magnifies instruments around the pointer, independently of scene FOV.
-  // Magnification uses a fixed clipped viewport even on an ordinary window.
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.waitForTimeout(150);
-  const ap = page.locator('#ap-engage');
-  const box = await ap.boundingBox();
-  const anchor = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-  const originalDeck = await page.locator('.flight-deck').boundingBox(), originalScene = await page.locator('#scene').boundingBox();
-  await page.mouse.move(anchor.x, anchor.y);
-  await page.mouse.wheel(0, -180);
-  await page.waitForTimeout(100);
-  const enlarged = await ap.boundingBox();
-  assert(enlarged.width > box.width * 1.3, 'AP control visibly enlarges');
-  assert(Math.abs(enlarged.x + enlarged.width / 2 - anchor.x) < 1.5, 'horizontal pointer anchor stays fixed');
-  assert(Math.abs(enlarged.y + enlarged.height / 2 - anchor.y) < 1.5, 'vertical pointer anchor stays fixed');
-  const deckBounds = await page.locator('.flight-deck').boundingBox();
-  assert(enlarged.y >= deckBounds.y && enlarged.y + enlarged.height <= deckBounds.y + deckBounds.height);
-  assert.equal(deckBounds.height, originalDeck.height, 'panel magnification retains cockpit height');
-  assert.equal((await page.locator('#scene').boundingBox()).height, originalScene.height, 'panel magnification retains flying area');
-  assert.equal(await fov(), 60, 'panel zoom does not change camera FOV');
+  // Panel zoom is pointer-anchored and vertically bounded, independently of
+  // scene FOV and worker state. Actual AP clicks must still work while zoomed.
+  await page.setViewportSize({ width: 1440, height: 900 }); await page.waitForTimeout(150);
+  const ap = page.locator('#ap-engage'), box = await ap.boundingBox();
+  const originalDeck = await page.locator('.flight-deck').boundingBox();
+  const originalScene = await page.locator('#scene').boundingBox();
+  const originalPanel = await page.locator('.instruments').boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.wheel(0, -140); await page.waitForTimeout(80);
+  const focused = await ap.boundingBox();
+  assert(focused.width > box.width * 1.25, 'panel wheel enlarges the actual pointed AP control');
+  assert(Math.abs(focused.y + focused.height / 2 - box.y - box.height / 2) < 1.5, 'AP detail stays under pointer vertically');
+  assert.deepEqual(await page.locator('.flight-deck').boundingBox(), originalDeck, 'zoom leaves panel frame fixed');
+  assert.deepEqual(await page.locator('#scene').boundingBox(), originalScene, 'zoom leaves flying area fixed');
+  assert.equal(await fov(), 60, 'panel zoom does not change scene FOV');
+  const focusedPanel = await page.locator('.instruments').boundingBox();
   const wasEngaged = await ap.getAttribute('aria-pressed');
   await ap.click();
   await page.waitForFunction(previous => document.querySelector('#ap-engage').getAttribute('aria-pressed') !== previous, wasEngaged);
   await ap.click();
   await page.waitForFunction(previous => document.querySelector('#ap-engage').getAttribute('aria-pressed') === previous, wasEngaged);
-  await page.mouse.wheel(0, 200);
-  await page.waitForTimeout(100);
-  const restored = await ap.boundingBox();
-  assert(Math.abs(restored.width - box.width) < 1);
-  assert(Math.abs(restored.x - box.x) < 1 && Math.abs(restored.y - box.y) < 1, 'zooming out restores fitted panel');
-  // Extreme zoom/pan gestures cannot lose the panel past either edge.
-  for (let i = 0; i < 8; i++) {
-    const d = await page.locator('.flight-deck').boundingBox();
-    await page.mouse.move(700, d.y + d.height - 30); await page.mouse.wheel(0, -200);
-    await page.waitForTimeout(40);
+  assert.deepEqual(await page.locator('.instruments').boundingBox(), focusedPanel, 'AP focus/clicks never pan the zoomed panel');
+  const panelViewport = await page.locator('.cockpit-viewport').boundingBox();
+  await page.mouse.move(panelViewport.x + panelViewport.width * .5, panelViewport.y + panelViewport.height * .5);
+  await page.mouse.wheel(-120, 0); await page.waitForTimeout(60);
+  const scrolledPanel = await page.locator('.instruments').boundingBox();
+  assert(scrolledPanel.x > focusedPanel.x + 1, 'two-finger horizontal scrolling actually pans the zoomed panel');
+  const housing = await page.locator('.deck-heading').boundingBox();
+  await page.mouse.move(housing.x + housing.width / 2, housing.y + housing.height / 2);
+  await page.mouse.down(); await page.mouse.move(housing.x + housing.width / 2 - 45, housing.y + housing.height / 2 - 35, { steps: 4 }); await page.mouse.up();
+  const draggedPanel = await page.locator('.instruments').boundingBox();
+  assert(Math.abs(draggedPanel.x - scrolledPanel.x) > 1 || Math.abs(draggedPanel.y - scrolledPanel.y) > 1, 'housing drag actually pans');
+  assert(draggedPanel.y <= panelViewport.y + 1 && draggedPanel.y + draggedPanel.height >= panelViewport.y + panelViewport.height - 1);
+  assert.equal(await fov(), 60, 'panel drag/scroll leave camera FOV unchanged'); frozen(paused, await stats());
+
+  for (const dy of [-200, -200, 150, -100, 200, 200]) {
+    const viewport = await page.locator('.cockpit-viewport').boundingBox();
+    await page.mouse.move(viewport.x + viewport.width * .6, viewport.y + viewport.height * (dy < 0 ? .95 : .05));
+    await page.mouse.wheel(0, dy); await page.waitForTimeout(60);
+    const panel = await page.locator('.instruments').boundingBox();
+    assert(panel.y <= viewport.y + 1 && panel.y + panel.height >= viewport.y + viewport.height - 1,
+      'every zoom step fills the panel area at top and bottom');
+    assert.equal(await fov(), 60);
   }
-  for (const dx of [10000, -10000]) {
-    const bounds = await page.locator('.flight-deck').boundingBox();
-    await page.mouse.move(700, bounds.y + 50); await page.mouse.wheel(dx, 0);
-    await page.waitForTimeout(80);
-    const coverage = await page.locator('.instruments').evaluate(panel => {
-      const p = panel.getBoundingClientRect(), d = panel.closest('.cockpit-viewport').getBoundingClientRect();
-      return { left: p.left, right: p.right, top: p.top, bottom: p.bottom, deck: { left: d.left, right: d.right, top: d.top, bottom: d.bottom } };
-    });
-    assert(coverage.left <= coverage.deck.left + 13 && coverage.right >= coverage.deck.right - 13);
-    assert(coverage.top <= coverage.deck.top + 1 && coverage.bottom >= coverage.deck.bottom - 1, 'clamped focused content fills the viewport without blank vertical margins');
-  }
-  for (let i = 0; i < 8; i++) {
-    const d = await page.locator('.flight-deck').boundingBox();
-    await page.mouse.move(700, d.y + d.height - 30); await page.mouse.wheel(0, 200);
-    await page.waitForTimeout(40);
-  }
-  assert.equal(Number(await page.locator('.flight-deck').getAttribute('data-panel-zoom')), 1);
-  assert.equal(await fov(), 60);
+  await page.locator('.deck-heading').dblclick();
+  const restoredPanel = await page.locator('.instruments').boundingBox();
+  assert(['x','y','width','height'].every(key => Math.abs(restoredPanel[key] - originalPanel[key]) < .1), 'double click restores fitted geometry');
   frozen(paused, await stats());
-  checks.push('pointer-centered panel zoom, working enlarged AP clicks, exact fit restoration and unchanged camera/native physics');
+  checks.push('pointer-centered panel zoom, bounded drag/horizontal pan, no vertical gaps, working AP clicks and unchanged FOV/native physics');
   await scroll(-120);
   const narrowed = await fov(); assert(narrowed < 60 && narrowed > 20);
   await scroll(120); await waitFov(60);
@@ -180,7 +173,9 @@ try {
   assert.equal(await fov(), chosen, 'browser pinch/ctrl-wheel is not scene zoom');
   await page.locator('#view-menu > summary').click(); await page.locator('#toggle-map').click();
   await page.waitForFunction(() => document.querySelector('[aria-label="Zoom map in"]')?.disabled === false);
-  await page.locator('.practice-map-heading').click();
+  // The full-height map heading sits under the optional top bar. Activate
+  // through visible bare canvas, as a user does while the bar is open.
+  await activateFlightMap(page);
   const mapBox = await page.locator('.practice-map-viewport').boundingBox();
   await page.mouse.move(mapBox.x + mapBox.width / 2, mapBox.y + mapBox.height / 2);
   await page.mouse.wheel(0, -120); await page.waitForTimeout(100);

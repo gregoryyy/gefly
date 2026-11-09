@@ -3,6 +3,8 @@ import type { FlightState } from './types';
 export type FlightWarningStatus = 'active' | 'clear' | 'unavailable';
 export interface FlightWarnings {
   stall: FlightWarningStatus;
+  /** Live delivery minimum only: a genuine recent event while current signal is clear. */
+  stallRecent?: boolean;
   terrain: FlightWarningStatus;
   terrainClearance_m: number | null;
   terrainClosure_mps: number | null;
@@ -20,7 +22,7 @@ const unavailable = (): FlightWarnings => ({ stall: 'unavailable', terrain: 'una
   terrainClearance_m: null, terrainClosure_mps: null, terrainTime_s: null });
 const finite = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
 
-function contact(state: Readonly<FlightState>): boolean | null {
+export function flightWarningContact(state: Readonly<FlightState>): boolean | null {
   if (state.on_ground !== 0 && state.on_ground !== 1) return null;
   const wheels = [state.gear_nose_wow, state.gear_left_wow, state.gear_right_wow];
   if (wheels.some(value => value !== undefined && value !== 0 && value !== 1)) return null;
@@ -58,7 +60,7 @@ export function createFlightWarningMonitor(): {
       if (!state || !Number.isSafeInteger(state.step) || state.step < 0 || !finite(state.t_s) || state.t_s < 0) {
         reset(); return unavailable();
       }
-      const grounded = contact(state);
+      const grounded = flightWarningContact(state);
       const stallAvailable = grounded !== null && finite(state.stall_warning_norm) && state.stall_warning_norm >= 0;
       const terrainAvailable = grounded !== null && finite(state.ground_agl_m) && state.ground_agl_m >= 0
         && finite(state.ground_down_mps);

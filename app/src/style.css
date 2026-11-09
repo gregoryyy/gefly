@@ -518,12 +518,11 @@ body .engine-dialog, body .autopilot-dialog, body .radio-nav-dialog, body .navig
 .cockpit-fitted.flight-app { min-height: 0; }
 .cockpit-fitted .flight-deck { display: flex; flex-direction: column; align-items: center; padding: 10px 12px 14px; }
 .cockpit-fitted .deck-heading { width: 100%; flex: 0 0 auto; }
-.cockpit-fitted .cockpit-viewport { flex: 1 1 auto; width: 100%; min-height: 0; display: grid; place-items: start center; overflow: clip; }
-.cockpit-fitted .flight-deck[data-zoomed="true"] :is(.deck-heading, .cockpit-viewport) { cursor: grab; touch-action: none; }
-.cockpit-fitted .flight-deck[data-panel-dragging="true"] { cursor: grabbing; user-select: none; }
-.cockpit-fitted .flight-deck[data-panel-dragging="true"] .cockpit-viewport { cursor: grabbing; }
+.cockpit-fitted .cockpit-viewport { position: relative; flex: 0 0 auto; width: 100%; min-height: 0; overflow: clip; }
+.cockpit-fitted .flight-deck[data-panel-dragging=true] { cursor: grabbing; user-select: none; }
 .cockpit-fitted .instruments {
-  zoom: var(--cockpit-scale, 1); width: 1544px; max-width: none; height: 344px;
+  position: absolute; left: 0; top: 0; transform-origin: 0 0;
+  width: 1544px; max-width: none; height: 344px;
   flex: 0 0 auto; flex-direction: row; flex-wrap: nowrap; align-items: stretch; gap: 12px; margin: 0;
 }
 .cockpit-fitted .primary-instruments {
@@ -676,3 +675,38 @@ input[type=range][data-unavailable=true]::-moz-range-thumb { visibility: hidden;
 .initial-balance-status[hidden] { display: none; }
 
 .yoke-center-marker.needs-center { opacity: .85; border-color: #ffdc98; }
+/* Current-plan access is directly in the top bar beside View. */
+.topbar > #toggle-flight-plan { font-size: 11px; white-space: nowrap; }
+@media (max-width: 620px) {
+  .topbar > #toggle-flight-plan { grid-column: 3; grid-row: 1; padding: 7px; font-size: 10px; }
+  .topbar > #toggle-flight-plan kbd { display: none; }
+  .topbar > #view-menu { grid-column: 4; }
+}
+
+/* Pause status remains readable independently of the optional top menu. */
+.pause-marker {
+  position: absolute;
+  right: 20px;
+  top: 84px;
+  z-index: 9;
+  padding: 8px 12px;
+  border: 1px solid #d8bb7d99;
+  border-radius: 5px;
+  background: #17262deb;
+  color: #f2d69e;
+  font: 600 12px/1.2 ui-monospace, monospace;
+  letter-spacing: .12em;
+  pointer-events: none;
+}
+.pause-marker strong, .pause-marker span { display: block; }
+.pause-marker span { margin-top: 4px; font-size: 10px; letter-spacing: .02em; }
+@media (max-width: 620px) { .pause-marker { right: 10px; top: 112px; font-size: 11px; } }
+@media (max-width: 430px) {
+  .topbar { gap: 6px 4px; padding-inline: 8px; }
+  .topbar .session-status { min-width: 0; gap: 4px; }
+  .topbar #clock { display: none; }
+  .topbar > #toggle-flight-plan { padding-inline: 5px; font-size: 9px; }
+  .topbar > #view-menu > summary { padding-inline: 6px; font-size: 9px; }
+  .topbar .settings-trigger, .topbar #pause { padding-inline: 5px; font-size: 9px; }
+  .topbar #controls-settings kbd { display: none; }
+}

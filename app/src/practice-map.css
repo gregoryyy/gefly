@@ -65,6 +65,11 @@
 .practice-map-layers { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; padding: 4px 10px; }
 .practice-map-layers button { font-size: 10px; padding: 4px 8px; }
 .practice-map-layers button[aria-pressed=true] { color: #15232e; border-color: #c8dadd; background: #c8dadd; }
+.practice-map-color-scheme { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 5px; min-height: 28px; color: #d6e3e7; font-size: 10px; cursor: pointer; }
+.practice-map-color-scheme input { width: 15px; height: 15px; margin: 0; accent-color: #b5c8a0; }
+.practice-map-color-scheme input:focus-visible { outline: 2px solid #ffdb6c; outline-offset: 2px; }
+.practice-map-fix-visibility { display: flex; align-items: center; gap: 6px; margin: 6px 10px; color: #d6c1e6; font-size: 10px; }
+.practice-map-fix-visibility input { width: auto; margin: 0; }
 .practice-map-navigation-status, .practice-map-navigation-key { margin: 3px 10px; color: #cbb1e2; font-size: 9px; line-height: 1.35; }
 .practice-map-navigation-detail { margin: 3px 10px; color: #ead6fc; font-size: 10px; line-height: 1.4; }
 .practice-map-navigation-detail:empty { display: none; }
@@ -113,6 +118,8 @@
 
 .practice-map-panel .maplibregl-ctrl-attrib { max-width: calc(100% - 70px); background: #102532e8; color: #b7cbd2; font-size: 8px; line-height: 12px; }
 .practice-map-panel .maplibregl-ctrl-attrib a { color: inherit; }
+
+/* Session-authored points remain separate from published source markers. */
 .practice-map-custom-fix { background: #292036ee; color: #ffbcf4; border: 1px solid #ff8af1; border-radius: 4px; padding: 3px 5px; font-size: 10px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .practice-map-pick-notice { position: absolute; top: 76px; left: 8px; right: 8px; z-index: 4; margin: 0; padding: 6px; color: #ffe8b0; background: #252d37ee; pointer-events: none; font-size: 11px; }
 .practice-map-pick-notice[hidden] { display: none; }

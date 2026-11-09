@@ -6,6 +6,34 @@ An experimental [local browser application](../app/README.md) integrates the exi
 
 A lazy-loaded MapLibre map shows flight position, true heading, a bounded simplified session-only geographic path and worldwide OurAirports airport/NAV discovery, with source runway/frequency details and the bundled 731-entry five-state fallback. Review uses the historical marker and bounded retained recording path; the map history is separate from replay state and is not saved on reload. Airport selection moves only the map. The community inventory is not accepted airport/runway, chart, fix or procedure data; reported elevation never overwrites contact terrain. Both 2D and 3D views use bundled imagery plus fixed-source live map/photo endpoints.
 
+Custom GPS fixes and ordered flight plans are bounded page-session map data, with pure point/leg calculations separated from the editor and MapLibre presentation. Source point coordinates/provenance are copied into the draft; active-leg and direct-to selection affect map lines, true-bearing/heading readouts and the read-only BRG/DIST presentation. No plan enters native guidance, radios or flight recordings. In Review the current plan is explicitly distinguished from the historical aircraft position.
+
+Presentation pulls the current explicit GPS direct-to/active-leg target from
+`PracticeMap.getGpsTarget()` into the navigation-gauge update. The bearing dial
+labels GPS/target identity and geographic DIST NM separately from NAV1 radio DME;
+without a GPS target it retains the NAV1 VOR/radio-DME presentation. Draft points
+do not select a target. Closing the map retains selection, and Next/Stop/Clear
+refresh the display. Review combines current target selection with recorded
+position and labels that distinction. This data path does not enter the worker,
+deterministic state, recorded avionics or native AP/radio/OBS/RPM state. AP NAV
+continues to use NAV1 radio guidance; GPS autopilot guidance is not implemented.
+
+A visible-map canvas right-click opens a location popup without changing the
+store. Explicit Create GPS fix or Add waypoint actions perform bounded creation;
+the latter atomically preserves start/destination and rejects exhausted fix/
+waypoint capacity without an orphan or consumed identifier. Right-drags and
+native control menus do not create points. The full planner
+lives in a nonmodal transparent portal outside the hidden map container, so map
+and plan visibility are independent. Both views share the same bounded current
+session plan, including in Review, without native guidance or radio commands.
+
+A versioned local display-preference record retains only vector/photo scenery
+and landmark level. Startup restores these choices before scene initialization;
+invalid or inaccessible storage falls back to photos and labels Off. Options
+previews are not stored until Save; cancellation restores opening values.
+Flight state, control preferences and planning data retain their separate
+existing lifetimes.
+
 The research worker also computes an ideal ISA scale-offset pressure altimeter
 from actual JSBSim static pressure at each fixed step. Read-only pressure exports
 leave the original 14-value dynamics state/digest unchanged. A bounded setting
@@ -113,6 +141,16 @@ These are source boundaries, not chosen package-manager workspaces. Finalize phy
 ## Model and flows
 
 Inputs become timestamped, normalized control events. The simulation advances at the selected fixed **1/120 s** step independent of display frames; the renderer reads the 60 Hz state stream and interpolates for display only (Q17/Q18, [CONTRACTS](design/CONTRACTS.md)). If the machine cannot keep up, report overload or deliberate simulation slow-down rather than silently changing physics. JSBSim runs as WASM in a module Web Worker; the E1 study is evidence for that integration boundary, not an accepted 172S model.
+
+Window blur and page hiding release transient held controls and scene steering
+without changing live running intent, latched flight selections or autopilot
+state. A running worker continues advancing fixed 1/120 s steps independently
+of rendering while the browser schedules it. Explicit Pause, Review, pausing
+settings, terrain loading and faults retain their integration stops; focus return
+never supplies an automatic resume. Hidden-page audio remains suppressed.
+Browser/OS throttling or suspension can delay execution; this behavior does not
+promise real-time progress through computer sleep or replace fixed steps with a
+single elapsed-time jump.
 
 The versioned state includes simulation time, aircraft identity/configuration, position/orientation in declared frames, velocities/rates, mass/configuration, environmental conditions, systems/sensors and control positions. SI is the internal default. Cockpit presentation converts explicitly to aircraft-appropriate units. State labels distinguish IAS/TAS/groundspeed, altitude references and magnetic/true headings. A real instrument model derives readings from simulated sensors rather than reusing a visual attitude or speed guess.
 
@@ -352,6 +390,25 @@ This display consumes selected recorded states and never feeds the engine.
 Regional separation, induced flow, twist and local control effects require a
 separate applicable aerodynamic model; current tail/fuselage regions stay unknown.
 
+The stall-warning transport observes the existing validated thirteen-field native
+group after every fixed physics step. A bounded pending positive peak and exact
+source step accompany one successful live state publication, then drain. Current
+native values, deterministic step size and aircraft coefficients remain unchanged.
+Contact, invalid data and stop/loading/reset paths discard the pending event;
+rate-only rebasing publishes it before draining. The session validates the optional
+all-or-none positive/step-bounded pair independently of the raw group. FlightTrace
+validates but drops it, so it cannot become recorded physics or a continuation
+checkpoint field.
+
+A live-only delivery helper accepts every worker frame before RAF and coalesces
+genuine events across rendering gaps. Its 200 ms wall-clock presentation minimum
+starts at first presentation, with RECENT STALL identifying retained events whose
+current native signal is clear. It uses performance.now(), not simulation time or
+RAF's earlier timestamp. Disabled delivery cancels pending/held events while
+retaining consumed identities; only a new worker/reset clears the epoch. Review
+uses the raw warning monitor, without retention or historical peak replay. The
+existing audio graph receives the same displayed live warning and lifecycle gates.
+
 ## Engine sound presentation
 
 A single gesture-created Web Audio graph consumes actual selected engine state
@@ -427,13 +484,14 @@ was activated by the global-scenery research.
 
 ## Simulator shortcuts and pacing
 
-The top title/menu bar and floating flight controls start hidden; O toggles the
-bar independently of the central Start/Pause card. Floating controls, map,
-flight-data and stall panels are inactive at half opacity. A first activation
-gesture is consumed and releases held pilot axes/yoke mode; subsequent gestures
-operate the active panel. Ordinary cockpit controls remain direct. Menu shortcut
-combinations invoke the existing guarded commands; they do not bypass Review,
-disabled controls, editable fields or dialogs.
+The top title/menu bar and floating flight controls start hidden; I toggles the
+bar independently of the central Start/Pause card, and O opens Options. Floating
+controls, flight-data and stall panels retain half opacity and a consumed first
+activation gesture. The map and plan portal bypass that reusable guard and
+dimming so their first intended gesture operates immediately. Interaction
+neutralizes held pilot axes while preserving selected steering references.
+P toggles the independent plan overlay; A retains its AP capture/disconnect toggle.
+Commands preserve their typing, modal, menu, repeat/modifier and Review guards.
 
 A is a simulator convenience to capture the worker's current true heading and
 pressure altitude into HDG + ALT, reusing existing KAP mode commands and generic

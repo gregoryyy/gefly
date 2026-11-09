@@ -70,3 +70,6 @@
   .navigation-obs-controls button { min-height: 25px; }
   .navigation-obs-knob output { font-size: 12px; }
 }
+/* Current map target identity remains on the face when compact-panel notes hide. */
+.bearing-gps-labels text { fill: #e5d49e; font: 9px system-ui,sans-serif; text-anchor: middle; }
+.bearing-gps-labels .bearing-gps-context { font-size: 7px; fill: #b9c7c3; }

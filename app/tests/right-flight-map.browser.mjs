@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { mkdir } from 'node:fs/promises';
 import { chromium } from 'playwright';
-import { installSceneryFixture } from './flight-actions.mjs';
+import { installSceneryFixture, flightMapCanvasPoint } from './flight-actions.mjs';
 
 const app = fileURLToPath(new URL('..', import.meta.url));
 const origin = 'http://127.0.0.1:5232';
@@ -45,7 +45,7 @@ try {
     await route.fulfill({ response, body: source.replace('map = new LibreMap({', 'map = window.__rightFlightMap = new LibreMap({') });
   });
   await installSceneryFixture(page);
-  await page.goto(origin);
+  await page.goto(origin, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => !document.querySelector('#start').disabled && window.rightMapStates.length, null, { timeout: 60000 });
   const scene = page.locator('#scene'), panel = page.locator('#practice-map-panel'), menu = page.locator('#flight-map-extended-menu');
   const output = fileURLToPath(new URL('../../output/flight/', import.meta.url));
@@ -237,10 +237,10 @@ try {
   assert(Math.abs(following.lon-following.expectedLon)<1e-7 && Math.abs(following.lat-following.expectedLat)<1e-7);
   const canvas = panel.locator('.maplibregl-canvas'), box = await canvas.boundingBox();
   // Follow puts ownship/trace DOM markers at the center; drag bare map instead.
-  const panStart = {x:box.x+box.width/4,y:box.y+box.height/4};
+  const panStart = await flightMapCanvasPoint(page);
   assert(await canvas.evaluate((element, point) => document.elementFromPoint(point.x,point.y) === element, panStart), 'pan begins on actual map canvas, not a DOM marker');
   await page.mouse.move(panStart.x,panStart.y);
-  await page.mouse.down(); await page.mouse.move(panStart.x+50,panStart.y,{steps:5}); await page.mouse.up();
+  await page.mouse.down(); await page.mouse.move(panStart.x+(panStart.x>box.x+box.width/2?-50:50),panStart.y,{steps:5}); await page.mouse.up();
   await page.waitForFunction(() => Array.from(document.querySelectorAll('.practice-map-toolbar button')).find(button=>button.textContent==='Follow').getAttribute('aria-pressed') === 'false');
   await frozen(paused);
   checks.push('trail grows from actual flight states; Fit, Follow and pan preserve paused native state');
@@ -257,6 +257,9 @@ try {
   assert.equal(navData.features.length, 277);
   assert.equal(navData.features.filter(feature => feature.properties.component === 'station').length, 210);
   assert((await panel.locator('.practice-map-navigation-marker').count()) <= 80);
+  assert.equal((await page.evaluate(async()=>await window.__rightFlightMap.getSource('navigation-fixes').getData())).features.length,0,'historical fixes are not drawn automatically');
+  const historicalMarkers=menu.getByRole('checkbox',{name:'Show historical fix markers',exact:true});
+  assert(!await historicalMarkers.isChecked(),'historical marker display defaults off independently of Fixes search');
   const locationTypes=menu.getByRole('group',{name:'Location types',exact:true});
   const navCheckbox=locationTypes.getByRole('checkbox',{name:'NAV aids',exact:true});
   await navCheckbox.uncheck();
@@ -283,6 +286,9 @@ try {
   };
   assert(await navCheckbox.isChecked(),'airport marker is reachable with NAV labels still visible');
   assert.equal(await panel.getByRole('button',{name:'Show navigation aids',exact:true}).count(),0,'location checkbox replaces the duplicate NAV toggle');
+  // Earlier Fit/Follow/pan checks intentionally change the camera. Set the
+  // marker's viewport explicitly instead of relying on elapsed flight time.
+  await page.evaluate(() => window.__rightFlightMap.jumpTo({ center: [8.643043, 49.96], zoom: 13 }));
   await panel.getByRole('button',{name:'Select Frankfurt-Egelsbach Airport',exact:true}).click();
   await popup.getByRole('button',{name:'COM1 standby',exact:true}).first().waitFor({state:'visible'});
   await tunePopup('com');
@@ -305,6 +311,9 @@ try {
   checks.push('actual airport/NAV marker popups tune both standby receivers only; ASKIK source fix sets the exact GPS target; AP and paused native state remain unchanged');
 
   await panel.locator('.maplibregl-popup-close-button').click();await pointSearch.fill('');
+  assert.equal((await page.evaluate(async()=>await window.__rightFlightMap.getSource('navigation-fixes').getData())).features.length,0,'historical search/selection does not automatically display the catalogue');
+  await historicalMarkers.check();
+
   const typeLabels=['Airfields','Helipads','Seaplane bases','Balloonports','Closed facilities','NAV aids','Fixes'];
   for(const name of typeLabels) assert(await locationTypes.getByRole('checkbox',{name,exact:true}).isChecked(),`${name} defaults on`);
   const layerState=()=>page.evaluate(async()=>{

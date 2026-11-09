@@ -97,7 +97,8 @@ export function createFlightAssists(options: FlightAssistsOptions): {
   function blocked(event: KeyboardEvent): boolean {
     return event.repeat || event.altKey || event.ctrlKey || event.metaKey
       || !!document.querySelector('dialog[open]')
-      || !!root.querySelector('#view-menu[open], #flight-menu[open]')
+      || !!root.querySelector('.top-menu[open]')
+      || [...document.querySelectorAll<HTMLElement>('.cesium-credit-lightbox-overlay')].some(popup => popup.checkVisibility())
       || (event.target instanceof Element && !!event.target.closest(
         'input, textarea, select, [contenteditable]:not([contenteditable="false"]), .practice-map-panel, .flight-plan-overlay'));
   }

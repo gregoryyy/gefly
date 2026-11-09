@@ -190,7 +190,7 @@ try {
       'Q/W rudder input does not become a throttle command');
     await page.keyboard.up(key);
   }
-  for (const [key, throttle] of [['Digit1', .1], ['Digit9', .9], ['Digit0', 0]]) {
+  for (const [key, throttle] of [['Digit1', .1], ['Digit9', .9], ['Digit0', 1], ['Numpad0', 1], ['Backquote', 0]]) {
     await page.keyboard.press(key);
     await page.waitForFunction(throttle => window.__trimInputs.at(-1).throttle === throttle, throttle);
   }
@@ -200,7 +200,7 @@ try {
   await page.waitForFunction(() => window.__trimStates.at(-1).flap_rad > 0);
   await page.keyboard.press('BracketLeft');
   await page.waitForFunction(() => document.querySelector('#flap-control').value === '0');
-  checks.push('Q/W rudder, digit throttle with 0 idle and bracket flap shortcuts');
+  checks.push('Q/W rudder, 0/numpad0 full throttle, physical left-of-1 idle and bracket flap shortcuts');
 
   for (const visible of [false, true]) {
     await page.locator('#view-menu > summary').click(); await page.locator('#toggle-controls').click();

@@ -11,7 +11,7 @@ import { createFlightPlanStore, planPoints, planLegs, pointNavigation } from './
 import { createFlightPlanPanel } from './map-flight-plan-panel';
 import type { FlightPlanPanelAction, PlannerPoint, PlanResult } from './map-flight-plan-types';
 import { loadMapLocationPreferences, saveMapLocationPreferences } from './map-location-preferences.ts';
-import { createWorldMapStyle, worldMapLayers, worldMapLabelLayers } from './world-map-style';
+import { createWorldMapStyle, worldMapLayers, worldMapLabelLayers, type WorldMapColorScheme } from './world-map-style';
 /// <reference types="vite/client" />
 import { createAirportPlayControls } from './airport-play-controls';
 import { createRunwayPracticePanel } from './runway-practice-panel';
@@ -28,21 +28,24 @@ import { AIRFIELD_BOUNDS, loadAirportCatalogue, type Airport } from './airport-c
 import type { FlightState } from './types';
 import { loadFlightMapCatalogue } from './flight-map-catalogue';
 import type { FlightMapNavigation, FlightMapNavigationFeature } from './flight-map-navigation';
-import { createMapPointPopup, type MapPoint } from './map-point-popup';
+import { createMapLocationPopup, createMapPointPopup, refreshMapPopupFlightAvailability, type MapPoint, type MapLaunchHeightFt } from './map-point-popup';
 import { createMapPointSearch, mapLocationType, type MapLocationType } from './map-point-search';
 import { loadMapFixes, type MapFix } from './map-fixes';
 import { distanceMeters } from './scenery-coverage';
 import type { AirportComDirectory } from './airport-com';
+import { validFrequency } from './radio-nav';
 import { createWorldAirportLoader } from './world-airport-loader';
 import { worldAirportCellId, type WorldAirportSnapshot, type WorldNavaid, type WorldSearchHit, type WorldRunway } from './world-airport-contract';
 
 export interface PracticeMap {
   zoom(direction: 1 | -1): void;
+  /** Current explicit GPS direct-to or active plan-leg target, independent of map visibility. */
   getGpsTarget(): Readonly<PlannerPoint> | null;
   setPlanVisible(visible: boolean): void;
   update(state: Readonly<FlightState>, path: readonly MapPathPosition[], mode: 'live' | 'review', options?: { simplified?: boolean; recordingStart?: boolean }): void;
   setVisible(visible: boolean): void;
   setVector(enabled: boolean): void;
+  setColorScheme(scheme: WorldMapColorScheme): void;
   setCircuitGuide(enabled: boolean): void;
   toggleOverlap(): void;
   dispose(): void;
@@ -69,18 +72,23 @@ interface MapOptions {
   onClose: () => void;
   onInteraction: () => void;
   onVectorChange?: (enabled: boolean) => void;
+  initialColorScheme?: WorldMapColorScheme;
+  onColorSchemeChange?: (scheme: WorldMapColorScheme) => void;
   onStartRunway?: (runway: string) => void;
   getRunwayPractice?: () => { runway: '08' | '26'; progress: PracticeProgress } | null;
   onStopExercise?: () => void;
   isExerciseActive?: () => boolean;
   canTuneCom?: () => boolean;
-  onTuneCom?: (receiver: 1 | 2, channel_khz: number) => void;
-  onTuneNav?: (receiver: 1 | 2, channel_khz: number) => void;
+  onTuneCom?: (receiver: 1 | 2, channel_khz: number) => boolean | void;
+  onTuneNav?: (receiver: 1 | 2, channel_khz: number) => boolean | void;
+  canFlyFrom?: () => boolean;
+  onFlyFrom?: (position: { lat_deg: number; lon_deg: number }, height_ft: MapLaunchHeightFt) => void;
 }
 
 /** A visual aid only; airport data is community maintained and not a chart. */
 export async function createPracticeMap(options: MapOptions): Promise<PracticeMap> {
   const { container, onClose, onInteraction } = options;
+  let colorScheme: WorldMapColorScheme = options.initialColorScheme === 'terrain' ? 'terrain' : 'original';
   container.classList.add('practice-map-panel');
   container.setAttribute('aria-label', 'Flight map');
   const header = document.createElement('div');
@@ -136,6 +144,11 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     return button;
   });
   const [mapLayer, aerialLayer, vectorLayer] = layerButtons;
+  const colorLabel = document.createElement('label'); colorLabel.className = 'practice-map-color-scheme';
+  colorLabel.htmlFor = 'map-dark-colors'; colorLabel.title = '2D map colors only. Off uses the original light palette; on uses the darker terrain palette.';
+  const colorToggle = document.createElement('input'); colorToggle.type = 'checkbox'; colorToggle.id = 'map-dark-colors'; colorToggle.disabled = true;
+  colorToggle.checked = colorScheme === 'terrain'; colorLabel.append(colorToggle, document.createTextNode('Dark map')); layers.append(colorLabel);
+  container.dataset.mapColorScheme = colorScheme;
   const chartButton = document.createElement('button');
   chartButton.type = 'button'; chartButton.textContent = 'Charts';
   chartButton.setAttribute('aria-controls', 'flight-map-charts'); chartButton.setAttribute('aria-expanded', 'false');
@@ -252,6 +265,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   let disposed = false;
   let following = true;
   let failed = false;
+  let waypointMessage = '', waypointNoticeUntil = 0;
+  let cancelWaypointGesture = () => {};
   function refreshMapStatus(): void {
     if (!ready && !failed) return;
     const center = map?.getCenter();
@@ -261,8 +276,9 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     const country = affected.length ? `${affected.map(source => source.name).join(' / ')} photography temporarily unavailable; map fallback remains.` : '';
     const spainZoom = candidates.includes('es') && map && map.getZoom() < COUNTRY_PHOTO_DETAIL_MIN_LEVEL
       ? 'Spain PNOA 2024 is available from map zoom 7 in some areas; showing map fallback.' : '';
-    status.hidden = !failed && !country && !spainZoom;
-    status.textContent = [country, spainZoom, failed ? 'Some map tiles unavailable. Aircraft and path remain local.' : ''].filter(Boolean).join(' ');
+    const waypoint = performance.now() < waypointNoticeUntil ? waypointMessage : '';
+    status.hidden = !failed && !country && !spainZoom && !waypoint;
+    status.textContent = [waypoint, country, spainZoom, failed ? 'Some map tiles unavailable. Aircraft and path remain local.' : ''].filter(Boolean).join(' ');
   }
   const airportMarkers: Marker[] = [];
   let airportMarkerKey = '';
@@ -316,13 +332,15 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   const fixMarkers: Marker[] = [];
   let selectedPoint: Readonly<MapPoint> | null = null, pointPopup: Popup | null = null;
   let approachGuide: Readonly<ApproachGuide> | null = options.initialApproachGuide ?? null;
-  let gpsTarget: Readonly<MapPoint> | null = null, gpsDataKey = '';
+  let popupContent: HTMLElement | null = null;
+  let gpsTarget: Readonly<MapPoint> | null = null, gpsDataKey = 'dirty';
   let pickingGpsFix = false;
   const customFixMarkers: Marker[] = [], planPointMarkers: Marker[] = [];
   let plannerMarkerKey = '', plannerRouteKey = '';
   const planStore = createFlightPlanStore(() => {
     if (gpsTarget?.custom && !planStore.getSnapshot().fixes.some(fix => fix.id === gpsTarget!.id)) gpsTarget = null;
-    gpsDataKey = ''; refreshPointSearch(); paintPlanner(); paintGpsTarget();
+    if (selectedPoint?.custom && !planStore.getSnapshot().fixes.some(fix => fix.id === selectedPoint!.id)) { pointPopup?.remove(); pointPopup = null; selectedPoint = null; popupContent = null; }
+    gpsDataKey = 'dirty'; refreshPointSearch(); paintPlanner(); paintGpsTarget();
   });
   let searchPosition: { lat: number; lon: number } | null = null;
   const fixesStatus = document.createElement('p'); fixesStatus.className = 'practice-map-navigation-status';
@@ -434,10 +452,19 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   }
   const fixPoint = (fix: MapFix): MapPoint => ({ ...fix, id: fix.name, kind: 'fix' });
   function refreshPointSearch(): void { pointSearch.setPoints([...airports.map(airportPoint), ...navigationData.features.map(navigationPoint), ...(worldSnapshot?.navaids.map(worldNavaidPoint) ?? []), ...fixes.map(fixPoint), ...planStore.getSnapshot().fixes]); }
+  const canFlyFrom = () => !disposed && !reviewing && !!options.onFlyFrom && (options.canFlyFrom?.() ?? true);
+  function flyFrom(popup: Popup, content: HTMLElement, position: { lat_deg: number; lon_deg: number }, height_ft: MapLaunchHeightFt): void {
+    if (!canFlyFrom() || pointPopup !== popup || popupContent !== content || !content.isConnected) return;
+    onInteraction(); pointPopup?.remove(); pointPopup = null; selectedPoint = null; popupContent = null;
+    options.onFlyFrom?.(position, height_ft);
+  }
   function refreshPointPopup(): void {
     if (!selectedPoint || !pointPopup) return;
     const point = selectedPoint, popup = pointPopup;
-    const content = createMapPointPopup(point, {
+    const ownedFix = () => point.custom && planStore.getSnapshot().fixes.some(fix => fix.id === point.id
+      && fix.lon_deg === point.lon_deg && fix.lat_deg === point.lat_deg && fix.source_label === point.source_label);
+    const content: HTMLElement = createMapPointPopup(point, {
+      canFlyFrom, onFlyFrom: options.onFlyFrom ? (position, height_ft) => flyFrom(popup, content, position, height_ft) : undefined,
       currentApproachGuide: approachGuide,
       onApproachGuide: options.onApproachGuide ? guide => {
         if (disposed || pointPopup !== popup || selectedPoint !== point || !content.isConnected || !popup.getElement().contains(content)) return;
@@ -450,9 +477,24 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       } : undefined,
       canTune: () => !reviewing && (options.canTuneCom?.() ?? true) && !!point.frequencies?.some(f => f.kind === 'com' ? options.onTuneCom : options.onTuneNav),
       onTune(kind, receiver, channel) {
-        if (reviewing || !(options.canTuneCom?.() ?? true)) return;
-        (kind === 'com' ? options.onTuneCom : options.onTuneNav)?.(receiver, channel); onInteraction();
+        if (disposed || reviewing || !(options.canTuneCom?.() ?? true)
+          || pointPopup !== popup || selectedPoint !== point || popupContent !== content || !content.isConnected
+          || !['com', 'nav'].includes(kind) || ![1, 2].includes(receiver) || !validFrequency(kind, channel)
+          || !point.frequencies?.some(frequency => frequency.kind === kind && frequency.channel_khz === channel)
+          || kind === 'nav' && /\b(?:NDB|TACAN)\b/i.test(`${point.kind} ${point.equipment ?? ''}`)) return false;
+        const tune = kind === 'com' ? options.onTuneCom : options.onTuneNav;
+        if (!tune) return false;
+        onInteraction();
+        return tune(receiver, channel) === true;
       },
+      onDeleteFix: ownedFix() ? target => {
+        if (disposed || pointPopup !== popup || selectedPoint !== point || popupContent !== content || !content.isConnected
+          || !ownedFix() || target.id !== point.id || target.lon_deg !== point.lon_deg
+          || target.lat_deg !== point.lat_deg || target.source_label !== point.source_label)
+          return { ok: false, error: 'This custom GPS fix is no longer selected.' };
+        onInteraction();
+        return handlePlannerAction({ type: 'remove-fix', id: point.id });
+      } : undefined,
       onGpsTarget(target) { setDirectTo(target); },
       onPlanPoint(target, role) {
         if (disposed || pointPopup !== popup || selectedPoint !== point || !content.isConnected || !popup.getElement().contains(content)) return;
@@ -461,17 +503,44 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       },
     });
     const feedback = document.createElement('p'); feedback.setAttribute('role', 'status'); content.append(feedback);
-    popup.setDOMContent(content);
+    popupContent = content; popup.setDOMContent(content);
   }
   function openPoint(point: Readonly<MapPoint>, preserveWorldSelection = false): void {
     if (!preserveWorldSelection) { ++worldSelectionGeneration; selectedWorldHit = null; }
     if (pickingGpsFix) { pickGpsPosition(point.lon_deg, point.lat_deg); return; }
     if (!map || disposed || !locationTypes.has(mapLocationType(point))) return;
-    pointPopup?.remove(); selectedPoint = point;
+    pointPopup?.remove();
+    const custom = planStore.getSnapshot().fixes.some(fix => fix.id === point.id && fix.lon_deg === point.lon_deg && fix.lat_deg === point.lat_deg && fix.source_label === point.source_label);
+    selectedPoint = custom ? Object.freeze({ ...point, custom: true as const }) : point;
     pointPopup = new Popup({ closeButton: true, closeOnClick: true, maxWidth: '290px', offset: 10 }).setLngLat([point.lon_deg, point.lat_deg]);
     refreshPointPopup(); pointPopup.addTo(map);
   }
   function pickGpsPosition(lon: number, lat: number): void { pickingGpsFix = false; planner.setPickedPosition(lon, lat); updatePlannerPanel(); onInteraction(); }
+  function openLocation(lon_deg: number, lat_deg: number): void {
+    if (!map || disposed) return;
+    ++worldSelectionGeneration; selectedWorldHit = null;
+    pointPopup?.remove(); selectedPoint = null;
+    const popup = new Popup({ closeButton: true, closeOnClick: true, maxWidth: '290px', offset: 10 })
+      .setLngLat([lon_deg, lat_deg]);
+    pointPopup = popup;
+    const create = (waypoint: boolean): PlanResult<unknown> => {
+      if (disposed || pointPopup !== popup) return { ok: false, error: 'This map location is no longer selected.' };
+      const result = waypoint ? planStore.createWaypoint(lat_deg, lon_deg) : planStore.createFix('', lat_deg, lon_deg);
+      waypointMessage = result.ok ? waypoint
+        ? `${result.value.id} added as waypoint ${planStore.getSnapshot().waypoints.length}.`
+        : `${result.value.id} created as a custom GPS fix.` : result.error;
+      waypointNoticeUntil = performance.now() + 6000; refreshMapStatus(); onInteraction();
+      if (result.ok) { popup.remove(); pointPopup = null; }
+      return result;
+    };
+    const content: HTMLElement = createMapLocationPopup({ lon_deg, lat_deg }, {
+      canFlyFrom, onFlyFrom: options.onFlyFrom ? (position, height_ft) => flyFrom(popup, content, position, height_ft) : undefined,
+      onCreateFix: () => create(false), onAddWaypoint: () => create(true),
+      onCancel: () => { popup.remove(); if (pointPopup === popup) pointPopup = null; onInteraction(); },
+    });
+    popupContent = content; popup.setDOMContent(content).addTo(map);
+    onInteraction();
+  }
   function navigationTarget(): Readonly<PlannerPoint> | null {
     const state = planStore.getSnapshot();
     return state.activeLegIndex === null ? gpsTarget : state.waypoints[state.activeLegIndex] ?? state.destination;
@@ -654,8 +723,12 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   const stopKey = (event: KeyboardEvent) => event.stopPropagation();
   planOverlay.addEventListener('pointerdown', onInteraction); planOverlay.addEventListener('focusin', onInteraction);
   planOverlay.addEventListener('keydown', stopKey); planOverlay.addEventListener('keyup', stopKey);
+  const stopPlanWheel = (event: WheelEvent) => { event.stopPropagation(); onInteraction(); };
+  planOverlay.addEventListener('wheel', stopPlanWheel, { passive: true });
+  const mapWheelInteraction = () => { if (!disposed && visible) onInteraction(); };
   container.addEventListener('pointerdown', onInteraction);
   container.addEventListener('focusin', onInteraction);
+  container.addEventListener('wheel', mapWheelInteraction, { capture: true, passive: true });
   container.addEventListener('keydown', stopKey);
   container.addEventListener('keyup', stopKey);
   const abort = new AbortController();
@@ -714,6 +787,24 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   function updateLayerCaption(): void {
     caption.textContent = `${aerial ? 'Regional aerial imagery, including Switzerland and Austria where available · capture dates vary; global OSM fallback.' : 'Public map · not a navigation chart.'}${vector ? ' Terrain: map without labels.' : ''} Worldwide community airport/NAV discovery near map centre. Receiver signals use a separate historical NAV810 inventory; published fix coverage remains regional.`;
   }
+
+  function setColorScheme(scheme: WorldMapColorScheme): void {
+    if (disposed || scheme !== 'original' && scheme !== 'terrain') return;
+    colorScheme = scheme; colorToggle.checked = scheme === 'terrain'; container.dataset.mapColorScheme = scheme;
+    if (!map || !ready) return;
+    // Paint changes preserve the map, tile sources, camera and all local overlays.
+    for (const layer of [...worldMapLayers(scheme), ...worldMapLabelLayers(scheme)]) {
+      for (const [property, value] of Object.entries(layer.paint ?? {})) {
+        map.setPaintProperty(layer.id, property as Parameters<LibreMap['setPaintProperty']>[1], value);
+      }
+    }
+  }
+  const colorChange = () => {
+    const scheme = colorToggle.checked ? 'terrain' : 'original';
+    setColorScheme(scheme); onInteraction(); options.onColorSchemeChange?.(scheme);
+  };
+  colorToggle.addEventListener('change', colorChange);
+  removers.push(() => colorToggle.removeEventListener('change', colorChange));
 
   function setVector(enabled: boolean): void {
     vector = enabled;
@@ -954,7 +1045,10 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     aircraft!.setLngLat(frame.position).setRotation(frame.heading_deg).addTo(map);
     if (frame.path.length) start!.setLngLat(frame.path[0]).addTo(map);
     else start!.remove();
-    if (following) map.jumpTo({ center: frame.position });
+    // jumpTo stops MapLibre's gesture handlers, even before a held mouse has
+    // moved far enough to emit dragstart. Let that pending native pan survive
+    // Follow repaints; an actual drag still turns Follow off through dragstart.
+    if (following && !map.dragPan.isActive()) map.jumpTo({ center: frame.position });
     // Observable paint result for actual-browser checks; not navigation data.
     container.dataset.pathPoints = String(frame.path.length);
     container.dataset.markerHeadingDeg = frame.heading_deg.toFixed(1);
@@ -996,6 +1090,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       const wasReviewing = reviewing; reviewing = mode === 'review';
       if (wasReviewing !== reviewing) setFollowing(following);
       if (wasReviewing !== reviewing) refreshPointPopup();
+      if (popupContent?.isConnected) refreshMapPopupFlightAvailability(popupContent);
       playControls.update(options.isExerciseActive?.() ?? false, reviewing);
       const practice = options.getRunwayPractice?.();
       circuitState = state;
@@ -1036,6 +1131,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       paint();
     },
     setVector,
+    setColorScheme,
     setCircuitGuide(enabled) {
       circuitEnabled = enabled; circuitFitPending = enabled;
       circuitToggle.setAttribute('aria-pressed', String(enabled)); refreshCircuit();
@@ -1044,7 +1140,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       if (disposed) return;
       visible = value; ofmOverlay?.setVisible(value);
       syncCountryPhotoLayers(); refreshMapStatus();
-      if (!value) { pointPopup?.remove(); pointPopup = null; }
+      if (!value) { cancelWaypointGesture(); pointPopup?.remove(); pointPopup = null; }
       container.hidden = !value;
       if (value) { map?.resize(); requestWorldCenter(); paint(); }
     },
@@ -1058,6 +1154,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       container.removeEventListener('focusin', onInteraction);
       container.removeEventListener('keydown', stopKey);
       container.removeEventListener('keyup', stopKey);
+      container.removeEventListener('wheel', mapWheelInteraction, true);
+      planOverlay.removeEventListener('wheel', stopPlanWheel);
       airportMarkers.forEach((marker) => marker.remove());
       navigationMarkers.forEach((marker) => marker.remove());
       worldNavMarkers.forEach((marker) => marker.remove());
@@ -1090,8 +1188,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
         'practice-circuit': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
       },
       layers: [
-        ...worldMapLayers(),
-        ...worldMapLabelLayers(),
+        ...worldMapLayers(colorScheme),
+        ...worldMapLabelLayers(colorScheme),
         { id: 'basemap', type: 'raster', source: 'basemap', layout: { visibility: 'none' }, paint: { 'raster-fade-duration': 0 } },
         ...COUNTRY_IMAGERY.map(countryRasterLayer),
         { id: 'imagery', type: 'raster', source: 'imagery', layout: { visibility: 'none' }, paint: { 'raster-fade-duration': 0 } },
@@ -1155,6 +1253,86 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     map.on('move', () => { paintTrajectory(); refreshMapStatus(); }); map.on('resize', paintTrajectory);
     map.dragRotate.disable();
     map.touchZoomRotate.disableRotation();
+    const canvas = map.getCanvas();
+    type WaypointGesture = { pointerId: number; x: number; y: number; lastX: number; lastY: number; moved: boolean; ctrl: boolean; endedAt: number | null };
+    let waypointGesture: WaypointGesture | null = null;
+    const activeMap = () => !disposed && visible && ready
+      && (!container.classList.contains('floating-overlay') || container.classList.contains('overlay-active'));
+    const activeCanvas = (event: MouseEvent) => activeMap() && event.target === canvas;
+    const canvasWheel = (event: WheelEvent) => {
+      if (!activeCanvas(event) || event.defaultPrevented || !Number.isFinite(event.deltaY) || event.deltaY === 0
+        || !map!.scrollZoom.isEnabled() || document.querySelector('dialog[open]')) return;
+      if (map!.cooperativeGestures.isEnabled() && !event.ctrlKey && !map!.cooperativeGestures.isBypassed(event)) return;
+      // MapLibre can classify a single wheel event after a 40 ms delay. Release
+      // Follow before that delay, so its jumpTo repaint cannot reset the gesture.
+      // The library retains complete ownership of zoom and event cancellation.
+      setFollowing(false);
+    };
+    const clearWaypointGesture = () => { waypointGesture = null; };
+    cancelWaypointGesture = clearWaypointGesture;
+    const waypointDown = (event: PointerEvent) => {
+      if (!activeCanvas(event) || event.defaultPrevented || event.isPrimary === false || event.altKey || event.metaKey || event.shiftKey
+        || !(event.button === 2 || event.button === 0 && event.ctrlKey)) return;
+      waypointGesture = { pointerId: event.pointerId, x: event.clientX, y: event.clientY,
+        lastX: event.clientX, lastY: event.clientY, moved: false, ctrl: event.button === 0, endedAt: null };
+    };
+    const waypointMove = (event: PointerEvent) => {
+      const gesture = waypointGesture;
+      if (!gesture || gesture.endedAt !== null || event.pointerId !== gesture.pointerId) return;
+      if ((event.buttons & (gesture.ctrl ? 1 : 2)) === 0 || event.altKey || event.metaKey || event.shiftKey) { clearWaypointGesture(); return; }
+      gesture.lastX = event.clientX; gesture.lastY = event.clientY;
+      gesture.moved ||= Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) > 5;
+    };
+    const waypointUp = (event: PointerEvent) => {
+      const gesture = waypointGesture;
+      if (!gesture || gesture.endedAt !== null || event.pointerId !== gesture.pointerId) return;
+      gesture.endedAt = performance.now(); gesture.lastX = event.clientX; gesture.lastY = event.clientY;
+      if (!activeCanvas(event) || gesture.moved || Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) > 5
+        || event.altKey || event.metaKey || event.shiftKey || document.elementFromPoint(event.clientX, event.clientY) !== canvas) return;
+      const rect = canvas.getBoundingClientRect(), point = map!.unproject([event.clientX - rect.left, event.clientY - rect.top]);
+      openLocation(point.lng, point.lat);
+    };
+    const recentWaypointGesture = (event: MouseEvent) => {
+      const gesture = waypointGesture;
+      return gesture && (gesture.endedAt === null || performance.now() - gesture.endedAt < 500)
+        && Math.hypot(event.clientX - gesture.lastX, event.clientY - gesture.lastY) <= 6;
+    };
+    const waypointGestureTarget = (event: MouseEvent) => {
+      // Some platforms dispatch contextmenu after mouseup, when the new menu
+      // may be under the pointer. Only the same canvas gesture reserves it.
+      const popupTarget = event.target instanceof Element && !!event.target.closest('.map-location-popup')
+        && !!pointPopup?.getElement().contains(event.target);
+      return event.target === canvas || popupTarget;
+    };
+    const waypointContext = (event: MouseEvent) => {
+      // Canvas right-click belongs to the location menu. Native controls and
+      // ordinary popup gestures retain their browser context menus.
+      const canvasContext = event.target === canvas && (event.button === 2 || event.button === 0 && event.ctrlKey);
+      const createdContext = waypointGestureTarget(event) && recentWaypointGesture(event) && (event.button === 2 || waypointGesture?.ctrl && event.button === 0);
+      if (activeMap() && (canvasContext || createdContext)
+        && !event.altKey && !event.metaKey && !event.shiftKey) { event.preventDefault(); event.stopPropagation(); }
+    };
+    const waypointClick = (event: MouseEvent) => {
+      // macOS Control-click can also emit a left click. It must not fill the
+      // separate Pick form or open a source marker underneath the new point.
+      if (activeMap() && waypointGestureTarget(event) && waypointGesture?.ctrl && recentWaypointGesture(event)) { event.preventDefault(); event.stopImmediatePropagation(); }
+    };
+    const waypointVisibility = () => { if (document.hidden || !visible) clearWaypointGesture(); };
+    canvas.addEventListener('wheel', canvasWheel, { capture: true, passive: true });
+    canvas.addEventListener('pointerdown', waypointDown);
+    viewport.addEventListener('contextmenu', waypointContext, true); viewport.addEventListener('click', waypointClick, true);
+    window.addEventListener('pointerdown', clearWaypointGesture, true);
+    window.addEventListener('pointermove', waypointMove, true); window.addEventListener('pointerup', waypointUp, true);
+    window.addEventListener('pointercancel', clearWaypointGesture); window.addEventListener('blur', clearWaypointGesture);
+    document.addEventListener('visibilitychange', waypointVisibility);
+    removers.push(() => {
+      clearWaypointGesture(); canvas.removeEventListener('wheel', canvasWheel, true); canvas.removeEventListener('pointerdown', waypointDown);
+      viewport.removeEventListener('contextmenu', waypointContext, true); viewport.removeEventListener('click', waypointClick, true);
+      window.removeEventListener('pointerdown', clearWaypointGesture, true);
+      window.removeEventListener('pointermove', waypointMove, true); window.removeEventListener('pointerup', waypointUp, true);
+      window.removeEventListener('pointercancel', clearWaypointGesture); window.removeEventListener('blur', clearWaypointGesture);
+      document.removeEventListener('visibilitychange', waypointVisibility);
+    });
     map.on('moveend', () => { requestWorldCenter(); paintAirports(); paintNavigation(); paintWorldNavigation(); paintFixes(); paintCircuit(); });
     map.on('click', 'world-navigation-stations', event => { const nav = worldSnapshot?.navaids.find(n => n.id === event.features?.[0]?.properties.id); if (nav) { openPoint(worldNavaidPoint(nav)); onInteraction(); } });
     map.on('click', 'airfields', event => {
@@ -1181,7 +1359,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       fixes = data; refreshPointSearch();
       fixesStatus.textContent = `${fixes.length} regional fixes · FlightGear 2013.10 · historical`; paintFixes();
     }).catch(() => { if (!disposed) fixesStatus.textContent = 'Historical navigation fixes unavailable'; });
-    map.on('click', 'gps-target-point', () => { if (gpsTarget) { openPoint(gpsTarget); onInteraction(); } });
+    map.on('click', 'gps-target-point', () => { const target = navigationTarget(); if (target) { openPoint(target); onInteraction(); } });
     map.on('click', 'navigation-fixes', event => {
       const fix = fixes.find(f => f.id === event.features?.[0]?.properties.fixId); if (fix) { openPoint(fixPoint(fix)); onInteraction(); }
     });
@@ -1262,6 +1440,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       ready = true;
       refreshMapStatus();
       [...buttons, ...layerButtons].forEach((button) => { button.disabled = false; });
+      colorToggle.disabled = false; setColorScheme(colorScheme);
       circuitToggle.disabled = false;
       circuitDataKey = ''; circuitLabelKey = ''; circuitLegKey = ''; paintedFixes = undefined;
       airportSourceKey = ''; paintedNavigationData = undefined; paintedWorldNavaids = undefined;
@@ -1271,7 +1450,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       paintNavigation();
       paintWorldNavigation(); requestWorldCenter();
       paintFixes();
-      gpsDataKey = ''; plannerRouteKey = ''; plannerMarkerKey = ''; paintPlanner();
+      gpsDataKey = 'dirty'; plannerRouteKey = ''; plannerMarkerKey = ''; paintPlanner();
       paint();
     });
   } catch {

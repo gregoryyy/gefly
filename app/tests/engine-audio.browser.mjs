@@ -606,14 +606,18 @@ try {
     Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
     document.dispatchEvent(new Event('visibilitychange'));
   });
-  await silence(); assert.equal(await page.locator('#status').textContent(), 'Paused', 'visibility policy synchronously stops live flight/audio');
+  await silence(); assert.equal(await page.locator('#status').textContent(), 'Flying', 'hidden-page audio silences without pausing live flight');
+  const hiddenFlight = await stats();
+  await page.waitForFunction(step => window.__soundStates.at(-1).step > step, hiddenFlight.step);
   await page.evaluate(() => { delete document.hidden; });
+  await page.locator('#scene').focus(); await page.keyboard.press('Space');
+  await page.waitForFunction(() => document.querySelector('#status').textContent === 'Paused');
   const beforeReset = await stats();
   await page.locator('#flight-menu > summary').click(); await page.locator('#reset').click();
   await silence(); await page.waitForFunction(() => !document.querySelector('#start').disabled);
   assert.equal(await page.evaluate(() => window.__soundContexts.length), 1, 'flight reset keeps the same audio context');
   assert((await stats()).step < beforeReset.step, 'real flight reset replaces the worker state while audio remains silent');
-  checks.push('visibility-policy pause and flight reset silence the existing graph synchronously');
+  checks.push('hidden-page audio silences while flight continues; manual Pause and reset silence the existing graph synchronously');
 
   const unsupported = await browser.newPage({ viewport: { width: 900, height: 800 } });
   await unsupported.addInitScript(() => { window.AudioContext = undefined; window.webkitAudioContext = undefined; });
@@ -622,7 +626,16 @@ try {
   await startOrResume(unsupported); await unsupported.waitForFunction(() => document.querySelector('#status').textContent === 'Flying');
   await unsupported.close();
   const rejected = await browser.newPage({ viewport: { width: 900, height: 800 } });
-  await rejected.addInitScript(() => { AudioContext.prototype.resume = () => Promise.reject(new Error('test activation rejection')); });
+  await rejected.addInitScript(() => {
+    const NativeContext = AudioContext;
+    window.AudioContext = class extends NativeContext {
+      constructor(...args) { super({ ...args[0], sinkId: { type: 'none' } }); }
+      // Keep the injected denial observable even if the native context starts
+      // running under Chrome's trusted-activation policy.
+      get state() { return 'suspended'; }
+      resume() { return Promise.reject(new Error('test activation rejection')); }
+    };
+  });
   await installSceneryFixture(rejected); await rejected.goto(origin); await rejected.waitForFunction(() => !document.querySelector('#start').disabled);
   await startOrResume(rejected);
   await rejected.locator('#scene').focus(); await rejected.keyboard.press('s');

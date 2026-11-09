@@ -213,7 +213,7 @@ vertical trim/flaps and explanatory copy moved off the panel. See
 reference, not confirmation of an exact aircraft/avionics installation.
 
 Refinement: **2026-11-02 18:54, user** (recording time): specified bracket
-flaps, apostrophe/backslash trim, Q/W rudder, 0 idle and Space pause; restart in a
+flaps, apostrophe/backslash trim, Q/W rudder, ~~0 idle~~ (superseded by 2.0.134: 0 full, § idle) and Space pause; restart in a
 menu, retained yoke mode on pointer reentry and persistent Review look. Requested
 landing instability from gear reactions and separate radio/NAV/autopilot boxes;
 modern fullscreen instruments/ILS markers and configurable keys are later.

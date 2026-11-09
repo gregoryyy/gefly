@@ -75,12 +75,12 @@ try {
     await installSceneryFixture(capturePage); await capturePage.goto(origin);
     await capturePage.waitForFunction(() => !document.querySelector('#start').disabled && window.kapA?.kap_profile === 1,null,{timeout:60000});
     // Physical engagement starts in VS with current rate and no altitude arm.
-    await capturePage.locator('#scene').focus(); await capturePage.keyboard.press('p');
+    await capturePage.locator('#scene').focus(); await capturePage.locator('#ap-engage').click();
     await capturePage.waitForFunction(() => window.kapA?.kap_engaged===1&&window.kapA.kap_vertical===0);
     await startOrResume(capturePage);
     await capturePage.waitForFunction(() => window.kapA?.t_s>4);
     await capturePage.locator('#scene').focus(); await capturePage.keyboard.press('Space');
-    const physical=await observeCapture('physical P keeps commanded VS readable after shared selector expires');
+    const physical=await observeCapture('physical AP button keeps commanded VS readable after shared selector expires');
     assert.equal(physical.vertical,'VS'); assert.equal(physical.arm,''); assert.equal(physical.state.kap_alt_arm,0);
     assert.equal(physical.unit,'FT','shared selector returned to target altitude after three simulation seconds');
     await assertPersistentVs(physical.state.kap_vs_target_mps*60/.3048);
@@ -341,7 +341,7 @@ try {
   await page.mouse.click(range.x + range.width * .4, range.y + range.height / 2);
   await page.waitForFunction(() => document.querySelector('#ap-engaged-label').textContent === 'AP');
   assert.equal(await page.locator('#ap-state-label').textContent(), 'REC');
-  await page.locator('#scene').focus(); await page.keyboard.press('p'); frozen(paused, await stats());
+  await page.locator('#scene').focus(); await page.keyboard.press('a'); frozen(paused, await stats());
   await page.screenshot({ path: `${output}/kap140-flight-review.png` });
   observations.review = { frozen_digest: paused.digest, selection_s: await page.locator('#review-time').inputValue() };
   checks.push('paused steering keys leave AP engaged; explicit A disconnects without physics advance; Review restores captured engaged modes, blocks AP/P input and preserves native state/digest');

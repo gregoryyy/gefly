@@ -23,6 +23,15 @@ export const RUDDER_LEFT_SIGN = 1 as const;
 export const LEFT_RUDDER_CODE = 'KeyQ';
 export const RIGHT_RUDDER_CODE = 'KeyW';
 
+/** Layout-aware idle key plus physical number-row/numpad throttle presets. */
+export function throttleShortcut(event: { code: string; key: string; shiftKey: boolean }): number | null {
+  if (event.key === '§') return 0;
+  if (event.shiftKey) return null;
+  if (event.code === 'Backquote') return 0;
+  const digit = /^(?:Digit|Numpad)([0-9])$/.exec(event.code);
+  return digit ? (digit[1] === '0' ? 1 : Number(digit[1]) / 10) : null;
+}
+
 const clampAxis = (value: number) => Math.max(-1, Math.min(1, value));
 
 /** Raw pilot axes before Options gains and the study roll offset. */

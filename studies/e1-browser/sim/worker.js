@@ -32,6 +32,8 @@ import { sampleTerrain, sampleTerrainGradient, terrainContainsInterior } from '.
 import { sampleAtlas, sampleAtlasGradient } from './terrain-stream.js';
 import { createTerrainSourceStream } from './terrain-source-client.js';
 import { createTerrainPrediction } from './terrain-prediction.js';
+import { validMapStart } from './map-start.js';
+import { validAutopilotReload, copyAutopilotReload } from './autopilot-reload.js';
 import { pressureAltitude_m, indicatedAltitude_m, validSetting } from './altimeter.js';
 import { stallFields, controlFields, cockpitFields, pitchTrimFields, groundFields } from './cockpit.js';
 import { autopilotCommand, engineFields, engineSwitchFields } from './engine.js';
@@ -42,6 +44,7 @@ import { FLIGHT_DEFAULT_LOADING, validLoading, loadingValues, loadingFromState, 
 import { createAltitudeAlert } from './altitude-alert.js';
 import { DEFAULT_NAVIGATION, NAVIGATION_FIELDS, validNavigation, navigationSignal, loadNavigationPackage } from './navigation.js';
 import { validSimulationRate, pacedStepMilliseconds } from './simulation-rate.js';
+import { createStallWarningPeak } from './stall-warning-peak.js';
 
 const MAX_CATCHUP = 12;          // steps per tick (100 ms at 1/120 s)
 const TIMER_SLACK_MS = 0.1;     // wake margin after a step's due time
@@ -71,6 +74,7 @@ let t0Ms = 0;         // wall (performance.now) origin of the pacing schedule
 let stepBase = 0;     // stepIndex at t0Ms
 let timer = null;
 let nextPostMs = 0;      // performance.now() at which the next state is due
+const stallWarningPeak = createStallWarningPeak();
 let pending = [];     // inputs sorted by step (stable)
 let lastInputWallMs = null;
 let lastStepCostUs = 0;
@@ -211,6 +215,7 @@ function onAltimeter(msg) {
 }
 
 function fail(message) {
+  stallWarningPeak.clear();
   running = false;
   if (timer !== null) { clearTimeout(timer); timer = null; }
   postMessage({ type: 'error', message });
@@ -395,7 +400,7 @@ function onSimulationRate(msg) {
     // Rebase at the last completed fixed step, so changing speed cannot replay
     // elapsed wall time at the new rate or produce one large integration step.
     const wasRunning = running;
-    if (wasRunning) onHalt();
+    if (wasRunning) onHalt(false); // publish the pending genuine peak below before draining it
     simulationRate = msg.rate;
     if (wasRunning) onRun({ until_step: untilStep });
   }
@@ -483,7 +488,11 @@ function postState() {
   for (const k of ['t_s', 'lat_rad', 'lon_rad', 'alt_msl_m', 'roll_rad', 'pitch_rad', 'heading_rad', 'tas_mps']) {
     if (!Number.isFinite(msg[k])) { fail(`non-finite state ${k} at step ${stepIndex}`); return false; }
   }
+  const onGround = msg.on_ground === 0 && [msg.gear_nose_wow, msg.gear_left_wow, msg.gear_right_wow].some(wow => wow === 1) ? 1 : msg.on_ground;
+  Object.assign(msg, stallWarningPeak.fields(msg.step, msg.stall_warning_norm, onGround,
+    msg.collision_mask > 0 ? msg.collision_mask : msg.structure_contact_mask));
   postMessage(msg);
+  stallWarningPeak.clear();
   if (running && terrainStream && !terrainLoad) {
     const focus = terrainPrediction.update(msg, simulationRate);
     void terrainStream.prefetch(msg.lat_rad, msg.lon_rad, focus);
@@ -552,6 +561,9 @@ function stepOnce() {
   const b = performance.now();
   if (rc !== 0) { if (rc === -7) terrainFault = true; fail(rc === -7 ? 'Terrain/contact coverage unavailable; flight stopped without changing aircraft position.' : `step rc=${rc} at step ${stepIndex}`); return false; }
   stepIndex += 1;
+  const stall = readStallFields(), cockpit = readCockpitFields(), ground = readGroundFields();
+  const onGround = cockpit.on_ground === 0 && [ground.gear_nose_wow, ground.gear_left_wow, ground.gear_right_wow].some(wow => wow === 1) ? 1 : cockpit.on_ground;
+  stallWarningPeak.observe(stepIndex, stall.stall_warning_norm, onGround, ground.structure_contact_mask);
   updateAltimeter();
   if (altitudeAlert) altitudeAlert.update(alertSensors());
   lastStepCostUs = (b - a) * 1000;
@@ -641,6 +653,19 @@ async function onInit(msg) {
     || (requestedBalance === 1 && (msg.runway_start === true || msg.landing_preset !== undefined))) {
     fail('init: invalid or incompatible initial balance profile.'); return;
   }
+  const hasMapStart = Object.hasOwn(msg, 'height_agl_ft');
+  const mapStart = hasMapStart ? { lat_rad: msg.ic?.lat_rad, lon_rad: msg.ic?.lon_rad,
+    heading_rad: msg.ic?.heading_rad, height_agl_ft: msg.height_agl_ft } : null;
+  if (hasMapStart && (!validMapStart(mapStart) || msg.resume_state !== undefined || msg.landing_preset !== undefined
+    || msg.terrain !== true || msg.streaming_terrain !== true || (msg.height_agl_ft > 0 && msg.runway_start === true))) {
+    fail('init: invalid or incompatible map start height/position.'); return;
+  }
+  const hasAutopilotReload = Object.hasOwn(msg, 'autopilot_reload');
+  if (hasAutopilotReload && (!validAutopilotReload(msg.autopilot_reload) || msg.resume_state !== undefined
+    || msg.landing_preset !== undefined || hasMapStart || msg.navigation !== undefined || msg.kap140 !== true)) {
+    fail('init: invalid or incompatible autopilot reload snapshot.'); return;
+  }
+  const autopilotReload = hasAutopilotReload ? copyAutopilotReload(msg.autopilot_reload) : null;
   await modulePromise;
   const resume = msg.resume_state;
   if ((resume && !validInitialBalanceState(resume))
@@ -664,7 +689,8 @@ async function onInit(msg) {
     else rc=M._gf_configure_loading(0,0);
     if(rc!==0){fail(`Loading configuration rejected: ${rc}`);return;}
   }
-  const ic = resume ? {lat_rad:resume.lat_rad,lon_rad:resume.lon_rad,alt_msl_m:resume.alt_msl_m,heading_rad:resume.heading_rad,tas_mps:resume.tas_mps} : msg.ic || {};
+  const ic = resume ? {lat_rad:resume.lat_rad,lon_rad:resume.lon_rad,alt_msl_m:resume.alt_msl_m,heading_rad:resume.heading_rad,tas_mps:resume.tas_mps}
+    : mapStart ? { ...msg.ic, tas_mps: mapStart.height_agl_ft === 0 ? 0 : 90 * 1852 / 3600 } : msg.ic || {};
   const dt = msg.dt_s;
   const hz = msg.state_hz === undefined ? 60 : msg.state_hz;
   if (!finiteIn(dt, 1e-4, 0.1) || !finiteIn(hz, 1, 1000)) { fail('init: bad dt_s or state_hz'); return; }
@@ -679,11 +705,13 @@ async function onInit(msg) {
     navigation = Object.fromEntries(NAVIGATION_FIELDS.map(k => [k, merged[k]]));
   }
   if(resume)navigation=Object.fromEntries(NAVIGATION_FIELDS.map(k=>[k,resume[k]??DEFAULT_NAVIGATION[k]]));
+  if (autopilotReload) navigation = { ...autopilotReload.navigation };
   if (msg.kap140 !== undefined && typeof msg.kap140 !== 'boolean') { fail('init: invalid kap140 capability flag'); return; }
   const presets = { normal: 1, hard: 2, side: 3, banked: 4 };
   const preset = msg.landing_preset;
+  const runwayStart = msg.runway_start === true || mapStart?.height_agl_ft === 0;
   if (msg.runway_start !== undefined && typeof msg.runway_start !== 'boolean') { fail('init: invalid runway_start'); return; }
-  if (msg.runway_start && (preset !== undefined || typeof M._gf_init_runway !== 'function')) { fail('Runway start unavailable. Rebuild the native engine.'); return; }
+  if (runwayStart && (preset !== undefined || typeof M._gf_init_runway !== 'function')) { fail('Runway start unavailable. Rebuild the native engine.'); return; }
 
   if (preset !== undefined && (typeof preset !== 'string' || !Object.hasOwn(presets, preset)
     || typeof M._gf_init_landing !== 'function')) { fail('init: landing preset unavailable or invalid'); return; }
@@ -727,9 +755,14 @@ async function onInit(msg) {
       grid => { if (generation === terrainGeneration) removeTile(grid); });
     await terrainStream.move(ic.lat_rad, ic.lon_rad);
   }
+  if (mapStart && mapStart.height_agl_ft > 0) {
+    const sample = terrainSample(ic.lat_rad, ic.lon_rad);
+    if (!sample) { fail('Map start physical terrain height unavailable.'); return; }
+    ic.alt_msl_m = sample.physical_m + mapStart.height_agl_ft * .3048;
+  }
   let resumeRc=null;
   if(resume){const values=resumeValues(resume,dt),pointer=M._malloc(values.byteLength);if(!pointer){fail('Cannot allocate continuation state.');return;}try{M.HEAPF64.set(values,pointer/8);resumeRc=M._gf_init_resume(dt,pointer,values.length);}finally{M._free(pointer);}}
-  const rc = resume ? resumeRc : msg.runway_start ? M._gf_init_runway(dt, ic.lat_rad, ic.lon_rad, ic.heading_rad) : preset === undefined
+  const rc = resume ? resumeRc : runwayStart ? M._gf_init_runway(dt, ic.lat_rad, ic.lon_rad, ic.heading_rad) : preset === undefined
     ? (requestedBalance === 1 ? M._gf_init_balanced : M._gf_init)(dt, ic.lat_rad, ic.lon_rad, ic.alt_msl_m, ic.heading_rad, ic.tas_mps)
     : M._gf_init_landing(dt, ic.lat_rad, ic.lon_rad, ic.heading_rad, presets[preset]);
   if (rc !== 0) { fail(requestedBalance === 1 ? `Initial model balance failed (rc=${rc}); flight has not started.` : `init rc=${rc}`); return; }
@@ -748,9 +781,11 @@ async function onInit(msg) {
   if (msg.kap140 && typeof M._gf_set_autopilot_vertical === 'function' && typeof M._gf_autopilot_vertical_state === 'function' && typeof M._gf_static_pressure_pa === 'function') {
     kap = createKap140(kapSensors());
     if(resume&&!kap.restore(resume,kapSensors())){fail('Recorded autopilot modes cannot be reconstructed.');return;}
+    if(autopilotReload&&!kap.restore(autopilotReload.kap,kapSensors())){fail('Saved autopilot modes cannot be reconstructed.');return;}
     altitudeAlert = createAltitudeAlert(alertSensors());
     if (!applyKapGuidance()) return;
   }
+  if (autopilotReload && !kap) { fail('Saved autopilot requires the existing native KAP controller capabilities.'); return; }
   initialized = true;
   postMessage({
     type: 'ready',
@@ -811,8 +846,9 @@ function onRun(msg) {
   timer = setTimeout(tick, 0);
 }
 
-function onHalt(_discardWarnings = true, preserveTerrainPrefetch = false) {
+function onHalt(discardWarnings = true, preserveTerrainPrefetch = false) {
   if (!preserveTerrainPrefetch) { terrainPrediction.reset(); terrainStream?.cancelPrefetch(); }
+  if (discardWarnings) stallWarningPeak.clear();
   if (running) runWallMs += performance.now() - runWallStartMs;
   running = false;
   if (timer !== null) { clearTimeout(timer); timer = null; }

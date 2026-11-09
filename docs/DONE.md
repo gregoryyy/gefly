@@ -3,6 +3,37 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-09 16:15 — Port root-only checkout work onto main
+
+TODO: 2.0.121–2.0.149, 2.0.151, 2.0.152, 2.0.193, 2.0.194. Agent: Claude
+orchestrator; port worker (fork).
+
+**Implementation notes**
+
+The main checkout held uncommitted 2026-11-04/05 work that never reached main
+through a PR. The 2026-11-06 frozen snapshot was merged onto current main and
+resolved feature by feature: fixed panel with pointer-centered zoom/pan, stall
+peak delivery with a 200 ms presentation minimum, PAUSED marker, 0/§ throttle
+keys, AP reload combined with initial-balance launch identity, right-click map
+location popup, map Fly from here, Delete GPS fix, tune feedback, Dark map
+preference, nearest-popup dismissal and GPS-driven BRG/DIST. The original
+request, review and research records for these tasks are carried and indexed.
+Typecheck, production build, 825 app unit tests and the Python tool tests pass;
+actual-Chrome groups for throttle, panel resize, GPS bearing, map waypoint, map
+fly-from, AP reload, view preferences, map/plan shortcuts, world GPS map and
+C172 physics diagnostics pass with the bundled local native build.
+
+**Deviations**
+
+The prepared Frankfurt 50 NM airport package (2.0.151) and the separate
+historical-fix toggle (part of 2.0.131) are not ported: main's on-demand airport
+generation and saved Fixes filter supersede them. Root browser tests that
+assumed the removed plan card, regional fix bounds or unsaved Options were
+updated; the card-only flight-plan browser test was dropped. Earlier root
+reviews apply to the root implementation, not this port. Independent quality,
+validation and cross-provider peer review of the port are pending. Nothing here
+establishes aircraft or training fidelity.
+
 ## 2026-11-09 15:59 — Port the orphaned terrain source and overview stack to main
 
 TODO: 2.0.165, 2.0.167, 2.0.169, 2.0.174, 2.0.178; R-WORLD-11/R-SIM-2/R-VIEW-1/R-INPUT-1.
@@ -206,6 +237,26 @@ sustained performance were not evaluated. Other German states remain open.
 None from the bounded NRW/BB scope; complete national coverage
 remains future work.
 Cross-provider peer review is pending; no flight or terrain fidelity is claimed.
+
+## 2026-11-07 07:00 — Reconcile remaining flight tasks
+
+TODO: 2.0.164, 2.0.169, 2.0.193–2.0.194. Agent: Codex orchestrator;
+audit `task_audit`, map investigation `map_airports`, shadow investigation
+`landing_shadow`, and COM prototype `airport_welcome`.
+
+**Implementation notes**
+
+Recorded the user's terrain and chase-overview observations and the remaining
+map, airport-generation, landing-shadow and airport-communication requests. A
+fresh Cape Town query to the configured Overpass service timed out after 35 s;
+this does not establish that airport geometry is absent. Map, shadow and COM
+prototypes remain unaccepted; no outstanding task is marked complete by this
+entry. Independent review identified unresolved visual/coverage checks.
+
+**Deviations**
+
+The task reconciliation does not claim that any of the remaining
+features has been delivered.
 
 ## 2026-11-07 05:59 — Add Swiss and Austrian photographic scenery
 
@@ -1039,6 +1090,46 @@ neutral archive delivery plus an explicit descriptor/catalogue boundary preserve
 exact bytes. Airport discovery, ground scenery and receiver/procedure fidelity
 need independent source and acceptance records.
 
+## 2026-11-06 12:06 — Extend national scenery and aviation-data coverage research
+
+TODO: 2.0.148; R-DATA-1/R-WORLD-11/R-NAV-1/R-NAV-2/R-NAV-3.
+Agent: Codex orchestrator; researchers `country_sources` and `aviation_sources`,
+housekeeping `coverage_housekeeping`; independent `coverage_quality` and `coverage_validate`.
+
+**Implementation notes**
+
+Extended the [maintained comparison](research/2026-11-05-candidate-region-data.md)
+with 23 country entries alongside the original eight destinations, source spacing,
+partial footprints and reuse/access distinctions. Added airport/runway/COM/radio-navaid
+baseline sources, OSM pavement geometry, FAA and France SIA structured fixes/ILS
+and navigation candidates, official national AIS discovery routes, conditional
+OFM/openAIP/EAD feeds, and a practical versioned-region ingestion proposal.
+Corrected the obsolete claim that Copernicus is only proposed; current optional
+source/overview and limited airport/historical receiver coverage remain explicit.
+Recorded the [request](input/2026-11-06-country-aviation-coverage.md), updated indexes,
+Task148 and GAPS without selecting regions or altering runtime requirements.
+
+Independent quality/source spot-checks and criterion validation accept the bounded
+research extension. Original eight region rows remain unchanged; 23 country rows
+are present. `just check` passes 517 Markdown files. Master SHA-256:
+`ed9baa3a4420d950aadbac0bc9fd7259d62b7e8c74806df5725a7cf6ed474bda`.
+
+**Deviations**
+
+No bulk data, adapters, dependency, simulator state or external account changed.
+Selected-product completeness, current effective records, datum conversions and
+receiver/procedure behavior remain ingestion/implementation work. Sampled source
+checks are not exhaustive licence or dataset acceptance. Whole-root `just assure
+check` and `just assure diff HEAD` both stop at the existing graph node/fact bound;
+the bound is unchanged. No whole-root CI/publication or cross-provider acceptance
+is claimed; peer pending under the batched cadence.
+
+**Insights**
+
+France's openly licensed AIRAC XML/AIXM exports and FAA cyclic records are strong
+richer-data candidates; worldwide airport inventory, pavement and navigation
+components need distinct source/coverage records.
+
 ## 2026-11-06 11:36 — Verify, install and peer-review the bounded roll-return repair
 
 TODO: 2.0.153 (bounded repair delivered; broader handling remains open); R-SIM-11/R-SIM-5/R-INPUT-1.
@@ -1624,6 +1715,1223 @@ PR, release, aircraft fidelity or training acceptance is claimed by this entry.
 
 Module boundaries need runnable intermediate contracts and source-scoped records;
 copying a final shared file wholesale would pull later features into this PR.
+
+## 2026-11-05 16:05 — Compare free regional data and worldwide elevation fallback
+
+TODO: 2.0.148; R-DATA-1/R-WORLD-11.
+Agent: Codex orchestrator root global/California/Japan/French Antilles sources
+and synthesis; region_imagery researcher Spain/Cape/Seychelles/Dubai primary
+source and reuse assessment.
+
+**Implementation notes**
+
+The [research request](input/2026-11-05-region-data-candidates.md) is answered by
+[the comparison](research/2026-11-05-candidate-region-data.md) and
+[regional imagery evidence](research/2026-11-05-candidate-region-imagery.md).
+Primary sources establish public-domain OurAirports global baseline records,
+free global Copernicus GLO-30 DSM rights, detailed USGS terrain/NAIP and FAA
+records for California, Spanish island terrain/orthophotos, GSI terrain/photos
+with use-procedure conditions, and IGN data for French Antilles. Cape detailed
+services exist but selected raster redistribution remains unverified; Seychelles
+and Dubai high-resolution open regional mosaics are unverified, not declared
+nonexistent. Acquisition/output resolution and source/licence conditions remain
+distinct. All external references were read with web tools; no source data assets
+were downloaded or installed.
+
+Current Gefly coverage is distinguished from availability: the bundled global
+elevation fallback is one degree, approximately 111 km north-south spacing, while
+30 m worldwide surface data are an available upgrade candidate. Finer regional
+priority, bounded streaming, vertical/geoid treatment and the existing tiny
+fallback form a proposed ingestion approach, not an implemented terrain upgrade.
+No expansion region is chosen by this feasibility answer.
+
+**Deviations**
+
+This is bounded source research, not exhaustive regional completeness, current
+AIRAC, service availability/SLA, legal advice or accepted redistribution/fidelity.
+OurAirports basic data do not establish complete ILS/procedure or airport scenery
+assets. GLO-30 is a DSM including vegetation/buildings, not bare-earth runway
+contact data. Selected footprints/editions and current source terms still need
+asset ingestion review. No runtime/source integration, dependency, native
+rebuild, commit, publication or new tests. Cross-provider peer remains pending
+for the wider implementation branch.
+
+**Insights**
+
+Free global baseline coverage is broadly available; clearly reusable detailed
+photography and fine bare-earth grids distinguish practical expansion regions.
+
+## 2026-11-05 16:01 — Confirm map-to-radio standby loading visually
+
+TODO: 2.0.147; R-NAV-3/R-NAV-5/R-WORLD-6.
+Agent: Codex root main integration/shared records and browser observation;
+tune_popup (code1) popup status/checkmark; tune_map (code2) guarded acceptance
+contract; tune_help (housekeeping) README help; quality independent review;
+panel_validate_final independent specification validation.
+
+**Implementation notes**
+
+The [feedback request](input/2026-11-05-map-radio-feedback.md) adds a checkmark
+and highlighted last-action button plus an inert polite live-status message with
+point, frequency and destination receiver standby. The message explains Swap to
+activate. Main returns explicit acceptance only after validating and applying the
+local standby configuration. Popup success requires true; rejection, missing or
+legacy-void callbacks cannot produce success. Review, stale popup/selection/
+content, channel membership, receiver and unsupported-source guards remain.
+The radio active channels and aircraft guidance are unchanged.
+
+Independent [quality](reviews/2026-11-05-map-radio-feedback-quality.md) and
+[validation](reviews/2026-11-05-map-radio-feedback-validation.md) find no bounded
+blocker. The 16-pin packet `output/flight/map-tune-task147-packet.json` has
+SHA-256 `ddb30e15adda51cdcd16c6d560a31304219477acc7bb1308d729afba06d8a41e`.
+Existing 16 radio/map-data units and TypeScript pass, zero failures/skips;
+production build passes. Actual-browser manual observation exits zero/no page
+errors: FFM 114.200 MHz loaded by NAV1 click and NAV2 Enter displays the correct
+receiver message and one moving checkmark, retaining keyboard focus. Both standby
+readouts become 114.20 while displayed active channels stay 113.80/114.00.
+A separate false-callback UI fixture shows unavailable feedback without a mark.
+Both screenshots were visually inspected.
+
+**Deviations**
+
+This confirms an accepted local standby write, not native acknowledgement,
+reception or continuous station selection. COM, Review and stale cases were
+source reviewed, not a new running/native-digest matrix. Initial manual search
+attempt exposed the menu before asynchronous map readiness; the corrected probe
+uses its visible menu button and passes; the initial timeout log is retained.
+No new repository tests for reversible UI. Cross-provider peer remains pending.
+No native rebuild, dependency, commit, push or publication.
+
+**Insights**
+
+Explicit callback acceptance keeps visual confirmation aligned with the actual
+standby operation and prevents a guarded no-op from looking successful.
+
+## 2026-11-05 15:48 — Delete a custom GPS fix from its selected map popup
+
+TODO: 2.0.146; R-NAV-5.
+Agent: Codex root integration/shared records and actual-browser observation;
+delete_popup (code1) popup action/inline feedback; delete_map (code2) store wiring
+and stale-selection guards; delete_help (housekeeping) README help; quality
+independent correctness review; panel_validate_final independent validation.
+
+**Implementation notes**
+
+The [selected-point request](input/2026-11-05-selected-map-point-delete.md) exposes
+**Delete GPS fix** directly when a user-created point is selected on the map.
+Only a full ID/coordinate/source match in the custom store receives the action;
+activation rechecks the current popup, selected object, connected content and
+store ownership. Existing store policy refuses a fix still used by the flight
+plan and returns inert inline role-alert feedback. Success follows the existing
+observer lifecycle to close the popup, clear selection/direct-to and refresh
+marker/search presentation; no model policy, published inventory, aircraft,
+radio or AP behavior is changed.
+
+Independent [quality](reviews/2026-11-05-map-point-delete-quality.md) and
+[validation](reviews/2026-11-05-map-point-delete-validation.md) report no bounded
+blocker. Frozen 15-pin packet `output/flight/map-delete-task146-packet.json` has
+SHA-256 `11360f6534461ece915ff0f356dd34c4372588dc9de7d1af54dc75e008be61d3`.
+Existing 17 plan-model cases pass without failures/skips; TypeScript and
+production build pass. Actual paused-app browser observation exits zero with no
+page errors: active custom GPS target deletion removes store point, marker and
+popup and hides/resets its target readout. In-plan deletion displays the existing
+error without changing the fix/waypoint; removing the waypoint through the real
+editor then permits deletion. The screenshot was visually inspected.
+
+**Deviations**
+
+The [subsequent user clarification](input/2026-11-05-selected-map-point-delete-clarification.md)
+confirms custom-fix-only deletion. The frozen implementation packet and reviews
+precede this answer and retain the historical pending-question wording; its
+confirmation does not change their accepted code or criteria. No published-point
+hiding or source deletion is implemented. Stale callbacks, published-action exclusion, search cleanup
+and normal bearing fallback were checked by source/model evidence rather than
+additional browser cases. No renewed running/Review/native-digest or cockpit
+bearing-gauge matrix. No new repository tests for this reversible UI change;
+ignored manual observations reuse the actual browser/runtime. Cross-provider
+peer remains pending. No native rebuild, dependency, commit or publication.
+
+**Insights**
+
+Keep popup deletion on the existing store path so reference protection and
+selection/marker cleanup stay consistent with the flight-plan editor.
+
+## 2026-11-05 15:40 — Move live attribution into Credits beside gefly
+
+TODO: 2.0.145; R-UX-2/R-WORLD-11.
+Agent: Codex root main/shortcut integration and shared records; credits_scene
+(code1) scene credit host; credits_ui (code2) menu/narrow CSS; credits_help
+(housekeeping) README help; quality independent correctness review;
+panel_validate_final independent specification validation.
+
+**Implementation notes**
+
+The [requested attribution placement](input/2026-11-05-credits-menu.md) uses a
+native Credits details menu beside gefly, replacing the application's multi-line
+scene footer. The actual Cesium credit display is relocated, preserving live
+provider/static source names, branding and licence links rather than maintaining
+a duplicate list. Standalone scene callers retain their existing footer fallback;
+scene error/disposal removes only its owned credit wrapper. Imagery status no
+longer moves upward with the relocated attribution height.
+
+The menu uses the existing exclusive opening, transient-input release, outside
+click and Escape/focus behavior. Generic top-menu guards also protect AP/rate
+shortcuts, and visible native attribution popups are guarded with their parent
+kept open. Scrollable content stays within desktop, 620px and 390px viewports;
+compact 390px header spacing retains all action controls while hiding its clock.
+
+Independent [quality](reviews/2026-11-05-credits-menu-quality.md) and
+[validation](reviews/2026-11-05-credits-menu-validation.md) report no remaining
+bounded blocker. Frozen 17-pin packet `output/flight/credits-task145-packet.json`
+has SHA-256 `d5e0e9450a6bad7b536a9b9f0c636ad6a043256ba355624e6480b47619baa499`.
+Full 537 Node and 22 Python tests pass, zero skips/failures; production build passes.
+Final actual-browser manual observation exits zero with no page errors. It shows
+no credits left inside the scene, live source links within the menu, Enter and
+Escape/focus, exclusive View opening, outside dismissal at 620/390, unchanged
+rate and disengaged AP presentation after menu keyboard inputs. Screenshots were
+visually inspected. No new repository tests for this reversible UI change.
+
+**Deviations**
+
+Quality found the previous View/Flight-only AP/rate guard omitted Credits; root
+repaired it before renewed review and browser observation. Initial observation
+forgot the normally hidden topbar, and a later optional popup attempt found its
+opener hidden because all active sources supply inline credits; both failed
+probe logs are retained, not counted as passes. Native auxiliary popup guards
+are source-reviewed, not runtime accepted. No new running-flight/native digest,
+licence sufficiency, worldwide source or aircraft fidelity claim. Cross-provider
+peer remains pending; no native rebuild, dependency, commit or publication.
+
+**Insights**
+
+Reuse the live provider attribution display when moving credits, so late source
+changes and licence links remain connected to the renderer.
+
+## 2026-11-05 15:24 — Choose light or dark 2D map colors
+
+TODO: 2.0.144; R-WORLD-6/R-WORLD-11.
+Agent: Codex orchestrator root integration and shared records; scenery (code1)
+explicit palettes; terrain (code2) checkbox and saved preferences;
+resize_housekeeping README help; quality independent correctness review;
+panel_validate_final independent specification validation.
+
+**Implementation notes**
+
+The [clarified choice](input/2026-11-05-map-color-choice.md) adds **Dark map**
+to the comma map menu. Off uses original light cartography by default; on uses
+the darker terrain palette. Explicit style paints preserve the geometry, names,
+sources, camera, route/fix overlays and Aerial selection. The independent 3D
+terrain palette stays dark. No pixel or photography conversion is introduced.
+The existing bounded local display record stores the choice across reload;
+legacy records and an invalid optional color field default to light without
+losing otherwise valid terrain/label preferences.
+
+Independent [quality](reviews/2026-11-05-map-color-choice-quality.md) and
+[validation](reviews/2026-11-05-map-color-choice-validation.md) report no bounded
+blocker. The 21-pin integrated packet
+`output/flight/map-colors-task144-integrated-packet.json` has SHA-256
+`43d8b8cec207e73f047ee4e0894b6b76c8c5a22ba94f96767ac67e9a990cf35f`.
+Full 537 Node and 22 Python tests pass without skips; production build passes.
+Eight preference checks were also renewed. Both 49-layer palettes validate;
+the 3D dark default exactly matches its frozen predecessor. Existing focused
+browser flow passes two groups; manual USA/UK paired street views retain the
+same camera, 63 layer IDs, 10 source IDs and 47/38 rendered names. Dark and light
+reloads restore their checkbox state, paused at native step zero. Fresh 3D
+provider textures remain dark.
+
+**Deviations**
+
+Evidence correction: root accidentally overwrote the original eight-test log;
+its historical hash is unavailable, not a confirmed current pin. The original
+UI packet is retained unchanged; the integrated packet explicitly records the
+loss and pins the renewed eight-test and complete integrated logs instead.
+Options persistence was checked by source; the adapted legacy preferences
+browser fixture was syntax checked, not rerun in full. Visual observations and
+component textures do not establish aircraft or worldwide terrain fidelity.
+Cross-provider peer remains pending. No dependency, native rebuild, commit,
+push or publication was performed.
+
+## 2026-11-05 14:54 — Retain autopilot selections across reload
+
+TODO: 2.0.143; R-AP-3.
+Agent: Codex orchestrator root types/runtime/main/requirements integration;
+scenery (code1) shared AP reload contract/session/worker/native proof; terrain
+(code2) saved-location persistence and actual reload browser; resize_housekeeping
+README help; quality independent correctness review; panel_validate_final
+independent specification validation.
+
+**Implementation notes**
+
+The [requested AP persistence](input/2026-11-05-autopilot-reload.md) saves a
+canonical AP/NAV snapshot atomically with the acknowledged live position.
+Engagement including OFF, lateral/vertical/armed modes, heading bug, selected/
+held altitude, VS, BARO setting/units and coupled NAV tuning are retained.
+Legacy position-only records work; optional AP corruption preserves a valid
+base position. Storage stays local, detached, coalesced and bounded to 4 KiB,
+with final pagehide flush. Review cannot overwrite the live profile; explicit
+Restart/new flight clears the prior reload context.
+
+The worker validates before terrain/NAV loading, restores tuning before sensors,
+then uses existing KAP restore/guidance before Ready/first state. No A recapture
+or temporary UI study-offset disconnect is introduced. UI NAV configuration
+mirrors restored tuning before first input publication. Reload remains paused;
+CWS is released, current sensor/source flags are fresh, and ordinary source-loss
+logic applies on Resume. Native integration/transient timers reconstruct; this
+is not a dynamics checkpoint or a saved throttle/attitude/fuel configuration.
+
+Independent [quality](reviews/2026-11-05-autopilot-reload-quality.md) and
+[validation](reviews/2026-11-05-autopilot-reload-validation.md) accept bounded
+restoration. The 43-pin packet
+`output/flight/autopilot-reload-task143-integrated-packet.json` has SHA-256
+`1bd750157bf061e713aaa5fdda4a4cbed90871c4c34ad94f5ad0c978e823bb16`.
+Final 535 Node and 22 Python tests pass without skips; production build passes.
+Independent narrow helper/store/session checks pass. Actual native Worker proof
+passes seven groups plus ten pre-terrain/NAV-I/O rejections, including real
+IFCW APR/GS and fresh source-loss reversion, ground and CWS release.
+
+Final browser run 79178 passes six groups. Direct reload from an AP-controlled
+running flight (step 38) returns paused at step zero with engagement, HDG/ALT,
+bug and altitude targets retained. HDG/ALT, VS/ARM, OFF/BARO/NAV, live-versus-Review
+isolation and Restart clearing are exercised against actual first and settled
+native frames. Final scaffold/assurance check and inspected HEAD diff logs:
+`output/flight/autopilot-reload-task143-{check,assure-check,assure-diff}.log`.
+
+**Deviations**
+
+The first five-group pass is preserved alongside later fixture-only failures:
+a fifth selector-click acknowledgement had not arrived at the sampled expected
+state, and a BARO input was typed before its visible unit changed. Explicit
+acknowledgement/visible-unit waits resolve those observation races; production
+code is unchanged across the six-group renewal. No native/model rebuild or
+controller-gain retune. The local WASM/build-record mismatch remains unverified,
+not established by runtime success. Full flight-maneuver continuity, native
+checkpoint restoration, installed-aircraft fidelity and broad legacy/hardware
+matrices remain unaccepted. Peer remains pending; no commit/publication.
+
+**Insights**
+
+Restore the acknowledged controller snapshot before exposing the initial frame;
+recapturing the new launch heading/altitude would silently replace the user's
+selected guidance. Position and AP must come from the same frame, with current
+source validity kept separate from persisted mode intent.
+
+## 2026-11-05 14:12 — Restore detailed world cartography, remove the plan card and clarify Pause
+
+TODO: 2.0.138–2.0.142; R-WORLD-11/R-AIRPORT-1/R-NAV-5/R-SIM-2/R-PLAY-2.
+Agent: Codex orchestrator root integration/pause UI/shared records; scenery
+(code1) palette/global cartography and RPM diagnostics; terrain (code2) map/scene/
+renderer/card lifecycle and manual browser observations; resize_housekeeping
+README help; quality independent source/security review; panel_validate_final
+independent specification/source/visual validation.
+
+**Implementation notes**
+
+The [darker palette](input/2026-11-05-darker-osm-palette.md) retains natural greens,
+earthy land/buildings, dark blue-green water and subdued roads. The initial
+[USA names increment](input/2026-11-05-usa-labels-rpm-response.md) added 2D places;
+the [subsequent screenshot and BOTH-view clarification](input/2026-11-05-global-map-detail-plan-ux.md)
+supersede that limited fallback with 49 original OpenMapTiles geometry/label
+layers shared by the interactive map and rendered terrain texture. Real source
+country/state/city context and closer streets, water, places, land use, rail,
+paths and buildings now appear at useful zooms. Local fonts, bounded inert names,
+collision/halo placement and existing source/credit/resource limits remain.
+Default opaque regional BKG cartography is inactive, removing its rectangular
+patchwork; its implementation remains available, and regional photography still
+covers the global underlay in photo mode. Physical DEM/geoid data are unchanged.
+
+The always-on map plan card is no longer instantiated. The existing current
+editor opens explicitly from top bar/P or map header and closes normally; route,
+fix and plan storage are retained. No named-plan library or new persistence.
+
+The user [confirmed RPM was observed while paused](input/2026-11-05-paused-marker.md).
+Actual USA native/app checks show normal running throttle response: app idle
+about 1,249 to full power about 3,038 RPM, matching both digital instruments.
+Paused power is correctly staged. A real usability defect hid the Start card
+after a prior flight followed by a new paused map start; new map flights now
+restore that card. A clear PAUSED / Space to resume marker is visible without the
+top menu, hidden for running/Review/unavailable/collision states, and consumes no
+pointer input. No engine, needle-scale, physics or aircraft-model retuning.
+
+Independent [palette quality](reviews/2026-11-05-osm-palette-quality.md)/
+[validation](reviews/2026-11-05-osm-palette-validation.md), initial
+[place-label quality](reviews/2026-11-05-world-map-labels-quality.md)/
+[validation](reviews/2026-11-05-world-map-labels-validation.md),
+[pause quality](reviews/2026-11-05-paused-rpm-quality.md)/
+[validation](reviews/2026-11-05-paused-rpm-validation.md) and final
+[world-detail quality](reviews/2026-11-05-global-map-detail-quality.md)/
+[validation](reviews/2026-11-05-global-map-detail-validation.md) accept their
+explicit bounded snapshots. Final integrated packet:
+`output/flight/world-map-task138-142-integrated-packet.json`, 47 pins,
+SHA-256 `23ac83b33297f6c49115090e6ec262dfde29b5ccdbb497686d71c4ecdd7e6ae0`.
+The 19-pin historical `osm-pause-task138-140-packet.json` preserves earlier
+color/place-only and before/after pause evidence, SHA-256
+`9f70cc7ae2a52161ea6fd6e17de73834c7de64e9053d6deedf0bf03771976c34`.
+
+Observed checks: final 523 Node and 22 Python tests pass without skips; production
+build passes. Existing style tests and independent MapLibre schema validation
+pass, 49 layers / zero errors; seven pinned actual USA/UK MVT samples confirm
+source fields. Final manual app run 56505 observes USA overview at actual zoom
+1.8486, NY/London street zoom 14, UK 3 and Germany edge 9, readable detail/names,
+no BKG/card and an empty editor opening/closing with native pause invariance.
+Same-source terrain-provider texture evidence is explicitly reused from earlier
+successful 81580 (two existing focused groups); it is not a new whole-globe
+flight or two fresh groups in 56505. After-fix pause observations show the card/
+marker with the header hidden, running/Review marker absence, manual-pause marker
+presence and frozen native state. No new permanent visual test cases are authored.
+Final scaffold/assurance check and inspected HEAD diff logs:
+`output/flight/world-map-task138-142-{check,assure-check,assure-diff}.log`.
+
+**Deviations**
+
+Original strict/generic fixture failures and corrected gesture/camera lineage
+remain recorded, including intercepted optional-header controls and Follow
+remaining enabled; they are not product failures or passes. Five existing legacy
+browser fixtures received expectation/syntax updates only, not full matrix runs.
+Populated-plan preservation is source-reviewed; runtime editor observations use
+an empty plan. Narrow/mobile, assistive technology and failure/collision marker
+matrices remain source-only. World ground elevation outside accepted regional
+data is still the coarse one-degree baseline; map detail adds no measured terrain
+or obstacle/collision data, global airport/NAV inventory or training fidelity.
+The actual native binary/build-record mismatch remains unverified. Peer/release
+acceptance remains separate. No commit, publication, dependency or native rebuild.
+
+**Insights**
+
+Sparse style selection and a regional raster overlay produced apparent missing
+world data. One detailed global style makes source geometry available consistently
+in both views. Pause must remain obvious when the menu and the prior Start card
+are hidden; actual engine response is meaningful only while native time advances.
+
+## 2026-11-05 13:17 — Open the current plan from the top bar and launch from the map
+
+TODO: 2.0.137; R-NAV-5/R-PLAY-2.
+Agent: Codex orchestrator root main/types/runtime/style and shared records;
+scenery (code1) map-start contract/session/worker and native tests; terrain
+(code2) map popup UI and actual browser; resize_housekeeping README help;
+quality independent correctness review; panel_validate_final independent validation.
+
+**Implementation notes**
+
+The [request and clarification](input/2026-11-05-map-flight-start.md) now have a
+direct top-bar Flight plan button opening the current transparent editor. P and
+the existing single session plan remain; no named-plan library is added.
+Map-coordinate and selected-point popups offer Ground / 1,000 / 5,000 / 10,000 ft
+AGL and an explicit Fly from here command. Selecting a position/height alone
+has no aircraft effect. The validated four-field request crosses the session's
+fifth reset argument and worker boundary. Airborne initialization uses actual
+loaded physical terrain H plus feet × 0.3048 at existing 90 kt TAS; ground uses
+native settling, idle engine and parking brake. Explicit launch starts paused,
+with current true heading. Review/loading/faults and stale popups reject launch;
+collision recovery is an explicit new flight. Restart/loading retain setup and
+ordinary intent; continuing a recording clears the map-start context.
+
+Independent [quality](reviews/2026-11-05-map-start-quality.md) and
+[validation](reviews/2026-11-05-map-start-validation.md) accept bounded behavior.
+The stale-popup callback finding was repaired and tested; validate's initial
+ready-before-first-state heading gap was repaired and source/build reviewed
+without claiming a second functional browser run for that guard alone.
+The 43-pin packet `output/flight/map-start-task137-integrated-packet.json` has
+SHA-256 `7e4652bfe5141d6ff885c3fb7515fd612cd362e0caba6211a5c70e676bb7772f`.
+
+Observed checks: 523 Node and 22 Python tests pass without skips; final production
+build passes. Eight actual Worker starts cover all four choices, fine terrain and
+coarse-world maximum-height cases; twelve invalid requests are rejected before
+terrain/NAV I/O. Three legacy terrain-worker checks pass. Four Chrome browser
+groups exercise the top-bar current editor, all heights, ground rest/idle/brakes/
+contacts, selection-only invariance, removed/replaced popup actions and Review
+blocks without changing paused native flight. Fixture failures from a hidden
+Start button and an overlapped optional popup close button are preserved; their
+corrected resume/Cancel gestures pass. Final scaffold/assurance check and inspected
+HEAD diff logs are `output/flight/map-start-task137-{check,assure-check,assure-diff}.log`.
+
+**Deviations**
+
+An initial strict micro-metre native readback assertion failed: the inherited
+bridge initializes h-sl-ft and reports geod-alt-ft. Worker H-plus-AGL arithmetic
+stays exact; the existing 0.25 m engineering coordinate/display budget is now
+explicit, not an aircraft accuracy tolerance. Maximum measured native difference
+is 0.034847743 m. High-terrain cases reach about 9,037 m MSL with trim status −1;
+initialization success does not validate performance, trim or C172S ceilings.
+The local engine binary/build-record mismatch remains unverified, as documented
+for 2.0.135; no native/model rebuild or retune is performed. Existing saved-position
+MSL bounds remain −500 to 6,000 m, so higher starts are not saved on reload.
+
+Narrow top-bar geometry and map-specific Restart/loading/Continue/collision
+recovery are source-reviewed, not newly runtime-executed. WebKit/hardware/full
+legacy matrices, surveyed ground/landing suitability, native build provenance,
+peer, release and training acceptance remain separate. No commit, publication,
+dependency or new persistence.
+
+**Insights**
+
+AGL belongs at the worker's installed terrain boundary. Explicit map launch must
+remain separate from ordinary GPS selection/planning and must recheck popup
+identity and live heading rather than relying on stale UI state.
+
+## 2026-11-05 12:50 — Dismiss nearest-name lookup on outside clicks
+
+TODO: 2.0.136; R-WORLD-7.
+Agent: Codex orchestrator root requirement/status integration; scenery (code1)
+lookup listener; terrain (code2) existing browser-fixture inspection/syntax check;
+resize_housekeeping help; quality independent correctness review;
+panel_validate_final independent source validation.
+
+**Implementation notes**
+
+The [requested nearest-point overlay dismissal](input/2026-11-05-nearest-popup-dismissal.md)
+uses a document capture pointerdown listener. Pressing outside the lookup closes
+it even over controls that stop bubbling; pressing inside keeps it open. The
+listener consumes no action and reuses the existing abort/identity guards so
+late lookup results cannot reopen the popup. Disposal removes the matching
+listener. Close-button and existing Escape handling remain. Both README help
+sentences describe dismissal.
+
+Independent [quality](reviews/2026-11-05-nearest-popup-quality.md) and
+[source validation](reviews/2026-11-05-nearest-popup-validation.md) find no blocking
+issue. TypeScript/production build and scoped whitespace checks pass. The
+six-pin packet `output/flight/nearest-popup-task136-packet.json` has SHA-256
+`12087ed4b4a168583a8a29b6305f0c6425da7039ce80e668ef1661acdf3097e5`.
+Final scaffold/assurance check and inspected HEAD diff logs are
+`output/flight/nearest-popup-task136-{check,assure-check,assure-diff}.log`.
+
+**Deviations**
+
+No new tests are authored for this reversible low-impact change. The existing
+browser fixture remains unchanged and passes syntax check; it was not executed.
+Actual outside/interior pointer and delayed-network browser cases are explicitly
+not evaluated. Acceptance here is bounded source review plus build, not an
+invented browser pass. Peer review remains pending. No commit, publication,
+dependency install or native/model change.
+
+**Insights**
+
+Capture-phase dismissal handles overlays elsewhere in the interface without
+requiring their controls to cooperate or suppressing their normal actions.
+
+## 2026-11-05 11:45 — Map 0 to full throttle and § to idle
+
+TODO: 2.0.134; R-INPUT-1.
+Agent: Codex orchestrator main/help/SPEC integration and shared records; scenery
+(code1) pure shortcut mapping/unit tests; terrain (code2) native browser/legacy
+fixture updates; resize_housekeeping README/runway help; quality independent
+correctness review; panel_validate_final independent validation.
+
+**Implementation notes**
+
+The [requested shortcuts](input/2026-11-05-throttle-shortcuts.md) now select0 or
+numpad0→100% throttle and§ or unshifted physicalBackquote→idle.1–9 retain10–90%.
+Recognizing the§ character handles alternate reported key codes; other shifted
+keys remain untouched, including GermanShift+0='=' pacing. Existing typing,
+modifier/repeat, menu/dialog/map/plan, Review and availability guards remain.
+Selected paused commands apply on Resume. No ignition, engine/model or native
+physics change. Current help/readmes also correct stale A/P descriptions to the
+already implemented AP/flight-plan bindings, without changing those actions.
+
+Independent [quality](reviews/2026-11-05-throttle-shortcuts-quality.md) and
+[validation](reviews/2026-11-05-throttle-shortcuts-validation.md) pass. Seven
+focused mapping units and the complete486Node/12Python suite pass, no skips;
+production build passes. The focused browser exits0 with four groups,13 actual
+paused→resume native mappings and context/pacing guards. The18-input packet is
+`output/flight/throttle-task134-packet.json`, SHA-256
+`2f79f3e4dd19f4f3532862fbf8460b78f18686b7a727c5ef2b540504ce6a478f`.
+Final structural/assurance evidence is retained in ignored throttle-task134-check,
+throttle-task134-assure-check and throttle-task134-assure-diff logs under
+output/flight. No commit, publication or dependency change; peer pending.
+
+**Deviations**
+
+A test first focused a hidden planner control, leaving the scene active; its
+failure is preserved and the fixture now asserts visible in-panel focus.
+Section-sign/German-layout tests use trusted ChromeInput fixtures, not physical
+Swiss hardware. Legacy pitch/trim, warning and pacing fixtures were adapted and
+syntax-checked, without rerunning their entire matrices. Collision/loading/failure
+availability paths are unchanged/source-inspected, not newly runtime-accepted.
+
+**Insights**
+
+Distinguish a requested character from keyboard position while retaining existing
+focus guards. Guard tests must prove which control actually receives the key.
+
+## 2026-11-05 11:30 — Audit C172 power, loading, flaps and climb-to-low-speed behavior
+
+TODO: 2.0.133; R-SIM-5, R-AIR-1, R-AIR-2, R-FID-3, diagnostic scope only.
+Agent: Codex orchestrator integrated findings, propeller/static lift diagnostics,
+contracts and shared records; scenery (code1) native performance/recovery matrix;
+terrain (code2) flap/input tracing and actual game browser reproduction;
+resize_housekeeping primary P/S performance references; quality independent
+numerical/source review and eight-case cross-check; panel_validate_final
+independent diagnostic validation.
+
+**Implementation notes**
+
+The [request](input/2026-11-05-c172-physical-model.md) and
+[40–50kt follow-up](input/2026-11-05-c172-low-speed-followup.md) were checked
+through the actual game and existing native WASM. Full power/flaps up with a
+1000-FPM selection falls below50kt CAS at81.48s and produces a native warning
+at41.34kt at166.22s, while actual climb is about604FPM. The400/600FPM selections
+retain speed without warning over approximately180s. These are bounded UI
+observations, not indefinite performance or the exact original flight.
+
+The [integrated findings](reviews/2026-11-05-c172-physical-model-audit.md)
+confirm generic C172P loading2480lb, including80lb outboard ballast; actual
+219–236hp/~3070RPM despite nominal160hp/2700RPM; active additive alpha lift
+terms; and a measured0.025rad elevator neutral remainder from native hysteresis.
+Flap0/10/20/30 commands, angles and source traverse times match. Their calibrated
+aircraft effectiveness is unaccepted. Native controlled climbs show available
+headroom; an engine-power increase is not selected as a repair.
+
+Evidence includes43 native cases repeated exactly, six direct low-speed/recovery
+cases,14 flap trajectories/two actuator suites, four corrected full-power level
+cases repeated byte-for-byte, static source-table arithmetic, four original
+actual-app cases and one renewed effective manual input. Eight separate native
+initialization cases were independently run by quality. Native/browser runs and
+syntax checks exit0. Independent [quality](reviews/2026-11-05-c172-physics-quality.md)
+and [validation](reviews/2026-11-05-c172-physics-validation.md) pass bounded
+diagnostic scope. The43-input frozen packet is
+`output/flight/c172-physics-task133-packet.json`, SHA-256
+`59c8659e534a2b3ce469b7d263587a6780c7810dd30439b6f97e5febaf0ff891`.
+Final structural/assurance evidence is retained in the ignored c172-task133-check,
+c172-task133-assure-check and c172-task133-assure-diff logs under output/flight.
+Production/model/engine binary and all42 prior task132 frozen inputs remain
+unchanged. No new dependency, rebuild, commit, publication or retune. Peer pending.
+
+**Deviations**
+
+Six low-speed speed-seeking-controller cases fail settling and40kt default trim
+fails: neither is accepted as an aircraft-model failure or steady reference.
+A root diagnostic initially read lateral velocity as climb; quality caught it,
+the index was corrected and affected outputs renewed/repeated. The small15px
+manual input did not move the elevator, so a separate60px case verified actual
+deflection and release. Its68.59-degree bank excludes straight-climb acceptance.
+The1000-FPM case also banks substantially. Source lift overlap does not establish
+an unintended duplicate or authorize removing a term. Pressure altitude/OAT,
+installation IAS and justified aircraft tolerances were not matched, so R-SIM-5
+model acceptance and selected172S fidelity remain unestablished.
+
+**Insights**
+
+Follow actual control surfaces, mass/CG, power and time histories before assigning
+a low-speed event to a weak engine. Rated XML values are not runtime output
+limits, and zero input need not restore a history-dependent actuator's previous
+position. A connected flap actuator is separate from validated flap aerodynamics.
+Keep model data, native numerical behavior, controller demand and aircraft
+reference acceptance distinct when planning corrections.
+
+## 2026-11-05 10:53 — Preserve short native stall warnings through worker and display sampling
+
+TODO: 2.0.132; R-ALERT-1.
+Agent: Codex orchestrator (/root) transport/session/trace/main/runtime integration,
+contracts and shared records; scenery (code1) native diagnostics and worker peak
+producer; terrain (code2) delivery/UI/audio guard and browser tests;
+resize_housekeeping source note/README; quality independent correctness review;
+panel_validate_final independent behavior validation.
+
+**Implementation notes**
+
+The [late/intermittent weak-climb report](input/2026-11-05-stall-warning-climb.md)
+led to a reproduced delivery failure: ten genuine native-positive steps span
+83.33 ms of simulated time, yet all ordinary snapshots in an actual 10× worker
+run report clear. A bounded per-step producer now carries the genuine peak and
+exact source step through one successful publication. The native values, model,
+WASM and measured before/after dynamics digest remain unchanged.
+
+The live consumer preserves accepted events across RAF coalescing for a generic
+200 ms wall-time presentation minimum from first display. RECENT STALL and its
+accessible label/title explicitly identify an already-cleared native signal.
+Contact, missing/invalid data and lifecycle suppression cancel retention without
+replaying old events on resume. Session validation keeps the optional pair atomic
+and bounded; traces discard it and direct continuation strips it. Review uses
+recorded raw telemetry. Cached RECENT-only horns cannot start on audio re-enable;
+current native positives and new audible events retain the original graph.
+
+Active/unavailable badges remain readable above map/plan/header combinations and
+show N/A explicitly. S/default mute and volume policy remain. Reload the game to
+load the changed worker; S enables sound.
+
+Independent [quality](reviews/2026-11-05-stall-delivery-quality.md) and
+[validation](reviews/2026-11-05-stall-delivery-validation.md) pass the bounded
+repair. Final checks: 483 Node and 12 Python tests, no skips; production build;
+five actual main-app browser groups; actual native-worker → real session →
+delivery/panel/original connected audio component runs observing 216.3 ms and
+200 ms cue durations; 20 offline waveform cases plus actual AP-disconnect edges;
+16 width/header/plan layout combinations and explicit current/RECENT/Review
+labels. The frozen 42-input packet is
+`output/flight/task132-integrated-packet.json`, SHA-256
+`ecb40f58da2779f978bbbe676c39b32dd22f1a9d0dccd904cbb07cdb87543c4d`.
+Final structural/assurance evidence is retained in the ignored task132-check,
+task132-assure-check and task132-assure-diff logs under output/flight; those
+structural checks do not establish aircraft fidelity. Cross-provider peer pending.
+
+**Deviations**
+
+The browser exposed a missing runtime allowlist entry; it was repaired with an
+import-coverage regression. Quality also found direct continuation could forward
+live metadata; that boundary now strips it. Old test selectors treated a RECENT
+raw-clear frame as a recorded positive; corrected fixtures select actual raw
+positives for Review and preserve the unsuccessful logs. Whole-main transient
+RECENT delivery, actual hidden-tab event timing, physical speakers, the exact
+user AP/manual/rate setup and aircraft power/warning calibration are not claimed.
+The transient causal proof uses actual native worker/session components; captured
+packet suppression epochs are separately labelled. No threshold, IAS rule,
+engine coefficient, AP behavior, dependency or publication change was made.
+
+**Insights**
+
+A correct native detector can become an intermittent UI/horn when state messages
+only sample its latest value. Preserve the genuine event at the physics boundary,
+then make its presentation visible without rewriting current or recorded physics.
+Runtime serving and Review selectors must also be checked after adding a module
+or distinguishing current warnings from retained events.
+
+## 2026-11-05 09:28 — Make map interaction direct and separate the flight-plan overlay
+
+TODO: 2.0.131; R-NAV-5, R-UX-2, R-WORLD-6, R-WORLD-7.
+Agent: Codex orchestrator shared contracts, main/shortcut integration and native
+probe; scenery (code1) map/planner/popup implementation and map regressions;
+terrain (code2) display preferences, reusable overlay exemption and input/wheel
+regressions; resize_housekeeping README and primary-source UX note; quality
+independent correctness review; panel_validate_final independent validation.
+
+**Implementation notes**
+
+The [user's request and A/P clarification](input/2026-11-05-map-interaction-preferences.md)
+are implemented without changing native guidance. The visible map and plan portal
+respond to their first intended gesture and stay undimmed; other panels retain
+the reusable activation/dimming implementation. A passive map-wide wheel listener
+neutralizes held input even when a scrolling menu receives no click or focus.
+Eligible canvas wheels also release Follow before MapLibre's delayed single-wheel
+classification, while menu wheels retain Follow and the map camera.
+
+P opens/closes a separate nonmodal translucent planner, with close/pick controls
+and bounded scrolling. A retains its existing heading/altitude capture and AP
+disconnect toggle; the redundant P/Shift+P AP binding is removed. Plan visibility
+is independent of map visibility, including live/paused/Review updates. Pick can
+open the map; planner-focused controls guard aircraft/AP/rate commands, and open
+top menus remain above the portal.
+
+A bounded versioned localStorage record preserves only vector/photo mode and
+landmark level. Initial UI/scene configuration uses those choices; malformed,
+oversized or denied storage falls back softly. Direct display commands and
+Options Save persist them; previews/cancellation retain opening-value semantics.
+Other controls, avionics and plans gain no new persistence.
+
+Right/Ctrl-click opens a location popup without changing the store. Explicit
+Create GPS fix and atomic Add waypoint actions preserve bounds/caps/provenance;
+dismissal or drag consumes no identifier. Historical fix markers default off
+behind a separate display toggle, with catalogue search retained. A custom point
+already represented by its plan marker does not get a duplicate marker.
+The [GeoFS source note](research/2026-11-05-map-ux-reference.md) records the
+interaction reference without copying assets or adopting GPS/AP behavior.
+
+**Checks and review**
+
+Actual Chrome/native-worker evidence records four preference, six overlay/input
+and six P/A/plan groups. Final serial waypoint/planner/right-map/GPS regressions
+add 38 groups, all four processes exit 0 with a verified source/test freeze.
+These include three fresh single-wheel gestures, queued held-pitch release
+before keyup on one trusted menu wheel, full paused native comparisons, explicit
+creation/cancellation, controls/filter coexistence and current-plan Review.
+The preference and shortcut runs apply to unchanged relevant paths from their
+earlier load revisions; final overlay and four serial map runs cover EB25.
+Unique ignored evidence is under `output/flight/map-ux-task131-*` and
+`output/flight/task131-final-*`.
+
+Full application tests pass: 451 Node cases and 12 Python cases, zero skipped;
+TypeScript/production build pass. Independent
+[quality](reviews/2026-11-05-map-ux-quality.md) and
+[validation](reviews/2026-11-05-map-ux-validation.md) reports have no unresolved
+blocking finding at their declared scope. Repository/assurance results and
+the integrated diff are retained in `output/flight/task131-*`.
+
+**Deviations**
+
+Initial parallel cold browser setup/navigation and optional COM inventory
+timeouts remain preserved unsuccessful trials, without an established cause;
+final broader regressions ran serially. Earlier wheel and closed-map Review
+failures prompted source repairs and affected renewal. An initial probe counted
+an intentional vertical-button release as an AP command; the final probe retains
+raw messages, distinguishes engagement/target commands and compares full paused
+state. Complete legacy AP/engine/audio/pointer suites were not rerun; adjusted
+AP-button/A-guard fixture paths have independent readback and syntax checks.
+
+Fresh VS Code embedded-browser, wider device/contrast/assistive-technology
+coverage, current navigation data and aircraft fidelity are not newly accepted.
+Peer remains pending; no full publication CI, commit, push or publication.
+
+**Insights**
+
+Wheel interaction can hand control to an existing map without a click or focus
+change. Neutralization belongs on the common map UI path; Follow release belongs
+on the eligible canvas path before delayed zoom classification.
+
+## 2026-11-05 08:28 — Replace CSS zoom fitting for the embedded cockpit panel
+
+TODO: 2.0.130; R-PANEL-1, affected R-VIEW-1 geometry.
+Agent: Codex orchestrator native VS Code observation and integration; scenery
+(code1) layout/CSS implementation; terrain (code2) disjoint browser regressions;
+resize_housekeeping README review (no edit needed); quality and validate
+independent affected reviews; panel_validate_final additional read-only report,
+pin and geometry cross-check. Validate's native accessibility inspection
+supplied no independent visual geometry acceptance after its UI runtime stalled.
+
+**Implementation notes**
+
+The [reload/browser follow-up](input/2026-11-05-panel-embedded-browser.md) enabled
+observation of the reported clipping in the actual VS Code integrated browser.
+The baseline showed left instruments clipped with an empty right strip. Its
+developer tools displayed DevTools 150; the user's WebKit guess, exact user agent
+and browser page zoom were not established. The earlier Chrome-only diagnostic
+remains historical.
+
+Replaced CSS `zoom` plus separately rescaled translation with one transform:
+screen-pixel translation followed by the combined fit/magnification scale.
+Fractional canonical dimensions define the fitted viewport and clamp frame.
+Normal fit, resize resets, pointer anchors, drag and horizontal pan retain their
+existing helper contract. No avionics, simulation, camera, map or dependency
+changes were made. In the actual VS Code view, the candidate showed the complete
+panel centered at both wider and narrower widths after opening developer tools.
+These visual observations are conversation tool images, without local image
+paths or exact DOM measurements.
+
+The user subsequently confirmed [“the panel is fixed”](input/2026-11-05-panel-fix-confirmed.md).
+That confirmation accepts the reported visible issue; it does not change the
+separate automated-reload evidence limit below.
+
+**Checks and review**
+
+The standalone current-component regression passed 208 normal-fit measurements
+(192 resize-series, eight fresh narrow/reload and eight offset-iframe cases),
+plus 20 gesture/focus cases at DPR 1/2. Maximum center error was below 0.0004 CSS
+pixels; no scene-budget deficit or browser/network error was recorded. The full
+native panel regression passed 13 viewport cases, Review, actual pointer
+anchors, bounded drag/pan, capture cleanup and vertical bounds at every observed
+frame. Tests assert that CSS zoom stays at 1 and the single transform owns fit
+and magnification. The 14 helper tests, TypeScript and production build passed.
+
+Candidate evidence is preserved separately as ignored
+`output/flight/panel-transform-resize.json`, `panel-transform-layout.json` and
+`panel-transform-pointer.json`; uniquely named test logs remain alongside them.
+Independent [quality](reviews/2026-11-05-panel-transform-quality.md) and
+[validation](reviews/2026-11-05-panel-transform-validation.md) reports state the
+affected scope and evidence limits. Repository checks and the final assurance
+diff are retained under `output/flight/panel-transform-*`.
+
+**Deviations**
+
+The embedded-browser reload action timed out in computer automation; its
+completion is unknown and is not counted as a fresh embedded reload pass.
+Automated fresh reload coverage uses Chrome 156. Exact browser geometry, arbitrary
+browser page zoom, WebKit/Firefox and native resizing during every transient
+frame were not established. The fix removes the CSS-zoom coordinate dependency;
+no precise browser-engine defect or aircraft/training validity is claimed.
+Cross-provider peer review remains pending. No commit, push or publication.
+
+## 2026-11-05 08:00 — Investigate panel drift when narrowing the window
+
+TODO: 2.0.130 (partial, remains open); R-PANEL-1.
+Agent: Codex orchestrator live-app measurements and shared records; terrain
+(code1) standalone component regression; scenery (code2) layout-source
+investigation; housekeeping README clarification; quality independent diagnostic
+review.
+
+**Implementation notes**
+
+Added an opt-in `npm --prefix app run test:panel-resize` regression using the
+current cockpit components, CSS and controller. No production positioning code
+was changed. The screenshot condition remains unreproduced, and this entry does
+not record a repair or acceptance of the user's case.
+
+The standalone Chrome fixture passed 192 settled DOM checks and 20 gesture/focus
+cases at DPR 1/2, including gradual narrowing, breakpoint crossings, zoom/pan,
+active drag resize and DG BUG input. Maximum normal-fit horizontal center error
+was below 0.000008 CSS pixels. This fixture does not run flight dynamics.
+Separately, the live application with its native worker passed 26 geometry
+observations: all 22 normal-fit states were centered, and four states intentionally
+retained pointer zoom. Measured scroll offsets were zero; no page errors occurred.
+The reports are in ignored `output/flight/panel-resize-browser.json` and
+`output/flight/panel-resize-native-diagnostic.json`.
+
+**Deviations**
+
+The screenshot's browser, browser page zoom and reload/interaction history are
+unknown; clarification remains pending. Chrome DPR emulation is not browser page
+zoom. Firefox and WebKit were not evaluated. The component run also recorded 15
+separate scene-height observations about 1.66 CSS pixels below the declared 60%
+budget; horizontal checks do not accept that scene-height criterion. No AP logic,
+simulation model or aircraft fidelity was assessed by the resize checks.
+
+**Checks and review**
+
+The existing 14 panel-zoom math tests passed. Repository `just check` and
+`just assure check` passed during integration; final shared-record checks and
+the assurance diff are retained under `output/flight/panel-resize-*`. Independent
+quality review is recorded in
+[the diagnostic](reviews/2026-11-05-panel-resize-diagnostic.md).
+No production fix was available for behavioral acceptance. Cross-provider peer
+review remains pending; no commit, push or publication was performed.
+
+## 2026-11-05 02:29 — Audit autopilot behavior without changing it
+
+TODO: 2.0.129 (partial, remains open); R-AP-1/R-AP-2/R-INPUT-1.
+Agent: Codex orchestrator actual UI sequencing, evidence integration and shared
+records; quality independent native HDG/NAV trajectories; validate independent
+vertical/CWS browser diagnostic; ap_reference manufacturer-source research.
+
+**Implementation notes**
+
+No production, model, specification, dependency or repository test changes were
+made for this audit. The [integrated diagnostic](reviews/2026-11-05-autopilot-behavior-diagnostic.md)
+combines independently measured lateral, vertical and CWS behavior with the
+source-scoped manual comparison. Existing source/runtime hashes remain fixed.
+
+Fourteen native HDG cases, eleven production-worker NAV/authority cases and
+three additional engagement-mode cases did not reproduce a reversed heading
+controller. Trusted UI observations confirmed that A recaptures the current
+bug/altitude and enters HDG/ALT; pressing HDG afterward toggles to ROL.
+Matched valid radio sources captured/tracked; map GPS bearing selection did not
+become AP guidance.
+
+Actual Enter/blur/ARM and powered native flights confirmed separate ALT hold,
+selected altitude and VS capture. With capture explicitly disarmed, commanded
+VS continued through the selected altitude. The low-power descent and invalid
+initial paused-CWS attempt are retained as limits/unsuccessful observations.
+
+Same-pointer mouse-held CWS failed the touchpad workflow: pointer capture kept
+movement at the button instead of the scene yoke. Existing keyboard-held CWS
+allowed steering and release synchronization. No control or mode improvement
+was implemented.
+
+**Deviations**
+
+The user's later speculative A-near-north-to-230-degree case remains not
+evaluated. The next protected browser run did not execute because automatic
+approval review could not complete after its service usage limit was reached.
+This was not an unsafe-action determination; no alternate path bypassed it.
+An additional pending-AP/cursor timing probe is also unexecuted. A separate
+unprivileged offline engine check at 0/0.01/359.99/355/5 degrees held within
+about 0.10 degrees after 90 simulated seconds in five trimmed calm fixtures.
+It opened no browser/server and did not bypass the blocked action. TODO 2.0.129
+stays open; these fixtures do not resolve the exact UI/flight event.
+
+**Insights**
+
+Discrete modes, actual servo response, aircraft energy and desktop input
+ergonomics are separate questions. Source-plausible altitude controls and
+successful heading fixtures do not make the reported UI experience acceptable
+or explain an unrecorded excursion.
+
+## 2026-11-05 02:02 — Connect GPS waypoints to the bearing dial
+
+TODO: 2.0.128; R-NAV-5/R-PANEL-1/R-REVIEW-1.
+Agent: Codex orchestrator shared contracts, main integration and records;
+terrain (code1) bearing display and native browser regressions; scenery (code2)
+read-only map target API; housekeeping controls/source documentation;
+quality and validate independent review.
+
+**Implementation notes**
+
+The BRG dial follows the same explicit GPS direct-to or active plan-leg target
+as the map, including when the map is closed. GPS identity, true bearing and
+geographic GPS DIST NM are explicit. Draft point creation does not select a
+target; Next, Stop, Clear and selected-fix deletion update the display.
+No active GPS target restores the original NAV1 VOR-bearing/radio-DME display.
+Selected but unavailable or coincident GPS geometry never invents a bearing or
+silently substitutes radio guidance. Review labels current GPS selection against
+the selected recorded position.
+
+The map getter and main-to-gauge argument are presentation-only: NAV1/NAV2, OBS,
+RPM, AP guidance, receiver tuning, native state and recording format stay
+independent. AP NAV still uses NAV1 radio guidance; GPS route steering is not
+implemented. The GPS/VOR bearing-pointer pattern is referenced from Garmin's
+guide without claiming its installed hardware, artwork or C172 fidelity.
+
+Independent [quality](reviews/2026-11-05-gps-bearing-quality.md) and
+[validation](reviews/2026-11-05-gps-bearing-validation.md) pass all nine actual
+Chrome/native GPS groups. Tests include independent bearing/distance vectors,
+map-close/Next, unavailable/coincident geometry, source/target clear transitions,
+live/paused/Review/AP/radio isolation, narrow/zoomed layouts and a delayed native
+restart. Existing three-group NAV and ten-group map-planning regressions pass.
+The final app unit suite passes 445 Node and 12 Python cases with zero skips;
+the final build passes. Background lifecycle also passes six independent groups
+again on the integrated main/SPEC.
+
+The DG BUG control was verified through actual click/select-all/typing and
+Enter/Tab commits in paused/flying, AP OFF/HDG-ALT states. Its numeric entry and
+ten-degree buttons work; the separate bearing dial is intentionally a readout.
+
+Shared check commands/evidence: just check, just assure check and
+just assure diff HEAD; outputs are final-gps-check.log, final-gps-assure.log and
+final-gps-assure-diff.json under the ignored output/flight directory.
+
+**Deviations**
+
+Independent quality found the reset's null-state display call omitted the
+retained GPS target. Passing that target now preserves GPS identity with
+unavailable geometry during loading; a gated replacement-runtime regression
+passes before fresh native data restores the pointer. This display connection
+does not add a GPS receiver/FMS or AP GPS guidance. Peer remains pending; no
+commit, publication or aircraft/training-fidelity acceptance.
+
+**Insights**
+
+Bearing-source identity must survive missing position data. Keeping read-only
+target selection separate from native radio/AP inputs makes this connection
+useful without silently changing guidance.
+
+## 2026-11-05 02:00 — Create waypoints directly with the right mouse button
+
+TODO: 2.0.127; R-NAV-5/R-WORLD-6.
+Agent: Codex orchestrator contracts, integration and shared records; terrain
+(code1) atomic model/tests; scenery (code2) map gestures, Follow repair and
+native browser fixture; housekeeping usage/architecture/security notes;
+quality and validate independent review.
+
+**Implementation notes**
+
+Right-clicking an active map canvas creates an anonymous custom GPS fix and
+appends one intermediate plan point without a dialog. Control-click is also
+supported. Both collection limits and coordinates are checked before allocating
+an identifier; success publishes one immutable combined update. Start/destination
+are retained and the existing active-plan editing rules apply.
+
+First activation, right-drag/cancel, native control context menus, ordinary
+left-click picking and map panning remain distinct. Canvas context menus are
+reserved for the new action, including activation-only gestures. Visible success
+or failure feedback retains any map-tile warning.
+
+Independent [quality](reviews/2026-11-05-right-click-waypoint-quality.md) and
+[validation](reviews/2026-11-05-right-click-waypoint-validation.md) pass:
+17 model cases and six real Chrome/native groups cover coordinates, gesture
+guards, endpoint/navigation semantics, capacity/identifier atomicity,
+failed tiles and live/Review/AP/radio isolation. The final integrated unit
+suite passes 445 Node and 12 Python cases with zero skips; the build passes.
+
+**Deviations**
+
+A genuine pre-existing Follow race emerged in independent validation: periodic
+camera jumps reset MapLibre's pending pan gesture before dragstart could disable
+Follow. A deterministic 350 ms held gesture reproduces the old failure.
+Following now waits while the public pan handler is active; actual dragging
+still turns Follow off, while ordinary clicking retains it. Both author and
+independent six-group runs pass after the repair. Peer remains pending.
+
+**Insights**
+
+Combining anonymous fix creation and route insertion in one model transition
+prevents orphan data. Observing context-menu prevention must happen after event
+dispatch, and pointer regressions must allow browser rendering between moves.
+
+## 2026-11-05 01:34 — Keep live flight running in the background
+
+TODO: 2.0.126; R-SIM-2/R-INPUT-1.
+Agent: Codex orchestrator input-flush contract, integration and shared records;
+scenery (code2) browser lifecycle; terrain (code1) session and native-browser
+regressions; housekeeping usage/architecture/security notes; quality and validate
+independent review.
+
+**Implementation notes**
+
+Window blur and page hiding release transient controls without pausing the live
+worker or cancelling explicit pending flight intent. Released input is flushed
+synchronously before main-thread timers can be throttled. Latched configuration,
+parking brake and AP authority remain intact; hidden audio silences immediately.
+Pending readiness, Back to live and Continue live no longer veto resumption
+because of visibility or focus. Async completion avoids stealing focus.
+
+Manual Pause, settings/Review pauses, collision/loading and fault stops remain
+effective. Returning focus never resumes a paused flight automatically. Worker
+integration stays at 1/120 s with its existing bounded catch-up policy.
+
+Independent [quality](reviews/2026-11-05-background-flight-quality.md) and
+[validation](reviews/2026-11-05-background-flight-validation.md) pass. Six real
+Chrome hidden-tab/native groups cover AP/latched controls, held-input release,
+Pause/Review isolation and gated hidden readiness/Continue acknowledgement.
+The app unit suite, build and classic-control, audio and full smoke regressions
+pass; the validator independently ran 39 session/pacing cases. Final combined
+foundation/assurance checks accompany the following map increment.
+
+**Deviations**
+
+The final lifecycle fixture uses isolated headless Chrome with ordinary
+background throttling and no forced-focus defaults. Earlier headful attempts
+exposed automation overrides and desktop-input interference; neither is claimed
+as a passing full occlusion matrix. Browser/OS suspension can slow or stop
+progress. Cross-provider peer remains pending; no commit or publication.
+
+**Insights**
+
+Rendering visibility is an input/audio lifecycle boundary, not a change to the
+user's running intent. Browser automation must allow genuine visibility events
+before it can verify background simulation.
+
+## 2026-11-05 01:00 — Make GPS names optional and promote flight plans on the map
+
+TODO: 2.0.125; R-NAV-5/R-WORLD-6.
+Agent: Codex orchestrator map/card/style/browser integration; terrain (code1)
+anonymous model/tests; scenery (code2) anonymous form and map card; housekeeping
+usage/security notes; quality and validate independent affected-scope reviews.
+
+**Implementation notes**
+
+Blank names or the Anonymous GPS fix option create a uniquely labeled custom
+point without requiring a name. Named fixes remain supported, and generated
+identity, provenance, route reuse and direct-to behavior stay bounded.
+
+The map now displays a persistent Flight plan card with endpoints, leg/total
+summary and Edit/Fit/Navigate/Next/Stop controls. A header command also opens the
+editor directly. A contrasting route casing and clearer S/number/D labels make
+the plan easier to distinguish. Picking hides the card temporarily so it does
+not obstruct choosing a position. The existing M/comma bindings remain.
+
+The final application suite passes 441 Node cases and two six-case Python suites;
+TypeScript and UI build pass. The ten-group integrated map check, twelve-group
+legacy map regression and camera/panel/native isolation regression pass. Tests
+cover anonymous and named creation, visible card/editor/leg actions, live/paused/
+Review behavior, filters, stale custom-point cleanup and complete route rendering
+with failed tile/catalogue providers. Reviewers independently ran fourteen model
+groups and inspected anonymous/card browser behavior and desktop/narrow visuals.
+Current hashes and affected outcomes are recorded in the appended
+[quality](reviews/2026-11-05-map-plan-panel-pan-quality.md) and
+[validation](reviews/2026-11-05-map-plan-panel-pan-validation.md) sections.
+
+**Deviations**
+
+Anonymous means unnamed; it is not a change to map-provider privacy or data flows.
+Plans/fixes remain page-session visual aids with generated identifiers, no AP
+coupling and explicit current-plan context in Review. Cross-provider peer remains
+pending. Previously accepted panel-pan inputs are unchanged.
+
+**Insights**
+
+Keep optional naming in the model, not only the form. Map controls must remain
+discoverable independently of the detailed editor. Test map gestures against
+actual exposed canvas rather than fixed coordinates that a new card can cover.
+
+## 2026-11-05 00:46 — Add GPS fixes, map flight plans and bounded panel panning
+
+TODO: 2.0.123, 2.0.124; R-NAV-5/R-WORLD-6/R-PANEL-1.
+Agent: Codex orchestrator map/popup/rendering/browser integration; map_explorer
+read-only integration survey; terrain (code1) planning/navigation and pan models;
+scenery (code2) planning editor and panel drag integration; housekeeping usage/
+security notes; quality and validate independent source and criterion reviews.
+
+**Implementation notes**
+
+Named custom GPS fixes can be created from coordinates or a picked map position,
+selected as direct-to targets and reused with published points in an ordered
+start/waypoints/destination plan. The map draws distinct route/active-leg lines
+and start/numbered/destination labels. True bearings, separate actual heading,
+heading difference, leg courses, nautical distances and route totals remain
+visual readouts. Plans support explicit leg navigation, reordering/removal,
+fitting and clearing. Copied provenance and coordinates preserve duplicate
+published identities; all labels are inert text. The session is bounded to 64
+custom fixes and 32 route points within the declared map region.
+
+Zoomed panel backgrounds can again be dragged, and horizontal two-finger
+scrolling pans left/right within the content limits. Normal fit remains fixed;
+all pan steps preserve vertical coverage. Control/OBS gestures, release/cancel/
+blur handling and capture cleanup remain separate from panel motion.
+
+The final application suite passes 439 Node cases and two six-case Python suites;
+TypeScript and UI build pass. New eight-group actual-browser map checks and the
+existing twelve-group map regression pass, including real live/paused/Review
+interaction, source-filter coexistence, complete route rendering under failed
+tiles/catalogues, session retention and deleted-fix popup/target cleanup.
+Panel/FOV checks pass across 13 viewports; 2,354 observed pan/zoom frames retain
+coverage within 0.000062 CSS px rounding. Independent Review drag/scroll leaves
+native step/digest/state, camera and frame geometry unchanged. Independent
+[quality](reviews/2026-11-05-map-plan-panel-pan-quality.md) and
+[validation](reviews/2026-11-05-map-plan-panel-pan-validation.md) accept the bounded
+scope. Review findings about stale custom-fix popups and released-button drag
+cleanup were repaired and the affected cases renewed.
+
+**Deviations**
+
+Plans/fixes are current page-session data, retained on ordinary map close/reopen
+and cleared on reload. In Review the current plan uses the recorded aircraft
+position; it is not recorded plan state. No AP coupling, receiver tuning,
+wind-corrected heading, official procedure or operational planning/aircraft
+fidelity is claimed. The user superseded the prior drag/horizontal-pan restriction
+in 2.0.121/2.0.122. Cross-provider peer remains pending. No publication performed.
+
+**Insights**
+
+Use stable immutable planning snapshots to preserve editor focus during aircraft
+updates. Normalize custom identity when opening copied plan points, and remove
+their stale popups/targets when deleting a fix. Test actual map-click coordinates
+with browser pixel rounding, explicit overlay activation and failed providers.
+
+## 2026-11-05 00:12 — Restore pointer-centered panel zoom with vertical limits
+
+TODO: 2.0.122; R-PANEL-1/R-INPUT-1.
+Agent: Codex orchestrator requirements/browser integration; terrain (code1) pure
+zoom geometry; scenery (code2) DOM integration; housekeeping usage/security notes;
+quality and validate independent source and criterion reviews.
+
+**Implementation notes**
+
+Vertical scrolling enlarges the detail under the pointer from normal fit to 3×.
+An explicit instrument viewport and one screen-pixel coordinate frame keep its
+top at or above the area top and its bottom at or below the area bottom on every
+step. Edge limits take priority over pointer anchoring. The panel frame and flying
+height stay fixed; normal fit returns at 1×, resize and noninteractive double-click.
+Dragging and horizontal panning remain disabled.
+
+Ten new boundary cases, the final 423-case Node suite and two six-case Python
+suites pass. The UI build and actual-browser panel/FOV regressions pass, including
+13 viewports, 13 real pointer anchors and 1,008 observed animation frames.
+Independent geometry analysis found a maximum vertical gap of 0.000062 CSS px,
+below the 1 px rounding allowance. Actual zoomed AP and NAV/OBS interactions,
+Review, resize and camera/native-state isolation pass. Review found and repaired
+an OBS-face reset guard omission; the affected real-control cases were renewed.
+See [quality](reviews/2026-11-05-pointer-panel-zoom-quality.md) and
+[validation](reviews/2026-11-05-pointer-panel-zoom-validation.md).
+
+**Deviations**
+
+The user superseded the zoom-disabled portion of 2.0.121; its placement repair
+remains. A frame edge can prevent exact pointer anchoring, as required to avoid
+empty space. This is local presentation state, with no persistence, physics,
+network or aircraft-fidelity change. Cross-provider peer remains pending.
+
+**Insights**
+
+Measure the fitted physical surface once and keep zoom math in screen pixels.
+Test both clamp limits while zooming in and out, sample intermediate frames and
+protect custom interactive SVG controls as well as native buttons and inputs.
+
+## 2026-11-04 23:48 — Restore fixed cockpit placement and disable panel zoom
+
+TODO: 2.0.121; R-PANEL-1/R-INPUT-1.
+Agent: Codex orchestrator implementation/integration; housekeeping browser regression;
+quality independent source/security review; validate independent criterion/evidence review.
+
+**Implementation notes**
+
+Removed manual panel zoom, wheel panning and housing dragging. The cockpit stays
+bottom-centered at its automatic shared fit; resize and Review retain both rows
+and accessible lower controls. Updated the current requirement and preserved the
+older manual-zoom deliveries as superseded history.
+
+TypeScript, the 13-viewport actual-browser panel check and the full FOV browser
+regression pass. Real gestures and lower-control hit tests/clicks verify desktop,
+short-window and mobile placement. Camera zoom, AP clicks, map/dialog isolation,
+yoke input and Review remain covered. The existing map regression also passes
+after explicitly centering its airport-marker fixture. See the independent
+[quality](reviews/2026-11-04-five-state-panel-quality.md) and
+[validation](reviews/2026-11-04-five-state-panel-validation.md) reports.
+
+**Deviations**
+
+Automatic responsive fitting remains; manual magnification is disabled as
+requested. Short/mobile instruments shrink with the existing fit policy; this
+is not a claim of a new readability target. Cross-provider peer pending.
+
+**Insights**
+
+A fixed fit removes the offset/zoom state that could displace instruments. Test
+actual control reachability and adjacent camera interactions when changing panel
+behavior; old magnification assertions must follow the current user decision.
 
 ## 2026-11-04 22:43 — Filter map locations with checkboxes
 

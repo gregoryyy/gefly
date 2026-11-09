@@ -62,6 +62,10 @@ try {
   await page.waitForFunction(() => !document.querySelector('#start').disabled
     && window.__classicStates.at(-1)?.cas_mps > 0);
   await prepareFlightUI(page);
+  // This fixture exercises the optional relative-yoke geometry below.
+  await page.locator('#scene').focus(); await page.keyboard.press('o');
+  await page.getByLabel('Centered touchpad controls', { exact: true }).uncheck();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
   const state = () => page.evaluate(() => window.__classicStates.at(-1));
   const stats = async () => {
     const count = await page.evaluate(() => window.__classicStats.length);
@@ -109,8 +113,8 @@ try {
   await page.evaluate(() => window.dispatchEvent(new Event('blur')));
   await mode('off'); await centered();
   const blurred = await stats(); await page.waitForTimeout(200);
-  assert.equal((await stats()).step, blurred.step, 'blur pauses the actual worker');
-  await startOrResume(page);
+  assert((await stats()).step > blurred.step, 'blur releases steering while the actual worker keeps flying');
+  assert.equal(await page.locator('#status').textContent(), 'Flying');
   await page.waitForFunction(step => window.__classicStates.at(-1).step > step, blurred.step);
   checks.push('temporary look, restored yoke and cancellation paths');
 
@@ -165,6 +169,8 @@ try {
   checks.push('compact six-pack and aircraft controls');
 
   await page.locator('#review-exit').click();
+  await page.locator('#scene').focus(); await page.keyboard.press('Space');
+  await page.waitForFunction(() => document.querySelector('#status').textContent === 'Paused');
   const previousWorker = await page.evaluate(() => window.__classicWorkerId);
   await page.locator('#flight-menu > summary').click(); await page.locator('#reset').click();
   await page.waitForFunction(previous => { const s = window.__classicStates.at(-1); return s.__worker_id > previous && s.flap_rad === 0 && s.brake_left_norm === 0 && s.brake_right_norm === 0; }, previousWorker);

@@ -139,6 +139,7 @@ try {
   assert.match(await page.locator('#imagery-status').textContent(), /global OSM/i);
   await page.locator('#scene').focus(); await page.keyboard.press('/');
   await page.waitForFunction(() => document.querySelector('#scene').dataset.sceneryMode === 'vector');
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('gefly.view-preferences.v1')).vectorScenery), true);
   await page.keyboard.press('/'); await page.waitForFunction(() => document.querySelector('#scene').dataset.sceneryMode === 'imagery');
   assert.equal(await page.locator('#scene').getAttribute('data-scenery-fallback'), 'osm');
   await page.keyboard.press('m'); await page.waitForFunction(() => window.__worldFlightMap?.loaded(), null, { timeout: 60000 });
@@ -148,7 +149,7 @@ try {
   assert.match(observations.map.attribution, /OpenMapTiles/);
   assert.equal(await page.evaluate(() => window.__worldFlightMap.getLayoutProperty('basemap', 'visibility')), 'none', 'regional BKG is retained for reuse without covering the selected OSM map');
   await frozen(initial); await page.screenshot({ path: `${output}/world-map-task135-outside.png` });
-  checks.push('actual app initializes paused outside Germany with native global heights and aligned rendered mesh; map and photo/vector modes retain global OSM fallback without physics changes');
+  checks.push('actual app initializes paused outside Germany with native global heights and aligned rendered mesh; map and photo/vector preference retain global OSM fallback without physics changes');
 
   if (!creditOnly) {
   await page.locator('#scene').focus(); await page.keyboard.press('m'); await page.locator('#start').click();
@@ -164,6 +165,7 @@ try {
   assert.equal(await page.locator('#status').textContent(), 'Paused'); assert.equal(observations.reload.step, 0); assert.equal(observations.reload.terrain_source, 2);
   for (const key of ['lat_rad', 'lon_rad', 'heading_rad']) assert(Math.abs(observations.reload[key] - liveBeforeReload[key]) < 1e-8, `actual reload restores outside ${key}`);
   assert(Math.abs(observations.reload.alt_msl_m - liveBeforeReload.alt_msl_m) < .1);
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('gefly.view-preferences.v1')).vectorScenery), false);
   const reloadedPaused = await stats();
   observations.reconstruction = await page.evaluate(() => {
     const actual = window.worldMessages.filter(message => message.type === 'state').at(-1);

@@ -72,6 +72,12 @@ End with proposed implications, limitations and a handoff to product/orchestrato
 - [AP keyboard input](2026-11-06-ap-keyboard-input.md).
 - [OSM terrain relief](2026-11-07-osm-terrain-relief.md).
 - [Swiss and Austrian photographic scenery](2026-11-07-swiss-austrian-imagery.md).
+- [Autopilot behavior diagnostic: source reference](2026-11-05-autopilot-behavior-reference.md).
+- [C172 performance audit references](2026-11-05-c172-performance-audit.md).
+- [Map interaction reference](2026-11-05-map-ux-reference.md).
+- [Stall-warning diagnostic reference](2026-11-05-stall-warning-reference.md).
+- [Regional scenery and aviation-data coverage candidates](2026-11-05-candidate-region-data.md): maintained country/region comparison, extended 2026-11-06 with national elevation/photography, worldwide airport/runway/COM/radio-navaid baseline, FAA/SIA structured navigation sources, official AIS routes and conditional access/rights findings. Research only; current Gefly coverage is listed separately.
+- [Candidate-region imagery detail](2026-11-05-candidate-region-imagery.md): island, Cape, Seychelles and Dubai product/rights evidence supporting the comparison.
 - [Chase overview zoom](2026-11-06-chase-overview.md): bounded distance zoom, top-down orbit and double-click return behind the aircraft.
 - [2026-11-06 camera return](2026-11-06-camera-return.md)
 - [Disturbance stability sources](2026-11-06-disturbance-stability-sources.md) — FAA stability distinctions, executing model and source actuator evidence.

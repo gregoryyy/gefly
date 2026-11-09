@@ -1,8 +1,42 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { pilotAxes, recordedControlView, recordedHeldKeys, RUDDER_LEFT_SIGN } from './pilot-controls.ts';
+import { pilotAxes, recordedControlView, recordedHeldKeys, RUDDER_LEFT_SIGN, throttleShortcut } from './pilot-controls.ts';
 
 const holding = (...codes: string[]) => (code: string) => codes.includes(code);
+
+test('R-INPUT-1 throttle presets preserve 1–9 and map number-row/numpad zero to full power', () => {
+  for (const prefix of ['Digit', 'Numpad']) {
+    for (let digit = 0; digit <= 9; digit++) {
+      assert.equal(throttleShortcut({ code: `${prefix}${digit}`, key: String(digit), shiftKey: false }), digit === 0 ? 1 : digit / 10);
+    }
+  }
+  assert.equal(throttleShortcut({ code: 'Digit1', key: '&', shiftKey: false }), .1, 'physical digits retain layout-independent presets');
+  assert.equal(throttleShortcut({ code: 'Numpad0', key: 'Insert', shiftKey: false }), 1, 'existing physical numpad mapping is preserved');
+});
+
+test('R-INPUT-1 idle accepts the Swiss section character and unshifted physical key left of 1', () => {
+  for (const code of ['Backquote', 'IntlBackslash', 'Unidentified']) {
+    for (const shiftKey of [false, true]) assert.equal(throttleShortcut({ code, key: '§', shiftKey }), 0);
+  }
+  assert.equal(throttleShortcut({ code: 'Backquote', key: '`', shiftKey: false }), 0);
+  assert.equal(throttleShortcut({ code: 'Backquote', key: '²', shiftKey: false }), 0);
+  assert.equal(throttleShortcut({ code: 'IntlBackslash', key: '<', shiftKey: false }), null, 'IntlBackslash alone does not identify the Swiss idle character');
+  assert.equal(throttleShortcut({ code: 'Unidentified', key: '`', shiftKey: false }), null, 'fallback is specific to the section character');
+});
+
+test('R-INPUT-1 throttle shortcuts leave shifted digits, pacing and other commands untouched', () => {
+  for (const prefix of ['Digit', 'Numpad']) {
+    for (let digit = 0; digit <= 9; digit++) assert.equal(throttleShortcut({ code: `${prefix}${digit}`, key: String(digit), shiftKey: true }), null);
+  }
+  for (const event of [
+    { code: 'Digit0', key: '=', shiftKey: true },
+    { code: 'Backquote', key: '~', shiftKey: true },
+    { code: 'Equal', key: '=', shiftKey: false },
+    { code: 'KeyA', key: 'a', shiftKey: false },
+    { code: 'Unidentified', key: '0', shiftKey: false },
+    { code: 'Digit10', key: '0', shiftKey: false },
+  ]) assert.equal(throttleShortcut(event), null);
+});
 
 test('R-SIM-3/R-INPUT-1 rudder sign: Q is left rudder (+, left yaw), W is right rudder (-)', () => {
   assert.equal(RUDDER_LEFT_SIGN, 1);

@@ -487,6 +487,31 @@ test('continuation prefix is exclusive, independent and keeps context while disc
   assert(Object.isFrozen(branch.atTime(3)!.state));
 });
 
+
+test('R-ALERT-1 recordings retain raw native state and deliberately discard live warning envelopes', () => {
+  const trace = new FlightTrace();
+  const native = { ...Object.fromEntries(STALL_FIELDS.map(key => [key, 0])), aero_alpha_max_rad: .28 };
+  const frame = { ...state(1), ...native, stall_warning_peak_norm: .4, stall_warning_peak_step: 1 };
+  assert(trace.record(frame, 0));
+  const recorded = trace.atTime(1)!.state;
+  assert.equal(recorded.stall_warning_norm, 0);
+  assert.equal(recorded.stall_warning_peak_norm, undefined);
+  assert.equal(recorded.stall_warning_peak_step, undefined);
+  assert(trace.record({ ...state(2), ...native }, 0));
+  const json = trace.exportJSON();
+  assert(!json.includes('stall_warning_peak'));
+  assert.deepEqual(FlightTrace.fromJSON(json).atTime(1)!.state, recorded);
+  assert.equal(trace.record({ ...state(2), ...native, stall_warning_peak_norm: .9, stall_warning_peak_step: 1 }, 0), false, 'same physical frame is not a new sample');
+  assert.equal(trace.record({ ...state(2), ...native, stall_warning_peak_norm: 1 }, 0), false);
+  assert.equal(trace.record({ ...state(2), stall_warning_peak_norm: 1, stall_warning_peak_step: 1 }, 0), false);
+  const imported = JSON.parse(json);
+  Object.assign(imported.samples[0].state, { stall_warning_peak_norm: .4, stall_warning_peak_step: 1 });
+  assert.equal(FlightTrace.fromJSON(JSON.stringify(imported)).atTime(1)!.state.stall_warning_peak_norm, undefined);
+  imported.samples[0].state.stall_warning_peak_step = 2;
+  assert.throws(() => FlightTrace.fromJSON(JSON.stringify(imported)));
+});
+
+
 test('R-WORLD-11 recordings preserve actual terrain quality and height references across world seeking', () => {
   const trace = new FlightTrace();
   for (const [step, terrain_source] of [[1, 2], [2, 3], [3, 1]]) assert(trace.record({ ...state(step),

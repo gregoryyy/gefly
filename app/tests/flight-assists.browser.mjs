@@ -109,7 +109,7 @@ try {
     bubbles: true, cancelable: true, code: 'Digit0', key: '=', shiftKey: true,
   })));
   await page.waitForFunction(() => window.assistStates.at(-1)?.simulation_rate === 10 && document.querySelector('#simulation-rate-overlay').textContent === 'SIM 10×');
-  assert.equal(await page.locator('#throttle').inputValue(), throttleBefore, 'German Shift+0 = never reaches throttle idle');
+  assert.equal(await page.locator('#throttle').inputValue(), throttleBefore, 'German Shift+0 = never reaches full throttle');
   unchanged(before, await stats());
   checks.push('German-layout Shift+Digit0 = changes rate while preserving throttle');
   for (const rate of [5, 2, 1.5, 1, 1]) {
