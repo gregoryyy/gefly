@@ -42,7 +42,7 @@ export interface PracticeMap {
   /** Current explicit GPS direct-to or active plan-leg target, independent of map visibility. */
   getGpsTarget(): Readonly<PlannerPoint> | null;
   /** Airports and COM rows the map currently holds (worldwide cells or the bundled fallback), for simulated airport contact. */
-  getComContactSource(): { airports: readonly Airport[]; directory: AirportComDirectory } | null;
+  getComContactSource(): { airports: readonly Airport[]; directory: AirportComDirectory; worldCells: readonly string[] | null } | null;
   setPlanVisible(visible: boolean): void;
   update(state: Readonly<FlightState>, path: readonly MapPathPosition[], mode: 'live' | 'review', options?: { simplified?: boolean; recordingStart?: boolean }): void;
   setVisible(visible: boolean): void;
@@ -81,6 +81,9 @@ interface MapOptions {
   onStopExercise?: () => void;
   isExerciseActive?: () => boolean;
   canTuneCom?: () => boolean;
+  /** Already-requested bundled catalogue/COM packages, shared with airport-contact text so they are fetched once. */
+  regionalAirports?: Promise<Airport[]>;
+  regionalCom?: Promise<AirportComDirectory>;
   onTuneCom?: (receiver: 1 | 2, channel_khz: number) => boolean | void;
   onTuneNav?: (receiver: 1 | 2, channel_khz: number) => boolean | void;
   canFlyFrom?: () => boolean;
@@ -1080,7 +1083,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   const controller: PracticeMap = {
     zoom(direction) { if (!disposed && visible && ready) { onInteraction(); changeZoom(direction); } },
     getGpsTarget() { return disposed ? null : navigationTarget(); },
-    getComContactSource() { return disposed || !comDirectory ? null : { airports, directory: comDirectory }; },
+    getComContactSource() { return disposed || !comDirectory ? null : { airports, directory: comDirectory, worldCells: worldSnapshot ? worldSnapshot.cells ?? [] : null }; },
     setPlanVisible,
     toggleOverlap() {
       if (disposed) return;
@@ -1390,11 +1393,11 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       });
       requestWorldCenter();
     } catch { worldStatus.textContent = 'Worldwide discovery unavailable; bundled regional inventory remains available.'; }
-    void loadAirportCatalogue(abort.signal).then((data) => {
+    void (options.regionalAirports ?? loadAirportCatalogue(abort.signal)).then((data) => {
       if (disposed || !map) return;
       regionalAirports = data; if (!worldSnapshot) airports = data; refreshPointSearch();
       renderAirports();
-      void loadAirportComDirectory(abort.signal).then(directory => {
+      void (options.regionalCom ?? loadAirportComDirectory(abort.signal)).then(directory => {
         if (disposed) return;
         regionalComDirectory = directory; if (!worldSnapshot) comDirectory = directory;
         updateComDirectory(); refreshPointSearch();

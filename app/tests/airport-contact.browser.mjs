@@ -6,7 +6,7 @@ import { spawn } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
-import { installSceneryFixture } from './flight-actions.mjs';
+import { installSceneryFixture, prepareFlightUI } from './flight-actions.mjs';
 
 const app = fileURLToPath(new URL('..', import.meta.url));
 const output = fileURLToPath(new URL('../../output/flight/', import.meta.url));
@@ -27,6 +27,24 @@ try {
   await page.waitForFunction(() => document.querySelector('#start') && !document.querySelector('#start').disabled, null, { timeout: 90000 });
   const contact = page.locator('#airport-contact'), action = contact.locator('.airport-contact-qnh');
   const reference = () => page.locator('#altimeter-reference').textContent();
+  const setAltimeter = async hpa => {
+    await page.locator('#altimeter-open').click();
+    await page.locator('#altimeter-setting').fill(String(hpa)); await page.locator('#altimeter-setting').dispatchEvent('change');
+    await page.locator('#altimeter-close').click();
+  };
+  const boxOf = async selector => page.evaluate(selector => {
+    const element = document.querySelector(selector); if (!element) return null;
+    const style = getComputedStyle(element); const r = element.getBoundingClientRect();
+    return style.display === 'none' || style.visibility === 'hidden' || !r.width || !r.height ? null : { x: r.x, y: r.y, width: r.width, height: r.height };
+  }, selector);
+  const overlap = (a, b) => !!a && !!b && a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+  /** The message must not cover the named overlays at the current viewport. */
+  const assertClear = async (label, selectors) => {
+    const box = await boxOf('#airport-contact');
+    for (const selector of selectors) assert(!overlap(box, await boxOf(selector)), `${label}: airport text overlaps ${selector}`);
+    return box;
+  };
+  const OVERLAYS = ['#flight-controls-panel', '#pointer-mode', '#camera-fov', '.scenery-label', '#radio-nav-systems', '.simulation-rate-overlay'];
 
   // Standby alone never makes contact; the ACTIVE channel does.
   await page.locator('#com1-standby').fill('118.405'); await page.locator('#com1-standby').press('Enter');
@@ -39,23 +57,45 @@ try {
   assert.match(text, /COM1 118\.405 · EDFE Egelsbach Radio/);
   assert.match(text, /Welcome to Frankfurt-Egelsbach Airport\. QNH 1013 hPa \(29\.92 inHg\)\./);
   assert.match(text, /Simulated text, not ATC/);
-  assert.equal(await contact.locator('[role="status"]').getAttribute('aria-live'), 'polite');
-  checks.push('ACTIVE COM1 118.405 near EDFE shows simulated welcome and QNH 1013 hPa / 29.92 inHg');
+  const live = page.locator('.airport-contact-live');
+  assert.equal(await live.getAttribute('role'), 'status'); assert.equal(await live.getAttribute('aria-live'), 'polite');
+  assert.match(await live.textContent(), /Welcome to Frankfurt-Egelsbach Airport/);
+  assert.equal(await page.locator('#airport-contact [role="status"]').count(), 0, 'live region is outside the hideable box');
+  checks.push('ACTIVE COM1 118.405 near EDFE shows simulated welcome and QNH 1013 hPa / 29.92 inHg; persistent live region announces it');
 
-  // Small and off the forward view centre.
+  // Small, off the forward-view centre and clear of other overlays (expanded state, before the 10 s collapse).
   const box = await contact.boundingBox(), scene = await page.locator('#scene').boundingBox();
   assert(box.width * box.height < 0.06 * scene.width * scene.height, 'message stays small');
   assert(!(box.x < scene.x + scene.width / 2 && box.x + box.width > scene.x + scene.width / 2
     && box.y < scene.y + scene.height / 2 && box.y + box.height > scene.y + scene.height / 2), 'message avoids scene centre');
   await page.screenshot({ path: `${output}airport-contact.png` });
-  checks.push(`message ${Math.round(box.width)}×${Math.round(box.height)} px, outside the scene centre`);
+  const sizes = [];
+  for (const controls of [false, true]) {
+    if (controls) {
+      // Show the live control panel, then retune for a fresh (expanded) contact.
+      await page.setViewportSize({ width: 1440, height: 900 }); await prepareFlightUI(page, { controls: true });
+      await page.locator('#com1-swap').click(); await page.waitForTimeout(600); await page.locator('#com1-swap').click();
+      await page.waitForFunction(() => !document.querySelector('#airport-contact').hidden && !document.querySelector('#airport-contact').classList.contains('compact'));
+    }
+    for (const [width, height] of [[1440, 900], [1100, 800], [390, 844]]) {
+      await page.setViewportSize({ width, height }); await page.waitForTimeout(250);
+      await contact.hover(); // keep it expanded while measuring
+      if (controls) assert(await boxOf('#flight-controls-panel'), `${width}×${height}: live control panel shown`);
+      const measured = await assertClear(`${width}×${height}${controls ? ' with controls' : ''}`, OVERLAYS);
+      assert(measured, `${width}×${height}: message visible`);
+      if (!controls) sizes.push(`${width}×${height}: ${Math.round(measured.width)}×${Math.round(measured.height)}`);
+    }
+  }
+  await page.setViewportSize({ width: 1440, height: 900 }); await page.mouse.move(5, 5); await page.waitForTimeout(250);
+  checks.push(`message clear of live controls/pointer/FOV/scenery/radio overlays (${sizes.join('; ')})`);
 
-  // The default setting already equals the simulator QNH; change it through the dialog first.
+  // The default setting already equals the simulator QNH; a set 1013.00 hPa also counts as the announced QNH 1013.
   assert.match(await action.textContent(), /Altimeter on QNH 1013/); assert.equal(await action.isDisabled(), true);
-  await page.locator('#altimeter-open').click();
-  await page.locator('#altimeter-setting').fill('1000'); await page.locator('#altimeter-setting').dispatchEvent('change');
-  await page.locator('#altimeter-close').click();
+  await setAltimeter(1013);
   await page.waitForFunction(() => /CUSTOM PRESSURE/.test(document.querySelector('#altimeter-reference')?.textContent ?? ''));
+  await page.waitForTimeout(400);
+  assert.match(await action.textContent(), /Altimeter on QNH 1013/, '1013.00 hPa is inside the announced QNH 1013');
+  await setAltimeter(1000);
   await page.waitForFunction(() => !document.querySelector('#airport-contact .airport-contact-qnh').disabled);
   assert.match(await action.textContent(), /Set altimeter QNH 1013/);
   await page.waitForTimeout(800);
@@ -63,25 +103,28 @@ try {
   await action.click();
   await page.waitForFunction(() => /QNH/.test(document.querySelector('#altimeter-reference')?.textContent ?? ''));
   await page.waitForFunction(() => document.querySelector('#airport-contact .airport-contact-qnh').disabled);
-  checks.push('explicit action sets the altimeter to the simulator QNH through the existing worker path');
+  checks.push('1013.00 hPa counts as on QNH 1013; explicit action sets the exact simulator QNH through the existing worker path');
 
-  // Fly briefly, then Review: no live action, and recorded state does not change contact.
-  await page.locator('#altimeter-open').click();
-  await page.locator('#altimeter-setting').fill('1000'); await page.locator('#altimeter-setting').dispatchEvent('change');
-  await page.locator('#altimeter-close').click();
+  // Fly briefly, then Review: the text box is hidden and does not cover the recorded control readouts.
+  await setAltimeter(1000);
   await page.waitForFunction(() => /CUSTOM PRESSURE/.test(document.querySelector('#altimeter-reference')?.textContent ?? ''));
   await page.locator('#start').click(); await page.waitForTimeout(1500);
   await page.locator('#scene').focus(); await page.keyboard.press('KeyR');
   await page.waitForFunction(() => document.querySelector('.flight-app')?.dataset.review === 'true');
-  await page.waitForFunction(() => /Review · read only/.test(document.querySelector('#airport-contact .airport-contact-qnh')?.textContent ?? ''));
-  assert.equal(await action.isDisabled(), true);
-  checks.push('Review shows the action as read only; live action returns after Review');
+  for (const [width, height] of [[1440, 900], [1100, 800]]) {
+    await page.setViewportSize({ width, height }); await page.waitForTimeout(400);
+    assert(await boxOf('#flight-controls-panel'), 'recorded control panel visible in Review');
+    assert.equal(await boxOf('#airport-contact'), null, `${width}×${height}: airport text hidden in Review`);
+    await assertClear(`Review ${width}×${height}`, ['#flight-controls-panel']);
+  }
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.locator('#review-exit').click();
   await page.waitForFunction(() => document.querySelector('.flight-app')?.dataset.review === 'false');
   await page.waitForFunction(() => /Set altimeter QNH 1013/.test(document.querySelector('#airport-contact .airport-contact-qnh')?.textContent ?? ''));
   assert.equal(await contact.locator('.airport-contact-title').textContent(), 'COM1 118.405 · EDFE Egelsbach Radio');
+  checks.push('Review hides the text (no overlap with recorded controls at 1440×900 and 1100×800); live action returns after Review');
 
-  // Collapse keeps the action reachable; dismissal hides it until a new contact.
+  // Collapse keeps an available action reachable; once on QNH the pill fades out.
   await page.mouse.move(5, 5);
   await page.waitForFunction(() => document.querySelector('#airport-contact')?.classList.contains('compact'), null, { timeout: 15000 });
   assert.equal(await contact.isVisible(), true);
@@ -89,10 +132,19 @@ try {
   const pill = await contact.boundingBox();
   assert(pill.height < 40 && pill.width <= 330, 'collapsed pill is one line');
   await page.screenshot({ path: `${output}airport-contact-compact.png`, clip: { x: pill.x - 20, y: pill.y - 20, width: pill.width + 40, height: pill.height + 40 } });
-  checks.push(`message collapses to a ${Math.round(pill.width)}×${Math.round(pill.height)} px pill that keeps the QNH action`);
+  await action.click(); await page.mouse.move(5, 5);
+  await page.waitForFunction(() => document.querySelector('#airport-contact').hidden);
+  assert.match(await reference(), /QNH/);
+  checks.push(`message collapses to a ${Math.round(pill.width)}×${Math.round(pill.height)} px pill; it hides once the altimeter is on QNH`);
+
+  // A new contact (retune) announces again; dismissal hides it.
+  await page.locator('#com1-swap').click(); await page.waitForTimeout(600);
+  await page.locator('#com1-swap').click();
+  await page.waitForFunction(() => !document.querySelector('#airport-contact').hidden && !document.querySelector('#airport-contact').classList.contains('compact'));
   await contact.locator('.airport-contact-dismiss').click();
+  await page.waitForTimeout(600);
   assert.equal(await contact.isHidden(), true);
-  checks.push('dismiss hides the message');
+  checks.push('retuning announces a new contact; dismiss hides it');
   assert.deepEqual(errors, []);
   console.log(JSON.stringify({ browser: browser.version(), checks }, null, 2));
 } finally { await browser?.close(); server.kill(); }
