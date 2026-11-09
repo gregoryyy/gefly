@@ -221,6 +221,7 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
   let worldMapStatus: 'loading' | 'ready' | 'degraded' = 'loading';
   // Asked only after a photo tile failure, so a missing Python Pillow is named in the status.
   let photoCompositor: PhotoCompositorState = 'unknown', photoCompositorCheckedAt = -Infinity, photoCompositorCheck = false;
+  let photoCompositorPoll: ReturnType<typeof setTimeout> | undefined;
   function orderPhotographs() {
     // Photographs cover the OSM map only in Photo mode. Vector mode uses the
     // same detailed OSM presentation everywhere, independent of regional bounds.
@@ -367,7 +368,11 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
       .catch(() => 'unknown' as const)
       .then(value => {
         photoCompositorCheck = false;
-        if (disposed || value === photoCompositor) return;
+        if (disposed) return;
+        // While unavailable, keep asking so a repaired server clears the notice.
+        clearTimeout(photoCompositorPoll);
+        if (value === 'unavailable') photoCompositorPoll = setTimeout(checkPhotoCompositor, 31000);
+        if (value === photoCompositor) return;
         photoCompositor = value; container.dataset.photoCompositor = value;
         imageryStatus(lastState); scene.requestRender();
       });
@@ -458,7 +463,10 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
   // Cesium shows a provider-level credit wherever a layer is shown, even in
   // another country, so each source is credited per rendered tile instead: only
   // tiles that can carry its pixels (near its outline, at proxy detail levels).
-  // Other tiles are the proxy's transparent answer, produced without a request.
+  // Other tiles are a deliberate client coverage cut-off: a local transparent
+  // tile without a request. Below level 7 that matches the proxy; farther inside
+  // the envelope the proxy would have asked upstream, and tile-aligned cut-off
+  // edges remain possible where provider imagery overhangs beyond the margin.
   const emptyCountryTile = document.createElement('canvas');
   emptyCountryTile.width = emptyCountryTile.height = 1;
   const noCountryCredits: Credit[] = [];
@@ -480,6 +488,7 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
       const result = requestImage(x, y, level, request);
       if (!result) return undefined;
       return result.then(image => {
+        if (photoCompositor === 'unavailable') checkPhotoCompositor(); // a decoded tile suggests recovery
         if (!disposed && epoch === countryPhotoEpoch[source.id] && generation === countryPhotoBackoff.generation(source.id)
           && level >= 7 && countryPhotoFailures.delete(source.id)) imageryStatus(lastState);
         return image;
@@ -913,7 +922,7 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
       worldMap?.dispose();
       observer.disconnect();
       creditObserver.disconnect();
-      clearTimeout(loadTimeout);
+      clearTimeout(loadTimeout); clearTimeout(photoCompositorPoll);
       forwardMarker.dispose(); removeReliefError(); removeCountryPhotoBackoff();
       scene.globe.material = undefined; osmRelief?.destroy(); delete container.dataset.osmRelief;
       approachGuide.dispose(); aircraftShadow.dispose(); airportScenery.dispose(); landmarkLabels.dispose();

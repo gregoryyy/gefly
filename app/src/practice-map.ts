@@ -754,8 +754,8 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     const bounds = map.getBounds(), wide = bounds.getEast() - bounds.getWest() >= 360;
     const west = wide ? -180 : Math.max(-180, bounds.getWest()), east = wide ? 180 : Math.min(180, bounds.getEast());
     for (const source of COUNTRY_IMAGERY) {
-      const layerId = `country-photo-${source.id}`, show = visible && aerial && !countryPhotoBackoff.isBlocked(source.id)
-        && countryPhotoRectangleMayContain(source.id, west, bounds.getSouth(), east, bounds.getNorth());
+      const layerId = `country-photo-${source.id}`, eligible = visible && aerial && !countryPhotoBackoff.isBlocked(source.id);
+      const show = eligible && countryPhotoRectangleMayContain(source.id, west, bounds.getSouth(), east, bounds.getNorth());
       if (!map.getLayer(layerId)) continue;
       if (show && countryPhotoNeedsRefresh.has(source.id)) {
         // Recreate only this source and its layer, so every retry gets fresh
@@ -772,8 +772,13 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       const next = show ? 'visible' : 'none';
       const current = map.getLayoutProperty(layerId, 'visibility');
       if (current !== next) {
-        if (current === 'visible' && next === 'none') countryPhotoNeedsRefresh.add(source.id);
-        countryPhotoEpoch[source.id]++; map.setLayoutProperty(layerId, 'visibility', next);
+        // Mode or backoff hides refresh the source on return; a viewport-only
+        // hide keeps MapLibre's tiles and the current error ticket.
+        if (!eligible) {
+          if (current === 'visible') countryPhotoNeedsRefresh.add(source.id);
+          countryPhotoEpoch[source.id]++;
+        }
+        map.setLayoutProperty(layerId, 'visibility', next);
       }
     }
   }

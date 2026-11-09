@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { test } from 'node:test';
+import { after, test } from 'node:test';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { sceneryMiddleware } from './scenery-server.ts';
 
@@ -242,13 +242,33 @@ test('northern Hessen photography expands without querying southern state provid
   assert.equal(result.headers['X-Scenery-Partial'], 'false');
 });
 
-function fakeInterpreter(): string {
-  // Reproduces an interpreter without Pillow, as with a fresh Homebrew Python.
-  const path = join(mkdtempSync(join(tmpdir(), 'gefly-no-pillow-')), 'python');
-  writeFileSync(path, "#!/bin/sh\ncat >/dev/null\necho \"ModuleNotFoundError: No module named 'PIL'\" >&2\nexit 1\n");
+const fakeDirectories: string[] = [];
+after(() => { for (const directory of fakeDirectories) rmSync(directory, { recursive: true, force: true }); });
+function fakeInterpreter(stderr = "ModuleNotFoundError: No module named 'PIL'"): string {
+  // Reproduces an interpreter without (or with a broken) Pillow, as with a fresh Homebrew Python.
+  const directory = mkdtempSync(join(tmpdir(), 'gefly-no-pillow-')), path = join(directory, 'python');
+  fakeDirectories.push(directory);
+  writeFileSync(path, `#!/bin/sh\ncat >/dev/null\n${stderr ? `echo "${stderr}" >&2\n` : ''}exit 1\n`);
   chmodSync(path, 0o755);
   return path;
 }
+
+test('R-WORLD-14 a broken Pillow import or any failed probe also counts as unavailable', async () => {
+  let requests = 0;
+  const broken = sceneryMiddleware({ python: fakeInterpreter("ImportError: cannot import name '_imaging' from 'PIL'"), warn: () => {}, fetcher: async () => {
+    requests++; return new Response(photoPng, { headers: { 'content-type': 'image/png' } });
+  } });
+  const [x, y] = tile(51.2, 9.4, 12);
+  const result = await call(broken, `/scenery/imagery/12/${x}/${y}.png`);
+  assert.equal(result.status, 503); assert.equal(result.headers['X-Scenery-Status'], 'compositor-unavailable');
+  assert.deepEqual(JSON.parse((await call(broken, '/scenery/imagery/status.json')).data.toString()), { compositor: 'unavailable' });
+  // The probe is only `import PIL.Image`, so even an undiagnosed nonzero exit means unusable.
+  const silent = sceneryMiddleware({ python: fakeInterpreter(''), warn: () => {} });
+  assert.deepEqual(JSON.parse((await call(silent, '/scenery/imagery/status.json')).data.toString()), { compositor: 'unavailable' });
+  // A compositor that imports but rejects an image stays an ordinary 502, not a missing Pillow.
+  const invalid = sceneryMiddleware({ python: fakeInterpreter('ValueError: invalid PNG'), warn: () => assert.fail('no warning for an invalid image'), fetcher: async () => new Response(photoPng, { headers: { 'content-type': 'image/png' } }) });
+  assert.equal((await call(invalid, `/scenery/imagery/12/${x}/${y}.png`)).status, 502);
+});
 
 test('R-WORLD-14 missing Pillow is reported, warned once and stops further public WMS requests', async () => {
   let requests = 0; const warnings: string[] = [];

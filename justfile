@@ -186,9 +186,12 @@ fly:
     #!/usr/bin/env bash
     set -euo pipefail
     root="{{justfile_directory()}}"
+    explicit="${PYTHON:-}"
     if [ -z "${PYTHON:-}" ] && [ -x "$root/.venv/bin/python" ]; then export PYTHON="$root/.venv/bin/python"; fi
     if ! "${PYTHON:-python3}" -c 'import PIL.Image' >/dev/null 2>&1; then
-        echo "Note: ${PYTHON:-python3} lacks Pillow, so live aerial photos are unavailable. Run: just scenery-venv" >&2
+        if [ -n "$explicit" ]; then fix="install utils/scenery/requirements.txt into PYTHON, or unset PYTHON after just scenery-venv"
+        else fix="run: just scenery-venv"; fi
+        echo "Note: ${PYTHON:-python3} cannot import Pillow, so live aerial photos are unavailable; $fix" >&2
     fi
     exec npm --prefix "$root/app" run dev -- --port 5173 --strictPort
 

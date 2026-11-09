@@ -719,9 +719,10 @@ The service envelopes are generous rectangles (the NRW one reaches Frankfurt), s
 the status names a country/state source only when the aircraft is within 2 km of
 its coarse Natural Earth outline, and the 3D view credits it per rendered tile
 only for tiles within 10 km of that outline (the 2D map shows a source's layer and
-credit only while the view comes that close). Farther tiles are the proxy's
-transparent answer and are not requested. Sampled provider imagery extended at
-most about 5 km beyond the outlines. These outlines are
+credit only while the view comes that close). Farther 3D tiles are a deliberate
+client coverage cut-off: they are drawn transparent without a request, so any
+provider imagery beyond the margin is omitted and tile-aligned edges are possible.
+Sampled provider imagery extended at most about 5 km beyond the outlines. These outlines are
 [generalized cartography](../utils/scenery/photo-outlines-source.md), not
 imagery footprints or legal boundaries.
 

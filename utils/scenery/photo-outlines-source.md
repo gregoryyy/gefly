@@ -28,7 +28,11 @@ The script checks both input hashes, keeps only outer rings (holes and enclaves
 such as Büsingen are treated as covered), simplifies each ring with
 Douglas–Peucker at 0.01° (about 1 km), rounds to 0.001° and checks the output
 SHA-256 `e6fdb5f33672a7a1ac60873f9a8e02e4053bac80a270c10bb0dc97d3d6fe8ce7`
-(24 rings, about 1,700 vertices).
+(24 rings, about 1,700 vertices). Rings left with fewer than three distinct
+vertices are dropped silently. For this input that removes five small Spanish
+North African territories: Peñón de Vélez de la Gomera, the two Alhucemas islets,
+the Chafarinas and Perejil. They lie south of the proxy's 35.99° N mainland PNOA
+request bound, so no photography is requested there either.
 
 Margin evidence (2026-11-09, one sample each, outlines from the unsimplified
 source): live NRW WMS imagery extended at most 2.2 km (Siegerland) and 2.7 km

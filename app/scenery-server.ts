@@ -38,7 +38,12 @@ export type CompositorState = 'unknown' | 'ready' | 'unavailable';
 const COMPOSITOR_RECHECK_MS = 30000;
 // Raised when the interpreter cannot start or cannot import Pillow, unlike an invalid image.
 class CompositorUnavailable extends Error {}
-const PILLOW_MISSING = /No module named ['"]?PIL\b/;
+// A nonzero interpreter exit without an import diagnostic (for example an invalid image).
+class CompositorExited extends Error {}
+// Missing or broken Pillow (absent module, failed _imaging load, wrong-ABI wheel) fails at import.
+const IMPORT_FAILED = /\b(?:ModuleNotFoundError|ImportError)\b/;
+// Only these spawn errors mean the configured interpreter cannot run; EAGAIN/EMFILE are transient.
+const INTERPRETER_MISSING = new Set(['ENOENT', 'EACCES', 'ENOTDIR', 'ENOEXEC']);
 
 class Semaphore {
   private active = 0;
@@ -99,13 +104,14 @@ function runPython(python: string, args: string[], input: string, timeoutMs: num
     let done = false, size = 0, diagnostic = ''; const chunks: Buffer[] = [];
     const finish = (error?: Error) => { if (done) return; done = true; clearTimeout(timer); if (error) { child.kill(); reject(error); } else resolve(Buffer.concat(chunks, size)); };
     const timer = setTimeout(() => finish(new Error('compositor timeout')), timeoutMs);
-    child.on('error', () => finish(new CompositorUnavailable('compositor interpreter unavailable')));
+    child.on('error', (error: NodeJS.ErrnoException) => finish(INTERPRETER_MISSING.has(error.code ?? '')
+      ? new CompositorUnavailable('compositor interpreter unavailable') : new Error('compositor spawn failed')));
     child.stdin.on('error', () => finish(new Error('compositor input failed')));
-    // Bounded diagnostics only distinguish a missing Pillow import from an invalid image.
+    // Bounded diagnostics only distinguish a failed Pillow import from an invalid image.
     child.stderr.on('data', (chunk: Buffer) => { if (diagnostic.length < 4096) diagnostic += chunk.toString('utf8').slice(0, 4096 - diagnostic.length); });
     child.stdout.on('data', (chunk: Buffer) => { size += chunk.length; if (size > LIMIT) finish(new Error('compositor output too large')); else chunks.push(chunk); });
     child.on('close', (code) => code === 0 ? finish()
-      : finish(PILLOW_MISSING.test(diagnostic) ? new CompositorUnavailable('Pillow unavailable') : new Error('compositor failed')));
+      : finish(IMPORT_FAILED.test(diagnostic) ? new CompositorUnavailable('Pillow unavailable') : new CompositorExited('compositor failed')));
     child.stdin.end(input);
   });
 }
@@ -131,8 +137,10 @@ export function sceneryMiddleware(options: SceneryOptions = {}) {
       + 'live aerial photos are disabled. Run `just scenery-venv` and restart `just fly`, or set PYTHON to an interpreter with Pillow.');
   }
   function probeCompositor(): Promise<void> {
+    // The probe only imports Pillow, so any nonzero exit means it is unusable.
     probe ??= runPython(python, ['-c', 'import PIL.Image'], '', 10000).then(() => { compositor = 'ready'; }, (error: unknown) => {
-      if (error instanceof CompositorUnavailable) compositorFailed();
+      if (error instanceof CompositorUnavailable || error instanceof CompositorExited) compositorFailed();
+      else recheckAt = Date.now() + COMPOSITOR_RECHECK_MS; // transient: stay 'unknown' without a probe per request
     }).finally(() => { probe = null; });
     return probe;
   }
@@ -175,7 +183,7 @@ export function sceneryMiddleware(options: SceneryOptions = {}) {
     if (!url.startsWith('/scenery/')) { next(); return; }
     if (url === '/scenery/imagery/status.json' && ['GET', 'HEAD'].includes(req.method || '')) {
       // Fixed local self-description: no interpreter path or diagnostic text is exposed.
-      const recheck = compositor === 'unknown' || (compositor === 'unavailable' && Date.now() >= recheckAt);
+      const recheck = compositor !== 'ready' && Date.now() >= recheckAt;
       void (recheck ? probeCompositor() : Promise.resolve()).then(() => {
         const body = Buffer.from(JSON.stringify({ compositor }));
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': body.length, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
