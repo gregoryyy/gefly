@@ -189,7 +189,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   zoomOut.setAttribute('aria-label', 'Zoom map out');
   zoomIn.setAttribute('aria-label', 'Zoom map in');
   zoomOut.setAttribute('aria-keyshortcuts', '-'); zoomOut.title = '- · Zoom map out';
-  zoomIn.setAttribute('aria-keyshortcuts', '= +'); zoomIn.title = '= / + · Zoom map in';
+  zoomIn.setAttribute('aria-keyshortcuts', 'Shift+= +'); zoomIn.title = 'Shift+= / + · Zoom map in';
   follow.setAttribute('aria-pressed', 'true');
   const readout = document.createElement('p');
   readout.className = 'practice-map-readout';

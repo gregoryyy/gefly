@@ -10,8 +10,11 @@
   color: #f0f4e8;
   font: 600 12px/1.2 ui-monospace, monospace;
   letter-spacing: .04em;
-  pointer-events: none;
+  cursor: pointer;
+  user-select: none;
 }
+.simulation-rate-overlay[data-clickable="false"] { cursor: default; }
+.simulation-rate-overlay:hover { border-color: #cad7d3a0; }
 .simulation-rate-overlay[data-review="true"] { color: #dbd1a8; }
 @media (max-width: 620px) {
   .simulation-rate-overlay { right: 10px; top: 92px; font-size: 10px; }

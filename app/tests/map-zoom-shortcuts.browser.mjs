@@ -90,16 +90,37 @@ try {
   await scene.focus(); await page.keyboard.press('m'); await mapPanel.waitFor({ state: 'visible' });
   await page.waitForFunction(() => document.querySelector('#practice-map-panel').textContent.includes('Loading practice map'));
   const loadingCount = await rateCommands();
-  for (const key of ['Minus', 'Equal', 'Shift+Equal']) await page.keyboard.press(key);
-  await character('=', 'Digit0', 8); await character('=', 'Digit0', 8, true);
+  for (const key of ['Minus', 'Shift+Equal']) await page.keyboard.press(key);
+  await character('=', 'Digit0', 8, true);
   assert.equal(await rateCommands(), loadingCount); assert.equal(await page.locator('#throttle').inputValue(), throttle);
+  await character('=', 'Digit0', 8); await page.waitForFunction(() => window.zoomStates.at(-1)?.simulation_rate === 1.5);
+  await rateOverlay.click({ modifiers: ['Shift'] }); await page.waitForFunction(() => window.zoomStates.at(-1)?.simulation_rate === 1);
+  assert.equal(await rateCommands(), loadingCount + 2); assert.equal(await page.locator('#throttle').inputValue(), throttle);
   await frozen(initial); releaseMap();
   await page.waitForFunction(() => window.__shortcutMap?.getSource('recorded-path'));
   await page.getByRole('button', { name: 'Zoom map in', exact: true }).waitFor({ state: 'visible' });
-  await page.waitForFunction(() => !document.querySelector('#simulation-rate').hasAttribute('aria-keyshortcuts')
-    && document.querySelector('#simulation-rate kbd').textContent === 'Menu');
+  await page.waitForFunction(() => document.querySelector('#simulation-rate').getAttribute('aria-keyshortcuts') === '='
+    && document.querySelector('#simulation-rate kbd').textContent === '=');
   assert.match(await page.locator('#simulation-rate').getAttribute('title'), /zoom the open map/);
-  result.checks.push('open but loading map consumes zoom/German repeated = without pacing/throttle/native changes');
+  result.checks.push('open but loading map consumes + / - and repeated German = without pacing; a German = press still paces; throttle/native unchanged');
+
+  async function keyPace(label, focus, action) {
+    await focus(); const before = await zoom(), count = await rateCommands(); await action();
+    await page.waitForFunction(() => window.zoomStates.at(-1)?.simulation_rate === 1.5);
+    await page.waitForTimeout(180); // Detect a MapLibre keyboard-handler zoom.
+    assert(Math.abs(await zoom() - before) < 1e-9, `${label}: = does not zoom the open map`);
+    assert.equal(await rateCommands(), count + 1); assert.equal(await page.locator('#throttle').inputValue(), throttle);
+    await rateOverlay.click({ modifiers: ['Shift'] }); await page.waitForFunction(() => window.zoomStates.at(-1)?.simulation_rate === 1);
+    await frozen(initial); result.observations.push({ label, zoom: before, rateCommandCount: await rateCommands() });
+  }
+  const unchangedRateBeforePace = await rateCommands();
+  for (const [label, focus] of [['scene', () => scene.focus()], ['MapLibre canvas', () => page.locator('#practice-map-panel .maplibregl-canvas').focus()],
+    ['map control', () => page.getByRole('button', { name: 'Zoom map in', exact: true }).focus()]]) {
+    await keyPace(`${label} =`, focus, () => page.keyboard.press('Equal'));
+  }
+  await keyPace('German Shift+Digit0 =', () => scene.focus(), () => character('=', 'Digit0', 8));
+  assert.equal(await rateCommands(), unchangedRateBeforePace + 8);
+  result.checks.push('= cycles speed with scene, canvas and map-control focus over the open map without zooming it; native worker stays paused');
 
   const unchangedRate = await rateCommands();
   async function keyZoom(label, focus, action, direction) {
@@ -115,14 +136,12 @@ try {
   const canvasFocus = () => page.locator('#practice-map-panel .maplibregl-canvas').focus();
   const buttonFocus = () => page.getByRole('button', { name: 'Zoom map in', exact: true }).focus();
   for (const [label, focus] of [['scene', sceneFocus], ['MapLibre canvas', canvasFocus], ['map control', buttonFocus]]) {
-    await keyZoom(`${label} =`, focus, () => page.keyboard.press('Equal'), 1);
     await keyZoom(`${label} -`, focus, () => page.keyboard.press('Minus'), -1);
     await keyZoom(`${label} +`, focus, () => page.keyboard.press('Shift+Equal'), 1);
     await keyZoom(`${label} numpad -`, focus, () => page.keyboard.press('NumpadSubtract'), -1);
   }
-  await keyZoom('German Shift+Digit0 =', sceneFocus, () => character('=', 'Digit0', 8), 1);
   await keyZoom('numpad +', canvasFocus, () => page.keyboard.press('NumpadAdd'), 1);
-  result.checks.push('= and + zoom in and - zooms out exactly once with scene, canvas and map-control focus; native worker stays paused and rate/throttle stay unchanged');
+  result.checks.push('Shift+= (+) zooms in and - zooms out exactly once with scene, canvas and map-control focus; native worker stays paused and rate/throttle stay unchanged');
 
   // All initial keyboard zoom cases run before a pointer activation. Older
   // floating-panel implementations need activation before ordinary point UI.
@@ -135,11 +154,11 @@ try {
   await scene.focus();
   for (const key of ['Control+Equal', 'Meta+Equal', 'Alt+Equal']) await page.keyboard.press(key);
   await character('=', 'Digit0', 8, true);
-  await page.keyboard.down('Equal'); // First real press zooms once; repeated down does not.
-  const repeatZoom = await zoom(); await page.keyboard.down('Equal'); await page.keyboard.up('Equal');
+  await character('+', 'Equal', 8); // First real press zooms once; a recognized repeat does not.
+  const repeatZoom = await zoom(); await character('+', 'Equal', 8, true);
   assert.equal(await zoom(), repeatZoom); assert.equal(repeatZoom, guardedZoom + 1);
   await scene.evaluate(element => {
-    const event = new KeyboardEvent('keydown', { key: '=', code: 'Equal', bubbles: true, cancelable: true });
+    const event = new KeyboardEvent('keydown', { key: '+', code: 'Equal', shiftKey: true, bubbles: true, cancelable: true });
     event.preventDefault(); element.dispatchEvent(event);
   });
   assert.equal(await zoom(), repeatZoom);
@@ -184,7 +203,7 @@ try {
   while (await zoom() > maxZoom - 2) await page.keyboard.press('Minus');
   const liveZoom = await zoom(), liveBefore = await state();
   assert(Number.isFinite(liveBefore.throttle_norm));
-  for (const [key, delta] of [['Equal', 1], ['Shift+Equal', 1], ['Minus', -1]]) {
+  for (const [key, delta] of [['Shift+Equal', 1], ['Shift+Equal', 1], ['Minus', -1]]) {
     const before = await zoom(); await page.keyboard.press(key);
     assert.equal(await zoom(), before + delta, `live ${key} changes map by one level`);
   }
@@ -198,21 +217,25 @@ try {
     stepBefore: liveBefore.step, stepAfter: liveAfter.step, throttle_norm: liveAfter.throttle_norm,
     rate: liveAfter.simulation_rate, rateCommandCount: await rateCommands() });
   await scene.focus(); await page.keyboard.press('m'); await mapPanel.waitFor({ state: 'hidden' });
-  result.checks.push('during live flight =/+/- change map zoom by exactly net +1 while worker steps continue and rate commands/throttle stay unchanged');
+  result.checks.push('during live flight +/- change map zoom by exactly net +1 while worker steps continue and rate commands/throttle stay unchanged');
   await page.locator('#pause').click(); await page.waitForFunction(() => document.querySelector('#status').textContent === 'Paused');
   const paused = await stats(); await page.locator('#review-flight').click();
   await page.waitForFunction(() => document.querySelector('#status').textContent === 'Review');
   await scene.focus(); await page.keyboard.press('m'); await mapPanel.waitFor({ state: 'visible' });
   const reviewRate = await rateOverlay.textContent(), reviewCommands = await rateCommands(), reviewZoom = await zoom();
-  for (const key of ['Minus', 'Equal', 'Shift+Equal']) await page.keyboard.press(key);
+  for (const key of ['Minus', 'Shift+Equal', 'Shift+Equal']) await page.keyboard.press(key);
   assert.equal(await zoom(), reviewZoom + 1); assert.equal(await rateOverlay.textContent(), reviewRate);
+  assert.equal(reviewRate, 'REPLAY 1×');
+  await page.keyboard.press('Equal'); await page.waitForFunction(() => document.querySelector('#simulation-rate-overlay').textContent === 'REPLAY 1.5×');
+  await rateOverlay.click({ modifiers: ['Shift'] }); await page.waitForFunction(() => document.querySelector('#simulation-rate-overlay').textContent === 'REPLAY 1×');
+  assert.equal(await zoom(), reviewZoom + 1);
   assert.equal(await rateCommands(), reviewCommands); await frozen(paused);
   await page.locator('#review-exit').click(); await mapPanel.waitFor({ state: 'visible' });
   await frozen(paused);
-  result.checks.push('Review map keys zoom map exactly once while preserving independent replay speed and paused live native state');
+  result.checks.push('Review map +/- zoom exactly once; = and badge Shift-click change only replay speed; paused live native state preserved');
 
   await scene.focus();
-  for (let i = 0; i < 25; i++) await page.keyboard.press('Equal');
+  for (let i = 0; i < 25; i++) await page.keyboard.press('Shift+Equal');
   assert.equal(await zoom(), await page.evaluate(() => window.__shortcutMap.getMaxZoom()));
   await page.getByRole('button', { name: 'Zoom map in', exact: true }).focus(); await page.keyboard.press('Enter');
   assert.equal(await zoom(), await page.evaluate(() => window.__shortcutMap.getMaxZoom()));

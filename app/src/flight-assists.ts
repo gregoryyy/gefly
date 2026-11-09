@@ -1,4 +1,5 @@
 import './flight-assists.css';
+import { isPlusKey } from './map-zoom-shortcuts.ts';
 
 const RATES = Object.freeze([1, 1.5, 2, 5, 10]);
 
@@ -10,7 +11,7 @@ interface FlightAssistsOptions {
   canCapture(): boolean;
   isAutopilotEngaged(): boolean;
   canChangeRate(): boolean;
-  /** Open-map zoom shortcuts take precedence over keyboard pacing controls. */
+  /** While the map is open, Shift+= (+) zooms it; = still cycles pacing. */
   mapOpen?(): boolean;
 }
 
@@ -59,15 +60,17 @@ export function createFlightAssists(options: FlightAssistsOptions): {
     const ariaLabel = reviewing ? 'Replay speed' : 'Simulation speed';
     if (overlay.getAttribute('aria-label') !== ariaLabel) overlay.setAttribute('aria-label', ariaLabel);
     const mapOpen = options.mapOpen?.() ?? false;
-    const keyboardHelp = mapOpen ? '= / + / - zoom the open map; click cycles speed, Shift-click steps down'
-      : '= cycles 1×, 1.5×, 2×, 5×, 10×; Shift+= steps down to 1×; Shift-click steps down';
+    const keyboardHelp = mapOpen ? '= cycles 1×, 1.5×, 2×, 5×, 10×; Shift+= / + and - zoom the open map; click cycles speed, Shift-click steps down'
+      : '= cycles 1×, 1.5×, 2×, 5×, 10×; Shift+= steps down to 1×; click cycles speed, Shift-click steps down';
     const title = `${reviewing ? 'Replay' : 'Simulation'} speed; ${keyboardHelp}`;
     if (overlay.title !== title) overlay.title = title;
     if (speed.title !== title) speed.title = title;
-    const shortcutText = mapOpen ? 'Menu' : '= / Shift+=';
+    const shortcutText = mapOpen ? '=' : '= / Shift+=';
     if (speedShortcut.textContent !== shortcutText) speedShortcut.textContent = shortcutText;
-    if (mapOpen) speed.removeAttribute('aria-keyshortcuts');
-    else if (!speed.hasAttribute('aria-keyshortcuts')) speed.setAttribute('aria-keyshortcuts', '= Shift+=');
+    const keyShortcuts = mapOpen ? '=' : '= Shift+=';
+    if (speed.getAttribute('aria-keyshortcuts') !== keyShortcuts) speed.setAttribute('aria-keyshortcuts', keyShortcuts);
+    const clickable = options.canChangeRate();
+    if (overlay.dataset.clickable !== String(clickable)) overlay.dataset.clickable = String(clickable);
     const span = speed.querySelector('span')!;
     const menuLabel = `${reviewing ? 'Replay' : 'Simulation'} speed: ${label}`;
     if (span.textContent !== menuLabel) span.textContent = menuLabel;
@@ -94,30 +97,42 @@ export function createFlightAssists(options: FlightAssistsOptions): {
     requestedRate = rate;
     options.onRate(rate);
   }
-  function blocked(event: KeyboardEvent): boolean {
-    return event.repeat || event.altKey || event.ctrlKey || event.metaKey
+  function guarded(event: KeyboardEvent, overMap = false): boolean {
+    return event.altKey || event.ctrlKey || event.metaKey
       || !!document.querySelector('dialog[open]')
       || !!root.querySelector('.top-menu[open]')
       || [...document.querySelectorAll<HTMLElement>('.cesium-credit-lightbox-overlay')].some(popup => popup.checkVisibility())
       || (event.target instanceof Element && !!event.target.closest(
-        'input, textarea, select, [contenteditable]:not([contenteditable="false"]), .practice-map-panel, .flight-plan-overlay'));
+        overMap ? 'input, textarea, select, [contenteditable]:not([contenteditable="false"]), .flight-plan-overlay'
+          : 'input, textarea, select, [contenteditable]:not([contenteditable="false"]), .practice-map-panel, .flight-plan-overlay'));
   }
   function onKey(event: KeyboardEvent): void {
-    if (event.defaultPrevented || blocked(event)) return;
+    if (event.defaultPrevented) return;
     if (event.code === 'KeyA') {
-      if (event.shiftKey || reviewing || !options.canCapture()) return;
+      if (event.repeat || guarded(event) || event.shiftKey || reviewing || !options.canCapture()) return;
       event.preventDefault(); event.stopPropagation(); captureCurrent();
-    } else if (event.key === '=' || event.key === '+' || event.code === 'Equal' && event.shiftKey) {
-      if (options.mapOpen?.()) return;
+    } else if (isPlusKey(event)) {
+      // Shift+= (+) zooms the open map; otherwise it steps pacing down.
+      if (event.repeat || guarded(event) || options.mapOpen?.() || !options.canChangeRate()) return;
+      event.preventDefault(); event.stopPropagation(); cycleRate(-1);
+    } else if (event.key === '=') {
       // Match the character: German keyboards produce '=' with Shift+Digit0.
-      // Consume it before the global digit/throttle handler sees that code.
-      if (!options.canChangeRate()) return;
-      event.preventDefault(); event.stopPropagation();
-      cycleRate(event.key === '+' || event.code === 'Equal' && event.shiftKey ? -1 : 1);
+      // = paces even over the open map, including with map focus.
+      const mapOpen = options.mapOpen?.() ?? false;
+      if (guarded(event, mapOpen)) return;
+      if (event.repeat || !options.canChangeRate()) {
+        // Keep MapLibre's built-in = zoom from acting on a non-pacing press.
+        if (mapOpen) { event.preventDefault(); event.stopPropagation(); }
+        return;
+      }
+      event.preventDefault(); event.stopPropagation(); cycleRate(1);
     }
   }
   capture.addEventListener('click', captureCurrent);
   speed.addEventListener('click', event => cycleRate(event.shiftKey ? -1 : 1));
+  // The on-screen SIM/REPLAY badge is a pointer shortcut for the same cycle;
+  // the Flight menu button remains the keyboard-accessible control.
+  overlay.addEventListener('click', event => { event.stopPropagation(); cycleRate(event.shiftKey ? -1 : 1); });
   document.addEventListener('keydown', onKey, true);
   render();
 

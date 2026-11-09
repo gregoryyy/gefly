@@ -365,4 +365,4 @@ selected under the user's publication instruction. Gefly is licensed
 **GPL-3.0-or-later** ([LICENSE](LICENSE), GAPS Q5). Third-party material keeps its
 own license; see the [upstream notices](THIRD_PARTY_NOTICES.md) and [SBOM](docs/SBOM.md).
 
-When the flight map is open, **= / +** zooms in and **-** zooms out. Close the map to use **= / Shift+=** for simulation or replay speed; the Flight-menu speed control works in either context. Typing and modal/menu shortcuts retain their guards.
+**=** always cycles simulation or replay speed, also while the flight map is open. With the map open, **Shift+= / +** zooms in and **-** zooms out; with it closed, **Shift+=** steps speed down. Clicking the on-screen SIM/REPLAY speed badge also cycles speed (Shift-click steps down), as does the Flight-menu speed control. Typing and modal/menu shortcuts retain their guards.
