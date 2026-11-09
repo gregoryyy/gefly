@@ -367,10 +367,11 @@ future tasks, not completed by this requirements update.
 
 - [x] 2.0.170 Integrate pinned worldwide OurAirports airport/runway/COM/radio-navaid discovery with regional packages, worker search/loading and source-marked map details/standby actions. R-WORLD-12/R-NAV-2/R-DATA-1/R-COMM-2. [Request](input/2026-11-06-integrate-ourairports.md).
 
-Task2.0.170 verification: [quality](reviews/2026-11-06-worldwide-airports-quality.md) and [validation](reviews/2026-11-06-worldwide-airports-validation.md) accept the bounded discovery increment; runtime records distinguish working-app and feature-only main scopes. Historical receiver/current-data fidelity and batched peer acceptance remain separate.
+Task 2.0.170 verification: [quality](reviews/2026-11-06-worldwide-airports-quality.md) and [validation](reviews/2026-11-06-worldwide-airports-validation.md) accept the bounded discovery increment; runtime records distinguish working-app and feature-only main scopes. Historical receiver/current-data fidelity and batched peer acceptance remain separate.
 
 - [x] 2.0.180 Reconcile PR102 worldwide discovery with current main and its on-demand OSM airport generator, preserving source boundaries and history; renew integrated checks/reviews and update the existing PR. R-WORLD-12/R-NAV-2/R-DATA-1/R-COMM-2/R-AIRPORT-3. [Request](input/2026-11-06-pr102-conflicts.md).
 
+- [x] 2.0.171 Refresh README with an actual current prototype screenshot/source provenance and the AI-assisted development research motivation, distinguishing planned A/B comparisons from measured results. Documentation only; R-BOOT-3/R-DATA-1. [Request](input/2026-11-06-readme-motivation-screenshot.md).
 - [x] 2.0.173 Retain saved Options across new flights and page reloads with bounded device-local preferences, preview/Save/Cancel and safe storage/audio defaults. R-INPUT-1/R-UX-2. [Request](input/2026-11-06-flaps-settings.md).
 - [x] 2.0.181 Reconcile PR104 saved Options with current main, retaining settings behavior, all airport pipelines and history; renew affected checks/reviews and push the existing PR. R-INPUT-1/R-UX-2/R-AIRPORT-3/R-WORLD-12. [Request](input/2026-11-06-pr104-conflicts.md).
 - [x] 2.0.182 Reconcile PR107 map fixes and saved location filters with current main, preserving worldwide discovery and saved Options; renew checks/reviews and push the existing PR. R-WORLD-6/R-NAV-5/R-INPUT-1. [Request](input/2026-11-06-pr107-conflicts.md).
