@@ -3,54 +3,63 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
-## 2026-11-09 18:58 — Simulated airport COM contact with an explicit QNH action
+## 2026-11-09 19:28 — Simulated airport COM contact with an explicit QNH action
 
 TODO: 2.0.194; R-COMM-2/R-DATA-1/R-AIR-3. Agent: Claude orchestrator (Claude
-Code, Opus 5.5); code2 subagent (Claude Opus 5.5) implemented commits 78cf437
-and 07c846d; quality subagent (Claude Opus 5.5) reviewed 78cf437.
-[Request](input/2026-11-07-remaining-flight-tasks.md),
+Code, Opus 5.5); code2 subagent (Claude Opus 5.5) implemented commits 78cf437,
+07c846d and fc371a6; quality subagents (Claude Opus 5.5) reviewed 78cf437 and
+07c846d. [Request](input/2026-11-07-remaining-flight-tasks.md),
 [repeat](input/2026-11-09-guide-imagery-qnh-runways.md).
 
 **Implementation notes**
 
 `app/src/airport-contact.ts` matches the ACTIVE COM1/COM2 channel exactly
-against an allow-list of aerodrome service types (TWR, GND, RMP, APRON, CLD,
-DEL, RADIO, RDO, CTAF, UNIC, UNICOM, A/G, INFO, AFIS, INFORMATION) and excludes
-descriptions naming radar, director, approach, control, ATIS/AWOS, VOLMET or
-operations. A normalised name shared by three or more airports, or an
-"Info/Information" name that does not match the airport, is a regional service
-(notice, no QNH); several airports in range on one channel give a shared
-notice; 121.5 and closed airports never count. Range is 25 NM horizontal, with
-every airport of the previous result kept to 27 NM. A source counts only if it
-covers the 27 NM circle (bundled five-state bounds or fully loaded world
-cells). One airport gives a once-per-contact message, e.g. `COM1 118.405 · EDFE
-Egelsbach Radio / Welcome to Frankfurt-Egelsbach Airport. QNH 1013 hPa (29.92
-inHg)`, labelled simulated text, not ATC, snapshot-dated. QNH is the worker's
-`altimeter_qnh_pa` (JSBSim sea-level pressure, ISA 1013.25 hPa; no weather). A
-setting inside the announced whole hPa counts as on QNH; the button sets the
-exact simulator value via `session.setAltimeter`, behind the controls/Review
-guards, never automatically. The panel sits above the radio stack, is hidden
-in Review, announces once through a persistent hidden live region and
-collapses after 10 s to a pill that hides once no action remains. main.ts
-loads the bundled catalogue/COM once (aborted on pagehide) and shares them with
-the map; `pressure-units.ts` is shared with the altimeter panel.
+against aerodrome stations: allow-listed source service types (TWR, GND, RMP,
+APRON, CLD, DEL, RADIO, RDO, CTAF, UNIC, UNICOM, A/G, INFO, AFIS, INFORMATION)
+whose station name matches the listing airport (typo-tolerant, three spelling
+aliases). Radar, director, approach, control, ATIS/AWOS, VOLMET and operations
+rows, names listed by three or more airports worldwide (a fixed table of 525),
+other-place names, 121.5 and closed airports give no welcome; several airports
+in range on one channel give a shared notice. Range is 25 NM horizontal, with
+every airport of the previous result kept to 27 NM. Data counts only where it
+is complete within 27 NM: `app/com-contact-data.ts` generates
+`app/public/airports/com-contact.json` (input-hashed 0.25° mask, 159 of 608
+cells, plus the name table), applied only to the exact verified bundled COM
+hash; world data counts only for fully loaded cells. One airport gives a
+once-per-contact message, e.g. `COM1 118.405 · EDFE Egelsbach Radio / Welcome
+to Frankfurt-Egelsbach Airport. QNH 1013 hPa (29.92 inHg)`, labelled simulated
+text, not ATC, snapshot-dated. QNH is the worker's `altimeter_qnh_pa` (JSBSim
+sea-level pressure, ISA 1013.25 hPa; no weather). A setting inside the
+announced whole hPa counts as on QNH; the button sets the exact simulator value
+via `session.setAltimeter`, behind the controls/Review guards, never
+automatically. The panel sits above the radio stack, is hidden in Review,
+announces once through a persistent hidden live region (cleared when contact
+ends) and collapses after 10 s to a one-line pill (`… · sim`) that hides once
+no action remains. main.ts loads the bundled catalogue/COM once (aborted on
+pagehide) and shares them with the map; `pressure-units.ts` is shared with the
+altimeter panel.
 
 **Deviations**
 
-The first version welcomed with QNH on radar, director, FIS and ATIS channels
-and covered the Review control panel; the quality review caught both. No
-keyboard shortcut. Shared or regional channels give no QNH rather than a
-nearest-airport guess (119.150 near EDFE is shared; EDMC 128.925 "Langen
-Information" is a name listed for 189 airports). Station classification is a
-heuristic over OurAirports labels: "Schwaebisch Hall Information" and "AIRBUS
-INFORMATION" are conservative misses; a neighbouring field's TWR/GND name is
-not detected. Airports just across the five-state border are missing from the
-bundled inventory. The bundled packages now load at startup. Worktree setup
-deleted the main checkout's `.vite` cache in round 1. Checks: tsc clean;
-`npm test` 849/849 plus Python; airport-contact (overlap at 1440×900, 1100×800
-and 390×844, live and Review), radio-layout, pressure-start and world-airports
-browser tests pass; `just check`; `just assure check` 0 errors. Quality
-re-review, validation and peer pending.
+Two quality reviews changed the design: the first version welcomed with QNH on
+radar, director, FIS and ATIS channels and covered the Review control panel;
+the second treated the five-state bounds rectangle as complete, so near Büchel
+122.100 welcomed ETSB although DE-0201 shares it. No keyboard shortcut. Shared
+or regional channels give no QNH rather than a nearest-airport guess (119.150
+near EDFE is shared; EDMC 128.925 "Langen Information" is a regional name).
+Strict name matching drops a few legitimate contacts (EDGW Wolfhagen Radio,
+EDNC Beilingen Radio, Schwaebisch Hall Information, AIRBUS INFORMATION) and
+callsign-named towers (LIMA, DONAU, GRAF); bundled single contacts: 250. The
+mask is conservative: borders and the north of the bounds give no contact from
+bundled data alone; it must be regenerated (`node com-contact-data.ts`) when
+the bundled COM or world packages change, which `--check` enforces. At ≤620 px
+the first-start gate covers the text until the first Start; at ≤420 px with the
+live controls shown only the pill is visible. Worktree setup deleted the main
+checkout's `.vite` cache in round 1. Checks on fc371a6: tsc clean; focused
+units 40/40; `npm test` 854/854 plus Python; airport-contact (overlap down to
+320×640, live and Review), radio-layout, world-airports and loading browser
+tests pass; `just check`; `just assure check` 0 errors. The fc371a6 fixes are
+not re-reviewed; validation and peer pending.
 
 ## 2026-11-09 17:30 — Restore green CI by keeping Pillow tests in the scenery gate
 
