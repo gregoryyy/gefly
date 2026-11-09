@@ -228,6 +228,14 @@ RPM instead of the generator's estimated gearbox. Build metadata records input,
 script and generated-output hashes. Generated XML and WASM remain ignored local
 research assets with the existing model/data distribution restrictions. This
 does not resolve source rights or validate an installed C172 propeller.
+Adapter v2 additionally reads the versioned, hash-pinned
+`studies/e1-browser/sim/naca-tr641-figure3.json`: numeric readings digitized from
+NACA Report 641 (Hartman and Biermann, 1938) figure 3, a U.S. Government work
+listed on NTRS (19930091716) as public with government public use permitted. No
+page image or prose is copied. Its rows are appended beyond the Aero-Matic tables;
+earlier rows are byte-identical. The generated propeller and WASM hashes change,
+so build records naming the v1 propeller or the v5 WASM above describe the earlier
+build.
 
 ## Aircraft reference values in application source
 
