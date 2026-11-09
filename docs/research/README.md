@@ -78,3 +78,6 @@ End with proposed implications, limitations and a handoff to product/orchestrato
 - [Stall-warning diagnostic reference](2026-11-05-stall-warning-reference.md).
 - [Regional scenery and aviation-data coverage candidates](2026-11-05-candidate-region-data.md): maintained country/region comparison, extended 2026-11-06 with national elevation/photography, worldwide airport/runway/COM/radio-navaid baseline, FAA/SIA structured navigation sources, official AIS routes and conditional access/rights findings. Research only; current Gefly coverage is listed separately.
 - [Candidate-region imagery detail](2026-11-05-candidate-region-imagery.md): island, Cape, Seychelles and Dubai product/rights evidence supporting the comparison.
+- [Disturbance stability sources](2026-11-06-disturbance-stability-sources.md) — FAA stability distinctions, executing model and source actuator evidence.
+- [Aileron return repair](2026-11-06-aileron-return.md) — controlled native and actual-app mechanism comparison with explicit limits.
+- [Current flap effectiveness](2026-11-06-flap-effectiveness.md): exact-build native response, matched source arithmetic and calibration limits.

@@ -642,17 +642,15 @@ when the handbook opens.
 
 Press **M** or select **View → Flight map** to show or hide a
 north-up practice map. It loads MapLibre on demand and uses bundled photographs
-plus the fixed-source live map/photo service described below. The aircraft marker shows true heading; the plotted route uses up
-to 600 points from the current flight's retained state trace. **Trace start**
-marks the first retained sample, not an airport reference point. Flight reset
-clears the route.
+plus the fixed-source live map/photo service described below. The aircraft marker shows true heading. In live flight the route uses a bounded, simplified geographic history from the session's first recorded position, separate from the shorter Review recording. **Trace start** marks that path's first available position, not an airport reference point. The route is session-only; flight reset or page reload clears it.
 
 To try it, fly a gentle turn, open **Map**, then enter **Review** and drag the
 timeline. The aircraft marker follows the selected recorded state. The route
-shows the whole retained trace, including any part flown after the selected
-review time; it is not a historical-only path. Use the map's zoom or **Fit**
-controls to inspect it. Map controls respond immediately; map interaction keeps
-keyboard focus in the map and releases held flight controls.
+shows the retained Review recording, including any part flown after the selected
+review time; it is not a historical-only path. Its **Recording start** may be
+later than departure. Use the map's zoom or **Fit** controls to inspect it. Map controls respond
+immediately; map interaction keeps keyboard focus in the map and releases held
+flight controls.
 Return focus to the scene before using ordinary flight keys.
 
 The map has **731 searchable community airfield and heliport entries** from a pinned OurAirports
@@ -870,7 +868,7 @@ adjoining states; ILS references remain historical 2013.10. This map-only invent
 does not replace the aircraft’s separately validated radio-navigation package.
 
 During Review the aircraft marker follows the selected historical frame while
-the whole retained flight path remains visible. Displaying these layers does not tune radios or move the aircraft. Explicit
+the retained recording path remains visible. Displaying these layers does not tune radios or move the aircraft. Explicit
 marker actions load supported standby channels; the map does not provide current
 airspace/NOTAM/procedure information.
 Failures while loading optional map layers are disclosed independently. The
@@ -1021,3 +1019,11 @@ compiler and bounded loader/source tests. The browser case requires the existing
 local JSBSim build and Chrome; it does not establish navigation or aircraft fidelity.
 
 Failed world cells remain unavailable for the current map-centre generation. Change to another region or reload to retry; reentry has a one-minute minimum cooldown. This avoids repeated failed fetches.
+
+## Roll-control return regression
+
+Rebuild the local engine with `just build-flight-engine` after updating the v5 aircraft adapter. `npm --prefix app run test:roll-return` runs57native diagnostic cases, checks18signed roll returns and54successive-pulse settling samples; no engine/model assets are distributed. The numeric equality check concerns command mapping, not a C172 flight tolerance.
+
+With `just fly` running from this checkout, `npm --prefix app run test:roll-return-browser` exercises actual pointer centering/keyboard release in isolated Chrome contexts. It does not touch your existing browser session. For another running checkout, set `GF_ORIGIN` and `GF_DISTURBANCE_SOURCE_ROOT` explicitly. Optional `GF_DISTURBANCE_NATIVE_DIR` supplies a local comparison runtime to the test context only. The position-control virtual yoke retains a displaced pointer command until centered or cancelled; mere finger lift is not centering.
+
+The native return regression also starts the normal `test:browser` gate. The actual-app input harness stays opt-in: it deliberately targets an already-running caller-owned server and source checkout, and does not start/stop that server. Run it explicitly for input/worker/browser changes; the full ordinary browser chain was not claimed as executed for this increment.

@@ -683,6 +683,13 @@ Country tiles are requested on visual demand and are not admitted to the
 existing persistent service-worker cache or predictive prefetch. Their source
 terms, attribution and boundary limitations are recorded in the imagery note.
 
+## Map track history
+
+The live map keeps a bounded, simplified geographic path in session memory.
+It does not add storage, network transmission or fields to recording exports;
+reload or a new flight clears it. Review and imported recordings retain their
+existing bounded state-trace semantics.
+
 The same bounded country service additionally allows canonical `nrw`, `bb` and
 `es` tile identities, routed only to fixed official NRW, Berlin/Brandenburg and
 PNOA 2024 annual WMS hosts and layers. It also exposes a fixed Spanish metadata

@@ -23,7 +23,7 @@ fixed public sources, small PNG dimensions, deadlines and memory/concurrency
 limits. Verified bundled photography remains available independently; the live
 service does not grant additional airport accuracy or currentness.
 
-MapLibre GL JS 6.16.0 (BSD-3-Clause) is pinned for the lazy-loaded practice map. Its worker is explicitly bundled by Vite; no external style/glyph service is used. The map adds local versioned airport points and the fixed-source public scenery endpoints below. The complete [MapLibre license](../LICENSES/MapLibre-BSD-3-Clause.txt) is retained in source and copied into UI build output. Geographic conversion follows the [official image-source corner convention](https://maplibre.org/maplibre-gl-js/docs/API/classes/ImageSource/). The plotted route uses at most 600 endpoint-preserving samples of the already bounded flight trace; it establishes no navigational/chart or airport-reference accuracy.
+MapLibre GL JS 6.16.0 (BSD-3-Clause) is pinned for the lazy-loaded practice map. Its worker is explicitly bundled by Vite; no external style/glyph service is used. The map adds local versioned airport points and the fixed-source public scenery endpoints below. The complete [MapLibre license](../LICENSES/MapLibre-BSD-3-Clause.txt) is retained in source and copied into UI build output. Geographic conversion follows the [official image-source corner convention](https://maplibre.org/maplibre-gl-js/docs/API/classes/ImageSource/). The live route uses a bounded simplified geographic history separate from the shorter recorded-state trace; it establishes no navigational/chart or airport-reference accuracy.
 
 ## Current development tools
 
@@ -210,16 +210,9 @@ distribution; link to it instead when it is a needed reference.
 
 ## Local cockpit adapter
 
-`studies/e1-browser/sim/prepare-aircraft.py` prepares an ignored copy of pinned
-JSBSim c172x data. It hash-guards the original XML and adds only a default-on
-execute gate for the automatic-mixture channel, leaving all other bytes and
-coefficients unchanged. The original checkout is not modified. The build record
-contains adapter ID, script/source/prepared SHA-256 hashes. Generated adapted
-model bytes remain embedded only in the excluded local research runtime; this is
-not a distribution-rights or selected-172S fidelity acceptance. Engine telemetry
-and the modern roll autopilot reuse the already pinned source; no new numerical
-or browser dependencies were added. Python's standard library supports the
-adapter and its six tests, including the pinned c172ap MSL/VS/output-gate wiring. See [source mappings](research/2026-11-02-classic-controls.md).
+`studies/e1-browser/sim/prepare-aircraft.py` prepares an ignored, source-hash-guarded copy of pinned JSBSim c172x data. Existing mixture gating, manual steering and generic pitch-AP wiring remain. Adapter v5 additionally sets the two named aileron actuator hysteresis bands to zero; compared with v4 prepared XML these are the only two numeric changes. Source scales/rate limits, mass and aerodynamic functions remain byte-identical. The original checkout is not modified. Script/source/prepared hashes and adapter ID are recorded. Generated model/native files remain excluded; upstream aircraft notices and redistribution limitations remain unresolved, not replaced by engine LGPL acceptance.
+
+Normal v5 build uses prepared aircraft SHA-256`cd85bb2afcd50b10238addf2f43493368b2266b83530786d1b3f6ccf3cc87595`, unchanged AP SHA-256`5e97d48b351d65431ee3b31bf557b3a81075634996319a9f02e244b8648b692d`, unchanged bridge/library and native WASM SHA-256`266f201652e8fc3fb6c5ee384bad3ef1f66b335ee9885fa4a14de9a797c1edcc` (1,770,582bytes). This matches the isolated controlled two-value comparison. Nine adapter tests include idempotence, exact intended byte scope, expected rejection causes and a truly unclosed actuator. No dependency, aircraft gain/coefficient fitting, training or selected-172S acceptance is added. See [source mappings](research/2026-11-02-classic-controls.md) and [roll-return evidence](research/2026-11-06-aileron-return.md).
 
 `studies/e1-browser/sim/prepare-propeller.py` additionally reads the pinned
 JSBSim `utils/aeromatic/prop2.php` (David P. Culp, Aero-Matic v1.1) to derive a

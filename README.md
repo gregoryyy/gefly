@@ -26,12 +26,14 @@ support commercial maps and charts, hosting and AI features.
 
 See the [vision and roadmap](docs/ROAD.md) for the full direction.
 
-![Gefly flying near Egelsbach with the left-hand systems panel, latest cockpit controls, a visible horizon and a recorded flight path on the Egelsbach map](docs/images/gefly-systems-cockpit-flight-map.png)
+![Gefly's current local prototype: a Cessna research aircraft in chase view, classic cockpit instruments and the Egelsbach flight map](docs/images/gefly-2026-11-06.png)
 
-Live prototype flight near Egelsbach: systems switches and electrical gauges on
-the far left, the latest cockpit panels, horizon and
-actual flown trajectory on the right-side map.
-[Screenshot provenance and credits](docs/images/README.md).
+Local development build, **6 November 2026**: actual JSBSim flight near Egelsbach,
+classic cockpit and the flown trace on the live map. Map ©
+[OpenStreetMap contributors](https://www.openstreetmap.org/copyright),
+[OpenFreeMap](https://openfreemap.org/) / [OpenMapTiles](https://openmaptiles.org/).
+Scenery/terrain: Hessen HVBG and © GeoBasis-DE / BKG (2026), resampled and blended.
+[Capture details and source licences](docs/images/README.md#current-readme-capture--2026-11-06).
 
 Today, Gefly is an experimental browser prototype with JSBSim flight dynamics,
 CesiumJS scenery, MapLibre maps, classic instruments and flight review. The native
@@ -46,6 +48,19 @@ where practical, under **GPL-3.0-or-later**. See the
 [training design](docs/design/TRAINING.md) and
 [GeoFS-inspired control profile](docs/design/CONTROLS.md) for the learning and
 interaction direction.
+
+## An experiment in AI-assisted development
+
+Gefly is also a practical experiment in rapid, AI-assisted software development.
+Build a technically substantial system quickly, then make visible where “vibe
+coding” breaks down as complexity grows. Physics, instruments, maps, data and
+asynchronous workers must keep working together as the codebase changes.
+
+We plan controlled A/B comparisons on matched development tasks, testing practices
+such as explicit contracts, smaller changes, regression tests and independent
+review. Measure delivery time, regressions and rework to learn what prevents or
+reduces failures without losing development speed. These comparisons are planned;
+no measured A/B results are claimed. See the [research motivation](docs/IDEA.md#ai-assisted-development-research).
 
 ## Airport play
 
@@ -88,9 +103,11 @@ attributions and licence links. The full text is in this menu rather than across
 the flight view.
 
 Select an airport on the map and open **Airport COM** to load a service into
-**COM1/COM2 standby**, then swap on the radio stack. The directory contains 631
-source records across 251 airports, including 8.33 channel names; it is a dated
-community snapshot, not current operational information or an ATC service.
+**COM1/COM2 standby**, then swap on the radio stack. The worldwide snapshot contains
+30,394 COM records; unsupported or invalid source channels remain untunable.
+The legacy regional directory contains 631 records across 251 airports and remains
+a fallback. These are dated community records, not current operational information
+or an ATC service.
 [Sources and limits](docs/research/2026-11-03-airport-play.md).
 
 ## Fly the prototype
@@ -170,8 +187,9 @@ route or an altitude, speed or obstacle-clearance instruction.
 
 **M** or **View → Flight map** opens a right-side map beside the 3D view,
 showing the aircraft and whole retained flight path. **Comma (,)** opens the menu
-below the map over the right cockpit panels. **Location types** checkboxes filter airfields, helipads, NAV aids, fixes and other facilities on both the map and search results. The map has **731 searchable
-community airfield and heliport entries across five southern German states**, including available airport elevations. Choose the
+below the map over the right cockpit panels. **Location types** checkboxes filter airfields, helipads, NAV aids, fixes and other facilities on both the map and search results. The map offers **worldwide airport and radio-navaid search**, loading nearby source
+records and available airport elevations. Its 731-entry five-state German catalogue
+remains a fallback. Choose the
 public map or aerial imagery; a nautical scale and **community radio beacons and historical LOC/ILS
 references (2013.10)** provide source-marked practice context. Pan/zoom,
 select an airport and use Follow to return to the aircraft; selection does not

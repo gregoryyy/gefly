@@ -49,6 +49,7 @@ import { resumeProblem } from '../../studies/e1-browser/sim/continue-flight.js';
 import { loadingFromState } from '../../studies/e1-browser/sim/loading.js';
 import { createFlightLocationStore } from './flight-location';
 import { FlightTrace } from './flight-trace';
+import { MapFlightTrack } from './map-flight-track';
 import { createRunwayPracticeMonitor, type PracticeProgress } from './runway-practice';
 import { createFlightReviewControls } from './flight-review-controls';
 import { applyControlSettings, type ControlSettings } from './control-settings';
@@ -282,6 +283,9 @@ let latest: FlightState | null = null, previous: FlightState | null = null;
 let collisionUnavailableNoticed = false;
 let verticalSpeedFpm = 0, throttle = 0.69, stickX = 0, stickY = 0;
 let flightTrace = new FlightTrace();
+const mapFlightTrack = new MapFlightTrack();
+// An imported clipped recording cannot establish the original departure.
+let mapTrackStartsAtRecording = false;
 let loadedTrace: FlightTrace | null = null;
 let resumeAfterReview = false;
 let recordingLoadVersion = 0;
@@ -442,7 +446,7 @@ const session = createSession({
     liveWarnings = liveWarningMonitor.update(state);
     stallWarningDelivery.accept(state, { now_ms: performance.now(), enabled: stallDeliveryEnabled() });
     if (!reviewing) {
-      flightTrace.record(state, verticalSpeedFpm * 0.3048 / 60);
+      if (flightTrace.record(state, verticalSpeedFpm * 0.3048 / 60)) mapFlightTrack.record(state);
       practiceReviewCache = null;
     }
     if (!reviewing && runwayStart) runwayPractice.update(state);
@@ -1089,9 +1093,22 @@ async function continueLiveFromReview() {
     const initial: FlightState = { ...selected.state, ...actual };
     const restoredLoading = loadingFromState(initial);
     if (restoredLoading) loadingPanel.setConfiguration(restoredLoading);
+    // A loaded recording is unrelated to the paused live flight. Its retained
+    // samples are the only history available for a continued imported flight.
+    if (source !== flightTrace) {
+      mapFlightTrack.clear();
+      mapTrackStartsAtRecording = !!source.bounds()?.clipped;
+      for (const state of source.recordedStates()) {
+        if (state.t_s >= selected.state.t_s) break;
+        mapFlightTrack.record(state);
+      }
+    } else {
+      mapFlightTrack.truncateAfter(selected.state.t_s);
+    }
     flightTrace = source.prefixBefore(selected.state.t_s);
     loadedTrace = null; recordingLoadVersion++; resumeAfterReview = false;
     flightTrace.record(initial, selected.vertical_speed_mps);
+    mapFlightTrack.record(initial);
     previous = null; latest = initial; verticalSpeedFpm = selected.vertical_speed_mps * 60 / .3048;
     keys.clear(); keyboardControls.clear(); keyboardControlActivation.clear(); apKeyboardGuard.clear(); pointerControls.clear(); pointerYoke?.cancel();
     stickX = stickY = 0; cwsHeld = apDisconnectPending = false;
@@ -1243,6 +1260,8 @@ function reset(preset: LandingPreset | null | undefined = landingPreset, start: 
   const runway = runwayStart?.runway;
   flightTrace.clear(runwayStart?.airport === 'EDFE' && (runway === '08' || runway === '26')
     ? { kind: 'runway-practice', version: 1, airport: 'EDFE', runway } : undefined);
+  mapFlightTrack.clear();
+  mapTrackStartsAtRecording = false;
   parkingBrake = false; pitchTrimTarget = null; flapTarget_deg = 0; mixtureCommand = 1; mixtureAutomatic = true; engineCommand = null; apDisconnectPending = false;
   if (practiceMap && latest) { try { practiceMap.update(latest, [], 'live'); } catch { mapUnavailable(); } }
   lastMapUpdate_ms = -Infinity;
@@ -1598,7 +1617,8 @@ function animate(now: number) {
     const shownVsiFpm = reviewSample ? reviewSample.vertical_speed_mps / 0.3048 * 60 : verticalSpeedFpm;
     if (practiceMap && (mapVisible || flightPlanVisible) && practiceMapUpdateDue({ reviewing, now_ms: now, lastUpdate_ms: lastMapUpdate_ms, sample: reviewSample, lastSample: lastMapSample })) {
       try {
-        practiceMap.update(state, recordedTrace().sampledStates(600), reviewing ? 'review' : 'live');
+        practiceMap.update(state, reviewing ? recordedTrace().sampledStates(600) : mapFlightTrack.sampledStates(1000), reviewing ? 'review' : 'live',
+          { simplified: !reviewing && mapFlightTrack.wasSimplified(), recordingStart: !reviewing && mapTrackStartsAtRecording });
         lastMapUpdate_ms = now; lastMapSample = reviewSample;
       } catch {
         mapUnavailable();
