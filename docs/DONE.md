@@ -3,11 +3,12 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
-## 2026-11-09 18:54 — Extend windmilling propeller tables with the NACA TR-641 negative region
+## 2026-11-09 19:09 — Extend windmilling propeller tables with the NACA TR-641 negative region
 
 TODO: 2.0.52 (partial), new 2.0.206/2.0.207; R-SIM-10/R-ENG-1. Agent: Claude
 orchestrator (Claude Code, Opus 5.5); code1/researcher subagent (Claude Opus
-5.5) implemented commit 27f673c. [Report](input/2026-11-03-engine-off-glide.md),
+5.5) implemented commits 27f673c and 7e7b021; quality subagent (Claude Opus
+5.5) reviewed 27f673c. [Report](input/2026-11-03-engine-off-glide.md),
 [research](research/2026-11-09-engine-off-propeller-tr641.md).
 
 **Implementation notes**
@@ -17,29 +18,38 @@ JSBSim holds the last value beyond them, so a slowing windmilling propeller
 lost torque and drag with the square of shaft speed. With JSBSim's constant
 engine-off friction power, a closed-throttle shutdown stopped the shaft, and a
 stopped propeller applies no force. Digitized NACA TR-641 figure 3 readings
-(2-blade Clark Y, 15° and 20°, public domain, NTRS 19930091716;
-`studies/e1-browser/sim/naca-tr641-figure3.json`, hash-pinned with provenance
-and reading uncertainty) are appended by preparation adapter v2 as CT = Tc·J²
-and CP = 2π·Qc·J² rows up to J = 100, using the 20° curve, whose zero-torque
-point matches the Aero-Matic zero-power point. Earlier rows stay
-byte-identical. `engine-off-glide-native.mjs` (2,500 m, flaps up, 60–120 s
-after shutdown): 35 m/s closed throttle 13.99 → 11.92:1, 0 → 717 rpm, −138 N;
-ignition-off/cutoff and 45 m/s cases and powered digests unchanged; the restart
-coast now windmills at 716 rpm. A 240 s probe at about 68 KIAS gives
-11.6–12.0:1 against the 172S POH reading of 9.1:1.
+(2-blade Clark Y, 15° and 20°; NACA 1938, NTRS 19930091716, distribution
+PUBLIC, GOV_PUBLIC_USE_PERMITTED; `studies/e1-browser/sim/naca-tr641-figure3.json`,
+hash-pinned with provenance and reading uncertainty) are appended by
+preparation adapter v2 as CT = Tc·J² and CP = 2π·Qc·J² rows up to J = 100,
+using the 20° curve, whose zero-torque point matches the Aero-Matic zero-power
+point. Earlier rows stay byte-identical. The join mismatch is recorded in build
+metadata and rejected above 25 % (CT +9.9 %, CP −3.1 %). Results from
+`node studies/e1-browser/sim/engine-off-glide-native.mjs` (2,500 m, flaps up):
+35 m/s closed throttle over 60–120 s 13.99 → 11.92:1, 0 → 717 rpm, −138 N;
+ignition-off/cutoff, 45 m/s and powered digests unchanged; the restart coast
+windmills at 716 rpm. 420 s descents: 35 m/s closed throttle stops at 252 s;
+40 m/s (≈68 KIAS) windmills throughout, with 180–240 s energy glide ratios of
+11.58:1 (closed throttle) and 11.97:1 (throttle at trim) against the 172S POH
+reading of 9.1:1, unchanged from v1 because those cases stay below J 1.4. A
+temporary 15° build gave 11.13:1 for the 35 m/s case (about 7 % from 20°).
 
 **Deviations**
 
 2.0.52 stays open: the airframe polar accounts for about 13.5:1 and was not
-tuned (2.0.206); closed-throttle low-speed shaft stop and locked-propeller
-force need JSBSim changes (2.0.207); the 30 m/s closed-throttle case is kept
-as a not-accepted fixture. The NACA propeller is a 1938 10 ft radial-nacelle
-test, not the 172's McCauley propeller. The flap-effectiveness WASM pin was
-already environment-specific and is unchanged; `engine-smoke` fails on two
-assertions that fail identically with main's WASM. Checks: `npm test`, both
-preparation tests, nine native harnesses plus landing physics and the
-performance diagnostic, `just check`, `just assure check`. Independent
-quality/validation and peer review pending.
+tuned (2.0.206); closed throttle at or below about 35 m/s TAS still stops the
+propeller after some minutes, and locked-propeller force needs JSBSim changes
+(2.0.207). Two fixtures are kept as not accepted (30 m/s closed throttle, 35 m/s
+420 s descent). TR-641 is a 1938 10 ft propeller on a radial nacelle, and its
+effective thrust includes that installation's slipstream drag; it is not the
+172's McCauley propeller. The quality review found no blockers; its wording,
+join-bound and metadata findings are fixed in 7e7b021. The flap-effectiveness
+WASM pin was already environment-specific and is unchanged; `engine-smoke` fails
+on two assertions that fail identically with main's WASM. Checks: glide harness
+(13 nominal pass, 2 not accepted, identical re-runs), `prepare-propeller.test.py`
+10 and `prepare-aircraft.test.py` 9, `npm test`, nine native harnesses plus
+landing physics and the performance diagnostic (first round), `just check`,
+`just assure check`. Validation and peer review pending.
 
 ## 2026-11-09 17:30 — Restore green CI by keeping Pillow tests in the scenery gate
 
