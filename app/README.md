@@ -88,7 +88,7 @@ unavailable. Returning to live restores pending control settings.
 | 0 | Set throttle to idle |
 | P | Autopilot on / off (simulator shortcut) |
 | A | Engage autopilot HDG + ALT at current heading/pressure altitude |
-| = / + / - | Map open: zoom in / in / out; map closed: = cycles simulation rate, + steps down |
+| = / + / - | = always cycles simulation rate; map open: + (Shift+=) / - zoom in / out; map closed: + steps rate down. Click the SIM badge to cycle, Shift-click to step down |
 | M | Open / close the flight map |
 | , | Toggle the extended menu below the map |
 | . | Cycle terrain landmark labels: Off / Places / Landmarks / Detailed |
@@ -993,7 +993,7 @@ No worldwide airport/NAV inventory or new photographs are added. See the
 [regional package](public/terrain/region/README.md),
 [world package](public/terrain/world/README.md), and [source rights](../THIRD_PARTY_NOTICES.md).
 
-When the flight map is open, **= / +** zooms in and **-** zooms out. Close the map to use **= / Shift+=** for simulation or replay speed; the Flight-menu speed control works in either context. Typing and modal/menu shortcuts retain their guards.
+**=** always cycles simulation or replay speed, also while the flight map is open. With the map open, **Shift+= / +** zooms in and **-** zooms out; with it closed, **Shift+=** steps speed down. Clicking the on-screen SIM/REPLAY speed badge also cycles speed (Shift-click steps down), as does the Flight-menu speed control. Typing and modal/menu shortcuts retain their guards.
 
 ## Worldwide airport discovery
 

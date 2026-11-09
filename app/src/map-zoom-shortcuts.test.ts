@@ -43,7 +43,7 @@ function fixture() {
   document.addEventListener('keydown', () => { downstream++; }, { capture: true });
   function key(properties: Partial<KeyboardEvent> = {}, target?: TargetElement, prevented = false) {
     const event = Object.assign(new Event('keydown', { cancelable: true }), {
-      key: '=', code: 'Equal', shiftKey: false, repeat: false, ctrlKey: false, metaKey: false, altKey: false,
+      key: '+', code: 'Equal', shiftKey: true, repeat: false, ctrlKey: false, metaKey: false, altKey: false,
       ...properties,
     });
     if (target) Object.defineProperty(event, 'target', { value: target });
@@ -57,8 +57,8 @@ function fixture() {
 
 test('R-WORLD-6/R-SIM-9 open map captures US, German and numpad zoom once per press', () => {
   for (const [properties, direction] of [
-    [{ key: '=', code: 'Equal' }, 1], [{ key: '+', code: 'Equal', shiftKey: true }, 1],
-    [{ key: '=', code: 'Digit0', shiftKey: true }, 1], [{ key: '-', code: 'Minus' }, -1],
+    [{ key: '+', code: 'Equal', shiftKey: true }, 1], [{ key: '+', code: 'BracketRight' }, 1],
+    [{ key: 'Unidentified', code: 'Equal', shiftKey: true }, 1], [{ key: '-', code: 'Minus' }, -1],
     [{ key: '+', code: 'NumpadAdd' }, 1], [{ key: '-', code: 'NumpadSubtract' }, -1],
     [{ key: 'Unidentified', code: 'NumpadAdd' }, 1], [{ key: 'Unidentified', code: 'NumpadSubtract' }, -1],
   ] as const) {
@@ -71,9 +71,19 @@ test('R-WORLD-6/R-SIM-9 open map captures US, German and numpad zoom once per pr
   }
 });
 
+test('R-SIM-9 = is never a map zoom key, so it reaches simulation pacing over the open map', () => {
+  const f = fixture();
+  for (const properties of [{ key: '=', code: 'Equal' }, { key: '=', code: 'Digit0', shiftKey: true },
+    { key: '=', code: 'Equal', shiftKey: true }, { key: '=', code: 'Equal', repeat: true }]) {
+    assert.equal(f.key(properties).defaultPrevented, false);
+  }
+  assert.deepEqual(f.calls, []); assert.equal(f.zoom(), 5); assert.equal(f.downstream(), 4);
+  f.shortcuts.dispose();
+});
+
 test('R-WORLD-6/R-SIM-9 repeated zoom keys are consumed without zoom or throttle leakage', () => {
   const f = fixture();
-  for (const properties of [{ key: '=', code: 'Digit0', shiftKey: true },
+  for (const properties of [{ key: '+', code: 'Equal', shiftKey: true },
     { key: '+', code: 'NumpadAdd' }, { key: '-', code: 'Minus' }]) {
     assert.equal(f.key({ ...properties, repeat: true }).defaultPrevented, true);
   }
@@ -84,7 +94,7 @@ test('R-WORLD-6/R-SIM-9 repeated zoom keys are consumed without zoom or throttle
 test('R-WORLD-6/R-SIM-9 closed map and unrelated keys retain normal downstream controls', () => {
   const f = fixture(); f.close();
   assert.equal(f.key().defaultPrevented, false);
-  assert.equal(f.key({ key: '=', code: 'Digit0', shiftKey: true, repeat: true }).defaultPrevented, false);
+  assert.equal(f.key({ key: '+', code: 'Equal', shiftKey: true, repeat: true }).defaultPrevented, false);
   f.reopen(); assert.equal(f.key({ key: '0', code: 'Digit0' }).defaultPrevented, false);
   assert.equal(f.key({ key: 'a', code: 'KeyA' }).defaultPrevented, false);
   assert.deepEqual(f.calls, []); assert.equal(f.downstream(), 4); f.shortcuts.dispose();

@@ -60,7 +60,7 @@ try {
   };
   assert.equal(await page.locator('.topbar').isVisible(), false);
   assert.equal(await overlay.textContent(), 'SIM 1×');
-  assert.equal(await overlay.evaluate(element => getComputedStyle(element).pointerEvents), 'none');
+  assert.equal(await overlay.evaluate(element => getComputedStyle(element).pointerEvents), 'auto');
   assert.equal(await page.locator('#capture-autopilot').getAttribute('aria-keyshortcuts'), 'A');
   assert.equal(await page.locator('#simulation-rate').getAttribute('aria-keyshortcuts'), '= Shift+=');
 
@@ -118,6 +118,16 @@ try {
   }
   unchanged(before, await stats());
   checks.push('Shift+= steps down 10×→5×→2×→1.5×→1× and stays at 1× without stepping paused physics');
+  for (const rate of [1.5, 2]) {
+    await overlay.click();
+    await page.waitForFunction(rate => window.assistStates.at(-1)?.simulation_rate === rate && document.querySelector('#simulation-rate-overlay').textContent === `SIM ${rate}×`, rate);
+  }
+  await overlay.click({ modifiers: ['Shift'] });
+  await page.waitForFunction(() => window.assistStates.at(-1)?.simulation_rate === 1.5 && document.querySelector('#simulation-rate-overlay').textContent === 'SIM 1.5×');
+  await overlay.click({ modifiers: ['Shift'] });
+  await page.waitForFunction(() => window.assistStates.at(-1)?.simulation_rate === 1 && document.querySelector('#simulation-rate-overlay').textContent === 'SIM 1×');
+  unchanged(before, await stats());
+  checks.push('clicking the SIM badge cycles speed up and Shift-click steps down without stepping paused physics');
 
   const commandCount = () => page.evaluate(() => window.assistCommands.filter(command => ['simulation-rate', 'autopilot-capture'].includes(command.type)
     || command.type === 'kap140' && command.command?.action === 'disconnect').length);

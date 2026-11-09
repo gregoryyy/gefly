@@ -4,7 +4,15 @@ interface MapZoomShortcutsOptions {
   onZoom(direction: 1 | -1): void;
 }
 
-/** The open flight map owns zoom keys even when focus remains in the flying view. */
+/**
+ * Shift+= (the + character), including a layout reporting Shift+Equal. Plain =
+ * (also German Shift+Digit0) is never a zoom key: it always cycles simulation speed.
+ */
+export function isPlusKey(event: Pick<KeyboardEvent, 'key' | 'code' | 'shiftKey'>): boolean {
+  return event.key === '+' || event.code === 'Equal' && event.shiftKey && event.key !== '=';
+}
+
+/** The open flight map owns + / - zoom keys even when focus remains in the flying view. */
 export function createMapZoomShortcuts(options: MapZoomShortcutsOptions): { dispose(): void } {
   const { root } = options;
   const document = root.ownerDocument;
@@ -15,7 +23,7 @@ export function createMapZoomShortcuts(options: MapZoomShortcutsOptions): { disp
     if (disposed || event.defaultPrevented || !options.isOpen()
       || event.ctrlKey || event.metaKey || event.altKey) return;
     // Match characters rather than the Equal code: German Shift+Digit0 is '='.
-    const direction = event.key === '=' || event.key === '+' || event.code === 'NumpadAdd' ? 1
+    const direction = isPlusKey(event) || event.code === 'NumpadAdd' ? 1
       : event.key === '-' || event.code === 'NumpadSubtract' ? -1 : null;
     if (direction === null) return;
     const ElementClass = document.defaultView?.Element;

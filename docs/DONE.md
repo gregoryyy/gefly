@@ -3,6 +3,32 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-09 20:38 — Let = pace over the open map and make the speed badge clickable
+
+TODO: 2.0.202; R-WORLD-6/R-SIM-9. Agent: Claude orchestrator (Claude Code,
+Opus 5.5); no subagents.
+
+**Implementation notes**
+
+`isPlusKey` in `map-zoom-shortcuts.ts` now defines the shared Shift+= / +
+predicate. The map zoom handler no longer captures =; `flight-assists.ts`
+handles = (also with map-panel focus) as speed-up in live and Review use, and
+consumes a non-pacing = over the open map so MapLibre's built-in = zoom cannot
+act. With the map open, + zooms; with it closed, + steps speed down. The
+SIM/REPLAY badge accepts clicks (Shift-click steps down); the Flight menu
+remains the keyboard-accessible control. READMEs, the map zoom-in button hint,
+SPEC R-SIM-9 and GAPS record the change.
+
+Checks: `node --test src/map-zoom-shortcuts.test.ts` 8/8;
+`tests/flight-assists.browser.mjs` and `tests/map-zoom-shortcuts.browser.mjs`
+pass with updated = / + / badge-click assertions; `npm test`, `just check` and
+`just assure check` as reported in the PR.
+
+**Deviations**
+
+The badge is pointer-only by design; no new keyboard focus stop. Peer review
+pending.
+
 ## 2026-11-09 17:30 — Restore green CI by keeping Pillow tests in the scenery gate
 
 TODO: 2.0.192/2.0.195/2.0.198 follow-up; R-WORLD-11/R-DATA-1. Agent: Claude
