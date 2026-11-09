@@ -17,7 +17,8 @@ uncaught `RangeError: Panel frame dimensions must be positive…` in the
 animation frame; in headless Chrome the panel still refitted afterwards. The
 fit now returns before writing any size when the deck has no measurable width
 or the window no height, and clears the layout key, so any later usable size,
-including the previous one, refits. A first version guarded only after writing
+including the previous one, refits; the stale panel frame is cleared too, so
+wheel and drag do nothing until the next fit. A first version guarded only after writing
 the deck height; the review showed that a collapse to 1–8 px followed by a
 restore to the same size then left the panel empty, which main recovered from.
 `tests/panel-tiny-start.browser.mjs` (`npm run test:panel-tiny-start`, also in
@@ -29,7 +30,8 @@ fitted 720×715 window, requiring the original fit and no page errors.
 
 The user's VS Code empty-panel report was not reproduced; this fixes the
 failures found in headless Chrome, so the report stays open until the user
-confirms. Checks: the test passes; it fails on main (page error at the 1×1
+confirms. The quality re-review passed the fix. Checks: the test and
+`panel-layout.browser.mjs` (13 viewport cases) pass; it fails on main (page error at the 1×1
 start) and on the first version (no refit after the collapse). TypeScript and
 `npm test` pass. Independent re-review, validation and peer pending.
 

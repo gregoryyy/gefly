@@ -87,7 +87,7 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
     // A hidden or tiny window (an editor-embedded browser can start or collapse
     // to almost nothing) has no measurable frame. Write nothing and clear the
     // key, so any later usable size, including the previous one, refits.
-    if (!(deck.clientWidth - horizontalPadding > 0 && container.clientHeight > 0)) { layoutKey = ''; return; }
+    if (!(deck.clientWidth - horizontalPadding > 0 && container.clientHeight > 0)) { layoutKey = ''; panelFrame = null; return; }
     const scale = Math.min(1,
       Math.max(1, deck.clientWidth - horizontalPadding) / naturalWidth,
       Math.max(1, container.clientHeight - sceneReserve - headingHeight - verticalPadding) / naturalHeight);
@@ -101,7 +101,7 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
       viewport.style.height = `${baseHeight}px`;
       container.style.setProperty('--deck-height', `${baseHeight + headingHeight + verticalPadding}px`);
       const viewportRect = viewport.getBoundingClientRect();
-      if (!(viewportRect.width > 0 && viewportRect.height > 0 && baseWidth > 0 && baseHeight > 0)) { layoutKey = ''; return; }
+      if (!(viewportRect.width > 0 && viewportRect.height > 0 && baseWidth > 0 && baseHeight > 0)) { layoutKey = ''; panelFrame = null; return; }
       fitScale = scale;
       panelFrame = { width: viewportRect.width, height: viewportRect.height,
         baseWidth, baseHeight };
