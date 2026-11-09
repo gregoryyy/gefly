@@ -222,3 +222,41 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [Additional German photographic scenery](2026-11-07-german-state-imagery.md).
 - [Spanish island photographic scenery](2026-11-07-spanish-island-imagery.md).
 - [Repeated vector scenery reloads](2026-11-07-vector-imagery-reloads.md).
+- [2026-11-04: restore fixed cockpit panel](2026-11-04-panel-fixed-fit.md)
+- [2026-11-05: anonymous fixes and prominent flight plans](2026-11-05-anonymous-fixes-prominent-plan.md)
+- [2026-11-05 autopilot behavior check](2026-11-05-autopilot-behavior-check.md): measure HDG/NAV, altitude/ARM and CWS before considering changes.
+- [2026-11-05 near-north autopilot follow-up](2026-11-05-autopilot-north-followup.md): speculative A engagement near north followed by a turn toward 230 degrees.
+- [2026-11-05 autopilot reload](2026-11-05-autopilot-reload.md): retain AP engagement, modes and targets with the saved live position.
+- [2026-11-05 background flight](2026-11-05-background-flight.md): continue flying while the window/tab is in the background.
+- [C172 low-speed follow-up](2026-11-05-c172-low-speed-followup.md).
+- [C172 physical-model audit request](2026-11-05-c172-physical-model.md).
+- [2026-11-05: Copernicus priority and elevation-unit hypothesis](2026-11-05-copernicus-elevation-units.md)
+- [2026-11-05 credits menu](2026-11-05-credits-menu.md): relocate scene attribution beside the gefly brand.
+- [2026-11-05 darker OSM palette](2026-11-05-darker-osm-palette.md): use darker natural terrain colors.
+- [Repair startup and publish modular changes](2026-11-05-engine-fix-modular-prs.md): user request and scoped interpretation.
+- [Build Frankfurt-area airfield ground surfaces](2026-11-05-frankfurt-airfields-50nm.md): user request and scoped interpretation.
+- [2026-11-05 GPS record time correction](2026-11-05-gps-bearing-dial-time-correction.md): correct the recording minute without changing the original input.
+- [2026-11-05 GPS bearing dial](2026-11-05-gps-bearing-dial.md): connect active GPS waypoints to the dial and clarify heading-bug, bearing and AP NAV controls.
+- [ILS guidance bars](2026-11-05-ils-crossbars.md): user request and scoped interpretation.
+- [2026-11-05 configurable map colors](2026-11-05-map-color-choice.md): default light 2D map with a Dark map flag, independently of darker 3D terrain.
+- [2026-11-05 map flight starts](2026-11-05-map-flight-start.md): open the current plan from the top menu and choose a map start on ground or at a selected height.
+- [2026-11-05: GPS fixes and map flight plans](2026-11-05-map-gps-flight-plan.md)
+- [2026-11-05 map interaction and preferences](2026-11-05-map-interaction-preferences.md): immediate undimmed map, reload-persistent terrain/labels, transparent P flight plan and explicit GPS creation; A remains AP toggle.
+- [2026-11-05 map radio feedback](2026-11-05-map-radio-feedback.md): confirm accepted map-to-NAV standby loads visually.
+- [2026-11-05 right-button map waypoint](2026-11-05-map-right-waypoint.md): direct waypoint creation from the map with the right mouse button.
+- [2026-11-05 nearest-point popup dismissal](2026-11-05-nearest-popup-dismissal.md): close the right-click nearest-name overlay on an outside click.
+- [2026-11-05 embedded-browser follow-up](2026-11-05-panel-embedded-browser.md): fresh reload reproduces the shift in VS Code's internal browser.
+- [2026-11-05 panel fix confirmed](2026-11-05-panel-fix-confirmed.md): the user confirms the panel is fixed after the single-transform repair.
+- [2026-11-05: drag and horizontally pan the zoomed panel](2026-11-05-panel-pan.md)
+- [2026-11-05 panel resize drift](2026-11-05-panel-resize-drift.md): leftward panel shift when the window narrows, with a user screenshot.
+- [2026-11-05 pause marker](2026-11-05-paused-marker.md): user confirms RPM was observed while paused and requests visible pause status.
+- [2026-11-05: pointer-centered panel zoom with vertical bounds](2026-11-05-pointer-panel-zoom.md)
+- [2026-11-05 region data candidates](2026-11-05-region-data-candidates.md): free navigation/airport/elevation/photography candidates and worldwide elevation fallback feasibility.
+- [2026-11-05 custom-only deletion confirmation](2026-11-05-selected-map-point-delete-clarification.md): user confirms deletion of user-created fixes only.
+- [2026-11-05 selected map point deletion](2026-11-05-selected-map-point-delete.md): delete user-created GPS fixes directly from their selected-point popup.
+- [2026-11-05 climb warning follow-up](2026-11-05-stall-warning-climb.md): the warning is late or intermittent during ascent with weak engine performance.
+- [2026-11-05 stall warning](2026-11-05-stall-warning.md): inspect native stall detection, visual annunciation and audible warning after the reported failure.
+- [Throttle shortcut remap](2026-11-05-throttle-shortcuts.md).
+- [2026-11-05 USA labels and RPM response](2026-11-05-usa-labels-rpm-response.md): restore map names and investigate full-throttle RPM behavior.
+- [2026-11-06 country and aviation-data coverage](2026-11-06-country-aviation-coverage.md): extend national scenery candidates and airport/navaid/fix source coverage.
+- [Remaining flight and map tasks](2026-11-07-remaining-flight-tasks.md).
