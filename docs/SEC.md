@@ -27,11 +27,53 @@ Protect source code, build environment, dependency integrity, aircraft/reference
 
 Map popups render source strings as text. Supported radio actions validate the
 channel and update standby only; Review rejects tuning at both UI and application
-boundaries. GPS targets draw a map point/line without issuing aircraft commands.
+boundaries. Explicit GPS targets draw a map point/line and feed the read-only
+BRG/DIST presentation without issuing aircraft commands.
 The pinned 2013.10 fix package has fixed same-origin paths, manifest and compressed
 byte hashes, byte/decompression limits and an abortable deadline. Invalid assets
 leave the optional layer unavailable. Its historical age stays visible; this does
 not establish current AIRAC accuracy or operational navigation authority.
+
+Custom GPS fixes and visual plans use bounded, in-memory map state: at most 64
+custom fixes and 32 route points (start, 30 intermediate points, destination),
+with finite worldwide WGS84 latitude −90…90° / longitude −180…180° and bounded names.
+Names are optional: blank names or the anonymous-fix option receive unique
+generated labels. “Anonymous” describes an unnamed point, not a different privacy
+or data-flow mode. Names, generated labels and source labels render as inert text,
+never HTML or executable content. The current editor opens explicitly from top bar/P or its map-header shortcut;
+no always-on plan card covers the map. Route/point labels expose the same bounded
+session state, without a separate store or navigation authority.
+The editor's map-pick creation requires an explicit creation action. A visible
+canvas right-click opens a location popup without creating a point. Explicit
+Create GPS fix or Add waypoint actions retain coordinate validation; the latter
+checks both custom/waypoint capacity atomically, without orphan fixes, partial
+edits or consumed identifiers on failure. Dismissal and right-drags do not invoke
+creation. Map and plan interactions bypass the reusable initial activation guard
+and dimming; native control menus remain usable. Point
+coordinates and custom/source provenance remain
+distinct even when published identifiers repeat. Deleting a
+custom fix referenced by a plan is rejected. Plan edits stop active navigation;
+direct-to selection stops plan navigation while retaining the draft route.
+
+Fixes and plans survive map close/reopen only within the current page session;
+reload clears them. They add no import, persistence, geolocation, provider or
+network data flow. Existing map tiles retain their separate scenery-service
+boundaries. Planning controls and geometry do not depend on optional tile/source
+success. Review shows the current plan against the selected recorded position,
+without claiming historical plan state or modifying the recording. Readouts do
+not send radio, autopilot, terrain or flight-dynamics commands; true course and
+actual heading stay separate, with no wind-corrected heading or operational
+navigation claim. Existing keyboard bindings remain unchanged.
+
+The current GPS direct-to/active-leg target is read by the bearing-gauge
+presentation only. GPS identity, true bearing and geographic DIST NM remain
+visibly distinct from NAV1 radio bearing/DME. Draft creation does not activate a
+target; closing the map preserves the explicit selection, while Next/Stop/Clear
+update it. Review uses current selection and recorded position with an explicit
+label, without adding recorded GPS avionics state. This path writes no worker,
+deterministic simulation, autopilot, radio, OBS or RPM state. AP NAV remains
+NAV1-radio guidance; the display adds no GPS autopilot coupling, storage,
+permission or network flow.
 
 ## Repository-tool CI
 
@@ -219,6 +261,23 @@ editable, modal and sibling UI/map gestures are excluded. It requests no device
 permission, makes no network/storage calls and sends no simulation input. FOV is
 retained separately from aircraft/review state and reset to default on reload.
 
+Panel magnification is a bounded, page-local view transform of the instrument
+surface, from its automatic fit to 3×. Vertical scrolling anchors it at the
+pointer, subject to viewport-edge clamps that prevent empty top/bottom strips;
+the panel frame and flying-view height do not change. Zoom-out to 1×, viewport
+resizing and double-clicking noninteractive housing/faces restore the centered
+fit and clear dragging. While zoomed, noninteractive backgrounds, headers and
+faces support bounded two-dimensional dragging; horizontal wheel gestures pan
+left/right. Both share content/frame clamps, including no empty top/bottom strips
+and stops at horizontal edges; 1× fit does not pan. Native controls, OBS faces and
+editable elements retain their own inputs. Pointer release/cancel or window blur
+ends dragging and releases capture; a completed drag must not trigger an accidental
+click. Pointer entry, focus and ordinary control interaction must not reposition
+the panel.
+This view-only behavior adds no persistence, network calls, permissions or
+simulation/control writes, including while paused or in Review. Camera FOV and
+map zoom retain their separate input boundaries.
+
 ## Procedural engine audio
 
 Web Audio is activated by explicit browser/user interaction. The original local
@@ -236,6 +295,17 @@ an available warning from absent data. The native software stall signal is not
 an installed-aircraft calibration; the terrain cue uses current local CG
 clearance/closure, with no forward terrain or obstacle scan and no TAWS/EGPWS
 claim. Its generic thresholds can warn on a steep landing approach.
+
+A positive-only live warning envelope contains a finite peak and a safe integer
+source step bounded by the current frame; it requires the complete valid native
+group and is rejected atomically if malformed. It is never recorded or restored.
+The producer and display retain at most one coalesced event, with no unbounded
+queue. A generic 200 ms wall-time cue minimum cannot change native telemetry or
+flight controls. Contact/unavailable data and lifecycle suppression cancel it;
+consumed identities survive suppression to prevent delayed resume/replay alerts.
+A RECENT STALL label distinguishes this presentation hold from current AoA state.
+Audio newly enabled during a RECENT-only episode suppresses that old episode
+until clear or a current native positive; unmuting cannot queue a retained horn.
 
 The added tones reuse the same bounded synthesis graph, trusted-gesture unlock,
 default-off mute and volume controls. They add no sample downloads, permissions,
@@ -383,6 +453,18 @@ labels. Current-source labels in Review do not establish historical map state.
 ## Local launch position
 
 The browser stores a versioned last live latitude, longitude, MSL altitude, heading and ground/airborne flag in localStorage. It stays on the browser origin; no account or location-upload service is added. Restart flight removes it. Reads are size/schema/finite/range bounded, writes are throttled, and denied storage falls back to ordinary launch. This is simulated flight location, not device geolocation.
+
+## Local display preferences
+
+The separate `gefly.view-preferences.v1` localStorage record accepts at most 256
+characters: a version, boolean vector/photo choice, integer landmark level 0–3
+and an optional 2D map color scheme (`original` or `terrain`; invalid values fall
+back to `original`). It contains no coordinates, identity, controls, aircraft,
+plan or recorded telemetry. Invalid, oversized or inaccessible storage falls
+back to photos and labels Off. Save and direct display commands retain the
+bounded choices; Options previews remain temporary and cancellation restores
+the opening values. Restored label choices use the existing bounded scenery
+providers, without adding a destination, permission, account or upload path.
 
 ## Planned world-authoring boundary
 

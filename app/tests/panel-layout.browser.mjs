@@ -9,11 +9,11 @@ import { chromium } from 'playwright';
 const app = fileURLToPath(new URL('..', import.meta.url));
 const output = fileURLToPath(new URL('../../output/flight/', import.meta.url));
 const origin = 'http://127.0.0.1:5193';
-const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', '5193', '--strictPort'], { cwd: app, stdio: 'pipe' });
+const server = spawn(process.execPath, ['--input-type=module', '-e', `import{createServer}from'vite';const s=await createServer({server:{host:'127.0.0.1',port:5193,strictPort:true,hmr:false,watch:{ignored:['**/*']}}});await s.listen();s.printUrls();`], { cwd: app, stdio: 'pipe' });
 let serverOutput = '', browser;
 server.stdout.on('data', chunk => { serverOutput += chunk; });
 server.stderr.on('data', chunk => { serverOutput += chunk; });
-const observations = [], bottomZoomObservations = [];
+const observations = [], gestureObservations = [];
 try {
   for (let attempt = 0; attempt < 100; attempt++) {
     if (server.exitCode !== null) throw new Error(serverOutput);
@@ -33,17 +33,34 @@ try {
   const geometry = () => page.evaluate(() => {
     const rect = selector => {
       const element = document.querySelector(selector), r = element.getBoundingClientRect(), s = getComputedStyle(element);
-      return { x: r.x, y: r.y, width: r.width, height: r.height, right: r.right, bottom: r.bottom, font: parseFloat(s.fontSize), display: s.display };
+      return { x: r.x, y: r.y, width: r.width, height: r.height, right: r.right, bottom: r.bottom, font: parseFloat(s.fontSize), display: s.display, cssZoom: s.zoom, cssWidth:parseFloat(s.width), transform:s.transform };
     };
-    return { width: innerWidth, height: innerHeight, scale: Number(document.querySelector('.flight-app').dataset.cockpitScale),
+    return { width: innerWidth, height: innerHeight, zoom:Number(document.querySelector('.flight-app').dataset.panelZoom), scale: Number(document.querySelector('.flight-app').dataset.cockpitScale),
       scene: rect('#scene'), deck: rect('.flight-deck'), viewport: rect('.cockpit-viewport'), vsiFace: rect('#vertical-speed'), surface: rect('.instruments'), primary: rect('.primary-instruments'),
       aircraft: rect('.engine-controls'), face: rect('#airspeed'), nav1: rect('#nav1-gauge .navigation-gauge-face'), nav2: rect('#nav2-gauge .navigation-gauge-face'), bearing: rect('#bearing-gauge .navigation-gauge-face'), rpmFace: rect('#rpm-gauge .navigation-gauge-face'), fuel: rect('#engine-fuel-gauge'), pressure: rect('#altimeter-open'), flaps: rect('#flap-control'), trim: rect('#pitch-trim-control'),
-      ap: rect('.autopilot-content'), apButton: rect('#ap-engage'), engine: rect('#engine-systems'), radio: rect('#radio-nav-systems'),
+      ap: rect('.autopilot-content'), apHeading: rect('.autopilot-heading'), systemsHeading: rect('.aircraft-systems-content header'), apButton: rect('#ap-engage'), engine: rect('#engine-systems'), radio: rect('#radio-nav-systems'),
       rpm: rect('#engine-rpm'), frequency: rect('#com1-standby'), throttle: rect('#throttle'), mixture: rect('#mixture-control'),
       engineOpen: !document.querySelector('#engine-open').hidden, radioOpen: !document.querySelector('#radio-nav-open').hidden,
       appScroll: document.documentElement.scrollWidth };
   });
   const unchangedSurface=(before,after,message)=>assert(['x','y','right','bottom'].every(key=>Math.abs(before.surface[key]-after.surface[key])<.1),message);
+  const singleTransform = (g, context) => {
+    assert(g.surface.cssZoom==='normal'||Number(g.surface.cssZoom)===1,`${context}: surface CSS zoom remains normal/1`);
+    const matrix=g.surface.transform.match(/^matrix\(([^)]+)\)$/);assert(matrix,`${context}: surface has one explicit transform`);
+    const [a,b,c,d]=matrix[1].split(',').map(Number);
+    assert(Math.abs(a-g.scale*g.zoom)<1e-5&&Math.abs(d-a)<1e-6&&Math.abs(b)<1e-6&&Math.abs(c)<1e-6,`${context}: transform owns the fitted scale and magnification`);
+    assert(Math.abs(g.surface.width-g.surface.cssWidth*a)<1,`${context}: actual width uses one fractional fitted scale`);
+  };
+  const fittedSurface = (g, context) => {
+    singleTransform(g,context);
+    assert(Math.abs(g.surface.y - g.viewport.y) <= 1, `${context}: panel is top aligned in its fitted frame`);
+    assert(Math.abs((g.surface.x + g.surface.right - g.viewport.x - g.viewport.right) / 2) <= 1,
+      `${context}: panel is horizontally centered`);
+    assert(g.surface.x >= g.viewport.x - 1 && g.surface.right <= g.viewport.right + 1,
+      `${context}: full panel width remains in the frame`);
+    assert(g.surface.bottom <= g.viewport.bottom + 1 && g.surface.bottom <= g.height + 1,
+      `${context}: full panel height remains reachable`);
+  };
   const dragPanel=async(dx,dy)=>{
     const box=await page.locator('.deck-heading').boundingBox(), x=box.x+box.width/2, y=box.y+box.height/2;
     await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+dx,y+dy,{steps:3});await page.mouse.up();await page.waitForTimeout(60);
@@ -54,6 +71,7 @@ try {
     await page.waitForTimeout(180);
     const g = await geometry(); observations.push(g);
     reference ??= g;
+    fittedSurface(g, `${width}×${height}`);
     assert(g.scale > 0 && g.scale <= 1);
     assert(await page.locator('#altimeter-reference').isVisible(), 'active altimeter pressure reference stays visible');
     assert(g.surface.x >= -1 && g.surface.right <= width + 1, 'entire cockpit surface fits width');
@@ -105,116 +123,181 @@ try {
     if (width === 1440 && height === 900) assert(g.deck.height <= 390, 'desktop cockpit is shorter than the previous 449px panel');
     if (width === 390 || (width === 1440 && [900, 800, 480].includes(height))) await page.screenshot({ path: `${output}/panel-layout-${width}x${height}.png` });
   }
-  // Focused magnification crops other instruments without growing the cockpit
-  // or reducing the flight view, including in short/mobile windows.
+  const reachable = async selector => {
+    const box = await page.locator(selector).boundingBox();
+    assert(box && box.width > 0 && box.height > 0, `${selector} has visible geometry`);
+    const point = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    assert(await page.evaluate(({ selector, x, y }) => !!document.elementFromPoint(x, y)?.closest(selector),
+      { selector, ...point }), `${selector} is reachable through the actual rendered panel`);
+    return point;
+  };
+  const filled = (g, context) => {
+    singleTransform(g,context);
+    assert(g.surface.y <= g.viewport.y + 1, `${context}: no empty top`);
+    assert(g.surface.bottom >= g.viewport.bottom - 1, `${context}: no empty bottom`);
+  };
+  // Use actual rendered control locations. Verify the same material point stays
+  // under the pointer unless a content edge hits the frame's allowed limit.
   for (const [width, height] of [[1440, 800], [1440, 480], [390, 844]]) {
     await page.setViewportSize({ width, height }); await page.waitForTimeout(180);
-    // Real lower controls and deck padding were absent from the earlier
-    // AP/VSI-only checks. Pointer entry alone must never reposition the panel.
-    const bottomSelector=width<=620?'#radio-nav-open':'#parking-brake';
-    const bottomBase=await geometry(),bottomControl=await page.locator(bottomSelector).boundingBox();
-    const bottomAnchor={x:bottomControl.x+bottomControl.width/2,y:bottomControl.y+bottomControl.height/2};
-    assert(await page.evaluate(({selector,x,y})=>!!document.elementFromPoint(x,y)?.closest(selector),{selector:bottomSelector,...bottomAnchor}),'bottom-control gesture starts on a visible actual control');
-    await page.mouse.move(bottomAnchor.x,bottomAnchor.y);
-    unchangedSurface(bottomBase,await geometry(),'entering bottom controls does not move the panel');
-    await page.mouse.wheel(0,-180);await page.waitForTimeout(100);
-    const bottomFocused=await geometry(),newBottom=await page.locator(bottomSelector).boundingBox();
-    const bottomError={x:newBottom.x+newBottom.width/2-bottomAnchor.x,y:newBottom.y+newBottom.height/2-bottomAnchor.y};
-    const bottomClampedX=Math.abs(bottomFocused.surface.x-bottomFocused.viewport.x)<1||Math.abs(bottomFocused.surface.right-bottomFocused.viewport.right)<1;
-    assert(Number(await page.locator('.flight-deck').getAttribute('data-panel-zoom'))>1.3,'bottom-control wheel really zooms');
-    assert(Math.abs(bottomError.x)<1.5||width<=620&&bottomClampedX,'bottom control stays under pointer horizontally unless its content edge clamps');
-    assert(Math.abs(bottomError.y)<1.5,'bottom control stays under pointer vertically');
-    assert(bottomFocused.surface.y<=bottomFocused.viewport.y+1&&bottomFocused.surface.bottom>=bottomFocused.viewport.bottom-1,'bottom-control zoom fills both vertical frame edges');
-    bottomZoomObservations.push({width,height,bottomSelector,bottomError,before:bottomBase,after:bottomFocused});
-    await page.locator('.deck-heading').dblclick();
-    const paddingBase=await geometry(),paddingX=paddingBase.viewport.x+paddingBase.viewport.width*.8,paddingY=paddingBase.deck.bottom-2;
-    assert(await page.evaluate(({x,y})=>!!document.elementFromPoint(x,y)?.closest('.flight-deck')&&!document.elementFromPoint(x,y)?.closest('.cockpit-viewport'),{x:paddingX,y:paddingY}),'bottom-padding gesture is outside the old viewport-only listener');
-    for(let i=0;i<4;i++){await page.mouse.move(paddingX,paddingY);await page.mouse.wheel(0,-180);}
-    await page.waitForTimeout(100);
-    const paddingZoom=await geometry();
-    assert.equal(Number(await page.locator('.flight-deck').getAttribute('data-panel-zoom')),3,'repeated bottom-padding wheel reaches maximum zoom');
-    assert(paddingZoom.surface.y<=paddingZoom.viewport.y+1&&Math.abs(paddingZoom.surface.bottom-paddingZoom.viewport.bottom)<1,'bottom-padding zoom aligns the real content bottom and leaves no blank frame edge');
-    await page.mouse.move(paddingX,paddingZoom.viewport.bottom-2);
-    unchangedSurface(paddingZoom,await geometry(),'pointer entry after bottom-edge zoom never pans');
-    await page.locator('.deck-heading').dblclick();
-    const topBase=await geometry();
-    await page.mouse.move(topBase.viewport.x+topBase.viewport.width*.5,topBase.deck.y+2);await page.mouse.wheel(0,-180);await page.waitForTimeout(100);
-    const topZoom=await geometry();
-    assert(Number(await page.locator('.flight-deck').getAttribute('data-panel-zoom'))>1.3,'top-padding wheel also zooms');
-    assert(Math.abs(topZoom.surface.y-topZoom.viewport.y)<1&&topZoom.surface.bottom>=topZoom.viewport.bottom-1,'top-edge zoom aligns top and fills bottom');
-    bottomZoomObservations.push({width,height,paddingZoom,topZoom});
-    await page.locator('.deck-heading').dblclick();
-    const before = await geometry(), ap = page.locator('#ap-engage');
-    const anchor = { x: before.apButton.x + before.apButton.width / 2, y: before.apButton.y + before.apButton.height / 2 };
-    await page.mouse.move(anchor.x, anchor.y); await page.mouse.wheel(0, -180); await page.waitForTimeout(120);
-    let focused = await geometry();
-    assert(focused.apButton.width > before.apButton.width * 1.3, 'short windows retain useful instrument magnification');
-    const anchoredX = Math.abs(focused.apButton.x + focused.apButton.width / 2 - anchor.x) < 1.5;
-    const clampedX = Math.abs(focused.surface.x - focused.viewport.x) < 1 || Math.abs(focused.surface.right - focused.viewport.right) < 1;
-    assert(anchoredX || width <= 620 && clampedX, 'pointer X anchors the instrument, subject only to mobile content-edge clamping');
-    assert(Math.abs(focused.apButton.y + focused.apButton.height / 2 - anchor.y) < 1.5, 'pointer Y anchors the focused instrument');
-    assert.equal(focused.deck.height, before.deck.height, 'zoom never grows the cockpit');
-    assert.equal(focused.scene.height, before.scene.height, 'zoom never shrinks the flying area');
-    await ap.focus(); await ap.dblclick();
-    unchangedSurface(focused,await geometry(),'focusing and clicking AP controls never moves the panel');
-    assert(Number(await page.locator('.flight-deck').getAttribute('data-panel-zoom')) > 1.3, `double-clicking a native AP control does not reset zoom at ${width}×${height}`);
-    for (let i = 0; i < 4; i++) { await page.mouse.move(anchor.x, anchor.y); await page.mouse.wheel(0, -200); }
-    await page.waitForTimeout(100); focused = await geometry();
-    assert.equal(Number(await page.locator('.flight-deck').getAttribute('data-panel-zoom')), 3);
-    assert(focused.surface.y <= focused.viewport.y + 1 && focused.surface.bottom >= focused.viewport.bottom - 1, 'vertical pan clamps keep the instrument viewport filled without a blank top');
-    for (const dx of [10000, -10000]) {
-      await page.mouse.move(focused.viewport.x + focused.viewport.width / 2, focused.viewport.y + focused.viewport.height / 2);
-      await page.mouse.wheel(dx, 0); await page.waitForTimeout(80); focused = await geometry();
-      assert(focused.surface.x <= focused.viewport.x + 1 && focused.surface.right >= focused.viewport.right - 1, 'horizontal pan cannot reveal blank margins');
-    }
-    const beforeFocus=await geometry();
-    await page.locator('#pitch-trim-control').focus();await page.waitForTimeout(60);
-    unchangedSurface(beforeFocus,await geometry(),'focusing a clipped control does not reposition the panel');
-    await dragPanel(0,-10000);focused=await geometry();
-    assert(Math.abs(focused.surface.bottom-focused.viewport.bottom)<1,'dragging housing reaches the content bottom');
-    await page.mouse.move(focused.viewport.x+focused.viewport.width/2,focused.viewport.y+focused.viewport.height/2);
-    unchangedSurface(focused,await geometry(),'pointer re-entry after release never moves the panel');
-    if(height===800) await page.screenshot({path:`${output}/panel-drag-bottom.png`});
-    await dragPanel(0,10000);focused=await geometry();
-    assert(Math.abs(focused.surface.y-focused.viewport.y)<1,'dragging housing reaches the content top');
-    for(const dx of [-10000,10000]){
-      await dragPanel(dx,0);focused=await geometry();
-      assert(focused.surface.x<=focused.viewport.x+1&&focused.surface.right>=focused.viewport.right-1,'housing drag cannot expose blank horizontal margins');
-      assert(Math.abs((dx<0?focused.surface.right:focused.surface.x)-(dx<0?focused.viewport.right:focused.viewport.x))<1,'housing drag reaches either horizontal edge');
-    }
-    if(width===1440&&height===800) for(const selector of ['#pitch-trim-control','#nav1-gauge .navigation-gauge-face','#ap-engage']){
-      const control=page.locator(selector), target=await control.boundingBox();focused=await geometry();
-      await dragPanel(focused.viewport.x+focused.viewport.width/2-target.x-target.width/2,focused.viewport.y+focused.viewport.height/2-target.y-target.height/2);
-      const visible=await control.boundingBox(), stable=await geometry();
-      const x=Math.max(stable.viewport.x+3,Math.min(stable.viewport.right-3,visible.x+visible.width/2));
-      const y=Math.max(stable.viewport.y+3,Math.min(stable.viewport.bottom-3,visible.y+visible.height/2));
-      assert(await page.evaluate(({x,y,selector})=>!!document.elementFromPoint(x,y)?.closest(selector),{x,y,selector}),`${selector} is actually reachable`);
-      await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+12,y+10,{steps:3});await page.mouse.up();
-      unchangedSurface(stable,await geometry(),`${selector} interaction cannot drag the panel`);
-    }
-    assert.equal(focused.deck.height,before.deck.height);assert.equal(focused.scene.height,before.scene.height);
-    // Restore fit through the noninteractive housing, then focus a lower face.
-    await page.locator('.deck-heading').dblclick(); await page.waitForTimeout(80);
-    assert.equal(Number(await page.locator('.flight-deck').getAttribute('data-panel-zoom')), 1);
-    const base = await geometry(), vsi = page.locator('#vertical-speed');
-    const lowerAnchor = { x: base.vsiFace.x + base.vsiFace.width / 2, y: base.vsiFace.y + base.vsiFace.height / 2 };
-    await page.mouse.move(lowerAnchor.x, lowerAnchor.y); await page.mouse.wheel(0, -180); await page.waitForTimeout(100);
-    const lower = await geometry();
-    assert(lower.vsiFace.width > base.vsiFace.width * 1.3, 'lower-row gesture actually magnifies the VSI');
-    const lowerX = Math.abs(lower.vsiFace.x + lower.vsiFace.width / 2 - lowerAnchor.x) < 1.5;
-    const lowerClampedX = Math.abs(lower.surface.x - lower.viewport.x) < 1 || Math.abs(lower.surface.right - lower.viewport.right) < 1;
-    assert((lowerX || width <= 620 && lowerClampedX) && Math.abs(lower.vsiFace.y + lower.vsiFace.height / 2 - lowerAnchor.y) < 1.5, 'lower-row focus anchors in both axes subject to mobile content-edge clamping');
-    if (height === 800) await page.screenshot({ path: `${output}/panel-focus-lower.png` });
-    await vsi.dblclick(); await page.waitForTimeout(60);
-    assert.equal(Number(await page.locator('.flight-deck').getAttribute('data-panel-zoom')), 1, 'double-clicking a noninteractive face restores the fitted panel');
-    const restored = await geometry();
-    assert(Math.abs(restored.surface.x - before.surface.x) < 1 && Math.abs(restored.surface.y - before.surface.y) < 1);
-    if (height === 800) {
-      await page.mouse.move(anchor.x, base.viewport.y + 1); await page.mouse.wheel(0, -300); await page.waitForTimeout(80);
-      await page.screenshot({ path: `${output}/panel-focus-autopilot.png` });
+    const base = await geometry(), context = `${width}×${height}`, records = [];
+    await page.mouse.move(base.viewport.x + base.viewport.width / 2, base.viewport.y + 10);
+    await page.mouse.wheel(80, 0); await dragPanel(50, -30);
+    unchangedSurface(base, await geometry(), `${context}: normal fitted panel does not pan`);
+    await page.evaluate(() => {
+      window.panelFrameSamples = []; window.samplePanelFrames = true;
+      const sample = () => {
+        const surface = document.querySelector('.instruments').getBoundingClientRect();
+        const viewport = document.querySelector('.cockpit-viewport').getBoundingClientRect();
+        if (window.panelFrameSamples.length < 2500) window.panelFrameSamples.push({
+          top: surface.top - viewport.top, bottom: surface.bottom - viewport.bottom });
+        if (window.samplePanelFrames) requestAnimationFrame(sample);
+      }; requestAnimationFrame(sample);
+    });
+    const stableFrame = (g, label) => {
+      assert(Math.abs(g.deck.height - base.deck.height) < .1, `${label}: panel frame height stays fixed`);
+      assert(Math.abs(g.scene.height - base.scene.height) < .1, `${label}: flying height stays fixed`);
+      filled(g, label);
+    };
+    const resetFit = async () => {
       await page.locator('.deck-heading').dblclick();
-      assert.equal(Number(await page.locator('.flight-deck').getAttribute('data-panel-zoom')), 1, 'double-clicking panel housing restores fit');
+      const g = await geometry(); fittedSurface(g, context); filled(g, context);
+      unchangedSurface(base, g, `${context}: reset returns the original centered fit`);
+    };
+    const bottomSelector = width <= 620 ? '#radio-nav-open' : '#parking-brake';
+    for (const selector of ['#ap-engage', '#vertical-speed', bottomSelector, ...(width > 620 ? ['#nav1-gauge .navigation-gauge-face', '#nav2-gauge .navigation-gauge-face'] : [])]) {
+      await resetFit(); const before = await geometry(), point = await reachable(selector);
+      const u = (point.x - before.surface.x) / before.surface.width;
+      const v = (point.y - before.surface.y) / before.surface.height;
+      await page.mouse.move(point.x, point.y); await page.mouse.wheel(0, -140); await page.waitForTimeout(80);
+      const after = await geometry(); stableFrame(after, `${context} ${selector}`);
+      assert(after.surface.height > before.surface.height * 1.25, 'wheel really magnifies the pointed detail');
+      const error = { x: after.surface.x + u * after.surface.width - point.x,
+        y: after.surface.y + v * after.surface.height - point.y };
+      const clampedX = Math.abs(after.surface.x - after.viewport.x) < 1
+        || Math.abs(after.surface.right - after.viewport.right) < 1;
+      const clampedY = Math.abs(after.surface.y - after.viewport.y) < 1
+        || Math.abs(after.surface.bottom - after.viewport.bottom) < 1;
+      assert(Math.abs(error.x) < 1.5 || clampedX, `${context} ${selector}: pointer anchors X except at a frame limit`);
+      assert(Math.abs(error.y) < 1.5 || clampedY, `${context} ${selector}: pointer anchors Y except at a frame limit`);
+      // These real upper/lower control centers fit without a vertical edge
+      // exception, so do not let edge-clamp checks hide a broken anchor.
+      assert(Math.abs(error.y) < 1.5, `${context} ${selector}: real detail stays vertically under the pointer`);
+      const focused = await geometry();
+      if (selector.includes('navigation-gauge-face')) {
+        const receiver = selector.includes('nav1') ? 1 : 2;
+        const obs = await page.locator(`#nav${receiver}-gauge-obs`).textContent();
+        await page.locator(selector).dblclick();
+        unchangedSurface(focused, await geometry(), 'interactive OBS face double-click never resets or moves the panel');
+        assert.equal(await page.locator(`#nav${receiver}-gauge-obs`).textContent(), obs, 'zero-motion OBS clicks do not change course');
+      }
+      const clampPan = (before, dx, dy) => ({
+        x: Math.max(Math.min(before.viewport.x, before.viewport.right - before.surface.width),
+          Math.min(Math.max(before.viewport.x, before.viewport.right - before.surface.width), before.surface.x + dx)),
+        y: Math.max(Math.min(before.viewport.y, before.viewport.bottom - before.surface.height),
+          Math.min(Math.max(before.viewport.y, before.viewport.bottom - before.surface.height), before.surface.y + dy)),
+      });
+      const minX = Math.min(focused.viewport.x, focused.viewport.right - focused.surface.width);
+      const deltaX = focused.surface.x > minX + 2 ? 40 : -40;
+      await page.mouse.wheel(deltaX, 0); await page.waitForTimeout(30);
+      const scrolled = await geometry(), scrollExpected = clampPan(focused, -deltaX, 0);
+      assert(Math.abs(scrolled.surface.x - scrollExpected.x) < 1 && Math.abs(scrolled.surface.y - focused.surface.y) < 1,
+        'horizontal two-finger scrolling pans only left/right within content bounds');
+      assert(Math.abs(scrolled.surface.x - focused.surface.x) > 1, 'horizontal scrolling actually moves enlarged content');
+      stableFrame(scrolled, `${context}: horizontal scroll`);
+      await dragPanel(50, -30);
+      const dragged = await geometry(), dragExpected = clampPan(scrolled, 50, -30);
+      assert(Math.abs(dragged.surface.x - dragExpected.x) < 1 && Math.abs(dragged.surface.y - dragExpected.y) < 1,
+        'housing drag uses actual screen deltas and clamps both axes');
+      stableFrame(dragged, `${context}: housing drag`);
+      records.push({ selector, point, error, before, after });
     }
+    // Padding gestures explicitly exercise both hard vertical limits. Repeated
+    // zoom-in/out must fill the frame at every step, not only after a reset.
+    for (const edge of ['top', 'bottom']) {
+      await resetFit(); const g = await geometry();
+      const point = { x: g.viewport.x + g.viewport.width * .5,
+        y: edge === 'top' ? g.deck.y + 2 : g.deck.bottom - 2 };
+      await page.mouse.move(point.x, point.y);
+      for (let i = 0; i < 8; i++) {
+        await page.mouse.wheel(0, -180); await page.waitForTimeout(40);
+        const z = await geometry(); stableFrame(z, `${context} ${edge} in ${i}`);
+        assert(Math.abs(edge === 'top' ? z.surface.y - z.viewport.y : z.surface.bottom - z.viewport.bottom) < 1,
+          `${context}: padding anchor stays on the ${edge} bound`);
+      }
+      assert.equal(Number(await page.locator('.flight-app').getAttribute('data-panel-zoom')), 3);
+      await page.screenshot({ path: `${output}/panel-pointer-${edge}-${width}x${height}.png` });
+      for (let i = 0; i < 10; i++) {
+        const z = await geometry();
+        await page.mouse.move(z.viewport.x + z.viewport.width * (i % 2 ? .2 : .8),
+          z.viewport.y + z.viewport.height * (i % 2 ? .05 : .95));
+        await page.mouse.wheel(0, 150); await page.waitForTimeout(40);
+        stableFrame(await geometry(), `${context} ${edge} out ${i}`);
+      }
+      fittedSurface(await geometry(), context);
+    }
+    // Repeated real within-window drags and horizontal scrolls reach all hard
+    // edges while every animation frame continues to cover the vertical area.
+    await resetFit();
+    let g = await geometry();
+    await page.mouse.move(g.viewport.x + g.viewport.width / 2, g.viewport.y + g.viewport.height / 2);
+    for (let i = 0; i < 8; i++) await page.mouse.wheel(0, -180);
+    for (const sign of [1, -1]) {
+      g = await geometry();
+      await page.mouse.move(g.viewport.x + g.viewport.width / 2, g.viewport.y + 8);
+      await page.mouse.wheel(sign * 10000, 0);
+      const horizontalEdge = await geometry(); stableFrame(horizontalEdge, `${context}: horizontal edge ${sign}`);
+      assert(Math.abs(sign > 0 ? horizontalEdge.surface.right - horizontalEdge.viewport.right : horizontalEdge.surface.x - horizontalEdge.viewport.x) < 1,
+        `${context}: horizontal scroll reaches the content edge`);
+      for (let i = 0; i < 8; i++) {
+        await dragPanel(0, sign * Math.min(120, base.viewport.height * .6));
+        stableFrame(await geometry(), `${context}: repeated vertical drag ${sign}/${i}`);
+      }
+      const verticalEdge = await geometry();
+      assert(Math.abs(sign > 0 ? verticalEdge.surface.y - verticalEdge.viewport.y : verticalEdge.surface.bottom - verticalEdge.viewport.bottom) < 1,
+        `${context}: repeated housing drags reach the vertical content edge`);
+    }
+    // Native OBS dragging retains its own capture/course gesture and never
+    // starts a background pan. The normal reset keeps its face reachable.
+    if (width > 620) {
+      await resetFit(); const point = await reachable('#nav1-gauge .navigation-gauge-face');
+      await page.mouse.move(point.x, point.y); await page.mouse.wheel(0, -140); await page.waitForTimeout(40);
+      const beforeControlDrag = await geometry();
+      await page.mouse.down(); await page.mouse.move(point.x + 20, point.y, {steps:4}); await page.mouse.up();
+      unchangedSurface(beforeControlDrag, await geometry(), 'OBS control drag does not pan the instrument surface');
+    }
+    // Real mouse capture is released by blur/cancel; later pointer movement
+    // cannot continue the old drag, and its release cannot click a control.
+    for (const reason of ['blur', 'pointercancel', 'lostpointercapture', 'released-buttons']) {
+      await resetFit(); const point = await reachable('#vertical-speed');
+      await page.mouse.move(point.x, point.y); await page.mouse.wheel(0, -140); await page.waitForTimeout(40);
+      await page.evaluate(() => {
+        window.panelDragClicks = 0;
+        document.querySelector('.flight-deck').addEventListener('click', () => window.panelDragClicks++, {once:true});
+        window.addEventListener('pointerdown', event => {window.lastPanelPointer=event.pointerId;}, {once:true,capture:true});
+      });
+      const header = await page.locator('.deck-heading').boundingBox(), x = header.x + header.width / 2, y = header.y + header.height / 2;
+      await page.mouse.move(x,y); await page.mouse.down(); await page.mouse.move(x+20,y-15,{steps:3});
+      assert(await page.locator('.flight-deck').evaluate(deck => deck.hasPointerCapture(window.lastPanelPointer)), 'zoomed housing drag captures its real pointer after threshold');
+      const stopped = await geometry();
+      await page.evaluate(reason => {
+        const deck = document.querySelector('.flight-deck');
+        if (reason === 'blur') window.dispatchEvent(new Event('blur'));
+        else if (reason === 'pointercancel') deck.dispatchEvent(new PointerEvent('pointercancel', {pointerId:window.lastPanelPointer,bubbles:true}));
+        else if (reason === 'lostpointercapture') deck.releasePointerCapture(window.lastPanelPointer);
+        else window.dispatchEvent(new PointerEvent('pointermove', {pointerId:window.lastPanelPointer,buttons:0,clientX:999,clientY:99}));
+      },reason);
+      await page.mouse.move(x+40,y-30,{steps:3}); await page.mouse.up();
+      unchangedSurface(stopped, await geometry(), `${reason} ends dragging`);
+      assert(!await page.locator('.flight-deck').evaluate(deck => deck.hasPointerCapture(window.lastPanelPointer)), `${reason} leaves no stuck capture`);
+      assert.equal(await page.evaluate(()=>window.panelDragClicks),0,'an ended drag suppresses its following click');
+      stableFrame(await geometry(), `${context}: ${reason}`);
+    }
+    await resetFit();
+    const samples = await page.evaluate(() => { window.samplePanelFrames = false; return window.panelFrameSamples; });
+    assert(samples.length > 0 && samples.every(sample => sample.top <= 1 && sample.bottom >= -1),
+      `${context}: every observed animation frame fills the area vertically`);
+    gestureObservations.push({ width, height, records, samples });
   }
   // Docking the flight map changes width, not the reserved flying height.
   await page.setViewportSize({ width: 1440, height: 800 }); await page.waitForTimeout(180);
@@ -252,6 +335,12 @@ try {
   await page.locator('#flight-review').waitFor({ state: 'visible' });
   for (const [width, height] of [[1440, 900], [760, 844], [390, 844]]) {
     await page.setViewportSize({ width, height }); await page.waitForTimeout(200);
+    fittedSurface(await geometry(), `Review ${width}×${height}`);
+    const reviewBase = await geometry(), reviewPoint = await reachable('#vertical-speed');
+    await page.mouse.move(reviewPoint.x, reviewPoint.y); await page.mouse.wheel(0, -140); await page.waitForTimeout(60);
+    const reviewZoom = await geometry(); filled(reviewZoom, `Review ${width}×${height}`);
+    assert(reviewZoom.surface.height > reviewBase.surface.height * 1.25, 'Review permits view-only panel zoom');
+    await page.locator('.deck-heading').dblclick(); fittedSurface(await geometry(), `Review reset ${width}×${height}`);
     const boxes = await page.evaluate(() => {
       const r = s => { const b = document.querySelector(s).getBoundingClientRect(); return { x: b.x, y: b.y, right: b.right, bottom: b.bottom }; };
       return { controls: r('.control-panel'), review: r('#flight-review'), header: r('.topbar'), deck: r('.flight-deck') };
@@ -268,10 +357,10 @@ try {
   assert(await mobile.locator('.engine-controls .autopilot-content').isVisible());
   assert(await mobile.locator('#engine-open').isVisible());
   await mobile.close();
-  await writeFile(`${output}/panel-bottom-zoom.json`, `${JSON.stringify(bottomZoomObservations, null, 2)}\n`);
+  await writeFile(`${output}/panel-pointer-zoom.json`, `${JSON.stringify(gestureObservations, null, 2)}\n`);
   await writeFile(`${output}/panel-layout.json`, `${JSON.stringify(observations, null, 2)}\n`);
   assert.deepEqual(errors, []);
-  console.log(`Panel layout: ${observations.length} viewport cases, bottom-control/padding zoom and fresh-mobile portals passed.`);
+  console.log(`Panel layout: ${observations.length} viewport cases, pointer anchors, bounded drag/horizontal pan, capture cleanup, vertical bounds at every observed frame, fit resets and fresh-mobile portals passed.`);
 } finally {
   await browser?.close();
   server.kill();

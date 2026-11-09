@@ -233,15 +233,15 @@ try {
   observations.wingsLevel = { before:bankStart.roll_rad, after:leveled.roll_rad };
   checks.push('wings-level response and same-step paused disconnect');
 
-  await resume(); await page.locator('#scene').focus(); await page.keyboard.press('p');
+  await resume(); await page.locator('#scene').focus(); await page.locator('#ap-engage').click();
   await page.waitForFunction(() => window.__engineStates.at(-1).ap_mode===0);
-  await page.keyboard.press('p'); await page.waitForFunction(() => window.__engineStates.at(-1).ap_mode===1);
+  await page.locator('#ap-engage').click(); await page.waitForFunction(() => window.__engineStates.at(-1).ap_mode===1);
   await page.keyboard.down('ArrowRight'); await page.waitForFunction(() => window.__engineStates.at(-1).ap_mode===0); await page.keyboard.up('ArrowRight');
   await page.locator('#ap-engage').click({ delay:350 }); await page.waitForFunction(() => window.__engineStates.at(-1).ap_mode===1);
   await page.mouse.click(900,150); await page.mouse.move(955,150);
   await page.waitForFunction(() => window.__engineStates.at(-1).ap_mode===0);
   await page.keyboard.press('Escape');
-  checks.push('P toggle and keyboard/pointer manual AP override');
+  checks.push('AP-button toggle and keyboard/pointer manual AP override');
 
   await page.locator('#review-flight').click();
   await page.waitForFunction(() => document.querySelector('#engine-state-label').textContent==='RECORDED');

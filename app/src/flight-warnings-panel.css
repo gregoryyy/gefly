@@ -1,15 +1,15 @@
 .flight-warnings-panel {
   position: absolute;
-  top: 12px;
+  top: var(--flight-warning-top, 12px);
   left: 12px;
-  z-index: 4;
+  right: 12px;
+  z-index: 11;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 5px;
   pointer-events: none;
 }
-.flight-app:has(.topbar:not([hidden])) .flight-warnings-panel { top: 88px; }
 .flight-warnings-panel[hidden], .flight-warning-light[hidden] { display: none; }
 .flight-warning-light {
   padding: 4px 7px;
@@ -27,6 +27,5 @@
 .flight-warning-recorded { color: #d4c3a4; font-size: 8px; letter-spacing: .5px; }
 .flight-warning-recorded[hidden] { display: none; }
 @media (max-width: 620px) {
-  .flight-app:has(.topbar:not([hidden])) .flight-warnings-panel { top: 104px; }
   .flight-warning-light { font-size: 9px; padding: 3px 5px; }
 }

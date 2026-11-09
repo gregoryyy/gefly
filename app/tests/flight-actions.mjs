@@ -44,3 +44,22 @@ export async function installSceneryFixture(page) {
   const map=png(256),photo=png(512);
   await page.route('**/scenery/**',route=>new URL(route.request().url()).pathname.startsWith('/scenery/') ? route.fulfill({contentType:'image/png',body:route.request().url().includes('/imagery/')?photo:map}) : route.fallback());
 }
+
+/** Activate through actual bare canvas, avoiding on-map cards and point labels. */
+export async function flightMapCanvasPoint(page) {
+  return page.locator('#practice-map-panel .maplibregl-canvas').evaluate(canvas => {
+    const rect = canvas.getBoundingClientRect();
+    for (const y of [.7, .5, .3, .85]) for (const x of [.7, .5, .3, .1, .95]) {
+      const point = { x: rect.left + rect.width * x, y: rect.top + rect.height * y };
+      if (document.elementFromPoint(point.x, point.y) === canvas) return point;
+    }
+    throw new Error('No exposed map canvas for activation');
+  });
+}
+
+export async function activateFlightMap(page) {
+  const panel = page.locator('#practice-map-panel');
+  if (await panel.evaluate(element => !element.classList.contains('floating-overlay') || element.classList.contains('overlay-active'))) return;
+  const point = await flightMapCanvasPoint(page);
+  await page.mouse.click(point.x, point.y);
+}

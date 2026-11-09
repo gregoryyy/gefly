@@ -112,3 +112,13 @@ test('the actual dev server configuration serves the configured runtime root', {
   assert.equal(response.status, 200);
   assert.equal(await response.text(), 'stand-in dist/jsbsim.wasm');
 });
+
+
+test('every static relative worker-runtime import is present in the served allowlist', () => {
+  for (const file of RUNTIME_FILES.filter(file => /\.(?:m?js)$/.test(file) && !file.startsWith('dist/'))) {
+    const source = read(`studies/e1-browser/sim/${file}`);
+    for (const match of source.matchAll(/^import\s+.*?\s+from\s+['"]\.\/([^'"]+)['"];?$/gm)) {
+      assert(RUNTIME_FILES.some(allowed => allowed === match[1]), `${file} imports unserved ${match[1]}`);
+    }
+  }
+});

@@ -6,7 +6,9 @@ import { createCwsControls } from './cws-controls';
 import { worldCellAt } from '../../studies/e1-browser/sim/world-terrain.js';
 import { REGIONAL_FLIGHTS, isRegionalFlight } from './regional-flights';
 import { EDFE_RUNWAYS, airportOffset } from './airport-geometry';
-import { tuneStandby } from './radio-nav';
+import { tuneStandby, validFrequency } from './radio-nav';
+import type { WorldMapColorScheme } from './world-map-style';
+import { validMapStart, type MapStart } from '../../studies/e1-browser/sim/map-start.js';
 import type { RunwayStart } from './types';
 import { createAircraftSystemsPanel } from './aircraft-systems-panel';
 import { createOverlayPresentation } from './overlay-presentation';
@@ -25,6 +27,7 @@ import { createGroundCollisionPanel } from './ground-collision-panel';
 import { createFlightPathGroundPanel } from './flight-path-ground';
 import { createStallAwarenessPanel } from './stall-awareness-panel';
 import { createFlightWarningMonitor } from './flight-warnings';
+import { createStallWarningDelivery } from './stall-warning-delivery';
 import { createFlightWarningsPanel } from './flight-warnings-panel';
 import { createAircraftHandbook } from './aircraft-handbook';
 import { createSixPack } from './six-pack';
@@ -54,7 +57,7 @@ import { loadViewPreferences, saveViewPreferences } from './view-preferences';
 import { createControlSettingsPanel } from './control-settings-panel';
 import { reviewKeyAction, snapReviewTime } from './review-transport';
 import { checkNavdata, eddfPracticeReady, workerNavdata, type NavdataCheck, type NavdataSide } from './navdata-identity';
-import { pilotAxes, recordedControlView, recordedHeldKeys } from './pilot-controls';
+import { pilotAxes, recordedControlView, recordedHeldKeys, throttleShortcut } from './pilot-controls';
 import type { ApproachGuide } from './approach-guide.ts';
 import type { Controls, FlightState, FlightScene, LandingPreset, AirborneSite, FlightLocation } from './types';
 import type { PracticeMap } from './practice-map';
@@ -88,6 +91,7 @@ root.innerHTML = `
     </nav></details>
     <button id="pause" disabled>Pause <kbd>SPACE</kbd></button>
   </header>
+  <div id="pause-marker" class="pause-marker" role="status" aria-live="polite" hidden><strong>PAUSED</strong><span>Space to resume</span></div>
   <section id="notice" class="notice" role="status" aria-live="polite" hidden></section>
   <section id="navdata-error" class="notice navdata-error" role="alert" hidden></section>
   <section id="flight-gate" class="flight-gate" aria-label="Flight session">
@@ -122,7 +126,7 @@ root.innerHTML = `
       <div class="axis-display"><span>FLAP CMD <b id="recorded-flap-command">—</b></span><span>ACTUAL <b id="recorded-flap-actual">—</b></span><span>TRIM <b id="recorded-trim">—</b></span></div>
       <div class="axis-display"><span>THROTTLE <b id="recorded-throttle">—</b></span><span>MIXTURE <b id="recorded-mixture">—</b></span><span>MODE <b id="recorded-mixture-mode">—</b></span><span>ENGINE <b id="recorded-engine">—</b></span></div>
     </div>
-    <details class="control-options"><summary>Keyboard & assistance</summary><p>↑ Push nose down · ↓ Pull nose up<br>← / → Bank · Q / W Rudder<br>1–9 Throttle: 10–90% · 0: idle<br>[ / ] Retract / extend flaps · B Hold wheel brakes · N Toggle parking brake<br>&#39; / &#92; Trim nose up / down<br>P Autopilot on / off<br>E Engine on/off · S Sound on/off<br>Space Pause · R Review</p><label for="roll-offset">Roll correction <output id="offset-value">0</output></label><input id="roll-offset" type="range" min="-0.25" max="0.25" step="0.001" value="0" aria-label="Experimental roll correction for the generic model"><small>Optional constant aileron command for experiments. Defaults to zero; a saved choice is retained. This is not aircraft trim.</small><div class="roll-correction-presets"><button id="roll-correction-off" type="button">Off · 0%</button><button id="roll-correction-default" type="button">Legacy study offset</button></div></details>
+    <details class="control-options"><summary>Keyboard & assistance</summary><p>↑ Push nose down · ↓ Pull nose up<br>← / → Bank · Q / W Rudder<br>1–9 Throttle: 10–90% · 0: 100% · §: idle<br>[ / ] Retract / extend flaps · B Hold wheel brakes · N Toggle parking brake<br>&#39; / &#92; Trim nose up / down<br>P Autopilot on / off<br>E Engine on/off · S Sound on/off<br>Space Pause · R Review</p><label for="roll-offset">Roll correction <output id="offset-value">0</output></label><input id="roll-offset" type="range" min="-0.25" max="0.25" step="0.001" value="0" aria-label="Experimental roll correction for the generic model"><small>Optional constant aileron command for experiments. Defaults to zero; a saved choice is retained. This is not aircraft trim.</small><div class="roll-correction-presets"><button id="roll-correction-off" type="button">Off · 0%</button><button id="roll-correction-default" type="button">Legacy study offset</button></div></details>
   </aside>
   <div class="scenery-label">Hessen public terrain · Egelsbach–Frankfurt–Taunus</div>
   <aside id="practice-map-panel" class="practice-map-panel" aria-label="Flight map" hidden></aside>
@@ -164,6 +168,7 @@ const groundCollisionPanel = createGroundCollisionPanel({
 const flightData = createFlightPathGroundPanel({ container: el('flight-data-panel'), onClose: () => setFlightDataVisible(false) });
 const stallAwareness = createStallAwarenessPanel({ container: el('stall-awareness-panel'), onClose: () => setStallAwarenessVisible(false) });
 const liveWarningMonitor = createFlightWarningMonitor();
+const stallWarningDelivery = createStallWarningDelivery();
 const reviewWarningMonitor = createFlightWarningMonitor();
 const unavailableWarnings = liveWarningMonitor.update(null);
 let liveWarnings = unavailableWarnings;
@@ -178,6 +183,7 @@ const initialSettingsPreferences = loadSettingsPreferences(viewPreferenceStorage
 engineAudio.setVolume(initialSettingsPreferences.volume);
 engineAudio.setMuted(initialSettingsPreferences.muted);
 let landmarkLevel: LandmarkLevel = initialViewPreferences.landmarkLevel;
+let mapColorScheme: WorldMapColorScheme = initialViewPreferences.mapColorScheme;
 let pointerYoke: ReturnType<typeof createPointerYoke> | null = null;
 let centerPickupRequired = false;
 let cameraLook = { yaw_rad: 0, pitch_rad: 0 };
@@ -263,6 +269,7 @@ let engineCommand: boolean | null = null;
 let parkingBrake = false;
 let runwayStart: RunwayStart | null = null;
 let practiceInitialLocation: FlightLocation | undefined;
+let practiceMapStart: MapStart | undefined;
 let practiceLaunchPending = false;
 let exerciseActive = false;
 const runwayPractice = createRunwayPracticeMonitor();
@@ -308,7 +315,7 @@ function persistSettingsPreferences(): void {
   }, viewPreferenceStorage);
 }
 function persistViewPreferences(): void {
-  saveViewPreferences({ vectorScenery: !!controlSettings.vectorScenery, landmarkLevel, mapColorScheme: initialViewPreferences.mapColorScheme }, viewPreferenceStorage);
+  saveViewPreferences({ vectorScenery: !!controlSettings.vectorScenery, landmarkLevel, mapColorScheme }, viewPreferenceStorage);
 }
 const keys = new Set<string>();
 const pointerControls = new Map<number, string>();
@@ -342,11 +349,19 @@ async function continueAfterGroundCollision(): Promise<void> {
   finally { continuingCollision = false; }
 }
 function controlsAvailable() { return ready && !failed && !sceneFailed && !reviewing && !groundCollisionStopped(); }
+function stallDeliveryEnabled(): boolean {
+  return ready && running && !failed && !sceneFailed && !terrainLoading && !reviewing
+    && !continuingReplay && !document.hidden;
+}
+function suppressStallDelivery(): void {
+  stallWarningDelivery.present({ now_ms: performance.now(), enabled: false });
+}
 function updateSessionUI() {
   if (mapDisposed) return;
   const unavailable = !ready || failed || sceneFailed;
   const collided = groundCollisionStopped();
   document.querySelector<HTMLElement>('.flight-app')!.dataset.review = String(reviewing);
+  el('pause-marker').hidden = unavailable || collided || running || reviewing;
   el('flight-gate').hidden = collided || running || reviewing || (hasFlown && controlsAvailable());
   el<HTMLButtonElement>('start').disabled = unavailable || reviewing || collided;
   el<HTMLButtonElement>('pause').disabled = unavailable || reviewing || collided;
@@ -383,12 +398,12 @@ function updateSessionUI() {
   } else if (!ready) {
     el('gate-label').textContent = 'PREPARING YOUR FLIGHT';
     el('gate-title').textContent = 'Loading aircraft…';
-    el('gate-copy').textContent = 'The aircraft starts airborne at 90 kt. Flight time stays paused until you start.';
+    el('gate-copy').textContent = practiceMapStart?.height_agl_ft === 0 ? 'Preparing a ground start at your map position. Flight time stays paused until you start.' : 'The aircraft starts airborne at 90 kt TAS. Flight time stays paused until you start.';
     el('start').textContent = 'Loading…';
   } else {
-    el('gate-label').textContent = hasFlown ? 'SIMULATION PAUSED' : isRegionalFlight(airborneSite) ? `${airborneSite.toUpperCase()} TERRAIN FLIGHT` : airborneSite === 'eddf-ils' ? 'HISTORICAL EDDF 25C PRACTICE' : airborneSite === 'taunus' ? 'TAUNUS TERRAIN FLIGHT' : 'READY AT EGELSBACH';
+    el('gate-label').textContent = practiceMapStart ? 'MAP FLIGHT START' : hasFlown ? 'SIMULATION PAUSED' : isRegionalFlight(airborneSite) ? `${airborneSite.toUpperCase()} TERRAIN FLIGHT` : airborneSite === 'eddf-ils' ? 'HISTORICAL EDDF 25C PRACTICE' : airborneSite === 'taunus' ? 'TAUNUS TERRAIN FLIGHT' : 'READY AT EGELSBACH';
     el('gate-title').textContent = hasFlown ? 'Ready when you are.' : 'Take the controls.';
-    el('gate-copy').textContent = runwayStart ? `Runway ${runwayStart.runway} at EDFE · at rest, engine idle and parking brake set. N releases the brake; 1–9 adds throttle. Approximate practice geometry.` : landingPreset ? 'Flat-ground contact study: CG starts 3 m above the ellipsoid, at 28 m/s. These are test fixtures, not landing procedures.' : hasFlown ? 'Flight time is paused. Resume, then drag the stick or use the keyboard.' : isRegionalFlight(airborneSite) ? 'Regional terrain demonstration at 90 kt. Elevation tiles load as you fly; this is not a published route or surveyed airport exercise.' : airborneSite === 'eddf-ils' ? 'Start 5 NM from the historical 25C glideslope antenna at 90 kt, slightly below its beam. NAV1 111.55, NAV2 FFM 114.20. Engage AP, then APR to practice capture. Geometric simulator fixture, not a published procedure.' : airborneSite === 'taunus' ? 'Start at 90 kt and 3,609 ft MSL, facing the Taunus ridge. This is a terrain demonstration, not a published route.' : 'Start airborne at 90 kt and 1,300 ft MSL over public Hessen terrain. Drag the stick or hold the buttons to fly.';
+    el('gate-copy').textContent = practiceMapStart ? practiceMapStart.height_agl_ft === 0 ? 'At your selected map position · at rest, engine idle and parking brake set. Press Start or Space to run the simulator; N releases the brake. Ground geometry is approximate.' : `At your selected map position · ${practiceMapStart.height_agl_ft.toLocaleString()} ft above terrain, 90 kt TAS. Press Start or Space; power changes take effect when resumed.` : runwayStart ? `Runway ${runwayStart.runway} at EDFE · at rest, engine idle and parking brake set. N releases the brake; 1–9 adds throttle. Approximate practice geometry.` : landingPreset ? 'Flat-ground contact study: CG starts 3 m above the ellipsoid, at 28 m/s. These are test fixtures, not landing procedures.' : hasFlown ? 'Flight time is paused. Resume, then drag the stick or use the keyboard.' : isRegionalFlight(airborneSite) ? 'Regional terrain demonstration at 90 kt. Elevation tiles load as you fly; this is not a published route or surveyed airport exercise.' : airborneSite === 'eddf-ils' ? 'Start 5 NM from the historical 25C glideslope antenna at 90 kt, slightly below its beam. NAV1 111.55, NAV2 FFM 114.20. Engage AP, then APR to practice capture. Geometric simulator fixture, not a published procedure.' : airborneSite === 'taunus' ? 'Start at 90 kt and 3,609 ft MSL, facing the Taunus ridge. This is a terrain demonstration, not a published route.' : 'Start airborne at 90 kt and 1,300 ft MSL over public Hessen terrain. Drag the stick or hold the buttons to fly.';
     el('start').textContent = hasFlown ? 'Resume flight →' : 'Start flight →';
     if (restoredFlightLocationActive) {
       el('gate-label').textContent = 'SAVED FLIGHT LOCATION';
@@ -402,7 +417,7 @@ function updateSessionUI() {
 const session = createSession({
   onTerrainTile(grid) { regionalTiles.set(grid.id,grid); },
   onTerrainRemove(id) { regionalTiles.delete(id); },
-  onTerrainLoading(loading) { terrainLoading=loading; if (loading) neutralize(); if (!loading) scene?.setTerrainTiles?.([...regionalTiles.values()]); },
+  onTerrainLoading(loading) { terrainLoading=loading; if (loading) { suppressStallDelivery(); neutralize(); } if (!loading) scene?.setTerrainTiles?.([...regionalTiles.values()]); },
   onState(workerState) {
     if (continuingReplay) return;
     const state = { ...radioPanel.snapshot(), ...workerState, systems_switch_mask: systemsPanel.snapshot() };
@@ -425,6 +440,7 @@ const session = createSession({
     }
     if (state.kap_engaged) autopilotCapturePending = false;
     liveWarnings = liveWarningMonitor.update(state);
+    stallWarningDelivery.accept(state, { now_ms: performance.now(), enabled: stallDeliveryEnabled() });
     if (!reviewing) {
       flightTrace.record(state, verticalSpeedFpm * 0.3048 / 60);
       practiceReviewCache = null;
@@ -443,15 +459,15 @@ const session = createSession({
     engineNavdata = workerNavdata(reply); const navdataStatus = applyNavdataCheck();
     if (continuingReplay) return;
     ready = true; failed = false; startupPreloadPending = true; throttle = trim.throttle;
-    if (runwayStart || (restoredFlightLocationActive && initialFlightLocation?.mode === 'ground')) parkingBrake = true;
+    if (practiceMapStart?.height_agl_ft === 0 || runwayStart || (restoredFlightLocationActive && initialFlightLocation?.mode === 'ground')) parkingBrake = true;
     terrainLoading=false; scene?.setTerrainTiles?.([...regionalTiles.values()]);
     pitchTrimTarget = Math.abs(trim.pitch_trim) <= 1 ? trim.pitch_trim : null;
     el<HTMLInputElement>('throttle').value = String(throttle * 100);
-    const restoredGround = restoredFlightLocationActive && initialFlightLocation?.mode === 'ground';
+    const restoredGround = practiceMapStart?.height_agl_ft === 0 || (restoredFlightLocationActive && initialFlightLocation?.mode === 'ground');
     const trimNotice = !landingPreset && !runwayStart && !restoredGround && trim.status !== 1 ? 'Initial trim did not converge. Handling may be unstable; restart if needed.' : '';
     if (restoredFlightLocationActive) {
       document.querySelector('.location strong')!.textContent = 'SAVED FLIGHT LOCATION';
-      document.querySelector('.location span')!.textContent = 'C172 research aircraft · local position restored';
+      document.querySelector('.location span')!.textContent = initialFlightLocation?.autopilot ? 'Local position and autopilot restored · paused' : 'C172 research aircraft · local position restored';
     }
     notice(trimNotice);
     const eddf = eddfPracticeReady(airborneSite, landingPreset, navdataStatus);
@@ -465,6 +481,11 @@ const session = createSession({
       // The visible navdata alert explains why; the flight still becomes ready (Paused).
       notice(`${trimNotice} EDDF 25C practice guidance disabled: navigation data is unavailable or does not match.`.trim());
     }
+    if (restoredFlightLocationActive && initialFlightLocation?.autopilot) {
+      // Keep the visible NAV tuning consistent with the restored controller.
+      // Restoring through A would recapture and overwrite the saved targets.
+      radioPanel.setConfiguration({ ...radioPanel.snapshot(), ...initialFlightLocation.autopilot.navigation });
+    }
     publishInput();
     if (startWhenReady && !sceneFailed) { startWhenReady = false; startFlight(); }
     updateSessionUI();
@@ -473,7 +494,7 @@ const session = createSession({
   onAutopilotRejected(message) { autopilotCapturePending = false; notice(message); updatePointerHint(); },
   onError(message) {
     autopilotCapturePending = false;
-    failed = true; running = false; ready = false; startWhenReady = false; engineAudio.update(null, false);
+    failed = true; running = false; ready = false; startWhenReady = false; suppressStallDelivery(); engineAudio.update(null, false);
     neutralize(); notice(`Flight stopped. ${message}`); updateSessionUI();
   },
 });
@@ -740,7 +761,7 @@ navigationMedia.addEventListener('change', placeNavigationOpener); placeNavigati
 const loadingPanel = createLoadingPanel({
   buttonContainer: el('flight-menu').querySelector<HTMLElement>('nav')!,
   onOpen() { closeViewMenu(); neutralize(); }, onClose: focusFlight,
-  onApply(config) { if (!reviewing && session.setLoading(config)) reset(landingPreset, runwayStart, practiceInitialLocation); },
+  onApply(config) { if (!reviewing && session.setLoading(config)) reset(landingPreset, runwayStart, practiceInitialLocation, practiceMapStart); },
 });
 const aircraftHandbook = createAircraftHandbook({
   buttonContainer: viewMenu.querySelector<HTMLElement>('nav')!,
@@ -910,6 +931,22 @@ async function ensurePracticeMap(): Promise<void> {
       initialApproachGuide: approachGuide,
       onApproachGuide(guide) { approachGuide = guide ? { ...guide } : null; scene?.setApproachGuide?.(approachGuide); },
       onVectorChange: setTerrainMode,
+      initialColorScheme: mapColorScheme,
+      onColorSchemeChange(scheme) {
+        if (scheme !== 'original' && scheme !== 'terrain') return;
+        mapColorScheme = scheme; persistViewPreferences();
+      },
+      canFlyFrom: () => ready && !!latest && Number.isFinite(latest.heading_rad) && !failed && !terrainLoading && !reviewing && !sceneFailed && !practiceLaunchPending && !continuingReplay,
+      onFlyFrom(position, height_ft) {
+        if (!ready || !latest || !Number.isFinite(latest.heading_rad) || failed || terrainLoading || reviewing || sceneFailed || practiceLaunchPending || continuingReplay) return;
+        const selection: MapStart = { lat_rad: position.lat_deg * Math.PI / 180,
+          lon_rad: position.lon_deg * Math.PI / 180,
+          heading_rad: (latest.heading_rad % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2), height_agl_ft: height_ft };
+        if (!validMapStart(selection)) { notice('Select a supported map position and starting height.'); return; }
+        pauseFlight(); exerciseActive = false; airborneSite = 'edfe'; hasFlown = false;
+        reset(null, null, undefined, selection);
+        startWhenReady = false;
+      },
       onStartRunway(id) {
         const runway = EDFE_RUNWAYS.find(r => r.id === id); if (!runway || reviewing) return;
         pauseFlight(); airborneSite = 'edfe';
@@ -936,17 +973,19 @@ async function ensurePracticeMap(): Promise<void> {
         return { runway, progress: practiceReviewCache.progress };
       },
       onTuneNav(receiver, channel) {
-        if (!controlsAvailable()) return;
+        if (!controlsAvailable() || !validFrequency('nav', channel)) return false;
         const config = tuneStandby(radioPanel.snapshot(), 'nav', channel, receiver);
         radioPanel.setConfiguration(config); session.setNavigation(config);
         if (latest) latest = { ...latest, ...config };
+        return true;
       },
       canTuneCom: controlsAvailable,
       onTuneCom(receiver, channel) {
-        if (!controlsAvailable()) return;
+        if (!controlsAvailable() || !validFrequency('com', channel)) return false;
         const config = tuneStandby(radioPanel.snapshot(), 'com', channel, receiver);
         radioPanel.setConfiguration(config); session.setNavigation(config);
         if (latest) latest = { ...latest, ...config };
+        return true;
       },
     });
     if (mapDisposed) { created.dispose(); return; }
@@ -984,7 +1023,7 @@ const reviewControls = createFlightReviewControls({
   onSeek(time_s) {
     const selected_s = snapReviewTime(time_s, recordedTrace().bounds());
     if (!reviewing || continuingReplay || selected_s === null) return;
-    reviewPlaying = false; engineAudio.update(null, false); reviewTime_s = selected_s;
+    reviewPlaying = false; suppressStallDelivery(); engineAudio.update(null, false); reviewTime_s = selected_s;
     lastMapUpdate_ms = -Infinity;
     updateReviewControls();
   },
@@ -1061,14 +1100,14 @@ async function continueLiveFromReview() {
     throttle = initial.throttle_norm!; flapTarget_deg = initial.flap_command_norm! * 30;
     pitchTrimTarget = initial.pitch_trim_norm!; mixtureCommand = initial.mixture_norm!;
     mixtureAutomatic = initial.mixture_auto === 1; engineCommand = initial.engine_command_on === 1;
-    parkingBrake = false; restoredFlightLocationActive = false; landingPreset = undefined; airborneSite = 'edfe';
+    parkingBrake = false; restoredFlightLocationActive = false; practiceMapStart = undefined; landingPreset = undefined; airborneSite = 'edfe';
     const context = source.getContext(), runway = context && EDFE_RUNWAYS.find(item => item.id === context.runway);
     runwayStart = runway ? { airport: 'EDFE', runway: runway.id, lat_rad: runway.lat_rad,
       lon_rad: runway.lon_rad, heading_rad: runway.heading_true_rad } : null;
     exerciseActive = !!context; runwayPractice.reset();
     if (runwayStart) for (const frame of flightTrace.recordedStates()) runwayPractice.update(frame);
     practiceReviewCache = null; lastMapUpdate_ms = -Infinity; collisionUnavailableNoticed = false;
-    liveWarningMonitor.reset(); reviewWarningMonitor.reset(); liveWarnings = liveWarningMonitor.update(initial);
+    liveWarningMonitor.reset(); reviewWarningMonitor.reset(); stallWarningDelivery.reset(); liveWarnings = liveWarningMonitor.update(initial);
     if (initial.systems_switch_mask !== undefined) systemsPanel.restore(initial.systems_switch_mask);
     else systemsPanel.reset();
     reviewing = false; ready = true; failed = false;
@@ -1137,7 +1176,8 @@ function publishInput() {
     apDisconnectPending = true; session.setKap140({action: 'disconnect'});
   }
   raw.pilot_override = raw.elevator !== 0 || raw.aileron !== 0 || raw.rudder !== 0;
-  const controls = applyControlSettings(raw, controlSettings, latest?.ap_mode ? 0 : rollOffset, parkingBrake);
+  const restoredApAwaitingState = !latest && restoredFlightLocationActive && initialFlightLocation?.autopilot?.kap.kap_engaged === 1;
+  const controls = applyControlSettings(raw, controlSettings, latest?.ap_mode || restoredApAwaitingState ? 0 : rollOffset, parkingBrake);
   if (continuedAxes) {
     Object.assign(controls, continuedAxes);
     controls.brake_norm = Math.max(continuedAxes.brake_norm ?? 0, parkingBrake ? 1 : 0);
@@ -1173,7 +1213,7 @@ function neutralize() {
 }
 function pauseFlight() {
   if (mapDisposed) return;
-  reviewPlaying = false; engineAudio.update(null, false);
+  reviewPlaying = false; suppressStallDelivery(); engineAudio.update(null, false);
   startWhenReady = false; neutralize(); running = false; session.pause(); updateSessionUI();
 }
 function startFlight() {
@@ -1182,21 +1222,21 @@ function startFlight() {
   neutralize(); running = true; hasFlown = true; session.start(); updateSessionUI(); focusFlight();
 }
 function togglePause() { if (running) pauseFlight(); else startFlight(); }
-function reset(preset: LandingPreset | null | undefined = landingPreset, start: RunwayStart | null = runwayStart, location?: FlightLocation) {
+function reset(preset: LandingPreset | null | undefined = landingPreset, start: RunwayStart | null = runwayStart, location?: FlightLocation, mapStart?: MapStart) {
   autopilotCapturePending = false; startupPreloadPending = false;
   closeViewMenu();
   if (reviewing) return;
   flightLocationStore.clear(); restoredFlightLocationActive = false;
-  runwayStart = start; practiceInitialLocation = location;
+  runwayStart = start; practiceInitialLocation = location; practiceMapStart = mapStart ? { ...mapStart } : undefined;
   runwayPractice.reset(); practiceReviewCache = null;
   if (sceneFailed) { notice('The 3D scene is unavailable. Reload with WebGL enabled.'); return; }
   landingPreset = preset ?? undefined;
   flightAssists.reset();
-  liveWarningMonitor.reset(); reviewWarningMonitor.reset(); liveWarnings = unavailableWarnings;
+  liveWarningMonitor.reset(); reviewWarningMonitor.reset(); stallWarningDelivery.reset(); liveWarnings = unavailableWarnings;
   flightWarningsPanel.update(unavailableWarnings, false);
   regionalTiles.clear(); terrainLoading=false; scene?.setTerrainTiles?.([]);
-  document.querySelector('.location strong')!.textContent = isRegionalFlight(airborneSite) ? airborneSite.toUpperCase() : airborneSite === 'eddf-ils' ? 'FRANKFURT 25C' : airborneSite === 'taunus' ? 'TAUNUS' : 'EGELSBACH';
-  document.querySelector('.location span')!.textContent = runwayStart ? `C172 research aircraft · ${runwayStart.airport} runway ${runwayStart.runway}` : 'C172 research aircraft · airborne practice';
+  document.querySelector('.location strong')!.textContent = mapStart ? 'MAP LOCATION' : isRegionalFlight(airborneSite) ? airborneSite.toUpperCase() : airborneSite === 'eddf-ils' ? 'FRANKFURT 25C' : airborneSite === 'taunus' ? 'TAUNUS' : 'EGELSBACH';
+  document.querySelector('.location span')!.textContent = mapStart ? `C172 research aircraft · ${mapStart.height_agl_ft === 0 ? 'ground start' : `${mapStart.height_agl_ft.toLocaleString()} ft AGL start`}` : runwayStart ? `C172 research aircraft · ${runwayStart.airport} runway ${runwayStart.runway}` : 'C172 research aircraft · airborne practice';
   collisionUnavailableNoticed = false;
   systemsPanel.reset(); radioPanel.reset();
   recordingLoadVersion++; loadedTrace = null; resumeAfterReview = false;
@@ -1213,10 +1253,10 @@ function reset(preset: LandingPreset | null | undefined = landingPreset, start: 
   pitchTrimControl.update(null, false, false, null);
   flightData.update(null, false); stallAwareness.update(null, false); groundCollisionPanel.update(null, false, false);
   enginePanel.update(null, false, false); autopilotPanel.update(null, false, false);
-  radioPanel.update(null, false, false); navigationGauges.update(null, false, false); landingFeedback.update(null, false);
+  radioPanel.update(null, false, false); navigationGauges.update(null, false, false, false, practiceMap?.getGpsTarget?.() ?? null); landingFeedback.update(null, false);
   updateConfiguration(null, false);
   engineNavdata = { settled: false, sha256: null, error: null }; applyNavdataCheck();
-  notice(''); session.reset(landingPreset, airborneSite, runwayStart ?? undefined, location, landingPreset || runwayStart || location?.mode === 'ground' ? 0 : location?.initial_balance_profile ?? 1); updateSessionUI(); focusFlight();
+  notice(''); session.reset(landingPreset, airborneSite, runwayStart ?? undefined, location, landingPreset || runwayStart || location?.mode === 'ground' || mapStart?.height_agl_ft === 0 ? 0 : location?.initial_balance_profile ?? 1, mapStart); updateSessionUI(); focusFlight();
 }
 function setView(next: typeof view) {
   cancelCameraReturn(); closeViewMenu(); view = next;
@@ -1252,7 +1292,7 @@ for (const [id, kind] of [['practice-takeoff', 'takeoff'], ['practice-landing', 
   el(id).onclick = () => { void launchPractice(kind); };
 el('start').onclick = startFlight;
 el('pause').onclick = () => { togglePause(); focusFlight(); };
-el('reset').onclick = () => reset(landingPreset, runwayStart, practiceInitialLocation);
+el('reset').onclick = () => reset(landingPreset, runwayStart, practiceInitialLocation, practiceMapStart);
 document.querySelectorAll<HTMLButtonElement>('[data-landing]').forEach(button => {
   button.onclick = () => { if (!reviewing) { runwayStart = null; exerciseActive = false; airborneSite = 'edfe'; reset(button.dataset.landing as LandingPreset); } };
 });
@@ -1444,8 +1484,9 @@ addEventListener('keydown', event => {
     }
   }
   if (event.repeat) return;
-  if (controlsAvailable() && /^(Digit|Numpad)[0-9]$/.test(event.code)) {
-    event.preventDefault(); throttle = Number(event.code.at(-1)) / 10;
+  const selectedThrottle = throttleShortcut(event);
+  if (controlsAvailable() && selectedThrottle !== null) {
+    event.preventDefault(); throttle = selectedThrottle;
     el<HTMLInputElement>('throttle').value = String(throttle * 100); publishInput();
   }
   if (['BracketLeft', 'BracketRight'].includes(event.code) && controlsAvailable() && latest?.flap_rad !== undefined) {
@@ -1466,7 +1507,7 @@ function releaseBackgroundInput(): void {
   // Release held controls before browser timers become throttled, while keeping
   // the explicitly requested flight state unchanged.
   neutralize(); apKeyboardGuard.clear(); session.flushInput();
-  if (document.hidden) engineAudio.update(null, false);
+  if (document.hidden) { suppressStallDelivery(); engineAudio.update(null, false); }
 }
 function backgroundVisibility(): void { if (document.hidden) releaseBackgroundInput(); }
 addEventListener('blur', releaseBackgroundInput);
@@ -1542,8 +1583,14 @@ function animate(now: number) {
     }
   }
   const reviewSample = reviewing ? recordedTrace().atTime(reviewTime_s) : null;
-  const shownWarnings = ready && !failed && !sceneFailed && !terrainLoading && latest
+  const baseWarnings = ready && !failed && !sceneFailed && !terrainLoading && latest
     ? reviewSample ? reviewWarningMonitor.update(reviewSample.state) : liveWarnings : unavailableWarnings;
+  // A short native warning pulse is presented for a labelled minimum wall time;
+  // the raw recorded/native signal is unchanged.
+  const stallPulse = stallWarningDelivery.present({ now_ms: performance.now(), enabled: stallDeliveryEnabled() });
+  const shownWarnings = stallPulse.active && baseWarnings.stall !== 'unavailable'
+    ? { ...baseWarnings, stall: 'active' as const, stallRecent: stallPulse.recent && baseWarnings.stall === 'clear' }
+    : baseWarnings;
   flightWarningsPanel.update(shownWarnings, reviewing);
   if (latest) {
     const state = reviewSample?.state ?? latest;
@@ -1603,7 +1650,7 @@ function animate(now: number) {
     radioPanel.update(state, reviewing, controlsAvailable(), running);
     systemsPanel.update(state, reviewing, controlsAvailable());
     loadingPanel.update(state, reviewing);
-    navigationGauges.update(state, reviewing, controlsAvailable(), running);
+    navigationGauges.update(state, reviewing, controlsAvailable(), running, practiceMap?.getGpsTarget?.() ?? null);
     pitchTrimControl.update(state, reviewing, controlsAvailable(), groundCollisionStopped() ? null : pitchTrimTarget);
     updateConfiguration(state, reviewing);
     if (reviewing || groundCollisionStopped()) updateRecordedControls(state);

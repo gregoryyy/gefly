@@ -5,6 +5,8 @@ import { createKap140 } from '../../studies/e1-browser/sim/kap140.js';
 import assert from 'node:assert/strict';
 import { test, type TestContext } from 'node:test';
 import { createSession } from './session.ts';
+import { MAP_START_HEIGHTS_FT, type MapStart } from '../../studies/e1-browser/sim/map-start.js';
+import { captureAutopilotReload, type AutopilotReload } from '../../studies/e1-browser/sim/autopilot-reload.js';
 
 class MockWorker {
   static instances: MockWorker[] = [];
@@ -213,6 +215,39 @@ test('high-frequency inputs coalesce to the latest immutable snapshot and stop w
   const pausedCount = worker.messages.length;
   await sleep(70);
   assert.equal(worker.messages.length, pausedCount);
+});
+
+test('R-SIM-2 lifecycle input flush releases transient controls immediately without changing run intent or latched commands', t => {
+  const { session, errors } = fixture(t);
+  session.flushInput(); session.start(); const worker = MockWorker.instances[0];
+  const latched = { throttle: .7, flap_norm: 1 / 3, mixture_norm: .85, mixture_auto: false,
+    pitch_trim_norm: .15, engine_running: true, brake_norm: 0 };
+  session.input({ ...latched, elevator: .3, aileron: .2, rudder: -.1, pilot_override: true });
+  session.flushInput(); assert.equal(worker.messages.length, 1, 'loading has only the init command');
+  worker.emit(ready); worker.emit(state);
+  assert.equal(worker.messages.at(-1)?.type, 'run');
+  const count = worker.messages.length;
+  session.input({ ...latched, elevator: 0, aileron: 0, rudder: 0, pilot_override: false });
+  assert.equal(worker.messages.length, count, 'ordinary inputs retain their coalescing contract');
+  session.flushInput();
+  assert.equal(worker.messages.length, count + 1, 'release is sent synchronously before background timer throttling');
+  const release = worker.messages.at(-1)!;
+  assert.equal(release.type, 'input'); assert.equal(release.step, state.step);
+  for (const [key, value] of Object.entries(latched)) assert.equal(release[key], value, `preserved ${key}`);
+  assert.equal(release.elevator, 0); assert.equal(release.aileron, 0); assert.equal(release.rudder, 0); assert.equal(release.pilot_override, false);
+  session.flushInput(); assert.equal(worker.messages.length, count + 1, 'unchanged controls are not published twice');
+  assert.equal(worker.messages.filter(message => message.type === 'run').length, 1);
+  assert.equal(worker.messages.filter(message => message.type === 'pause').length, 0);
+  session.pause(); const pausedCount = worker.messages.length;
+  session.input({ ...latched, elevator: 0, aileron: 0, rudder: 0, pilot_override: false });
+  session.flushInput(); assert.equal(worker.messages.length, pausedCount, 'explicit pause cannot publish or resume through a flush');
+  session.start(); assert.equal(worker.messages.at(-1)?.type, 'run');
+  worker.emit({ ...state, collision_mask: 16, collision_step: state.step, collision_t_s: state.t_s,
+    collision_down_mps: 4, collision_groundspeed_mps: 28 });
+  const collisionCount = worker.messages.length; session.flushInput();
+  assert.equal(worker.messages.length, collisionCount, 'a stopped collision cannot be resumed or mutated');
+  session.dispose(); session.flushInput(); assert.equal(worker.messages.length, collisionCount);
+  assert.deepEqual(errors, []);
 });
 
 test('invalid numerical state stops the worker and reports failure without a fallback', (t) => {
@@ -539,6 +574,55 @@ test('collision continuation rejects worker refusal and cancels on reset without
   assert.equal(MockWorker.instances.length, 2);
 });
 
+
+test('R-ALERT-1 session forwards bounded transport-only peaks with complete native telemetry', t => {
+  const { session, states, errors } = fixture(t); session.start();
+  const worker = MockWorker.instances[0]; worker.emit(ready);
+  const native = { ...Object.fromEntries(STALL_FIELDS.map(key => [key, 0])), aero_alpha_max_rad: .28 };
+  worker.emit({ ...state, ...native, stall_warning_peak_norm: 2.4, stall_warning_peak_step: 2 });
+  assert.equal((states[0] as FlightState).stall_warning_peak_norm, 2.4);
+  assert.equal((states[0] as FlightState).stall_warning_peak_step, 2);
+  assert.equal((states[0] as FlightState).stall_warning_norm, 0, 'raw signal is unchanged');
+  assert.equal(errors.length, 0);
+});
+
+test('R-ALERT-1 session rejects malformed/partial/future peaks and peaks without native telemetry', async t => {
+  for (const bad of [
+    { stall_warning_peak_norm: 1 }, { stall_warning_peak_step: 2 },
+    { stall_warning_peak_norm: 0, stall_warning_peak_step: 2 },
+    { stall_warning_peak_norm: NaN, stall_warning_peak_step: 2 },
+    { stall_warning_peak_norm: 1, stall_warning_peak_step: 4 },
+    { stall_warning_peak_norm: 1, stall_warning_peak_step: -1 },
+    { stall_warning_peak_norm: 1, stall_warning_peak_step: 1.5 },
+  ]) await t.test(JSON.stringify(bad), t => {
+    const { session, states, errors } = fixture(t); session.start();
+    const worker = MockWorker.instances[0]; worker.emit(ready);
+    const native = { ...Object.fromEntries(STALL_FIELDS.map(key => [key, 0])), aero_alpha_max_rad: .28 };
+    worker.emit({ ...state, ...native, ...bad });
+    assert.equal(states.length, 0); assert.equal(errors.length, 1);
+  });
+  await t.test('missing native group', t => {
+    const { session, states, errors } = fixture(t); session.start();
+    const worker = MockWorker.instances[0]; worker.emit(ready);
+    worker.emit({ ...state, stall_warning_peak_norm: 1, stall_warning_peak_step: 2 });
+    assert.equal(states.length, 0); assert.equal(errors.length, 1);
+  });
+});
+
+
+test('R-ALERT-1 direct continuation never forwards live event envelopes into native initialization', async t => {
+  const { session } = fixture(t); session.reset(); MockWorker.instances[0].emit(ready);
+  const selected = { ...continuationFrame(), stall_warning_peak_norm: .4, stall_warning_peak_step: 1199 };
+  const pending = session.restoreFromReview(selected), candidate = MockWorker.instances.at(-1)!;
+  const restoredInput = candidate.messages[0].resume_state as FlightState;
+  assert.equal(restoredInput.stall_warning_peak_norm, undefined);
+  assert.equal(restoredInput.stall_warning_peak_step, undefined);
+  assert.equal(restoredInput.stall_warning_norm, selected.stall_warning_norm);
+  assert.equal(selected.stall_warning_peak_norm, .4, 'caller state is unchanged');
+  candidate.emit(ready); candidate.emit(continuationFrame()); await pending;
+});
+
+
 function worldGrid(col: number, row: number, slot: number) {
   const rad = Math.PI / 180;
   return { version: 1 as const, id: `world-c${col}-r${row}`, width: 129, height: 129, slot,
@@ -586,6 +670,100 @@ test('R-WORLD-11 saved world position initializes the actual global terrain mode
   assert.equal(worker.messages[0].streaming_terrain, true); worker.emit(ready);
   assert(!worker.messages.some(m => m.type === 'run'));
 });
+
+test('R-PLAY-2 each explicit map height replaces a flying session and starts paused with selected coordinates', async t => {
+  for (const height_agl_ft of MAP_START_HEIGHTS_FT) await t.test(String(height_agl_ft), t => {
+    const f = fixture(t); f.session.start(); const previous = MockWorker.instances[0]; previous.emit(ready);
+    const pick: MapStart = { lat_rad: .71, lon_rad: -1.3, heading_rad: 2.4, height_agl_ft };
+    f.session.reset(undefined, 'edfe', undefined, undefined, undefined, pick);
+    const current = MockWorker.instances.at(-1)!, init = current.messages[0], ic = init.ic as Record<string, number>;
+    assert(previous.terminated); assert.equal(init.height_agl_ft, height_agl_ft);
+    assert.equal(init.terrain, true); assert.equal(init.streaming_terrain, true);
+    assert.equal(ic.lat_rad, pick.lat_rad); assert.equal(ic.lon_rad, pick.lon_rad); assert.equal(ic.heading_rad, pick.heading_rad);
+    assert.equal(ic.alt_msl_m, 0, 'worker resolves physical H+AGL after tiles load');
+    assert.equal(ic.tas_mps, height_agl_ft === 0 ? 0 : 90 * 1852 / 3600);
+    assert.equal(init.runway_start, height_agl_ft === 0 ? true : undefined);
+    current.emit(ready); assert(!current.messages.some(m => m.type === 'run'));
+    assert.equal(f.statuses.at(-1), 'Paused');
+    f.session.start(); const input = current.messages.find(m => m.type === 'input')!;
+    assert.equal(input.throttle, height_agl_ft === 0 ? 0 : ready.trim.throttle);
+    assert.equal(input.brake_norm, height_agl_ft === 0 ? 1 : undefined);
+    assert.equal(input.elevator, 0); assert.equal(input.aileron, 0); assert.equal(input.rudder, 0);
+    assert.deepEqual(f.errors, []);
+  });
+});
+test('R-PLAY-2 invalid map picks and conflicting start modes leave the existing worker untouched', t => {
+  const f = fixture(t); f.session.start(); const current = MockWorker.instances[0]; current.emit(ready);
+  const pick: MapStart = { lat_rad: .7, lon_rad: -1.3, heading_rad: 2.4, height_agl_ft: 1000 };
+  for (const change of [{height_agl_ft:2000},{height_agl_ft:undefined},{lat_rad:NaN},{lat_rad:89.5*Math.PI/180},
+    {lon_rad:Math.PI+.01},{heading_rad:2*Math.PI},{extra:true}])
+    f.session.reset(undefined, 'edfe', undefined, undefined, undefined, { ...pick, ...change } as unknown as MapStart);
+  f.session.reset('normal', 'edfe', undefined, undefined, undefined, pick);
+  f.session.reset(undefined, 'edfe', { airport:'EDFE',runway:'26',lat_rad:.7,lon_rad:.1,heading_rad:1 }, undefined, undefined, pick);
+  f.session.reset(undefined, 'edfe', undefined, { version:1,lat_rad:.7,lon_rad:.1,heading_rad:1,alt_msl_m:1000,mode:'airborne' }, undefined, pick);
+  assert.equal(MockWorker.instances.length, 1); assert.equal(current.terminated, false);
+  assert.equal(f.statuses.at(-1), 'Flying'); assert.deepEqual(f.errors, []);
+});
+test('R-PLAY-2 map requests are copied, old callbacks ignored and explicit start selection can be cleared', t => {
+  const f = fixture(t);
+  const pick: MapStart = { lat_rad: .7, lon_rad: -1.3, heading_rad: 2.4, height_agl_ft: 5000 };
+  f.session.reset(undefined, 'eddf-ils', undefined, undefined, undefined, pick);
+  const old = MockWorker.instances[0], init = old.messages[0];
+  pick.lat_rad = 0; pick.height_agl_ft = 10000;
+  assert.equal((init.ic as Record<string, number>).lat_rad, .7); assert.equal(init.height_agl_ft, 5000);
+  f.session.reset(undefined, 'edfe'); const replacement = MockWorker.instances.at(-1)!;
+  old.emit(ready); old.emit(state); assert.equal(f.readies.length, 0); assert.equal(f.states.length, 0);
+  assert.equal(replacement.messages[0].height_agl_ft, undefined); assert.equal(replacement.messages[0].runway_start, undefined);
+  replacement.emit(ready); assert(!replacement.messages.some(m => m.type === 'run'));
+  assert.deepEqual(f.errors, []);
+});
+test('R-PLAY-2 terrain failure after a map start stays stopped and never resumes an older flight', t => {
+  const f = fixture(t); f.session.start(); MockWorker.instances[0].emit(ready);
+  f.session.reset(undefined, 'edfe', undefined, undefined, undefined, {lat_rad:.7,lon_rad:-1.3,heading_rad:1,height_agl_ft:1000});
+  const candidate = MockWorker.instances.at(-1)!; candidate.emit({ type:'error',message:'Bundled world terrain integrity check failed.' });
+  assert(candidate.terminated); assert.equal(f.errors.length, 1); assert.equal(f.statuses.at(-1), 'Error');
+  candidate.emit(ready); assert(!candidate.messages.some(m => m.type === 'run'));
+});
+
+test('R-AP-3 saved location sends a detached exact AP/NAV envelope without recapturing or auto-running', t => {
+  const f=fixture(t),flat={...continuationFrame(),kap_engaged:1,kap_lateral:1,kap_vertical:1,
+    kap_heading_bug_rad:2.2,kap_hold_pressure_altitude_m:1234,kap_selected_altitude_m:2000,kap_baro_setting_pa:100000,
+    radio_nav_active_khz:110500,radio_obs_deg:123,radio_nav2_active_khz:114200,radio_obs2_deg:222};
+  const autopilot=JSON.parse(JSON.stringify(captureAutopilotReload(flat))) as AutopilotReload;
+  // Unbalanced legacy initialization keeps this AP-reload check independent of R-SIM-11 trim.
+  const location={version:1 as const,lat_rad:.7,lon_rad:.1,alt_msl_m:1000,heading_rad:1,mode:'airborne' as const,initial_balance_profile:0 as const,autopilot};
+  f.session.reset(undefined,'edfe',undefined,location);const worker=MockWorker.instances[0],sent=worker.messages[0].autopilot_reload as AutopilotReload;
+  assert.deepEqual(sent,autopilot);assert.notEqual(sent,autopilot);assert.notEqual(sent.kap,autopilot.kap);assert.notEqual(sent.navigation,autopilot.navigation);
+  (autopilot.kap as {kap_heading_bug_rad:number}).kap_heading_bug_rad=.5;
+  assert.equal(sent.kap.kap_heading_bug_rad,2.2);assert.equal(worker.messages[0].navigation,undefined,'reload envelope is the sole NAV authority');
+  worker.emit(ready);assert.equal(worker.messages.length,1,'paused initialization sends no A capture, mode commands or run');
+  worker.emit({...state,...sent.kap,...sent.navigation});
+  assert.equal((f.states.at(-1) as FlightState).kap_engaged,1);assert.equal((f.states.at(-1) as FlightState).kap_hold_pressure_altitude_m,1234);
+  assert.equal((f.states.at(-1) as FlightState).radio_nav_active_khz,110500);assert.equal(f.statuses.at(-1),'Paused');assert.deepEqual(f.errors,[]);
+});
+test('R-AP-3 malformed direct reload payload leaves the current session untouched; legacy location stays accepted', t => {
+  const f=fixture(t);f.session.reset();const old=MockWorker.instances[0];old.emit(ready);
+  const autopilot=captureAutopilotReload(continuationFrame())!;
+  const base={version:1 as const,lat_rad:.7,lon_rad:.1,alt_msl_m:1000,heading_rad:1,mode:'airborne' as const};
+  for(const bad of [{...autopilot,version:2},{...autopilot,kap:{...autopilot.kap,kap_sensor_fault:1}},
+    {...autopilot,navigation:{...autopilot.navigation,radio_nav2_active_khz:NaN}}])
+    f.session.reset(undefined,'edfe',undefined,{...base,autopilot:bad as AutopilotReload});
+  assert.equal(MockWorker.instances.length,1);assert(!old.terminated);assert.deepEqual(f.errors,[]);
+  f.session.reset(undefined,'edfe',undefined,base);const legacy=MockWorker.instances.at(-1)!;
+  assert.equal(legacy.messages[0].autopilot_reload,undefined);legacy.emit(ready);assert(!legacy.messages.some(m=>m.type==='run'));
+});
+test('R-AP-3 ground reload remains parked/paused and AP reload never leaks into Review continuation or ordinary reset', async t => {
+  const f=fixture(t),autopilot=captureAutopilotReload({...continuationFrame(),kap_selected_altitude_m:3000})!;
+  f.session.reset(undefined,'edfe',undefined,{version:1,lat_rad:.7,lon_rad:.1,alt_msl_m:1000,heading_rad:1,mode:'ground',autopilot});
+  const ground=MockWorker.instances[0];assert.equal(ground.messages[0].runway_start,true);assert.deepEqual(ground.messages[0].autopilot_reload,autopilot);
+  ground.emit({...ready,trim:{throttle:0,pitch_trim:0,status:0}});assert.equal(ground.messages.length,1);
+  const selected=continuationFrame(),pending=f.session.restoreFromReview(selected),candidate=MockWorker.instances.at(-1)!;
+  assert.equal(candidate.messages[0].autopilot_reload,undefined);assert(candidate.messages[0].resume_state);
+  candidate.emit(ready);candidate.emit(selected);await pending;
+  f.session.reset(undefined,'edfe');const ordinary=MockWorker.instances.at(-1)!;
+  assert.equal(ordinary.messages[0].autopilot_reload,undefined);assert.deepEqual(f.errors,[]);
+});
+
 
 test('R-WORLD-11 fine Copernicus cells reach the view without being misclassified as regional terrain', async t => {
   const col = 3391, row = 4182, rad = Math.PI / 180, nodes = 129 * 129;

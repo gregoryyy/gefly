@@ -2,7 +2,7 @@ import { INITIAL_BALANCE_FIELDS, validInitialBalanceState, equalInitialBalance }
 import { LOADING_FIELDS, validLoadingState } from '../../studies/e1-browser/sim/loading.js';
 import { validSystemsState } from './types.ts';
 import { RADIO_NAV_FIELDS, validRadioNavSnapshot } from './radio-nav.ts';
-import { ALERT_FIELDS, validAlertState, KAP_FIELDS, validKapState, TERRAIN_FIELDS, TERRAIN_SOURCE_FIELDS, validTerrainState, COLLISION_FIELDS, validCollisionState, STALL_FIELDS, validStallState, CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, ENGINE_SWITCH_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
+import { ALERT_FIELDS, validAlertState, KAP_FIELDS, validKapState, TERRAIN_FIELDS, TERRAIN_SOURCE_FIELDS, validTerrainState, COLLISION_FIELDS, validCollisionState, STALL_FIELDS, validStallState, validStallWarningPeakState, CONTROL_FIELDS, validControlState, ALTIMETER_FIELDS, COCKPIT_FIELDS, ENGINE_FIELDS, ENGINE_SWITCH_FIELDS, PITCH_TRIM_FIELDS, GROUND_FIELDS, validGroundState, validPitchTrimState, validAltimeterState, validCockpitState, validEngineState } from './types.ts';
 import type { FlightState } from './types';
 import { validSimulationRate } from '../../studies/e1-browser/sim/simulation-rate.js';
 
@@ -71,7 +71,7 @@ export class FlightTrace {
   }
 
   record(state: FlightState, vertical_speed_mps: number): boolean {
-    if (!state || typeof state !== 'object' || !Number.isFinite(vertical_speed_mps) || !validAltimeterState(state) || !validCockpitState(state) || !validEngineState(state) || !validPitchTrimState(state) || !validGroundState(state) || !validControlState(state) || !validStallState(state) || !validCollisionState(state) || !validTerrainState(state) || !validKapState(state) || !validAlertState(state) || !validSystemsState(state) || !validLoadingState(state) || !validInitialBalanceState(state)
+    if (!state || typeof state !== 'object' || !Number.isFinite(vertical_speed_mps) || !validAltimeterState(state) || !validCockpitState(state) || !validEngineState(state) || !validPitchTrimState(state) || !validGroundState(state) || !validControlState(state) || !validStallState(state) || !validStallWarningPeakState(state) || !validCollisionState(state) || !validTerrainState(state) || !validKapState(state) || !validAlertState(state) || !validSystemsState(state) || !validLoadingState(state) || !validInitialBalanceState(state)
       || (RADIO_NAV_FIELDS.some(key => state[key] !== undefined) && !validRadioNavSnapshot(state))
       || (state.simulation_rate !== undefined && !validSimulationRate(state.simulation_rate))) return false;
     const snapshot: FlightState = {
@@ -81,6 +81,7 @@ export class FlightTrace {
       ...(state.simulation_rate === undefined ? {} : { simulation_rate: state.simulation_rate }),
       ...(state.systems_switch_mask === undefined ? {} : { systems_switch_mask: state.systems_switch_mask }),
     };
+    // Live event envelopes are validated above but never recorded or restored.
     for (const key of [...INITIAL_BALANCE_FIELDS, ...LOADING_FIELDS, ...ALERT_FIELDS, ...KAP_FIELDS, ...TERRAIN_FIELDS, ...TERRAIN_SOURCE_FIELDS, ...COLLISION_FIELDS, ...STALL_FIELDS, ...CONTROL_FIELDS, ...ALTIMETER_FIELDS, ...COCKPIT_FIELDS, ...ENGINE_FIELDS, ...ENGINE_SWITCH_FIELDS, ...PITCH_TRIM_FIELDS, ...GROUND_FIELDS, ...RADIO_NAV_FIELDS]) if (state[key] !== undefined) Object.assign(snapshot, { [key]: state[key] });
     if (!Object.values(snapshot).every((value) => typeof value === 'number' && Number.isFinite(value))
       || !Number.isInteger(snapshot.step) || snapshot.step < 0 || snapshot.t_s < 0

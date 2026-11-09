@@ -1,4 +1,6 @@
 import type { FlightState } from './types';
+import type { PlannerPoint } from './map-flight-plan-types';
+import { pointNavigation } from './map-flight-plan';
 import { bearingDistanceIndication, navigationIndication, validRadioNavSnapshot } from './radio-nav';
 import { C172X_MAX_RPM } from './c172x-instrument-references';
 import './navigation-gauges.css';
@@ -20,7 +22,7 @@ const svgPoint = (radius: number, degrees: number): [number, number] => [
   120 + radius * Math.sin(degrees * DEG), 120 - radius * Math.cos(degrees * DEG),
 ];
 
-/** Original compass-card artwork. Bearing/course geometry stays in radio-nav. */
+/** Original compass-card artwork. Bearing/course geometry stays in the shared navigation models. */
 function compassCard(): string {
   const ticks: string[] = [];
   for (let degrees = 0; degrees < 360; degrees += 5) {
@@ -70,6 +72,7 @@ function bearingFace(): string {
     <g class="nav-bearing-pointer" hidden><path d="M120 42l-7 15h14zM120 55v132M113 179l7 16 7-16"/></g>
     <circle cx="120" cy="120" r="6" class="nav-course-index"/>
     <g class="bearing-warning-flag"><rect x="99" y="151" width="42" height="18" rx="2"/><text x="120" y="164">BRG</text></g>
+    <g class="bearing-gps-labels" hidden><rect x="40" y="171" width="160" height="40" rx="3" class="nav-dial"/><text x="120" y="181" class="bearing-gps-id"></text><text x="120" y="193" class="bearing-gps-name"></text><text x="120" y="206" class="bearing-gps-context"></text></g>
     <title>NAV1 VOR-derived true bearing teaching aid and independent DME, not ADF/NDB reception</title>`, 'NAV1 bearing teaching aid and DME unavailable');
 }
 function rpmFace(): string {
@@ -88,9 +91,9 @@ function rpmFace(): string {
     <text x="120" y="210" class="rpm-unavailable">INOP</text>`, 'Actual propeller RPM unavailable');
 }
 
-/** Four original displays over the shared signal model, not ADF/NDB reception. */
+/** Four original displays over shared radio/GPS geometry and native RPM, not ADF/NDB reception. */
 export function createNavigationGauges(options: NavigationGaugesOptions): {
-  update(state: Readonly<FlightState> | null, reviewing: boolean, running: boolean, flying?: boolean): void;
+  update(state: Readonly<FlightState> | null, reviewing: boolean, running: boolean, flying?: boolean, gpsTarget?: Readonly<PlannerPoint> | null): void;
   dispose(): void;
 } {
   const { container } = options;
@@ -108,7 +111,7 @@ export function createNavigationGauges(options: NavigationGaugesOptions): {
       <button type="button" id="nav${receiver}-gauge-obs-up" data-receiver="${receiver}" data-delta="1" aria-label="Increase NAV${receiver} OBS course by one degree">+</button></div>
     <p id="nav${receiver}-gauge-note" class="navigation-gauge-note">Radio configuration unavailable</p>
   </section>`).join('') + `<section id="bearing-gauge" class="navigation-gauge" data-instrument="bearing" aria-label="NAV1 VOR-derived true bearing teaching aid and independent DME">
-    ${bearingFace()}<div class="navigation-aux-readout"><output id="bearing-true">—</output><span>BRG TRUE</span><output id="bearing-dme">—</output><span>DME NM</span></div>
+    ${bearingFace()}<div class="navigation-aux-readout"><output id="bearing-true">—</output><span>BRG TRUE</span><output id="bearing-dme">—</output><span id="bearing-distance-label">DME NM</span></div>
     <p class="navigation-gauge-note" id="bearing-note">Navigation signal unavailable</p></section>
     <section id="rpm-gauge" class="navigation-gauge" data-instrument="rpm" aria-label="Actual propeller RPM">
     ${rpmFace()}<div class="navigation-aux-readout"><output id="rpm-value">—</output><span>PROP RPM · MODEL</span></div></section>`;
@@ -247,7 +250,7 @@ export function createNavigationGauges(options: NavigationGaugesOptions): {
   dialog.addEventListener('close', close); media.addEventListener('change', layout);
   layout();
 
-  function update(state: Readonly<FlightState> | null, reviewing: boolean, running: boolean, flying = false): void {
+  function update(state: Readonly<FlightState> | null, reviewing: boolean, running: boolean, flying = false, gpsTarget: Readonly<PlannerPoint> | null = null): void {
     if (disposed) return;
     const config = state && validRadioNavSnapshot(state) ? state : null;
     canAdjust = !!config && running && !reviewing;
@@ -304,23 +307,66 @@ export function createNavigationGauges(options: NavigationGaugesOptions): {
         + (receiver === 1 ? gsValid ? `, glideslope ${(indication!.gs_norm! * 5).toFixed(1)} dots positive up` : `, GS flag, ${indication?.gs_reason ?? 'glideslope unavailable'}` : ', no glideslope receiver on this instrument')
         + `, DME ${dmeValid ? indication!.dme_nm!.toFixed(1) + ' nautical miles indicated' : 'unavailable'}${reviewing ? ', recorded' : ''}`);
     }
-    const bearing = config ? bearingDistanceIndication(config, state, 1) : null;
     const heading = state && Number.isFinite(state.heading_rad) ? ((state.heading_rad / DEG) % 360 + 360) % 360 : null;
-    const validBearing = bearing?.valid === true && heading !== null;
-    bearingRoot.dataset.valid = String(validBearing); bearingRoot.dataset.recorded = String(reviewing);
-    bearingRoot.dataset.bearingTrueDeg = bearing?.bearing_true_deg === null || bearing?.bearing_true_deg === undefined ? '' : String(bearing.bearing_true_deg);
-    const dmeValid = bearing?.dme_valid === true && bearing.dme_nm !== null && Number.isFinite(bearing.dme_nm);
-    bearingRoot.dataset.dmeNm = dmeValid ? String(bearing!.dme_nm) : ''; bearingRoot.dataset.dmeValid = String(dmeValid);
-    bearingCard.toggleAttribute('hidden', heading === null);
-    if (heading !== null) bearingCard.setAttribute('transform', `rotate(${-heading} 120 120)`);
-    bearingPointer.toggleAttribute('hidden', !validBearing); bearingFlag.toggleAttribute('hidden', validBearing);
-    if (validBearing) bearingPointer.setAttribute('transform', `rotate(${bearing.bearing_true_deg! - heading!} 120 120)`);
-    const bearingText = validBearing ? `${String(Math.round(bearing.bearing_true_deg!) % 360).padStart(3, '0')}°` : '—';
-    bearingRoot.querySelector<HTMLOutputElement>('#bearing-true')!.value = bearingText;
-    bearingRoot.querySelector<HTMLOutputElement>('#bearing-dme')!.value = dmeValid ? bearing!.dme_nm!.toFixed(1) : '—';
-    bearingRoot.querySelector('.nav-unit-reference')!.textContent = `${bearing?.station_id ?? 'NAV1'} · TRUE AID`;
-    bearingRoot.querySelector<HTMLElement>('#bearing-note')!.textContent = `${reviewing ? 'RECORDED · ' : ''}${bearing?.reason ?? 'Radio configuration unavailable'}`;
-    bearingRoot.querySelector('svg')!.setAttribute('aria-label', `NAV1 ${bearing?.station_id ?? 'unidentified'}, ${bearing?.source_label ?? 'source unavailable'}, VOR-derived true bearing teaching aid ${bearingText}, DME ${dmeValid ? bearing!.dme_nm!.toFixed(1) + ' nautical miles indicated' : 'unavailable'}, not ADF/NDB reception${reviewing ? ', recorded' : ''}`);
+    bearingRoot.dataset.source = gpsTarget ? 'gps' : 'nav1';
+    bearingRoot.querySelector('.bearing-gps-labels')!.toggleAttribute('hidden', !gpsTarget);
+    bearingRoot.querySelector('.nav-unit-title')!.textContent = gpsTarget ? 'GPS BRG / DIST' : 'BRG / DME';
+    bearingRoot.querySelector('#bearing-distance-label')!.textContent = gpsTarget ? 'GPS DIST NM' : 'DME NM';
+    if (gpsTarget) {
+      // A selected GPS target stays selected even if its bearing is unavailable;
+      // never substitute an unrelated radio station in that case.
+      const navigation = state ? pointNavigation({ lat_deg: state.lat_rad / DEG, lon_deg: state.lon_rad / DEG }, gpsTarget) : null;
+      const bearing = navigation?.bearing_true_deg ?? null;
+      const valid = bearing !== null && heading !== null;
+      const distance = navigation?.distance_nm ?? null;
+      const bearingText = valid ? `${String(Math.round(bearing!) % 360).padStart(3, '0')}°` : '—';
+      const context = reviewing ? 'CURRENT GPS / REVIEW POSITION' : 'CURRENT GPS';
+      const targetText = `${gpsTarget.id} · ${gpsTarget.name}`;
+      const description = `${context}, ${targetText}, ${gpsTarget.source_label}, true bearing ${bearingText}, GPS geographic distance ${distance === null ? 'unavailable' : distance.toFixed(1) + ' nautical miles'}, not DME; current target is not recorded; no autopilot coupling`;
+      bearingRoot.dataset.valid = String(valid); bearingRoot.dataset.recorded = String(reviewing);
+      bearingRoot.dataset.targetId = gpsTarget.id;
+      bearingRoot.dataset.bearingTrueDeg = bearing === null ? '' : String(bearing);
+      bearingRoot.dataset.distanceNm = distance === null ? '' : String(distance);
+      bearingRoot.dataset.dmeNm = ''; bearingRoot.dataset.dmeValid = 'false';
+      bearingCard.toggleAttribute('hidden', heading === null);
+      if (heading !== null) bearingCard.setAttribute('transform', `rotate(${-heading} 120 120)`);
+      bearingPointer.toggleAttribute('hidden', !valid); bearingFlag.toggleAttribute('hidden', valid);
+      if (valid) bearingPointer.setAttribute('transform', `rotate(${bearing! - heading!} 120 120)`);
+      bearingRoot.querySelector<HTMLOutputElement>('#bearing-true')!.value = bearingText;
+      bearingRoot.querySelector<HTMLOutputElement>('#bearing-dme')!.value = distance === null ? '—' : distance.toFixed(1);
+      bearingRoot.querySelector('.nav-unit-reference')!.textContent = 'GPS · TRUE';
+      const compact = (label: string) => label.length > 24 ? label.slice(0, 23) + '…' : label;
+      bearingRoot.querySelector('.bearing-gps-id')!.textContent = compact(gpsTarget.id);
+      bearingRoot.querySelector('.bearing-gps-name')!.textContent = compact(gpsTarget.name);
+      bearingRoot.querySelector('.bearing-gps-context')!.textContent = context;
+      bearingRoot.querySelector<HTMLElement>('#bearing-note')!.textContent = `${context} · ${targetText}`;
+      bearingRoot.title = description;
+      bearingRoot.setAttribute('aria-label', description);
+      bearingRoot.querySelector('svg')!.setAttribute('aria-label', description);
+      bearingRoot.querySelector('svg > title')!.textContent = description;
+    } else {
+      delete bearingRoot.dataset.targetId; delete bearingRoot.dataset.distanceNm;
+      bearingRoot.querySelectorAll('.bearing-gps-labels text').forEach(label => { label.textContent = ''; });
+      bearingRoot.removeAttribute('title');
+      bearingRoot.setAttribute('aria-label', 'NAV1 VOR-derived true bearing teaching aid and independent DME');
+      bearingRoot.querySelector('svg > title')!.textContent = 'NAV1 VOR-derived true bearing teaching aid and independent DME, not ADF/NDB reception';
+      const bearing = config ? bearingDistanceIndication(config, state, 1) : null;
+      const validBearing = bearing?.valid === true && heading !== null;
+      bearingRoot.dataset.valid = String(validBearing); bearingRoot.dataset.recorded = String(reviewing);
+      bearingRoot.dataset.bearingTrueDeg = bearing?.bearing_true_deg === null || bearing?.bearing_true_deg === undefined ? '' : String(bearing.bearing_true_deg);
+      const dmeValid = bearing?.dme_valid === true && bearing.dme_nm !== null && Number.isFinite(bearing.dme_nm);
+      bearingRoot.dataset.dmeNm = dmeValid ? String(bearing!.dme_nm) : ''; bearingRoot.dataset.dmeValid = String(dmeValid);
+      bearingCard.toggleAttribute('hidden', heading === null);
+      if (heading !== null) bearingCard.setAttribute('transform', `rotate(${-heading} 120 120)`);
+      bearingPointer.toggleAttribute('hidden', !validBearing); bearingFlag.toggleAttribute('hidden', validBearing);
+      if (validBearing) bearingPointer.setAttribute('transform', `rotate(${bearing.bearing_true_deg! - heading!} 120 120)`);
+      const bearingText = validBearing ? `${String(Math.round(bearing.bearing_true_deg!) % 360).padStart(3, '0')}°` : '—';
+      bearingRoot.querySelector<HTMLOutputElement>('#bearing-true')!.value = bearingText;
+      bearingRoot.querySelector<HTMLOutputElement>('#bearing-dme')!.value = dmeValid ? bearing!.dme_nm!.toFixed(1) : '—';
+      bearingRoot.querySelector('.nav-unit-reference')!.textContent = `${bearing?.station_id ?? 'NAV1'} · TRUE AID`;
+      bearingRoot.querySelector<HTMLElement>('#bearing-note')!.textContent = `${reviewing ? 'RECORDED · ' : ''}${bearing?.reason ?? 'Radio configuration unavailable'}`;
+      bearingRoot.querySelector('svg')!.setAttribute('aria-label', `NAV1 ${bearing?.station_id ?? 'unidentified'}, ${bearing?.source_label ?? 'source unavailable'}, VOR-derived true bearing teaching aid ${bearingText}, DME ${dmeValid ? bearing!.dme_nm!.toFixed(1) + ' nautical miles indicated' : 'unavailable'}, not ADF/NDB reception${reviewing ? ', recorded' : ''}`);
+    }
     const rpm = state && typeof state.prop_radps === 'number' && Number.isFinite(state.prop_radps) && state.prop_radps >= 0 ? state.prop_radps * 60 / (2 * Math.PI) : null;
     const validRpm = rpm !== null && Number.isFinite(rpm);
     rpmRoot.dataset.valid = String(validRpm); rpmRoot.dataset.recorded = String(reviewing);

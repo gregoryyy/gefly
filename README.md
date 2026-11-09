@@ -56,7 +56,7 @@ height above the threshold; set power/flaps yourself. It is not a published appr
 Research flights and contact studies are in the secondary group.
 
 Alternatively, open the flight map with **M**, press **,** for the map menu, choose **EDFE 26 or 08**, and select **Start at runway**. The aircraft starts at rest with the engine idling and parking brake
-set. Press **N** to release the brake, add power with **1–9**, and fly the circuit
+set. Press **N** to release the brake, add power with **1–9 / 0**, and fly the circuit
 manually. **Stop exercise** on the map pauses the flight and keeps Review available.
 Other airports can be inspected, but their runway starts are not prepared yet.
 
@@ -76,10 +76,16 @@ Sharp runway markings, taxiways and apron overlays sit on the public terrain.
 Use **/** (Slash on a US keyboard), **View → Terrain** or **Options → Map terrain** to switch between photography and official German cartography
 without text over the terrain. Roads, fields, woodland, water and building
 footprints extend beyond the airport. The modes are exclusive: loading or missing
-vector tiles expose terrain relief, not photography. The flight map keeps its **Map/Aerial** background;
+vector tiles expose terrain relief, not photography. In the comma map menu, **Dark map** switches between original light colors
+(off, default) and darker terrain colors (on) for the 2D map only; the choice
+survives reload. The flight map keeps its **Map/Aerial** background;
 its **Map terrain** button changes only the 3D texture. **Practice PAPI / runway
 lights** are separate illustrative aids, not a surveyed EDFE installation.
 [Map terrain source and limits](docs/research/2026-11-04-label-free-map-terrain.md).
+
+Open **Credits** beside **gefly** for the live terrain, map and imagery source
+attributions and licence links. The full text is in this menu rather than across
+the flight view.
 
 Select an airport on the map and open **Airport COM** to load a service into
 **COM1/COM2 standby**, then swap on the radio stack. The directory contains 631
@@ -102,7 +108,7 @@ The top menu/title bar and floating flight controls start hidden: **I** toggles
 the menu, **O** opens Options (Controls, Scenery, Sound and Advanced), and **View → Flight controls** shows the flight controls. **F** toggles browser fullscreen (also in View); the browser’s **Esc** action exits it. Floating controls, map,
 flight-data and stall-awareness panels are half opaque until clicked; their
 first click activates the panel, and subsequent gestures operate it.
-Arrow keys control pitch/roll, Q/W rudder, 0 throttle idle and 1–9 throttle.
+Arrow keys control pitch/roll, Q/W rudder, 1–9 for 10–90% throttle, 0 for full throttle and § (left of 1) for idle.
 In Review, **← / →** seek backward/forward one second, with repeated keys supported. **Continue live** flies from the selected frame and keeps the earlier path; **Back to live** returns to the original flight. Continuation starts a new simulation branch; older recordings without enough state remain viewable.
 With the map closed, **=** or the replay speed button cycles **1×, 1.5×, 2×, 5×, 10×**, independently
 of live-flight speed. The overlay shows **REPLAY** speed.
@@ -112,7 +118,7 @@ sound (initially off). **A** toggles the autopilot, capturing current heading/al
 With the map closed, **=** cycles **1×, 1.5×, 2×, 5×, 10×**, with an on-screen simulation-rate indicator.
 These are simulator conveniences; acceleration preserves the fixed physics step
 and the achieved rate depends on available CPU/rendering capacity.
-Restart is in Flight. The last live location is saved locally and restored paused on reload; Restart clears it. Airborne restores use the normal 90 kt launch speed, rather than a saved physics checkpoint. Click toggles touchpad yoke control;
+Restart is in Flight. The last live location and autopilot settings are saved locally and restored paused on reload; Restart clears them. AP engagement, modes, heading bug, altitude/VS selections, arming, BARO settings and coupled NAV tuning return with the location. Airborne restores use the normal 90 kt launch speed; this is not an engine or physics checkpoint. Click toggles touchpad yoke control;
 hold-drag retains the view where you release it and preserves the yoke midpoint;
 Double-click the scenery or press Escape to center the view. L/R/U/D/B markers
 show the aircraft’s left, right, up, down and backward directions. Two-finger
@@ -127,7 +133,7 @@ Press **.** to cycle floating OSM names: **Off → Places → Landmarks → Deta
 The same setting is in View. Labels sit above their mapped locations on either
 map terrain or photography; source coverage and label density are bounded.
 With labels on, **right-click** terrain (Mac **Ctrl-click** also works) to look
-for its nearest mapped name. The popup shows distance; it is not an address lookup.
+for its nearest mapped name. The popup shows distance; click outside it or use its close button to dismiss it. It is not an address lookup.
 
 Public terrain now streams across **6–14°E / 47–51.75°N**, including
 Westerwald, the Lahn valley, Marburg and Kassel, alongside Darmstadt, Odenwald
@@ -172,13 +178,26 @@ select an airport and use Follow to return to the aircraft; selection does not
 move the aircraft. During **Review**, the marker follows the selected historical
 state. The map is practice context, not a navigation chart or current airport reference.
 
+Right-click a map location, choose **Ground**, **1,000 ft AGL**, **5,000 ft AGL**
+or **10,000 ft AGL**, then press **Fly from here** to relocate and start paused.
+Ground starts at rest with the parking brake set; airborne starts use 90 kt TAS and
+the existing generic-model trim. AGL means height above local terrain. Saved-location restore retains its existing −500 to 6,000 m MSL limit; higher starts are not saved.
+Open **Flight plan** from the top menu or map header, or press **P** for its
+transparent editor; use its close button to hide it. Routes and fixes stay on the
+map without a persistent flight-plan card.
+
 The flight map uses almost the full front-window height. **M** shows it and **,**
 opens details and search below it over the right cockpit panels. Click airports,
 radio aids or fixes directly on the map to inspect them, load supported COM/NAV
-standby channels or set a visual GPS target. The 2,739 regional fix rows are from
+standby channels or set a visual GPS target. After a channel is loaded, a checkmark
+and inline confirmation identify the receiving radio and frequency. This confirms
+the last loading action; use the radio stack swap control to activate it.
+The 2,739 regional fix rows are from
 FlightGear 2013.10 and are clearly historical, not a current AIRAC database.
-Nearby map/vector data preloads while the start screen is open; Start remains
-available. See the [source inventory](app/public/mapdata/fixes-README.md).
+Select a user-created GPS point and choose **Delete GPS fix** to remove it.
+Remove it from the flight plan first if it is used there; published navaids are
+not deleted. Nearby map/vector data preloads while the start screen is open;
+Start remains available. See the [source inventory](app/public/mapdata/fixes-README.md).
 
 The local development server fetches live map/photo tiles from fixed public
 WMS services. Pillow is needed for photo compositing; provider failure leaves
@@ -201,8 +220,8 @@ turn/slip, true heading and vertical speed. Click the scene to toggle touchpad
 yoke control; hold-drag to look around. Two-finger vertical scrolling
 over the scenery adjusts camera FOV; over the cockpit it zooms the panel around
 the pointer. **[ / ]** selects flaps, **B** holds
-wheel brakes, and **1–9** selects 10–90% throttle (**0** idle). The engine panel
-adds mixture, RPM, manifold pressure, oil and fuel readouts. **Flight → Weight & fuel** sets occupants, baggage, auxiliary load and initial fuel in litres; Apply restarts the flight. Fuel use reduces both tank contents and native aircraft mass. **P** toggles the two-axis autopilot. Its KAP 140 operating controls include VS,
+wheel brakes, and **1–9** selects 10–90% throttle (**0** full, **§** idle). The engine panel
+adds mixture, RPM, manifold pressure, oil and fuel readouts. **Flight → Weight & fuel** sets occupants, baggage, auxiliary load and initial fuel in litres; Apply restarts the flight. Fuel use reduces both tank contents and native aircraft mass. **A** toggles the two-axis autopilot; **P** toggles the flight plan. Its KAP 140 operating controls include VS,
 current-altitude hold, selected-altitude capture and source-aware navigation;
 generic servo response and real navigation-data coverage remain limited.
 To climb to a preselected altitude, engage AP, set climb power and select the altitude. Selection automatically arms capture: **ARMED** and **ALT ARM** confirm it. Pressing **ARMED** cancels capture. Switch ALT to VS if needed, then use UP/DN to set the rate. The first press reveals a hidden VS value; subsequent taps change 100 FPM. Hold **CWS** to hand-fly and release to capture current VS or held altitude. CWS is an optional KAP140 control; this particular C172 installation is unverified.

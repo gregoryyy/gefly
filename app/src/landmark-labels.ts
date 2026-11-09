@@ -41,6 +41,9 @@ export function createLandmarkLabels(scene: Scene, container: HTMLElement,
   lookupBox.append(lookupText, lookupClose); container.append(lookupBox);
   let lookupRequest: AbortController | null = null;
   function hideLookup(): void { lookupRequest?.abort(); lookupRequest = null; lookupBox.hidden = true; }
+  function dismissLookupOutside(event: PointerEvent): void {
+    if (!lookupBox.hidden && !(event.target instanceof Node && lookupBox.contains(event.target))) hideLookup();
+  }
   function lookupMessage(text: string, state: string): void {
     lookupBox.dataset.status = state; lookupText.textContent = text; lookupBox.hidden = false;
   }
@@ -72,6 +75,7 @@ export function createLandmarkLabels(scene: Scene, container: HTMLElement,
     });
   }
   container.addEventListener('contextmenu', onContextMenu);
+  document.addEventListener('pointerdown', dismissLookupOutside, true);
 
   const occluder = new EllipsoidalOccluder(Ellipsoid.WGS84, scene.camera.positionWC);
   const offset = new Cartesian3(), normal = new Cartesian3();
@@ -164,7 +168,8 @@ export function createLandmarkLabels(scene: Scene, container: HTMLElement,
     update,
     dispose() {
       if (disposed) return; disposed = true; hideLookup(); lookup.dispose(); source.dispose();
-      container.removeEventListener('contextmenu', onContextMenu); lookupBox.remove();
+      container.removeEventListener('contextmenu', onContextMenu);
+      document.removeEventListener('pointerdown', dismissLookupOutside, true); lookupBox.remove();
       scene.primitives.remove(labels); scene.primitives.remove(dots); entries.clear(); status.remove();
       delete container.dataset.landmarkLevel; delete container.dataset.landmarkLabels; delete container.dataset.landmarkStatus;
     },

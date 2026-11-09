@@ -15,6 +15,7 @@ export function createFlightWarningAudioEvents(): {
   };
 } {
   let previous: { step: number; time_s: number; kapEngaged: 0 | 1 | null } | null = null;
+  let suppressRecent = false;
   return {
     update(frame, enabled) {
       if (!enabled || !frame?.live || !Number.isSafeInteger(frame.step) || frame.step < 0
@@ -25,12 +26,18 @@ export function createFlightWarningAudioEvents(): {
       const continuous = previous !== null && (
         (frame.step === previous.step && frame.time_s === previous.time_s)
         || (frame.step > previous.step && frame.time_s > previous.time_s && frame.time_s - previous.time_s <= .5));
+      const recent = frame.warnings.stall === 'active' && frame.warnings.stallRecent === true;
+      // A cached presentation remainder is not a new audible warning after
+      // unlock/unmute/resume. Keep it suppressed for the whole recent episode;
+      // a current raw positive or an observed clear establishes a fresh boundary.
+      if (!recent) suppressRecent = false;
+      else if (previous === null) suppressRecent = true;
       // Paused avionics commands can replace the selected frame without stepping
       // physics. Only an observed live edge may produce the one-shot cue.
       const disconnected = continuous && previous?.kapEngaged === 1 && frame.kapEngaged === 0;
       previous = { step: frame.step, time_s: frame.time_s,
         kapEngaged: frame.kapEngaged === 0 || frame.kapEngaged === 1 ? frame.kapEngaged : null };
-      return { stall: frame.warnings.stall === 'active', terrain: frame.warnings.terrain === 'active', disconnected, continuous };
+      return { stall: frame.warnings.stall === 'active' && !suppressRecent, terrain: frame.warnings.terrain === 'active', disconnected, continuous };
     },
   };
 }

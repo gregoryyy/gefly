@@ -1,3 +1,13 @@
+import { fitPanel, panPanel, zoomPanel, type PanelFrame, type PanelZoom } from './panel-zoom.ts';
+
+const interactivePanel = [
+  'button,input,textarea,select,a,label,summary',
+  ...['button', 'slider', 'spinbutton', 'checkbox', 'radio', 'switch', 'textbox', 'searchbox', 'combobox', 'listbox',
+    'option', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'tab', 'treeitem', 'link'].map(role => `[role="${role}"]`),
+  '[contenteditable]:not([contenteditable="false"])',
+  '#nav1-gauge .navigation-gauge-face,#nav2-gauge .navigation-gauge-face',
+].join(',');
+
 /** Fit one cockpit surface, so instruments, lettering and controls keep the same scale. */
 export function createCockpitLayout(container: HTMLElement): { dispose(): void } {
   const deck = container.querySelector<HTMLElement>('.flight-deck');
@@ -10,109 +20,30 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
   container.classList.add('cockpit-fitted');
   let frame = 0;
   let disposed = false;
-  let zoom = 1;
-  let panX = 0, panY = 0;
-  let fitted = 1, naturalHeight = 0, naturalWidth = 0, headingHeight = 0, verticalPadding = 0;
-  const maxZoom = 3;
-  let fitKey = '';
-  const controls = 'button,input,select,textarea,a,label,summary,[contenteditable],[role=button],[role=slider],[role=spinbutton],#nav1-gauge .navigation-gauge-face,#nav2-gauge .navigation-gauge-face';
-  let drag: { id: number; x: number; y: number; panX: number; panY: number; active: boolean } | null = null;
-  let suppressClick = false;
-
-  function paintZoom(): void {
-    if (!deck || !instruments) return;
-    // Magnify only the clipped instrument surface. The deck and flying view
-    // retain their fitted height, including while focusing a lower instrument.
-    const width = naturalWidth * fitted;
-    const baseLeft = (viewport.clientWidth - width) / 2;
-    const scaledWidth = width * zoom;
-    panX = scaledWidth <= viewport.clientWidth
-      ? Math.max(-baseLeft, Math.min(viewport.clientWidth - baseLeft - scaledWidth, panX))
-      : Math.max(viewport.clientWidth - baseLeft - scaledWidth, Math.min(-baseLeft, panX));
-    instruments.style.transformOrigin = '0 0';
-    instruments.style.transform = `translate(${panX / fitted}px, ${panY / fitted}px) scale(${zoom})`;
-    // Clamp the rendered edges, including CSS zoom rounding, rather than an
-    // estimated height. The enlarged surface must keep covering the frame.
-    const surface = instruments.getBoundingClientRect(), bounds = viewport.getBoundingClientRect();
-    const correctionY = surface.height >= bounds.height
-      ? Math.max(bounds.bottom - surface.bottom, Math.min(bounds.top - surface.top, 0))
-      : bounds.top - surface.top;
-    if (correctionY !== 0) {
-      panY += correctionY;
-      instruments.style.transform = `translate(${panX / fitted}px, ${panY / fitted}px) scale(${zoom})`;
-    }
-    deck.dataset.zoomed = String(zoom > 1);
-    deck.dataset.panelZoom = String(zoom);
+  let panelFrame: PanelFrame | null = null;
+  let panelZoom: PanelZoom = { zoom: 1, x: 0, y: 0 };
+  let fitScale = 1;
+  let layoutKey = '';
+  let drag: { pointerId: number; x: number; y: number; initial: PanelZoom; active: boolean } | null = null;
+  let suppressedClickPointer: number | null = null;
+  function endDrag(): void {
+    const previous = drag; drag = null; delete deck!.dataset.panelDragging;
+    if (!previous) return;
+    if (previous.active) suppressedClickPointer = previous.pointerId;
+    if (deck!.hasPointerCapture(previous.pointerId)) deck!.releasePointerCapture(previous.pointerId);
   }
-  function resetZoom(): void { stopDrag(); zoom = 1; panX = panY = 0; paintZoom(); }
-  function doubleClick(event: MouseEvent): void {
-    if (suppressClick || event.button !== 0 || !(event.target instanceof Element)
-      || event.target.closest(controls)) return;
-    event.preventDefault(); event.stopPropagation(); resetZoom();
+  function paint(): void {
+    // One transform maps canonical instruments into the frame. Translation is
+    // already in screen CSS pixels, exactly as supplied by the panel helpers.
+    instruments!.style.transformOrigin = '0 0';
+    instruments!.style.transform = `translate(${panelZoom.x}px, ${panelZoom.y}px) scale(${fitScale * panelZoom.zoom})`;
+    container.dataset.panelZoom = String(panelZoom.zoom);
   }
-
-  function pointerDown(event: PointerEvent): void {
-    if (event.button !== 0 || !event.isPrimary) return;
-    stopDrag();
-    suppressClick = false;
-    if (zoom === 1 || event.defaultPrevented
-      || !(event.target instanceof Element) || event.target.closest(controls)
-      || container.ownerDocument.querySelector('dialog[open]')) return;
-    drag = { id: event.pointerId, x: event.clientX, y: event.clientY, panX, panY, active: false };
-    event.preventDefault();
+  function reset(): void {
+    endDrag();
+    if (!panelFrame) return;
+    panelZoom = fitPanel(panelFrame); paint();
   }
-
-  function pointerMove(event: PointerEvent): void {
-    if (!drag || event.pointerId !== drag.id || !deck) return;
-    if ((event.buttons & 1) === 0) { stopDrag(); return; }
-    const dx = event.clientX - drag.x, dy = event.clientY - drag.y;
-    if (!drag.active) {
-      if (Math.hypot(dx, dy) < 5) return;
-      drag.active = true;
-      deck.setPointerCapture(event.pointerId);
-      deck.dataset.panelDragging = 'true';
-    }
-    event.preventDefault();
-    panX = drag.panX + dx; panY = drag.panY + dy;
-    paintZoom();
-  }
-
-  function stopDrag(event?: PointerEvent): void {
-    if (!drag || event && event.pointerId !== drag.id) return;
-    const previous = drag; drag = null;
-    suppressClick = previous.active && event?.type === 'pointerup';
-    if (deck?.hasPointerCapture(previous.id)) deck.releasePointerCapture(previous.id);
-    if (deck) delete deck.dataset.panelDragging;
-  }
-
-  function click(event: MouseEvent): void {
-    if (!suppressClick) return;
-    suppressClick = false;
-    if (event.detail > 0) { event.preventDefault(); event.stopPropagation(); }
-  }
-
-  function wheel(event: WheelEvent): void {
-    if (!deck || !instruments || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey
-      || container.ownerDocument.querySelector('dialog[open]')
-      || !Number.isFinite(event.deltaY) || !Number.isFinite(event.deltaX)) return;
-    const horizontal = Math.abs(event.deltaX) > Math.abs(event.deltaY);
-    if (horizontal ? zoom === 1 : event.deltaY === 0) return;
-    const unit = event.deltaMode === 0 ? 1 : event.deltaMode === 1 ? 16
-      : event.deltaMode === 2 ? deck.clientHeight : 0;
-    if (!unit) return;
-    event.preventDefault();
-    event.stopPropagation();
-    if (horizontal) { panX -= event.deltaX * unit; paintZoom(); return; }
-    const next = Math.max(1, Math.min(maxZoom, zoom * Math.exp(-Math.max(-200, Math.min(200, event.deltaY * unit)) * .002)));
-    const rect = instruments.getBoundingClientRect();
-    // Keep the instrument point under the pointer fixed in screen coordinates.
-    panX += (event.clientX - rect.left) * (1 - next / zoom);
-    panY += (event.clientY - rect.top) * (1 - next / zoom);
-    zoom = next;
-    if (zoom === 1) panX = panY = 0;
-    paintZoom();
-  }
-
   function fit(): void {
     frame = 0;
     if (disposed || !deck || !instruments) return;
@@ -123,12 +54,18 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
     }
     const style = getComputedStyle(deck);
     const horizontalPadding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
-    verticalPadding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)
+    const verticalPadding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)
       + parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth);
-    headingHeight = deck.querySelector<HTMLElement>('.deck-heading')?.offsetHeight ?? 0;
-    // offset sizes describe the canonical, unzoomed controls. No physics or camera state is changed.
-    naturalHeight = instruments.offsetHeight;
-    naturalWidth = instruments.offsetWidth;
+    const headingHeight = deck.querySelector<HTMLElement>('.deck-heading')?.getBoundingClientRect().height ?? 0;
+    // Measure canonical layout, including fractional auto-height rows. Restore
+    // the current view synchronously so an unrelated observer callback neither
+    // flashes the natural size nor discards the learner's zoom/pan position.
+    const previousTransform = instruments.style.transform;
+    instruments.style.transform = 'none';
+    const naturalRect = instruments.getBoundingClientRect();
+    instruments.style.transform = previousTransform;
+    const naturalHeight = naturalRect.height;
+    const naturalWidth = naturalRect.width;
     if (naturalHeight <= 0 || naturalWidth <= 0) return;
     // Give the flying view about 60% of the window. A 300px practical floor
     // applies while a compact cockpit still fits; very short windows keep a
@@ -150,16 +87,21 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
     const scale = Math.min(1,
       Math.max(1, deck.clientWidth - horizontalPadding) / naturalWidth,
       Math.max(1, container.clientHeight - sceneReserve - headingHeight - verticalPadding) / naturalHeight);
-    fitted = scale;
-    container.style.setProperty('--deck-height', `${Math.ceil(naturalHeight * fitted + headingHeight + verticalPadding)}px`);
-    if (container.style.getPropertyValue('--cockpit-scale') !== String(scale)) {
-      container.style.setProperty('--cockpit-scale', String(scale));
-    }
     container.dataset.cockpitScale = String(scale);
-    // Control text can resize an observed overlay without changing this fit.
-    // Keep its current focus; only actual viewport/layout changes restore fit.
-    const key = [scale, naturalWidth, naturalHeight, headingHeight, verticalPadding, container.clientWidth, container.clientHeight, container.dataset.review === 'true'].join('/');
-    if (key !== fitKey) { fitKey = key; resetZoom(); } else paintZoom();
+    const nextKey = [container.clientWidth, container.clientHeight, naturalWidth, naturalHeight,
+      headingHeight, scale, deck.clientWidth - horizontalPadding, container.dataset.review].join(':');
+    if (nextKey !== layoutKey) {
+      // The fitted rectangle and helper offsets share one physical origin;
+      // CSS zoom must not introduce an engine-dependent second coordinate scale.
+      const baseWidth = naturalWidth * scale, baseHeight = naturalHeight * scale;
+      viewport.style.height = `${baseHeight}px`;
+      container.style.setProperty('--deck-height', `${baseHeight + headingHeight + verticalPadding}px`);
+      const viewportRect = viewport.getBoundingClientRect();
+      fitScale = scale;
+      panelFrame = { width: viewportRect.width, height: viewportRect.height,
+        baseWidth, baseHeight };
+      layoutKey = nextKey; reset();
+    }
   }
   function schedule(): void {
     if (!disposed && !frame) frame = requestAnimationFrame(fit);
@@ -172,47 +114,105 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
   const reviewObserver = new MutationObserver(schedule);
   reviewObserver.observe(container, { attributes: true, attributeFilter: ['data-review'] });
   window.addEventListener('resize', schedule);
-  // Include the housing and bottom padding: they are part of the panel too.
-  deck.addEventListener('wheel', wheel, { passive: false, capture: true });
-  deck.addEventListener('dblclick', doubleClick);
-  deck.addEventListener('pointerdown', pointerDown);
-  deck.addEventListener('click', click, true);
-  window.addEventListener('pointermove', pointerMove, { passive: false });
-  window.addEventListener('pointerup', stopDrag);
-  window.addEventListener('pointercancel', stopDrag);
-  deck.addEventListener('lostpointercapture', stopDrag);
-  window.addEventListener('blur', cancelDrag);
   fit();
-
-  function cancelDrag(): void { stopDrag(); }
+  function wheel(event: WheelEvent): void {
+    if (!panelFrame || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey
+      || container.ownerDocument.querySelector('dialog[open]')
+      || ![event.deltaX, event.deltaY, event.clientX, event.clientY].every(Number.isFinite)) return;
+    const unit = event.deltaMode === 0 ? 1 : event.deltaMode === 1 ? 16
+      : event.deltaMode === 2 ? panelFrame.height : NaN;
+    const horizontal = Math.abs(event.deltaX) >= Math.abs(event.deltaY);
+    if (horizontal && panelZoom.zoom === 1) return;
+    const deltaPixels = (horizontal ? event.deltaX : event.deltaY) * unit;
+    if (!Number.isFinite(deltaPixels) || deltaPixels === 0) return;
+    const rect = viewport.getBoundingClientRect();
+    event.preventDefault(); event.stopPropagation();
+    endDrag();
+    panelZoom = horizontal ? panPanel(panelZoom, panelFrame, { x: -deltaPixels, y: 0 })
+      : zoomPanel(panelZoom, panelFrame, { x: event.clientX - rect.left, y: event.clientY - rect.top }, deltaPixels);
+    paint();
+  }
+  function doubleClick(event: MouseEvent): void {
+    const target = event.target instanceof Element ? event.target : null;
+    if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey
+      || container.ownerDocument.querySelector('dialog[open]')
+      || target?.closest(interactivePanel)) return;
+    event.preventDefault(); event.stopPropagation(); reset();
+  }
+  function pointerDown(event: PointerEvent): void {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!panelFrame || panelZoom.zoom === 1 || event.defaultPrevented || !event.isPrimary || event.button !== 0
+      || event.ctrlKey || event.metaKey || event.altKey || target?.closest(interactivePanel)
+      || container.ownerDocument.querySelector('dialog[open]')
+      || ![event.clientX, event.clientY].every(Number.isFinite)) return;
+    endDrag();
+    drag = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, initial: { ...panelZoom }, active: false };
+    // Eligible housing has no native editing gesture; keep text selection from
+    // competing with the drag while controls retain their original handlers.
+    event.preventDefault();
+  }
+  function pointerMove(event: PointerEvent): void {
+    if (!drag || !panelFrame || event.pointerId !== drag.pointerId) return;
+    if ((event.buttons & 1) === 0 || !Number.isFinite(event.clientX) || !Number.isFinite(event.clientY) || event.ctrlKey || event.metaKey || event.altKey
+      || container.ownerDocument.querySelector('dialog[open]')) { endDrag(); return; }
+    const x = event.clientX - drag.x, y = event.clientY - drag.y;
+    if (!drag.active && Math.hypot(x, y) < 5) return;
+    if (!drag.active) {
+      drag.active = true; deck!.dataset.panelDragging = 'true'; deck!.setPointerCapture(event.pointerId);
+    }
+    event.preventDefault(); event.stopPropagation();
+    panelZoom = panPanel(drag.initial, panelFrame, { x, y }); paint();
+  }
+  function pointerEnd(event: PointerEvent): void {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    if (drag.active) { event.preventDefault(); event.stopPropagation(); }
+    endDrag();
+  }
+  function newPointer(): void { suppressedClickPointer = null; }
+  function suppressDragClick(event: MouseEvent): void {
+    if (suppressedClickPointer === null || event.detail === 0
+      || event instanceof PointerEvent && event.pointerId !== suppressedClickPointer) return;
+    suppressedClickPointer = null; event.preventDefault(); event.stopImmediatePropagation();
+  }
+  // Capture gestures over controls as well as housing, before a native numeric
+  // input could interpret the wheel as a value edit. Focus never pans the panel.
+  deck.addEventListener('wheel', wheel, { passive: false, capture: true });
+  deck.addEventListener('dblclick', doubleClick, true);
+  deck.addEventListener('pointerdown', pointerDown, true);
+  deck.addEventListener('lostpointercapture', pointerEnd, true);
+  window.addEventListener('pointerdown', newPointer, true);
+  window.addEventListener('pointermove', pointerMove, { passive: false, capture: true });
+  window.addEventListener('pointerup', pointerEnd, true);
+  window.addEventListener('pointercancel', pointerEnd, true);
+  window.addEventListener('blur', endDrag);
+  window.addEventListener('click', suppressDragClick, true);
 
   return {
     dispose() {
       disposed = true;
-      stopDrag();
+      endDrag();
       cancelAnimationFrame(frame);
       observer.disconnect();
       reviewObserver.disconnect();
       window.removeEventListener('resize', schedule);
-      deck.removeEventListener('wheel', wheel, { capture: true });
-      deck.removeEventListener('dblclick', doubleClick);
-      deck.removeEventListener('pointerdown', pointerDown);
-      deck.removeEventListener('click', click, true);
-      window.removeEventListener('pointermove', pointerMove);
-      window.removeEventListener('pointerup', stopDrag);
-      window.removeEventListener('pointercancel', stopDrag);
-      deck.removeEventListener('lostpointercapture', stopDrag);
-      window.removeEventListener('blur', cancelDrag);
+      deck.removeEventListener('wheel', wheel, true);
+      deck.removeEventListener('dblclick', doubleClick, true);
+      deck.removeEventListener('pointerdown', pointerDown, true);
+      deck.removeEventListener('lostpointercapture', pointerEnd, true);
+      window.removeEventListener('pointerdown', newPointer, true);
+      window.removeEventListener('pointermove', pointerMove, true);
+      window.removeEventListener('pointerup', pointerEnd, true);
+      window.removeEventListener('pointercancel', pointerEnd, true);
+      window.removeEventListener('blur', endDrag);
+      window.removeEventListener('click', suppressDragClick, true);
       viewport.before(instruments); viewport.remove();
       instruments.style.removeProperty('transform');
       instruments.style.removeProperty('transform-origin');
-      delete deck.dataset.zoomed;
-      delete deck.dataset.panelZoom;
       container.classList.remove('cockpit-fitted');
-      container.style.removeProperty('--cockpit-scale');
       container.style.removeProperty('--deck-height');
       container.style.removeProperty('--review-readouts-offset');
       delete container.dataset.cockpitScale;
+      delete container.dataset.panelZoom;
     },
   };
 }

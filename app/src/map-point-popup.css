@@ -1,13 +1,26 @@
-.map-point-popup { color: #e5eef1; min-width: 210px; max-width: 290px; font: 12px/1.4 system-ui,sans-serif; overflow-wrap: anywhere; }
+.map-point-popup { color: #e5eef1; min-width: 210px; max-width: 290px; max-height: min(45vh, 360px); overflow-y: auto; overscroll-behavior: contain; font: 12px/1.4 system-ui,sans-serif; overflow-wrap: anywhere; }
 .map-point-popup > strong { display: block; padding-right: 12px; font-size: 13px; }
 .map-point-popup p { margin: 5px 0; }
 .map-point-popup-source { color: #b4c5cc; font-size: 10px; }
 .map-point-popup-channel { padding-top: 6px; margin-top: 6px; border-top: 1px solid #bfd2dc30; }
 .map-point-popup-tuning { display: flex; gap: 5px; margin-top: 4px; }
 .map-point-popup button { min-height: 25px; padding: 3px 7px; border: 1px solid #abc8d94d; border-radius: 4px; color: #e5eef1; background: #223743; font: inherit; cursor: pointer; }
+.map-point-popup button.is-loaded { border-color: #91d4ab; background: #244737; color: #d8f4e2; }
+.map-point-popup-tuning-feedback { color: #c4ebd3; font-size: 11px; }
+.map-point-popup-tuning-feedback[data-accepted=false] { color: #ffd2c8; }
 .map-point-popup button:disabled { opacity: .5; cursor: default; }
 .map-point-popup button:focus-visible { outline: 2px solid #e4ba77; outline-offset: 2px; }
 .map-point-popup-target { width: 100%; margin-top: 9px; }
+.map-location-popup-actions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.map-point-popup [role=alert] { color: #ffd2c8; }
+.map-point-popup [hidden] { display: none; }
+.map-point-popup-delete { width: 100%; margin-top: 9px; }
+.map-fly-from { display: grid; gap: 7px; min-width: 0; margin: 10px 0 0; padding: 8px 0 0; border: 0; border-top: 1px solid #bfd2dc45; }
+.map-fly-from legend { padding-top: 8px; font-weight: 600; }
+.map-fly-from label { display: grid; gap: 4px; }
+.map-fly-from select { width: 100%; min-height: 30px; border: 1px solid #abc8d94d; border-radius: 4px; color: #e5eef1; background: #223743; font: inherit; }
+.map-fly-from small { color: #b4c5cc; font-size: 10px; }
+.map-fly-from select:disabled { opacity: .5; }
 .maplibregl-popup-content:has(> .map-point-popup) { background: #132632; padding: 11px; }
 .maplibregl-popup-content:has(> .map-point-popup) > .maplibregl-popup-close-button { color: #e5eef1; }
 .map-approach-guide { display: grid; gap: 7px; min-width: 0; margin: 10px 0 0; padding: 8px 0 0; border: 0; border-top: 1px solid #bfd2dc45; }

@@ -273,7 +273,7 @@ try {
   assert.equal(armObservations.at(-1).engaged, 1); assert.equal(armObservations.at(-1).armed, 1);
   await markerAt(rect.x + rect.width / 2, rect.y + rect.height / 2);
   await page.locator('#scene').focus(); await page.keyboard.press('Escape'); await mode('off');
-  await page.keyboard.press('p'); await page.waitForFunction(() => window.__pointerStates.at(-1)?.kap_engaged === 0);
+  await page.locator('#ap-engage').click(); await page.waitForFunction(() => window.__pointerStates.at(-1)?.kap_engaged === 0);
   await page.keyboard.press('a');
   await page.waitForFunction(() => window.__pointerStates.at(-1)?.kap_engaged === 1 && window.__pointerStates.at(-1)?.kap_alt_arm === 0);
   await observeArm('A engaged with yoke off');
@@ -285,7 +285,7 @@ try {
   await page.locator('#ap-arm').click(); await page.waitForTimeout(100); await observeArm('pressing already-ARMED cancels it');
   assert.equal(armObservations.at(-1).engaged, 1); assert.equal(armObservations.at(-1).armed, 0);
   const oldSelection = armObservations.at(-1).selected_altitude_m;
-  await page.locator('#scene').focus(); await page.keyboard.press('p');
+  await page.locator('#scene').focus(); await page.locator('#ap-engage').click();
   await page.waitForFunction(() => window.__pointerStates.at(-1)?.kap_engaged === 0);
   await page.keyboard.press('a');
   await page.waitForFunction(previous => Math.abs(window.__pointerStates.at(-1)?.kap_selected_altitude_m - previous) > 1, oldSelection);

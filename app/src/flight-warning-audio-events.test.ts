@@ -44,3 +44,29 @@ test('active warnings follow the selected live state and clear immediately on su
   assert.equal(events.update({ ...active, live: false }, true).stall, false);
   assert.equal(events.update(frame(1), true).terrain, false);
 });
+
+test('R-ALERT-1 retained recent-only episode cannot start on unlock/unmute/resume or repeat a suppressed remainder', () => {
+  const active = frame(10); active.warnings = { ...active.warnings, stall: 'active', stallRecent: true };
+  for (const suppressed of [undefined, false, true]) {
+    const events = createFlightWarningAudioEvents();
+    if (suppressed !== undefined) events.update(frame(9), suppressed);
+    if (suppressed === true) events.update(active, false);
+    assert.equal(events.update(active, true).stall, false);
+    assert.equal(events.update(active, true).stall, false, 'same-frame remainder stays suppressed');
+    assert.equal(events.update({ ...active, step: 11, time_s: 11 / 120 }, true).stall, false, 'new raw-clear frame does not replay the retained episode');
+    events.update(frame(12), true);
+    assert.equal(events.update({ ...active, step: 13, time_s: 13 / 120 }, true).stall, true, 'an observed clear followed by a new event is audible');
+  }
+});
+
+test('a genuine current raw positive sounds on enable, and a fresh recent event during already audible flight sounds', () => {
+  const raw = frame(1); raw.warnings = { ...raw.warnings, stall: 'active' };
+  const recent = frame(2); recent.warnings = { ...recent.warnings, stall: 'active', stallRecent: true };
+  const events = createFlightWarningAudioEvents();
+  assert.equal(events.update(raw, true).stall, true);
+  assert.equal(events.update(recent, true).stall, true, 'current episode minimum continues');
+  events.update(recent, false);
+  assert.equal(events.update(raw, true).stall, true, 'rawactive is not mistaken for a stale event');
+  events.update(frame(3), true);
+  assert.equal(events.update({ ...recent, step: 4, time_s: 4 / 120 }, true).stall, true);
+});
