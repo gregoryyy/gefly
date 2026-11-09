@@ -21,35 +21,53 @@ try {
     await new Promise(resolve => setTimeout(resolve, 100));
   }
   browser = await chromium.launch({ headless: true, ...(process.env.CHROME ? { executablePath: process.env.CHROME } : { channel: 'chrome' }) });
-  for (const [label, width, height] of [['0×0', 0, 0], ['zero width', 0, 715], ['zero height', 720, 0], ['1×1', 1, 1]]) {
-    const context = await browser.newContext({ viewport: { width: 720, height: 715 }, deviceScaleFactor: 2 });
-    const page = await context.newPage();
-    const errors = [];
+  const full = { width: 720, height: 715 };
+  const geometry = page => page.evaluate(() => {
+    const box = selector => { const r = document.querySelector(selector).getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height, right: r.right, bottom: r.bottom }; };
+    return { surface: box('.instruments'), viewport: box('.cockpit-viewport'),
+      deckHeight: document.querySelector('.flight-app').style.getPropertyValue('--deck-height') };
+  });
+  const fitted = page => page.waitForFunction(() => {
+    const viewport = document.querySelector('.cockpit-viewport')?.getBoundingClientRect();
+    const surface = document.querySelector('.instruments')?.getBoundingClientRect();
+    return viewport && surface && viewport.width > 600 && viewport.height > 100 && surface.width > 400 && surface.height > 100;
+  }, null, { timeout: 10000 });
+  const assertFitted = (label, g) => {
+    assert(g.surface.y >= g.viewport.y - 1 && g.surface.y < g.viewport.bottom, `${label}: fitted panel is inside its viewport ${JSON.stringify(g)}`);
+    assert(g.surface.x >= -1 && g.surface.right <= full.width + 1, `${label}: panel fits the window width ${JSON.stringify(g)}`);
+  };
+  const open = async viewport => {
+    const context = await browser.newContext({ viewport, deviceScaleFactor: 2 });
+    const page = await context.newPage(), errors = [];
     page.on('pageerror', error => errors.push(error.stack ?? String(error)));
-    await installSceneryFixture(page);
-    const cdp = await context.newCDPSession(page);
-    await cdp.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 2, mobile: false });
-    await page.goto(origin);
-    await page.waitForSelector('.cockpit-fitted');
-    await page.waitForTimeout(1500);
-    await cdp.send('Emulation.clearDeviceMetricsOverride');
-    await page.setViewportSize({ width: 720, height: 715 });
-    await page.waitForFunction(() => {
-      const viewport = document.querySelector('.cockpit-viewport')?.getBoundingClientRect();
-      const surface = document.querySelector('.instruments')?.getBoundingClientRect();
-      return viewport && surface && viewport.width > 600 && viewport.height > 100 && surface.width > 400 && surface.height > 100;
-    }, null, { timeout: 10000 });
-    const geometry = await page.evaluate(() => {
-      const box = element => { const r = document.querySelector(element).getBoundingClientRect(); return { x: r.x, y: r.y, right: r.right, bottom: r.bottom }; };
-      return { surface: box('.instruments'), viewport: box('.cockpit-viewport') };
-    });
-    assert(geometry.surface.y >= geometry.viewport.y - 1 && geometry.surface.y < geometry.viewport.bottom,
-      `${label}: fitted panel is inside its viewport ${JSON.stringify(geometry)}`);
-    assert(geometry.surface.x >= -1 && geometry.surface.right <= 721, `${label}: panel fits the window width ${JSON.stringify(geometry)}`);
-    assert.deepEqual(errors, [], `${label}: no page errors`);
-    console.log(`Panel recovered after a ${label} start.`);
+    await installSceneryFixture(page); await page.goto(origin);
+    await page.waitForSelector('.cockpit-fitted'); await page.waitForTimeout(1200);
+    return { context, page, errors };
+  };
+  // Cold starts at real one-pixel sizes (a 0 override would disable emulation).
+  for (const [label, width, height] of [['1×1', 1, 1], ['1-pixel width', 1, 715], ['1-pixel height', 720, 1]]) {
+    const { context, page, errors } = await open({ width, height });
+    await page.setViewportSize(full); await fitted(page);
+    assertFitted(`${label} start`, await geometry(page));
+    assert.deepEqual(errors, [], `${label} start: no page errors`);
+    console.log(`Panel fitted after a ${label} start.`);
     await context.close();
   }
+  // Collapse and restore to the same size: the fit must not keep the tiny layout.
+  const { context, page, errors } = await open(full);
+  await fitted(page);
+  const reference = await geometry(page);
+  for (const [label, width, height] of [['1×1', 1, 1], ['1-pixel width', 1, 715], ['8-pixel width', 8, 715], ['1-pixel height', 720, 1]]) {
+    await page.setViewportSize({ width, height }); await page.waitForTimeout(400);
+    await page.setViewportSize(full); await fitted(page); await page.waitForTimeout(200);
+    const g = await geometry(page);
+    assertFitted(`${label} collapse`, g);
+    assert(Math.abs(g.viewport.height - reference.viewport.height) < .5 && g.deckHeight === reference.deckHeight,
+      `${label} collapse restores the original fit ${JSON.stringify({ reference, g })}`);
+    console.log(`Panel restored after a ${label} collapse.`);
+  }
+  assert.deepEqual(errors, [], 'collapse and restore: no page errors');
+  await context.close();
   console.log('Tiny-start cockpit panel regression passed.');
 } finally {
   await browser?.close();

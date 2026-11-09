@@ -3,29 +3,35 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
-## 2026-11-09 18:24 — Fit the cockpit panel after a zero-size first layout
+## 2026-11-09 18:41 — Fit the cockpit panel after a zero-size or collapsed layout
 
 TODO: 2.0.205; R-PANEL-1/R-VIEW-1. Agent: Claude orchestrator (Claude Code,
-Opus 5.5); no subagents. [Report](input/2026-11-09-vscode-panel-empty.md).
+Opus 5.5); quality subagent (Claude Opus 5.5) reviewed the first version.
+[Report](input/2026-11-09-vscode-panel-empty.md).
 
 **Implementation notes**
 
 `cockpit-layout.ts` stored a new layout key and a zero-width panel frame before
-`fitPanel()` validated it, so a page that first laid out at 1×1 threw
-`RangeError: Panel frame dimensions must be positive…` inside the animation
-frame. The fit now waits until the viewport and fitted surface have a positive
-size and leaves the key unset, so the next resize fits the panel. The new
-`tests/panel-tiny-start.browser.mjs` (also `npm run test:panel-tiny-start`, and
-in `test:browser`) starts pages at 0×0, zero width, zero height and 1×1, then
-resizes to 720×715 and requires a fitted, in-window panel with no page errors.
+`fitPanel()` validated it, so a page that first laid out at 1×1 threw an
+uncaught `RangeError: Panel frame dimensions must be positive…` in the
+animation frame; in headless Chrome the panel still refitted afterwards. The
+fit now returns before writing any size when the deck has no measurable width
+or the window no height, and clears the layout key, so any later usable size,
+including the previous one, refits. A first version guarded only after writing
+the deck height; the review showed that a collapse to 1–8 px followed by a
+restore to the same size then left the panel empty, which main recovered from.
+`tests/panel-tiny-start.browser.mjs` (`npm run test:panel-tiny-start`, also in
+`test:browser`) uses real 1-pixel sizes: cold starts at 1×1, 1-pixel width and
+1-pixel height, and collapses to 1×1, 1 px and 8 px width and 1 px height from a
+fitted 720×715 window, requiring the original fit and no page errors.
 
 **Deviations**
 
-The user's VS Code empty-panel report was not reproduced in headless Chrome;
-this fixes the only failure found there, so the report stays open until the
-user confirms. Checks: without the fix the new test fails at the 1×1 start
-with the page error; with it, all four starts pass. TypeScript and `npm test`
-pass. Independent quality/validation and peer review pending.
+The user's VS Code empty-panel report was not reproduced; this fixes the
+failures found in headless Chrome, so the report stays open until the user
+confirms. Checks: the test passes; it fails on main (page error at the 1×1
+start) and on the first version (no refit after the collapse). TypeScript and
+`npm test` pass. Independent re-review, validation and peer pending.
 
 ## 2026-11-09 17:30 — Restore green CI by keeping Pillow tests in the scenery gate
 
