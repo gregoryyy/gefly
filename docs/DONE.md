@@ -34,6 +34,42 @@ The path does not persist on reload; cross-provider peer review remains pending.
 
 The geographic path is an approximation; it does not extend replay duration or
 claim a navigational accuracy tolerance.
+## 2026-11-07 11:24 — Limit vector imagery reloads after tile failures
+
+TODO: 2.0.199; R-WORLD-11/R-VIEW-1. Agent: Codex orchestrator; diagnosis
+`reload_diagnosis`, implementation `vector_queue_fix`, independent quality
+`vector_quality` and validation `vector_validate`.
+
+**Implementation notes**
+
+In a separate 120-second root-workspace vector run at an assumed 53.40°N,
+10.00°E, one terrain provider installation was followed by two 12-second map
+tile timeouts, each clearing the hidden MapLibre style. The scene remained
+incomplete; headless software rendering and the assumed position limit inference
+to that fixture. A tile cache reached its 32-canvas limit in an Egelsbach run;
+that observation does not establish the frequency of cache eviction.
+
+The single vector renderer now uses Cesium backpressure for additional unique
+requests. A timeout retains the style and existing canvas cache, and affected
+Cesium tiles become retryable after cooldown instead of accepting a permanent
+transparent success. Identified source-tile errors are tracked across jobs and
+selectively refreshed, including errors arriving after timeout; unknown errors
+still reset the renderer. Repeated identical status notifications are suppressed.
+
+Independent quality and validation exercised controlled Chrome/Cesium pan,
+cache reuse, saturation, a 12-second timeout with 32 retained canvases and no
+style reset, late source errors, targeted refresh and same-tile retry. An earlier
+independent timeout-only run failed to observe same-tile recovery within 45s;
+the later full candidate passed, but deterministic long-run recovery is not
+established. Tests did not reproduce the user's exact flight or establish
+sustained live-network performance, WebKit behavior, or all renderer failures.
+Cross-provider peer review remains pending.
+
+**Deviations**
+
+This addresses demonstrated vector timeout/source-error paths, not a confirmed
+fix for every reported scenery reload or a change to persistent photographic
+tile caching.
 
 ## 2026-11-07 08:03 — Add dated Spanish island photographic scenery
 
