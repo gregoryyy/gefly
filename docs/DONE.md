@@ -3,6 +3,27 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-09 17:30 — Restore green CI by keeping Pillow tests in the scenery gate
+
+TODO: 2.0.192/2.0.195/2.0.198 follow-up; R-WORLD-11/R-DATA-1. Agent: Claude
+orchestrator (Claude Code, Opus 5.5); no subagents.
+
+**Implementation notes**
+
+Every main CI run since #123 failed: `country-imagery-server.test.ts` (added
+with the photographic-scenery PRs) and the world-fallback builder unit test ran
+in `npm test`, but Pillow is installed only before `test:scenery` in the
+browser job and never in the standard-library shared gate. Both moved to
+`test:scenery`; the SBOM CI description now says so. With a Pillow-free Python,
+`npm test` passed 837/837 and `utils/ci/run.py --require-node` passed (9 of 23
+optional e1-jsbsim study checks skipped); with pinned Pillow, `test:scenery`
+passed 44/44 node tests and 10 Python tests.
+
+**Deviations**
+
+No test was removed or weakened; the moved tests now run only in the browser
+job's scenery step. Peer review pending.
+
 ## 2026-11-09 16:15 — Port root-only checkout work onto main
 
 TODO: 2.0.121–2.0.149, 2.0.151, 2.0.152, 2.0.193, 2.0.194. Agent: Claude
