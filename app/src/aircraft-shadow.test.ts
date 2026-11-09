@@ -27,3 +27,11 @@ test('public terrain shadow matches its converted receiver rather than treating 
   assert(!aircraftShadowPresentation({ ...active, terrain_height_ellipsoid_m: 115.25 }, 'chase').enabled);
   assert(!aircraftShadowPresentation({ ...active, terrain_height_ellipsoid_m: undefined }, 'chase').enabled);
 });
+
+
+test('landing shadow uses the active rendered receiver through asynchronous native height readouts', () => {
+ const state={...fixture(1.5,160),alt_msl_m:115.7,terrain_profile:1,terrain_geoid_m:46,terrain_height_ellipsoid_m:160};
+ for(const jitter of [-.6,-.3,0,.3,.6]) assert(aircraftShadowPresentation({...state,ground_agl_m:1.5+jitter},'chase',160).enabled);
+ assert(!aircraftShadowPresentation(state,'chase',null).enabled);
+ assert(!aircraftShadowPresentation({...state,ground_height_ellipsoid_m:300},'chase',160).enabled);
+});

@@ -258,8 +258,7 @@ persistence, personal telemetry or external service was introduced in the UI.
 Scene wheel zoom is a bounded, page-local camera preference. A non-passive
 capture listener handles eligible vertical scene events before Cesium; Ctrl/Meta/Alt,
 editable, modal and sibling UI/map gestures are excluded. It requests no device
-permission, makes no network/storage calls and sends no simulation input. FOV is
-retained separately from aircraft/review state and reset to default on reload.
+permission, makes no network calls and sends no simulation input. Wheel/pose changes themselves do not write storage. Cockpit scroll changes FOV; chase and overview scroll change separately bounded camera distance. Chase double-click resets its distance/orbit while retaining the existing guarded pointer neutralization. These page-local camera values stay separate from aircraft/review state and reset to defaults on reload.
 
 Panel magnification is a bounded, page-local view transform of the instrument
 surface, from its automatic fit to 3×. Vertical scrolling anchors it at the
@@ -659,6 +658,10 @@ The saved view-return preference stores only a bounded strict boolean. The
 700–6000ms wall-time interpolation affects camera presentation only; reduced
 motion bypasses it. Input and lifecycle cancellation does not write physics,
 position, flight data or telemetry, and adds no network access.
+The preference is a separate `gefly.camera-preferences.v1` record of shape
+`{version:1,animate_return:boolean}`, bounded to 128 UTF-8 bytes with safe
+default-on behavior for denied or corrupt storage; no pose, aircraft position
+or telemetry is persisted.
 
 ## Swiss and Austrian photographic imagery
 

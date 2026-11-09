@@ -264,4 +264,8 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [2026-11-05 USA labels and RPM response](2026-11-05-usa-labels-rpm-response.md): restore map names and investigate full-throttle RPM behavior.
 - [2026-11-06 country and aviation-data coverage](2026-11-06-country-aviation-coverage.md): extend national scenery candidates and airport/navaid/fix source coverage.
 - [Remaining flight and map tasks](2026-11-07-remaining-flight-tasks.md).
+
+- [2026-11-06 chase overview](2026-11-06-chase-overview.md): extreme chase zoom and double-click return behind the aircraft.
+
+- [2026-11-06 camera return](2026-11-06-camera-return.md)
 - [Ball-like roll instability](2026-11-06-ball-like-roll-instability.md) — user disturbance/recovery description and roll-first clarification.
