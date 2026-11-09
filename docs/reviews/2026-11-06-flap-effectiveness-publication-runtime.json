@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "scope": "Independent publication replay of the same32native cases and source arithmetic; real aircraft calibration not evaluated",
+  "result": "pass",
+  "common_measurements": "docs/reviews/2026-11-06-flap-effectiveness-root-runtime.json",
+  "common_measurements_sha256": "0b0b4b6f9a2985a05589ae34d9ff37f92c534962e1f130623e022408f1e39805",
+  "summary_sha256": "0481bf62c5bfd4176a2369c115cfba122a8ad7000b04c65db103e74208e5766b",
+  "native_sha256": "df6b527ec5eafdd85bded61bfd529ade4a1c39ade74336bd36a2428e061b4364",
+  "source_sha256": "6037623ad6c3457945a0ec463391702517942ea49f10176205ebcaca02cea1fe",
+  "comparison": {
+    "native_equal_excluding": [
+      "generated_at"
+    ],
+    "source_equal_excluding": [
+      "source.mutable_prepared_excluded_sha256"
+    ],
+    "all_other_values_equal": true
+  },
+  "source_pins": {
+    "wasm": "266f201652e8fc3fb6c5ee384bad3ef1f66b335ee9885fa4a14de9a797c1edcc",
+    "reconstructed_prepared_aircraft": "cd85bb2afcd50b10238addf2f43493368b2266b83530786d1b3f6ccf3cc87595",
+    "bridge": "e71646929a6f13dbf9abd3eddc2f158fb79fd0ae16e8ed929038d22a3bd893c8",
+    "adapter": "0f0b3913598bdac84f66dec663cd70b7ea687fd3b8a601c3fd7a6f964d910678",
+    "native_diagnostic": "297492a6071d3924ed45b5a56ae79f276fa3dc963281f124cacdc01299609096",
+    "source_diagnostic": "4e260eeea6485acd2ad2b8ecbfffa42e52dcbce19d94600c0d9d13ed50dc10df"
+  }
+}

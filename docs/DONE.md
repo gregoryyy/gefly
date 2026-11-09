@@ -3,6 +3,29 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-09 15:48 — Port the orphaned roll-return and flap stack to main
+
+TODO: 2.0.153, 2.0.172; R-SIM-5/R-SIM-11/R-INPUT-1/R-AIR-2/R-FID-3. Agent:
+Claude orchestrator; port worker code1 (fork).
+
+**Implementation notes**
+
+PR #101 (roll-return repair) and PR #105 (flap-effectiveness measurement) were
+merged into their intermediate stack branches after those parents had already
+reached main, so neither change was on main. This merge brings
+`origin/test/flap-effectiveness` into current main with history preserved.
+Conflicts were limited to shared records and the app test scripts: main's newer
+scripts, documentation and decisions were kept and the stack's roll-return and
+flap scripts, sections and dated GAPS answers were added. The 2026-11-06 entries
+below for both tasks are carried unchanged from the stack.
+
+**Deviations**
+
+The earlier stack reviews and peer evidence covered the stack against its own
+base, not this integration with current main. Quality, validation and
+cross-provider peer review of the port are pending. No aircraft or handling
+fidelity is claimed beyond those records.
+
 ## 2026-11-09 15:48 — Port the orphaned README refresh to main
 
 TODO: 2.0.171; R-BOOT-3/R-DATA-1. Agent: Claude orchestrator (Claude Code,
@@ -54,6 +77,7 @@ The path does not persist on reload; cross-provider peer review remains pending.
 
 The geographic path is an approximation; it does not extend replay duration or
 claim a navigational accuracy tolerance.
+
 ## 2026-11-07 11:24 — Limit vector imagery reloads after tile failures
 
 TODO: 2.0.199; R-WORLD-11/R-VIEW-1. Agent: Codex orchestrator; diagnosis
@@ -722,6 +746,42 @@ Cross-provider peer remains pending under the batching cadence.
 Refresh the actual target before publication and renew affected evidence after
 merging; a clean merge against an older target cannot settle current PR status.
 
+## 2026-11-06 13:52 — Check current native flap effectiveness
+
+TODO: 2.0.172; R-SIM-5/R-AIR-2/R-FID-3.
+Agent: Codex orchestrator; diagnostic implementation `world_airport_data`, source
+research `coverage_housekeeping`, independent quality and separate validation
+outcomes `world_airport_client` (not a flap implementation author).
+
+**Implementation notes**
+
+Added an exact-v5 native32-case diagnostic, source-model arithmetic and bounded
+evidence admission. At the75kt CAS initial condition, full flap versus clean
+with AP off gives4.724kt more deceleration and4.299° more pitch after4s. Generic
+VS compensation masks much of the pitch response through actual elevator.
+Source static subsets at α5° increase30.34% in lift and92.60% in drag. Six
+actuator transitions,39 paused-command checks and a repeated trajectory pass.
+The isolated publication replay reproduces all numerical/native and source
+values; only explicitly documented metadata differs.
+[Results and reproduction](research/2026-11-06-flap-effectiveness.md);
+[independent review](reviews/2026-11-06-flap-effectiveness-review.md).
+
+**Deviations**
+
+No flap coefficient, engine, bridge or aircraft edits: the controls have a
+substantial response and no disconnected/angle-unit defect is demonstrated.
+Three new evidence-admission defects found by review are repaired and rechecked;
+10 Node and3 Python admission/arithmetic tests pass. These pure tests are separate
+from the actual32-case measurement. Publication CI passes565 Node/28 application Python,85 assurance and11 training cases, with9 optional JSBSim study skips. Real C172P/172S calibration, stall and steady
+glide remain not evaluated; idle cases end at different airspeeds. Broader
+handling/fidelity tasks remain open. Cross-provider peer remains pending under
+the batching cadence.
+
+**Insights**
+
+Compare matched conditions and actual elevator corrections before interpreting
+small visual attitude changes as weak flaps; test the evidence checker itself.
+
 ## 2026-11-06 13:50 — Keep saved Options across new flights and reloads
 
 TODO: 2.0.173; R-INPUT-1/R-UX-2.
@@ -859,6 +919,48 @@ Browser HTTP gzip auto-decoding invalidates compressed-payload integrity checks;
 neutral archive delivery plus an explicit descriptor/catalogue boundary preserves
 exact bytes. Airport discovery, ground scenery and receiver/procedure fidelity
 need independent source and acceptance records.
+
+## 2026-11-06 11:36 — Verify, install and peer-review the bounded roll-return repair
+
+TODO: 2.0.153 (bounded repair delivered; broader handling remains open); R-SIM-11/R-SIM-5/R-INPUT-1.
+Agent: Codex orchestrator; code1 `stability_native`, code2 `stability_input`, housekeeping `stability_sources`; independent `roll_quality`, `roll_validate` and fresh external Claude peer.
+
+**Implementation notes**
+
+[Controlled evidence](research/2026-11-06-aileron-return.md) identifies retained aileron deflection after actual centering. Normal v5 build266f2016… matches the isolated two-value comparison; source coefficients/gains and other channels are unchanged. Native57-case/18signed return checks and54successive-pulse settling samples pass, while the old engine fails on actual surface residue. The completed actual installed-ROOT browser suite passes allfive expected cases,24deliberate-roll paired returns plus6neutral/control numerical guards; neutral-only and partial selectors cannot claim a full regression pass.
+
+Shared CI passes555Node+25Python application,85assurance and11training tests, with9optional JSBSim study skips. Log SHA256`0ac6fb02f73395078b12d67b120bac3221f4db2e5a19f10ee04da33d2c4c11e7`. The only later source change prepends the native regression to the normal browser gate; existing commands/dependencies remain byte-preserved and that registered command passes57+18+54. No full legacy browser-chain pass is claimed. [Quality](reviews/2026-11-06-roll-return-quality.md) and [validation](reviews/2026-11-06-roll-return-validation.md) have clear current nine-file tables and explicit historical appendices.
+
+[ROOT integration quality](reviews/2026-11-06-roll-return-root-integration-quality.md) independently verifies26initial install pairs,12unchanged core modules,193preservation tests and TypeScript; author full candidate717Node+28Python/TSC/native checks and actual installed browser proof also pass. [Integration validation](reviews/2026-11-06-roll-return-root-integration-validation.md) distinguishes preflight, post-apply identity and metadata refresh. Backups/manifests are under ignored `output/flight/roll-return-integration/`. The live5173 native file and metadata hashes match the tested build.
+
+[External peer](reviews/2026-11-06-roll-return-peer.json) runs fresh Claude Code2.1.308, observed `claude-opus-5-5`, and accepts the frozen40f7493 scoped source plusaea4d10 registration supplement. Earlier empty-data, missing browser assertion and metadata/diff-freshness findings were repaired and reviewed again; packet hashes and separate quality/criterion outcomes are retained. Coverage excludes parent PR97 and full aircraft/release acceptance.
+
+**Deviations**
+
+Task153 remains open for pitch,110kt trim, wider dynamics and selected-C172 fidelity. The user’s internal browser/physical trackpad was not directly exercised. The position-controlled yoke holds a displaced cursor command; centering, not inactivity, releases it. Source-model/binary redistribution restrictions remain and generated assets are untracked. Whole-ROOT assurance still exceeds its existing graph bound; scoped feature integrity is checked separately, with no whole-root CI claim. Nonblocking peer test-maintenance findings remain explicit.
+
+**Insights**
+
+Gate actual returned surfaces and complete observations, preserve source/model identity, and separate a control-return contract from formal dynamic stability or automatic wings-level behavior.
+
+## 2026-11-06 10:28 — Remove the reproduced retained aileron deflection after centering
+
+TODO: 2.0.153 (bounded roll-return repair; wider handling remains open); R-SIM-11/R-SIM-5/R-INPUT-1.
+Agent: Codex orchestrator; code1 `stability_native`, code2 `stability_input`, housekeeping `stability_sources`; independent `roll_quality` and `roll_validate`.
+
+**Implementation notes**
+
+The exact c11a933… native model retains effective aileron±0.0025rad after signed commands return to zero. Actual app pointer centering and keyboard release confirm the same physical residue with all external axeszero. Adapterv5 changes only two named source aileron hysteresis widths0.005→0, retaining every other prepared XML/AP byte, source aero/mass/rate limits and steering gain. Normal rebuilt WASM266f2016… matches the isolated two-value counterfactual; original control relink exactly reproduces c11a933….
+
+The signed57-case diagnostic and18roll-return checks pass; the old engine fails the same strict physical return regression. New evidence admission tests reject empty/partial/duplicate/nonfinite/forged telemetry; nine Python adapter tests check exact scope and intended rejection causes. Native/Worker balanced-start and AP/KAP nonregressions pass. Actual browser five-case final-v5 run pins native/harness/source bytes and returns both surfaces exactly after centering.
+
+**Deviations**
+
+This is generic-model command-return semantics, not a measured C172 rigging value or full aircraft stability acceptance. Bank angle can remain after an input; the rate guard is sampled sanity, not a formal damping/settling criterion. Position-control pointer inactivity is not centering. Pitch hysteresis,110kt trim and broader handling/fidelity remain Task153. Initial external peer inspection found a real empty-data regression loophole and weak rejection fixtures; repaired before final review. Full source/evidence records follow in the documentation commit. No aircraft/model binaries are tracked.
+
+**Insights**
+
+Zero pilot command does not establish neutral surface position in a history-dependent actuator. Observe actual left/right positions, then distinguish retained forcing from unforced motion.
 
 ## 2026-11-06 09:29 — Add bounded on-demand airport surface generation
 
