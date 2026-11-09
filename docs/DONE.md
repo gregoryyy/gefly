@@ -3,6 +3,30 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-09 18:24 — Fit the cockpit panel after a zero-size first layout
+
+TODO: 2.0.205; R-PANEL-1/R-VIEW-1. Agent: Claude orchestrator (Claude Code,
+Opus 5.5); no subagents. [Report](input/2026-11-09-vscode-panel-empty.md).
+
+**Implementation notes**
+
+`cockpit-layout.ts` stored a new layout key and a zero-width panel frame before
+`fitPanel()` validated it, so a page that first laid out at 1×1 threw
+`RangeError: Panel frame dimensions must be positive…` inside the animation
+frame. The fit now waits until the viewport and fitted surface have a positive
+size and leaves the key unset, so the next resize fits the panel. The new
+`tests/panel-tiny-start.browser.mjs` (also `npm run test:panel-tiny-start`, and
+in `test:browser`) starts pages at 0×0, zero width, zero height and 1×1, then
+resizes to 720×715 and requires a fitted, in-window panel with no page errors.
+
+**Deviations**
+
+The user's VS Code empty-panel report was not reproduced in headless Chrome;
+this fixes the only failure found there, so the report stays open until the
+user confirms. Checks: without the fix the new test fails at the 1×1 start
+with the page error; with it, all four starts pass. TypeScript and `npm test`
+pass. Independent quality/validation and peer review pending.
+
 ## 2026-11-09 17:30 — Restore green CI by keeping Pillow tests in the scenery gate
 
 TODO: 2.0.192/2.0.195/2.0.198 follow-up; R-WORLD-11/R-DATA-1. Agent: Claude

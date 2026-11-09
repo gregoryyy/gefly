@@ -269,3 +269,4 @@ These inputs are included in the local repository. Recheck privacy before remote
 
 - [2026-11-06 camera return](2026-11-06-camera-return.md)
 - [Ball-like roll instability](2026-11-06-ball-like-roll-instability.md) — user disturbance/recovery description and roll-first clarification.
+- [Cockpit panel empty in the VS Code browser](2026-11-09-vscode-panel-empty.md) — empty panel after `just fly` in an editor-embedded browser.

@@ -97,6 +97,10 @@ export function createCockpitLayout(container: HTMLElement): { dispose(): void }
       viewport.style.height = `${baseHeight}px`;
       container.style.setProperty('--deck-height', `${baseHeight + headingHeight + verticalPadding}px`);
       const viewportRect = viewport.getBoundingClientRect();
+      // A hidden or zero-size window (an editor-embedded browser can start at
+      // 0×0) has no measurable frame. Keep the previous fit and leave the key
+      // unset, so the next resize fits the panel instead of throwing here.
+      if (!(viewportRect.width > 0 && viewportRect.height > 0 && baseWidth > 0 && baseHeight > 0)) return;
       fitScale = scale;
       panelFrame = { width: viewportRect.width, height: viewportRect.height,
         baseWidth, baseHeight };
