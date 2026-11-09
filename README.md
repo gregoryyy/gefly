@@ -131,9 +131,9 @@ These are simulator conveniences; acceleration preserves the fixed physics step
 and the achieved rate depends on available CPU/rendering capacity.
 Restart is in Flight. The last live location is saved locally and restored paused on reload; Restart clears it. Airborne restores use the normal 90 kt launch speed, rather than a saved physics checkpoint. Click toggles touchpad yoke control;
 hold-drag retains the view where you release it and preserves the yoke midpoint;
-Double-click the scenery or press Escape to center the view. L/R/U/D/B markers
+Double-click chase view to return close behind the aircraft; in cockpit view double-click centers the view. **View → Animate view return** toggles a saved smooth return for both views; reduced-motion preferences keep it instant. Escape centers the look direction. L/R/U/D/B markers
 show the aircraft’s left, right, up, down and backward directions. Two-finger
-vertical scroll over the scenery changes field of view. Over the cockpit panel,
+vertical scroll changes cockpit field of view or chase/overview distance. Chase can zoom out to 20,000 km; hold-drag above the aircraft for a top-down overview. Over the cockpit panel,
 scroll up to focus on instruments around the pointer (up to 3×). The panel stays
 the same size while the enlarged content is cropped inside it; horizontal scroll
 moves between columns. Drag the panel background or a header to reach enlarged
@@ -217,7 +217,7 @@ lights. Switch positions are recorded for Review. On narrow screens use the coll
 The classic **six-pack** now shows airspeed, attitude, pressure altitude, ideal
 turn/slip, true heading and vertical speed. Click the scene to toggle touchpad
 yoke control; hold-drag to look around. Two-finger vertical scrolling
-over the scenery adjusts camera FOV; over the cockpit it zooms the panel around
+over the scenery adjusts cockpit FOV or chase/overview distance; over the cockpit panel it zooms around
 the pointer. **[ / ]** selects flaps, **B** holds
 wheel brakes, and **1–9** selects 10–90% throttle (**0** idle). The engine panel
 adds mixture, RPM, manifold pressure, oil and fuel readouts. **Flight → Weight & fuel** sets occupants, baggage, auxiliary load and initial fuel in litres; Apply restarts the flight. Fuel use reduces both tank contents and native aircraft mass. **P** toggles the two-axis autopilot. Its KAP 140 operating controls include VS,

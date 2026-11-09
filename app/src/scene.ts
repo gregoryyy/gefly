@@ -4,6 +4,8 @@ import { countryPhotoBackoff } from './country-photo-backoff.ts';
 import { showVisibleSpainCredit } from './visible-photo-credit.ts';
 import { CHASE_DISTANCE } from './chase-distance.ts';
 import { setCameraPose } from './camera-pose.ts';
+import { overviewCameraENU } from './overview-camera.ts';
+import { createTerrainOverviewSource } from './terrain-overview-source.ts';
 import { createSceneryCache } from './scenery-cache';
 import { createLandmarkLabels, LANDMARK_CREDIT } from './landmark-labels';
 import { createAirportScenery, AIRPORT_VECTOR_CREDIT } from './airport-scenery';
@@ -432,7 +434,7 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
   const local = new Cartesian3();
   const localDirection = new Cartesian3();
   const localUp = new Cartesian3();
-  let lastView: 'cockpit' | 'chase' = 'cockpit';
+  let lastView: 'cockpit' | 'chase' | 'overview' = 'cockpit';
   let lastState = initialVisual;
   let lastLook: CameraLook = { yaw_rad: 0, pitch_rad: 0 };
   // Country services are independent of the German regional terrain stream.
@@ -530,7 +532,7 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
     } else if (tryUpdateGlobalTerrainOverview(activeTerrain, grids)) pendingOverview.delete('window');
     else if (globalProviderLive) pendingOverview.add('window');
     closeOverviewIfRequired(); presentOverviewStatus(); scene.requestRender();
-  }, { onResolved(result) {
+  }, { source: createTerrainOverviewSource(worldGrid), onResolved(result) {
     if (disposed || !overviewActive || lastState.terrain_profile !== 1) return;
     const id=`${result.col}/${result.row}`;
     if(acceptGlobalTerrainOverviewSource(activeTerrain,result))pendingOverview.delete(id);
@@ -558,7 +560,7 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
     if (disposed) { model.destroy(); return; }
     aircraft = scene.primitives.add(model);
     model.readyEvent.addEventListener(() => { if (!disposed) container.dataset.aircraftVisual = 'ready'; });
-    aircraft!.show = lastView === 'chase';
+    aircraft!.show = lastView !== 'cockpit';
   }).catch(() => {
     if (!disposed) {
       container.dataset.aircraftVisual = 'error';
@@ -567,7 +569,7 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
     }
   });
 
-  function update(state: FlightState, view: 'cockpit' | 'chase', look?: Readonly<CameraLook>, livePrediction = false): void {
+  function update(state: FlightState, view: 'cockpit' | 'chase' | 'overview', look?: Readonly<CameraLook>, livePrediction = false): void {
     if (disposed) return;
     if (![state.lat_rad, state.lon_rad, state.alt_msl_m, state.pitch_rad, state.roll_rad, state.heading_rad].every(Number.isFinite)) {
       landmarkLabels.update(null, false);
@@ -679,7 +681,7 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
     Matrix4.multiplyTransformation(frame, localModelMatrix, modelMatrix);
     if (aircraft) {
       aircraft.modelMatrix = Matrix4.clone(modelMatrix, aircraft.modelMatrix);
-      aircraft.show = view === 'chase';
+      aircraft.show = view !== 'cockpit';
       if (aircraft.ready) {
         for (const binding of controlSurfaces) {
           const node = aircraft.getNode(binding.surface.name);
@@ -691,7 +693,7 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
         }
       }
     }
-    aircraftShadow.update(state, view, aircraft);
+    aircraftShadow.update(state, view, aircraft, useTerrain ? atlasSample(state.lat_rad, state.lon_rad)?.ellipsoid_m ?? null : 0);
     if (view === 'cockpit') {
       const camera = cockpitCameraENU(basis, lastLook);
       Cartesian3.fromElements(...camera.direction, localDirection);
@@ -701,7 +703,7 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
       Matrix4.multiplyByPointAsVector(frame, localDirection, cameraDirection);
       Matrix4.multiplyByPointAsVector(frame, localUp, cameraUp);
     } else {
-      const camera = chaseCameraENU(heading_rad, lastLook, lastLook.distance_m ?? CHASE_DISTANCE.initial_m);
+      const camera = view === 'overview' ? overviewCameraENU(heading_rad, lastLook, lastLook.distance_m ?? 1500) : chaseCameraENU(heading_rad, lastLook, lastLook.distance_m ?? CHASE_DISTANCE.initial_m);
       container.dataset.cameraDistanceM = String(Math.hypot(...camera.offset));
       Cartesian3.fromElements(...camera.offset, local);
       Cartesian3.fromElements(...camera.direction, localDirection);
@@ -711,6 +713,7 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
       Matrix4.multiplyByPointAsVector(frame, localUp, cameraUp);
     }
     container.dataset.cameraView = view;
+    container.dataset.overviewDistanceM = String(lastLook.distance_m ?? 1500);
     setCameraPose(scene.camera, cameraPosition, cameraDirection, cameraUp);
     const frustum = scene.camera.frustum;
     if (!(frustum instanceof PerspectiveFrustum)) throw new Error('Flight view requires a perspective camera');

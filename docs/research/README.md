@@ -72,9 +72,8 @@ End with proposed implications, limitations and a handoff to product/orchestrato
 - [AP keyboard input](2026-11-06-ap-keyboard-input.md).
 - [OSM terrain relief](2026-11-07-osm-terrain-relief.md).
 - [Swiss and Austrian photographic scenery](2026-11-07-swiss-austrian-imagery.md).
-
+- [Chase overview zoom](2026-11-06-chase-overview.md): bounded distance zoom, top-down orbit and double-click return behind the aircraft.
+- [2026-11-06 camera return](2026-11-06-camera-return.md)
 - [Disturbance stability sources](2026-11-06-disturbance-stability-sources.md) — FAA stability distinctions, executing model and source actuator evidence.
-
 - [Aileron return repair](2026-11-06-aileron-return.md) — controlled native and actual-app mechanism comparison with explicit limits.
-
 - [Current flap effectiveness](2026-11-06-flap-effectiveness.md): exact-build native response, matched source arithmetic and calibration limits.

@@ -1,3 +1,4 @@
+import { copernicusDecoders } from './copernicus-decode.ts';
 import { inflateSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -169,7 +170,7 @@ export function createCopernicusTerrainMiddleware(options: CopernicusOptions = {
   async function block(cog: Cog, index: number, expires: number): Promise<Float32Array> {
     return shared('block:' + cog.url + ':' + cog.etag + ':' + index, BLOCK_PIXELS * 4, async () => {
       const data = await range(cog.url, cog.offsets[index], cog.lengths[index], cog, expires);
-      return decodeCopernicusBlock(data.bytes);
+      return await copernicusDecoders.decode(data.bytes);
     });
   }
   async function cell(profile: CellProfile, col: number, row: number): Promise<Buffer> {

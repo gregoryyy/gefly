@@ -3,23 +3,26 @@ import type { FlightState } from './types';
 
 export const SHADOW_MAX_AGL_M = 120;
 /** Native sun shadow on the active, explicitly matched terrain receiver. */
-export function aircraftShadowPresentation(state: Readonly<FlightState> | null, view: 'cockpit' | 'chase') {
+export function aircraftShadowPresentation(state: Readonly<FlightState> | null, view: 'cockpit' | 'chase' | 'overview', activeReceiver_m?: number | null) {
   const unavailable = { enabled: false, darkness: 1, ground_height_m: null as number | null, reason: 'ground-unavailable' };
   if (view !== 'chase') return { ...unavailable, reason: 'cockpit' };
   if (!state || !Number.isFinite(state.ground_agl_m) || !Number.isFinite(state.ground_height_ellipsoid_m)) return unavailable;
-  const ground = state.ground_height_ellipsoid_m! - state.ground_agl_m!;
+  const ground = activeReceiver_m === undefined ? state.ground_height_ellipsoid_m! - state.ground_agl_m! : activeReceiver_m;
+  const visualHeight = state.ground_height_ellipsoid_m!;
+  const agl = activeReceiver_m === undefined ? state.ground_agl_m! : ground === null ? NaN : visualHeight - ground;
   // Match the active public terrain receiver; legacy flat studies remain at
   // zero. Missing or inconsistent height data must not leave a stale cue.
   const receiverHeight = state.terrain_profile === 1 ? state.terrain_height_ellipsoid_m : 0;
-  if (!Number.isFinite(ground) || !Number.isFinite(receiverHeight) || Math.abs(ground - receiverHeight!) > .25) return { ...unavailable, reason: 'receiver-unavailable' };
-  const fraction = Math.max(0, state.ground_agl_m!) / SHADOW_MAX_AGL_M;
+  if (ground === null || !Number.isFinite(ground) || !Number.isFinite(agl)
+    || (activeReceiver_m === undefined && (!Number.isFinite(receiverHeight) || Math.abs(ground - receiverHeight!) > .25))) return { ...unavailable, reason: 'receiver-unavailable' };
+  const fraction = Math.max(0, agl) / SHADOW_MAX_AGL_M;
   if (fraction >= 1) return { ...unavailable, ground_height_m: ground, reason: 'too-high' };
   const fade = fraction * fraction * (3 - 2 * fraction);
   return { enabled: true, darkness: .45 + .55 * fade, ground_height_m: ground, reason: 'native' };
 }
 
 export function createAircraftShadow(scene: Scene, container: HTMLElement): {
-  update(state: Readonly<FlightState>, view: 'cockpit' | 'chase', model: Model | null): void;
+  update(state: Readonly<FlightState>, view: 'cockpit' | 'chase' | 'overview', model: Model | null, activeReceiver_m?: number | null): void;
   dispose(): void;
 } {
   const map = scene.shadowMap;
@@ -30,9 +33,9 @@ export function createAircraftShadow(scene: Scene, container: HTMLElement): {
   scene.globe.shadows = ShadowMode.RECEIVE_ONLY;
   let disposed = false;
   return {
-    update(state, view, model) {
+    update(state, view, model, activeReceiver_m) {
       if (disposed) return;
-      const presentation = aircraftShadowPresentation(state, view);
+      const presentation = aircraftShadowPresentation(state, view, activeReceiver_m);
       const enabled = presentation.enabled && !!model?.ready;
       map.enabled = enabled;
       map.darkness = presentation.darkness;

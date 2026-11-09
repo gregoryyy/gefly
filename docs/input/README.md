@@ -226,4 +226,8 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [Spanish island photographic scenery](2026-11-07-spanish-island-imagery.md).
 - [Map track history](2026-11-07-map-track-history.md).
 - [Repeated vector scenery reloads](2026-11-07-vector-imagery-reloads.md).
+
+- [2026-11-06 chase overview](2026-11-06-chase-overview.md): extreme chase zoom and double-click return behind the aircraft.
+
+- [2026-11-06 camera return](2026-11-06-camera-return.md)
 - [Ball-like roll instability](2026-11-06-ball-like-roll-instability.md) — user disturbance/recovery description and roll-first clarification.
