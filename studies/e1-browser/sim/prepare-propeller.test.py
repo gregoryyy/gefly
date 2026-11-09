@@ -102,6 +102,16 @@ class PreparePropellerTests(unittest.TestCase):
         self.assertAlmostEqual(region['aeromatic_zero_power_j'], 0.2 + 1.2 / 1.75, places=12)
         self.assertEqual(region['selected_blade_angle_deg_at_0_75R'], 10)
         self.assertEqual(region['source_zero_torque_j'], {'10.0': 0.8, '30.0': 2.0})
+        # Join record: synthetic Aero-Matic end values -0.75*ct0/cp0 against the
+        # synthetic curve converted at J 1.4: CT -0.02*1.96 and CP 2*pi*-0.003*1.96.
+        join = region['join']
+        self.assertEqual(region['join_relative_difference_limit'], 0.25)
+        for name, aeromatic, source in (('C_THRUST', -0.75 * inputs['ct0'], -0.02 * 1.96),
+                                        ('C_POWER', -0.75 * inputs['cp0'], 2 * math.pi * -0.003 * 1.96)):
+            self.assertEqual(join[name]['j'], 1.4)
+            self.assertAlmostEqual(join[name]['aeromatic'], aeromatic, places=12)
+            self.assertAlmostEqual(join[name]['tr641'], source, places=12)
+            self.assertAlmostEqual(join[name]['relative_difference'], (aeromatic - source) / abs(source), places=12)
         for name, coefficient in (('C_THRUST', -0.02), ('C_POWER', 2 * math.pi * -0.003)):
             values = [float(v) for v in xml.find(f"table[@name='{name}']/tableData").text.split()]
             rows = list(zip(values[::2], values[1::2]))
@@ -116,6 +126,16 @@ class PreparePropellerTests(unittest.TestCase):
                 # Printed J and coefficient are each rounded to four decimals.
                 self.assertAlmostEqual(value, coefficient * j * j, delta=5e-5 + abs(2 * coefficient * j) * 5e-5 + 1e-12)
         self.assertIn(b'NACA Report 641', result)
+
+    def test_rejects_implausible_join_step(self):
+        # A curve whose converted value at the Aero-Matic end differs by more than
+        # the documented 25 % plausibility bound is rejected, for either table.
+        for changes, name in (({'Tc': [[0, -0.01], [1.0, -0.01], [1.3, 0]]}, 'C_THRUST'),
+                              ({'Qc': [[0, -0.0015], [1.0, -0.0015], [1.25, 0]]}, 'C_POWER')):
+            curve = {'blade_angle_deg': 10, 'Tc': [[0, -0.02], [1.0, -0.02], [1.3, 0]],
+                     'Qc': [[0, -0.003], [1.0, -0.003], [1.25, 0]], **changes}
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, f'{name} join differs'):
+                module.model_xml(GENERATOR, ENGINE, PROPELLER, json.dumps({'curves': [curve]}).encode())
 
     def test_negative_region_validation_and_no_extrapolation(self):
         def record(**changes):
@@ -142,6 +162,7 @@ class PreparePropellerTests(unittest.TestCase):
         self.assertEqual(module.sha256(data), module.NEGATIVE_DATA_SHA256)
         record = json.loads(data)
         self.assertEqual(record['source']['ntrs_id'], '19930091716')
+        self.assertEqual(module._recorded_path(REAL_NEGATIVE), 'studies/e1-browser/sim/naca-tr641-figure3.json')
         curves = module.negative_curves(data)
         self.assertEqual(sorted(curves), [15.0, 20.0])
         # Synthetic zero-power crossing at J 1.1 selects the 20-degree curve (zero torque J 1/0.924).
@@ -175,6 +196,8 @@ class PreparePropellerTests(unittest.TestCase):
             self.assertEqual({record['path']: record['sha256'] for record in first['sources']},
                              {path: module.sha256(data) for path, data in FIXTURE.items()})
             self.assertEqual(first['negative_region_source']['sha256'], module.sha256(NEGATIVE))
+            self.assertEqual(first['negative_region_source']['path'], negative.resolve().as_posix(),
+                             'records the file actually read, not the default path')
             self.assertEqual(negative.read_bytes(), NEGATIVE)
 
     def test_unknown_source_fails_before_output_mutation(self):

@@ -27,7 +27,7 @@ SOURCE_SHA256 = {
 }
 RHO_SLUG_FT3 = 0.002378  # Aero-Matic v1.1 design-point density, not runtime atmosphere.
 NEGATIVE_DATA = Path(__file__).with_name('naca-tr641-figure3.json')
-NEGATIVE_DATA_SHA256 = '206657a6027de96aa4f3bb075d1e3c777596477299df5bec37237377a56078f6'
+NEGATIVE_DATA_SHA256 = 'f39ab7d0adc71b9f275ed836dd64061eb104d1fe8e9e7d7b49d48a4edde7b45e'
 # Row spacing for the appended high-advance rows. JSBSim interpolates CT/CP
 # linearly in J while CT = Tc*J^2 grows quadratically; a 1.1 geometric step keeps
 # that interpolation error below about 0.25 %. This is a table-resolution choice,
@@ -37,6 +37,14 @@ EXTENSION_J_RATIO = 1.1
 # Below the corresponding shaft speed JSBSim clamps to this row (force and torque
 # then fall as n^2); a fully stopped propeller still produces no JSBSim force.
 EXTENSION_J_MAX = 100.0
+# Plausibility bound at each join: relative difference between the last Aero-Matic
+# coefficient and the TR-641 value converted at the same J. Both are generic
+# estimates of the same windmilling branch; elsewhere in their overlap they differ
+# by about 3-15 %. A larger step means the selected curve does not describe a
+# compatible propeller (the 15 degree curve would differ by about 47 % in CT).
+# This guards the join; it is not fitted to an aircraft or glide outcome.
+JOIN_RELATIVE_DIFFERENCE_LIMIT = 0.25
+REPOSITORY = Path(__file__).resolve().parents[3]
 
 
 def sha256(data: bytes) -> str:
@@ -154,6 +162,15 @@ def model_xml(generator: bytes, engine: bytes, original_propeller: bytes,
     angle, selection = select_negative_curve(curves, base['C_POWER'])
     extension = {'C_THRUST': extension_rows(curves[angle]['Tc'], base['C_THRUST'][-1][0], False),
                  'C_POWER': extension_rows(curves[angle]['Qc'], base['C_POWER'][-1][0], True)}
+    join = {}
+    for name, curve, factor in (('C_THRUST', curves[angle]['Tc'], 1.0), ('C_POWER', curves[angle]['Qc'], 2 * math.pi)):
+        j, aeromatic = base[name][-1]
+        source = factor * _interpolate(curve, 1 / j) * j * j
+        join[name] = {'j': j, 'aeromatic': aeromatic, 'tr641': source,
+                      'relative_difference': (aeromatic - source) / abs(source)}
+        if abs(join[name]['relative_difference']) > JOIN_RELATIVE_DIFFERENCE_LIMIT:
+            raise ValueError(f'{name} join differs by more than {JOIN_RELATIVE_DIFFERENCE_LIMIT:.0%} '
+                             'between Aero-Matic and the selected TR-641 curve')
     for name in ('C_THRUST', 'C_POWER'):
         if not all(b[1] < a[1] for a, b in zip([base[name][-1]] + extension[name], extension[name])):
             raise ValueError(f'{name} extension must continue the negative windmilling branch monotonically')
@@ -183,7 +200,8 @@ def model_xml(generator: bytes, engine: bytes, original_propeller: bytes,
               'negative_region': {**selection, 'extension_j_ratio': EXTENSION_J_RATIO,
                                   'extension_j_max': EXTENSION_J_MAX,
                                   'aeromatic_table_end_j': {name: base[name][-1][0] for name in base},
-                                  'appended_rows': {name: len(rows) for name, rows in extension.items()}}}
+                                  'appended_rows': {name: len(rows) for name, rows in extension.items()},
+                                  'join': join, 'join_relative_difference_limit': JOIN_RELATIVE_DIFFERENCE_LIMIT}}
     return data, inputs
 
 
@@ -206,6 +224,14 @@ def _atomic_write(path: Path, data: bytes) -> None:
             temporary.replace(path)
         finally:
             temporary.unlink(missing_ok=True)
+
+
+def _recorded_path(path: Path) -> str:
+    absolute = path.resolve()
+    try:
+        return absolute.relative_to(REPOSITORY).as_posix()
+    except ValueError:
+        return absolute.as_posix()
 
 
 def prepare_propeller(source: Path, destination: Path, metadata: Path,
@@ -238,7 +264,7 @@ def prepare_propeller(source: Path, destination: Path, metadata: Path,
     result = {'adapter_id': ADAPTER_ID, 'scope': 'generic research fixed-pitch windmilling; not accepted aircraft data',
               'source_jsbsim_commit': '66f7fafc07fe13e7ede9db20873030fed2881713',
               'sources': [{'path': path, 'sha256': sha256(data)} for path, data in sorted(originals.items())],
-              'negative_region_source': {'path': 'studies/e1-browser/sim/' + NEGATIVE_DATA.name,
+              'negative_region_source': {'path': _recorded_path(negative_data),
                                          'id': json.loads(negative)['id'], 'sha256': sha256(negative),
                                          'reference': 'NACA Report 641 (1938), figure 3; NTRS 19930091716'},
               'inputs': inputs, 'prepared_sha256': sha256(prepared),

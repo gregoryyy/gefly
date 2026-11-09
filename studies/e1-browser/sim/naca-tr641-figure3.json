@@ -12,13 +12,13 @@
     "download_url": "https://ntrs.nasa.gov/api/citations/19930091716/downloads/19930091716.pdf",
     "download_sha256": "281d1e2845088e51a12253e678a89bc1b4abd1742d36e155761e02dcea8d9c77",
     "download_note": "The served file has a 436-byte NTRS prefix before the PDF header; the PDF starting at byte offset 436 has SHA-256 3a67650a5fc5fff31343c64b424eb3e06a6a9085347b55f6e8017c3e95742527 and 24 pages.",
-    "rights": "NTRS record distribution PUBLIC, copyright determination GOV_PUBLIC_USE_PERMITTED (U.S. Government work). Only digitized numeric readings are recorded here; no page image or prose is redistributed.",
+    "rights": "Authored and published in 1938 by the National Advisory Committee for Aeronautics, a U.S. federal agency. NTRS record metadata (checked 2026-11-09): distribution PUBLIC; copyright determinationType GOV_PUBLIC_USE_PERMITTED; belongsToUsGov false; no third-party material flagged. Only digitized numeric readings are recorded here; no page image or prose is redistributed.",
     "accessed": "2026-11-09",
     "figure": "Figure 3, printed page 3 (PDF page 7): negative thrust and torque coefficients for propeller 5868-9, Clark Y section, 2 blades",
     "test_article": "10-foot diameter metal Navy propeller 5868-9, Clark Y sections, 2 blades, ahead of a radial-engine nacelle in the NACA 20-foot tunnel at 100-110 mph; cross-faired curves",
     "definitions": {
       "advance": "nD/V, propeller revolutions per second times diameter divided by airspeed; 0 is the locked propeller",
-      "Tc": "Te / (rho V^2 D^2), where Te = T - delta D is effective thrust (shaft axial force minus slipstream-induced body-drag change); negative is drag",
+      "Tc": "Te / (rho V^2 D^2), where Te = T - delta D is effective thrust (shaft axial force minus the slipstream-induced drag change of the test radial-engine nacelle); negative is drag. Applying Tc as JSBSim shaft thrust therefore includes that installation-specific nacelle effect.",
       "Qc": "Q / (rho V^2 D^3), aerodynamic torque; negative assists rotation",
       "blade_angle": "blade angle at 0.75 R, degrees"
     }

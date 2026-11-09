@@ -44,11 +44,14 @@ under `propeller_adapter` in `dist/build-info.json` and the worker's ready metad
 After rebuilding, run `node studies/e1-browser/sim/engine-off-glide-native.mjs`
 from the repository root. It compares powered, ignition-off and mixture-cutoff
 flight with retained/idle throttle at 30, 35 and 45 m/s, reports specific energy
-and glide geometry, and repeats exact native reset/digest and restart cases.
-Eleven nominal cases pass, including the former 35 m/s closed-throttle
-counterexample. The 30 m/s closed-throttle case is explicitly **not accepted**:
-JSBSim's dead-engine friction stops the shaft and a stopped propeller has no
-force. An exit-zero regression result does not accept that known model limitation
+and glide geometry in a 60–120 s window, and repeats exact native reset/digest and
+restart cases. It also runs 420 s closed-throttle descents at 35 and 40 m/s, plus a
+40 m/s descent with throttle at its trim setting, and reports when the shaft stops
+and a 180–240 s energy glide ratio. Thirteen nominal cases pass, including the
+former 35 m/s closed-throttle counterexample within its window. Two are explicitly
+**not accepted**: the 30 m/s closed-throttle case and the 35 m/s long descent
+(stop at about 250 s). There, JSBSim's dead-engine friction stops the shaft and a
+stopped propeller has no force. An exit-zero regression result does not accept that known model limitation
 or calibrate C172 performance. See [research](../../../docs/research/2026-11-03-engine-off-glide.md)
 and the [TR-641 extension](../../../docs/research/2026-11-09-engine-off-propeller-tr641.md).
 

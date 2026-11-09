@@ -273,8 +273,10 @@ Beyond the Aero-Matic table ends, the preparation appends rows converted from
 readings of figure 3 of Edwin P. Hartman and David Biermann, *The Negative Thrust
 and Torque of Several Full-Scale Propellers and Their Application to Various Flight
 Problems*, NACA Report 641 (1938),
-[NTRS 19930091716](https://ntrs.nasa.gov/citations/19930091716). It is a U.S.
-Government work; NTRS lists it as public with government public use permitted.
+[NTRS 19930091716](https://ntrs.nasa.gov/citations/19930091716). It was authored
+and published by NACA, a U.S. federal agency. The NTRS record lists distribution
+public and copyright determination "government public use permitted" (its
+belongs-to-U.S.-Government flag is false).
 
 
 ## EDFE vector scenery and airport COM directory

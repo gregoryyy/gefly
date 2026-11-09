@@ -737,8 +737,9 @@ an equivalent endpoint service remain undecided.
   replaces the original positive-only power table. Beyond the finite generator
   tables it uses digitized NACA Report 641 windmilling coefficients, so engine-off
   cases retain native propeller drag and shaft losses down to low shaft speed.
-  Closed-throttle flight near 30 m/s can still stop the propeller, and a stopped
-  propeller has no drag in JSBSim: the full correction remains open. The clean
+  Closed-throttle flight at or below about 35 m/s TAS (≈60 KIAS) can still stop
+  the propeller after some minutes, and a stopped propeller has no drag in JSBSim:
+  the full correction remains open. The clean
   airframe still glides better than the 172S reference (about 10–12.5:1 versus
   9.1:1); this is not a calibrated 172S glide polar. The build records the
   source, inputs and output hashes. See [investigation](../docs/research/2026-11-03-engine-off-glide.md)
