@@ -224,4 +224,5 @@ These inputs are included in the local repository. Recheck privacy before remote
 - [Swiss and Austrian photographic scenery](2026-11-07-swiss-austrian-imagery.md).
 - [Additional German photographic scenery](2026-11-07-german-state-imagery.md).
 - [Spanish island photographic scenery](2026-11-07-spanish-island-imagery.md).
+- [Map track history](2026-11-07-map-track-history.md).
 - [Repeated vector scenery reloads](2026-11-07-vector-imagery-reloads.md).
