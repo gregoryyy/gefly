@@ -193,6 +193,9 @@ These inputs are included in the local repository. Recheck privacy before remote
 
 - [2026-11-06 flaps and settings](2026-11-06-flaps-settings.md): check flap effectiveness and retain settings across restart/reload.
 - [2026-11-06 integrate OurAirports](2026-11-06-integrate-ourairports.md): worldwide source-pinned discovery, worker search/regional loading and existing map/radio controls.
+
+- [2026-11-06 README motivation and screenshot](2026-11-06-readme-motivation-screenshot.md): actual current prototype capture and planned AI-development A/B research motivation.
+
 - [2026-11-06: Build on-demand airport generation and caching](2026-11-06-on-demand-airport-generator.md)
 
 - [Scenery workers, overview, OFM and shadow](2026-11-06-scenery-workers-and-overview.md) — user requests recorded 2026-11-06.
