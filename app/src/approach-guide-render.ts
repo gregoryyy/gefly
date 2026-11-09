@@ -9,18 +9,22 @@ export function createApproachGuideRenderer(scene: Scene, container: HTMLElement
   const status = document.createElement('div');
   status.className = 'approach-guide-status';
   status.setAttribute('role', 'status');
-  // One compact line over the flying view; the full disclosure is the tooltip
-  // and the airport map popup, where the guide is chosen.
-  status.style.cssText = 'position:absolute;top:140px;left:12px;z-index:2;max-width:min(300px, calc(100% - 24px));padding:2px 7px;background:#10272cb3;color:#e5eadd;border-radius:10px;font:10px/1.5 system-ui;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+  // One compact line over the flying view. The full disclosure is the tooltip,
+  // visually hidden text for assistive technology, and the airport popup.
+  status.style.cssText = 'position:absolute;top:140px;left:12px;z-index:2;max-width:min(300px, calc(100% - 24px));padding:2px 7px;background:#10272cb3;color:#e5eadd;border-radius:10px;font:10px/1.5 system-ui;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:none';
+  const summary = document.createElement('span'), detail = document.createElement('span');
+  detail.className = 'approach-guide-detail';
+  detail.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap';
+  status.append(summary, detail);
   status.hidden = true; container.append(status);
   let guide: ApproachGuide | null = null, height: number | null = null, nextCheck = 0, disposed = false;
   const color = Color.fromCssColorString('#70e5ee');
   function clear(): void { lines.removeAll(); labels.removeAll(); height = null; }
   function setStatus(state: 'off' | 'waiting' | 'ready'): void {
     container.dataset.approachGuide = state; status.hidden = state === 'off';
-    if (!guide || state === 'off') { status.textContent = ''; status.title = ''; return; }
-    status.textContent = `3° visual guide · ${guide.airportId} ${guide.runwayIdent} · ${state === 'waiting' ? 'waiting for terrain' : 'illustrative'}`;
-    status.title = approachGuideDisclosure(guide);
+    if (!guide || state === 'off') { summary.textContent = detail.textContent = status.title = ''; return; }
+    summary.textContent = `3° visual guide · ${guide.airportId} ${guide.runwayIdent}${guide.displaced_threshold_ft === null ? ' · threshold ≈ runway end' : ''} · ${state === 'waiting' ? 'waiting for terrain' : 'illustrative'}`;
+    status.title = approachGuideDisclosure(guide); detail.textContent = ` · ${status.title}`;
   }
   function build(anchor_m: number): void {
     clear(); height = anchor_m;

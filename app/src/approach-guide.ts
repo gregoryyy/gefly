@@ -49,7 +49,7 @@ export function approachPoints(guide: ApproachGuide): GuidePoint[] {
   });
 }
 
-/** The guide's full limitations, shown where it is chosen and as the in-view chip's tooltip. */
+/** The guide's full limitations: the popup's "Shown" line, the in-view chip's tooltip and its assistive text. */
 export function approachGuideDisclosure(guide: ApproachGuide): string {
   const threshold = guide.displaced_threshold_ft === null
     ? 'runway end used; threshold position unknown; terrain-height approximation' : 'terrain-height approximation';

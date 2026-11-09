@@ -1,7 +1,7 @@
 import type { PlanRole, PlanResult } from './map-flight-plan-types';
 import { validFrequency, type RadioKind, type RadioReceiver } from './radio-nav';
 import './map-point-popup.css';
-import type { ApproachGuide } from './approach-guide.ts';
+import { approachGuideDisclosure, type ApproachGuide } from './approach-guide.ts';
 
 export type MapLaunchHeightFt = 0 | 1000 | 5000 | 10000;
 export interface MapFlyFromActions {
@@ -113,8 +113,7 @@ export function createMapPointPopup(input: Readonly<MapPoint>, actions: MapPoint
     const guides = point.approach_guides ?? [];
     const current = actions.currentApproachGuide;
     if (current) {
-      group.append(node('p', `Shown: ${current.airportName} · runway ${current.runwayIdent}${current.displaced_threshold_ft === null ? ' · runway-end approximation; displacement unknown' : ''} · terrain-height approximation`));
-      const source = node('p', current.source); source.className = 'map-point-popup-source'; group.append(source);
+      group.append(node('p', `Shown: ${approachGuideDisclosure(current)}`));
       const hide = node('button', 'Hide 3° guide'); hide.type = 'button';
       hide.addEventListener('click', () => actions.onApproachGuide?.(null)); group.append(hide);
     }

@@ -3,28 +3,33 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
-## 2026-11-09 18:22 — Keep the approach-guide status to one compact line
+## 2026-11-09 18:43 — Keep the approach-guide status to one compact line
 
-TODO: 2.0.204; R-NAV-3. Agent: Claude orchestrator (Claude Code, Opus 5.5); no
-subagents. [Request](input/2026-11-09-guide-imagery-qnh-runways.md).
+TODO: 2.0.204; R-NAV-3. Agent: Claude orchestrator (Claude Code, Opus 5.5);
+quality subagent (Claude Opus 5.5) reviewed the first version.
+[Request](input/2026-11-09-guide-imagery-qnh-runways.md).
 
 **Implementation notes**
 
 Showing a 3° guide put a 360 px, five-line status box over the flying view,
 including the 40-character source revision. The status is now one line, for
-example `3° visual guide · EDFE 08 · illustrative` (or `waiting for terrain`),
-with the full disclosure as its tooltip. `approachGuideDisclosure()` holds the
-disclosure text; the airport popup's guide section now also names the
-terrain-height approximation and the source revision. The 3D line and label
-are unchanged.
+example `3° visual guide · EDFE 08 · threshold ≈ runway end · illustrative` (or
+`waiting for terrain`). `approachGuideDisclosure()` holds the full disclosure:
+the chip's tooltip, a visually hidden span read by assistive technology, and
+the airport popup's "Shown" line all use it, so the popup now also names the
+terrain-height approximation and source revision. The 3D line and label are
+unchanged. Review follow-ups: the unknown-threshold note stays visible in the
+chip, the popup reuses the shared text, and the chip is not text-selectable.
+The chip keeps pointer events (for the tooltip); the yoke and hold-drag look
+listen on `#scene`, so presses on it still reach them.
 
 **Deviations**
 
-None. Checks: TypeScript passes; `src/approach-guide.test.ts` 4/4 including the
-new disclosure test; `npm run test:world-airports` passes 10 groups, now
-asserting the revision via the tooltip and a chip of at most 300×24 px. A
-headless screenshot at EDFE showed the one-line chip. Independent
-quality/validation and peer review pending.
+None. Checks: TypeScript passes; `src/approach-guide.test.ts` 4/4;
+`npm run test:world-airports` passes 10 groups, asserting a one-line chip, its
+airport/runway/state text, the revision in the assistive text and the popup's
+terrain-height and revision disclosure. Independent re-review, validation and
+peer review pending.
 
 ## 2026-11-09 17:30 — Restore green CI by keeping Pillow tests in the scenery gate
 

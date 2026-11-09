@@ -200,8 +200,12 @@ try {
       const revision = await panel.getAttribute('data-world-airports-revision');
       assert.match(revision, /^[a-f0-9]{40}$/);
       assert((await page.locator('#scene .approach-guide-status').getAttribute('title')).includes(`revision ${revision}`), 'guide discloses exact source revision');
-      { const chip = await page.locator('#scene .approach-guide-status').boundingBox();
-        assert(chip && chip.height <= 24 && chip.width <= 300, `guide status is a compact one-line chip: ${JSON.stringify(chip)}`); }
+      { const chip = page.locator('#scene .approach-guide-status'), box = await chip.boundingBox();
+        assert(box && box.height <= 24, `guide status is a one-line chip: ${JSON.stringify(box)}`);
+        assert.match(await chip.locator('span').first().textContent(), new RegExp(`^3° visual guide · \\S+ ${label.split(' · ')[0]}.* · (waiting for terrain|illustrative)$`));
+        assert((await chip.locator('.approach-guide-detail').textContent()).includes(`revision ${revision}`), 'assistive text carries the full disclosure');
+        const shown = await popup.textContent();
+        assert.match(shown, /terrain-height approximation/); assert(shown.includes(`revision ${revision}`), 'popup discloses the source revision'); }
       assert.equal(await page.locator('#scene').getAttribute('data-approach-guide-runway'), label.split(' · ')[0]);
       await popup.getByRole('button', { name: 'Hide 3° guide' }).click();
       assert.equal(await page.locator('#scene').getAttribute('data-approach-guide'), 'off', 'hide works immediately without reopening');
