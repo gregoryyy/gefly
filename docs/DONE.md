@@ -26,6 +26,58 @@ base, not this integration with current main. Quality, validation and
 cross-provider peer review of the port are pending. No aircraft or handling
 fidelity is claimed beyond those records.
 
+## 2026-11-09 15:48 — Port the orphaned README refresh to main
+
+TODO: 2.0.171; R-BOOT-3/R-DATA-1. Agent: Claude orchestrator (Claude Code,
+Opus 5.5); no subagents for this documentation-only port.
+
+**Implementation notes**
+
+PR #103 was merged into `feat/worldwide-airport-data` after that branch had
+already been merged into main, so its README screenshot, AI-development
+motivation and capture records never reached main. This merges the original
+branch into current main, keeping its history. GAPS and TODO conflicts were
+resolved by keeping all of main's entries, inserting the 2026-11-06 13:11 answer
+in newest-first order and adding 2.0.171 beside 2.0.173.
+
+**Deviations**
+
+The README describes the 2026-11-06 capture and was not re-captured against
+current main. Quality, validation and cross-provider peer review of the port are
+pending.
+
+## 2026-11-07 11:53 — Retain the map track from the flight start
+
+TODO: 2.0.200; R-WORLD-6/R-REVIEW-1. Agent: Codex orchestrator; investigation
+`track_trace` and `track_context`, implementation `track_history` and
+`track_integration`, documentation audit `track_docs`, independent quality
+`track_quality`, independent validation `track_validate`.
+
+**Implementation notes**
+
+Live maps keep a separate session-only geographic path instead of deriving the
+start from the ten-minute rolling state recording. History is bounded to 8192
+compact points, with geometric simplification and no guaranteed error bound;
+display is bounded and marks simplification. Departure and latest positions
+survive thinning. Review remains the bounded state trace; imported clipped
+recordings disclose their first available point. Reset, continuation and date
+line behavior are covered separately from native state and recording export.
+
+Independent quality and validation passed 13 focused tests, TypeScript, and a
+Chrome 156 real-app test using synthetic validated worker messages over 650s:
+departure retention, Review, live/imported continuation, reopening and reset.
+A separate 1105-point synthetic date-line browser check verified unwrapped
+path and simplification disclosure. Interactive date-line Fit/Follow/pan/zoom,
+actual long-duration flight, reload behavior and extreme polar rendering were
+not evaluated; a test's real-worker state interrupted its attempted Fit check.
+An initial browser sandbox bind failed with EPERM, and an approved rerun passed.
+The path does not persist on reload; cross-provider peer review remains pending.
+
+**Deviations**
+
+The geographic path is an approximation; it does not extend replay duration or
+claim a navigational accuracy tolerance.
+
 ## 2026-11-07 11:24 — Limit vector imagery reloads after tile failures
 
 TODO: 2.0.199; R-WORLD-11/R-VIEW-1. Agent: Codex orchestrator; diagnosis
@@ -765,6 +817,46 @@ peer review remains pending under the batching cadence.
 
 Persist deliberate user preferences without treating preview values, transient
 commands or a remembered sound choice as permission to resume simulation/audio.
+
+## 2026-11-06 13:17 — Refresh README capture and AI-development motivation
+
+TODO: 2.0.171; R-BOOT-3/R-DATA-1.
+Agent: Codex orchestrator; read-only housekeeping `coverage_housekeeping`,
+independent quality `world_airport_quality` and validation `coverage_validate`.
+
+**Implementation notes**
+
+The README now uses the actual 6 November working-app
+[capture](images/gefly-2026-11-06.png), with current chase/cockpit/map, source
+attribution and [capture provenance](images/README.md#current-readme-capture--2026-11-06).
+Chrome 156.0.8078.80/1920×1080 captured the real JSBSim flight at 1×, 46.2083 s / step 5545,
+HDG/ALT engaged and 378 actual path points. Image hash 2a60d397… matches the versioned
+[capture record](reviews/2026-11-06-readme-capture.json); loading notices remain
+visible. The older 3 November capture record is explicitly archived, not rewritten.
+
+README and [IDEA](IDEA.md#ai-assisted-development-research) record the complementary
+motivation: rapid AI-assisted development of a technically substantial codebase,
+expose complexity-related vibe-coding failures, and use controlled matched-task
+A/B comparisons to test prevention/reduction practices. Study methods and metrics
+remain planned, with no effectiveness result claimed. Source counts in README
+now distinguish worldwide discovery from legacy regional fallbacks. Raw request,
+GAPS and task status are recorded. The [independent review record](reviews/2026-11-06-readme-refresh.md)
+accepts the prose, image identity/visuals and source/licence attribution.
+
+**Deviations**
+
+No simulator/runtime changes, image editing, imagery fixtures, source rewriting
+or A/B experiment. The capture is a current local working-tree prototype, not a
+claim that every pictured feature has merged. Some live detail/airport geometry
+was loading; this is not source-coverage or aircraft/training validation. No new
+implementation tests were added for this reversible documentation update.
+Structural, publication CI and final assurance checks are recorded with the PR;
+optional JSBSim study skips and batched peer status remain explicit.
+
+**Insights**
+
+Show actual development state with provenance and visible limitations; describe
+research motivation separately from measured results and simulator fidelity.
 
 ## 2026-11-06 12:53 — Integrate worldwide OurAirports discovery
 

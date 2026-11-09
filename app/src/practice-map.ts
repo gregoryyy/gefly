@@ -23,7 +23,7 @@ import { LngLatBounds, Map as LibreMap, Marker, Popup, ScaleControl, setWorkerUr
 import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './practice-map.css';
-import { makePracticeMapFrame, type PracticeMapFrame } from './practice-map-data';
+import { makePracticeMapFrame, unwrapMapPath, type MapPathPosition, type PracticeMapFrame } from './practice-map-data';
 import { AIRFIELD_BOUNDS, loadAirportCatalogue, type Airport } from './airport-catalogue';
 import type { FlightState } from './types';
 import { loadFlightMapCatalogue } from './flight-map-catalogue';
@@ -40,7 +40,7 @@ export interface PracticeMap {
   zoom(direction: 1 | -1): void;
   getGpsTarget(): Readonly<PlannerPoint> | null;
   setPlanVisible(visible: boolean): void;
-  update(state: Readonly<FlightState>, path: readonly Readonly<FlightState>[], mode: 'live' | 'review'): void;
+  update(state: Readonly<FlightState>, path: readonly MapPathPosition[], mode: 'live' | 'review', options?: { simplified?: boolean; recordingStart?: boolean }): void;
   setVisible(visible: boolean): void;
   setVector(enabled: boolean): void;
   setCircuitGuide(enabled: boolean): void;
@@ -183,7 +183,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   readout.textContent = 'Waiting for aircraft position';
   const legend = document.createElement('p');
   legend.className = 'practice-map-legend';
-  legend.textContent = 'Whole retained path · Following aircraft · North up';
+  legend.textContent = 'Flight track · Following aircraft · North up';
   const credit = document.createElement('p');
   credit.className = 'practice-map-credit';
   credit.innerHTML = 'Map: © <a href="https://www.bkg.bund.de" target="_blank" rel="noopener noreferrer">BKG</a> (2026), <a href="https://www.govdata.de/dl-de/by-2-0" target="_blank" rel="noopener noreferrer">dl-de/by-2-0</a>, <a href="https://sgx.geodatenzentrum.de/web_public/gdz/datenquellen/datenquellen_topplusopen.html" target="_blank" rel="noopener noreferrer">Sources</a> · Imagery: HVBG (DL-DE Zero 2.0), © Bayerische Vermessungsverwaltung (2026, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>), Datenquelle: <a href="https://www.lgl-bw.de" target="_blank" rel="noopener noreferrer">LGL-BW</a> (2026, <a href="https://www.govdata.de/dl-de/by-2-0" target="_blank" rel="noopener noreferrer">dl-de/by-2-0</a>) · Airports: OurAirports, public domain';
@@ -231,6 +231,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   let ofmOverlay: ReturnType<typeof createOfmMapOverlay> | undefined;
   let aircraft: Marker | undefined;
   let start: Marker | undefined;
+  let markerStartsAtRecording = false;
   let frame: PracticeMapFrame | undefined;
   // Project the bounded trace directly so it remains visible while worker tiles load.
   const trajectory = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -240,7 +241,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   trajectory.append(track);
   function paintTrajectory(): void {
     const points = ready && map && frame && frame.path.length > 1
-      ? frame.path.map(coordinate => { const p = map!.project(coordinate); return `${p.x.toFixed(2)},${p.y.toFixed(2)}`; }).join(' ')
+      ? unwrapMapPath(frame.path, map.getCenter().lng).map(coordinate => { const p = map!.project(coordinate); return `${p.x.toFixed(2)},${p.y.toFixed(2)}`; }).join(' ')
       : '';
     if (track.getAttribute('points') !== points) track.setAttribute('points', points);
   }
@@ -670,7 +671,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   function setFollowing(value: boolean): void {
     following = value;
     follow.setAttribute('aria-pressed', String(value));
-    legend.textContent = `Whole retained path · ${value ? 'Following aircraft' : 'Fit view · press Follow to recenter'} · North up`;
+    legend.textContent = `${reviewing ? 'Recorded path' : 'Flight track'} · ${value ? 'Following aircraft' : 'Fit view · press Follow to recenter'} · North up`;
   }
 
   function syncCountryPhotoLayers(): void {
@@ -940,11 +941,12 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     paintTrajectory();
     paintCircuit();
     paintGpsTarget();
-    const pathKey = JSON.stringify(frame.path);
+    const unwrappedPath = unwrapMapPath(frame.path, frame.position[0]);
+    const pathKey = JSON.stringify(unwrappedPath);
     if (pathKey !== paintedPath) {
       (map.getSource('recorded-path') as GeoJSONSource).setData({
         type: 'FeatureCollection', features: frame.path.length < 2 ? [] : [{
-          type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: frame.path },
+          type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: unwrappedPath },
         }],
       });
       paintedPath = pathKey;
@@ -966,7 +968,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
   listen(zoomIn, () => changeZoom(1));
   listen(fit, () => {
     if (!map || !frame) return;
-    const coordinates = frame.path.length ? frame.path : [frame.position];
+    const coordinates = frame.path.length ? unwrapMapPath(frame.path, frame.position[0]) : [frame.position];
     const bounds = new LngLatBounds(coordinates[0], coordinates[0]);
     coordinates.forEach((coordinate) => bounds.extend(coordinate));
     bounds.extend(frame.position);
@@ -989,9 +991,10 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       container.dataset.extendedMenu = String(enabled); extendedMenu.hidden = !enabled;
       overlap.setAttribute('aria-pressed', String(enabled)); overlap.setAttribute('aria-expanded', String(enabled));
     },
-    update(state, path, mode) {
+    update(state, path, mode, pathOptions) {
       if (disposed) return;
       const wasReviewing = reviewing; reviewing = mode === 'review';
+      if (wasReviewing !== reviewing) setFollowing(following);
       if (wasReviewing !== reviewing) refreshPointPopup();
       playControls.update(options.isExerciseActive?.() ?? false, reviewing);
       const practice = options.getRunwayPractice?.();
@@ -1002,7 +1005,9 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       comPanel?.setEnabled(!reviewing && !!options.onTuneCom && (options.canTuneCom?.() ?? true));
       comPanel?.updatePosition(state.lat_rad * 180 / Math.PI, state.lon_rad * 180 / Math.PI);
       if (disposed) return;
-      modeLabel.textContent = mode === 'review' ? 'Recorded review' : 'Live';
+      modeLabel.textContent = mode === 'review' ? 'Recorded review' : pathOptions?.simplified ? 'Live · Track simplified' : 'Live';
+      markerStartsAtRecording = mode === 'review' || !!pathOptions?.recordingStart;
+      if (start) start.getElement().textContent = markerStartsAtRecording ? 'Recording start' : 'Trace start';
       try {
         frame = makePracticeMapFrame(state, path);
       } catch {
@@ -1222,7 +1227,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     aircraft = new Marker({ element: arrow, rotationAlignment: 'map' });
     const origin = document.createElement('div');
     origin.className = 'practice-map-start';
-    origin.textContent = 'Trace start';
+    origin.textContent = markerStartsAtRecording ? 'Recording start' : 'Trace start';
     start = new Marker({ element: origin, anchor: 'left', offset: [5, 0] });
     map.on('sourcedataloading', event => {
       const sourceId = event.sourceId, tile = (event as typeof event & { tile?: object }).tile;
