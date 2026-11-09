@@ -38,6 +38,8 @@ is applied, and the correction is suspended while AP owns roll. These are generi
 research-model controls, not the installed 172S avionics or full v1.1 run contract.
 See [sources and limits](research/2026-11-02-classic-controls.md).
 
+The v5 local aircraft adapter zeroes only the named left/right aileron actuator hysteresis widths. Source travel/rate limits, scales, aerodynamic functions, mass, elevator/rudder and existing AP/mixture/steering adaptations are preserved. Returned manual command plus fixed trim therefore has one aileron target independent of prior command direction. This removes a generic-model control-history effect; it adds no continuous bank correction or claimed installed-C172 rigging. [Mechanism and evidence](research/2026-11-06-aileron-return.md).
+
 Engine-off flight uses a separately hash-recorded, local-only generic fixed-pitch
 propeller derived from the pinned Aero-Matic generator. Its negative power
 region lets airflow drive native shaft rotation and negative thrust, including

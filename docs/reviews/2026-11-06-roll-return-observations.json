@@ -1,0 +1,1558 @@
+{
+  "scope": "Executed engineering observations; not independent acceptance, formal stability, aircraft fidelity or training credit",
+  "recorded": "2026-11-06 10:24 Europe/Berlin",
+  "artifacts": {
+    "output/flight/disturbance-response-native/observations.json": {
+      "sha256": "0ebe7911683d3499e3e5ae8be3c0722b153dead8c61c68b35b4992af8fc3de8a",
+      "bytes": 33729340,
+      "retained_copy": "output/flight/roll-return-release-evidence/0ebe7911683d3499/observations.json"
+    },
+    "output/flight/roll-return-native/observations.json": {
+      "sha256": "ba9685adafa4ef5be358615a7e4281a89dd569e5002403936201652ea615b671",
+      "bytes": 33762979,
+      "retained_copy": "output/flight/roll-return-release-evidence/ba9685adafa4ef5b/observations.json"
+    },
+    "output/flight/roll-return-native/regression.json": {
+      "sha256": "c40e9a571c03112c8b8d96293cb3e18633fbcdb245ff0dc4bf7f2185eb514276",
+      "bytes": 5824,
+      "retained_copy": "output/flight/roll-return-release-evidence/c40e9a571c03112c/regression.json"
+    },
+    "output/flight/disturbance-input-browser.json": {
+      "sha256": "59f0753697bd945ee6b70c5e5982293148b079df3cd113789079f3a44f9bc4a7",
+      "bytes": 7365907,
+      "retained_copy": "output/flight/roll-return-release-evidence/59f0753697bd945e/disturbance-input-browser.json"
+    },
+    "studies/e1-browser/sim/dist/build-info.json": {
+      "sha256": "cbbe0f59e8648b72f0c97a323c151cbddfaa2a8fb548aeea6b3186b13dde6d65",
+      "bytes": 3243,
+      "retained_copy": "output/flight/roll-return-release-evidence/cbbe0f59e8648b72/build-info.json"
+    },
+    "output/flight/disturbance-input-browser-final-v5-strict.json": {
+      "sha256": "d21695bd53617f8a037da5027702bf0481dc14414a21ddb4854556dd3adc0388",
+      "bytes": 7407097,
+      "retained_copy": "output/flight/roll-return-release-evidence/d21695bd53617f8a/disturbance-input-browser-final-v5-strict.json"
+    },
+    "output/flight/roll-return-native/sequence.json": {
+      "sha256": "d51f93e5f33eee4516601635cf13faeddae3fe96cfdc7bfb0c0eed106fb220eb",
+      "bytes": 7801,
+      "retained_copy": "output/flight/roll-return-release-evidence/d51f93e5f33eee45/sequence.json"
+    },
+    "output/flight/disturbance-input-browser-installed-final.json": {
+      "sha256": "8654925e881ae9ea517c754c2d36d5548e78c529234f62e0c5a0773f749f73b8",
+      "bytes": 7476881,
+      "retained_copy": "output/flight/roll-return-release-evidence/8654925e881ae9ea/disturbance-input-browser-installed-final.json"
+    },
+    "output/flight/disturbance-input-browser-installed-neutral-only.json": {
+      "sha256": "588f8da86a4ae70aff51dd6c93a88e6f6aed4441fb1283f8fe0f9bdaea6fa4ef",
+      "bytes": 1442153,
+      "retained_copy": "output/flight/roll-return-release-evidence/588f8da86a4ae70a/disturbance-input-browser-installed-neutral-only.json"
+    }
+  },
+  "old_sources": {
+    "dist/jsbsim.wasm": "c11a93378da778e34168c5b9043e44448855fb6699a640585d224313722d0f42",
+    "dist/jsbsim.mjs": "019d393954ba61d1e09c541496a18413118ed22617608220080ddbea3dea270e",
+    "dist/build-info.json": "0b5910545b81299abfd0d8e85b35da2a4b0f2d640684d88a15165d7332815bdd",
+    "loading.js": "b36361f5d73f4681e987c6eaf52472e59df6fa404e03b4cc8dc13bcc179d7957",
+    "bridge.cpp": "e71646929a6f13dbf9abd3eddc2f158fb79fd0ae16e8ed929038d22a3bd893c8",
+    "disturbance-response-native.mjs": "fd61ab046e750856e92df30446d1848010c8a9bc77d20aef2a9b507368f2e98e"
+  },
+  "new_sources": {
+    "dist/jsbsim.wasm": "266f201652e8fc3fb6c5ee384bad3ef1f66b335ee9885fa4a14de9a797c1edcc",
+    "dist/jsbsim.mjs": "019d393954ba61d1e09c541496a18413118ed22617608220080ddbea3dea270e",
+    "dist/build-info.json": "cbbe0f59e8648b72f0c97a323c151cbddfaa2a8fb548aeea6b3186b13dde6d65",
+    "loading.js": "b36361f5d73f4681e987c6eaf52472e59df6fa404e03b4cc8dc13bcc179d7957",
+    "bridge.cpp": "e71646929a6f13dbf9abd3eddc2f158fb79fd0ae16e8ed929038d22a3bd893c8",
+    "disturbance-response-native.mjs": "6b350252e9b1bd9fadcb42ae6afd453ea7af011ff4dcccd11366b5180cda4b93"
+  },
+  "format": "gefly-roll-return-observations",
+  "version": 1,
+  "regression": {
+    "scope": "Generic aileron command return; sampled rate sanity guard only, not formal stability or automatic wings-level/C172S acceptance",
+    "result": "pass",
+    "source_hashes": {
+      "dist/jsbsim.wasm": "266f201652e8fc3fb6c5ee384bad3ef1f66b335ee9885fa4a14de9a797c1edcc",
+      "dist/jsbsim.mjs": "019d393954ba61d1e09c541496a18413118ed22617608220080ddbea3dea270e",
+      "dist/build-info.json": "cbbe0f59e8648b72f0c97a323c151cbddfaa2a8fb548aeea6b3186b13dde6d65",
+      "loading.js": "b36361f5d73f4681e987c6eaf52472e59df6fa404e03b4cc8dc13bcc179d7957",
+      "bridge.cpp": "e71646929a6f13dbf9abd3eddc2f158fb79fd0ae16e8ed929038d22a3bd893c8",
+      "disturbance-response-native.mjs": "6b350252e9b1bd9fadcb42ae6afd453ea7af011ff4dcccd11366b5180cda4b93"
+    },
+    "prepared_aircraft_sha256": "cd85bb2afcd50b10238addf2f43493368b2266b83530786d1b3f6ccf3cc87595",
+    "numeric_equality_budget_deg": 1e-10,
+    "cases": [
+      {
+        "id": "60-aileron--0.1",
+        "max_returned_surface_residual_deg": 0,
+        "release_roll_rate_degps": 3.9203859741980205,
+        "max_later_roll_rate_degps": 0.4758336779693162,
+        "bank_delta_at20s_deg": -3.534789842884177
+      },
+      {
+        "id": "60-aileron--0.05",
+        "max_returned_surface_residual_deg": 0,
+        "release_roll_rate_degps": 1.9661059720182266,
+        "max_later_roll_rate_degps": 0.23858136100877345,
+        "bank_delta_at20s_deg": -1.7751494726945223
+      },
+      {
+        "id": "60-aileron--0.02",
+        "max_returned_surface_residual_deg": 0,
+        "release_roll_rate_degps": 0.7870320082174588,
+        "max_later_roll_rate_degps": 0.09546493317640022,
+        "bank_delta_at20s_deg": -0.711385164279879
+      },
+      {
+        "id": "60-aileron-0.02",
+        "max_returned_surface_residual_deg": 0,
+        "release_roll_rate_degps": 0.7870390470254707,
+        "max_later_roll_rate_degps": 0.09463483524096722,
+        "bank_delta_at20s_deg": 0.7288600961357584
+      },
+      {
+        "id": "60-aileron-0.05",
+        "max_returned_surface_residual_deg": 0,
+        "release_roll_rate_degps": 1.9661376634969834,
+        "max_later_roll_rate_degps": 0.2363438044021098,
+        "bank_delta_at20s_deg": 1.8225678279310444
+      },
+      {
+        "id": "60-aileron-0.1",
+        "max_returned_surface_residual_deg": 0,
+        "release_roll_rate_degps": 3.9204922219568314,
+        "max_later_roll_rate_degps": 0.4708467632740855,
+        "bank_delta_at20s_deg": 3.641589510690629
+      },
+      {
+        "id": "80-aileron--0.1",
+        "max_returned_surface_residual_deg": 0,
+        "release_roll_rate_degps": 5.710991924570533,
+        "max_later_roll_rate_degps": 0.6541088601647889,
+        "bank_delta_at20s_deg": -2.321119643114697
+      },
+      {
+        "id": "80-aileron--0.05",
+        "max_returned_surface_residual_deg": 0,
+        "release_roll_rate_degps": 2.8606545554020375,
+        "max_later_roll_rate_degps": 0.32631341290160115,
+        "bank_delta_at20s_deg": -1.1612698551261906
+      },
+      {
+        "id": "80-aileron--0.02",
+        "max_returned_surface_residual_deg": 0,
+        "release_roll_rate_degps": 1.1447767017628354,
+        "max_later_roll_rate_degps": 0.13040931269145434,
+        "bank_delta_at20s_deg": -0.4644897054945913
+      },
+      {
+        "id": "80-aileron-0.02",
+        "max_returned_surface_residual_deg": 0,
+        "release_roll_rate_degps": 1.1447849769091134,
+        "max_later_roll_rate_degps": 0.12901024860334004,
+        "bank_delta_at20s_deg": 0.47569135439107496
+      },
+      {
+        "id": "80-aileron-0.05",
+        "max_returned_surface_residual_deg": 0,
+        "release_roll_rate_degps": 2.860705456974355,
+        "max_later_roll_rate_degps": 0.3225807016117319,
+        "bank_delta_at20s_deg": 1.1872324322240317
+      },
+      {
+        "id": "80-aileron-0.1",
+        "max_returned_surface_residual_deg": 0,
+        "release_roll_rate_degps": 5.7111862179649675,
+        "max_later_roll_rate_degps": 0.6459170436963676,
+        "bank_delta_at20s_deg": 2.365916312783502
+      },
+      {
+        "id": "100-aileron--0.1",
+        "max_returned_surface_residual_deg": 0,
+        "release_roll_rate_degps": 7.465673483508504,
+        "max_later_roll_rate_degps": 0.6832027689612225,
+        "bank_delta_at20s_deg": -2.3684893812740335
+      },
+      {
+        "id": "100-aileron--0.05",
+        "max_returned_surface_residual_deg": 0,
+        "release_roll_rate_degps": 3.7362204237018015,
+        "max_later_roll_rate_degps": 0.33880806803584346,
+        "bank_delta_at20s_deg": -1.1799075253565139
+      },
+      {
+        "id": "100-aileron--0.02",
+        "max_returned_surface_residual_deg": 0,
+        "release_roll_rate_degps": 1.4948278018440104,
+        "max_later_roll_rate_degps": 0.1351916734301657,
+        "bank_delta_at20s_deg": -0.4706325630661107
+      },
+      {
+        "id": "100-aileron-0.02",
+        "max_returned_surface_residual_deg": 0,
+        "release_roll_rate_degps": 1.494839544946254,
+        "max_later_roll_rate_degps": 0.1327420626062906,
+        "bank_delta_at20s_deg": 0.48583964942560337
+      },
+      {
+        "id": "100-aileron-0.05",
+        "max_returned_surface_residual_deg": 0,
+        "release_roll_rate_degps": 3.736301415883646,
+        "max_later_roll_rate_degps": 0.33235175356991215,
+        "bank_delta_at20s_deg": 1.208947575836684
+      },
+      {
+        "id": "100-aileron-0.1",
+        "max_returned_surface_residual_deg": 0,
+        "release_roll_rate_degps": 7.4659929263345,
+        "max_later_roll_rate_degps": 0.6692735834077193,
+        "bank_delta_at20s_deg": 2.3959325415476322
+      }
+    ],
+    "checked_by": {
+      "roll-return-native.mjs": "f67bee27e8286c8dd605fba4f0fd57f966a9cc5e7dfb8702adf6210f4780735c",
+      "roll-return-checks.mjs": "7a36618833161d1830dd478fcfaf8efac1bc800e7f10f6a1f567b04a5f42c402",
+      "roll-return-sequence-native.mjs": "8a4f7a101459a4b4b849e7ed115d82634583c9f45fff2d41b5eb0436e563d7fc",
+      "disturbance-response-native.mjs": "6b350252e9b1bd9fadcb42ae6afd453ea7af011ff4dcccd11366b5180cda4b93"
+    },
+    "sequence_check_count": 54
+  },
+  "roll_comparison": [
+    {
+      "fixture": {
+        "id": "60-aileron--0.1",
+        "cas_kt": 60,
+        "axis": "aileron",
+        "pulse_norm": -0.1
+      },
+      "old": {
+        "differential_aileron_deg": -0.14323944878270584,
+        "roll_deg": -11.405772818188286,
+        "p_degps": -0.3525470340014591
+      },
+      "new": {
+        "differential_aileron_deg": 0,
+        "roll_deg": -3.534789842884177,
+        "p_degps": -0.020055543831025494
+      }
+    },
+    {
+      "fixture": {
+        "id": "60-aileron--0.05",
+        "cas_kt": 60,
+        "axis": "aileron",
+        "pulse_norm": -0.05
+      },
+      "old": {
+        "differential_aileron_deg": -0.14323944878270584,
+        "roll_deg": -9.733920314278915,
+        "p_degps": -0.34775530489942824
+      },
+      "new": {
+        "differential_aileron_deg": 0,
+        "roll_deg": -1.7751494726945223,
+        "p_degps": -0.010534214358811859
+      }
+    },
+    {
+      "fixture": {
+        "id": "60-aileron--0.02",
+        "cas_kt": 60,
+        "axis": "aileron",
+        "pulse_norm": -0.02
+      },
+      "old": {
+        "differential_aileron_deg": -0.14323944878270584,
+        "roll_deg": -8.714737344298962,
+        "p_degps": -0.3442141800045056
+      },
+      "new": {
+        "differential_aileron_deg": 0,
+        "roll_deg": -0.711385164279879,
+        "p_degps": -0.0043228392721610664
+      }
+    },
+    {
+      "fixture": {
+        "id": "60-aileron-0.02",
+        "cas_kt": 60,
+        "axis": "aileron",
+        "pulse_norm": 0.02
+      },
+      "old": {
+        "differential_aileron_deg": 0.14323944878270578,
+        "roll_deg": 8.919345345314245,
+        "p_degps": 0.374898927225759
+      },
+      "new": {
+        "differential_aileron_deg": 0,
+        "roll_deg": 0.7288600961357584,
+        "p_degps": 0.005262247146585065
+      }
+    },
+    {
+      "fixture": {
+        "id": "60-aileron-0.05",
+        "cas_kt": 60,
+        "axis": "aileron",
+        "pulse_norm": 0.05
+      },
+      "old": {
+        "differential_aileron_deg": 0.14323944878270578,
+        "roll_deg": 9.989866462982649,
+        "p_degps": 0.38451445523227323
+      },
+      "new": {
+        "differential_aileron_deg": 0,
+        "roll_deg": 1.8225678279310444,
+        "p_degps": 0.013385292270746668
+      }
+    },
+    {
+      "fixture": {
+        "id": "60-aileron-0.1",
+        "cas_kt": 60,
+        "axis": "aileron",
+        "pulse_norm": 0.1
+      },
+      "old": {
+        "differential_aileron_deg": 0.14323944878270578,
+        "roll_deg": 11.75210793811973,
+        "p_degps": 0.4003247726377739
+      },
+      "new": {
+        "differential_aileron_deg": 0,
+        "roll_deg": 3.641589510690629,
+        "p_degps": 0.02739534115213374
+      }
+    },
+    {
+      "fixture": {
+        "id": "80-aileron--0.1",
+        "cas_kt": 80,
+        "axis": "aileron",
+        "pulse_norm": -0.1
+      },
+      "old": {
+        "differential_aileron_deg": -0.1432394487827058,
+        "roll_deg": -10.155317668581603,
+        "p_degps": -0.28649120840433595
+      },
+      "new": {
+        "differential_aileron_deg": 0,
+        "roll_deg": -2.321119643114697,
+        "p_degps": 0.036459095547038786
+      }
+    },
+    {
+      "fixture": {
+        "id": "80-aileron--0.05",
+        "cas_kt": 80,
+        "axis": "aileron",
+        "pulse_norm": -0.05
+      },
+      "old": {
+        "differential_aileron_deg": -0.1432394487827058,
+        "roll_deg": -9.029580794767899,
+        "p_degps": -0.3025401450597282
+      },
+      "new": {
+        "differential_aileron_deg": 0,
+        "roll_deg": -1.1612698551261906,
+        "p_degps": 0.018171707171983714
+      }
+    },
+    {
+      "fixture": {
+        "id": "80-aileron--0.02",
+        "cas_kt": 80,
+        "axis": "aileron",
+        "pulse_norm": -0.02
+      },
+      "old": {
+        "differential_aileron_deg": -0.1432394487827058,
+        "roll_deg": -8.35096288848716,
+        "p_degps": -0.3120874833925787
+      },
+      "new": {
+        "differential_aileron_deg": 0,
+        "roll_deg": -0.4644897054945913,
+        "p_degps": 0.007257650802696146
+      }
+    },
+    {
+      "fixture": {
+        "id": "80-aileron-0.02",
+        "cas_kt": 80,
+        "axis": "aileron",
+        "pulse_norm": 0.02
+      },
+      "old": {
+        "differential_aileron_deg": 0.14323944878270584,
+        "roll_deg": 8.461746832470574,
+        "p_degps": 0.325547845811185
+      },
+      "new": {
+        "differential_aileron_deg": 0,
+        "roll_deg": 0.47569135439107496,
+        "p_degps": -0.007171350523814043
+      }
+    },
+    {
+      "fixture": {
+        "id": "80-aileron-0.05",
+        "cas_kt": 80,
+        "axis": "aileron",
+        "pulse_norm": 0.05
+      },
+      "old": {
+        "differential_aileron_deg": 0.14323944878270584,
+        "roll_deg": 9.152652527342015,
+        "p_degps": 0.3159182777724044
+      },
+      "new": {
+        "differential_aileron_deg": 0,
+        "roll_deg": 1.1872324322240317,
+        "p_degps": -0.01789488787231374
+      }
+    },
+    {
+      "fixture": {
+        "id": "80-aileron-0.1",
+        "cas_kt": 80,
+        "axis": "aileron",
+        "pulse_norm": 0.1
+      },
+      "old": {
+        "differential_aileron_deg": 0.14323944878270584,
+        "roll_deg": 10.292647722135893,
+        "p_degps": 0.2998167683890495
+      },
+      "new": {
+        "differential_aileron_deg": 0,
+        "roll_deg": 2.365916312783502,
+        "p_degps": -0.03571005491914391
+      }
+    },
+    {
+      "fixture": {
+        "id": "100-aileron--0.1",
+        "cas_kt": 100,
+        "axis": "aileron",
+        "pulse_norm": -0.1
+      },
+      "old": {
+        "differential_aileron_deg": -0.14323944878270584,
+        "roll_deg": -11.557581179436683,
+        "p_degps": -0.3421551648057576
+      },
+      "new": {
+        "differential_aileron_deg": 0,
+        "roll_deg": -2.3684893812740335,
+        "p_degps": 0.05124852431930168
+      }
+    },
+    {
+      "fixture": {
+        "id": "100-aileron--0.05",
+        "cas_kt": 100,
+        "axis": "aileron",
+        "pulse_norm": -0.05
+      },
+      "old": {
+        "differential_aileron_deg": -0.14323944878270584,
+        "roll_deg": -10.394607269402227,
+        "p_degps": -0.3595958491665247
+      },
+      "new": {
+        "differential_aileron_deg": 0,
+        "roll_deg": -1.1799075253565139,
+        "p_degps": 0.025901383541794786
+      }
+    },
+    {
+      "fixture": {
+        "id": "100-aileron--0.02",
+        "cas_kt": 100,
+        "axis": "aileron",
+        "pulse_norm": -0.02
+      },
+      "old": {
+        "differential_aileron_deg": -0.14323944878270584,
+        "roll_deg": -9.69654467227577,
+        "p_degps": -0.3707718892261574
+      },
+      "new": {
+        "differential_aileron_deg": 0,
+        "roll_deg": -0.4706325630661107,
+        "p_degps": 0.01041693277172847
+      }
+    },
+    {
+      "fixture": {
+        "id": "100-aileron-0.02",
+        "cas_kt": 100,
+        "axis": "aileron",
+        "pulse_norm": 0.02
+      },
+      "old": {
+        "differential_aileron_deg": 0.1432394487827058,
+        "roll_deg": 9.775611813544614,
+        "p_degps": 0.3792049413545863
+      },
+      "new": {
+        "differential_aileron_deg": 0,
+        "roll_deg": 0.48583964942560337,
+        "p_degps": -0.010403464774794797
+      }
+    },
+    {
+      "fixture": {
+        "id": "100-aileron-0.05",
+        "cas_kt": 100,
+        "axis": "aileron",
+        "pulse_norm": 0.05
+      },
+      "old": {
+        "differential_aileron_deg": 0.1432394487827058,
+        "roll_deg": 10.460734255197746,
+        "p_degps": 0.3650592074463889
+      },
+      "new": {
+        "differential_aileron_deg": 0,
+        "roll_deg": 1.208947575836684,
+        "p_degps": -0.026140301453220813
+      }
+    },
+    {
+      "fixture": {
+        "id": "100-aileron-0.1",
+        "cas_kt": 100,
+        "axis": "aileron",
+        "pulse_norm": 0.1
+      },
+      "old": {
+        "differential_aileron_deg": 0.1432394487827058,
+        "roll_deg": 11.579277933631495,
+        "p_degps": 0.34150092385175734
+      },
+      "new": {
+        "differential_aileron_deg": 0,
+        "roll_deg": 2.3959325415476322,
+        "p_degps": -0.052664360879550204
+      }
+    }
+  ],
+  "old_browser": {
+    "executed_harness_sha256": "0a43aaa892aa4cbacb8be1cf316bae1cc67260c726074659ed8bf332958d16e0",
+    "executed_harness_copy": "output/flight/disturbance-input-baseline-executed.mjs",
+    "origin": "http://localhost:5173",
+    "result": "pass",
+    "browser": "156.0.8078.80",
+    "before": {
+      "app/src/main.ts": "0c0d129a2721076bfca6a305111f18952bce72fbfebd4aefbad138fde77883a8",
+      "app/src/pointer-yoke.ts": "08082bce04e20ce0f7c24959884a70f37f2e8ebc29739ab4136657bcb03e5b35",
+      "app/src/pilot-controls.ts": "b74b7cffd7f3f22c311e2fc4a1f207d2b0929700047d045502c5997a28514338",
+      "app/src/control-settings.ts": "9f79f1e84f4a81dd0d467ff06cddebd604bec87fff0a7a8e017e2b836fb9435d",
+      "app/src/scene.ts": "32558e9ec73539cf995db6b23fd1d2957e08d3fc7bc28f55b780b0772d7fd89d",
+      "studies/e1-browser/sim/worker.js": "140d3fbadd41df7df7b37fd41fe7633f18289874f599ac4e0d0a95beec7dbf4b",
+      "studies/e1-browser/sim/dist/jsbsim.wasm": "c11a93378da778e34168c5b9043e44448855fb6699a640585d224313722d0f42"
+    },
+    "after": {
+      "app/src/main.ts": "0c0d129a2721076bfca6a305111f18952bce72fbfebd4aefbad138fde77883a8",
+      "app/src/pointer-yoke.ts": "08082bce04e20ce0f7c24959884a70f37f2e8ebc29739ab4136657bcb03e5b35",
+      "app/src/pilot-controls.ts": "b74b7cffd7f3f22c311e2fc4a1f207d2b0929700047d045502c5997a28514338",
+      "app/src/control-settings.ts": "9f79f1e84f4a81dd0d467ff06cddebd604bec87fff0a7a8e017e2b836fb9435d",
+      "app/src/scene.ts": "32558e9ec73539cf995db6b23fd1d2957e08d3fc7bc28f55b780b0772d7fd89d",
+      "studies/e1-browser/sim/worker.js": "140d3fbadd41df7df7b37fd41fe7633f18289874f599ac4e0d0a95beec7dbf4b",
+      "studies/e1-browser/sim/dist/jsbsim.wasm": "c11a93378da778e34168c5b9043e44448855fb6699a640585d224313722d0f42"
+    },
+    "cases": [
+      {
+        "config": {
+          "id": "neutral",
+          "kind": "neutral",
+          "duration": 20
+        },
+        "released_axes_zero": true,
+        "release_bank_rad": -0.0008211293559540363,
+        "bank_at20s_rad": -0.0008052432289132188,
+        "roll_rate_at20s_radps": 8.917668293157209e-07,
+        "returned_left_delta_rad": 0.0,
+        "returned_right_delta_rad": 0.0,
+        "native_files_served": []
+      },
+      {
+        "config": {
+          "id": "pointer-right-15px",
+          "kind": "pointer",
+          "sign": 1,
+          "duration": 20
+        },
+        "released_axes_zero": true,
+        "release_bank_rad": 0.04416426877096379,
+        "bank_at20s_rad": 0.18569161964066974,
+        "roll_rate_at20s_radps": 0.005443663442726824,
+        "returned_left_delta_rad": 0.0025,
+        "returned_right_delta_rad": -0.0025,
+        "native_files_served": []
+      },
+      {
+        "config": {
+          "id": "pointer-left-15px",
+          "kind": "pointer",
+          "sign": -1,
+          "duration": 20
+        },
+        "released_axes_zero": true,
+        "release_bank_rad": -0.04394101278046538,
+        "bank_at20s_rad": -0.184225823029135,
+        "roll_rate_at20s_radps": -0.0053353094784620485,
+        "returned_left_delta_rad": -0.0025,
+        "returned_right_delta_rad": 0.0025,
+        "native_files_served": []
+      },
+      {
+        "config": {
+          "id": "keyboard-right",
+          "kind": "keyboard",
+          "sign": 1,
+          "duration": 20
+        },
+        "released_axes_zero": true,
+        "release_bank_rad": 0.07345751768957297,
+        "bank_at20s_rad": 0.2468532496226871,
+        "roll_rate_at20s_radps": 0.004336828257557032,
+        "returned_left_delta_rad": 0.0025,
+        "returned_right_delta_rad": -0.0025,
+        "native_files_served": []
+      },
+      {
+        "config": {
+          "id": "keyboard-left",
+          "kind": "keyboard",
+          "sign": -1,
+          "duration": 20
+        },
+        "released_axes_zero": true,
+        "release_bank_rad": -0.09626608155273877,
+        "bank_at20s_rad": -0.2577075005280064,
+        "roll_rate_at20s_radps": -0.0042541855365393075,
+        "returned_left_delta_rad": -0.0025,
+        "returned_right_delta_rad": 0.0025,
+        "native_files_served": []
+      }
+    ],
+    "return_contract_status": "historical observations, not strict returned-surface acceptance"
+  },
+  "new_browser": {
+    "harness_sha256": "e3e44f81ff49d0cd78aa8e6c9f97b8a17fe1ff21b9c5e36274e9bfdeb1d23481",
+    "origin": "http://localhost:5173",
+    "variant": {
+      "label": "installed-final",
+      "native": "unchanged ROOT"
+    },
+    "result": "pass",
+    "browser": "156.0.8078.80",
+    "before": {
+      "app/src/main.ts": "0c0d129a2721076bfca6a305111f18952bce72fbfebd4aefbad138fde77883a8",
+      "app/src/pointer-yoke.ts": "08082bce04e20ce0f7c24959884a70f37f2e8ebc29739ab4136657bcb03e5b35",
+      "app/src/pilot-controls.ts": "b74b7cffd7f3f22c311e2fc4a1f207d2b0929700047d045502c5997a28514338",
+      "app/src/control-settings.ts": "9f79f1e84f4a81dd0d467ff06cddebd604bec87fff0a7a8e017e2b836fb9435d",
+      "app/src/scene.ts": "32558e9ec73539cf995db6b23fd1d2957e08d3fc7bc28f55b780b0772d7fd89d",
+      "studies/e1-browser/sim/worker.js": "140d3fbadd41df7df7b37fd41fe7633f18289874f599ac4e0d0a95beec7dbf4b",
+      "studies/e1-browser/sim/dist/jsbsim.wasm": "266f201652e8fc3fb6c5ee384bad3ef1f66b335ee9885fa4a14de9a797c1edcc"
+    },
+    "after": {
+      "app/src/main.ts": "0c0d129a2721076bfca6a305111f18952bce72fbfebd4aefbad138fde77883a8",
+      "app/src/pointer-yoke.ts": "08082bce04e20ce0f7c24959884a70f37f2e8ebc29739ab4136657bcb03e5b35",
+      "app/src/pilot-controls.ts": "b74b7cffd7f3f22c311e2fc4a1f207d2b0929700047d045502c5997a28514338",
+      "app/src/control-settings.ts": "9f79f1e84f4a81dd0d467ff06cddebd604bec87fff0a7a8e017e2b836fb9435d",
+      "app/src/scene.ts": "32558e9ec73539cf995db6b23fd1d2957e08d3fc7bc28f55b780b0772d7fd89d",
+      "studies/e1-browser/sim/worker.js": "140d3fbadd41df7df7b37fd41fe7633f18289874f599ac4e0d0a95beec7dbf4b",
+      "studies/e1-browser/sim/dist/jsbsim.wasm": "266f201652e8fc3fb6c5ee384bad3ef1f66b335ee9885fa4a14de9a797c1edcc"
+    },
+    "return_check": {
+      "status": "pass",
+      "budget_rad": 1.7453292519943296e-12,
+      "at_s": [
+        0.5,
+        1,
+        2,
+        5,
+        10,
+        20
+      ],
+      "reference": "Each actual surface must return to its own initial trimmed angle; not absolute zero."
+    },
+    "cases": [
+      {
+        "config": {
+          "id": "neutral",
+          "kind": "neutral",
+          "duration": 20
+        },
+        "released_axes_zero": true,
+        "release_bank_rad": -0.0008211249889582439,
+        "bank_at20s_rad": -0.0008051621412752478,
+        "roll_rate_at20s_radps": 8.884193841859879e-07,
+        "returned_left_delta_rad": 0.0,
+        "returned_right_delta_rad": 0.0,
+        "return_checks": {
+          "status": "not_evaluated",
+          "reason": "Neutral control case has no deliberate roll input; numeric surface-repeatability guard only.",
+          "budget_rad": 1.7453292519943296e-12,
+          "initial_left_rad": -0.0036068623685615365,
+          "initial_right_rad": 0.002705146776421152,
+          "observations": [
+            {
+              "after_s": 0.5,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 1,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 2,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 5,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 10,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 20,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            }
+          ]
+        }
+      },
+      {
+        "config": {
+          "id": "pointer-right-15px",
+          "kind": "pointer",
+          "sign": 1,
+          "duration": 20
+        },
+        "released_axes_zero": true,
+        "release_bank_rad": 0.05298453930096607,
+        "bank_at20s_rad": 0.043420580916685644,
+        "roll_rate_at20s_radps": -0.0008192375269724207,
+        "returned_left_delta_rad": 0.0,
+        "returned_right_delta_rad": 0.0,
+        "return_checks": {
+          "status": "pass",
+          "budget_rad": 1.7453292519943296e-12,
+          "initial_left_rad": -0.0036068623685615365,
+          "initial_right_rad": 0.002705146776421152,
+          "observations": [
+            {
+              "after_s": 0.5,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 1,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 2,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 5,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 10,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 20,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            }
+          ]
+        }
+      },
+      {
+        "config": {
+          "id": "pointer-left-15px",
+          "kind": "pointer",
+          "sign": -1,
+          "duration": 20
+        },
+        "released_axes_zero": true,
+        "release_bank_rad": -0.054598190323348346,
+        "bank_at20s_rad": -0.044072196714425686,
+        "roll_rate_at20s_radps": 0.000814221524603597,
+        "returned_left_delta_rad": 0.0,
+        "returned_right_delta_rad": 0.0,
+        "return_checks": {
+          "status": "pass",
+          "budget_rad": 1.7453292519943296e-12,
+          "initial_left_rad": -0.0036068623685615365,
+          "initial_right_rad": 0.002705146776421152,
+          "observations": [
+            {
+              "after_s": 0.5,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 1,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 2,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 5,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 10,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 20,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            }
+          ]
+        }
+      },
+      {
+        "config": {
+          "id": "keyboard-right",
+          "kind": "keyboard",
+          "sign": 1,
+          "duration": 20
+        },
+        "released_axes_zero": true,
+        "release_bank_rad": 0.05781664683078459,
+        "bank_at20s_rad": 0.09136912168140283,
+        "roll_rate_at20s_radps": -0.0017479450964353008,
+        "returned_left_delta_rad": 0.0,
+        "returned_right_delta_rad": 0.0,
+        "return_checks": {
+          "status": "pass",
+          "budget_rad": 1.7453292519943296e-12,
+          "initial_left_rad": -0.0036068623685615365,
+          "initial_right_rad": 0.002705146776421152,
+          "observations": [
+            {
+              "after_s": 0.5,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 1,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 2,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 5,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 10,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 20,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            }
+          ]
+        }
+      },
+      {
+        "config": {
+          "id": "keyboard-left",
+          "kind": "keyboard",
+          "sign": -1,
+          "duration": 20
+        },
+        "released_axes_zero": true,
+        "release_bank_rad": -0.05290973940767694,
+        "bank_at20s_rad": -0.09029440645205077,
+        "roll_rate_at20s_radps": 0.0016799708770526103,
+        "returned_left_delta_rad": 0.0,
+        "returned_right_delta_rad": 0.0,
+        "return_checks": {
+          "status": "pass",
+          "budget_rad": 1.7453292519943296e-12,
+          "initial_left_rad": -0.0036068623685615365,
+          "initial_right_rad": 0.002705146776421152,
+          "observations": [
+            {
+              "after_s": 0.5,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 1,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 2,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 5,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 10,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            },
+            {
+              "after_s": 20,
+              "left_rad": -0.0036068623685615365,
+              "right_rad": 0.002705146776421152,
+              "left_delta_rad": 0,
+              "right_delta_rad": 0,
+              "finite": true,
+              "within_budget": true
+            }
+          ]
+        }
+      }
+    ],
+    "suite": {
+      "expected_cases": [
+        "neutral",
+        "pointer-right-15px",
+        "pointer-left-15px",
+        "keyboard-right",
+        "keyboard-left"
+      ],
+      "selected_cases": [
+        "neutral",
+        "pointer-right-15px",
+        "pointer-left-15px",
+        "keyboard-right",
+        "keyboard-left"
+      ],
+      "executed_cases": [
+        "neutral",
+        "pointer-right-15px",
+        "pointer-left-15px",
+        "keyboard-right",
+        "keyboard-left"
+      ],
+      "complete": true
+    },
+    "observe_only": false
+  },
+  "sequence": {
+    "scope": "Successive opposite aileron command return within each fresh flight; numeric mapping budget, not aircraft tolerance",
+    "result": "pass",
+    "checker_sha256": "8a4f7a101459a4b4b849e7ed115d82634583c9f45fff2d41b5eb0436e563d7fc",
+    "checks": [
+      {
+        "cas_kt": 60,
+        "pulse_norm": 0.1,
+        "after_release_s": 0.5,
+        "surface_residual_rad": 0,
+        "step": 120
+      },
+      {
+        "cas_kt": 60,
+        "pulse_norm": 0.1,
+        "after_release_s": 1,
+        "surface_residual_rad": 0,
+        "step": 180
+      },
+      {
+        "cas_kt": 60,
+        "pulse_norm": 0.1,
+        "after_release_s": 2,
+        "surface_residual_rad": 0,
+        "step": 300
+      },
+      {
+        "cas_kt": 60,
+        "pulse_norm": -0.1,
+        "after_release_s": 0.5,
+        "surface_residual_rad": 0,
+        "step": 420
+      },
+      {
+        "cas_kt": 60,
+        "pulse_norm": -0.1,
+        "after_release_s": 1,
+        "surface_residual_rad": 0,
+        "step": 480
+      },
+      {
+        "cas_kt": 60,
+        "pulse_norm": -0.1,
+        "after_release_s": 2,
+        "surface_residual_rad": 0,
+        "step": 600
+      },
+      {
+        "cas_kt": 60,
+        "pulse_norm": 0.05,
+        "after_release_s": 0.5,
+        "surface_residual_rad": 0,
+        "step": 720
+      },
+      {
+        "cas_kt": 60,
+        "pulse_norm": 0.05,
+        "after_release_s": 1,
+        "surface_residual_rad": 0,
+        "step": 780
+      },
+      {
+        "cas_kt": 60,
+        "pulse_norm": 0.05,
+        "after_release_s": 2,
+        "surface_residual_rad": 0,
+        "step": 900
+      },
+      {
+        "cas_kt": 60,
+        "pulse_norm": -0.05,
+        "after_release_s": 0.5,
+        "surface_residual_rad": 0,
+        "step": 1020
+      },
+      {
+        "cas_kt": 60,
+        "pulse_norm": -0.05,
+        "after_release_s": 1,
+        "surface_residual_rad": 0,
+        "step": 1080
+      },
+      {
+        "cas_kt": 60,
+        "pulse_norm": -0.05,
+        "after_release_s": 2,
+        "surface_residual_rad": 0,
+        "step": 1200
+      },
+      {
+        "cas_kt": 60,
+        "pulse_norm": 0.02,
+        "after_release_s": 0.5,
+        "surface_residual_rad": 0,
+        "step": 1320
+      },
+      {
+        "cas_kt": 60,
+        "pulse_norm": 0.02,
+        "after_release_s": 1,
+        "surface_residual_rad": 0,
+        "step": 1380
+      },
+      {
+        "cas_kt": 60,
+        "pulse_norm": 0.02,
+        "after_release_s": 2,
+        "surface_residual_rad": 0,
+        "step": 1500
+      },
+      {
+        "cas_kt": 60,
+        "pulse_norm": -0.02,
+        "after_release_s": 0.5,
+        "surface_residual_rad": 0,
+        "step": 1620
+      },
+      {
+        "cas_kt": 60,
+        "pulse_norm": -0.02,
+        "after_release_s": 1,
+        "surface_residual_rad": 0,
+        "step": 1680
+      },
+      {
+        "cas_kt": 60,
+        "pulse_norm": -0.02,
+        "after_release_s": 2,
+        "surface_residual_rad": 0,
+        "step": 1800
+      },
+      {
+        "cas_kt": 80,
+        "pulse_norm": 0.1,
+        "after_release_s": 0.5,
+        "surface_residual_rad": 0,
+        "step": 120
+      },
+      {
+        "cas_kt": 80,
+        "pulse_norm": 0.1,
+        "after_release_s": 1,
+        "surface_residual_rad": 0,
+        "step": 180
+      },
+      {
+        "cas_kt": 80,
+        "pulse_norm": 0.1,
+        "after_release_s": 2,
+        "surface_residual_rad": 0,
+        "step": 300
+      },
+      {
+        "cas_kt": 80,
+        "pulse_norm": -0.1,
+        "after_release_s": 0.5,
+        "surface_residual_rad": 0,
+        "step": 420
+      },
+      {
+        "cas_kt": 80,
+        "pulse_norm": -0.1,
+        "after_release_s": 1,
+        "surface_residual_rad": 0,
+        "step": 480
+      },
+      {
+        "cas_kt": 80,
+        "pulse_norm": -0.1,
+        "after_release_s": 2,
+        "surface_residual_rad": 0,
+        "step": 600
+      },
+      {
+        "cas_kt": 80,
+        "pulse_norm": 0.05,
+        "after_release_s": 0.5,
+        "surface_residual_rad": 0,
+        "step": 720
+      },
+      {
+        "cas_kt": 80,
+        "pulse_norm": 0.05,
+        "after_release_s": 1,
+        "surface_residual_rad": 0,
+        "step": 780
+      },
+      {
+        "cas_kt": 80,
+        "pulse_norm": 0.05,
+        "after_release_s": 2,
+        "surface_residual_rad": 0,
+        "step": 900
+      },
+      {
+        "cas_kt": 80,
+        "pulse_norm": -0.05,
+        "after_release_s": 0.5,
+        "surface_residual_rad": 0,
+        "step": 1020
+      },
+      {
+        "cas_kt": 80,
+        "pulse_norm": -0.05,
+        "after_release_s": 1,
+        "surface_residual_rad": 0,
+        "step": 1080
+      },
+      {
+        "cas_kt": 80,
+        "pulse_norm": -0.05,
+        "after_release_s": 2,
+        "surface_residual_rad": 0,
+        "step": 1200
+      },
+      {
+        "cas_kt": 80,
+        "pulse_norm": 0.02,
+        "after_release_s": 0.5,
+        "surface_residual_rad": 0,
+        "step": 1320
+      },
+      {
+        "cas_kt": 80,
+        "pulse_norm": 0.02,
+        "after_release_s": 1,
+        "surface_residual_rad": 0,
+        "step": 1380
+      },
+      {
+        "cas_kt": 80,
+        "pulse_norm": 0.02,
+        "after_release_s": 2,
+        "surface_residual_rad": 0,
+        "step": 1500
+      },
+      {
+        "cas_kt": 80,
+        "pulse_norm": -0.02,
+        "after_release_s": 0.5,
+        "surface_residual_rad": 0,
+        "step": 1620
+      },
+      {
+        "cas_kt": 80,
+        "pulse_norm": -0.02,
+        "after_release_s": 1,
+        "surface_residual_rad": 0,
+        "step": 1680
+      },
+      {
+        "cas_kt": 80,
+        "pulse_norm": -0.02,
+        "after_release_s": 2,
+        "surface_residual_rad": 0,
+        "step": 1800
+      },
+      {
+        "cas_kt": 100,
+        "pulse_norm": 0.1,
+        "after_release_s": 0.5,
+        "surface_residual_rad": 0,
+        "step": 120
+      },
+      {
+        "cas_kt": 100,
+        "pulse_norm": 0.1,
+        "after_release_s": 1,
+        "surface_residual_rad": 0,
+        "step": 180
+      },
+      {
+        "cas_kt": 100,
+        "pulse_norm": 0.1,
+        "after_release_s": 2,
+        "surface_residual_rad": 0,
+        "step": 300
+      },
+      {
+        "cas_kt": 100,
+        "pulse_norm": -0.1,
+        "after_release_s": 0.5,
+        "surface_residual_rad": 0,
+        "step": 420
+      },
+      {
+        "cas_kt": 100,
+        "pulse_norm": -0.1,
+        "after_release_s": 1,
+        "surface_residual_rad": 0,
+        "step": 480
+      },
+      {
+        "cas_kt": 100,
+        "pulse_norm": -0.1,
+        "after_release_s": 2,
+        "surface_residual_rad": 0,
+        "step": 600
+      },
+      {
+        "cas_kt": 100,
+        "pulse_norm": 0.05,
+        "after_release_s": 0.5,
+        "surface_residual_rad": 0,
+        "step": 720
+      },
+      {
+        "cas_kt": 100,
+        "pulse_norm": 0.05,
+        "after_release_s": 1,
+        "surface_residual_rad": 0,
+        "step": 780
+      },
+      {
+        "cas_kt": 100,
+        "pulse_norm": 0.05,
+        "after_release_s": 2,
+        "surface_residual_rad": 0,
+        "step": 900
+      },
+      {
+        "cas_kt": 100,
+        "pulse_norm": -0.05,
+        "after_release_s": 0.5,
+        "surface_residual_rad": 0,
+        "step": 1020
+      },
+      {
+        "cas_kt": 100,
+        "pulse_norm": -0.05,
+        "after_release_s": 1,
+        "surface_residual_rad": 0,
+        "step": 1080
+      },
+      {
+        "cas_kt": 100,
+        "pulse_norm": -0.05,
+        "after_release_s": 2,
+        "surface_residual_rad": 0,
+        "step": 1200
+      },
+      {
+        "cas_kt": 100,
+        "pulse_norm": 0.02,
+        "after_release_s": 0.5,
+        "surface_residual_rad": 0,
+        "step": 1320
+      },
+      {
+        "cas_kt": 100,
+        "pulse_norm": 0.02,
+        "after_release_s": 1,
+        "surface_residual_rad": 0,
+        "step": 1380
+      },
+      {
+        "cas_kt": 100,
+        "pulse_norm": 0.02,
+        "after_release_s": 2,
+        "surface_residual_rad": 0,
+        "step": 1500
+      },
+      {
+        "cas_kt": 100,
+        "pulse_norm": -0.02,
+        "after_release_s": 0.5,
+        "surface_residual_rad": 0,
+        "step": 1620
+      },
+      {
+        "cas_kt": 100,
+        "pulse_norm": -0.02,
+        "after_release_s": 1,
+        "surface_residual_rad": 0,
+        "step": 1680
+      },
+      {
+        "cas_kt": 100,
+        "pulse_norm": -0.02,
+        "after_release_s": 2,
+        "surface_residual_rad": 0,
+        "step": 1800
+      }
+    ]
+  },
+  "source_revision": "aea4d10",
+  "selection_guards": {
+    "disturbance-input-browser-installed-neutral-only.json": {
+      "result": "observed",
+      "suite": {
+        "expected_cases": [
+          "neutral",
+          "pointer-right-15px",
+          "pointer-left-15px",
+          "keyboard-right",
+          "keyboard-left"
+        ],
+        "selected_cases": [
+          "neutral"
+        ],
+        "executed_cases": [
+          "neutral"
+        ],
+        "complete": false
+      },
+      "return_check": {
+        "status": "not_evaluated",
+        "budget_rad": 1.7453292519943296e-12,
+        "at_s": [
+          0.5,
+          1,
+          2,
+          5,
+          10,
+          20
+        ],
+        "reference": "Each actual surface must return to its own initial trimmed angle; not absolute zero.",
+        "reason": "No deliberate roll input executed; roll-return criterion not evaluated."
+      },
+      "sha256": "588f8da86a4ae70aff51dd6c93a88e6f6aed4441fb1283f8fe0f9bdaea6fa4ef"
+    },
+    "disturbance-input-browser-installed-pointer-subset.json": {
+      "result": "observed",
+      "suite": {
+        "expected_cases": [
+          "neutral",
+          "pointer-right-15px",
+          "pointer-left-15px",
+          "keyboard-right",
+          "keyboard-left"
+        ],
+        "selected_cases": [
+          "pointer-right-15px"
+        ],
+        "executed_cases": [
+          "pointer-right-15px"
+        ],
+        "complete": false
+      },
+      "return_check": {
+        "status": "partial",
+        "budget_rad": 1.7453292519943296e-12,
+        "at_s": [
+          0.5,
+          1,
+          2,
+          5,
+          10,
+          20
+        ],
+        "reference": "Each actual surface must return to its own initial trimmed angle; not absolute zero.",
+        "reason": "Selected-case checks passed; complete five-case suite not evaluated."
+      },
+      "sha256": "ea4a33b9b637b7521d7fe8a27e5ef13d73ea87242fc1822da8350157036b6b2e"
+    }
+  },
+  "registration_gate": {
+    "command": "node ../studies/e1-browser/sim/roll-return-native.mjs",
+    "cwd": "app",
+    "result": "pass",
+    "log_sha256": "b09617174a692e527cb463b3bfecd1454cfb56a8e1b8038ab2e5662fae5842b9",
+    "source_revision": "aea4d10",
+    "note": "Only normal browser-gate registration changed; prior browser chain is byte-preserved."
+  }
+}
