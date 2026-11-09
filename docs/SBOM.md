@@ -23,7 +23,7 @@ fixed public sources, small PNG dimensions, deadlines and memory/concurrency
 limits. Verified bundled photography remains available independently; the live
 service does not grant additional airport accuracy or currentness.
 
-MapLibre GL JS 6.16.0 (BSD-3-Clause) is pinned for the lazy-loaded practice map. Its worker is explicitly bundled by Vite; no external style/glyph service is used. The map adds local versioned airport points and the fixed-source public scenery endpoints below. The complete [MapLibre license](../LICENSES/MapLibre-BSD-3-Clause.txt) is retained in source and copied into UI build output. Geographic conversion follows the [official image-source corner convention](https://maplibre.org/maplibre-gl-js/docs/API/classes/ImageSource/). The plotted route uses at most 600 endpoint-preserving samples of the already bounded flight trace; it establishes no navigational/chart or airport-reference accuracy.
+MapLibre GL JS 6.16.0 (BSD-3-Clause) is pinned for the lazy-loaded practice map. Its worker is explicitly bundled by Vite; no external style/glyph service is used. The map adds local versioned airport points and the fixed-source public scenery endpoints below. The complete [MapLibre license](../LICENSES/MapLibre-BSD-3-Clause.txt) is retained in source and copied into UI build output. Geographic conversion follows the [official image-source corner convention](https://maplibre.org/maplibre-gl-js/docs/API/classes/ImageSource/). The live route uses a bounded simplified geographic history separate from the shorter recorded-state trace; it establishes no navigational/chart or airport-reference accuracy.
 
 ## Current development tools
 

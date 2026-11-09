@@ -3,6 +3,37 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-07 11:53 — Retain the map track from the flight start
+
+TODO: 2.0.200; R-WORLD-6/R-REVIEW-1. Agent: Codex orchestrator; investigation
+`track_trace` and `track_context`, implementation `track_history` and
+`track_integration`, documentation audit `track_docs`, independent quality
+`track_quality`, independent validation `track_validate`.
+
+**Implementation notes**
+
+Live maps keep a separate session-only geographic path instead of deriving the
+start from the ten-minute rolling state recording. History is bounded to 8192
+compact points, with geometric simplification and no guaranteed error bound;
+display is bounded and marks simplification. Departure and latest positions
+survive thinning. Review remains the bounded state trace; imported clipped
+recordings disclose their first available point. Reset, continuation and date
+line behavior are covered separately from native state and recording export.
+
+Independent quality and validation passed 13 focused tests, TypeScript, and a
+Chrome 156 real-app test using synthetic validated worker messages over 650s:
+departure retention, Review, live/imported continuation, reopening and reset.
+A separate 1105-point synthetic date-line browser check verified unwrapped
+path and simplification disclosure. Interactive date-line Fit/Follow/pan/zoom,
+actual long-duration flight, reload behavior and extreme polar rendering were
+not evaluated; a test's real-worker state interrupted its attempted Fit check.
+An initial browser sandbox bind failed with EPERM, and an approved rerun passed.
+The path does not persist on reload; cross-provider peer review remains pending.
+
+**Deviations**
+
+The geographic path is an approximation; it does not extend replay duration or
+claim a navigational accuracy tolerance.
 ## 2026-11-07 11:24 — Limit vector imagery reloads after tile failures
 
 TODO: 2.0.199; R-WORLD-11/R-VIEW-1. Agent: Codex orchestrator; diagnosis
