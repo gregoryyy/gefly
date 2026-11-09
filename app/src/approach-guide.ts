@@ -48,3 +48,10 @@ export function approachPoints(guide: ApproachGuide): GuidePoint[] {
       height_above_threshold_m: Math.tan(GUIDE_ANGLE_DEG * RAD) * distance_m };
   });
 }
+
+/** The guide's full limitations, shown where it is chosen and as the in-view chip's tooltip. */
+export function approachGuideDisclosure(guide: ApproachGuide): string {
+  const threshold = guide.displaced_threshold_ft === null
+    ? 'runway end used; threshold position unknown; terrain-height approximation' : 'terrain-height approximation';
+  return `3° visual guide · ${guide.airportName} ${guide.runwayIdent} · ${threshold} · not a published or obstacle-cleared approach · ${guide.source}`;
+}

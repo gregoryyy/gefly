@@ -199,7 +199,9 @@ try {
       await page.waitForFunction(() => ['waiting', 'ready'].includes(document.querySelector('#scene').dataset.approachGuide));
       const revision = await panel.getAttribute('data-world-airports-revision');
       assert.match(revision, /^[a-f0-9]{40}$/);
-      assert((await page.locator('#scene .approach-guide-status').textContent()).includes(`revision ${revision}`), 'guide discloses exact source revision');
+      assert((await page.locator('#scene .approach-guide-status').getAttribute('title')).includes(`revision ${revision}`), 'guide discloses exact source revision');
+      { const chip = await page.locator('#scene .approach-guide-status').boundingBox();
+        assert(chip && chip.height <= 24 && chip.width <= 300, `guide status is a compact one-line chip: ${JSON.stringify(chip)}`); }
       assert.equal(await page.locator('#scene').getAttribute('data-approach-guide-runway'), label.split(' · ')[0]);
       await popup.getByRole('button', { name: 'Hide 3° guide' }).click();
       assert.equal(await page.locator('#scene').getAttribute('data-approach-guide'), 'off', 'hide works immediately without reopening');

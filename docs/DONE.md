@@ -3,6 +3,29 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-09 18:22 — Keep the approach-guide status to one compact line
+
+TODO: 2.0.204; R-NAV-3. Agent: Claude orchestrator (Claude Code, Opus 5.5); no
+subagents. [Request](input/2026-11-09-guide-imagery-qnh-runways.md).
+
+**Implementation notes**
+
+Showing a 3° guide put a 360 px, five-line status box over the flying view,
+including the 40-character source revision. The status is now one line, for
+example `3° visual guide · EDFE 08 · illustrative` (or `waiting for terrain`),
+with the full disclosure as its tooltip. `approachGuideDisclosure()` holds the
+disclosure text; the airport popup's guide section now also names the
+terrain-height approximation and the source revision. The 3D line and label
+are unchanged.
+
+**Deviations**
+
+None. Checks: TypeScript passes; `src/approach-guide.test.ts` 4/4 including the
+new disclosure test; `npm run test:world-airports` passes 10 groups, now
+asserting the revision via the tooltip and a chip of at most 300×24 px. A
+headless screenshot at EDFE showed the one-line chip. Independent
+quality/validation and peer review pending.
+
 ## 2026-11-09 17:30 — Restore green CI by keeping Pillow tests in the scenery gate
 
 TODO: 2.0.192/2.0.195/2.0.198 follow-up; R-WORLD-11/R-DATA-1. Agent: Claude

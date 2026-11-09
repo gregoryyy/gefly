@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { approachPoints, approachThreshold, GUIDE_LENGTH_M, validApproachGuide, type ApproachGuide } from './approach-guide.ts';
+import { approachGuideDisclosure, approachPoints, approachThreshold, GUIDE_LENGTH_M, validApproachGuide, type ApproachGuide } from './approach-guide.ts';
 const guide: ApproachGuide = { airportId:'EDFE', airportName:'Egelsbach', runwayIdent:'08', lat_deg:50, lon_deg:8,
   heading_deg_true:90, displaced_threshold_ft:1000, source:'OurAirports' };
 test('R-NAV-3 visual guide anchors a known displaced threshold and rises three degrees outward', () => {
@@ -18,4 +18,10 @@ test('R-NAV-3 validates untrusted selection and handles antimeridian',()=>{
   assert(validApproachGuide({...guide,heading_deg_true:360}));
   const points=approachPoints({...guide,lat_deg:0,lon_deg:-179.99,heading_deg_true:90,displaced_threshold_ft:0});
   assert(points.every(p=>p.lon_deg>=-180&&p.lon_deg<180)); assert(points.at(-1)!.lon_deg>179);
+});
+test('R-NAV-3 disclosure keeps source, terrain-height and unknown-threshold limits for the popup and chip tooltip',()=>{
+  const known=approachGuideDisclosure(guide), unknown=approachGuideDisclosure({...guide,displaced_threshold_ft:null});
+  assert.match(known,/Egelsbach 08/); assert.match(known,/terrain-height approximation/); assert.match(known,/not a published or obstacle-cleared approach/);
+  assert.match(known,/OurAirports$/); assert.doesNotMatch(known,/threshold position unknown/);
+  assert.match(unknown,/runway end used; threshold position unknown/);
 });

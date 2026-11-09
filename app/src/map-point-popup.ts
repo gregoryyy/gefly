@@ -113,7 +113,8 @@ export function createMapPointPopup(input: Readonly<MapPoint>, actions: MapPoint
     const guides = point.approach_guides ?? [];
     const current = actions.currentApproachGuide;
     if (current) {
-      group.append(node('p', `Shown: ${current.airportName} · runway ${current.runwayIdent}${current.displaced_threshold_ft === null ? ' · runway-end approximation; displacement unknown' : ''}`));
+      group.append(node('p', `Shown: ${current.airportName} · runway ${current.runwayIdent}${current.displaced_threshold_ft === null ? ' · runway-end approximation; displacement unknown' : ''} · terrain-height approximation`));
+      const source = node('p', current.source); source.className = 'map-point-popup-source'; group.append(source);
       const hide = node('button', 'Hide 3° guide'); hide.type = 'button';
       hide.addEventListener('click', () => actions.onApproachGuide?.(null)); group.append(hide);
     }
