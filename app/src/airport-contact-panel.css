@@ -25,8 +25,22 @@
 .airport-contact.compact .airport-contact-qnh { grid-column: auto; padding: 2px 7px; font-size: 10px; }
 .airport-contact.compact .airport-contact-dismiss { position: static; }
 @media (max-width: 620px) {
-  /* Above the centred pointer-mode and FOV pills, right of the scaled live control panel (≈190 px). */
-  .airport-contact, .airport-contact.compact { right: 10px; bottom: calc(var(--deck-height) + 64px); width: auto; max-width: min(300px, calc(100% - 210px)); }
-  .airport-contact:not(.compact) { width: min(300px, calc(100% - 210px)); }
+  /* Above the centred pointer-mode and FOV pills; under the first-start gate (z-index 5) on short scenes. */
+  .airport-contact, .airport-contact.compact { z-index: 4; right: 10px; bottom: calc(var(--deck-height) + 64px); width: auto; max-width: min(300px, calc(100% - 20px)); }
+  .airport-contact:not(.compact) { width: min(300px, calc(100% - 20px)); }
   .flight-app[data-flight-map="true"] .airport-contact { right: 10px; }
+  /* Beside the scaled live control panel (≈190 px wide at the lower left). */
+  .flight-app:has(#flight-controls-panel:not([hidden])) .airport-contact { max-width: min(300px, calc(100% - 210px)); }
+  .flight-app:has(#flight-controls-panel:not([hidden])) .airport-contact:not(.compact) { width: min(300px, calc(100% - 210px)); }
+}
+@media (max-width: 420px) {
+  /* Too narrow beside the control panel: below the top bar instead, still under the start gate. */
+  .flight-app:has(#flight-controls-panel:not([hidden])) .airport-contact,
+  .flight-app:has(#flight-controls-panel:not([hidden])) .airport-contact.compact { top: 124px; bottom: auto; z-index: 4; max-width: min(300px, calc(100% - 20px)); }
+  /* The short phone scene then shows only the one-line pill; the full text stays in the live region. */
+  .flight-app:has(#flight-controls-panel:not([hidden])) .airport-contact:not(.compact) { width: auto; grid-template-columns: minmax(0, auto) auto auto; padding: 4px 6px 4px 9px; }
+  .flight-app:has(#flight-controls-panel:not([hidden])) .airport-contact .airport-contact-text { display: none; }
+  .flight-app:has(#flight-controls-panel:not([hidden])) .airport-contact .airport-contact-compact { display: block; }
+  .flight-app:has(#flight-controls-panel:not([hidden])) .airport-contact .airport-contact-qnh { grid-column: auto; padding: 2px 7px; font-size: 10px; }
+  .flight-app:has(#flight-controls-panel:not([hidden])) .airport-contact .airport-contact-dismiss { position: static; }
 }

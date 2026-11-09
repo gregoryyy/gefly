@@ -50,7 +50,7 @@ export function createAirportContactPanel(options: ContactPanelOptions) {
       const announced = input.announce.some(c => c.key === primary?.key);
       if (primary && (announced || shown?.key !== primary.key)) { shownAt_ms = input.now_ms; if (announced) dismissedKey = ''; }
       shown = primary;
-      if (!primary) { element.hidden = true; textKey = ''; dismissedKey = ''; return; }
+      if (!primary) { element.hidden = true; textKey = ''; dismissedKey = ''; if (live.textContent) live.textContent = ''; return; }
       const message = contactMessage(primary, input.qnh_pa);
       if (announced) live.textContent = `${message.title}. ${message.detail} ${message.note}.`;
       if (dismissedKey === primary.key) { element.hidden = true; return; }
@@ -68,7 +68,8 @@ export function createAirportContactPanel(options: ContactPanelOptions) {
       // The collapsed pill exists only to keep an available action; otherwise the text just fades out.
       element.hidden = !expanded && (primary.kind !== 'contact' || !action.enabled);
       element.classList.toggle('compact', !expanded);
-      const compactText = primary.kind === 'contact' ? `${airportIdent(primary.airport)}${message.qnh ? ` · QNH ${message.qnh.hpa}` : ''}` : '';
+      const compactText = primary.kind === 'contact' ? `${airportIdent(primary.airport)}${message.qnh ? ` · QNH ${message.qnh.hpa}` : ''} · sim`
+        : `${primary.label} · no airport contact`;
       if (compact.textContent !== compactText) compact.textContent = compactText;
     },
     dispose() { element.remove(); live.remove(); },

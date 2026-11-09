@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import type { Airport } from './airport-catalogue.ts';
-import { AIRFIELD_BOUNDS } from './airport-catalogue.ts';
+import { parseComContactData } from './airport-contact-data.ts';
 import type { AirportComDirectory, AirportComStation } from './airport-com.ts';
 import { CONTACT_RANGE_NM, CONTACT_RELEASE_NM, classifyStation, contactMessage, createAirportContactTracker, findAirportContact,
   formatQnh, qnhActionState, sourceCovers, type ContactSource } from './airport-contact.ts';
@@ -96,7 +96,7 @@ test('a channel shared by several airports in range is reported as ambiguous, wi
   assert.match(message.detail, /Shared channel: \d+ airports within 25 NM \(EDFE, EDDF, EDFC\)/);
 });
 
-test('station names: shared names on any channel are regional; Info names must be the airport own; allow-list decides services', () => {
+test('station names: shared names on any channel are regional; named rows must be the airport own; allow-list decides services', () => {
   const far = [airport('EDXA', 51, 10), airport('EDXB', 51.5, 10)];
   const home = airport('EDQQ', EDFE.lat, EDFE.lon, 'small_airport', 'Quellberg Airfield');
   const source = fixture([home, ...far], [
@@ -105,13 +105,25 @@ test('station names: shared names on any channel are regional; Info names must b
     station('5', 'EDQQ', 122200, 'AFIS', 'Strasbourg Info'), station('6', 'EDQQ', 122300, 'TWR', 'Stuttgart Director'),
     station('7', 'EDQQ', 122400, 'A/D', 'Quellberg'), station('8', 'EDQQ', 122500, 'ATIS', ''), station('9', 'EDQQ', 122600, 'AAS', 'Quellberg Info'),
     station('10', 'EDQQ', 122700, 'TWR', 'Quellberg ATIS'), station('11', 'EDQQ', 122800, 'RMP', 'Quellberg Vorfeld'),
+    station('12', 'EDQQ', 122900, 'TWR', 'Illeshaim Tower / Turm'), station('13', 'EDQQ', 123000, 'TWR', 'TWR'),
+    station('14', 'EDQQ', 123100, 'GND', 'Quelberg Ground'),
   ]);
-  const kind = (channel_khz: number) => { const c = findAirportContact({ receiver: 1, channel_khz }, EDFE, [source]); return c?.kind === 'shared' ? c.reason : c?.kind ?? null; };
+  const kind = (channel_khz: number, s = source) => { const c = findAirportContact({ receiver: 1, channel_khz }, EDFE, [s]); return c?.kind === 'shared' ? c.reason : c?.kind ?? null; };
   assert.equal(kind(128950), 'regional-name', 'same name at 3 airports, different channels');
   assert.equal(kind(122100), 'contact', 'own Info name');
   assert.equal(kind(122200), 'regional-name', 'foreign Info name');
+  assert.equal(kind(122900), 'regional-name', 'a tower named for another place gives no welcome');
+  assert.equal(kind(123000), 'contact', 'a generic service name');
+  assert.equal(kind(123100), 'contact', 'a one-letter source typo still matches');
   for (const channel of [122300, 122400, 122500, 122600, 122700]) assert.equal(kind(channel), null, String(channel));
   assert.equal(kind(122800), 'contact');
+  // Bundled reviewer case: EDQB "Illeshaim Tower / Turm" 129.850 is listed at Bad Windsheim.
+  assert.equal(at('EDQB', 129850)?.kind, 'shared');
+  // A stable name table overrides counts within a (view-dependent) directory.
+  const langen = airport('EDQL', EDFE.lat, EDFE.lon, 'small_airport', 'Langen Airfield');
+  const lone = fixture([langen], [station('20', 'EDQL', 124000, 'INFO', 'Langen Information')]);
+  assert.equal(kind(124000, lone), 'contact');
+  assert.equal(kind(124000, { ...fixture([langen], [station('20', 'EDQL', 124000, 'INFO', 'Langen Information')]), regionalNames: new Map([['langen information', 423]]) }), 'regional-name');
 });
 
 test('121.5 emergency and closed airports are ignored; duplicate sources count one airport', () => {
@@ -128,16 +140,39 @@ test('121.5 emergency and closed airports are ignored; duplicate sources count o
   assert.equal(contactMessage(fallbackName!, 101325).title, 'COM1 122.000 · EDQA EDQA field INFO');
 });
 
-test('sources count only where they cover the release circle; partial world cells fall back', () => {
+test('bundled coverage uses the generated completeness mask: interior covered, border fails closed', () => {
+  const data = parseComContactData(JSON.parse(readFileSync(new URL('com-contact.json', root), 'utf8')));
+  const bundled: ContactSource = { ...regional, coverage: { grid: data.coverage }, regionalNames: data.regionalNames };
+  assert.equal(sourceCovers(bundled, EDFE, CONTACT_RELEASE_NM), true, 'EDFE interior');
+  assert.equal(findAirportContact({ receiver: 1, channel_khz: 118405 }, north(3), [bundled])?.kind, 'contact');
+  // Border: ETSB 122.100 is shared with DE-0201 outside the five states; the bundled data alone must not welcome.
+  const border = { lat: 50.4, lon: 6.8 };
+  assert.equal(findAirportContact({ receiver: 1, channel_khz: 122100 }, border, [regional])?.kind, 'contact', 'unmasked bundled data would welcome');
+  assert.equal(sourceCovers(bundled, border, CONTACT_RELEASE_NM), false);
+  assert.equal(findAirportContact({ receiver: 1, channel_khz: 122100 }, border, [bundled]), null);
+  // With complete worldwide cells around the aircraft the channel is reported as shared.
+  const ids = new Set([[6, 49.9], [7.5, 49.9], [6, 50.9], [7.5, 50.9]].map(([lon, lat]) => worldAirportCellId(lon, lat)));
+  const cells = [...ids].map(id => JSON.parse(readFileSync(new URL(`world/cells/${id}.bin`, root), 'utf8')));
+  const world: ContactSource = { airports: cells.flatMap(c => c.airports), directory: { stations: cells.flatMap(c => c.com), retrieved: '2026-11-06', source: 'OurAirports' },
+    coverage: { cells: ids }, regionalNames: data.regionalNames };
+  const shared = findAirportContact({ receiver: 1, channel_khz: 122100 }, border, [world, bundled]);
+  assert.equal(shared?.kind, 'shared'); assert(shared?.idents.includes('ETSB') && shared.idents.includes('DE-0201'), JSON.stringify(shared?.idents));
+  // Other border areas named in review (Friedrichshafen, Basel, Salzburg, Hof) are not complete in the bundled mask.
+  for (const [lat, lon] of [[47.67, 9.51], [47.6, 7.6], [47.8, 12.9], [50.29, 11.86]]) assert.equal(sourceCovers(bundled, { lat, lon }, CONTACT_RELEASE_NM), false, `${lat},${lon}`);
+  assert.equal(sourceCovers(bundled, { lat: 46.9, lon: 8 }, CONTACT_RELEASE_NM), false, 'outside the mask bounds');
+});
+
+test('world cells must cover the release circle; longitude spacing uses the highest latitude of the box', () => {
   const inner = { lat: 49.5, lon: 8.5 };
-  assert.equal(sourceCovers({ ...regional, coverage: { bounds: AIRFIELD_BOUNDS } }, inner, CONTACT_RELEASE_NM), true);
-  assert.equal(sourceCovers({ ...regional, coverage: { bounds: AIRFIELD_BOUNDS } }, { lat: 51.6, lon: 8.5 }, CONTACT_RELEASE_NM), false, 'near the bundled edge');
   const cell = worldAirportCellId(inner.lon, inner.lat);
   assert.equal(sourceCovers({ ...regional, coverage: { cells: new Set([cell]) } }, inner, CONTACT_RELEASE_NM), true);
   // 49.9° N lies within 27 NM of the 50° N cell edge: the north cell must also be loaded.
   const edge = { lat: 49.9, lon: 8.5 };
   assert.equal(sourceCovers({ ...regional, coverage: { cells: new Set([cell]) } }, edge, CONTACT_RELEASE_NM), false);
   assert.equal(sourceCovers({ ...regional, coverage: { cells: new Set([cell, worldAirportCellId(8.5, 50.1)]) } }, edge, CONTACT_RELEASE_NM), true);
+  // At 52° N the circle reaches 10° E only with cos(52.45°), not cos(52°).
+  const high = { lat: 52, lon: 10 - 0.735 };
+  assert.equal(sourceCovers({ ...regional, coverage: { cells: new Set([worldAirportCellId(9, 52)]) } }, high, CONTACT_RELEASE_NM), false);
   // A partial world source that holds only one of two same-channel airports must not create a single contact.
   const one = airport('EDQA', EDFE.lat, EDFE.lon), two = airport('EDQB', EDFE.lat + 0.1, EDFE.lon);
   const partial = { ...fixture([one], [station('1', 'EDQA', 122000, 'INFO', 'Qa Radio')]), coverage: { cells: new Set<string>() } };

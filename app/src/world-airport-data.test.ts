@@ -159,6 +159,8 @@ test('regional owner loads centre/neighbours and uses validated absence without 
     repo.updateCenter(8, 48); await settled(repo);
     assert.equal(repo.status.status, 'ready'); assert.equal(repo.status.loaded, 9);
     assert.deepEqual(repo.snapshot.airports.map(a => a.id), ['TEST']); assert.equal(repo.snapshot.partial, false);
+    // Fetched and validated-absent cells are both fully admitted coverage (R-COMM-2 contact coverage).
+    assert.deepEqual([...repo.snapshot.cells!].sort(), ['36-26', '36-27', '36-28', '37-26', '37-27', '37-28', '38-26', '38-27', '38-28']);
     assert.deepEqual(calls, ['/airports/world/manifest.json', '/airports/world/catalogue.bin', '/airports/world/cells/37-27.bin']);
     assert(snapshots.some(ids => ids.includes('TEST')));
     repo.updateCenter(-40, -40); await settled(repo);
@@ -191,6 +193,7 @@ test('failed and corrupt cells report partial/unavailable with no retry storm', 
     repo.updateCenter(8, 48); await settled(repo);
     assert.equal(repo.status.status, 'partial'); assert.equal(repo.snapshot.partial, true);
     assert(repo.snapshot.airports.some(a => a.id === 'FIRST')); assert(!repo.snapshot.airports.some(a => a.id === 'SECOND'));
+    assert.equal(repo.snapshot.cells!.length, 8); assert(!repo.snapshot.cells!.includes('38-27'), 'a failed cell is not coverage');
     for (let i = 0; i < 50; i++) repo.updateCenter(8, 48);
     await new Promise(resolve => setTimeout(resolve, 20));
     assert.equal(calls.filter(path => path.endsWith('/38-27.bin')).length, 1);
@@ -238,6 +241,7 @@ test('aggregate count limits produce partial snapshot and partial status togethe
     repo.updateCenter(8, 48); await settled(repo, 10000);
     assert.equal(repo.status.loaded, 9); assert.equal(repo.snapshot.airports.length, 10001);
     assert.equal(repo.snapshot.partial, true); assert.equal(repo.status.status, 'partial');
+    assert(repo.snapshot.cells!.includes('37-27')); assert(!repo.snapshot.cells!.includes('38-27'), 'a count-limited cell is not coverage');
   } finally { repo.dispose(); }
 });
 
@@ -282,6 +286,24 @@ class FakeWorldWorker extends EventTarget {
   terminate(): void { this.terminated = true; }
   emit(data: unknown): void { this.dispatchEvent(new MessageEvent('message', { data })); }
 }
+test('worker snapshots carry optional bounded cell coverage; malformed cell lists are rejected', () => {
+  const before = globalThis.Worker; globalThis.Worker = FakeWorldWorker as unknown as typeof Worker;
+  const { manifest } = fixture();
+  const base = { airports: [], runways: [], com: [], navaids: [], source: manifest.source, retrieved: manifest.retrieved, source_commit: manifest.source_commit, partial: false };
+  try {
+    for (const [cells, accepted] of [[undefined, true], [['37-27', '38-28'], true], [['bad'], false], [[37], false],
+      [Array.from({ length: 19 }, (_, i) => `${i}-1`), false]] as const) {
+      const snapshots: unknown[] = [];
+      const loader = createWorldAirportLoader({ onSnapshot: s => snapshots.push(s), onStatus() {} });
+      loader.updateCenter(8, 48); const worker = FakeWorldWorker.instances.at(-1)!;
+      worker.emit({ type: 'snapshot', snapshot: cells === undefined ? base : { ...base, cells } });
+      assert.equal(snapshots.length, accepted ? 1 : 0, JSON.stringify(cells)); assert.equal(worker.terminated, !accepted);
+      if (accepted && cells) assert.deepEqual((snapshots[0] as { cells: string[] }).cells, cells);
+      loader.dispose();
+    }
+  } finally { globalThis.Worker = before; }
+});
+
 test('browser worker protocol rejects invalid snapshots and isolates terminated-worker messages', async () => {
   const before = globalThis.Worker; globalThis.Worker = FakeWorldWorker as unknown as typeof Worker;
   const snapshots: unknown[] = [], statuses: string[] = [];

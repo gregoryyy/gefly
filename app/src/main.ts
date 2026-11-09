@@ -44,9 +44,10 @@ import { createAudioControls } from './audio-controls';
 import { createPointerYoke } from './pointer-yoke';
 import { createFieldOfViewControl, DEFAULT_FOV_RAD } from './field-of-view';
 import { createPressureAltimeterPanel } from './pressure-altimeter-panel';
-import { createAirportContactTracker, formatQnh, type ContactSource } from './airport-contact';
+import { createAirportContactTracker, formatQnh, type ContactSource, type SourceCoverage } from './airport-contact';
 import { createAirportContactPanel } from './airport-contact-panel';
-import { AIRFIELD_BOUNDS, loadAirportCatalogue } from './airport-catalogue';
+import { loadAirportCatalogue } from './airport-catalogue';
+import { loadComContactData, type ComContactData } from './airport-contact-data';
 import { loadAirportComDirectory } from './airport-com';
 import { createScene } from './scene';
 import { createSession } from './session';
@@ -676,10 +677,15 @@ let lastContactUpdate_ms = -Infinity;
 const regionalAirportAbort = new AbortController();
 const regionalAirports = loadAirportCatalogue(regionalAirportAbort.signal);
 const regionalCom = loadAirportComDirectory(regionalAirportAbort.signal);
-void Promise.all([regionalAirports, regionalCom]).then(([airports, directory]) => {
-  // The five-state inventory is only complete well inside its bounds; near its edge no contact is inferred.
-  bundledContactSource = { airports, directory, coverage: { bounds: AIRFIELD_BOUNDS } };
-}).catch(() => { /* Contact text stays unavailable; the map's COM panel reports its own failure. */ });
+let contactData: ComContactData | null = null;
+/** The build-time mask covers only the exact bundled COM package it was generated from; otherwise nothing is covered. */
+const NO_COVERAGE: SourceCoverage = { cells: new Set() };
+const bundledCoverage = (directory: { sha256?: string }): SourceCoverage =>
+  contactData && directory.sha256 === contactData.inputs.com_sha256 ? { grid: contactData.coverage } : NO_COVERAGE;
+void Promise.all([regionalAirports, regionalCom, loadComContactData(regionalAirportAbort.signal)]).then(([airports, directory, data]) => {
+  contactData = data;
+  bundledContactSource = { airports, directory, coverage: bundledCoverage(directory), regionalNames: data.regionalNames };
+}).catch(() => { /* No verified coverage/name data means no contact text; the map's COM panel reports its own failure. */ });
 const airportContactPanel = createAirportContactPanel({
   container: document.querySelector<HTMLElement>('.flight-app')!,
   onSetQnh() {
@@ -696,8 +702,8 @@ function updateAirportContact(now_ms: number): void {
   const radio = radioPanel.snapshot();
   const map = practiceMap?.getComContactSource() ?? null;
   // Worldwide map data counts only where its loaded cells cover the aircraft's contact circle.
-  const mapSource: ContactSource | null = map ? { airports: map.airports, directory: map.directory,
-    coverage: map.worldCells ? { cells: new Set(map.worldCells) } : { bounds: AIRFIELD_BOUNDS } } : null;
+  const mapSource: ContactSource | null = map && contactData ? { airports: map.airports, directory: map.directory,
+    coverage: map.worldCells ? { cells: new Set(map.worldCells) } : bundledCoverage(map.directory), regionalNames: contactData.regionalNames } : null;
   const update = airportContactTracker.update({
     active: live ? [{ receiver: 1, channel_khz: radio.radio_com_active_khz }, { receiver: 2, channel_khz: radio.radio_com2_active_khz }] : [],
     position: live ? { lat: latest!.lat_rad * 180 / Math.PI, lon: latest!.lon_rad * 180 / Math.PI } : null,

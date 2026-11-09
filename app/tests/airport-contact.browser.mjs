@@ -6,7 +6,7 @@ import { spawn } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
-import { installSceneryFixture, prepareFlightUI } from './flight-actions.mjs';
+import { installSceneryFixture, prepareFlightUI, startOrResume } from './flight-actions.mjs';
 
 const app = fileURLToPath(new URL('..', import.meta.url));
 const output = fileURLToPath(new URL('../../output/flight/', import.meta.url));
@@ -44,7 +44,7 @@ try {
     for (const selector of selectors) assert(!overlap(box, await boxOf(selector)), `${label}: airport text overlaps ${selector}`);
     return box;
   };
-  const OVERLAYS = ['#flight-controls-panel', '#pointer-mode', '#camera-fov', '.scenery-label', '#radio-nav-systems', '.simulation-rate-overlay'];
+  const OVERLAYS = ['#flight-controls-panel', '#pointer-mode', '#camera-fov', '.scenery-label', '#radio-nav-systems', '.simulation-rate-overlay', '.topbar', '#initial-balance-status', '#flight-gate'];
 
   // Standby alone never makes contact; the ACTIVE channel does.
   await page.locator('#com1-standby').fill('118.405'); await page.locator('#com1-standby').press('Enter');
@@ -72,22 +72,32 @@ try {
   const sizes = [];
   for (const controls of [false, true]) {
     if (controls) {
-      // Show the live control panel, then retune for a fresh (expanded) contact.
+      // Show the live control panel and leave the first-start gate (which, by design, layers over
+      // the text on ≤420 px screens), then retune for a fresh (expanded) contact.
       await page.setViewportSize({ width: 1440, height: 900 }); await prepareFlightUI(page, { controls: true });
+      await startOrResume(page); await page.waitForTimeout(300);
+      await page.locator('#scene').focus(); await page.keyboard.press('Space');
+      await page.waitForFunction(() => document.querySelector('#flight-gate').hidden);
       await page.locator('#com1-swap').click(); await page.waitForTimeout(600); await page.locator('#com1-swap').click();
       await page.waitForFunction(() => !document.querySelector('#airport-contact').hidden && !document.querySelector('#airport-contact').classList.contains('compact'));
     }
-    for (const [width, height] of [[1440, 900], [1100, 800], [390, 844]]) {
+    for (const [width, height] of [[1440, 900], [1100, 800], [390, 844], [320, 640]]) {
       await page.setViewportSize({ width, height }); await page.waitForTimeout(250);
       await contact.hover(); // keep it expanded while measuring
       if (controls) assert(await boxOf('#flight-controls-panel'), `${width}×${height}: live control panel shown`);
-      const measured = await assertClear(`${width}×${height}${controls ? ' with controls' : ''}`, OVERLAYS);
+      // On phone widths the short scene cannot fit both; the first-start gate layers above the text and stays usable.
+      const measured = await assertClear(`${width}×${height}${controls ? ' with controls' : ''}`, width > 620 ? OVERLAYS : OVERLAYS.filter(s => s !== '#flight-gate'));
+      if (await boxOf('#flight-gate')) assert(await page.evaluate(() => {
+        const r = document.querySelector('#start').getBoundingClientRect();
+        return document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)?.closest('#start') !== null;
+      }), `${width}×${height}: Start remains on top`);
       assert(measured, `${width}×${height}: message visible`);
-      if (!controls) sizes.push(`${width}×${height}: ${Math.round(measured.width)}×${Math.round(measured.height)}`);
+      assert(measured.width >= 150, `${width}×${height}: message keeps a readable width`);
+      sizes.push(`${width}×${height}${controls ? '+controls' : ''}: ${Math.round(measured.width)}×${Math.round(measured.height)}`);
     }
   }
   await page.setViewportSize({ width: 1440, height: 900 }); await page.mouse.move(5, 5); await page.waitForTimeout(250);
-  checks.push(`message clear of live controls/pointer/FOV/scenery/radio overlays (${sizes.join('; ')})`);
+  checks.push(`message clear of live controls/pointer/FOV/scenery/radio/top-bar overlays (${sizes.join('; ')})`);
 
   // The default setting already equals the simulator QNH; a set 1013.00 hPa also counts as the announced QNH 1013.
   assert.match(await action.textContent(), /Altimeter on QNH 1013/); assert.equal(await action.isDisabled(), true);
@@ -108,7 +118,7 @@ try {
   // Fly briefly, then Review: the text box is hidden and does not cover the recorded control readouts.
   await setAltimeter(1000);
   await page.waitForFunction(() => /CUSTOM PRESSURE/.test(document.querySelector('#altimeter-reference')?.textContent ?? ''));
-  await page.locator('#start').click(); await page.waitForTimeout(1500);
+  await startOrResume(page); await page.waitForTimeout(1500);
   await page.locator('#scene').focus(); await page.keyboard.press('KeyR');
   await page.waitForFunction(() => document.querySelector('.flight-app')?.dataset.review === 'true');
   for (const [width, height] of [[1440, 900], [1100, 800]]) {
@@ -128,7 +138,7 @@ try {
   await page.mouse.move(5, 5);
   await page.waitForFunction(() => document.querySelector('#airport-contact')?.classList.contains('compact'), null, { timeout: 15000 });
   assert.equal(await contact.isVisible(), true);
-  assert.match(await contact.locator('.airport-contact-compact').textContent(), /^EDFE · QNH 1013$/);
+  assert.match(await contact.locator('.airport-contact-compact').textContent(), /^EDFE · QNH 1013 · sim$/);
   const pill = await contact.boundingBox();
   assert(pill.height < 40 && pill.width <= 330, 'collapsed pill is one line');
   await page.screenshot({ path: `${output}airport-contact-compact.png`, clip: { x: pill.x - 20, y: pill.y - 20, width: pill.width + 40, height: pill.height + 40 } });
@@ -139,12 +149,14 @@ try {
 
   // A new contact (retune) announces again; dismissal hides it.
   await page.locator('#com1-swap').click(); await page.waitForTimeout(600);
+  assert.equal(await live.textContent(), '', 'live region clears when the contact ends');
   await page.locator('#com1-swap').click();
   await page.waitForFunction(() => !document.querySelector('#airport-contact').hidden && !document.querySelector('#airport-contact').classList.contains('compact'));
+  assert.match(await live.textContent(), /Welcome to Frankfurt-Egelsbach Airport/);
   await contact.locator('.airport-contact-dismiss').click();
   await page.waitForTimeout(600);
   assert.equal(await contact.isHidden(), true);
-  checks.push('retuning announces a new contact; dismiss hides it');
+  checks.push('ending a contact clears the live region; retuning announces again; dismiss hides it');
   assert.deepEqual(errors, []);
   console.log(JSON.stringify({ browser: browser.version(), checks }, null, 2));
 } finally { await browser?.close(); server.kill(); }

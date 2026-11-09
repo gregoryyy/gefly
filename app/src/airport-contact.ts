@@ -28,8 +28,6 @@ const EMERGENCY_KHZ = 121_500;
  * VOLMET, PMSV, OPS, MISC, POST, PTD, GCA, VDF, EMR, 8.33, unknown) is excluded.
  */
 const AERODROME_SERVICES = new Set(['TWR', 'GND', 'RMP', 'APRON', 'CLD', 'DEL', 'RADIO', 'RDO', 'CTAF', 'UNIC', 'UNICOM', 'A/G', 'INFO', 'AFIS', 'INFORMATION']);
-/** Services that may carry a flight-information name; an "… Info/Information" name must be the airport's own. */
-const INFO_SERVICES = new Set(['RADIO', 'RDO', 'CTAF', 'UNIC', 'UNICOM', 'A/G', 'INFO', 'AFIS', 'INFORMATION']);
 /** Description words that identify radar/approach/control/broadcast/operations units, whatever the source service type. */
 const NON_AERODROME_WORDS = new Set(['radar', 'director', 'dir', 'approach', 'app', 'arr', 'arrival', 'dep', 'departure', 'con', 'control',
   'centre', 'center', 'ctr', 'cntr', 'atis', 'awos', 'asos', 'volmet', 'pmsv', 'metro', 'ops', 'misc', 'deicing', 'rng', 'range', 'advsy']);
@@ -38,11 +36,18 @@ const GENERIC_WORDS = new Set(['info', 'information', 'radio', 'rdo', 'twr', 'to
   'apron', 'vorfeld', 'ctaf', 'del', 'delivery', 'clnc', 'initial', 'call', 'unicom', 'unic', 'segelflug', 'north', 'south', 'nord', 'sud',
   'rwy', 'flugplatz', 'airport', 'airfield', 'a', 'g', 'sof']);
 
-export type SourceCoverage = { cells: ReadonlySet<string> } | { bounds: readonly [number, number, number, number] };
+/**
+ * Build-time completeness mask: rows run south→north, columns west→east, '1' marks a
+ * cell whose whole radius_nm neighbourhood holds no COM-listing airport missing from the source.
+ */
+export interface CoverageGrid { bounds: readonly [number, number, number, number]; cell_deg: number; radius_nm: number; rows: readonly string[] }
+export type SourceCoverage = { cells: ReadonlySet<string> } | { grid: CoverageGrid };
 export interface ContactSource {
   airports: readonly Airport[]; directory: AirportComDirectory;
   /** Area where the source holds every airport; outside it a channel could look unique only because data is missing. Omitted = complete. */
   coverage?: SourceCoverage;
+  /** Stable airport counts per normalized station name (build-time, worldwide); omitted = count within this directory. */
+  regionalNames?: ReadonlyMap<string, number>;
 }
 export interface ActiveCom { receiver: 1 | 2; channel_khz: number }
 export interface Position_deg { lat: number; lon: number }
@@ -72,39 +77,64 @@ function words(text: string): string[] {
   return folded.split(/[^a-z0-9]+/).filter(Boolean);
 }
 /** Normalized station name, or '' when the description is only service words. */
-function nameKey(description: string): string {
+export function nameKey(description: string): string {
   const w = words(description);
   return w.some(word => !GENERIC_WORDS.has(word)) ? w.join(' ') : '';
 }
-function ownName(description: string, airport: Airport): boolean {
-  const named = words(description).filter(w => !GENERIC_WORDS.has(w) && w.length >= 3 && !/^\d+$/.test(w));
+/** Spelling aids for German/English exonyms seen in community names; not a gazetteer. */
+const NAME_ALIASES: Readonly<Record<string, string>> = { munchen: 'munich', nurnberg: 'nuremberg', koln: 'cologne' };
+function editDistance(a: string, b: string): number {
+  let previous = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const current = [i];
+    for (let j = 1; j <= b.length; j++) current[j] = Math.min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    previous = current;
+  }
+  return previous[b.length];
+}
+/** Place-name tokens match exactly, by a ≥4-letter prefix, a ≥5-letter containment or ≤2 edits for ≥6 letters (source typos). */
+function similarName(a: string, b: string): boolean {
+  const shorter = Math.min(a.length, b.length);
+  return a === b || (shorter >= 4 && (a.startsWith(b) || b.startsWith(a)))
+    || (shorter >= 5 && (a.includes(b) || b.includes(a)))
+    || (shorter >= 6 && Math.abs(a.length - b.length) <= 2 && editDistance(a, b) <= 2);
+}
+/** True when the description names no place, or a place matching the airport's own name/ident. */
+export function ownName(description: string, airport: Airport): boolean {
+  const named = words(description).filter(w => !GENERIC_WORDS.has(w) && w.length >= 3 && !/^\d+$/.test(w)).map(w => NAME_ALIASES[w] ?? w);
   if (!named.length) return true;
   const own = words(`${airport.name} ${airport.icao} ${airport.id}`).filter(w => w.length >= 3);
-  return named.some(a => own.some(b => Math.min(a.length, b.length) >= 4 && (a.startsWith(b) || b.startsWith(a))));
+  return named.some(a => own.some(b => similarName(a, b)));
 }
 const validPosition = (p: Position_deg | null | undefined): p is Position_deg => !!p
   && Number.isFinite(p.lat) && Number.isFinite(p.lon) && Math.abs(p.lat) <= 90 && Math.abs(p.lon) <= 180;
 
 interface SourceIndex {
-  airports: readonly Airport[]; byId: Map<string, Airport>; byChannel: Map<number, AirportComStation[]>;
-  names: Map<string, Set<string>>; classes: Map<string, StationClass>;
+  airports: readonly Airport[]; regionalNames: ReadonlyMap<string, number> | undefined;
+  byId: Map<string, Airport>; byChannel: Map<number, AirportComStation[]>;
+  names: Map<string, number>; classes: Map<string, StationClass>;
 }
-/** Indexes are rebuilt only when a directory or its airport array changes. */
+/** Indexes are rebuilt only when a directory, its airport array or the name table changes. */
 const indexes = new WeakMap<AirportComDirectory, SourceIndex>();
 function index(source: ContactSource): SourceIndex {
   const cached = indexes.get(source.directory);
-  if (cached && cached.airports === source.airports) return cached;
+  if (cached && cached.airports === source.airports && cached.regionalNames === source.regionalNames) return cached;
   const byId = new Map(source.airports.map(a => [a.id, a]));
-  const byChannel = new Map<number, AirportComStation[]>(); const names = new Map<string, Set<string>>();
+  const byChannel = new Map<number, AirportComStation[]>(); const local = new Map<string, Set<string>>();
   for (const station of source.directory.stations) {
     const key = nameKey(station.description);
-    if (key) { const ids = names.get(key) ?? new Set<string>(); ids.add(station.airport_id); names.set(key, ids); }
+    if (key && !source.regionalNames) { const ids = local.get(key) ?? new Set<string>(); ids.add(station.airport_id); local.set(key, ids); }
     if (!exactChannel(station)) continue;
     const rows = byChannel.get(station.channel_khz) ?? []; rows.push(station); byChannel.set(station.channel_khz, rows);
   }
-  const value: SourceIndex = { airports: source.airports, byId, byChannel, names, classes: new Map() };
+  const names = new Map(source.regionalNames ?? [...local].map(([key, ids]) => [key, ids.size] as const));
+  const value: SourceIndex = { airports: source.airports, regionalNames: source.regionalNames, byId, byChannel, names, classes: new Map() };
   indexes.set(source.directory, value);
   return value;
+}
+/** Airports listing a normalized station name: the stable table when supplied, else this directory. */
+export function sharedNameCount(source: ContactSource, description: string): number {
+  const key = nameKey(description); return key ? index(source).names.get(key) ?? 1 : 0;
 }
 /** Classifies one source row; exported for data-driven tests over the bundled directory. */
 export function classifyStation(station: AirportComStation, airport: Airport, source: ContactSource): StationClass {
@@ -113,24 +143,28 @@ export function classifyStation(station: AirportComStation, airport: Airport, so
   const service = station.service.trim().toUpperCase(); const w = words(station.description);
   let result: StationClass;
   if (!AERODROME_SERVICES.has(service) || w.some(word => NON_AERODROME_WORDS.has(word))) result = 'excluded';
-  else if ((idx.names.get(nameKey(station.description))?.size ?? 0) >= SHARED_NAME_AIRPORTS) result = 'regional';
-  else if (INFO_SERVICES.has(service) && w.some(word => word === 'info' || word === 'information') && !ownName(station.description, airport)) result = 'regional';
+  else if (sharedNameCount(source, station.description) >= SHARED_NAME_AIRPORTS) result = 'regional';
+  // A row naming another place (e.g. "Illeshaim Tower" listed at Bad Windsheim) gives no welcome.
+  else if (!ownName(station.description, airport)) result = 'regional';
   else result = 'aerodrome';
   idx.classes.set(station.id, result);
   return result;
 }
 
-const KM_PER_NM = 1.852;
 /** True when the source holds every airport within radius_nm of position. */
 export function sourceCovers(source: ContactSource, position: Position_deg, radius_nm: number): boolean {
   const coverage = source.coverage; if (!coverage) return true;
-  const dlat = radius_nm * KM_PER_NM / 111.32; const cos = Math.cos(position.lat * Math.PI / 180);
-  if (Math.abs(position.lat) + dlat >= 85 || cos <= 0) return false;
-  const dlon = dlat / cos;
-  const [south, north, west, east] = [position.lat - dlat, position.lat + dlat, position.lon - dlon, position.lon + dlon];
-  if ('bounds' in coverage) {
-    const [w, s, e, n] = coverage.bounds; return west >= w && east <= e && south >= s && north <= n;
+  if ('grid' in coverage) {
+    const { bounds: [west, south, east, north], cell_deg, radius_nm: covered_nm, rows } = coverage.grid;
+    if (covered_nm < radius_nm || position.lon < west || position.lon >= east || position.lat < south || position.lat >= north) return false;
+    const row = rows[Math.floor((position.lat - south) / cell_deg)];
+    return row?.[Math.floor((position.lon - west) / cell_deg)] === '1';
   }
+  // 1 NM is one arc-minute of latitude; longitude spacing uses the box's highest |latitude|.
+  const dlat = radius_nm / 60; const maxLat = Math.abs(position.lat) + dlat;
+  if (maxLat >= 85) return false;
+  const dlon = dlat / Math.cos(maxLat * Math.PI / 180);
+  const [south, north, west, east] = [position.lat - dlat, position.lat + dlat, position.lon - dlon, position.lon + dlon];
   // World cells are 5° squares; the circle's bounding box touches at most 2×2 of them.
   return [[west, south], [west, north], [east, south], [east, north]].every(([lon, lat]) => coverage.cells.has(worldAirportCellId(lon, lat)));
 }
@@ -171,7 +205,7 @@ export function findAirportContact(active: ActiveCom, position: Position_deg | n
     const named = ordered.find(c => c.cls === 'regional') ?? first;
     return { kind: 'shared', key: `shared|${active.channel_khz}`, ...base,
       airports: ordered.slice(0, 3).map(c => ({ airport: c.airport, distance_nm: c.distance_nm })),
-      count: reason === 'several-in-range' ? ordered.length : (index(first.source).names.get(nameKey(first.station.description))?.size ?? 1), reason,
+      count: reason === 'several-in-range' ? ordered.length : Math.max(1, sharedNameCount(named.source, named.station.description)), reason,
       label: (reason === 'regional-name' ? named : first).station.description.trim() || first.station.service.trim() || 'COM' };
   }
   return { kind: 'contact', key: `contact|${active.channel_khz}|${idents[0]}`, ...base,
