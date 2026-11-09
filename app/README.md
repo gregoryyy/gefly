@@ -41,14 +41,17 @@ From the repository root:
 
 ```sh
 npm --prefix app ci
-python3 -m pip install -r utils/scenery/requirements.txt  # Pillow 11.2.1 for live photos
+just scenery-venv          # ignored .venv with Pillow 12.3.0 for live photos
 just build-flight-engine   # first run: downloads the pinned SDK and JSBSim sources
 just fly
 ```
 
-The country-photo proxy invokes `python3` from the server PATH; set
-`PYTHON=/path/to/python3` when starting the server to choose an interpreter with
-Pillow. Without it, country imagery falls back to the map.
+The state-photo compositor and country-photo proxy both invoke `PYTHON`, else
+`python3` from the server PATH. `just fly` sets `PYTHON` to `.venv/bin/python`
+when that exists and `PYTHON` is unset; otherwise set `PYTHON=/path/to/python3`
+to choose an interpreter with Pillow. Without it, photos fall back to the map,
+the server prints one warning and the 3D status names the missing Pillow
+(`/scenery/imagery/status.json` reports `{"compositor":"unavailable"}`).
 
 Open the local URL printed by the development server, then select **Start flight**.
 The application loads paused so the aircraft cannot fly away while you inspect
@@ -711,6 +714,16 @@ back until photo detail is requested. The displayed and service credits read
 “Obra derivada de PNOA 2024 CC-BY 4.0 scne.es”. See the [official layer
 capabilities](https://www.ign.es/wms/pnoa-historico?SERVICE=WMS&REQUEST=GetCapabilities&VERSION=1.3.0)
 and [CNIG terms](https://www.ign.es/resources/licencia/Condiciones_licenciaUso_IGN.pdf).
+
+The service envelopes are generous rectangles (the NRW one reaches Frankfurt), so
+the status names a country/state source only when the aircraft is within 2 km of
+its coarse Natural Earth outline, and the 3D view credits it per rendered tile
+only for tiles within 10 km of that outline (the 2D map shows a source's layer and
+credit only while the view comes that close). Farther tiles are the proxy's
+transparent answer and are not requested. Sampled provider imagery extended at
+most about 5 km beyond the outlines. These outlines are
+[generalized cartography](../utils/scenery/photo-outlines-source.md), not
+imagery footprints or legal boundaries.
 
 The proxy uses a 32 MiB memory cache and bounded requests/compositing. It needs
 Python/Pillow from `utils/scenery/requirements.txt`; without Pillow, photos fail

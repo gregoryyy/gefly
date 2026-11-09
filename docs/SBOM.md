@@ -305,7 +305,8 @@ records exact raw requests/hashes, and the manifest binds derived tile bytes.
 Capture dates remain unknown. Effective output is approximately 3.07 m at level 14
 and 1.54 m at level 15 near 50°N; the existing approximately 0.75 m EDFE overlay
 remains separate. No npm runtime dependency is added. The offline compiler uses
-Pillow 11.2.1 (MIT-CMU; authoring for this offline compiler), pinned in
+Pillow 11.2.1 (MIT-CMU; authoring for this offline compiler, kept at 11.2.1 so
+derived JPEG bytes stay reproducible; Python 3.15 needs an older interpreter), pinned in
 [requirements](../utils/imagery/requirements.txt), with the installed package's
 license retained. See [research/rights](research/2026-11-03-regional-textures.md)
 and [reproduction](../utils/imagery/README.md).
@@ -364,7 +365,8 @@ are temporary and not a frozen Review image/video snapshot; request/resource
 limits and external flow are in [SEC](SEC.md). Full EDDF/100 NM and global
 provider adoption remain separate work.
 
-The live compositor now requires **Pillow 11.2.1**, pinned in
+The live compositor now requires **Pillow 12.3.0** (raised from 11.2.1 on
+2026-11-09 because 11.2.1 has no Python 3.15 wheel), pinned in
 [`utils/scenery/requirements.txt`](../utils/scenery/requirements.txt), under
 MIT-CMU with PIL/Pillow copyright and its installed wheel's retained third-party
 notices. It is a Python scenery-server runtime dependency as well as an existing
@@ -434,7 +436,8 @@ Exact source URLs, rights, input/compiler hashes and derivation are pinned in
 [SOURCE.json](../app/public/terrain/world/SOURCE.json) and the
 [notices](../THIRD_PARTY_NOTICES.md#bundled-coarse-world-terrain).
 
-The offline compiler uses Python and already-pinned Pillow 11.2.1; no new
+The offline compiler uses Python and the scenery-pinned Pillow 12.3.0 (it only
+decodes the geoid image); no new
 runtime dependency or live DEM provider is added. Numeric source downloads stay
 in ignored scratch storage. Existing OpenFreeMap/OpenMapTiles/OSM source and
 decoder dependencies provide fixed-route global cartography, under available regional photography, with the same bounded network/cache policy and required credit. No
@@ -499,8 +502,12 @@ acquisition dates and coverage vary. The bundled Austria mask derives from
 Natural Earth Admin 0 1:10m v5.1.1, public domain; see
 [mask provenance](../utils/scenery/austria-boundary-source.md) and
 [service research](research/2026-11-07-swiss-austrian-imagery.md). The mask is
-generalized and conservatively inset, not a surveyed footprint. Pillow 11.2.1
+generalized and conservatively inset, not a surveyed footprint. Pillow 12.3.0
 is the existing local imagery decoder; no new npm dependency is introduced.
+Status text and credits name a photo source by coarse outlines generated from
+the same pinned Natural Earth v5.1.1 Admin 0 file plus its Admin 1 file
+(public domain); see [outline provenance](../utils/scenery/photo-outlines-source.md).
+They are bundled as generated source, not as an imagery footprint.
 
 Official NRW orthophotos are provided under Datenlizenz Deutschland Zero 2.0;
 Berlin/Brandenburg's live service specifies © GeoBasis-DE/LGB,
