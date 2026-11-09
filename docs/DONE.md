@@ -3,6 +3,34 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-09 20:29 — Make vector relief shading pronounced and lighten the vector landscape
+
+TODO: 2.0.201; R-AIRPORT-1/R-WORLD-11. Agent: Claude orchestrator (Claude Code,
+Opus 5.5); no subagents.
+
+**Implementation notes**
+
+The 2.0.189 material only darkened faces turned away from the illustrative
+north-west light (at most 25 %, gain 0.42). The app enables Cesium HDR, which
+blends globe materials in linear light, so that darkening appeared even weaker
+on screen. `OSM_RELIEF` now declares display-space parameters: a 0.14 white
+lift everywhere, darkening gain 1.5 (cap 0.5) and a highlight gain 0.9 (cap
+0.22) for sun-facing faces. Under `HDR` the shader converts them (exact for
+darkening; lift exact at a 0.3 sRGB reference). At the bundled Taunus view,
+flat map green moved from 78 to about 100, away-facing slopes to about 55 and
+sun-facing slopes to about 125 (8-bit green channel).
+
+The synthetic GPU test now checks the flat lift, a lighter sun-facing face and
+a darker opposing face (at least 15 levels) at two camera headings; it passes.
+The full `test:osm-relief` run still fails afterwards only at its existing OSM
+request-count assertion (422 vs 404), which also fails on unchanged main
+(424 vs 410).
+
+**Deviations**
+
+Values are presentation choices, not lighting or terrain validation. Peer
+review pending.
+
 ## 2026-11-09 17:30 — Restore green CI by keeping Pillow tests in the scenery gate
 
 TODO: 2.0.192/2.0.195/2.0.198 follow-up; R-WORLD-11/R-DATA-1. Agent: Claude

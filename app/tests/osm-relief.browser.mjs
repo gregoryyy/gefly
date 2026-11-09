@@ -37,7 +37,7 @@ try {
 <style>html,body,#scene{margin:0;width:100%;height:100%;overflow:hidden}</style><div id="scene"></div>
 <script type="module">
 import * as C from ${JSON.stringify(cesiumEntry)};
-import {createOsmReliefMaterial} from '/src/osm-relief.ts';
+import {createOsmReliefMaterial,OSM_RELIEF} from '/src/osm-relief.ts';
 const bounds=C.Rectangle.fromDegrees(8.4,49.8,8.9,50.2),size=65;
 const tiling=new C.GeographicTilingScheme({rectangle:bounds,numberOfLevelZeroTilesX:1,numberOfLevelZeroTilesY:1});
 const elevation=(lon,lat)=>Math.max(0,1600*(1-Math.abs(lon-8.65)/.08))*Math.max(0,Math.min(1,(.12-Math.abs(lat-50))/.04));
@@ -59,7 +59,7 @@ const widget=new C.CesiumWidget(document.querySelector('#scene'),{baseLayer:fals
 const scene=widget.scene;scene.imageryLayers.add(new C.ImageryLayer(imagery));scene.globe.maximumScreenSpaceError=1;
 scene.fog.enabled=false;scene.globe.enableLighting=false;scene.renderError.addEventListener((_,e)=>(window.renderErrors??=[]).push(String(e)));
 window.renderErrors=[];const material=createOsmReliefMaterial();
-window.fixture={scene,widget,material,elevation};window.setMaterial=on=>{scene.globe.material=on?material:undefined;scene.requestRender();};
+window.fixture={scene,widget,material,elevation,relief:OSM_RELIEF};window.setMaterial=on=>{scene.globe.material=on?material:undefined;scene.requestRender();};
 window.setHeading=deg=>{scene.camera.setView({destination:C.Cartesian3.fromDegrees(8.65,50,14000),orientation:{heading:C.Math.toRadians(deg),pitch:-Math.PI/2,roll:0}});scene.requestRender();};
 window.setHeading(0);window.fixtureReady=true;
 </script>`}));
@@ -91,8 +91,11 @@ window.setHeading(0);window.fixtureReady=true;
   const samplePairs=[];
   for(const [x,y] of [[100,400],[300,400],[700,400],[900,400]]) samplePairs.push({x,y,off:await sample(unshaded,x,y),on:await sample(shaded,x,y),rotatedOff:await sample(unshadedRotated,999-x,759-y),rotatedOn:await sample(shadedRotated,999-x,759-y)});
   observations.samples=samplePairs;
-  for(const i of [0,1,3]) assert(Math.abs(samplePairs[i].on[1]-samplePairs[i].off[1])<=2, 'flat and sun-facing reference pixels stay approximately unchanged');
-  assert(samplePairs[2].off[1]-samplePairs[2].on[1]>=3, 'opposing ridge face is visibly darker');
+  const {lift}=await page.evaluate(()=>window.fixture.relief);
+  const lifted=off=>off+lift*(255-off);
+  for(const i of [0,3]) assert(Math.abs(samplePairs[i].on[1]-lifted(samplePairs[i].off[1]))<=3, `flat reference pixels receive only the uniform lift: ${JSON.stringify(samplePairs[i])}`);
+  assert(samplePairs[1].on[1]-lifted(samplePairs[1].off[1])>=6, `sun-facing ridge face is visibly lighter than lifted flat ground: ${JSON.stringify(samplePairs[1])}`);
+  assert(samplePairs[2].off[1]-samplePairs[2].on[1]>=15, `opposing ridge face is clearly darker despite the lift: ${JSON.stringify(samplePairs[2])}`);
   assert(Math.abs((samplePairs[2].off[1]-samplePairs[2].on[1])-(samplePairs[2].rotatedOff[1]-samplePairs[2].rotatedOn[1]))<=2, 'same world face remains similarly shaded after 180° camera rotation');
   assert.deepEqual(await page.evaluate(()=>window.renderErrors), []);
   checks.push('actual Cesium GPU imagery darkens declared synthetic sloped terrain at two camera orientations');
