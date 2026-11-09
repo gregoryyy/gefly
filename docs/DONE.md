@@ -3,7 +3,7 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
-## 2026-11-09 17:52 — Show airport elevation in the map point popup
+## 2026-11-09 17:46 — Show airport elevation in the map point popup
 
 TODO: 2.0.202; R-WORLD-12. Agent: Claude orchestrator (Claude Code, Opus 5.5);
 no subagents. [Request](input/2026-11-09-airport-popup-elevation.md).
