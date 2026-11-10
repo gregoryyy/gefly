@@ -22,6 +22,7 @@ provider's white no-data as imagery; it is not a guarantee of legal coverage or
 precise boundaries. Underlying map/imagery remains visible in excluded strips.
 
 The middleware invokes `python3` by default. It may be configured with the
-`PYTHON` environment variable to select an interpreter with Pillow 11.2.1, for
-example `PYTHON=/path/to/python3 npm --prefix app run dev`. The source tiles
+`PYTHON` environment variable to select an interpreter with Pillow 12.3.0, for
+example `PYTHON=/path/to/python3 npm --prefix app run dev`; `just scenery-venv`
+prepares one that `just fly` selects. The source tiles
 are streamed on demand and are not included in this repository.

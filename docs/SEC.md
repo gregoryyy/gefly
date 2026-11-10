@@ -373,7 +373,7 @@ writing terrain or aircraft state.
 
 Photography uses the fixed local Python compositor with at most five 512 px
 images, 15 MiB bounded base64/JSON stdin and 2 MiB output. Its executable/script
-arguments are configured locally, never supplied by a request. Pillow 11.2.1
+arguments are configured locally, never supplied by a request. Pillow 12.3.0
 performs decoding and alpha composition; its dependency is required only by the
 scenery service, not the browser or native physics. Black/white blank images are
 skipped, and transparent coverage gaps reveal the map underneath. A partial
@@ -681,7 +681,12 @@ empty/low-zoom tiles are transparent; replies advertise empty coverage. Three
 provider failures open a per-country 30-second circuit, with non-cacheable
 503 responses and a single recovery probe. The browser pauses only the affected
 source and performs bounded retry; empty coverage does not trip the breaker.
-Python/Pillow is a local scenery dependency; `PYTHON` may select an interpreter.
+Python/Pillow is a local scenery dependency; `PYTHON` selects the interpreter for
+both the state compositor and country proxy (`just fly` uses the ignored `.venv`).
+A missing interpreter or Pillow import is detected from bounded stderr; it is
+warned once in the server log and pauses state-photo upstream requests for
+30 seconds per check. Fixed `/scenery/imagery/status.json` reports only
+`ready`/`unavailable`/`unknown`, never paths or diagnostics.
 Country tiles are requested on visual demand and are not admitted to the
 existing persistent service-worker cache or predictive prefetch. Their source
 terms, attribution and boundary limitations are recorded in the imagery note.

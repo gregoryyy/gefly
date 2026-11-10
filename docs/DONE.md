@@ -3,6 +3,59 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-09 19:24 — Name only plausible photo sources and explain missing Pillow
+
+TODO: 2.0.203; R-WORLD-14/R-WORLD-16/R-DATA-1. Agent: Claude orchestrator
+(Claude Code, Opus 5.5); code1 subagent (Claude Opus 5.5) implemented commit
+5aa436b. [Report](input/2026-11-09-guide-imagery-qnh-runways.md).
+
+**Implementation notes**
+
+User report: Hessen showed North Rhine-Westphalia material and no aerial
+photos. Causes: the NRW service envelope (`country-imagery.ts`, south to 50.0°)
+reaches Frankfurt and was the status test, and its text replaced the live-photo
+failure message; Cesium shows every shown layer's provider credit anywhere on
+the globe, and MapLibre does the same for visible sources, so PNOA appeared at
+EDFE; Pillow 11.2.1 has no Python 3.15 wheel, the state compositor ignored
+`PYTHON`, and a missing Pillow surfaced only as a generic failure. Status now
+names a source within 2 km of a coarse outline generated from hash-pinned
+Natural Earth v5.1.1 (`utils/scenery/extract-photo-outlines.py`). 3D country
+credits are per rendered tile at level 7 or finer within 10 km of the outline,
+with other tiles answered locally as transparent; the 2D map shows a country
+layer only while its view comes that close. Sampled provider imagery reached at
+most about 5 km past the outlines. The state compositor reports a missing
+interpreter or Pillow (503, one server warning, 30 s upstream pause) and serves
+`/scenery/imagery/status.json`; the 3D status then names the missing Pillow.
+Pillow 12.3.0 is pinned for scenery; `just scenery-venv` creates `.venv` and
+`just fly` uses it.
+Review follow-up 68417fe: viewport-only 2D hides keep the MapLibre source; any
+Pillow import error or failed probe counts as unavailable, transient spawn
+errors stay unknown, and every non-ready state waits out the 30 s recheck; the
+client re-asks every 31 s while unavailable, so the notice clears after repair;
+`just fly` advice distinguishes an explicit `PYTHON`. The new
+`photo-source-credits.browser.mjs` (in `test:country-imagery`) checks the EDFE
+status, that 3D credits equal the drawn source tiles, the per-tile wiring, that
+cut-off tiles are not requested, and the 2D EDFE and NRW-border views; guarding
+`checkVisibility` in `flight-assists.ts`/`map-zoom-shortcuts.ts` lets
+`country-imagery.browser.mjs` exit 0.
+
+**Deviations**
+
+The offline imagery compiler keeps Pillow 11.2.1 so its hash-pinned JPEG output
+stays reproducible (it needs Python ≤3.14). The Hessen live and starter layer
+credits stay layer-wide (2.0.208). 3D credits follow drawn tiles, so from EDFE
+Geobasis NRW is credited looking north and swisstopo/basemap.at looking south,
+where Cesium draws terrain 38–240 km away; the status never names them
+(decision 2.0.209). The cut-off can omit provider imagery overhanging more than
+10 km and follows tile edges; the test reads Cesium's internal
+`_tilesToRender`. Outline
+margins are sampled, not surveyed. The quality review found no blockers; its
+findings are fixed in 68417fe, not re-reviewed. Checks: tsc; `npm test`
+843/843; `test:scenery` 47 node + 10 Python with Pillow 12.3.0;
+`test:country-imagery` exit 0 (south and north headings); `just check`; `just ci`
+(9 of 23 optional e1-jsbsim study checks skipped); `just assure check` 0
+errors; headless real-proxy checks at EDFE, Gießen and Düsseldorf with and
+without Pillow. Validation and peer review pending.
 ## 2026-11-09 19:09 — Extend windmilling propeller tables with the NACA TR-641 negative region
 
 TODO: 2.0.52 (partial), new 2.0.206/2.0.207; R-SIM-10/R-ENG-1. Agent: Claude

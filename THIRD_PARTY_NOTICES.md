@@ -207,12 +207,13 @@ does not adopt their content or grant reuse rights.
 
 ## Pillow scenery compositor
 
-Pillow **11.2.1**, installed separately from
-`utils/scenery/requirements.txt`, supports live PNG composition and existing
-offline imagery authoring. It is not bundled into browser or physics code.
+Pillow **12.3.0**, installed separately from
+`utils/scenery/requirements.txt` (for example by `just scenery-venv`), supports
+live PNG composition and country-photo decoding. The offline imagery compiler
+keeps its own Pillow 11.2.1 pin (above). It is not bundled into browser or physics code.
 The installed wheel retains the full license and notices of its native libraries;
 those notices must accompany any later packaged redistribution. The inspected
-Pillow 11.2.1 core license states:
+Pillow 12.3.0 core license states:
 
 > The Python Imaging Library (PIL) is
 >
@@ -221,9 +222,9 @@ Pillow 11.2.1 core license states:
 >
 > Pillow is the friendly PIL fork. It is
 >
-> Copyright © 2010 by Jeffrey A. Clark and contributors
-
-Pillow is licensed under the open source MIT-CMU License:
+> Copyright © 2010 by Jeffrey 'Alex' Clark and contributors
+>
+> Like PIL, Pillow is licensed under the open source MIT-CMU License:
 
 > By obtaining, using, and/or copying this software and/or its associated
 > documentation, you agree that you have read, understood, and will comply

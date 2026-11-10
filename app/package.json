@@ -41,7 +41,7 @@
     "test:background-flight": "node tests/background-flight.browser.mjs",
     "test:flight-continuity": "node tests/flight-continuity.browser.mjs",
     "test:flight-plan-failure": "node tests/flight-plan-failure.browser.mjs",
-    "test:country-imagery": "node tests/country-imagery.browser.mjs",
+    "test:country-imagery": "node tests/country-imagery.browser.mjs && node tests/photo-source-credits.browser.mjs",
     "test:camera-return": "node tests/camera-return.browser.mjs",
     "test:ap-keyboard": "node tests/ap-keyboard.browser.mjs",
     "test:chase-zoom": "node tests/chase-zoom.browser.mjs",

@@ -23,7 +23,7 @@ export function createMapZoomShortcuts(options: MapZoomShortcutsOptions): { disp
       'input, textarea, select, [contenteditable]:not([contenteditable="false"])'))
       || document.querySelector('dialog[open]') || root.querySelector('.top-menu[open]')
       || [...document.querySelectorAll<HTMLElement>('.cesium-credit-lightbox-overlay')]
-        .some(popup => popup.checkVisibility())) return;
+        .some(popup => typeof popup.checkVisibility === 'function' ? popup.checkVisibility() : popup.getClientRects().length > 0)) return;
 
     // Repeats still belong to the map; do not leak Digit0 to the throttle handler.
     event.preventDefault();

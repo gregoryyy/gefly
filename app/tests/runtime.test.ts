@@ -43,7 +43,12 @@ test('build-flight-engine writes the engine into the directory just fly serves',
   assert.match(build, /^HERE=\$\(cd "\$\(dirname "\$\{BASH_SOURCE\[0\]\}"\)" && pwd\)$/m);
   assert.match(build, /^DIST=\$HERE\/dist$/m, 'outputs go to <script dir>/dist, independent of the work-dir argument');
   for (const file of ENGINE_FILES) assert.ok(build.includes(`$DIST/${file.slice('dist/'.length)}`), `build writes ${file}`);
-  assert.match(read('justfile'), /^fly:\n\s+npm --prefix "\{\{justfile_directory\(\)\}\}\/app" run dev -- --port 5173 --strictPort$/m);
+  const fly = /^fly:\n((?: {4}.*\n)+)/m.exec(read('justfile'));
+  assert.ok(fly, 'justfile has a fly recipe');
+  assert.match(fly[1], /^\s+root="\{\{justfile_directory\(\)\}\}"$/m);
+  assert.match(fly[1], /^\s+exec npm --prefix "\$root\/app" run dev -- --port 5173 --strictPort$/m);
+  assert.match(fly[1], /\[ -z "\$\{PYTHON:-\}" \] && \[ -x "\$root\/\.venv\/bin\/python" \]; then export PYTHON="\$root\/\.venv\/bin\/python"/,
+    'R-WORLD-14 just fly passes the project venv to the scenery compositor unless PYTHON is set');
   assert.equal(JSON.parse(read('app/package.json')).scripts.dev.split(' ')[0], 'vite');
   assert.equal(runtimeRoot({}), defaultRuntimeRoot, 'just fly serves the study root by default');
   assert.match(read('studies/e1-browser/sim/worker.js'), /^import createJSBSim from '\.\/dist\/jsbsim\.mjs';$/m);

@@ -172,9 +172,28 @@ clean:
 build-flight-engine:
     bash "{{justfile_directory()}}/studies/e1-browser/sim/build.sh" "{{justfile_directory()}}/output/flight/engine-build"
 
-# Fly the experimental browser prototype on localhost:5173
+# Create the ignored .venv with the pinned photo compositor (Pillow); safe with Homebrew Python
+scenery-venv:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd "{{justfile_directory()}}"
+    "${PYTHON_BOOTSTRAP:-python3}" -m venv .venv
+    .venv/bin/python -m pip install --disable-pip-version-check -r utils/scenery/requirements.txt
+    .venv/bin/python -c 'import PIL; print(f"Pillow {PIL.__version__} ready in .venv; just fly uses it.")'
+
+# Fly the experimental browser prototype on localhost:5173 (uses .venv Python when present)
 fly:
-    npm --prefix "{{justfile_directory()}}/app" run dev -- --port 5173 --strictPort
+    #!/usr/bin/env bash
+    set -euo pipefail
+    root="{{justfile_directory()}}"
+    explicit="${PYTHON:-}"
+    if [ -z "${PYTHON:-}" ] && [ -x "$root/.venv/bin/python" ]; then export PYTHON="$root/.venv/bin/python"; fi
+    if ! "${PYTHON:-python3}" -c 'import PIL.Image' >/dev/null 2>&1; then
+        if [ -n "$explicit" ]; then fix="install utils/scenery/requirements.txt into PYTHON, or unset PYTHON after just scenery-venv"
+        else fix="run: just scenery-venv"; fi
+        echo "Note: ${PYTHON:-python3} cannot import Pillow, so live aerial photos are unavailable; $fix" >&2
+    fi
+    exec npm --prefix "$root/app" run dev -- --port 5173 --strictPort
 
 # Stop only this checkout's Vite listener; leave other processes untouched.
 stop:
