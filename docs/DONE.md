@@ -50,6 +50,110 @@ on two assertions that fail identically with main's WASM. Checks: glide harness
 10 and `prepare-aircraft.test.py` 9, `npm test`, nine native harnesses plus
 landing physics and the performance diagnostic (first round), `just check`,
 `just assure check`. Validation and peer review pending.
+## 2026-11-09 19:16 — Keep the approach-guide status to one compact line
+
+TODO: 2.0.204; R-NAV-3. Agent: Claude orchestrator (Claude Code, Opus 5.5);
+quality subagents (Claude Opus 5.5) reviewed two earlier versions.
+[Request](input/2026-11-09-guide-imagery-qnh-runways.md).
+
+**Implementation notes**
+
+Showing a 3° guide put a 360 px, five-line status box over the flying view,
+including the 40-character source revision. The status is now one line, for
+example `3° guide · EDFE 08 · illustrative · threshold ≈ runway end` (or
+`waiting for terrain`); the state comes before the optional note, and the
+longest measured text (345 px) fits the 380 px limit. The full disclosure with
+the source revision is the chip's tooltip and stays in the airport popup;
+assistive technology reads the limitations (`approachGuideLimitations()`)
+without the revision. The popup's "Shown" line names the terrain-height
+approximation, with the source on its own small line. The chip is not
+text-selectable and keeps pointer events for the tooltip; the yoke and
+hold-drag look listen on `#scene`, so presses on it still reach them. The 3D
+line and label are unchanged.
+
+**Deviations**
+
+Review follow-ups: the first version dropped the unknown-threshold note from
+the chip and used different popup wording; the second clipped its state text
+with the note and repeated the whole disclosure, including the revision, in the
+live region. Checks: TypeScript passes; `src/approach-guide.test.ts` 4/4;
+`npm run test:world-airports` passes 10 groups, asserting a one-line, unclipped
+chip, its airport/runway/state text, assistive limitations without the revision,
+and the popup's terrain-height and revision disclosure. Validation and peer
+review pending.
+## 2026-11-09 18:41 — Fit the cockpit panel after a zero-size or collapsed layout
+
+TODO: 2.0.205; R-PANEL-1/R-VIEW-1. Agent: Claude orchestrator (Claude Code,
+Opus 5.5); quality subagent (Claude Opus 5.5) reviewed the first version.
+[Report](input/2026-11-09-vscode-panel-empty.md).
+
+**Implementation notes**
+
+`cockpit-layout.ts` stored a new layout key and a zero-width panel frame before
+`fitPanel()` validated it, so a page that first laid out at 1×1 threw an
+uncaught `RangeError: Panel frame dimensions must be positive…` in the
+animation frame; in headless Chrome the panel still refitted afterwards. The
+fit now returns before writing any size when the deck has no measurable width
+or the window no height, and clears the layout key, so any later usable size,
+including the previous one, refits; the stale panel frame is cleared too, so
+wheel and drag do nothing until the next fit. A first version guarded only after writing
+the deck height; the review showed that a collapse to 1–8 px followed by a
+restore to the same size then left the panel empty, which main recovered from.
+`tests/panel-tiny-start.browser.mjs` (`npm run test:panel-tiny-start`, also in
+`test:browser`) uses real 1-pixel sizes: cold starts at 1×1, 1-pixel width and
+1-pixel height, and collapses to 1×1, 1 px and 8 px width and 1 px height from a
+fitted 720×715 window, requiring the original fit and no page errors.
+
+**Deviations**
+
+The user's VS Code empty-panel report was not reproduced; this fixes the
+failures found in headless Chrome, so the report stays open until the user
+confirms. The quality re-review passed the fix. Checks: the test and
+`panel-layout.browser.mjs` (13 viewport cases) pass; it fails on main (page error at the 1×1
+start) and on the first version (no refit after the collapse). TypeScript and
+`npm test` pass. Independent re-review, validation and peer pending.
+## 2026-11-09 17:46 — Show airport elevation in the map point popup
+
+TODO: 2.0.202; R-WORLD-12. Agent: Claude orchestrator (Claude Code, Opus 5.5);
+no subagents. [Request](input/2026-11-09-airport-popup-elevation.md).
+
+**Implementation notes**
+
+Airport map points now carry the OurAirports `elevation_ft` value, and the
+popup position line reads, for example, `airport · 49.96000° N, 8.64304° E ·
+elevation 384 ft (117 m)`. Feet are the source unit; metres are derived for
+display only. A null or non-finite source elevation reads `elevation
+unavailable`. Navaids, fixes and custom points keep the coordinate-only line.
+Position formatting moved to `map-point-position.ts`, shared by the point and
+location popups.
+
+**Deviations**
+
+None from the request. Checks: TypeScript passes; `src/map-point-position.test.ts` (3 tests) passes and is in
+`npm test`. A headless Chrome check against the dev server opened EDFE from the
+map search and showed the line above, with no page errors. The full browser
+suite was not run. Independent quality/validation and peer review pending.
+## 2026-11-09 17:41 — Carry the glide-figure answer and README prerequisites onto main
+
+TODO: 2.0.201; R-BOOT-3, GAPS Q5. Agent: Claude orchestrator (Claude Code,
+Opus 5.5); no subagents.
+
+**Implementation notes**
+
+PRs #124–#130 landed the stacked branches and root-only work on main, which
+supersedes the local `integrate/missing-work` branch. Two of its records were
+still missing: the user's dated GAPS Q5 answer accepting the single POH
+maximum-glide reading (commit from `data/c172s-engine-cruise`, the one remote
+branch main never merged; input record, index line and research note), and the
+README prerequisites for `just fly` and `just build-flight-engine`. The GAPS
+answer is placed in newest-first order between the 2026-11-02 and 2026-11-01
+19:04 answers. The branch's 0.05 panel-scale floor is not carried: main replaced
+that layout code. Its integration DONE/TODO entries describe a merge that never
+reached main and are dropped.
+
+**Deviations**
+
+Documentation only; no simulator behavior changes. Peer review pending.
 
 ## 2026-11-09 17:30 — Restore green CI by keeping Pillow tests in the scenery gate
 
