@@ -3,6 +3,37 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-09 18:41 — Fit the cockpit panel after a zero-size or collapsed layout
+
+TODO: 2.0.205; R-PANEL-1/R-VIEW-1. Agent: Claude orchestrator (Claude Code,
+Opus 5.5); quality subagent (Claude Opus 5.5) reviewed the first version.
+[Report](input/2026-11-09-vscode-panel-empty.md).
+
+**Implementation notes**
+
+`cockpit-layout.ts` stored a new layout key and a zero-width panel frame before
+`fitPanel()` validated it, so a page that first laid out at 1×1 threw an
+uncaught `RangeError: Panel frame dimensions must be positive…` in the
+animation frame; in headless Chrome the panel still refitted afterwards. The
+fit now returns before writing any size when the deck has no measurable width
+or the window no height, and clears the layout key, so any later usable size,
+including the previous one, refits; the stale panel frame is cleared too, so
+wheel and drag do nothing until the next fit. A first version guarded only after writing
+the deck height; the review showed that a collapse to 1–8 px followed by a
+restore to the same size then left the panel empty, which main recovered from.
+`tests/panel-tiny-start.browser.mjs` (`npm run test:panel-tiny-start`, also in
+`test:browser`) uses real 1-pixel sizes: cold starts at 1×1, 1-pixel width and
+1-pixel height, and collapses to 1×1, 1 px and 8 px width and 1 px height from a
+fitted 720×715 window, requiring the original fit and no page errors.
+
+**Deviations**
+
+The user's VS Code empty-panel report was not reproduced; this fixes the
+failures found in headless Chrome, so the report stays open until the user
+confirms. The quality re-review passed the fix. Checks: the test and
+`panel-layout.browser.mjs` (13 viewport cases) pass; it fails on main (page error at the 1×1
+start) and on the first version (no refit after the collapse). TypeScript and
+`npm test` pass. Independent re-review, validation and peer pending.
 ## 2026-11-09 17:46 — Show airport elevation in the map point popup
 
 TODO: 2.0.202; R-WORLD-12. Agent: Claude orchestrator (Claude Code, Opus 5.5);
