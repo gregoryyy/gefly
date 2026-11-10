@@ -734,12 +734,16 @@ an equivalent endpoint service remain undecided.
   **not the selected project-owned 172S**. Its model/data rights and applicability
   remain as documented in the study; it is not redistributed here.
 - A local-only, source-derived **generic fixed-pitch windmilling propeller**
-  replaces the original positive-only power table. Verified nominal engine-off
-  cases retain native propeller drag and shaft losses. Lower-speed idle-throttle
-  flight can still stop the propeller and lose its drag: the full correction
-  remains open. Powered forces also change; this is not a calibrated 172S glide
-  polar. The build records the source, inputs
-  and output hashes. See [investigation and limits](../docs/research/2026-11-03-engine-off-glide.md).
+  replaces the original positive-only power table. Beyond the finite generator
+  tables it uses digitized NACA Report 641 windmilling coefficients, so engine-off
+  cases retain native propeller drag and shaft losses down to low shaft speed.
+  Closed-throttle flight at or below about 35 m/s TAS (≈60 KIAS) can still stop
+  the propeller after some minutes, and a stopped propeller has no drag in JSBSim:
+  the full correction remains open. The clean
+  airframe still glides better than the 172S reference (about 10–12.5:1 versus
+  9.1:1); this is not a calibrated 172S glide polar. The build records the
+  source, inputs and output hashes. See [investigation](../docs/research/2026-11-03-engine-off-glide.md)
+  and [TR-641 extension and limits](../docs/research/2026-11-09-engine-off-propeller-tr641.md).
 - Normal flights use public DGM/GCG terrain; explicit landing studies retain the flat ellipsoid. There is no accepted surveyed runway-elevation
   model or accepted EDFE airport-height alignment. Imagery does not establish
   authoritative runway geometry, navigation data or chart material.

@@ -16,10 +16,26 @@ const EARTH_MEAN_RADIUS_M = 6371008.8;
 // of a sustained windmilling solution; this is an engine-algorithm boundary,
 // not an aircraft operating limit or a fitted glide-performance tolerance.
 const REGULAR_ADVANCE_RADPS = 0.01 * 2 * Math.PI;
-// Declared coverage of the hash-pinned Aero-Matic fixed-pitch source tables
-// (utils/aeromatic/prop2.php); these are model-data bounds, not fitted tolerances.
-const MAX_THRUST_ADVANCE_RATIO = 1.4;
-const MAX_POWER_ADVANCE_RATIO = 1.6;
+// Declared coverage of the prepared propeller tables, read from the build record:
+// Aero-Matic rows (utils/aeromatic/prop2.php) followed by rows converted from the
+// digitized NACA Report 641 negative region. These are model-data bounds, not
+// fitted tolerances; JSBSim clamps beyond the last row.
+const BUILD = JSON.parse(readFileSync(new URL('./dist/build-info.json', import.meta.url), 'utf8'));
+const PROPELLER_ADAPTER = BUILD.propeller_adapter;
+assert.equal(PROPELLER_ADAPTER?.adapter_id, 'gefly-generic-fixed-pitch-windmilling-v2',
+  'rebuild with the NACA TR-641 negative-region propeller adapter');
+const NEGATIVE_REGION = PROPELLER_ADAPTER.inputs.negative_region;
+const MAX_TABLE_ADVANCE_RATIO = NEGATIVE_REGION.extension_j_max;
+const AEROMATIC_END_ADVANCE_RATIO = NEGATIVE_REGION.aeromatic_table_end_j;
+assert(Object.values(AEROMATIC_END_ADVANCE_RATIO).every(j => Number.isFinite(MAX_TABLE_ADVANCE_RATIO) && MAX_TABLE_ADVANCE_RATIO > j));
+// Advance ratios that use the appended TR-641 rows, per table.
+const tr641Rows = advanceRatio => Object.fromEntries(Object.entries(AEROMATIC_END_ADVANCE_RATIO)
+  .map(([table, end]) => [table, advanceRatio > end]));
+// Cessna 172S Information Manual Figure 3-1 reading recorded in
+// docs/research/2026-11-01-c172s-poh-values.md (68 KIAS, 18.0 nm from 12,000 ft,
+// propeller windmilling, flaps up, zero wind). Context only: this generic C172P
+// model is not accepted against it, and it is never used as a pass threshold.
+const POH_172S_GLIDE_RATIO_REFERENCE = 18.0 * 1852 / (12000 * 0.3048);
 const read = (fn, count) => {
   const offset = fn() >> 3;
   const values = Array.from(M.HEAPF64.subarray(offset, offset + count));
@@ -44,11 +60,12 @@ const runCase = (initialTasMps, mode) => {
   assert.equal(M._gf_set_engine_controls(mode === 'mixture-cutoff' ? 0 : 1, mode === 'mixture-cutoff' ? 0 : 1), 0);
   if (mode.startsWith('ignition-off')) assert.equal(M._gf_set_engine_running(0), 0);
   const samples = [];
-  let horizontalM = 0, initial = null, previous = null;
+  let horizontalM = 0, initial = null, previous = null, maxRegularAdvance = 0;
   for (let step = 0; step <= 120 / DT_S; step++) {
     const s = read(M._gf_state, 14);
     const prop = read(M._gf_propeller_state, 4);
     const running = read(M._gf_engine_switch_state, 2)[0];
+    if (prop[3] > REGULAR_ADVANCE_RADPS) maxRegularAdvance = Math.max(maxRegularAdvance, prop[2]);
     if (step >= 60 / DT_S) {
       if (previous) horizontalM += distance(previous, s);
       initial ??= s;
@@ -79,25 +96,34 @@ const runCase = (initialTasMps, mode) => {
     energy_sink_mps: energySinkMps, mean_thrust_n: mean('thrust_n'),
     mean_shaft_power_w: mean('shaft_power_w'), mean_prop_radps: mean('prop_radps'),
     final_digest_fnv1a64: M.UTF8ToString(M._gf_digest_hex()) };
+  // The binding criterion is the regular-branch shaft speed with negative thrust.
+  // The J bound only guards the tabulated data domain (the fallback branch reports
+  // J = V/D, well below it); it is not a tolerance on windmilling behavior.
   const regularWindmill = samples.every(s => s.prop_radps > REGULAR_ADVANCE_RADPS && s.thrust_n < 0
-    && s.advance_ratio <= MAX_THRUST_ADVANCE_RATIO && s.advance_ratio <= MAX_POWER_ADVANCE_RATIO);
-  // Preserve this observed counterexample as unaccepted model behavior. It must
-  // not become a passing windmilling case just because RPM/drag contain tiny
-  // floating-point remnants. If a future model actually sustains an in-envelope
-  // solution, the same fixture naturally becomes a nominal case.
-  const knownEnvelopeLimitation = initialTasMps === 35 && mode === 'ignition-off-idle'
-    && samples.every(s => s.prop_radps <= REGULAR_ADVANCE_RADPS
-      && s.advance_ratio > MAX_THRUST_ADVANCE_RATIO && s.advance_ratio > MAX_POWER_ADVANCE_RATIO);
+    && s.advance_ratio <= MAX_TABLE_ADVANCE_RATIO);
+  // Preserve this observed counterexample as unaccepted model behavior. At this
+  // lowest fixture speed with closed throttle, JSBSim's dead-engine loss (constant
+  // static-friction power, i.e. torque growing as 1/RPM, plus manifold pumping)
+  // exceeds the source windmilling torque and the shaft stops. FGPropeller then
+  // applies no locked-propeller force. It must not become a passing windmilling
+  // case through tiny floating-point remnants; if a future model sustains an
+  // in-envelope solution, the same fixture naturally becomes a nominal case.
+  const knownStoppedLimitation = initialTasMps === 30 && mode === 'ignition-off-idle'
+    && samples.every(s => s.prop_radps <= REGULAR_ADVANCE_RADPS);
   result.observed_advance_ratio_range = [Math.min(...samples.map(s => s.advance_ratio)), Math.max(...samples.map(s => s.advance_ratio))];
-  result.status = knownEnvelopeLimitation
-    ? 'not-accepted: outside finite propeller table/low-RPM model envelope' : 'pass';
-  if (knownEnvelopeLimitation) result.limitation = 'Stopped-propeller blade drag is not modeled; near-zero RPM and thrust do not satisfy the sustained-windmilling criterion.';
+  const windowRegular = samples.filter(s => s.prop_radps > REGULAR_ADVANCE_RADPS).map(s => s.advance_ratio);
+  result.tr641_rows_in_window = tr641Rows(windowRegular.length ? Math.max(...windowRegular) : 0);
+  result.max_regular_advance_ratio_0_120_s = maxRegularAdvance;
+  result.tr641_rows_0_120_s = tr641Rows(maxRegularAdvance);
+  result.status = knownStoppedLimitation
+    ? 'not-accepted: dead-engine friction stops the shaft; no locked-propeller force' : 'pass';
+  if (knownStoppedLimitation) result.limitation = 'Locked-propeller drag and native low-RPM engine friction torque are not modeled; near-zero RPM and thrust do not satisfy the sustained-windmilling criterion.';
   if (mode === 'powered') {
     assert(samples.every(s => s.running === 1 && s.thrust_n > 0), 'powered comparator retains combustion and positive propeller thrust');
   } else {
     assert(samples.every(s => s.running === 0), `${mode}: combustion stays off without starter or relight`);
-    if (!knownEnvelopeLimitation) {
-      assert(regularWindmill, `${mode}: forward flight sustains windmilling drag inside the declared coefficient-table and regular advance-ratio envelope`);
+    if (!knownStoppedLimitation) {
+      assert(regularWindmill, `${mode}: forward flight sustains windmilling drag within the 60–120 s window, inside the declared coefficient-table and regular advance-ratio envelope`);
     }
     assert(samples.every(s => s.shaft_power_w < 0), `${mode}: native engine absorbs shaft power`);
     assert(heightLossM > 0 && energySinkMps > 0, `${mode}: unpowered flight loses altitude and specific mechanical energy`);
@@ -105,7 +131,7 @@ const runCase = (initialTasMps, mode) => {
   return result;
 };
 const cases = [];
-for (const initialTasMps of [35, 45]) {
+for (const initialTasMps of [30, 35, 45]) {
   const speedCases = ['powered', 'ignition-off', 'ignition-off-idle', 'mixture-cutoff'].map(mode => runCase(initialTasMps, mode));
   cases.push(...speedCases);
   const [powered, ...unpowered] = speedCases;
@@ -113,10 +139,60 @@ for (const initialTasMps of [35, 45]) {
     assert(off.energy_sink_mps > powered.energy_sink_mps, `${off.mode}: energy loss exceeds same-initial-condition powered flight`);
   }
 }
+// The former finite-table counterexample (35 m/s, closed throttle) must now be a
+// nominal case within the 60–120 s window. It windmills on the appended TR-641
+// thrust rows in that window and passes through the appended power rows after
+// shutdown. Its later stop is recorded by the long-duration fixture below.
+const formerLimitation = cases.find(c => c.initial_tas_mps === 35 && c.mode === 'ignition-off-idle');
+assert(formerLimitation.status === 'pass' && formerLimitation.tr641_rows_in_window.C_THRUST
+  && formerLimitation.tr641_rows_0_120_s.C_POWER,
+  '35 m/s closed-throttle shutdown sustains windmilling drag within the 60–120 s window beyond the Aero-Matic table ends');
 // A fresh native model must reset engine/FCS/propeller state and repeat exactly.
 const repeated = runCase(35, 'ignition-off-idle');
 const original = cases.find(c => c.initial_tas_mps === 35 && c.mode === 'ignition-off-idle');
 assert.deepEqual(repeated, original, 'reinitializing repeats the complete fixed-step trajectory, digest and diagnostics exactly');
+// Long-duration closed-throttle descents from 2,500 m: sample once per second for
+// 420 s. Report when (if ever) the shaft leaves the regular windmilling branch, and
+// a 180–240 s energy-based glide diagnostic (mean TAS over specific-energy sink).
+// 40 m/s TAS is about 68 KIAS at this height. A stop is an unaccepted model
+// limitation (native dead-engine friction, no locked-propeller force), not a pass.
+const LONG_S = 420;
+const runLong = (initialTasMps, mode) => {
+  assert.equal(M._gf_init(DT_S, 49.96 * DEG, 8.643 * DEG, 2500, 82 * DEG, initialTasMps), 0);
+  assert.equal(M._gf_trim_status(), 1);
+  const throttle = mode === 'ignition-off-idle' ? 0 : M._gf_trim_throttle();
+  assert.equal(M._gf_set_inputs(0, 0, 0, throttle), 0);
+  assert.equal(M._gf_set_secondary_inputs(0, 0), 0);
+  assert.equal(M._gf_set_autopilot(2, 82 * DEG), 0);
+  assert.equal(M._gf_set_autopilot_vertical(0, 0), 0);
+  assert.equal(M._gf_set_engine_controls(1, 1), 0);
+  assert.equal(M._gf_set_engine_running(0), 0);
+  const seconds = [];
+  for (let step = 0; step <= LONG_S / DT_S; step++) {
+    if (step % (1 / DT_S) === 0) {
+      const s = read(M._gf_state, 14), prop = read(M._gf_propeller_state, 4);
+      assert.equal(read(M._gf_cockpit_state, 8)[7], 0, 'long descent remains airborne');
+      seconds.push({ t_s: s[0], alt_msl_m: s[3], tas_mps: s[7], thrust_n: prop[0], advance_ratio: prop[2], prop_radps: prop[3] });
+    }
+    if (step < LONG_S / DT_S) assert.equal(M._gf_step(), 0);
+  }
+  const stopped = seconds.find(s => s.t_s >= 60 && s.prop_radps <= REGULAR_ADVANCE_RADPS);
+  const window = seconds.filter(s => s.t_s >= 180 && s.t_s <= 240);
+  const [a, b] = [window[0], window.at(-1)];
+  const energySinkMps = (energyHeight([0, 0, 0, a.alt_msl_m, 0, 0, 0, a.tas_mps]) - energyHeight([0, 0, 0, b.alt_msl_m, 0, 0, 0, b.tas_mps])) / (b.t_s - a.t_s);
+  const meanTas = window.reduce((sum, s) => sum + s.tas_mps, 0) / window.length;
+  const rpm = s => s.prop_radps * 60 / (2 * Math.PI);
+  return { initial_tas_mps: initialTasMps, mode, duration_s: LONG_S,
+    rpm_every_30_s: seconds.filter(s => Math.round(s.t_s) % 30 === 0).map(s => Math.round(rpm(s))),
+    thrust_n_every_30_s: seconds.filter(s => Math.round(s.t_s) % 30 === 0).map(s => Math.round(s.thrust_n)),
+    shaft_stopped_at_s: stopped ? stopped.t_s : null, alt_msl_m_at_stop: stopped ? stopped.alt_msl_m : null,
+    energy_glide_ratio_180_240_s: meanTas / energySinkMps, mean_tas_180_240_s: meanTas,
+    status: stopped ? 'not-accepted: shaft stops during the long closed-throttle descent; no locked-propeller force' : 'pass' };
+};
+const longCases = [runLong(35, 'ignition-off-idle'), runLong(40, 'ignition-off-idle'), runLong(40, 'ignition-off')];
+for (const c of longCases.filter(c => c.initial_tas_mps === 40)) {
+  assert.equal(c.status, 'pass', `${c.mode}: 40 m/s windmills for the whole ${LONG_S} s descent`);
+}
 // Maintain the ignition / fuel / native-starter contract alongside aerodynamic
 // changes. A better glide must not be obtained by secretly keeping combustion on
 // or replacing native shaft dynamics with an imposed RPM value.
@@ -166,13 +242,18 @@ const runRestart = () => {
 };
 const restart = runRestart();
 assert.deepEqual(runRestart(), restart, 'fresh reset repeats complete shutdown / cutoff / restart trajectory exactly');
-const nominalCases = cases.filter(c => c.status === 'pass').length;
-const unacceptedCases = cases.length - nominalCases;
+const allCases = [...cases, ...longCases];
+const nominalCases = allCases.filter(c => c.status === 'pass').length;
+const unacceptedCases = allCases.length - nominalCases;
 console.log(JSON.stringify({ result: unacceptedCases ? 'pass-with-known-model-limitation' : 'pass',
   accepted_nominal_cases: nominalCases, not_accepted_model_fixtures: unacceptedCases, scope: 'generic c172x native windmilling and energy regression; no aircraft glide-ratio acceptance',
   wasm_sha256: createHash('sha256').update(readFileSync(new URL('./dist/jsbsim.wasm', import.meta.url))).digest('hex'),
+  propeller_adapter: { adapter_id: PROPELLER_ADAPTER.adapter_id, prepared_sha256: PROPELLER_ADAPTER.prepared_sha256,
+    negative_region_source: PROPELLER_ADAPTER.negative_region_source, max_table_advance_ratio: MAX_TABLE_ADVANCE_RATIO },
+  context_not_threshold: { poh_172s_glide_ratio: POH_172S_GLIDE_RATIO_REFERENCE,
+    note: '172S Figure 3-1 reading (68 KIAS, windmilling, flaps up, zero wind, no weight stated); the generic C172P model is not accepted against it' },
   diagnostic: '60–120 s after shutdown; retracted flaps, native longitudinal pitch trim, lateral leveling only; retained trim-throttle except explicit idle case; spherical horizontal range and standard-g energy-height diagnostic',
   repeat: { initial_tas_mps: 35, mode: 'ignition-off-idle', final_digest_fnv1a64: repeated.final_digest_fnv1a64, exact_match: true },
   restart: { exact_reset_match: true, coast_prop_radps: restart.coast.propeller[3],
     restored_thrust_n: restart.restarted.propeller[0],
-    final_digest_fnv1a64: restart.stopped_again.digest }, cases }, null, 2));
+    final_digest_fnv1a64: restart.stopped_again.digest }, cases, long_cases: longCases }, null, 2));
