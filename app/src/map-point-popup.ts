@@ -2,6 +2,7 @@ import type { PlanRole, PlanResult } from './map-flight-plan-types';
 import { validFrequency, type RadioKind, type RadioReceiver } from './radio-nav';
 import './map-point-popup.css';
 import { approachGuideLimitations, type ApproachGuide } from './approach-guide.ts';
+import { coordinate, formatPointPosition, validMapPosition } from './map-point-position';
 
 export type MapLaunchHeightFt = 0 | 1000 | 5000 | 10000;
 export interface MapFlyFromActions {
@@ -9,7 +10,6 @@ export interface MapFlyFromActions {
   onFlyFrom?(position: { lat_deg: number; lon_deg: number }, height_ft: MapLaunchHeightFt): void;
 }
 const flightAvailability = new WeakMap<HTMLElement, () => void>();
-const coordinate = (value: number, positive: string, negative: string) => `${Math.abs(value).toFixed(5)}° ${value < 0 ? negative : positive}`;
 /** Refresh availability without rebuilding a popup or losing its height choice. */
 export function refreshMapPopupFlightAvailability(popup: HTMLElement): void { flightAvailability.get(popup)?.(); }
 
@@ -45,6 +45,8 @@ export interface MapPoint {
   readonly airport_type?: string;
   readonly lon_deg: number;
   readonly lat_deg: number;
+  /** Airport field elevation from the source, in feet; null when the source has none. */
+  readonly elevation_ft?: number | null;
   readonly source_label: string;
   readonly equipment?: string;
   readonly custom?: true;
@@ -101,10 +103,8 @@ export function createMapPointPopup(input: Readonly<MapPoint>, actions: MapPoint
   const section = node('section'); section.className = 'map-point-popup';
   section.setAttribute('aria-label', 'Selected map point'); section.dataset.pointId = point.id;
   section.append(node('strong', point.name === point.id ? point.id : `${point.id} · ${point.name}`));
-  const validPosition = Number.isFinite(point.lat_deg) && Math.abs(point.lat_deg) <= 90
-    && Number.isFinite(point.lon_deg) && Math.abs(point.lon_deg) <= 180;
-  section.append(node('p', `${point.kind} · ${validPosition
-    ? `${coordinate(point.lat_deg, 'N', 'S')}, ${coordinate(point.lon_deg, 'E', 'W')}` : 'Coordinates unavailable'}`));
+  const validPosition = validMapPosition(point);
+  section.append(node('p', formatPointPosition(point)));
   const source = node('p', point.source_label); source.className = 'map-point-popup-source'; section.append(source);
   for (const detail of (point.details ?? []).slice(0, 12)) section.append(node('p', detail));
   if (point.kind === 'airport' && actions.onApproachGuide) {
