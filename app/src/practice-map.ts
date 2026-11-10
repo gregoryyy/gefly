@@ -1,4 +1,4 @@
-import { COUNTRY_IMAGERY, COUNTRY_PHOTO_DETAIL_MIN_LEVEL, COUNTRY_PHOTO_MAX_LEVEL, COUNTRY_PHOTO_MIN_LEVEL, countryPhotoCandidates, countryPhotoUrl, type PhotoCountry } from './country-imagery.ts';
+import { COUNTRY_IMAGERY, COUNTRY_PHOTO_DETAIL_MIN_LEVEL, COUNTRY_PHOTO_MAX_LEVEL, COUNTRY_PHOTO_MIN_LEVEL, countryPhotoCandidates, countryPhotoRectangleMayContain, countryPhotoUrl, type PhotoCountry } from './country-imagery.ts';
 import { countryPhotoBackoff } from './country-photo-backoff.ts';
 import { showVisibleSpainCredit } from './visible-photo-credit.ts';
 import { createOfmMapOverlay, OFM_OVERLAY_ID } from './ofm-map-overlay.ts';
@@ -430,6 +430,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     const runways = runwayByAirport.get(airport.id) ?? [];
     const guides = airportApproachGuides(airport, runways, `OurAirports community snapshot ${worldSnapshot?.retrieved ?? 'date unavailable'} · revision ${worldSnapshot?.source_commit ?? 'unavailable'}`);
     return { approach_guides: guides, id: airport.icao || airport.id, name: airport.name, kind: 'airport', airport_type: airport.type, lon_deg: airport.lon, lat_deg: airport.lat,
+      elevation_ft: airport.elevation_ft,
       ...(worldAirport ? { world_record_id: airport.id, details: runways.length ? runways.slice(0, 8).map(r =>
         `Runway ${r.le.ident || '?'} / ${r.he.ident || '?'} · ${r.length_ft === null ? 'length unknown' : `${r.length_ft} ft`}${r.width_ft === null ? '' : ` × ${r.width_ft} ft`} · ${r.surface || 'surface unknown'}${r.closed ? ' · CLOSED' : ''}`)
         : ['Runway details unavailable in this snapshot.'] } : {}),
@@ -754,8 +755,13 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
 
   function syncCountryPhotoLayers(): void {
     if (!ready || !map) return;
+    // MapLibre credits every visible source regardless of the viewport, so a
+    // source is shown only while the view can contain its pixels.
+    const bounds = map.getBounds(), wide = bounds.getEast() - bounds.getWest() >= 360;
+    const west = wide ? -180 : Math.max(-180, bounds.getWest()), east = wide ? 180 : Math.min(180, bounds.getEast());
     for (const source of COUNTRY_IMAGERY) {
-      const layerId = `country-photo-${source.id}`, show = visible && aerial && !countryPhotoBackoff.isBlocked(source.id);
+      const layerId = `country-photo-${source.id}`, eligible = visible && aerial && !countryPhotoBackoff.isBlocked(source.id);
+      const show = eligible && countryPhotoRectangleMayContain(source.id, west, bounds.getSouth(), east, bounds.getNorth());
       if (!map.getLayer(layerId)) continue;
       if (show && countryPhotoNeedsRefresh.has(source.id)) {
         // Recreate only this source and its layer, so every retry gets fresh
@@ -772,8 +778,13 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       const next = show ? 'visible' : 'none';
       const current = map.getLayoutProperty(layerId, 'visibility');
       if (current !== next) {
-        if (current === 'visible' && next === 'none') countryPhotoNeedsRefresh.add(source.id);
-        countryPhotoEpoch[source.id]++; map.setLayoutProperty(layerId, 'visibility', next);
+        // Mode or backoff hides refresh the source on return; a viewport-only
+        // hide keeps MapLibre's tiles and the current error ticket.
+        if (!eligible) {
+          if (current === 'visible') countryPhotoNeedsRefresh.add(source.id);
+          countryPhotoEpoch[source.id]++;
+        }
+        map.setLayoutProperty(layerId, 'visibility', next);
       }
     }
   }
@@ -1339,7 +1350,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
       window.removeEventListener('pointercancel', clearWaypointGesture); window.removeEventListener('blur', clearWaypointGesture);
       document.removeEventListener('visibilitychange', waypointVisibility);
     });
-    map.on('moveend', () => { requestWorldCenter(); paintAirports(); paintNavigation(); paintWorldNavigation(); paintFixes(); paintCircuit(); });
+    map.on('moveend', () => { requestWorldCenter(); paintAirports(); paintNavigation(); paintWorldNavigation(); paintFixes(); paintCircuit(); syncCountryPhotoLayers(); });
     map.on('click', 'world-navigation-stations', event => { const nav = worldSnapshot?.navaids.find(n => n.id === event.features?.[0]?.properties.id); if (nav) { openPoint(worldNavaidPoint(nav)); onInteraction(); } });
     map.on('click', 'airfields', event => {
       const airport = airports.find(a => a.id === event.features?.[0]?.properties.id);

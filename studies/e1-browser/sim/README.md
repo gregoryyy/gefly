@@ -37,16 +37,23 @@ relinking the bridge takes about 20 s. Interactive use: serve the directory with
 any static server (COOP/COEP recommended) and open `sim.html?seconds=30&live=10`.
 
 The local build now prepares a generic windmilling-capable fixed-pitch propeller
-from the pinned Aero-Matic source. It records source/input/output hashes under
-`propeller_adapter` in `dist/build-info.json` and the worker's ready metadata.
+from the pinned Aero-Matic source. Beyond its finite tables, adapter v2 appends
+rows converted from the hash-pinned digitized NACA Report 641 readings in
+`naca-tr641-figure3.json`. The build records source, data, input and output hashes
+under `propeller_adapter` in `dist/build-info.json` and the worker's ready metadata.
 After rebuilding, run `node studies/e1-browser/sim/engine-off-glide-native.mjs`
 from the repository root. It compares powered, ignition-off and mixture-cutoff
-flight with retained/idle throttle, reports settled specific energy and glide
-geometry, and repeats an exact native reset/digest case. Seven nominal cases
-pass; the lower-speed idle case is explicitly **not accepted**, because rotation
-and propeller drag still collapse outside the finite coefficient-table envelope.
-An exit-zero regression result does not accept that known model limitation or
-calibrate C172 performance. See [research](../../../docs/research/2026-11-03-engine-off-glide.md).
+flight with retained/idle throttle at 30, 35 and 45 m/s, reports specific energy
+and glide geometry in a 60–120 s window, and repeats exact native reset/digest and
+restart cases. It also runs 420 s closed-throttle descents at 35 and 40 m/s, plus a
+40 m/s descent with throttle at its trim setting, and reports when the shaft stops
+and a 180–240 s energy glide ratio. Thirteen nominal cases pass, including the
+former 35 m/s closed-throttle counterexample within its window. Two are explicitly
+**not accepted**: the 30 m/s closed-throttle case and the 35 m/s long descent
+(stop at about 250 s). There, JSBSim's dead-engine friction stops the shaft and a
+stopped propeller has no force. An exit-zero regression result does not accept that known model limitation
+or calibrate C172 performance. See [research](../../../docs/research/2026-11-03-engine-off-glide.md)
+and the [TR-641 extension](../../../docs/research/2026-11-09-engine-off-propeller-tr641.md).
 
 ## Contract interpretation
 

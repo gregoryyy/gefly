@@ -207,12 +207,13 @@ does not adopt their content or grant reuse rights.
 
 ## Pillow scenery compositor
 
-Pillow **11.2.1**, installed separately from
-`utils/scenery/requirements.txt`, supports live PNG composition and existing
-offline imagery authoring. It is not bundled into browser or physics code.
+Pillow **12.3.0**, installed separately from
+`utils/scenery/requirements.txt` (for example by `just scenery-venv`), supports
+live PNG composition and country-photo decoding. The offline imagery compiler
+keeps its own Pillow 11.2.1 pin (above). It is not bundled into browser or physics code.
 The installed wheel retains the full license and notices of its native libraries;
 those notices must accompany any later packaged redistribution. The inspected
-Pillow 11.2.1 core license states:
+Pillow 12.3.0 core license states:
 
 > The Python Imaging Library (PIL) is
 >
@@ -221,9 +222,9 @@ Pillow 11.2.1 core license states:
 >
 > Pillow is the friendly PIL fork. It is
 >
-> Copyright © 2010 by Jeffrey A. Clark and contributors
-
-Pillow is licensed under the open source MIT-CMU License:
+> Copyright © 2010 by Jeffrey 'Alex' Clark and contributors
+>
+> Like PIL, Pillow is licensed under the open source MIT-CMU License:
 
 > By obtaining, using, and/or copying this software and/or its associated
 > documentation, you agree that you have read, understood, and will comply
@@ -267,6 +268,16 @@ existing engine's direct-drive design RPM for the generator's gearing estimate,
 retaining the existing propeller geometry/inertia/Mach correction data. Generated
 model bytes are excluded from source distribution and do not establish aircraft
 performance or broader model-data redistribution rights.
+
+Beyond the Aero-Matic table ends, the preparation appends rows converted from
+`studies/e1-browser/sim/naca-tr641-figure3.json`. That file holds digitized numeric
+readings of figure 3 of Edwin P. Hartman and David Biermann, *The Negative Thrust
+and Torque of Several Full-Scale Propellers and Their Application to Various Flight
+Problems*, NACA Report 641 (1938),
+[NTRS 19930091716](https://ntrs.nasa.gov/citations/19930091716). It was authored
+and published by NACA, a U.S. federal agency. The NTRS record lists distribution
+public and copyright determination "government public use permitted" (its
+belongs-to-U.S.-Government flag is false).
 
 
 ## EDFE vector scenery and airport COM directory

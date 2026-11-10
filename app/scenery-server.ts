@@ -32,7 +32,18 @@ const PHOTO_BOUNDS: Record<Exclude<Source, 'map'>, readonly [number, number, num
 };
 type Fetcher = typeof fetch;
 type Result = { bytes: Buffer; type: string; sources: string; partial: boolean; expires: number };
-export interface SceneryOptions { fetcher?: Fetcher; cacheBytes?: number; python?: string }
+export interface SceneryOptions { fetcher?: Fetcher; cacheBytes?: number; python?: string; warn?: (message: string) => void }
+/** Local compositor state; 'unavailable' means the interpreter could not start or import Pillow. */
+export type CompositorState = 'unknown' | 'ready' | 'unavailable';
+const COMPOSITOR_RECHECK_MS = 30000;
+// Raised when the interpreter cannot start or cannot import Pillow, unlike an invalid image.
+class CompositorUnavailable extends Error {}
+// A nonzero interpreter exit without an import diagnostic (for example an invalid image).
+class CompositorExited extends Error {}
+// Missing or broken Pillow (absent module, failed _imaging load, wrong-ABI wheel) fails at import.
+const IMPORT_FAILED = /\b(?:ModuleNotFoundError|ImportError)\b/;
+// Only these spawn errors mean the configured interpreter cannot run; EAGAIN/EMFILE are transient.
+const INTERPRETER_MISSING = new Set(['ENOENT', 'EACCES', 'ENOTDIR', 'ENOEXEC']);
 
 class Semaphore {
   private active = 0;
@@ -87,25 +98,52 @@ async function readBounded(response: Response): Promise<Buffer> {
   } finally { await reader.cancel(); }
   return Buffer.concat(chunks, size);
 }
-function compose(images: Buffer[], python: string): Promise<Buffer> {
+function runPython(python: string, args: string[], input: string, timeoutMs: number): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const script = fileURLToPath(new URL('../utils/scenery/compose.py', import.meta.url));
-    const child = spawn(python, [script], { stdio: ['pipe', 'pipe', 'ignore'], env: { PATH: process.env.PATH || '/usr/bin:/bin' } });
-    let done = false, size = 0; const chunks: Buffer[] = [];
+    const child = spawn(python, args, { stdio: ['pipe', 'pipe', 'pipe'], env: { PATH: process.env.PATH || '/usr/bin:/bin' } });
+    let done = false, size = 0, diagnostic = ''; const chunks: Buffer[] = [];
     const finish = (error?: Error) => { if (done) return; done = true; clearTimeout(timer); if (error) { child.kill(); reject(error); } else resolve(Buffer.concat(chunks, size)); };
-    const timer = setTimeout(() => finish(new Error('compositor timeout')), 15000);
-    child.on('error', () => finish(new Error('compositor unavailable')));
+    const timer = setTimeout(() => finish(new Error('compositor timeout')), timeoutMs);
+    child.on('error', (error: NodeJS.ErrnoException) => finish(INTERPRETER_MISSING.has(error.code ?? '')
+      ? new CompositorUnavailable('compositor interpreter unavailable') : new Error('compositor spawn failed')));
     child.stdin.on('error', () => finish(new Error('compositor input failed')));
+    // Bounded diagnostics only distinguish a failed Pillow import from an invalid image.
+    child.stderr.on('data', (chunk: Buffer) => { if (diagnostic.length < 4096) diagnostic += chunk.toString('utf8').slice(0, 4096 - diagnostic.length); });
     child.stdout.on('data', (chunk: Buffer) => { size += chunk.length; if (size > LIMIT) finish(new Error('compositor output too large')); else chunks.push(chunk); });
-    child.on('close', (code) => code === 0 && size > 3 ? finish() : finish(new Error('compositor failed')));
-    child.stdin.end(JSON.stringify(images.map((image) => image.toString('base64'))));
+    child.on('close', (code) => code === 0 ? finish()
+      : finish(IMPORT_FAILED.test(diagnostic) ? new CompositorUnavailable('Pillow unavailable') : new CompositorExited('compositor failed')));
+    child.stdin.end(input);
   });
+}
+async function compose(images: Buffer[], python: string): Promise<Buffer> {
+  const script = fileURLToPath(new URL('../utils/scenery/compose.py', import.meta.url));
+  const result = await runPython(python, [script], JSON.stringify(images.map((image) => image.toString('base64'))), 15000);
+  if (result.length <= 3) throw new Error('compositor failed');
+  return result;
 }
 
 /** Fixed-source, memory-bounded local XYZ proxy. No request parameter becomes a URL or path. */
 export function sceneryMiddleware(options: SceneryOptions = {}) {
   const vectorMap = createVectorMapMiddleware(options);
-  const fetcher = options.fetcher || fetch, python = options.python || 'python3';
+  // PYTHON selects the same interpreter as the country-photo proxy, e.g. the `just scenery-venv` environment.
+  const fetcher = options.fetcher || fetch, python = options.python || process.env.PYTHON || 'python3';
+  const warn = options.warn ?? ((message: string) => console.warn(message));
+  let compositor: CompositorState = 'unknown', recheckAt = 0, warned = false, probe: Promise<void> | null = null;
+  function compositorFailed(): void {
+    compositor = 'unavailable'; recheckAt = Date.now() + COMPOSITOR_RECHECK_MS;
+    if (warned) return;
+    warned = true;
+    warn(`[gefly scenery] ${python} cannot run the photo compositor (Python Pillow missing or interpreter unavailable); `
+      + 'live aerial photos are disabled. Run `just scenery-venv` and restart `just fly`, or set PYTHON to an interpreter with Pillow.');
+  }
+  function probeCompositor(): Promise<void> {
+    // The probe only imports Pillow, so any nonzero exit means it is unusable.
+    probe ??= runPython(python, ['-c', 'import PIL.Image'], '', 10000).then(() => { compositor = 'ready'; }, (error: unknown) => {
+      if (error instanceof CompositorUnavailable || error instanceof CompositorExited) compositorFailed();
+      else recheckAt = Date.now() + COMPOSITOR_RECHECK_MS; // transient: stay 'unknown' without a probe per request
+    }).finally(() => { probe = null; });
+    return probe;
+  }
   const capacity = Math.max(0, Math.min(32 * 1024 * 1024, options.cacheBytes ?? 32 * 1024 * 1024));
   // Visible cartography never waits for regional photography or composition.
   const mapNetwork = new Semaphore(4), photoNetwork = new Semaphore(4), composers = new Semaphore(2);
@@ -133,13 +171,26 @@ export function sceneryMiddleware(options: SceneryOptions = {}) {
     const images: Buffer[] = [], sources: string[] = [];
     results.forEach((result, i) => { if (result.status === 'fulfilled') { images.push(result.value); sources.push(selected[i]); } });
     if (!images.length) throw new Error('imagery unavailable');
-    const bytes = await composers.run(() => compose(images, python));
+    const bytes = await composers.run(() => compose(images, python)).then((value) => { compositor = 'ready'; return value; }, (error: unknown) => {
+      if (error instanceof CompositorUnavailable) compositorFailed();
+      throw error;
+    });
     return { bytes, type: 'image/png', sources: sources.join(','), partial: sources.length !== selected.length, expires: Date.now() + 900000 };
   }
   return (req: IncomingMessage, res: ServerResponse, next: () => void): void => {
     const url = req.url || '';
     if (url.startsWith('/scenery/vector/') || url.startsWith('/scenery/landmarks/') || url.startsWith('/scenery/osm/')) { vectorMap(req, res, next); return; }
     if (!url.startsWith('/scenery/')) { next(); return; }
+    if (url === '/scenery/imagery/status.json' && ['GET', 'HEAD'].includes(req.method || '')) {
+      // Fixed local self-description: no interpreter path or diagnostic text is exposed.
+      const recheck = compositor !== 'ready' && Date.now() >= recheckAt;
+      void (recheck ? probeCompositor() : Promise.resolve()).then(() => {
+        const body = Buffer.from(JSON.stringify({ compositor }));
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': body.length, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
+        res.end(req.method === 'HEAD' ? undefined : body);
+      });
+      return;
+    }
     const match = /^\/scenery\/(map|imagery)\/(\d{1,2})\/(\d{1,6})\/(\d{1,6})\.(png|jpg)$/.exec(url);
     if (!match || !['GET', 'HEAD'].includes(req.method || '') || match[5] !== 'png') { res.writeHead(404).end(); return; }
     const [, kind, zs, xs, ys] = match; const z = Number(zs), x = Number(xs), y = Number(ys), n = 2 ** z;
@@ -152,6 +203,10 @@ export function sceneryMiddleware(options: SceneryOptions = {}) {
     if (result && result.expires <= Date.now()) { cache.delete(key); cacheSize -= result.bytes.length; result = undefined; }
     if (result) { cache.delete(key); cache.set(key, result); }
     let task = result ? Promise.resolve(result) : pending.get(key);
+    // Without a working compositor, spend no public WMS requests until the next recheck.
+    if (!task && kind === 'imagery' && compositor === 'unavailable' && Date.now() < recheckAt) {
+      res.writeHead(503, { 'Cache-Control': 'no-store', 'X-Scenery-Status': 'compositor-unavailable' }).end(); return;
+    }
     const visible = req.headers['x-gefly-scenery-priority'] === 'visible';
     if (visible && priorities.has(key)) priorities.get(key)!.value = 1;
     if (!task) {
@@ -170,6 +225,10 @@ export function sceneryMiddleware(options: SceneryOptions = {}) {
     task.then((value) => {
       res.writeHead(200, { 'Content-Type': value.type, 'Content-Length': value.bytes.length, 'Cache-Control': 'private, max-age=300', 'X-Scenery-Sources': value.sources, 'X-Scenery-Partial': String(value.partial), 'X-Content-Type-Options': 'nosniff' });
       res.end(req.method === 'HEAD' ? undefined : value.bytes);
-    }).catch(() => { if (!res.headersSent) res.writeHead(502, { 'Cache-Control': 'no-store' }).end(); });
+    }).catch((error: unknown) => {
+      if (res.headersSent) return;
+      if (error instanceof CompositorUnavailable) res.writeHead(503, { 'Cache-Control': 'no-store', 'X-Scenery-Status': 'compositor-unavailable' }).end();
+      else res.writeHead(502, { 'Cache-Control': 'no-store' }).end();
+    });
   };
 }

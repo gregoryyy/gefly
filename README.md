@@ -112,13 +112,29 @@ or an ATC service.
 
 ## Fly the prototype
 
+Prerequisites (macOS: `brew install just cmake node python git`):
+
+- [`just`](https://github.com/casey/just) to run the recipes below
+- Node.js 24.2+ with npm, for the app and its dev server
+- Python 3.11+, for the scenery tools and the engine build's aircraft preparation
+- Git and **CMake**, for `just build-flight-engine`. The first build also needs
+  network access: it downloads the pinned Emscripten SDK and JSBSim v1.3.3 into
+  ignored `output/flight/engine-build/`, then compiles them, which takes several minutes.
+- `lsof`, for `just stop` (included with macOS)
+
 ```sh
 npm --prefix app ci
-python3 -m pip install -r utils/scenery/requirements.txt  # live photo compositing
+just scenery-venv          # ignored .venv with pinned Pillow for live aerial photos
 just build-flight-engine   # first run: builds the local research runtime
 just fly                  # http://127.0.0.1:5173
 just stop                 # stop this checkout's flight server
 ```
+
+`just scenery-venv` creates `.venv` and installs `utils/scenery/requirements.txt`
+there, so it also works with an externally managed Homebrew Python. `just fly`
+then passes that interpreter to the scenery proxies as `PYTHON`; an explicitly
+set `PYTHON` takes precedence. Without Pillow, live Hessen/state and country
+aerial photos are unavailable: the status line says so and the map shows instead.
 
 Select **Start flight**, then click the scene for touchpad yoke control or use the keyboard.
 The top menu/title bar and floating flight controls start hidden: **I** toggles
@@ -218,8 +234,9 @@ not deleted. Nearby map/vector data preloads while the start screen is open;
 Start remains available. See the [source inventory](app/public/mapdata/fixes-README.md).
 
 The local development server fetches live map/photo tiles from fixed public
-WMS services. Pillow is needed for photo compositing; provider failure leaves
-map/other scenery fallback. Hosting remains undecided: a static UI build alone
+WMS services. Pillow is needed for photo compositing (`just scenery-venv`); provider failure leaves
+map/other scenery fallback. Status text and photo credits name a state or country
+source only where its coarse outline is near the aircraft or rendered tiles. Hosting remains undecided: a static UI build alone
 does not supply the development scenery proxy or local research engine.
 
 The altimeter's **pressure window** opens paused pressure practice. Compare QNH,
