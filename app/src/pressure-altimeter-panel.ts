@@ -1,5 +1,6 @@
 import type { FlightState } from './types';
 import './pressure-altimeter-panel.css';
+import { MAX_SETTING_PA, MIN_SETTING_PA, PA_PER_INHG, STANDARD_PA } from './pressure-units';
 
 interface PressureAltimeterOptions {
   container: HTMLElement;
@@ -9,11 +10,6 @@ interface PressureAltimeterOptions {
 }
 
 type DisplayUnit = 'hPa' | 'inHg';
-const PA_PER_INHG = 3386.389;
-// Practice UI bounds, not the limits of a sourced aircraft instrument.
-const MIN_SETTING_PA = 80_000;
-const MAX_SETTING_PA = 110_000;
-const STANDARD_PA = 101_325;
 const METRES_PER_FOOT = 0.3048;
 const selectablePressure = (pressure_pa: number) => Number.isFinite(pressure_pa)
   && pressure_pa >= MIN_SETTING_PA && pressure_pa <= MAX_SETTING_PA;

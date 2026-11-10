@@ -3,7 +3,7 @@ import type { Airport } from './airport-catalogue.ts';
 export interface AirportComStation {
   id: string; airport_id: string; service: string; description: string; channel_khz: number; source_frequency_mhz: string;
 }
-export interface AirportComDirectory { stations: AirportComStation[]; retrieved: string; source: string }
+export interface AirportComDirectory { stations: AirportComStation[]; retrieved: string; source: string; /** Verified package hash (bundled snapshot only). */ sha256?: string }
 export const isComChannel = (channel_khz: number): boolean => Number.isInteger(channel_khz)
   && channel_khz >= 118000 && channel_khz <= 136990 && [0, 5, 10, 15].includes(channel_khz % 25);
 
@@ -44,7 +44,7 @@ export async function loadAirportComDirectory(signal?: AbortSignal): Promise<Air
       || !s.id || !s.airport_id || ids.has(s.id) || !Number.isInteger(s.channel_khz) || s.channel_khz <= 0 || s.channel_khz > 500000) throw new Error('Invalid COM station');
     ids.add(s.id); return s;
   });
-  return { stations, retrieved: m.retrieved, source: m.source };
+  return { stations, retrieved: m.retrieved, source: m.source, sha256: m.sha256 };
 }
 
 export function airportDistance_nm(a: { lat: number; lon: number }, b: { lat: number; lon: number }): number {

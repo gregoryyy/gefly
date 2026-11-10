@@ -48,7 +48,7 @@ export function createWorldAirportRepository(options: WorldAirportRepositoryOpti
     const key = `${epoch}|${desired.map(id => cache.has(id) ? id : '-').join(',')}|${partialAdmission}|${manifest?.source_commit ?? ''}`;
     if (aggregate && aggregateKey === key) return aggregate;
     const result: WorldAirportSnapshot = { airports: [], runways: [], com: [], navaids: [],
-      source: manifest?.source ?? '', retrieved: manifest?.retrieved ?? '', source_commit: manifest?.source_commit ?? '', partial: false };
+      source: manifest?.source ?? '', retrieved: manifest?.retrieved ?? '', source_commit: manifest?.source_commit ?? '', partial: false, cells: [] };
     const seen = { airports: new Set<string>(), runways: new Set<string>(), com: new Set<string>(), navaids: new Set<string>() };
     for (const id of desired) {
       const cell = cache.get(id)?.cell;
@@ -62,6 +62,7 @@ export function createWorldAirportRepository(options: WorldAirportRepositoryOpti
           (result[key] as { id: string }[]).push(row);
         }
       }
+      result.cells!.push(id);
     }
     result.partial ||= partialAdmission;
     aggregateKey = key; aggregate = result;

@@ -3,6 +3,64 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-09 19:28 — Simulated airport COM contact with an explicit QNH action
+
+TODO: 2.0.194; R-COMM-2/R-DATA-1/R-AIR-3. Agent: Claude orchestrator (Claude
+Code, Opus 5.5); code2 subagent (Claude Opus 5.5) implemented commits 78cf437,
+07c846d and fc371a6; quality subagents (Claude Opus 5.5) reviewed 78cf437 and
+07c846d. [Request](input/2026-11-07-remaining-flight-tasks.md),
+[repeat](input/2026-11-09-guide-imagery-qnh-runways.md).
+
+**Implementation notes**
+
+`app/src/airport-contact.ts` matches the ACTIVE COM1/COM2 channel exactly
+against aerodrome stations: allow-listed source service types (TWR, GND, RMP,
+APRON, CLD, DEL, RADIO, RDO, CTAF, UNIC, UNICOM, A/G, INFO, AFIS, INFORMATION)
+whose station name matches the listing airport (typo-tolerant, three spelling
+aliases). Radar, director, approach, control, ATIS/AWOS, VOLMET and operations
+rows, names listed by three or more airports worldwide (a fixed table of 525),
+other-place names, 121.5 and closed airports give no welcome; several airports
+in range on one channel give a shared notice. Range is 25 NM horizontal, with
+every airport of the previous result kept to 27 NM. Data counts only where it
+is complete within 27 NM: `app/com-contact-data.ts` generates
+`app/public/airports/com-contact.json` (input-hashed 0.25° mask, 159 of 608
+cells, plus the name table), applied only to the exact verified bundled COM
+hash; world data counts only for fully loaded cells. One airport gives a
+once-per-contact message, e.g. `COM1 118.405 · EDFE Egelsbach Radio / Welcome
+to Frankfurt-Egelsbach Airport. QNH 1013 hPa (29.92 inHg)`, labelled simulated
+text, not ATC, snapshot-dated. QNH is the worker's `altimeter_qnh_pa` (JSBSim
+sea-level pressure, ISA 1013.25 hPa; no weather). A setting inside the
+announced whole hPa counts as on QNH; the button sets the exact simulator value
+via `session.setAltimeter`, behind the controls/Review guards, never
+automatically. The panel sits above the radio stack, is hidden in Review,
+announces once through a persistent hidden live region (cleared when contact
+ends) and collapses after 10 s to a one-line pill (`… · sim`) that hides once
+no action remains. main.ts loads the bundled catalogue/COM once (aborted on
+pagehide) and shares them with the map; `pressure-units.ts` is shared with the
+altimeter panel.
+
+**Deviations**
+
+Two quality reviews changed the design: the first version welcomed with QNH on
+radar, director, FIS and ATIS channels and covered the Review control panel;
+the second treated the five-state bounds rectangle as complete, so near Büchel
+122.100 welcomed ETSB although DE-0201 shares it. No keyboard shortcut. Shared
+or regional channels give no QNH rather than a nearest-airport guess (119.150
+near EDFE is shared; EDMC 128.925 "Langen Information" is a regional name).
+Strict name matching drops a few legitimate contacts (EDGW Wolfhagen Radio,
+EDNC Beilingen Radio, Schwaebisch Hall Information, AIRBUS INFORMATION) and
+callsign-named towers (LIMA, DONAU, GRAF); bundled single contacts: 250. The
+mask is conservative: borders and the north of the bounds give no contact from
+bundled data alone; it must be regenerated (`node com-contact-data.ts`) when
+the bundled COM or world packages change, which `--check` enforces. At ≤620 px
+the first-start gate covers the text until the first Start; at ≤420 px with the
+live controls shown only the pill is visible. Worktree setup deleted the main
+checkout's `.vite` cache in round 1. Checks on fc371a6: tsc clean; focused
+units 40/40; `npm test` 854/854 plus Python; airport-contact (overlap down to
+320×640, live and Review), radio-layout, world-airports and loading browser
+tests pass; `just check`; `just assure check` 0 errors. The fc371a6 fixes are
+not re-reviewed; validation and peer pending.
+
 ## 2026-11-09 19:24 — Name only plausible photo sources and explain missing Pillow
 
 TODO: 2.0.203; R-WORLD-14/R-WORLD-16/R-DATA-1. Agent: Claude orchestrator
@@ -56,6 +114,39 @@ findings are fixed in 68417fe, not re-reviewed. Checks: tsc; `npm test`
 (9 of 23 optional e1-jsbsim study checks skipped); `just assure check` 0
 errors; headless real-proxy checks at EDFE, Gießen and Düsseldorf with and
 without Pillow. Validation and peer review pending.
+
+## 2026-11-09 19:16 — Keep the approach-guide status to one compact line
+
+TODO: 2.0.204; R-NAV-3. Agent: Claude orchestrator (Claude Code, Opus 5.5);
+quality subagents (Claude Opus 5.5) reviewed two earlier versions.
+[Request](input/2026-11-09-guide-imagery-qnh-runways.md).
+
+**Implementation notes**
+
+Showing a 3° guide put a 360 px, five-line status box over the flying view,
+including the 40-character source revision. The status is now one line, for
+example `3° guide · EDFE 08 · illustrative · threshold ≈ runway end` (or
+`waiting for terrain`); the state comes before the optional note, and the
+longest measured text (345 px) fits the 380 px limit. The full disclosure with
+the source revision is the chip's tooltip and stays in the airport popup;
+assistive technology reads the limitations (`approachGuideLimitations()`)
+without the revision. The popup's "Shown" line names the terrain-height
+approximation, with the source on its own small line. The chip is not
+text-selectable and keeps pointer events for the tooltip; the yoke and
+hold-drag look listen on `#scene`, so presses on it still reach them. The 3D
+line and label are unchanged.
+
+**Deviations**
+
+Review follow-ups: the first version dropped the unknown-threshold note from
+the chip and used different popup wording; the second clipped its state text
+with the note and repeated the whole disclosure, including the revision, in the
+live region. Checks: TypeScript passes; `src/approach-guide.test.ts` 4/4;
+`npm run test:world-airports` passes 10 groups, asserting a one-line, unclipped
+chip, its airport/runway/state text, assistive limitations without the revision,
+and the popup's terrain-height and revision disclosure. Validation and peer
+review pending.
+
 ## 2026-11-09 19:09 — Extend windmilling propeller tables with the NACA TR-641 negative region
 
 TODO: 2.0.52 (partial), new 2.0.206/2.0.207; R-SIM-10/R-ENG-1. Agent: Claude
@@ -103,37 +194,7 @@ on two assertions that fail identically with main's WASM. Checks: glide harness
 10 and `prepare-aircraft.test.py` 9, `npm test`, nine native harnesses plus
 landing physics and the performance diagnostic (first round), `just check`,
 `just assure check`. Validation and peer review pending.
-## 2026-11-09 19:16 — Keep the approach-guide status to one compact line
 
-TODO: 2.0.204; R-NAV-3. Agent: Claude orchestrator (Claude Code, Opus 5.5);
-quality subagents (Claude Opus 5.5) reviewed two earlier versions.
-[Request](input/2026-11-09-guide-imagery-qnh-runways.md).
-
-**Implementation notes**
-
-Showing a 3° guide put a 360 px, five-line status box over the flying view,
-including the 40-character source revision. The status is now one line, for
-example `3° guide · EDFE 08 · illustrative · threshold ≈ runway end` (or
-`waiting for terrain`); the state comes before the optional note, and the
-longest measured text (345 px) fits the 380 px limit. The full disclosure with
-the source revision is the chip's tooltip and stays in the airport popup;
-assistive technology reads the limitations (`approachGuideLimitations()`)
-without the revision. The popup's "Shown" line names the terrain-height
-approximation, with the source on its own small line. The chip is not
-text-selectable and keeps pointer events for the tooltip; the yoke and
-hold-drag look listen on `#scene`, so presses on it still reach them. The 3D
-line and label are unchanged.
-
-**Deviations**
-
-Review follow-ups: the first version dropped the unknown-threshold note from
-the chip and used different popup wording; the second clipped its state text
-with the note and repeated the whole disclosure, including the revision, in the
-live region. Checks: TypeScript passes; `src/approach-guide.test.ts` 4/4;
-`npm run test:world-airports` passes 10 groups, asserting a one-line, unclipped
-chip, its airport/runway/state text, assistive limitations without the revision,
-and the popup's terrain-height and revision disclosure. Validation and peer
-review pending.
 ## 2026-11-09 18:41 — Fit the cockpit panel after a zero-size or collapsed layout
 
 TODO: 2.0.205; R-PANEL-1/R-VIEW-1. Agent: Claude orchestrator (Claude Code,
@@ -165,6 +226,7 @@ confirms. The quality re-review passed the fix. Checks: the test and
 `panel-layout.browser.mjs` (13 viewport cases) pass; it fails on main (page error at the 1×1
 start) and on the first version (no refit after the collapse). TypeScript and
 `npm test` pass. Independent re-review, validation and peer pending.
+
 ## 2026-11-09 17:46 — Show airport elevation in the map point popup
 
 TODO: 2.0.202; R-WORLD-12. Agent: Claude orchestrator (Claude Code, Opus 5.5);
@@ -186,6 +248,7 @@ None from the request. Checks: TypeScript passes; `src/map-point-position.test.t
 `npm test`. A headless Chrome check against the dev server opened EDFE from the
 map search and showed the line above, with no page errors. The full browser
 suite was not run. Independent quality/validation and peer review pending.
+
 ## 2026-11-09 17:41 — Carry the glide-figure answer and README prerequisites onto main
 
 TODO: 2.0.201; R-BOOT-3, GAPS Q5. Agent: Claude orchestrator (Claude Code,
