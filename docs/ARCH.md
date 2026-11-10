@@ -75,10 +75,15 @@ engine friction/pumping losses. The original propeller's positive-only power
 table let rotation and propeller drag vanish after shutdown. Direct-drive design
 RPM replaces the generator's gearing estimate; this changes powered propeller
 forces too. Aircraft airframe coefficients and native force integration remain
-in JSBSim. At low RPM/outside the finite coefficient tables, propeller rotation
-and drag can still collapse; this case remains unaccepted under TODO 2.0.52.
-This is a partial generic model correction, not accepted 172S performance;
-see [sources and diagnostic limits](research/2026-11-03-engine-off-glide.md).
+in JSBSim. Adapter v2 appends rows converted from hash-pinned digitized NACA
+Report 641 negative thrust/torque coefficients beyond the finite Aero-Matic
+tables (CT = Tc·J², CP = 2π·Qc·J²), so windmilling torque and drag follow the
+airflow instead of a clamped last row. Closed-throttle flight at or below about
+35 m/s TAS can still stop the shaft after some minutes through JSBSim's
+constant-power dead-engine friction, and a stopped propeller has no JSBSim force; these remain unaccepted under TODO 2.0.52.
+This is a generic model correction, not accepted 172S performance; see
+[sources and diagnostic limits](research/2026-11-03-engine-off-glide.md) and the
+[TR-641 extension](research/2026-11-09-engine-off-propeller-tr641.md).
 
 Additional user decisions: a **free/open-source flight-school community site**,
 **LLM-assisted flight-experience authoring and AI interaction**, an initial

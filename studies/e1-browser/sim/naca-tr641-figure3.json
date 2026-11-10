@@ -1,0 +1,59 @@
+{
+  "id": "naca-tr641-figure3-clark-y-2-blade-v1",
+  "scope": "Generic full-scale negative thrust and torque coefficients for windmilling, braked and locked fixed-pitch propeller operation. Not McCauley, C172P or C172S propeller data.",
+  "source": {
+    "title": "The Negative Thrust and Torque of Several Full-Scale Propellers and Their Application to Various Flight Problems",
+    "authors": ["Edwin P. Hartman", "David Biermann"],
+    "publisher": "National Advisory Committee for Aeronautics",
+    "report": "NACA Report No. 641",
+    "year": 1938,
+    "ntrs_id": "19930091716",
+    "url": "https://ntrs.nasa.gov/citations/19930091716",
+    "download_url": "https://ntrs.nasa.gov/api/citations/19930091716/downloads/19930091716.pdf",
+    "download_sha256": "281d1e2845088e51a12253e678a89bc1b4abd1742d36e155761e02dcea8d9c77",
+    "download_note": "The served file has a 436-byte NTRS prefix before the PDF header; the PDF starting at byte offset 436 has SHA-256 3a67650a5fc5fff31343c64b424eb3e06a6a9085347b55f6e8017c3e95742527 and 24 pages.",
+    "rights": "Authored and published in 1938 by the National Advisory Committee for Aeronautics, a U.S. federal agency. NTRS record metadata (checked 2026-11-09): distribution PUBLIC; copyright determinationType GOV_PUBLIC_USE_PERMITTED; belongsToUsGov false; no third-party material flagged. Only digitized numeric readings are recorded here; no page image or prose is redistributed.",
+    "accessed": "2026-11-09",
+    "figure": "Figure 3, printed page 3 (PDF page 7): negative thrust and torque coefficients for propeller 5868-9, Clark Y section, 2 blades",
+    "test_article": "10-foot diameter metal Navy propeller 5868-9, Clark Y sections, 2 blades, ahead of a radial-engine nacelle in the NACA 20-foot tunnel at 100-110 mph; cross-faired curves",
+    "definitions": {
+      "advance": "nD/V, propeller revolutions per second times diameter divided by airspeed; 0 is the locked propeller",
+      "Tc": "Te / (rho V^2 D^2), where Te = T - delta D is effective thrust (shaft axial force minus the slipstream-induced drag change of the test radial-engine nacelle); negative is drag. Applying Tc as JSBSim shaft thrust therefore includes that installation-specific nacelle effect.",
+      "Qc": "Q / (rho V^2 D^3), aerodynamic torque; negative assists rotation",
+      "blade_angle": "blade angle at 0.75 R, degrees"
+    }
+  },
+  "digitization": {
+    "date": "2026-11-09",
+    "agent": "Claude Code subagent (code1/researcher role), TODO 2.0.52",
+    "method": "The PDF page was rendered at 5x with macOS PDFKit. Grid lines were located from dark-pixel column/row profiles; curve centres were traced with dark-run column scans and checked against the printed curve labels, zero crossings and visual crops. Readings are linear in the local grid between calibrated lines.",
+    "uncertainty": "About +/-0.0003 in Tc and +/-0.00004 in Qc (1-2 rendered pixels on a 0.005 Tc / 0.0005 Qc minor grid), larger where curves cross; nD/V about +/-0.003. Cross-fairing by the original authors is retained, not removed.",
+    "zero_crossing_note": "The final row of each list is the read zero crossing of that curve, where the chart's negative region ends."
+  },
+  "curves": [
+    {
+      "blade_angle_deg": 15,
+      "Tc": [[0.00, -0.0258], [0.05, -0.0257], [0.10, -0.0260], [0.15, -0.0269], [0.20, -0.0285],
+             [0.25, -0.0307], [0.30, -0.0331], [0.35, -0.0355], [0.40, -0.0378], [0.45, -0.0400],
+             [0.50, -0.0419], [0.55, -0.0435], [0.60, -0.0444], [0.65, -0.0447], [0.70, -0.0444],
+             [0.75, -0.0433], [0.80, -0.0419], [0.85, -0.0397], [0.90, -0.0367], [0.95, -0.0328],
+             [1.00, -0.0284], [1.05, -0.0229], [1.10, -0.0162], [1.15, -0.0085], [1.20, 0.0]],
+      "Qc": [[0.00, -0.00293], [0.05, -0.00290], [0.10, -0.00290], [0.15, -0.00297], [0.20, -0.00315],
+             [0.25, -0.00335], [0.30, -0.00357], [0.35, -0.00380], [0.40, -0.00399], [0.45, -0.00414],
+             [0.50, -0.00422], [0.55, -0.00426], [0.60, -0.00428], [0.65, -0.00428], [0.70, -0.00426],
+             [0.75, -0.00421], [0.80, -0.00409], [0.85, -0.00392], [0.90, -0.00365], [0.95, -0.00330],
+             [1.00, -0.00283], [1.05, -0.00223], [1.10, -0.00140], [1.155, 0.0]]
+    },
+    {
+      "blade_angle_deg": 20,
+      "Tc": [[0.00, -0.0242], [0.05, -0.0241], [0.10, -0.0241], [0.15, -0.0244], [0.20, -0.0250],
+             [0.25, -0.0264], [0.30, -0.0282], [0.35, -0.0299], [0.40, -0.0312], [0.45, -0.0321],
+             [0.50, -0.0325], [0.55, -0.0323], [0.60, -0.0313], [0.65, -0.0300], [0.70, -0.0271],
+             [0.75, -0.0235], [0.80, -0.0189], [0.85, -0.0133], [0.90, -0.0067], [0.951, 0.0]],
+      "Qc": [[0.00, -0.00353], [0.05, -0.00352], [0.10, -0.00352], [0.15, -0.00356], [0.20, -0.00366],
+             [0.25, -0.00385], [0.30, -0.00402], [0.35, -0.00414], [0.40, -0.00421], [0.45, -0.00425],
+             [0.50, -0.00424], [0.55, -0.00417], [0.60, -0.00406], [0.65, -0.00389], [0.70, -0.00364],
+             [0.75, -0.00330], [0.80, -0.00274], [0.85, -0.00192], [0.90, -0.00072], [0.924, 0.0]]
+    }
+  ]
+}

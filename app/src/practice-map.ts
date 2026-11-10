@@ -425,6 +425,7 @@ export async function createPracticeMap(options: MapOptions): Promise<PracticeMa
     const runways = runwayByAirport.get(airport.id) ?? [];
     const guides = airportApproachGuides(airport, runways, `OurAirports community snapshot ${worldSnapshot?.retrieved ?? 'date unavailable'} · revision ${worldSnapshot?.source_commit ?? 'unavailable'}`);
     return { approach_guides: guides, id: airport.icao || airport.id, name: airport.name, kind: 'airport', airport_type: airport.type, lon_deg: airport.lon, lat_deg: airport.lat,
+      elevation_ft: airport.elevation_ft,
       ...(worldAirport ? { world_record_id: airport.id, details: runways.length ? runways.slice(0, 8).map(r =>
         `Runway ${r.le.ident || '?'} / ${r.he.ident || '?'} · ${r.length_ft === null ? 'length unknown' : `${r.length_ft} ft`}${r.width_ft === null ? '' : ` × ${r.width_ft} ft`} · ${r.surface || 'surface unknown'}${r.closed ? ' · CLOSED' : ''}`)
         : ['Runway details unavailable in this snapshot.'] } : {}),

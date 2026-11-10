@@ -269,6 +269,16 @@ retaining the existing propeller geometry/inertia/Mach correction data. Generate
 model bytes are excluded from source distribution and do not establish aircraft
 performance or broader model-data redistribution rights.
 
+Beyond the Aero-Matic table ends, the preparation appends rows converted from
+`studies/e1-browser/sim/naca-tr641-figure3.json`. That file holds digitized numeric
+readings of figure 3 of Edwin P. Hartman and David Biermann, *The Negative Thrust
+and Torque of Several Full-Scale Propellers and Their Application to Various Flight
+Problems*, NACA Report 641 (1938),
+[NTRS 19930091716](https://ntrs.nasa.gov/citations/19930091716). It was authored
+and published by NACA, a U.S. federal agency. The NTRS record lists distribution
+public and copyright determination "government public use permitted" (its
+belongs-to-U.S.-Government flag is false).
+
 
 ## EDFE vector scenery and airport COM directory
 
