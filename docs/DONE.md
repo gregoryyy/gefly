@@ -3,6 +3,37 @@
 Times use Europe/Berlin; timestamps come from the execution clock. New entries go
 above previous entries. This log records implementation, not simulator validity.
 
+## 2026-11-09 19:16 — Keep the approach-guide status to one compact line
+
+TODO: 2.0.204; R-NAV-3. Agent: Claude orchestrator (Claude Code, Opus 5.5);
+quality subagents (Claude Opus 5.5) reviewed two earlier versions.
+[Request](input/2026-11-09-guide-imagery-qnh-runways.md).
+
+**Implementation notes**
+
+Showing a 3° guide put a 360 px, five-line status box over the flying view,
+including the 40-character source revision. The status is now one line, for
+example `3° guide · EDFE 08 · illustrative · threshold ≈ runway end` (or
+`waiting for terrain`); the state comes before the optional note, and the
+longest measured text (345 px) fits the 380 px limit. The full disclosure with
+the source revision is the chip's tooltip and stays in the airport popup;
+assistive technology reads the limitations (`approachGuideLimitations()`)
+without the revision. The popup's "Shown" line names the terrain-height
+approximation, with the source on its own small line. The chip is not
+text-selectable and keeps pointer events for the tooltip; the yoke and
+hold-drag look listen on `#scene`, so presses on it still reach them. The 3D
+line and label are unchanged.
+
+**Deviations**
+
+Review follow-ups: the first version dropped the unknown-threshold note from
+the chip and used different popup wording; the second clipped its state text
+with the note and repeated the whole disclosure, including the revision, in the
+live region. Checks: TypeScript passes; `src/approach-guide.test.ts` 4/4;
+`npm run test:world-airports` passes 10 groups, asserting a one-line, unclipped
+chip, its airport/runway/state text, assistive limitations without the revision,
+and the popup's terrain-height and revision disclosure. Validation and peer
+review pending.
 ## 2026-11-09 18:41 — Fit the cockpit panel after a zero-size or collapsed layout
 
 TODO: 2.0.205; R-PANEL-1/R-VIEW-1. Agent: Claude orchestrator (Claude Code,
