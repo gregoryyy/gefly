@@ -24,6 +24,27 @@ None from the request. Checks: TypeScript passes; `src/map-point-position.test.t
 `npm test`. A headless Chrome check against the dev server opened EDFE from the
 map search and showed the line above, with no page errors. The full browser
 suite was not run. Independent quality/validation and peer review pending.
+## 2026-11-09 17:41 — Carry the glide-figure answer and README prerequisites onto main
+
+TODO: 2.0.201; R-BOOT-3, GAPS Q5. Agent: Claude orchestrator (Claude Code,
+Opus 5.5); no subagents.
+
+**Implementation notes**
+
+PRs #124–#130 landed the stacked branches and root-only work on main, which
+supersedes the local `integrate/missing-work` branch. Two of its records were
+still missing: the user's dated GAPS Q5 answer accepting the single POH
+maximum-glide reading (commit from `data/c172s-engine-cruise`, the one remote
+branch main never merged; input record, index line and research note), and the
+README prerequisites for `just fly` and `just build-flight-engine`. The GAPS
+answer is placed in newest-first order between the 2026-11-02 and 2026-11-01
+19:04 answers. The branch's 0.05 panel-scale floor is not carried: main replaced
+that layout code. Its integration DONE/TODO entries describe a merge that never
+reached main and are dropped.
+
+**Deviations**
+
+Documentation only; no simulator behavior changes. Peer review pending.
 
 ## 2026-11-09 17:30 — Restore green CI by keeping Pillow tests in the scenery gate
 
