@@ -406,6 +406,11 @@ Answer (EASA TCDS): **2026-11-02 07:16, user** ([input](input/2026-11-02-q23-pro
 Q23): the EASA TCDS values (manifest S5 IM.A.051, S9 EASA.IM.E.032) are used as
 cited facts (`facts_only`), like the POH: values with page citations, no copied text.
 
+Answer (glide figure): **2026-11-01 23:54, user** ([input](input/2026-11-01-glide-extraction.md)): “accept”.
+The single reading of the POH maximum-glide figure (68 KIAS, 18.0 nm from 12,000 ft),
+which carries that figure's whole content, is accepted as a cited fact; no further
+glide figure content is extracted.
+
 Answer (fuel chart): **2026-11-01 19:04, user** ([input](input/2026-11-01-renderer-fuel-tolerances.md)):
 “yes to all”. The facts-only, selective extraction allowance extends to the needed
 points of the Lycoming fuel-consumption chart (Fig. 3-9), under the same

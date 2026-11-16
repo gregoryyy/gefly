@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { imageryStatusText, REGIONAL_UNAVAILABLE_TEXT, type ImageryObservations } from './imagery-status.ts';
+import { imageryStatusText, parsePhotoCompositorStatus, PHOTO_COMPOSITOR_UNAVAILABLE_TEXT, REGIONAL_UNAVAILABLE_TEXT, withPhotoCompositorNotice, type ImageryObservations } from './imagery-status.ts';
 
 const loaded: ImageryObservations = { settled: true, slow: false, detailLoaded: true, overviewLoaded: true, airportLoaded: true,
   insideDetail: false, insideOverview: true, insideAirport: false, regional: 'ready', regionalLevel: 15, regionalFailedTiles: 0, tilesLoaded: true };
@@ -46,5 +46,29 @@ test('F57 R-WORLD-4 bundled-pyramid failure remains visible alongside live regio
     assert.match(status.text, /^Bundled regional detail imagery unavailable; live imagery\/map fallback shown\./);
     assert.notEqual(status.outcome, 'ready');
     assert.match(status.text, liveImagery === 'degraded' ? /Live photography unavailable/ : liveImagery === 'loading' ? /Loading live regional scenery/ : /capture dates unknown/);
+  }
+});
+
+test('R-WORLD-14 a missing local photo compositor is named instead of a silent map fallback', () => {
+  const outside = { ...loaded, regionalLevel: null, insideDetail: false, insideOverview: false, insideAirport: false };
+  assert.deepEqual(imageryStatusText({ ...outside, liveImagery: 'degraded', photoCompositor: 'unavailable' }),
+    { outcome: 'degraded', text: `${PHOTO_COMPOSITOR_UNAVAILABLE_TEXT} Map fallback shown.` });
+  // Inside the bundled Frankfurt pyramid the local photos remain, but the live loss is still explained.
+  assert.deepEqual(imageryStatusText({ ...loaded, liveImagery: 'degraded', photoCompositor: 'unavailable' }),
+    { outcome: 'degraded', text: PHOTO_COMPOSITOR_UNAVAILABLE_TEXT });
+  assert.match(PHOTO_COMPOSITOR_UNAVAILABLE_TEXT, /Pillow/);
+  for (const photoCompositor of ['unknown', 'ready'] as const) {
+    assert.deepEqual(imageryStatusText({ ...outside, liveImagery: 'degraded', photoCompositor }), { outcome: 'degraded', text: 'Live photography unavailable or incomplete · map fallback' });
+  }
+  assert.equal(imageryStatusText({ ...loaded, settled: false, photoCompositor: 'unavailable' }).outcome, 'loading');
+  assert.equal(withPhotoCompositorNotice('unavailable', 'Austria photography requested.'), `${PHOTO_COMPOSITOR_UNAVAILABLE_TEXT} Austria photography requested.`);
+  assert.equal(withPhotoCompositorNotice('ready', 'x'), 'x');
+});
+
+test('R-WORLD-14 compositor status parsing accepts only the fixed self-description', () => {
+  assert.equal(parsePhotoCompositorStatus({ compositor: 'ready' }), 'ready');
+  assert.equal(parsePhotoCompositorStatus({ compositor: 'unavailable' }), 'unavailable');
+  for (const value of [null, [], 'unavailable', { compositor: 'unknown' }, { compositor: 'unavailable', path: '/x' }, { status: 'ready' }]) {
+    assert.equal(parsePhotoCompositorStatus(value), 'unknown', JSON.stringify(value));
   }
 });

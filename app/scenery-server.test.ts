@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { test } from 'node:test';
+import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { after, test } from 'node:test';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { sceneryMiddleware } from './scenery-server.ts';
 
@@ -237,4 +240,68 @@ test('northern Hessen photography expands without querying southern state provid
   assert.equal(result.status, 200);
   assert.deepEqual(hosts, ['www.gds-srv.hessen.de']);
   assert.equal(result.headers['X-Scenery-Partial'], 'false');
+});
+
+const fakeDirectories: string[] = [];
+after(() => { for (const directory of fakeDirectories) rmSync(directory, { recursive: true, force: true }); });
+function fakeInterpreter(stderr = "ModuleNotFoundError: No module named 'PIL'"): string {
+  // Reproduces an interpreter without (or with a broken) Pillow, as with a fresh Homebrew Python.
+  const directory = mkdtempSync(join(tmpdir(), 'gefly-no-pillow-')), path = join(directory, 'python');
+  fakeDirectories.push(directory);
+  writeFileSync(path, `#!/bin/sh\ncat >/dev/null\n${stderr ? `echo "${stderr}" >&2\n` : ''}exit 1\n`);
+  chmodSync(path, 0o755);
+  return path;
+}
+
+test('R-WORLD-14 a broken Pillow import or any failed probe also counts as unavailable', async () => {
+  let requests = 0;
+  const broken = sceneryMiddleware({ python: fakeInterpreter("ImportError: cannot import name '_imaging' from 'PIL'"), warn: () => {}, fetcher: async () => {
+    requests++; return new Response(photoPng, { headers: { 'content-type': 'image/png' } });
+  } });
+  const [x, y] = tile(51.2, 9.4, 12);
+  const result = await call(broken, `/scenery/imagery/12/${x}/${y}.png`);
+  assert.equal(result.status, 503); assert.equal(result.headers['X-Scenery-Status'], 'compositor-unavailable');
+  assert.deepEqual(JSON.parse((await call(broken, '/scenery/imagery/status.json')).data.toString()), { compositor: 'unavailable' });
+  // The probe is only `import PIL.Image`, so even an undiagnosed nonzero exit means unusable.
+  const silent = sceneryMiddleware({ python: fakeInterpreter(''), warn: () => {} });
+  assert.deepEqual(JSON.parse((await call(silent, '/scenery/imagery/status.json')).data.toString()), { compositor: 'unavailable' });
+  // A compositor that imports but rejects an image stays an ordinary 502, not a missing Pillow.
+  const invalid = sceneryMiddleware({ python: fakeInterpreter('ValueError: invalid PNG'), warn: () => assert.fail('no warning for an invalid image'), fetcher: async () => new Response(photoPng, { headers: { 'content-type': 'image/png' } }) });
+  assert.equal((await call(invalid, `/scenery/imagery/12/${x}/${y}.png`)).status, 502);
+});
+
+test('R-WORLD-14 missing Pillow is reported, warned once and stops further public WMS requests', async () => {
+  let requests = 0; const warnings: string[] = [];
+  const handler = sceneryMiddleware({ python: fakeInterpreter(), warn: message => warnings.push(message), fetcher: async input => {
+    if (new URL(String(input)).hostname === 'sgx.geodatenzentrum.de') return new Response(mapPng, { headers: { 'content-type': 'image/png' } });
+    requests++; return new Response(photoPng, { headers: { 'content-type': 'image/png' } });
+  } });
+  const [x, y] = tile(51.2, 9.4, 12);
+  const first = await call(handler, `/scenery/imagery/12/${x}/${y}.png`);
+  assert.equal(first.status, 503); assert.equal(first.headers['X-Scenery-Status'], 'compositor-unavailable');
+  assert.equal(requests, 1);
+  const second = await call(handler, `/scenery/imagery/12/${x + 1}/${y}.png`);
+  assert.equal(second.status, 503); assert.equal(requests, 1, 'no upstream request before the compositor recheck');
+  const status = await call(handler, '/scenery/imagery/status.json');
+  assert.equal(status.status, 200); assert.equal(status.headers['Cache-Control'], 'no-store');
+  assert.deepEqual(JSON.parse(status.data.toString()), { compositor: 'unavailable' });
+  assert.equal(warnings.length, 1); assert.match(warnings[0], /Pillow/); assert.match(warnings[0], /just scenery-venv/);
+  const [mx, my] = tile(49.96, 8.64, 12);
+  assert.equal((await call(handler, `/scenery/map/12/${mx}/${my}.png`)).status, 200, 'cartography does not need the compositor');
+});
+
+test('R-WORLD-14 the compositor status probe honours PYTHON like the country-photo proxy', async () => {
+  const previous = process.env.PYTHON;
+  process.env.PYTHON = fakeInterpreter();
+  try {
+    const missing = sceneryMiddleware({ warn: () => {} });
+    assert.deepEqual(JSON.parse((await call(missing, '/scenery/imagery/status.json')).data.toString()), { compositor: 'unavailable' });
+    process.env.PYTHON = join(tmpdir(), 'gefly-missing-interpreter', 'python3');
+    const absent = sceneryMiddleware({ warn: () => {} });
+    assert.deepEqual(JSON.parse((await call(absent, '/scenery/imagery/status.json')).data.toString()), { compositor: 'unavailable' });
+  } finally { if (previous === undefined) delete process.env.PYTHON; else process.env.PYTHON = previous; }
+  const ready = sceneryMiddleware({ python: 'python3', warn: () => assert.fail('a Pillow interpreter must not warn') });
+  const head = await call(ready, '/scenery/imagery/status.json', 'HEAD');
+  assert.equal(head.status, 200); assert.equal(head.data.length, 0);
+  assert.deepEqual(JSON.parse((await call(ready, '/scenery/imagery/status.json')).data.toString()), { compositor: 'ready' });
 });

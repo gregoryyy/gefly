@@ -48,4 +48,6 @@ export interface WorldAirportManifest {
 export interface WorldAirportSnapshot {
   airports: WorldAirport[]; runways: WorldRunway[]; com: AirportComStation[]; navaids: WorldNavaid[];
   source: string; retrieved: string; source_commit: string; partial: boolean;
+  /** Cell ids whose records are fully included; absent from older workers (= coverage unknown). */
+  cells?: string[];
 }

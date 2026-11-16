@@ -33,6 +33,7 @@ Frame a note around one question with affected GAPS/requirement/task references,
 End with proposed implications, limitations and a handoff to product/orchestrator. Prefer linked documents and permitted extracts; do not check in copyrighted manuals without authorization. Reference notes by stable relative links; maintain this index when integrating them.
 
 - [Engine-off follow-up, 2026-11-03](2026-11-03-engine-off-followup.md): rejected FlightGear propeller candidate; actual native failures retained, no physics change accepted.
+- [Engine-off propeller, NACA TR-641, 2026-11-09](2026-11-09-engine-off-propeller-tr641.md): root cause at the finite propeller-table end, digitized public-domain negative-region data appended; airframe polar and dead-engine friction remain open.
 
 - [Label-free terrain cartography, 2026-11-04](2026-11-04-label-free-map-terrain.md): official vector-map source, label removal, Germany coverage, actual tile probes and attribution.
 

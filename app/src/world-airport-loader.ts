@@ -13,7 +13,9 @@ function validSnapshot(s: unknown): s is WorldAirportSnapshot {
   const value = s as Record<string, unknown>;
   return (['airports', 'runways', 'com', 'navaids'] as const).every(key => Array.isArray(value[key]) && value[key].length <= LIMITS[key])
     && typeof value.source === 'string' && value.source.length <= 200 && typeof value.retrieved === 'string' && value.retrieved.length <= 10
-    && typeof value.source_commit === 'string' && /^[a-f0-9]{40}$/.test(value.source_commit) && typeof value.partial === 'boolean';
+    && typeof value.source_commit === 'string' && /^[a-f0-9]{40}$/.test(value.source_commit) && typeof value.partial === 'boolean'
+    && (value.cells === undefined || (Array.isArray(value.cells) && value.cells.length <= LIMITS.cacheCells
+      && value.cells.every(id => typeof id === 'string' && /^\d{1,2}-\d{1,2}$/.test(id))));
 }
 /** Browser discovery work is isolated from both UI rendering and the physics worker. */
 export function createWorldAirportLoader(options: WorldAirportLoaderOptions) {

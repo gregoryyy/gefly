@@ -64,7 +64,7 @@ The ocean/land mask and one-degree interpolation are approximate near coasts.
 
 ## Rebuild and check
 
-Use Python 3.11+ with the existing Pillow 11.2.1 dependency. Download only the
+Use Python 3.11+ with the scenery-pinned Pillow 12.3.0 (`just scenery-venv`). Download only the
 five identified input files in SOURCE.json to scratch storage, retaining their
 exact bytes. Numeric input hashes are pinned in the compiler; changed upstream
 data requires review before changing those pins. ERDDAP injects request times

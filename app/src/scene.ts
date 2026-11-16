@@ -1,5 +1,5 @@
 import { createOsmReliefMaterial, supportsOsmRelief } from './osm-relief.ts';
-import { COUNTRY_IMAGERY, COUNTRY_PHOTO_MAX_LEVEL, COUNTRY_PHOTO_MIN_LEVEL, countryPhotoCandidates, countryPhotoUrl, type PhotoCountry } from './country-imagery.ts';
+import { COUNTRY_IMAGERY, COUNTRY_PHOTO_MAX_LEVEL, COUNTRY_PHOTO_MIN_LEVEL, countryPhotoCandidates, countryPhotoTileMayContain, countryPhotoUrl, type PhotoCountry } from './country-imagery.ts';
 import { countryPhotoBackoff } from './country-photo-backoff.ts';
 import { showVisibleSpainCredit } from './visible-photo-credit.ts';
 import { CHASE_DISTANCE } from './chase-distance.ts';
@@ -31,7 +31,7 @@ import { REGIONAL_TERRAIN, loadRegionalManifestOptional, WorldTerrainStream, sam
 import { loadWorldTerrainPackage, worldCellAt } from '../../studies/e1-browser/sim/world-terrain.js';
 import { createRegionalImageryProvider } from './regional-imagery';
 import { createMapTerrainImagery } from './map-terrain-imagery';
-import { imageryStatusText } from './imagery-status';
+import { imageryStatusText, parsePhotoCompositorStatus, withPhotoCompositorNotice, type PhotoCompositorState } from './imagery-status';
 import { loadTerrainPackage, sampleTerrain, type TerrainGrid } from '../../studies/e1-browser/sim/terrain.js';
 import { aircraftBasisENU, boundedCameraLook, cockpitCameraENU, chaseCameraENU, type CameraLook } from './aircraft-orientation';
 import { DEFAULT_FOV_RAD, MIN_FOV_RAD, MAX_FOV_RAD } from './field-of-view.ts';
@@ -219,6 +219,9 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
   let worldMapLayer: ImageryLayer | null = null;
   let worldMapLoad: Promise<void> | null = null;
   let worldMapStatus: 'loading' | 'ready' | 'degraded' = 'loading';
+  // Asked only after a photo tile failure, so a missing Python Pillow is named in the status.
+  let photoCompositor: PhotoCompositorState = 'unknown', photoCompositorCheckedAt = -Infinity, photoCompositorCheck = false;
+  let photoCompositorPoll: ReturnType<typeof setTimeout> | undefined;
   function orderPhotographs() {
     // Photographs cover the OSM map only in Photo mode. Vector mode uses the
     // same detailed OSM presentation everywhere, independent of regional bounds.
@@ -296,7 +299,7 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
       insideDetail: inside(DETAIL, state), insideOverview: inside(OVERVIEW, state), insideAirport: inside(AIRPORT_DETAIL, state),
       regional: !regionalSettled ? 'loading' : regionalImagery ? 'ready' : 'failed', regionalLevel,
       regionalFailedTiles: regionalStats?.failedTiles ?? 0, tilesLoaded: scene.globe.tilesLoaded,
-      liveImagery,
+      liveImagery, photoCompositor,
     });
     let text = vectorScenery && state.terrain_profile === 1
       ? worldMapStatus === 'ready' ? '' : worldMapStatus === 'degraded'
@@ -338,8 +341,8 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
       const names = (blocked: boolean) => COUNTRY_IMAGERY.filter(source => countryCandidates.includes(source.id)
         && countryPhotoBackoff.isBlocked(source.id) === blocked).map(source => source.name).join(' / ');
       const available = names(false), blocked = names(true);
-      text = [available && `${available} photography requested · coverage and capture dates vary${countryCandidates.some(id => !countryPhotoBackoff.isBlocked(id) && countryPhotoFailures.has(id)) ? ' · some tile requests failed' : ''}`,
-        blocked && `${blocked} photography temporarily unavailable · retrying shortly`, `OSM fallback · ${globalTerrainText}`].filter(Boolean).join(' · ') + '.';
+      text = withPhotoCompositorNotice(photoCompositor, [available && `${available} photography requested · coverage and capture dates vary${countryCandidates.some(id => !countryPhotoBackoff.isBlocked(id) && countryPhotoFailures.has(id)) ? ' · some tile requests failed' : ''}`,
+        blocked && `${blocked} photography temporarily unavailable · retrying shortly`, `OSM fallback · ${globalTerrainText}`].filter(Boolean).join(' · ') + '.');
     }
     container.dataset.mapTerrain = vectorScenery && state.terrain_profile === 1 ? worldMapStatus : vectorScenery ? 'flat-study' : 'off';
     container.dataset.mapTerrainLoaded = String(worldMap?.getStats().loadedTiles ?? 0);
@@ -356,6 +359,24 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
   // Load the same photograph for every view. A cached source snapshot makes
   // the first practice scene independent of WMS latency and adaptive tile LOD.
   const photographAbort = new AbortController();
+  function checkPhotoCompositor(): void {
+    const now = performance.now();
+    if (disposed || photoCompositorCheck || now - photoCompositorCheckedAt < 30000) return;
+    photoCompositorCheck = true; photoCompositorCheckedAt = now;
+    void fetch('/scenery/imagery/status.json', { cache: 'no-store', signal: AbortSignal.any([photographAbort.signal, AbortSignal.timeout(15000)]) })
+      .then(async response => response.ok && /^application\/json\b/i.test(response.headers.get('content-type') ?? '') ? parsePhotoCompositorStatus(await response.json()) : 'unknown' as const)
+      .catch(() => 'unknown' as const)
+      .then(value => {
+        photoCompositorCheck = false;
+        if (disposed) return;
+        // While unavailable, keep asking so a repaired server clears the notice.
+        clearTimeout(photoCompositorPoll);
+        if (value === 'unavailable') photoCompositorPoll = setTimeout(checkPhotoCompositor, 31000);
+        if (value === photoCompositor) return;
+        photoCompositor = value; container.dataset.photoCompositor = value;
+        imageryStatus(lastState); scene.requestRender();
+      });
+  }
   function ensureWorldMap(): void {
     if (worldMapLoad || disposed) return;
     worldMapLoad = createMapTerrainImagery({ profile: 'world', signal: photographAbort.signal,
@@ -439,22 +460,35 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
   let lastLook: CameraLook = { yaw_rad: 0, pitch_rad: 0 };
   // Country services are independent of the German regional terrain stream.
   // Their transparent tiles reveal the OSM base outside actual coverage.
+  // Cesium shows a provider-level credit wherever a layer is shown, even in
+  // another country, so each source is credited per rendered tile instead: only
+  // tiles that can carry its pixels (near its outline, at proxy detail levels).
+  // Other tiles are a deliberate client coverage cut-off: a local transparent
+  // tile without a request. Below level 7 that matches the proxy; farther inside
+  // the envelope the proxy would have asked upstream, and tile-aligned cut-off
+  // edges remain possible where provider imagery overhangs beyond the margin.
+  const emptyCountryTile = document.createElement('canvas');
+  emptyCountryTile.width = emptyCountryTile.height = 1;
+  const noCountryCredits: Credit[] = [];
   for (const source of COUNTRY_IMAGERY) {
     const provider = new UrlTemplateImageryProvider({
       url: new Resource({ url: countryPhotoUrl(source.id), headers: { 'X-Gefly-Scenery-Priority': 'visible' } }),
       minimumLevel: COUNTRY_PHOTO_MIN_LEVEL, maximumLevel: COUNTRY_PHOTO_MAX_LEVEL,
       tileWidth: 256, tileHeight: 256, rectangle: Rectangle.fromDegrees(...source.bounds),
-      credit: new Credit(source.attribution, true),
     });
+    const sourceCredits = [new Credit(source.attribution, true)];
+    provider.getTileCredits = (x, y, level) => countryPhotoTileMayContain(source.id, level, x, y) ? sourceCredits : noCountryCredits;
     // Error accounting is attached to each request below so stale completions
     // after a mode change or retry cannot reopen the shared circuit.
     provider.errorEvent.addEventListener(() => {});
     const requestImage = provider.requestImage.bind(provider);
     provider.requestImage = (x, y, level, request) => {
+      if (!countryPhotoTileMayContain(source.id, level, x, y)) return Promise.resolve(emptyCountryTile);
       const generation = countryPhotoBackoff.generation(source.id), epoch = countryPhotoEpoch[source.id];
       const result = requestImage(x, y, level, request);
       if (!result) return undefined;
       return result.then(image => {
+        if (photoCompositor === 'unavailable') checkPhotoCompositor(); // a decoded tile suggests recovery
         if (!disposed && epoch === countryPhotoEpoch[source.id] && generation === countryPhotoBackoff.generation(source.id)
           && level >= 7 && countryPhotoFailures.delete(source.id)) imageryStatus(lastState);
         return image;
@@ -462,7 +496,7 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
         if (!disposed && epoch === countryPhotoEpoch[source.id] && generation === countryPhotoBackoff.generation(source.id)
           && !countryPhotoBackoff.isBlocked(source.id)) {
           const first = !countryPhotoFailures.has(source.id);
-          countryPhotoFailures.add(source.id); countryPhotoBackoff.failure(source.id, generation);
+          countryPhotoFailures.add(source.id); countryPhotoBackoff.failure(source.id, generation); checkPhotoCompositor();
           if (first) imageryStatus(lastState);
         }
         throw error;
@@ -870,7 +904,7 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
         const rectangle=Rectangle.fromDegrees(REGIONAL_TERRAIN.west, REGIONAL_TERRAIN.south, REGIONAL_TERRAIN.east, REGIONAL_TERRAIN.north);
         const photoProvider=new UrlTemplateImageryProvider({url:new Resource({url:'/scenery/imagery/{z}/{x}/{y}.png',headers:{'X-Gefly-Scenery-Priority':'visible'}}),minimumLevel:7,maximumLevel:14,tileWidth:512,tileHeight:512,rectangle,
           credit:new Credit('Open photography: HVBG · <a href="https://www.govdata.de/dl-de/zero-2-0">DL-DE-Zero-2.0</a>; © <a href="https://www.ldbv.bayern.de">Bayerische Vermessungsverwaltung</a> (2026) · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; Datenquelle: <a href="https://www.lgl-bw.de">LGL-BW</a> (2026) · <a href="https://www.govdata.de/dl-de/by-2-0">dl-de/by-2-0</a>; © GeoBasis-DE / <a href="https://lvermgeo.rlp.de">LVermGeoRP</a> (2026), <a href="https://www.govdata.de/dl-de/by-2-0">dl-de/by-2-0</a> [Daten bearbeitet]; © GeoBasis DE / <a href="https://www.saarland.de/lvgl">LVGL-SL</a> (2026), <a href="https://www.govdata.de/dl-de/by-2-0">dl-de/by-2-0</a>, DOP2025 · resampled, composited · capture dates unknown',true)});
-        photoProvider.errorEvent.addEventListener(()=>{container.dataset.liveImagery='degraded';});
+        photoProvider.errorEvent.addEventListener(()=>{container.dataset.liveImagery='degraded';checkPhotoCompositor();});
         livePhotoLayer=new ImageryLayer(photoProvider);
         scene.imageryLayers.add(livePhotoLayer);orderPhotographs();
         container.dataset.liveImagery='loading';
@@ -888,7 +922,7 @@ export async function createScene(container: HTMLElement, creditContainer?: HTML
       worldMap?.dispose();
       observer.disconnect();
       creditObserver.disconnect();
-      clearTimeout(loadTimeout);
+      clearTimeout(loadTimeout); clearTimeout(photoCompositorPoll);
       forwardMarker.dispose(); removeReliefError(); removeCountryPhotoBackoff();
       scene.globe.material = undefined; osmRelief?.destroy(); delete container.dataset.osmRelief;
       approachGuide.dispose(); aircraftShadow.dispose(); airportScenery.dispose(); landmarkLabels.dispose();

@@ -1,6 +1,7 @@
 """Synthetic adapter fixtures; do not redistribute the upstream propeller tables."""
 import importlib.util
 import json
+import math
 from pathlib import Path
 import tempfile
 import unittest
@@ -33,6 +34,13 @@ PROPELLER = b'''<propeller name="Synthetic source">
 <table name="CP_MACH" type="internal"><tableData>0.5 1\n2 1.8</tableData></table>
 </propeller>'''
 FIXTURE = {'utils/aeromatic/prop2.php': GENERATOR, 'engine/eng_io320.xml': ENGINE, 'engine/prop_75in2f.xml': PROPELLER}
+# Synthetic negative-region curves (nD/V, coefficient). Constant values make the
+# expected CT = Tc*J^2 and CP = 2*pi*Qc*J^2 conversion exact and independent.
+NEGATIVE_RECORD = {'id': 'synthetic-negative-region', 'curves': [
+    {'blade_angle_deg': 10, 'Tc': [[0, -0.02], [1.0, -0.02], [1.3, 0]], 'Qc': [[0, -0.003], [1.0, -0.003], [1.25, 0]]},
+    {'blade_angle_deg': 30, 'Tc': [[0, -0.05], [0.4, -0.05], [0.55, 0]], 'Qc': [[0, -0.006], [0.4, -0.006], [0.5, 0]]}]}
+NEGATIVE = json.dumps(NEGATIVE_RECORD).encode()
+REAL_NEGATIVE = Path(__file__).with_name('naca-tr641-figure3.json')
 
 
 class PreparePropellerTests(unittest.TestCase):
@@ -55,7 +63,7 @@ class PreparePropellerTests(unittest.TestCase):
                 module.fixed_pitch_multipliers(text)
 
     def test_direct_drive_design_point_holdout_and_retained_geometry(self):
-        result, inputs = module.model_xml(GENERATOR, ENGINE, PROPELLER)
+        result, inputs = module.model_xml(GENERATOR, ENGINE, PROPELLER, NEGATIVE)
         # Independently calculated with Decimal at 28 digits, before running adapter.
         self.assertAlmostEqual(inputs['cp0'], .04258269989766734619240615565, places=15)
         self.assertAlmostEqual(inputs['ct0'], .05961577985673428466936861791, places=15)
@@ -64,6 +72,7 @@ class PreparePropellerTests(unittest.TestCase):
         ct = xml.find("table[@name='C_THRUST']/tableData").text.split()
         self.assertEqual(cp[2:4], ['0.2', '0.0426'])
         self.assertEqual(ct[2:4], ['0.2', '0.0596'])
+        self.assertEqual(cp[4:6], ['1.4', '-0.0319'])
         self.assertLess(float(cp[-1]), 0)
         self.assertLess(float(ct[-1]), 0)
         self.assertEqual(xml.findtext('gearratio').strip(), '1.0')
@@ -83,16 +92,100 @@ class PreparePropellerTests(unittest.TestCase):
                  (ENGINE, PROPELLER.replace(b'<numblades>2', b'<numblades>3')))
         for engine, propeller in cases:
             with self.subTest(engine=engine, propeller=propeller), self.assertRaises(ValueError):
-                module.model_xml(GENERATOR, engine, propeller)
+                module.model_xml(GENERATOR, engine, propeller, NEGATIVE)
+
+    def test_appends_exact_negative_region_rows_beyond_finite_tables(self):
+        result, inputs = module.model_xml(GENERATOR, ENGINE, PROPELLER, NEGATIVE)
+        xml = ET.fromstring(result)
+        region = inputs['negative_region']
+        # Synthetic CP zero crossing: 0.2 + 1.2 * 1 / 1.75; the 10-degree curve is nearer.
+        self.assertAlmostEqual(region['aeromatic_zero_power_j'], 0.2 + 1.2 / 1.75, places=12)
+        self.assertEqual(region['selected_blade_angle_deg_at_0_75R'], 10)
+        self.assertEqual(region['source_zero_torque_j'], {'10.0': 0.8, '30.0': 2.0})
+        # Join record: synthetic Aero-Matic end values -0.75*ct0/cp0 against the
+        # synthetic curve converted at J 1.4: CT -0.02*1.96 and CP 2*pi*-0.003*1.96.
+        join = region['join']
+        self.assertEqual(region['join_relative_difference_limit'], 0.25)
+        for name, aeromatic, source in (('C_THRUST', -0.75 * inputs['ct0'], -0.02 * 1.96),
+                                        ('C_POWER', -0.75 * inputs['cp0'], 2 * math.pi * -0.003 * 1.96)):
+            self.assertEqual(join[name]['j'], 1.4)
+            self.assertAlmostEqual(join[name]['aeromatic'], aeromatic, places=12)
+            self.assertAlmostEqual(join[name]['tr641'], source, places=12)
+            self.assertAlmostEqual(join[name]['relative_difference'], (aeromatic - source) / abs(source), places=12)
+        for name, coefficient in (('C_THRUST', -0.02), ('C_POWER', 2 * math.pi * -0.003)):
+            values = [float(v) for v in xml.find(f"table[@name='{name}']/tableData").text.split()]
+            rows = list(zip(values[::2], values[1::2]))
+            self.assertEqual([j for j, _ in rows[:3]], [0.0, 0.2, 1.4])
+            extension = rows[3:]
+            self.assertEqual(len(extension), region['appended_rows'][name])
+            self.assertAlmostEqual(extension[0][0], 1.54, places=4)
+            self.assertEqual(extension[-1][0], 100.0)
+            self.assertTrue(all(b[0] / a[0] <= 1.1 + 1e-4 for a, b in zip(rows[2:], rows[3:])))
+            self.assertTrue(all(b[1] < a[1] for a, b in zip(rows[2:], rows[3:])))
+            for j, value in extension:
+                # Printed J and coefficient are each rounded to four decimals.
+                self.assertAlmostEqual(value, coefficient * j * j, delta=5e-5 + abs(2 * coefficient * j) * 5e-5 + 1e-12)
+        self.assertIn(b'NACA Report 641', result)
+
+    def test_rejects_implausible_join_step(self):
+        # A curve whose converted value at the Aero-Matic end differs by more than
+        # the documented 25 % plausibility bound is rejected, for either table.
+        for changes, name in (({'Tc': [[0, -0.01], [1.0, -0.01], [1.3, 0]]}, 'C_THRUST'),
+                              ({'Qc': [[0, -0.0015], [1.0, -0.0015], [1.25, 0]]}, 'C_POWER')):
+            curve = {'blade_angle_deg': 10, 'Tc': [[0, -0.02], [1.0, -0.02], [1.3, 0]],
+                     'Qc': [[0, -0.003], [1.0, -0.003], [1.25, 0]], **changes}
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, f'{name} join differs'):
+                module.model_xml(GENERATOR, ENGINE, PROPELLER, json.dumps({'curves': [curve]}).encode())
+
+    def test_negative_region_validation_and_no_extrapolation(self):
+        def record(**changes):
+            curve = {'blade_angle_deg': 10, 'Tc': [[0, -0.02], [1.0, -0.02], [1.3, 0]],
+                     'Qc': [[0, -0.003], [1.0, -0.003], [1.25, 0]], **changes}
+            return json.dumps({'curves': [curve]}).encode()
+        for data in (record(Tc=[[0.1, -0.02], [1.0, -0.02], [1.3, 0]]),   # no locked-propeller point
+                     record(Tc=[[0, -0.02], [1.3, 0], [1.0, -0.02]]),     # unordered
+                     record(Qc=[[0, -0.003], [1.0, 0.001], [1.25, 0]]),   # positive before its zero crossing
+                     record(Qc=[[0, -0.003], [1.0, -0.003], [1.25, -0.001]]),  # no zero crossing
+                     record(Tc=[[0, -0.02], [0.6, 0]]),                   # too few points
+                     json.dumps({'curves': []}).encode(),
+                     json.dumps({'curves': [json.loads(record())['curves'][0]] * 2}).encode()):
+            with self.subTest(data=data), self.assertRaises(ValueError):
+                module.model_xml(GENERATOR, ENGINE, PROPELLER, data)
+        # The existing table must end inside the source negative region: a source
+        # curve whose thrust already reaches zero at nD/V 0.5 (J 2.0) would need
+        # extrapolation past J = 1.4, which is rejected.
+        with self.assertRaisesRegex(ValueError, 'inside the source negative region'):
+            module.model_xml(GENERATOR, ENGINE, PROPELLER, record(Tc=[[0, -0.02], [0.4, -0.02], [0.5, 0]]))
+
+    def test_committed_tr641_readings_are_pinned_and_convert_at_grid_points(self):
+        data = REAL_NEGATIVE.read_bytes()
+        self.assertEqual(module.sha256(data), module.NEGATIVE_DATA_SHA256)
+        record = json.loads(data)
+        self.assertEqual(record['source']['ntrs_id'], '19930091716')
+        self.assertEqual(module._recorded_path(REAL_NEGATIVE), 'studies/e1-browser/sim/naca-tr641-figure3.json')
+        curves = module.negative_curves(data)
+        self.assertEqual(sorted(curves), [15.0, 20.0])
+        # Synthetic zero-power crossing at J 1.1 selects the 20-degree curve (zero torque J 1/0.924).
+        angle, selection = module.select_negative_curve(curves, [(1.0, 0.01), (1.2, -0.01)])
+        self.assertEqual(angle, 20.0)
+        self.assertAlmostEqual(selection['source_zero_torque_j']['20.0'], 1 / 0.924)
+        # J = 2 is the source grid point nD/V = 0.5: CT = Tc*4, CP = 2*pi*Qc*4.
+        self.assertAlmostEqual(module._interpolate(curves[20.0]['Tc'], 0.5) * 4, -0.13)
+        self.assertAlmostEqual(2 * math.pi * module._interpolate(curves[20.0]['Qc'], 0.5) * 4,
+                               2 * math.pi * -0.00424 * 4)
+        with self.assertRaisesRegex(ValueError, 'no extrapolation'):
+            module._interpolate(curves[20.0]['Tc'], 0.96)
 
     def test_reproducible_output_hashes_and_source_untouched(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary); source = self.source(root)
             destination = root / 'out/propeller.xml'; metadata = root / 'out/meta.json'
-            with patch.object(module, 'SOURCE_SHA256', {path: module.sha256(data) for path, data in FIXTURE.items()}):
-                first = module.prepare_propeller(source, destination, metadata)
+            negative = root / 'negative.json'; negative.write_bytes(NEGATIVE)
+            with patch.object(module, 'SOURCE_SHA256', {path: module.sha256(data) for path, data in FIXTURE.items()}), \
+                    patch.object(module, 'NEGATIVE_DATA_SHA256', module.sha256(NEGATIVE)):
+                first = module.prepare_propeller(source, destination, metadata, negative)
                 first_bytes = destination.read_bytes()
-                second = module.prepare_propeller(source, destination, metadata)
+                second = module.prepare_propeller(source, destination, metadata, negative)
             self.assertEqual(first, second)
             self.assertEqual(destination.read_bytes(), first_bytes)
             self.assertEqual(json.loads(metadata.read_text()), first)
@@ -102,6 +195,10 @@ class PreparePropellerTests(unittest.TestCase):
                 self.assertEqual((source / relative).read_bytes(), data)
             self.assertEqual({record['path']: record['sha256'] for record in first['sources']},
                              {path: module.sha256(data) for path, data in FIXTURE.items()})
+            self.assertEqual(first['negative_region_source']['sha256'], module.sha256(NEGATIVE))
+            self.assertEqual(first['negative_region_source']['path'], negative.resolve().as_posix(),
+                             'records the file actually read, not the default path')
+            self.assertEqual(negative.read_bytes(), NEGATIVE)
 
     def test_unknown_source_fails_before_output_mutation(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -110,6 +207,16 @@ class PreparePropellerTests(unittest.TestCase):
             metadata = root / 'meta.json'; metadata.write_text('keep metadata')
             with self.assertRaisesRegex(ValueError, 'Unknown source bytes'):
                 module.prepare_propeller(source, destination, metadata)
+            self.assertEqual(destination.read_text(), 'keep')
+            self.assertEqual(metadata.read_text(), 'keep metadata')
+            negative = root / 'negative.json'; negative.write_bytes(NEGATIVE)
+            with patch.object(module, 'SOURCE_SHA256', {path: module.sha256(data) for path, data in FIXTURE.items()}):
+                with self.assertRaisesRegex(ValueError, 'Unknown negative-region data'):
+                    module.prepare_propeller(source, destination, metadata, negative)
+                link = root / 'negative-link.json'; link.symlink_to(negative)
+                with patch.object(module, 'NEGATIVE_DATA_SHA256', module.sha256(NEGATIVE)), \
+                        self.assertRaisesRegex(ValueError, 'regular digitized'):
+                    module.prepare_propeller(source, destination, metadata, link)
             self.assertEqual(destination.read_text(), 'keep')
             self.assertEqual(metadata.read_text(), 'keep metadata')
 
